@@ -6,12 +6,10 @@ metadata = dict(
     abbreviation='de',
     capitol_timezone='America/New_York',
     legislature_name='Delaware General Assembly',
-    upper_chamber_name='Senate',
-    lower_chamber_name='House',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Representative',
-    upper_chamber_term=4,
-    lower_chamber_term=2,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         {'name': '2011-2012',
          'sessions': ['146',],

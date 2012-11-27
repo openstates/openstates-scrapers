@@ -5,13 +5,10 @@ metadata = dict(
     abbreviation='mn',
     capitol_timezone='America/Chicago',
     legislature_name='Minnesota State Legislature',
-    lower_chamber_name='House',
-    upper_chamber_name='Senate',
-    lower_chamber_title='Representative',
-    upper_chamber_title='Senator',
-    lower_chamber_term=2,
-    # 4 yr terms in years ending in 2 and 6.  2 yr terms in years ending in 0
-    upper_chamber_term='http://en.wikipedia.org/wiki/Minnesota_Senate',
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         {'name': '2009-2010',
          'sessions': ['2009-2010', '2010 1st Special Session',

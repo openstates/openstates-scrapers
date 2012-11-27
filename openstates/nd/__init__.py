@@ -6,12 +6,10 @@ metadata = dict(
     abbreviation = 'nd',
     legislature_name = 'North Dakota Legislative Assembly',
     capitol_timezone='America/Chicago',
-    upper_chamber_name = 'Senate',
-    lower_chamber_name  = 'House',
-    upper_chamber_title = 'Senator',
-    lower_chamber_title = 'Representative',
-    upper_chamber_term = 4,
-    lower_chamber_term = 4,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms = [
         {'name': '62', 'sessions': ['62'],
          'start_year': 2011, 'end_year': 2012},

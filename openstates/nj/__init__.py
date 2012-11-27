@@ -11,12 +11,10 @@ metadata = dict(
     abbreviation='nj',
     capitol_timezone='America/New_York',
     legislature_name='New Jersey Legislature',
-    upper_chamber_name='Senate',
-    lower_chamber_name='Assembly',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Representative',
-    upper_chamber_term="http://en.wikipedia.org/wiki/New_Jersey_Legislature#Elections_and_terms",
-    lower_chamber_term=2,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
+    },
     terms=[
         #{'name': '2000-2001', 'sessions': ['209'],
         # 'start_year': 2000, 'end_year': 2001},

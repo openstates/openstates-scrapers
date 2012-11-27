@@ -9,12 +9,10 @@ metadata = dict(
     abbreviation='ny',
     capitol_timezone='America/New_York',
     legislature_name='New York Legislature',
-    lower_chamber_name='Assembly',
-    upper_chamber_name='Senate',
-    lower_chamber_title='Assembly Member',
-    upper_chamber_title='Senator',
-    lower_chamber_term=2,
-    upper_chamber_term=2,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
+    },
     terms=[dict(name='2011-2012', start_year=2011, end_year=2012,
                 sessions=['2011-2012'])],
     session_details={

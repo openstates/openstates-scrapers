@@ -9,9 +9,6 @@ settings = dict(
 
 metadata = {
     'capitol_timezone': 'America/New_York',
-    'lower_chamber_title': 'Representative',
-    'lower_chamber_name': 'House',
-    'upper_chamber_title': 'Senator',
     'terms': [
         {
             'end_year': 2010,
@@ -27,9 +24,7 @@ metadata = {
         }
     ],
     'name': 'Massachusetts',
-    'upper_chamber_term': 2,
     'abbreviation': 'ma',
-    'upper_chamber_name': 'Senate',
     'session_details': {
         '186th': {
             'type': 'primary',
@@ -43,7 +38,10 @@ metadata = {
         }
     },
     'legislature_name': 'Massachusetts General Court',
-    'lower_chamber_term': 2,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     'feature_flags': ['events', 'influenceexplorer'],
 }
 

@@ -7,12 +7,7 @@ metadata = dict(
     abbreviation='dc',
     capitol_timezone='America/New_York',
     legislature_name='Council of the District of Columbia',
-#    lower_chamber_name='n/a',
-    upper_chamber_name='Council',
-#    lower_chamber_title='n/a',
-    upper_chamber_title='Councilmember',
-#    lower_chamber_term=2,
-    upper_chamber_term=2,
+    chambers = { 'upper': { 'name': 'Council', 'title': 'Councilmember' } },
     terms=[
         #{'name': '2005-2006', 'sessions': ['16'],
         # 'start_year': 2005, 'end_year': 2006},

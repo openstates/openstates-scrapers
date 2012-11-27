@@ -6,12 +6,10 @@ metadata =  {
     'capitol_timezone': 'America/Chicago',
     'abbreviation': 'al',
     'legislature_name': 'Alabama Legislature',
-    'lower_chamber_name': 'House',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_title': 'Representative',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_term': 4,
-    'upper_chamber_term': 4,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     'terms': [
         #{'name': '2007-2010',
         # 'sessions': ['Organization Session 2007',
