@@ -53,6 +53,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
             xpath = '//img[contains(@class, "senator_teaser")]/@src'
             legislator['photo_url'] = page.xpath(xpath).pop()
+            import ipdb;ipdb.set_trace()
 
             email = page.xpath('//span[@class="spamspan"]')[0].text_content()
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
