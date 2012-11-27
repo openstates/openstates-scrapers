@@ -51,6 +51,9 @@ class NYLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             legislator.add_source(url)
 
+            xpath = '//img[contains(@class, "senator_teaser")]/@src'
+            legislator['photo_url'] = page.xpath(xpath).pop()
+
             email = page.xpath('//span[@class="spamspan"]')[0].text_content()
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
             if email:
