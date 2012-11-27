@@ -21,11 +21,16 @@ $(document).ready(function() {
 
 {% block content %}
     <div id="container">
-        <div class="fullWidth mainModule">
-            {% if favorites %}
-            <h1 class="moduleTitle">You're following:</h1>
-            <hr/>
+        <div class="fullWidth module">
             <div class="sixCol colRt">
+                <a href="/profile">Edit your profile</a>
+            </div>
+        </div>
+        <div class="fullWidth mainModule">
+
+            {% if favorites %}
+            <div class="sixCol colLt">
+                <h1 class="moduleTitle">You're following:</h1>
                 <ul style="padding-left: 25px">
                     {% for type, objs in favorites.items %}
                     <li>
