@@ -178,3 +178,28 @@ def substrings(word, from_beginning_only=False):
         if from_beginning_only:
             return
         i += 1
+
+
+def trie_add(values, trie=None, terminus=0):
+    '''Given a trie (or rather, a dict), add the match terms into the
+    trie.
+    '''
+    if trie is None:
+        trie = {}
+
+    for value in values:
+
+        this = trie
+        w_len = len(value) - 1
+        for i, c in enumerate(value):
+
+            try:
+                this = this[c]
+            except KeyError:
+                this[c] = {}
+                this = this[c]
+
+            if i == w_len:
+                this[terminus] = value
+
+    return trie

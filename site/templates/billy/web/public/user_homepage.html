@@ -8,24 +8,39 @@
 {% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
 {% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
 
+{% block headblock %}
+<script>
+$(document).ready(function() {
+    setup_notification_radios();
+    });
+</script>
+{% endblock %}
+
 {% block bodyclass %}home{% endblock %}
 
 
 {% block content %}
     <div id="container">
-        <div class="module">
-            {% if favorites %}
+        <div class="fullWidth module">
             <div class="sixCol colRt">
-                <h1>You're following:</h1>
+                <a href="/profile">Edit your profile</a>
+            </div>
+        </div>
+        <div class="fullWidth mainModule">
+
+            {% if favorites %}
+            <div class="sixCol colLt">
+                <h1 class="moduleTitle">You're following:</h1>
                 <ul style="padding-left: 25px">
                     {% for type, objs in favorites.items %}
                     <li>
                         <h5>{{objs|length|apnumber|title}}
                         {% if type != 'search' %}
-                            <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a></h5></li>
+                            <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a>
                         {% else %}
-                            <a href="#{{type}}">Searches</a></h5></li>
+                            <a href="#{{type}}">Searches</a>
                         {% endif %}
+                        </h5></li>
                     </li>
                     {% endfor %}
                 </ul>
@@ -38,12 +53,14 @@
             <div class="sixCol colRt">
                 <iframe width="420" height="315" src="http://www.youtube.com/embed/5xbyJGM1iUY" frameborder="0" allowfullscreen></iframe>
             </div>
+            <div class="clear"></div>
         </div>
 
 
         {% if favorites.has_bills %}
         <div class="module">
             <a name="bill" id="bill"></a>
+            {% notification_preference 'bill' %}
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
             <table class="withFilter">
                 <thead>
@@ -81,6 +98,7 @@
 
         <div class="module">
             <a name="legislator" id="legislator"></a>
+            {% notification_preference 'legislator' %}
             <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
             <table id="main-table">
                 <thead>
@@ -98,7 +116,7 @@
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %}">
                         <td>{% favorite obj.id 'legislator' obj.metadata.abbr 'is_favorite' %}</td>
-                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
+                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
                         <td>{{obj.metadata.name}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>
@@ -118,6 +136,7 @@
         {% if favorites.has_committees %}
         <div class="module">
             <a name="committee" id="committee"></a>
+            {% notification_preference 'committee' %}
             <h3 class="moduleTitle">{% trans "Committees" %}</h3>
            <table id="main-table">
               <thead>
@@ -162,7 +181,8 @@
 
         {% if favorites.has_searches %}
         <div class="module">
-            <a name="bill" id="bill"></a>
+            <a name="search" id="search"></a>
+            {% notification_preference 'search' %}
             <h3 class="moduleTitle">{% trans "Searches" %}</h3>
             <table>
                 <thead>

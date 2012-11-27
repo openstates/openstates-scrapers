@@ -4,6 +4,7 @@ import os
 import operator
 import functools
 import collections
+import urlparse
 import itertools
 import contextlib
 import logging
@@ -533,9 +534,20 @@ class Extractor(object):
             # Skip any entries that are missing required keys:
             required = set('summary source host link published_parsed'.split())
             if required not in set(entry):
-                msg = 'Skipped story lacking required keys: %r'
-                self.logger.info(msg % (required - set(entry)))
-                return
+                if 'links' not in entry:
+                    msg = 'Skipped story lacking required keys: %r'
+                    self.logger.info(msg % (required - set(entry)))
+                    return
+                else:
+                    source = entry['links'][-1].get('href')
+                    if source:
+                        host = urlparse.urlparse(entry['links'][0]['href']).netloc
+                        entry['source'] = source
+                        entry['host'] = host
+                    else:
+                        msg = 'Skipped story lacking required keys: %r'
+                        self.logger.info(msg % (required - set(entry)))
+                        return
 
             # Save
             feed_entries.save(entry)
@@ -653,4 +665,3 @@ if __name__ == '__main__':
 
     for abbr, count in stats.items():
         logger.info('%s - scanned %d feed entries' % (abbr, count))
-    #import pdb;pdb.set_trace()
