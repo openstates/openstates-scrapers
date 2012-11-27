@@ -5,12 +5,10 @@ metadata = dict(
     capitol_timezone='America/New_York',
     abbreviation='me',
     legislature_name='Maine Legislature',
-    upper_chamber_name='Senate',
-    lower_chamber_name='House',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Representative',
-    upper_chamber_term=2,
-    lower_chamber_term=2,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         {'name': '2009-2010', 'sessions': ['124'], 'start_year': 2009,
          'end_year': 2010},

@@ -7,13 +7,11 @@ metadata = dict(
     name='Alaska',
     capitol_timezone='America/Anchorage',
     abbreviation='ak',
-    legislature_name='The Alaska State Legislature',
-    lower_chamber_name='House',
-    upper_chamber_name='Senate',
-    lower_chamber_title='Representative',
-    upper_chamber_title='Senator',
-    lower_chamber_term=2,
-    upper_chamber_term=4,
+    legislature_name='Alaska State Legislature',
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         dict(name='26', sessions=['26'],
              start_year=2009, end_year=2010),

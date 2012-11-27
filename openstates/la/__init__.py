@@ -2,10 +2,7 @@ import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 
 metadata = {
-    "lower_chamber_title": "Representative",
-    "lower_chamber_name": "House",
     "capitol_timezone": 'America/Chicago',
-    "upper_chamber_title": "Senator",
     "terms": [
         {
             "name": "2008-2011",
@@ -28,9 +25,7 @@ metadata = {
         }
     ],
     "name": "Louisiana",
-    "upper_chamber_term": 4,
     "abbreviation": "la",
-    "upper_chamber_name": "Senate",
     "session_details": {
         "2009": {
             "type": "primary",
@@ -64,7 +59,10 @@ metadata = {
         },
     },
     "legislature_name": "Louisiana Legislature",
-    "lower_chamber_term": 4,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2012 Organizational Session',

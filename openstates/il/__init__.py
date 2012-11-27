@@ -6,14 +6,10 @@ metadata = {
     'name': 'Illinois',
     'legislature_name': 'The Illinois General Assembly',
     'capitol_timezone': 'America/Chicago',
-    'lower_chamber_name': 'House',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_title': 'Representative',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_term': 2,
-    'upper_chamber_term': 4, # technically, in every decennial period, one
-                             # senatorial term is only 2 years. See
-                             # Article IV, Section 2(a) for more information.
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     'terms': [
         {'name': '93rd', 'sessions': ['93rd', 'Special_93rd'],
          'start_year': 2003, 'end_year': 2004},

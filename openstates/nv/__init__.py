@@ -5,12 +5,10 @@ metadata = dict(
     abbreviation='nv',
     legislature_name='Nevada Legislature',
     capitol_timezone='America/Los_Angeles',
-    upper_chamber_name='Senate',
-    lower_chamber_name='Assembly',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Representative',
-    upper_chamber_term=4,
-    lower_chamber_term=2,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
+    },
     terms = [
         #{'name': '2001-2002', 'start_year': 2001, 'end_year': 2002,
         # 'sessions': ['2001Special17', '2002Special18', '71'],

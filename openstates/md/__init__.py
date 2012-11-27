@@ -6,12 +6,10 @@ metadata = dict(
     abbreviation='md',
     capitol_timezone='America/New_York',
     legislature_name='Maryland General Assembly',
-    upper_chamber_name='Senate',
-    lower_chamber_name='House',
-    upper_chamber_title='Senator',
-    lower_chamber_title='Delegate',
-    upper_chamber_term=4,
-    lower_chamber_term=4,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Delegate'},
+    },
     terms=[
         {'name': '2007-2010', 'sessions': ['2007', '2007s1', '2008',
                                            '2009', '2010'],
