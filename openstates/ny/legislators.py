@@ -49,11 +49,11 @@ class NYLegislatorScraper(LegislatorScraper):
     def scrape_upper_offices(self, legislator, url):
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
             legislator.add_source(url)
 
-            xpath = '//img[contains(@class, "senator_teaser")]/@src'
+            xpath = '//a[contains(@href, "profile-pictures")]/@href'
             legislator['photo_url'] = page.xpath(xpath).pop()
-            import ipdb;ipdb.set_trace()
 
             email = page.xpath('//span[@class="spamspan"]')[0].text_content()
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
