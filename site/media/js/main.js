@@ -188,6 +188,9 @@ function setup_find_your_legislator(success_append_html) {
         lng: -97,
         zoom: 3
     });
+
+    window.map = map;
+
     function do_geo_locate(lat, lon) {
         /* This is invoked when we want to re-draw the map. We get here either
            from the "submit" button, or clicking on the href with an overloaded
@@ -306,7 +309,7 @@ function setup_find_your_legislator(success_append_html) {
             "</p>"); */
         }
     });
-    if ( $("#_request").val().trim() != "" ) {
+    if ( $("#_request").val().trim() !== "" ) {
         /* Auto-submit if we've got something in there (?q= param) */
         $('#find_your_leg').submit();
     }
@@ -321,6 +324,19 @@ function toTitleCase(str)
 
 
 // Profile form.
-function user_profile_form(){
+function user_profile_form_submit(){
+    var center, lat, lng, lat_input, lng_input, form_data, location_text,
+        profile_form = $("#profile_form");
 
+    center = map.getCenter();
+    lat = center.lat();
+    lng = center.lng();
+    location_text = $("#leg_search").val();
+
+    location_text_input = $('<input type="hidden" name="location_text" value="' + location_text + '"></input>');
+    lat_input = $('<input type="hidden" name="lat" value="' + lat + '"></input>');
+    lng_input = $('<input type="hidden" name="lng" value="' + lng + '"></input>');
+    profile_form.append(location_text_input);
+    profile_form.append(lat_input);
+    profile_form.append(lng_input);
 }
