@@ -1,11 +1,11 @@
 abbr,chamber,name,num_seats,boundary_id
-dc,upper,1,1,sldu/dc-1
-dc,upper,2,1,sldu/dc-2
-dc,upper,3,1,sldu/dc-3
-dc,upper,4,1,sldu/dc-4
-dc,upper,5,1,sldu/dc-5
-dc,upper,6,1,sldu/dc-6
-dc,upper,7,1,sldu/dc-7
-dc,upper,8,1,sldu/dc-8
+dc,upper,Ward 1,1,sldu/dc-1
+dc,upper,Ward 2,1,sldu/dc-2
+dc,upper,Ward 3,1,sldu/dc-3
+dc,upper,Ward 4,1,sldu/dc-4
+dc,upper,Ward 5,1,sldu/dc-5
+dc,upper,Ward 6,1,sldu/dc-6
+dc,upper,Ward 7,1,sldu/dc-7
+dc,upper,Ward 8,1,sldu/dc-8
 dc,upper,At-Large,4,cd/dc-delegate-district-at-large
 dc,upper,Chairman,1,cd/dc-delegate-district-at-large
