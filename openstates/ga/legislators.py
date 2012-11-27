@@ -1,6 +1,7 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
 
+
 class GALegislatorScraper(LegislatorScraper):
     state = 'ga'
     sservice = get_client("Members").service
@@ -42,7 +43,8 @@ class GALegislatorScraper(LegislatorScraper):
                 name,
                 party=party,
                 last_name=last_name,
-                first_name=first_name
+                first_name=first_name,
+                _guid=guid
             )
             if middle_name:
                 legislator['middle_name'] = middle_name
