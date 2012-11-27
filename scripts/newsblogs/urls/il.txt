@@ -1,5 +1,4 @@
 http://feeds.stateline.org/StatelineorgRss-Illinois
-http://illinois.statehousenewsonline.com/feed/
 http://www.illinois.gov/PressReleases/RSS/State_All.xml
 http://capitolfax.com/feed/
 http://www.suntimes.com/rss/index.html?path=/suntimes/news/politics
@@ -15,6 +14,7 @@ http://www.ilsenategop.com/RSS/news.aspx
 http://feeds.feedburner.com/Archpundit
 http://feeds.feedburner.com/typepad/bYHz
 http://news.ilhousegop.org/feed/
+http://www.senatedem.ilga.gov/index.php/component/ninjarsssyndicator/?feed_id=3&format=raw
 http://www.senatedem.ilga.gov/index.php/sen-clayborne-home?format=feed&type=rss
 http://www.senatedem.ilga.gov/index.php/sen-acollins-home?format=feed&type=rss
 http://www.senatedem.ilga.gov/index.php/sen-collins-home?format=feed&type=rss
@@ -54,3 +54,4 @@ http://www.dailykos.com/user/poopdogcomedy/rss.xml
 http://blogs.suntimes.com/backtalk/atom.xml
 http://www.championnews.net/feed/rss/
 http://politicalwire.com/headlines.xml
+http://www.pewstates.org/feeds/all.rss?states=328020
