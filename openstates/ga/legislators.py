@@ -35,7 +35,6 @@ class GALegislatorScraper(LegislatorScraper):
             if party.strip() == '':
                 party = 'other'
 
-            print party
             legislator = Legislator(
                 term,
                 chamber,
