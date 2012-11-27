@@ -1,6 +1,27 @@
 from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
 
+# (Session){
+#    IsDefault = True
+#    Id = 21
+#    Description = "2011-2012 Regular Session"
+#    Library = "http://www.legis.ga.gov/Legislation/20112012/"
+#  }
+# (Session){
+#    IsDefault = False
+#    Id = 23
+#    Description = "2013-2014 Regular Session"
+#    Library = "http://www.legis.ga.gov/Legislation/20132014/"
+#  }
+# (Session){
+#    IsDefault = False
+#    Id = 22
+#    Description = "2011 Special Session"
+#    Library = "http://www.legis.ga.gov/Legislation/2011EX1/"
+#  }
+
+
+
 metadata = {
     'name': 'Georgia',
     'abbreviation': 'ga',
@@ -14,21 +35,26 @@ metadata = {
     'lower_chamber_term': 2,
     'terms': [
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['20132014']},
+         'sessions': ['2013_14']},
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011_12', '2011_ss']}
      ],
     'session_details': {
-        '20132014': {
+        '2013_14': {
             'display_name': '2013-2014 Regular Session',
-            '_scraped_name': '2013-2014 Regular Session'
+            '_scraped_name': '2013-2014 Regular Session',
+            '_guid': 23
         },
-        '2011_12': {'display_name': '2011-2012 Regular Session',
-                    '_scraped_name': '2011-2012 Regular Session',
-                   },
-        '2011_ss': {'display_name': '2011 Special Session',
-                    '_scraped_name': '2011 Special Session',
-                   },
+        '2011_12': {
+            'display_name': '2011-2012 Regular Session',
+            '_scraped_name': '2011-2012 Regular Session',
+            '_guid': 21
+        },
+        '2011_ss': {
+            'display_name': '2011 Special Session',
+            '_scraped_name': '2011 Special Session',
+            '_guid': 22
+        },
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': ['2009-2010 Regular Session',

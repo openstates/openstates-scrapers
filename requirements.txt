@@ -9,3 +9,5 @@ http://downloads.sourceforge.net/project/dbfpy/dbfpy/2.2.5/dbfpy-2.2.5.tar.gz
 # California
 SQLAlchemy>=0.5.3
 MySQL-python
+# GA
+suds

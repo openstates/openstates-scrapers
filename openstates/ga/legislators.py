@@ -1,38 +1,59 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import lxml
-
-URLS = {
-    "upper": "http://www.senate.ga.gov/senators/en-US/SenateMembersList.aspx",
-    "lower": "http://www.house.ga.gov/Representatives/en-US/HouseMembersList.aspx"
-}
+from .util import get_client, get_url
 
 class GALegislatorScraper(LegislatorScraper):
     state = 'ga'
+    sservice = get_client("Members").service
+    ssource = get_url("Members")
 
-    def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
+    def scrape_session(self, term, chambers, session):
+        session = self.metadata['session_details'][session]
+        sid = session['_guid']
+        members = self.sservice.GetMembersBySession(sid)['MemberListing']
+        for member in members:
+            guid = member['Id']
+            first_name, middle_name, last_name = (
+                member['Name'][x] for x in ['First', 'Middle', 'Last']
+            )
+            chamber, district = (
+                member['District'][x] for x in ['Type', 'Number']
+            )
 
-    def scrape_upper(self, href, chamber, term):
-        page = self.lxmlize(href)
-        title, name = [
-            x.text_content() for x in page.xpath("//div[@class='senateh3']")
-        ]
-        print name
+            party = member['Party']
+            if party == 'Democrat':
+                party = 'Democratic'
 
-    def scrape_lower(self, href, chamber, term):
-        pass
+            # print first_name, middle_name, last_name, party
+            # print chamber, district
+            name = "%s %s" % (first_name, last_name)
 
-    def scrape(self, chamber, term):
-        page = self.lxmlize(URLS[chamber])
-        t = page.xpath("//div[@class='ggaMasterContent']/table[@width='100%']")
-        if len(t) != 1:
-            raise Exception("Something's broke with the scraper. Root "
-                            "legislator list isn't what I think it was.")
-        t = t[0]
-        legislators = t.xpath(".//a[contains(@href, 'member.aspx')]")
-        for legislator in legislators:
-            href = legislator.attrib['href']
-            getattr(self, "scrape_%s" % (chamber))(href, chamber, term)
+            chamber = {
+                "House": 'lower',
+                "Senate": 'upper'
+            }[chamber]
+
+            if party.strip() == '':
+                party = 'other'
+
+            print party
+            legislator = Legislator(
+                term,
+                chamber,
+                str(district),
+                name,
+                party=party,
+                last_name=last_name,
+                first_name=first_name
+            )
+            if middle_name:
+                legislator['middle_name'] = middle_name
+
+            legislator.add_source(self.ssource)
+            # when I passed this into the instance's constructor
+            self.save_legislator(legislator)
+
+    def scrape(self, term, chambers):
+        for t in self.metadata['terms']:
+            if t['name'] == term:
+                for session in t['sessions']:
+                    self.scrape_session(term, chambers, session)
