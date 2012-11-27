@@ -150,7 +150,6 @@ me,lower,96,1,sldl/me-96
 me,lower,97,1,sldl/me-97
 me,lower,98,1,sldl/me-98
 me,lower,99,1,sldl/me-99
-me,lower,state-house-districts-not-defined,1,sldl/me-state-house-districts-not-defined
 me,upper,10,1,sldu/me-10
 me,upper,11,1,sldu/me-11
 me,upper,1,1,sldu/me-1
@@ -186,4 +185,3 @@ me,upper,6,1,sldu/me-6
 me,upper,7,1,sldu/me-7
 me,upper,8,1,sldu/me-8
 me,upper,9,1,sldu/me-9
-me,upper,state-senate-districts-not-defined,1,sldu/me-state-senate-districts-not-defined

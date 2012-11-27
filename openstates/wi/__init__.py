@@ -6,12 +6,10 @@ metadata = {
     'name': 'Wisconsin',
     'capitol_timezone': 'America/Chicago',
     'legislature_name': 'Wisconsin State Legislature',
-    'lower_chamber_name': 'Assembly',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_title': 'Representative',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_term': 2,
-    'upper_chamber_term': 4,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'Assembly', 'title': 'Representative'},
+    },
     'terms': [
         #{'name': '2001-2002',
         # 'sessions': ['2001 Regular Session',

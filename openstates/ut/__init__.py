@@ -6,12 +6,10 @@ metadata = dict(
     abbreviation='ut',
     legislature_name='Utah State Legislature',
     capitol_timezone='America/Denver',
-    lower_chamber_name='House',
-    upper_chamber_name='Senate',
-    lower_chamber_title='Representative',
-    upper_chamber_title='Senator',
-    lower_chamber_term=2,
-    upper_chamber_term=4,
+    chambers = {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Representative'},
+    },
     terms=[
         dict(name='2011-2012', sessions=['2011', '2011S1', '2011S2', '2011S3',
                                          '2012', '2012S4'],

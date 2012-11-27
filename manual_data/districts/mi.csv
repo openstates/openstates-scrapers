@@ -109,7 +109,6 @@ mi,lower,96,1,sldl/mi-96
 mi,lower,97,1,sldl/mi-97
 mi,lower,98,1,sldl/mi-98
 mi,lower,99,1,sldl/mi-99
-mi,lower,state-house-districts-not-defined,1,sldl/mi-state-house-districts-not-defined
 mi,upper,10,1,sldu/mi-10
 mi,upper,11,1,sldu/mi-11
 mi,upper,1,1,sldu/mi-1
@@ -148,4 +147,3 @@ mi,upper,6,1,sldu/mi-6
 mi,upper,7,1,sldu/mi-7
 mi,upper,8,1,sldu/mi-8
 mi,upper,9,1,sldu/mi-9
-mi,upper,state-senate-districts-not-defined,1,sldu/mi-state-senate-districts-not-defined

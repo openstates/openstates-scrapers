@@ -9,12 +9,10 @@ metadata = {
     'abbreviation': 'va',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'Virginia General Assembly',
-    'lower_chamber_name': 'House',
-    'upper_chamber_name': 'Senate',
-    'lower_chamber_title': 'Delegate',
-    'upper_chamber_title': 'Senator',
-    'lower_chamber_term': 2,
-    'upper_chamber_term': 4,
+    'chambers': {
+        'upper': {'name': 'Senate', 'title': 'Senator'},
+        'lower': {'name': 'House', 'title': 'Delegate'},
+    },
     'terms': [
         {'name': '2009-2011', 'sessions': ['2010', '2011', '2011specialI'],
          'start_year': 2010, 'end_year': 2011},

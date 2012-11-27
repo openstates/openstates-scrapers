@@ -104,7 +104,6 @@ la,lower,96,1,sldl/la-96
 la,lower,97,1,sldl/la-97
 la,lower,98,1,sldl/la-98
 la,lower,99,1,sldl/la-99
-la,lower,state-house-districts-not-defined,1,sldl/la-state-house-districts-not-defined
 la,upper,10,1,sldu/la-10
 la,upper,11,1,sldu/la-11
 la,upper,1,1,sldu/la-1
@@ -144,4 +143,3 @@ la,upper,6,1,sldu/la-6
 la,upper,7,1,sldu/la-7
 la,upper,8,1,sldu/la-8
 la,upper,9,1,sldu/la-9
-la,upper,state-senate-districts-not-defined,1,sldu/la-state-senate-districts-not-defined
