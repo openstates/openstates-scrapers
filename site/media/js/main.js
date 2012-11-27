@@ -229,30 +229,7 @@ function setup_find_your_legislator(success_append_html) {
                     }
                 }
             }
-            map.removeMarkers();
-            map.addMarker({
-                lat: lat,
-                lng: lon,
-                draggable: true,
-                fences: overlays,
-                outside: function(marker, fence) {
-                    var latlon = marker.position,
-                           lat = latlon.lat(),
-                           lon = latlon.lng();
-
-                    if ( ! needs_update ) {
-                        needs_update = true;
-                        do_geo_locate(lat, lon);
-                    }
-                },
-                click: function() {
-                    /* If the user clicks, let's recenter kindly. */
-                    map.setCenter(
-                        lat,
-                        lon
-                    );
-                }
-            });
+            // map.removeMarkers();
             needs_update = false;
         });
 
@@ -263,8 +240,6 @@ function setup_find_your_legislator(success_append_html) {
             lat,
             lon
         );
-        /* XXX: This is to remove all the other markers. Perhaps one day we
-                can find a way to mark all searched locations w/ results. */
 
         $("#results_table").html("<center>Loading....</center>");
         $("#results_table").load(url, function() {
