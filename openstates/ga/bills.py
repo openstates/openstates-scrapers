@@ -22,15 +22,41 @@ from .util import get_client, get_url
 
 class GABillScraper(BillScraper):
     state = 'ga'
-    mbills = get_client("Legislation").service
-    msource = get_url("Legislation")
+    lservice = get_client("Legislation").service
+    mservice = get_client("Members").service
+    lsource = get_url("Legislation")
+    msource = get_url("Members")
 
     def scrape(self, session, chambers):
         sid = self.metadata['session_details'][session]['_guid']
-        legislation = self.mbills.GetLegislationForSession(
+        legislation = self.lservice.GetLegislationForSession(
             sid
         )['LegislationIndex']
         for leg in legislation:
             lid = leg['Id']
-            instrument = self.mbills.GetLegislationDetail(lid)
-            print instrument
+            instrument = self.lservice.GetLegislationDetail(lid)
+
+            guid = instrument['Id']
+
+            bill_type = instrument['DocumentType']
+            chamber = {
+                "H": "lower",
+                "S": "upper",
+                "J": "joint"
+            }[bill_type[0]]  # XXX: This is a bit of a hack.
+
+            bill = Bill(
+                session,
+                chamber,
+                bill_id,
+                title,
+                description=description,
+                _guid=guid
+            )
+
+            sponsors = [
+                self.mservice.GetMember(x['MemberId']) for x in
+                    instrument['Authors']['Sponsorship']
+            ]
+            print bill
+            raise Exception
