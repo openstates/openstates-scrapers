@@ -229,7 +229,6 @@ function setup_find_your_legislator(success_append_html) {
                     }
                 }
             }
-            // map.removeMarkers();
             needs_update = false;
         });
 
