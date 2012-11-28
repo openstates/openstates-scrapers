@@ -5,11 +5,11 @@
         <div>
             <input type="hidden" value="{{obj_type}}"/>
             <input id="on-{{obj_type}}" type="radio"
-                   name="group1" value="on"/>
+                   name="group1" value="on" {% if alerts_on %}checked{% endif %}/>
             <label for="on-{{obj_type}}">On</label><br/>
 
             <input id="off-{{obj_type}}" type="radio"
-                   name="group1" value="off" checked/>
+                   name="group1" value="off" {% if not alerts_on %}checked{% endif %}/>
             <label for="on-{{obj_type}}">Off</label>
         </div>
     </div>
