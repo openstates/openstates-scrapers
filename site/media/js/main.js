@@ -36,13 +36,13 @@ $(document).ready( function() {
 
         $.ajax({
           type: 'POST',
-          url: '/user/set_favorite',
+          url: '/favorites/set_favorite/',
           data: favorite_div.data(),
           dataType: 'json',
           headers: {'X-CSRFToken': getCookie('csrftoken')},
           success: function(){
-            console.log("Favorite button got clicked.");
-            console.log(favorite_div.data());
+            //console.log("Favorite button got clicked.");
+            //console.log(favorite_div.data());
             if (favorite_div.data('is_favorite')) {
                 favorite_msg.text("Follow again");
             } else {
@@ -139,13 +139,13 @@ function setup_notification_radios() {
 
         $.ajax({
               type: 'POST',
-              url: '/user/set_notification_preference',
+              url: '/favorites/set_notification_preference/',
               data: {'obj_type': obj_type, 'on_off': on_off},
               dataType: 'json',
               headers: {'X-CSRFToken': getCookie('csrftoken')},
               success: function(){
                 var msg = $(".notification-preference .message-" + obj_type);
-                console.log(obj_type + ' notifications ' + on_off);
+                //console.log(obj_type + ' notifications ' + on_off);
                 msg.text(obj_type + ' notifications ' + on_off + '.');
                 },
               error: function(){
