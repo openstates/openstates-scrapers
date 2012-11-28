@@ -112,7 +112,7 @@ class FLCommitteeScraper(CommitteeScraper):
             # strip off spaces and everything in [R/D]
             name = link.text.strip().split(' [')[0]
             # membership type span follows link
-            mtype = link.getnext().text.strip()
+            mtype = link.getnext().text_content().strip()
             if not mtype:
                 mtype = 'member'
 
