@@ -1,7 +1,6 @@
 import re
 import urlparse
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -35,7 +34,6 @@ class FLLegislatorScraper(LegislatorScraper):
         office_name = 'District Office'
         for elem in doc.xpath('//h3[contains(text(), "District Office")]/following-sibling::*'):
             if elem.tag == 'p' and elem.text_content().strip():
-                print 'p'
                 # skip legislative assistants
                 if skip_next_p:
                     skip_next_p = False
@@ -59,13 +57,10 @@ class FLLegislatorScraper(LegislatorScraper):
                                address='\n'.join(address), phone=phone,
                                fax=fax)
             elif elem.tag == 'h4':
-                print 'h4'
                 skip_next_p = True
             elif elem.tag == 'h3' and elem.text == 'Tallahassee Office:':
-                print 'h3'
                 office_type = 'capitol'
                 office_name = 'Tallahassee Office'
-
 
     def scrape_senators(self, term):
         url = "http://www.flsenate.gov/Senators/"
@@ -108,7 +103,6 @@ class FLLegislatorScraper(LegislatorScraper):
 
                 self.save_legislator(leg)
 
-
     def scrape_rep_office(self, leg, doc, name):
         pieces = [x.tail.strip() for x in
                   doc.xpath('//strong[text()="%s"]/following-sibling::br' %
@@ -119,19 +113,27 @@ class FLLegislatorScraper(LegislatorScraper):
         for piece in pieces:
             if piece.startswith('Phone:'):
                 # 'Phone: \r\n        (303) 222-2222'
-                phone = piece.split(None, 1)[1]
+                if re.search(r'\d+', piece):
+                    phone = piece.split(None, 1)[1]
+                else:
+                    phone = None
             else:
                 piece = re.sub(r'\s+', ' ', piece)
                 address.append(piece)
 
+        office = dict(name=name, address='\n'.join(address))
+
+        # Phone
+        if phone is not None:
+            office['phone'] = phone
+
+        # Type
         if 'Capitol' in name:
-            leg.add_office('capitol', name, address='\n'.join(address),
-                           phone=phone)
+            office['type'] = 'capitol'
         elif 'District' in name:
-            leg.add_office('district', name, address='\n'.join(address),
-                           phone=phone)
+            office['type'] = 'district'
 
-
+        leg.add_office(**office)
 
     def scrape_reps(self, term):
         url = ("http://www.flhouse.gov/Sections/Representatives/"
