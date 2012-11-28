@@ -139,7 +139,7 @@ function setup_notification_radios() {
 
         $.ajax({
               type: 'POST',
-              url: '/user/set_notification_preference',
+              url: '/favorites/set_notification_preference/',
               data: {'obj_type': obj_type, 'on_off': on_off},
               dataType: 'json',
               headers: {'X-CSRFToken': getCookie('csrftoken')},
