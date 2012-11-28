@@ -146,7 +146,7 @@ function setup_notification_radios() {
               success: function(){
                 var msg = $(".notification-preference .message-" + obj_type);
                 //console.log(obj_type + ' notifications ' + on_off);
-                msg.text(obj_type + ' notifications ' + on_off + '.');
+                msg.text(toTitleCase(obj_type) + ' notifications ' + on_off + '.');
                 },
               error: function(){
                 var msg = $("notification-preference message-" + obj_type);
