@@ -20,12 +20,22 @@ from .util import get_client, get_url
 #            GetTitles()
 
 
+member_cache = {}
+
+
 class GABillScraper(BillScraper):
     state = 'ga'
     lservice = get_client("Legislation").service
     mservice = get_client("Members").service
     lsource = get_url("Legislation")
     msource = get_url("Members")
+
+    def get_member(self, member_id):
+        if member_id in member_cache:
+            return member_cache[member_id]
+        mem = self.mservice.GetMember(member_id)
+        member_cache[member_id] = mem
+        return mem
 
     def scrape(self, session, chambers):
         sid = self.metadata['session_details'][session]['_guid']
@@ -45,6 +55,16 @@ class GABillScraper(BillScraper):
                 "J": "joint"
             }[bill_type[0]]  # XXX: This is a bit of a hack.
 
+            bill_id = "%s %s" % (
+                bill_type,
+                instrument['Number'],
+            )
+            if instrument['Suffix']:
+                bill_id += instrument['Suffix']
+
+            title = instrument['Caption']
+            description = instrument['Summary']
+
             bill = Bill(
                 session,
                 chamber,
@@ -54,9 +74,38 @@ class GABillScraper(BillScraper):
                 _guid=guid
             )
 
+            sponsors = instrument['Authors']['Sponsorship']
+            if 'Sponsors' in instrument:
+                sponsors += instrument['Sponsors']['Sponsorship']
+
             sponsors = [
-                self.mservice.GetMember(x['MemberId']) for x in
-                    instrument['Authors']['Sponsorship']
+                (x['Type'], self.get_member(x['MemberId'])) for x in sponsors
             ]
-            print bill
-            raise Exception
+
+            for typ, sponsor in sponsors:
+                name = "{First} {Last}".format(**dict(sponsor['Name']))
+                bill.add_sponsor(
+                    'primary' if 'Author' in typ else 'seconday',
+                     name
+                )
+
+            for version in instrument['Versions']['DocumentDescription']:
+                name, url, doc_id, version_id = [
+                    version[x] for x in [
+                        'Description',
+                        'Url',
+                        'Id',
+                        'Version'
+                    ]
+                ]
+                bill.add_version(
+                    name,
+                    url,
+                    mimetype='application/pdf',
+                    _internal_document_id=doc_id,
+                    _version_id=version_id
+                )
+
+            bill.add_source(self.msource)
+            bill.add_source(self.lsource)
+            self.save_bill(bill)

@@ -1,4 +1,7 @@
 from suds.client import Client
+import logging
+logging.getLogger('suds').setLevel(logging.WARNING)
+
 
 url = 'http://webservices.legis.ga.gov/GGAServices/%s/Service.svc?wsdl'
 
