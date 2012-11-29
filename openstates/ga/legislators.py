@@ -13,8 +13,11 @@ class GALegislatorScraper(LegislatorScraper):
         members = self.sservice.GetMembersBySession(sid)['MemberListing']
         for member in members:
             guid = member['Id']
-            first_name, middle_name, last_name = (
-                member['Name'][x] for x in ['First', 'Middle', 'Last']
+            # print member['Name']
+            nick_name, first_name, middle_name, last_name = (
+                member['Name'][x] for x in [
+                    'Nickname', 'First', 'Middle', 'Last'
+                ]
             )
             chamber, district = (
                 member['District'][x] for x in ['Type', 'Number']
@@ -26,7 +29,13 @@ class GALegislatorScraper(LegislatorScraper):
 
             # print first_name, middle_name, last_name, party
             # print chamber, district
-            name = "%s %s" % (first_name, last_name)
+            first_name = nick_name if nick_name else first_name
+            # XXX: Due to the upstream handling...
+
+            if middle_name:
+                name = "%s %s %s" % (first_name, middle_name, last_name)
+            else:
+                name = "%s %s" % (first_name, last_name)
 
             chamber = {
                 "House": 'lower',
