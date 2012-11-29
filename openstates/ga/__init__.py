@@ -49,7 +49,8 @@ metadata = {
 
 def session_list():
     sessions = get_client("Session").service
-    sessions = [x['Description'].strip() for x in sessions.GetSessions()['Session']]
+    sessions = [x['Description'].strip()
+                for x in sessions.GetSessions()['Session']]
     return sessions
 
 
