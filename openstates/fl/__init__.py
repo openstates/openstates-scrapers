@@ -7,14 +7,17 @@ metadata = dict(
     abbreviation='fl',
     capitol_timezone='America/New_York',
     legislature_name='Florida Legislature',
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
         {'name': '2011-2012',
          'sessions': ['2011', '2012', '2012B'],
-         'start_year': 2011, 'end_year': 2012}],
+         'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014',
+         'sessions': ['2013'],
+         'start_year': 2013, 'end_year': 2014}],
     session_details={
         '2011': {'display_name': '2011 Regular Session',
                  '_scraped_name': '2011',
@@ -25,9 +28,12 @@ metadata = dict(
         '2012B': {'display_name': '2012 Extraordinary Apportionment Session',
                  '_scraped_name': '2012B',
                 },
+        '2013': {'display_name': '2013 Regular Session',
+                 '_scraped_name': '2013',
+                },
     },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions=['2010O', '2010A', '2012O', '2013'],
+    _ignored_scraped_sessions=['2010O', '2010A', '2012O'],
 )
 
 
