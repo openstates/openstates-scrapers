@@ -10,7 +10,8 @@ class TNLegislatorScraper(LegislatorScraper):
         self.validate_term(term, latest_only=False)
         root_url = 'http://www.capitol.tn.gov/'
         parties = {'D': 'Democratic', 'R': 'Republican',
-                   'CCR': 'Carter County Republican'}
+                   'CCR': 'Carter County Republican',
+                   'I': 'Independent'}
 
         #testing for chamber
         if chamber == 'upper':
@@ -28,6 +29,11 @@ class TNLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
 
             for row in page.xpath("//tr")[1:]:
+
+                # Skip any a header row.
+                if set(child.tag for child in row) == set(['th']):
+                    continue
+
                 partyInit = row.xpath('td[2]')[0].text.split()[0]
                 party = parties[partyInit]
                 district = row.xpath('td[4]/a')[0].text.split()[1]
