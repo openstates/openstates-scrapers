@@ -11,7 +11,7 @@ metadata = dict(
     abbreviation='tn',
     capitol_timezone='America/Chicago',
     legislature_name='Tennessee General Assembly',
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
@@ -19,9 +19,14 @@ metadata = dict(
         {'name': '106', 'sessions': ['106'],
             'start_year': 2009, 'end_year': 2010},
         {'name': '107', 'sessions': ['107'],
-            'start_year': 2010, 'end_year': 2011}
+            'start_year': 2010, 'end_year': 2011},
+        {'name': '108', 'sessions': ['108'],
+            'start_year': 2012, 'end_year': 2013}
     ],
     session_details={
+        '108': {
+            'type': 'primary',
+            'display_name': '108th Regular Session'},
         '107': {
             'start_date': datetime.date(2011, 1, 11),
             'end_date': datetime.date(2012, 1, 10),
@@ -33,7 +38,7 @@ metadata = dict(
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=[
-        '106th General Assembly',
+        '107th General Assembly', '106th General Assembly',
         '105th General Assembly', '104th General Assembly',
         '103rd General Assembly', '102nd General Assembly',
         '101st General Assembly', '100th General Assembly',
