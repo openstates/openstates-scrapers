@@ -8,6 +8,7 @@ class GACommitteeScraper(CommitteeScraper):
 
     cservice = get_client("Committees").service
     csource = get_url("Committees")
+    ctty_cache = {}
 
     def scrape_session(self, term, chambers, session):
         sid = self.metadata['session_details'][session]['_guid']
@@ -17,6 +18,7 @@ class GACommitteeScraper(CommitteeScraper):
         for committee in committees:
             cid = committee['Id']
             committee = self.cservice.GetCommittee(cid)
+
             name, typ, guid, code, description = [committee[x] for x in [
                 'Name', 'Type', 'Id', 'Code', 'Description'
             ]]
@@ -25,13 +27,24 @@ class GACommitteeScraper(CommitteeScraper):
                 "Senate": "upper",
                 "Joint": "joint"
             }[typ]
-            ctty = Committee(
-                chamber,
-                name,
-                code=code,
-                _guid=guid,
-                description=description
-            )
+            ctty = None
+            if code in self.ctty_cache:
+                ctty = self.ctty_cache[code]
+                if (ctty['chamber'] != chamber) and (description and
+                        'joint' in description.lower()):
+                    ctty['chamber'] = 'joint'
+                else:
+                    ctty = None
+
+            if ctty is None:
+                ctty = Committee(
+                    chamber,
+                    name,
+                    code=code,
+                    _guid=guid,
+                    description=description
+                )
+                self.ctty_cache[code] = ctty
 
             members = committee['Members']['CommitteeMember']
             for member in members:
