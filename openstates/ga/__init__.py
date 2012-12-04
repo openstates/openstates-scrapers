@@ -1,4 +1,5 @@
 from billy.utils.fulltext import text_after_line_numbers
+from .util import get_client
 import lxml.html
 
 metadata = {
@@ -11,16 +12,27 @@ metadata = {
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     'terms': [
+        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
+         'sessions': ['2013_14']},
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011_12', '2011_ss']}
      ],
     'session_details': {
-        '2011_12': {'display_name': '2011-2012 Regular Session',
-                    '_scraped_name': '2011-2012 Regular Session',
-                   },
-        '2011_ss': {'display_name': '2011 Special Session',
-                    '_scraped_name': '2011 Special Session',
-                   },
+        '2013_14': {
+            'display_name': '2013-2014 Regular Session',
+            '_scraped_name': '2013-2014 Regular Session',
+            '_guid': 23
+        },
+        '2011_12': {
+            'display_name': '2011-2012 Regular Session',
+            '_scraped_name': '2011-2012 Regular Session',
+            '_guid': 21
+        },
+        '2011_ss': {
+            'display_name': '2011 Special Session',
+            '_scraped_name': '2011 Special Session',
+            '_guid': 22
+        },
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': ['2009-2010 Regular Session',
@@ -34,17 +46,11 @@ metadata = {
                                   '2001-2002 Regular Session']
 }
 
+
 def session_list():
-    select_id = \
-        "ctl00_SPWebPartManager1_g_3ddc9629_a44e_4724_ae40_c80247107bd6_Session"
-    from billy.scrape.utils import url_xpath
-    sessions = url_xpath(
-        'http://www.legis.ga.gov/Legislation/en-US/Search.aspx',
-        "//select")[1].xpath("option/text()")
-    # XXX: If this breaks, it's because of this wonky xpath thing.
-    #      the ID seemed to change when I was testing it. This works
-    #      well enough for now.
-    sessions = [ session.strip() for session in sessions ]
+    sessions = get_client("Session").service
+    sessions = [x['Description'].strip()
+                for x in sessions.GetSessions()['Session']]
     return sessions
 
 
