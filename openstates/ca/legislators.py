@@ -45,6 +45,8 @@ class CALegislatorScraper(LegislatorScraper):
             legislator = parse(tr, term, chamber)
             if legislator['full_name'].startswith('Vacant'):
                 continue
+            if '[ Vacant ]' in legislator['full_name']:
+                continue
             legislator.add_source(url)
             #pprint.pprint(legislator)
             self.save_legislator(legislator)
@@ -91,7 +93,14 @@ class CALegislatorScraper(LegislatorScraper):
             pass
 
         # Addresses.
-        addresses = map(dict, filter(None, res['address']))
+        addresses = res['address']
+        try:
+            addresses = map(dict, filter(None, addresses))
+        except ValueError:
+            # Sometimes legislators only have one address, in which
+            # case this awful hack is helpful.
+            addresses = map(dict, filter(None, [addresses]))
+
         for x in addresses:
             try:
                 x['zip'] = x['zip'].replace('CA ', '')

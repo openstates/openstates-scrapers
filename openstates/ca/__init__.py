@@ -33,6 +33,11 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012,
          'start_date': datetime.date(2010, 12, 6),
          },
+         {'name': '20132014',
+         'sessions': ['20132014'],
+         'start_year': 2013, 'end_year': 2014,
+         # 'start_date': datetime.date(2013, ??, ?),
+         },
         ],
     session_details={
         '20092010': {
@@ -81,15 +86,29 @@ metadata = dict(
             'display_name': '2011-2012 Regular Session',
             'type': 'primary'
         },
+        '20132014': {
+            # 'start_date': datetime.date(2013, ?, ?),
+            'display_name': '2013-2014 Regular Session',
+            'type': 'primary'
+        },
     },
     feature_flags=['subjects', 'influenceexplorer'],
 
-    _ignored_scraped_sessions =  ['2011-2012', '2009-2010', '2007-2008',
-                                  '2005-2006', '2003-2004', '2001-2002',
-                                  '1999-2000', '1997-1998', '1995-1996',
-                                  '1993-1994']
-
+    _ignored_scraped_sessions = [
+        '2013-2014',
+        '2011-2012',
+        '2009-2010',
+        '2007-2008',
+        '2005-2006',
+        '2003-2004',
+        '2001-2002',
+        '1999-2000',
+        '1997-1998',
+        '1995-1996',
+        '1993-1994'
+        ]
 )
+
 
 def session_list():
     from billy.scrape.utils import url_xpath
@@ -102,9 +121,10 @@ def session_list():
     ]
     return sessions
 
+
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
-    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill_all"]',]
+    divs_to_try = ['//div[@id="bill"]', '//div[@id="bill_all"]']
     for xpath in divs_to_try:
         div = doc.xpath(xpath)
         if div:
