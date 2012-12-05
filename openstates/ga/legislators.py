@@ -32,10 +32,11 @@ class GALegislatorScraper(LegislatorScraper):
             first_name = nick_name if nick_name else first_name
             # XXX: Due to the upstream handling...
 
-            if middle_name:
-                name = "%s %s %s" % (first_name, middle_name, last_name)
-            else:
-                name = "%s %s" % (first_name, last_name)
+            # if middle_name:
+            #     name = "%s %s %s" % (first_name, middle_name, last_name)
+            # else:
+            # blocked out due to GA putting middle_name in first_name ...
+            name = "%s %s" % (first_name, last_name)
 
             chamber = {
                 "House": 'lower',
@@ -51,12 +52,15 @@ class GALegislatorScraper(LegislatorScraper):
                 str(district),
                 name,
                 party=party,
-                last_name=last_name,
-                first_name=first_name,
+#                last_name=last_name,
+#                first_name=first_name,
                 _guid=guid
             )
-            if middle_name:
-                legislator['middle_name'] = middle_name
+#            if middle_name:
+#                legislator['middle_name'] = middle_name
+
+#           Sadly, upstream isn't good about keeping first names first only,
+#           so I'm blocking this out.
 
             ainfo = [
                 member['DistrictAddress'][x] for x in [
