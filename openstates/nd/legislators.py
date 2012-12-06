@@ -49,3 +49,30 @@ class NDLegislatorScraper(LegislatorScraper):
             party = page.xpath(
                 "//div[contains(text(), 'Political Party')]"
             )[0].getnext().text_content().strip()
+
+            photo = page.xpath(
+                "//div[@class='field-person-photo']/img/@src"
+            )
+            photo = photo[0] if len(photo) else None
+
+            address = page.xpath("//div[@class='adr']")[0]
+            address = re.sub("\s+", " ", address.text_content()).strip()
+
+            item_mapping = {
+                "email": "email",
+                "home telephone": "home-telephone",
+                "cellphone": "cellphone",
+                "office telephone": "office-telephone",
+                "political party": "party",
+                "chamber": "chamber",
+                "fax": "fax"
+            }
+
+            for block in page.xpath("//div[contains(@class, 'field-label-inline')]"):
+                label, items = block.xpath("./*")
+                key = label.text_content().strip().lower()
+                if key.endswith(":"):
+                    key = key[:-1]
+
+                print item_mapping[key]
+                print items.text_content()
