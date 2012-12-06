@@ -67,6 +67,7 @@ class NDLegislatorScraper(LegislatorScraper):
                 "chamber": "chamber",
                 "fax": "fax"
             }
+            metainf = {}
 
             for block in page.xpath("//div[contains(@class, 'field-label-inline')]"):
                 label, items = block.xpath("./*")
@@ -74,5 +75,6 @@ class NDLegislatorScraper(LegislatorScraper):
                 if key.endswith(":"):
                     key = key[:-1]
 
-                print item_mapping[key]
-                print items.text_content()
+                metainf[item_mapping[key]] = items.text_content().strip()
+
+            print metainf
