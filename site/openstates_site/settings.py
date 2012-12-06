@@ -147,6 +147,8 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
 
+LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
+
 # Display API urls on pages.
 NERD_MODE = True
 
