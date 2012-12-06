@@ -6,7 +6,7 @@ import lxml.etree
 
 
 class MSCommitteeScraper(CommitteeScraper):
-    state = 'ms'
+    jurisdiction = 'ms'
 
     def scrape(self, chamber, term_name):
         self.save_errors=False

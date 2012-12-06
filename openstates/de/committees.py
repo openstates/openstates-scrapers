@@ -5,7 +5,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 
 class DECommitteeScraper(CommitteeScraper):
-    state = "de"
+    jurisdiction = "de"
 
     def scrape(self, chamber, term):
 

@@ -16,7 +16,7 @@ pages = {
 }
 
 class MAEventScraper(EventScraper):
-    state = 'ma'
+    jurisdiction = 'ma'
 
     _tz = pytz.timezone('US/Eastern')
 

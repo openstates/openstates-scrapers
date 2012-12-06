@@ -5,7 +5,7 @@ from zipfile import ZipFile
 from billy.scrape.votes import VoteScraper, Vote
 
 class NCVoteScraper(VoteScraper):
-    state = 'nc'
+    jurisdiction = 'nc'
 
     def scrape(self, chamber, session):
         if session == '2009':

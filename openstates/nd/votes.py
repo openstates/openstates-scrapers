@@ -18,7 +18,7 @@ fin_re = r"(?i).*(?P<bill_id>(S|H|J)(B|R|M) \d+).*(?P<passfail>(passed|lost)).*"
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY), .*\d{1,2},\s\d{4}).*"
 
 class NDVoteScraper(VoteScraper):
-    state = 'nd'
+    jurisdiction = 'nd'
 
     def lxmlize(self, url):
         with self.urlopen(url) as page:

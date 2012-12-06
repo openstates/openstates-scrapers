@@ -4,7 +4,7 @@ import lxml.html
 
 
 class UTLegislatorScraper(LegislatorScraper):
-    state = 'ut'
+    jurisdiction = 'ut'
     latest_only = True
 
     def scrape(self, chamber, term):

@@ -8,7 +8,7 @@ import lxml.html
 
 
 class NYLegislatorScraper(LegislatorScraper):
-    state = 'ny'
+    jurisdiction = 'ny'
 
     def scrape(self, chamber, term):
         if chamber == 'upper':

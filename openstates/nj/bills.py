@@ -10,7 +10,7 @@ import csv
 import os
 
 class NJBillScraper(BillScraper, DBFMixin):
-    state = 'nj'
+    jurisdiction = 'nj'
 
     _bill_types = {
         '': 'bill',

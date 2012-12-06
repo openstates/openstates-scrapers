@@ -7,7 +7,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 
 class MOCommitteeScraper(CommitteeScraper):
-    state = 'mo'
+    jurisdiction = 'mo'
     reps_url_base = 'http://www.house.mo.gov/'
     senate_url_base = 'http://www.senate.mo.gov/'
     no_members_text = 'This Committee does not have any members'

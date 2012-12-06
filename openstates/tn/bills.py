@@ -187,7 +187,7 @@ def actions_from_table(bill, actions_table):
 
 
 class TNBillScraper(BillScraper):
-    state = 'tn'
+    jurisdiction = 'tn'
 
     def scrape(self, chamber, term):
 

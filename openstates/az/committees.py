@@ -8,7 +8,7 @@ import re, datetime
 base_url = 'http://www.azleg.gov/'
 
 class AZCommitteeScraper(CommitteeScraper):
-    state = 'az'
+    jurisdiction = 'az'
 
     def get_session_for_term(self, term):
         # ideally this should be either first or second regular session

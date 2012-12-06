@@ -14,7 +14,7 @@ from .actions import Categorizer
 
 
 class PABillScraper(BillScraper):
-    state = 'pa'
+    jurisdiction = 'pa'
     categorizer = Categorizer()
 
     def scrape(self, chamber, session):

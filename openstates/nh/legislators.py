@@ -9,7 +9,7 @@ party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent',
 
 
 class NHLegislatorScraper(LegislatorScraper):
-    state = 'nh'
+    jurisdiction = 'nh'
     latest_only = True
 
     def get_photo(self, url, chamber):

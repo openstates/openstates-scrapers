@@ -25,7 +25,7 @@ class AZBillScraper(BillScraper):
     """
     Arizona Bill Scraper.
     """
-    state = 'az'
+    jurisdiction = 'az'
     def get_session_id(self, session):
         """
         returns the session id for a given session

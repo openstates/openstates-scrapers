@@ -9,7 +9,7 @@ import lxml.html
 
 
 class PAEventScraper(EventScraper):
-    state = 'pa'
+    jurisdiction = 'pa'
 
     _tz = pytz.timezone('US/Eastern')
 

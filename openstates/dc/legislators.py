@@ -11,7 +11,7 @@ def get_field(doc, key):
 
 
 class DCLegislatorScraper(LegislatorScraper):
-    state = 'dc'
+    jurisdiction = 'dc'
 
     def scrape(self, term, chambers):
         council_url = 'http://www.dccouncil.washington.dc.us/council'

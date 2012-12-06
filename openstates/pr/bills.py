@@ -53,7 +53,7 @@ _classifiers = (
 
 
 class PRBillScraper(BillScraper):
-    state = 'pr'
+    jurisdiction = 'pr'
 
     bill_types = {
         'P': 'bill',

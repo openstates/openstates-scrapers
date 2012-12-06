@@ -7,7 +7,7 @@ import lxml.etree
 
 
 class WALegislatorScraper(LegislatorScraper):
-    state = 'wa'
+    jurisdiction = 'wa'
 
     def scrape(self, chamber, term):
         biennium = "%s-%s" % (term[0:4], term[7:9])

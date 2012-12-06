@@ -38,7 +38,7 @@ committee_urls = {
 
 class MTCommitteeScraper(CommitteeScraper):
 
-    state = 'mt'
+    jurisdiction = 'mt'
 
     def scrape(self, chamber, term):
         for tdata in self.metadata['terms']:

@@ -23,7 +23,7 @@ bill_types = {
 
 class MOBillScraper(BillScraper):
 
-    state = 'mo'
+    jurisdiction = 'mo'
     senate_base_url = 'http://www.house.mo.gov'
     # a list of URLS that aren't working when we try to visit them (but probably should work):
     bad_urls = []

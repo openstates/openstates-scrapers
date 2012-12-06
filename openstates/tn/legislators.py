@@ -3,7 +3,7 @@ import lxml.html
 
 
 class TNLegislatorScraper(LegislatorScraper):
-    state = 'tn'
+    jurisdiction = 'tn'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=False)

@@ -61,7 +61,7 @@ vote_ambiguous_indicators = [
 
 class MTBillScraper(BillScraper):
     #must set state attribute as the state's abbreviated name
-    state = 'mt'
+    jurisdiction = 'mt'
 
     def __init__(self, *args, **kwargs):
         super(MTBillScraper, self).__init__(*args, **kwargs)

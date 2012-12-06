@@ -8,7 +8,7 @@ import feedparser
 
 
 class FLEventScraper(EventScraper):
-    state = 'fl'
+    jurisdiction = 'fl'
 
     _tz = pytz.timezone('US/Eastern')
 

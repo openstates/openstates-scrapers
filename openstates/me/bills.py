@@ -45,7 +45,7 @@ def unescape(text):
 
 
 class MEBillScraper(BillScraper):
-    state = 'me'
+    jurisdiction = 'me'
     categorizer = Categorizer()
 
     def scrape(self, chamber, session):

@@ -9,7 +9,7 @@ from .utils import clean_committee_name
 import lxml.html
 
 class NVLegislatorScraper(LegislatorScraper):
-    state = 'nv'
+    jurisdiction = 'nv'
 
     def scrape(self, chamber, term_name):
 

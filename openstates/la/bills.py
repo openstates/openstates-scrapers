@@ -12,7 +12,7 @@ import lxml.html
 
 
 class LABillScraper(BillScraper):
-    state = 'la'
+    jurisdiction = 'la'
 
     def scrape(self, chamber, session):
         types = {'upper': ['SB', 'SR', 'SCR'], 'lower': ['HB', 'HR', 'HCR']}

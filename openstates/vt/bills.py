@@ -100,7 +100,7 @@ def action_type(action):
 
 
 class VTBillScraper(BillScraper):
-    state = 'vt'
+    jurisdiction = 'vt'
     categorizer = Categorizer()
 
     def scrape(self, chamber, session, only_bills=None):

@@ -20,7 +20,7 @@ replacements = {
 now = datetime.datetime.now()
 
 class AKEventScraper(EventScraper):
-    state = 'ak'
+    jurisdiction = 'ak'
 
     _tz = pytz.timezone('US/Alaska')
 

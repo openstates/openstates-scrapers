@@ -40,7 +40,7 @@ def _categorize_action(action):
 
 class ALBillScraper(BillScraper):
 
-    state = 'al'
+    jurisdiction = 'al'
 
     def refresh_session(self):
         url = ('http://alisondb.legislature.state.al.us/acas/ACASLoginFire.asp'

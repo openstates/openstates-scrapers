@@ -10,7 +10,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 class DELegislatorScraper(LegislatorScraper):
-    state = 'de'
+    jurisdiction = 'de'
 
     def scrape(self, chamber, term, text=methodcaller('text_content'),
                re_spaces=re.compile(r'\s{,5}')):

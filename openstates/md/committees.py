@@ -4,7 +4,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 class MDCommitteeScraper(CommitteeScraper):
 
-    state = 'md'
+    jurisdiction = 'md'
 
     def scrape(self, term, chambers):
         lower = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'

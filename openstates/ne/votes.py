@@ -16,7 +16,7 @@ NOT_VOTING_RE = re.compile('(?:Present|Absent|Excused)?(?: and )?[Nn]ot voting, 
 
 
 class NEVoteScraper(VoteScraper):
-    state = 'ne'
+    jurisdiction = 'ne'
 
     def scrape(self, session, chambers):
         urls = {'102': ['http://www.nebraskalegislature.gov/FloorDocs/Current/PDF/Journal/r1journal.pdf',

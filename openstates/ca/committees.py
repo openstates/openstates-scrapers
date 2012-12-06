@@ -20,7 +20,7 @@ def clean(s):
 
 class CACommitteeScraper(CommitteeScraper):
 
-    state = 'ca'
+    jurisdiction = 'ca'
 
     urls = {'upper': 'http://senate.ca.gov/committees',
             'lower': 'http://assembly.ca.gov/committees'}

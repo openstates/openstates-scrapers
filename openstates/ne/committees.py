@@ -4,7 +4,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 class NECommitteeScraper(CommitteeScraper):
-    state = 'ne'
+    jurisdiction = 'ne'
     latest_only = True
 
     def scrape(self, term, chambers):

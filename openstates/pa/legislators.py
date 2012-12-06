@@ -8,7 +8,7 @@ import lxml.html
 
 
 class PALegislatorScraper(LegislatorScraper):
-    state = 'pa'
+    jurisdiction = 'pa'
 
     def scrape(self, chamber, term):
         # Pennsylvania doesn't make member lists easily available

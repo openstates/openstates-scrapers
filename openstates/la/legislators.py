@@ -24,7 +24,7 @@ def _get_b_tail(page, text):
 
 
 class LALegislatorScraper(LegislatorScraper):
-    state = 'la'
+    jurisdiction = 'la'
     latest_only = True
 
     def scrape(self, chamber, term):

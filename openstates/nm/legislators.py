@@ -4,7 +4,7 @@ import lxml.html
 
 
 class NMLegislatorScraper(LegislatorScraper):
-    state = 'nm'
+    jurisdiction = 'nm'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

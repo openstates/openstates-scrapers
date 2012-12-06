@@ -11,7 +11,7 @@ import xlrd
 
 
 class MECommitteeScraper(CommitteeScraper):
-    state = 'me'
+    jurisdiction = 'me'
 
     def scrape(self, chamber, term_name):
         self.validate_term(term_name, latest_only=True)

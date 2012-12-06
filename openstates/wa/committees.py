@@ -5,7 +5,7 @@ import lxml.etree
 
 
 class WACommitteeScraper(CommitteeScraper):
-    state = 'wa'
+    jurisdiction = 'wa'
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 

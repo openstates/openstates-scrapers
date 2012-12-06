@@ -9,7 +9,7 @@ from billy.scrape.votes import Vote
 
 
 class AKBillScraper(BillScraper):
-    state = 'ak'
+    jurisdiction = 'ak'
 
     _fiscal_dept_mapping = {
         'ADM': 'Administration',

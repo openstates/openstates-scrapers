@@ -4,7 +4,7 @@ import lxml.html
 import urllib
 
 class NEBillScraper(BillScraper):
-    state = 'ne'
+    jurisdiction = 'ne'
 
     def scrape(self, session, chambers):
         start_year = self.metadata['session_details'][session]['start_date'].year

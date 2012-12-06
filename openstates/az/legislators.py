@@ -5,7 +5,7 @@ from lxml import html
 import re, datetime
 
 class AZLegislatorScraper(LegislatorScraper):
-    state = 'az'
+    jurisdiction = 'az'
     parties = {
         'R': 'Republican',
         'D': 'Democratic',

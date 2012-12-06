@@ -11,7 +11,7 @@ url = "http://assembly.state.ny.us/leg/?sh=hear"
 
 class NYAssemblyEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
-    state = 'ny'
+    jurisdiction = 'ny'
 
     def lxmlize(self, url):
         with self.urlopen(url) as page:
@@ -107,7 +107,7 @@ class NYAssemblyEventScraper(EventScraper):
 
 class NYSenateEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
-    state = 'ny'
+    jurisdiction = 'ny'
     crappy = []
 
     def scrape(self, chamber, session):

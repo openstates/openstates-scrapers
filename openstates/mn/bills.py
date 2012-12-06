@@ -14,7 +14,7 @@ BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
 VERSION_URL_BASE = "https://www.revisor.mn.gov"
 
 class MNBillScraper(BillScraper):
-    state = 'mn'
+    jurisdiction = 'mn'
 
     _categorizers = (
         ('Introduced', 'bill:introduced'),

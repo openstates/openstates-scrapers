@@ -7,7 +7,7 @@ import lxml.html
 
 
 class NVCommitteeScraper(CommitteeScraper):
-    state = 'nv'
+    jurisdiction = 'nv'
 
     def scrape(self, chamber, term):
 

@@ -7,7 +7,7 @@ import re
 logger = logging.getLogger('openstates')
 
 class NDLegislatorScraper(LegislatorScraper):
-    state = 'nd'
+    jurisdiction = 'nd'
 
     def scrape(self, term, chambers):
         self.validate_term(term, latest_only=True)

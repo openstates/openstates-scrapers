@@ -9,7 +9,7 @@ from billy.scrape.events import EventScraper, Event
 agenda_dbf = "ftp://www.njleg.state.nj.us/ag/2012data/AGENDAS.DBF"
 
 class NJEventScraper(EventScraper, DBFMixin):
-    state = 'nj'
+    jurisdiction = 'nj'
     _tz = pytz.timezone('US/Eastern')
 
     def initialize_committees(self, year_abr):

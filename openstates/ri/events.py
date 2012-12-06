@@ -32,7 +32,7 @@ replace = {
 }
 
 class RIEventScraper(EventScraper):
-    state = 'ri'
+    jurisdiction = 'ri'
 
     _tz = pytz.timezone('US/Eastern')
 

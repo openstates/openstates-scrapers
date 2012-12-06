@@ -2,7 +2,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
 class ORLegislatorScraper(LegislatorScraper):
-    state      = 'or'
+    jurisdiction = 'or'
 
     rawdata    = None
     source_url = 'http://www.leg.state.or.us/xml/members.xml'

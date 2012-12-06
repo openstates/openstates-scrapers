@@ -9,7 +9,7 @@ def fix_whitespace(s):
     return re.sub(r'\s+', ' ', s)
 
 class MNCommitteeScraper(CommitteeScraper):
-    state = 'mn'
+    jurisdiction = 'mn'
     latest_only = True
 
     def scrape(self, term, chambers):

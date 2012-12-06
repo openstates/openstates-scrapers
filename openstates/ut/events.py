@@ -10,7 +10,7 @@ import lxml.html
 url = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
 
 class UTEventScraper(EventScraper):
-    state = 'ut'
+    jurisdiction = 'ut'
     _tz = pytz.timezone('US/Mountain')
     def lxmlize(self, url):
         with self.urlopen(url) as page:

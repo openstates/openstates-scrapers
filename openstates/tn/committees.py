@@ -28,7 +28,7 @@ def fix_whitespace(s):
 
 
 class TNCommitteeScraper(CommitteeScraper):
-    state = 'tn'
+    jurisdiction = 'tn'
     base_href = 'http://www.capitol.tn.gov'
     chambers = {
         'lower': 'house',

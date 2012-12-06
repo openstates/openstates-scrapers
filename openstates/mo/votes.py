@@ -26,7 +26,7 @@ def _clean_line(obj):
 
 
 class MOVoteScraper(VoteScraper):
-    state = 'mo'
+    jurisdiction = 'mo'
 
     def lxmlize(self, url):
         with self.urlopen(url) as page:

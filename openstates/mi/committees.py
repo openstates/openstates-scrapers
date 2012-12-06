@@ -5,7 +5,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 class MICommitteeScraper(CommitteeScraper):
-    state = 'mi'
+    jurisdiction = 'mi'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

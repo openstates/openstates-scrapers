@@ -64,7 +64,7 @@ BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s/billfile/%s%04d.htm" # year, session, bill_type, number
 
 class MDBillScraper(BillScraper):
-    state = 'md'
+    jurisdiction = 'md'
 
     def parse_bill_sponsors(self, doc, bill):
         sponsor_list = doc.xpath('//a[@name="Sponlst"]')
