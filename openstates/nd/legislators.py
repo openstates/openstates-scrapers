@@ -43,3 +43,9 @@ class NDLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             name = page.xpath("//h1[@id='page-title']/text()")[0]
+
+            committees = page.xpath("//a[contains(@href, 'committees')]/text()")
+
+            party = page.xpath(
+                "//div[contains(text(), 'Political Party')]"
+            )[0].getnext().text_content().strip()
