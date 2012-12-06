@@ -10,7 +10,7 @@ import lxml.html
 
 
 class FLBillScraper(BillScraper):
-    state = 'fl'
+    jurisdiction = 'fl'
 
     def scrape(self, chamber, session):
         self.validate_session(session)

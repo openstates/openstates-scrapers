@@ -13,7 +13,7 @@ urls = {
 }
 
 class ILEventScraper(EventScraper):
-    state = 'il'
+    jurisdiction = 'il'
     _tz = pytz.timezone('US/Eastern')
     def lxmlize(self, url):
         with self.urlopen(url) as page:

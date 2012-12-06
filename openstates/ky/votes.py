@@ -89,7 +89,7 @@ from billy.scrape.votes import VoteScraper, Vote
 
 
 class KYVoteScraper(VoteScraper):
-    state = 'ky'
+    jurisdiction = 'ky'
 
     def scrape(self, chamber, session):
         pass

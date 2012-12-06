@@ -12,7 +12,7 @@ import lxml.html
 
 
 class OHBillScraper(BillScraper):
-    state = 'oh'
+    jurisdiction = 'oh'
 
     def scrape(self, chamber, session):
         if int(session) < 128:

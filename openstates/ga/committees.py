@@ -3,7 +3,7 @@ from .util import get_client, get_url
 
 
 class GACommitteeScraper(CommitteeScraper):
-    state = 'ga'
+    jurisdiction = 'ga'
     latest_only = True
 
     cservice = get_client("Committees").service

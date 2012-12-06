@@ -7,7 +7,7 @@ import lxml.html
 
 
 class VTLegislatorScraper(LegislatorScraper):
-    state = 'vt'
+    jurisdiction = 'vt'
     latest_only = True
 
     def scrape(self, chamber, term):

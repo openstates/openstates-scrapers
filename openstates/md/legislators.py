@@ -10,7 +10,7 @@ PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 BASE_URL = 'http://www.msa.md.gov'
 
 class MDLegislatorScraper(LegislatorScraper):
-    state = 'md'
+    jurisdiction = 'md'
     latest_term = True
 
     def scrape(self, chamber, term):

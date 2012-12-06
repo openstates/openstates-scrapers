@@ -38,7 +38,7 @@ def clean_district(district):
 
 
 class MALegislatorScraper(LegislatorScraper):
-    state = 'ma'
+    jurisdiction = 'ma'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

@@ -11,7 +11,7 @@ import lxml.html
 from .utils import open_csv
 
 class CTEventScraper(EventScraper):
-    state = 'ct'
+    jurisdiction = 'ct'
 
     _tz = pytz.timezone('US/Eastern')
 

@@ -17,7 +17,7 @@ excel_mapping = {
 }
 
 class RILegislatorScraper(LegislatorScraper):
-    state = 'ri'
+    jurisdiction = 'ri'
     latest_only = True
 
     def scrape(self, chamber, term):

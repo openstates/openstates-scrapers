@@ -229,7 +229,7 @@ def get_committee_name_regex():
 
 
 class CABillScraper(BillScraper):
-    state = 'ca'
+    jurisdiction = 'ca'
 
     categorizer = CACategorizer()
 

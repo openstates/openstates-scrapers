@@ -63,7 +63,7 @@ def split_specific_votes(voters):
 
 class HIBillScraper(BillScraper):
 
-    state = 'hi'
+    jurisdiction = 'hi'
 
     def get_short_codes(self):
         with self.urlopen(SHORT_CODES) as list_html:

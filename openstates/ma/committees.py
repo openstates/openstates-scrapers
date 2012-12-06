@@ -4,7 +4,7 @@ import lxml.html
 
 
 class MACommitteeScraper(CommitteeScraper):
-    state = 'ma'
+    jurisdiction = 'ma'
 
     def scrape(self, term, chambers):
         page_types = []

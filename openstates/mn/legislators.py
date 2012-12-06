@@ -4,7 +4,7 @@ from billy.scrape import NoDataForPeriod
 import lxml.html
 
 class MNLegislatorScraper(LegislatorScraper):
-    state = 'mn'
+    jurisdiction = 'mn'
     latest_only = True
 
     _parties = {'DFL': 'Democratic-Farmer-Labor',

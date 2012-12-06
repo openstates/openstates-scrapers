@@ -7,7 +7,7 @@ import lxml.html
 
 
 class UTCommitteeScraper(CommitteeScraper):
-    state = 'ut'
+    jurisdiction = 'ut'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

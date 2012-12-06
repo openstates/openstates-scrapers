@@ -36,7 +36,7 @@ def parse_name(name):
 
 
 class NYCommitteeScraper(CommitteeScraper):
-    state = "ny"
+    jurisdiction = "ny"
     latest_only = True
 
     def scrape(self, chamber, term):

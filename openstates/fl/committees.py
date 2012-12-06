@@ -8,7 +8,7 @@ import lxml.html
 
 
 class FLCommitteeScraper(CommitteeScraper):
-    state = 'fl'
+    jurisdiction = 'fl'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

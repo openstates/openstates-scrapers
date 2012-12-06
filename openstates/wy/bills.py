@@ -42,7 +42,7 @@ def categorize_action(action):
 
 
 class WYBillScraper(BillScraper):
-    state = 'wy'
+    jurisdiction = 'wy'
 
     def scrape(self, chamber, session):
         chamber_abbrev = {'upper': 'SF', 'lower': 'HB'}[chamber]

@@ -7,7 +7,7 @@ import lxml.html
 
 
 class OKCommitteeScraper(CommitteeScraper):
-    state = "ok"
+    jurisdiction = "ok"
     latest_only = True
 
     def scrape(self, chamber, term):

@@ -7,7 +7,7 @@ import lxml.html
 
 
 class KYLegislatorScraper(LegislatorScraper):
-    state = 'ky'
+    jurisdiction = 'ky'
     latest_only = True
 
     def scrape(self, chamber, year):

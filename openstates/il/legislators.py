@@ -9,7 +9,7 @@ MEMBER_LIST_URL = {
 
 
 class ILLegislatorScraper(LegislatorScraper):
-    state = 'il'
+    jurisdiction = 'il'
 
     def scrape(self, chamber, term):
         term_slug = term[:-2]

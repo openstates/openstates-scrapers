@@ -14,7 +14,7 @@ def get_table_item(doc, name):
             '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
 
 class NCLegislatorScraper(LegislatorScraper):
-    state = 'nc'
+    jurisdiction = 'nc'
 
     def scrape(self, term, chambers):
         for chamber in chambers:

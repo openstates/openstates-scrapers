@@ -13,7 +13,7 @@ import pytz
 
 
 class CAEventScraper(EventScraper):
-    state = 'ca'
+    jurisdiction = 'ca'
 
     _tz = pytz.timezone('US/Pacific')
 

@@ -8,7 +8,7 @@ import lxml.html
 from .utils import DOUBLED_NAMES
 
 class VTCommitteeScraper(CommitteeScraper):
-    state = 'vt'
+    jurisdiction = 'vt'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

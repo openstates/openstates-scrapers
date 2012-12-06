@@ -4,7 +4,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
 class ALLegislatorScraper(LegislatorScraper):
-    state = 'al'
+    jurisdiction = 'al'
 
     def scrape(self, chamber, term):
         urls = {'upper': 'http://www.legislature.state.al.us/senate/senators/senateroster_alpha.html',

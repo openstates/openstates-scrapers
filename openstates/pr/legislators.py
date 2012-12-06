@@ -9,7 +9,7 @@ import scrapelib
 PHONE_RE = re.compile('\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
 
 class PRLegislatorScraper(LegislatorScraper):
-    state = 'pr'
+    jurisdiction = 'pr'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

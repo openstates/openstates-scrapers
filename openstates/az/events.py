@@ -10,7 +10,7 @@ class AZEventScraper(EventScraper):
     Arizona Event Scraper, gets interim committee, agendas, floor calendars
     and floor activity events
     """
-    state = 'az'
+    jurisdiction = 'az'
     _tz = pytz.timezone('US/Arizona')
 
     _chamber_short = {'upper': 'S', 'lower': 'H'}

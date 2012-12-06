@@ -21,7 +21,7 @@ vote_re = re.compile((r"\s*"
 votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
 class COVoteScraper(VoteScraper):
-    state = 'co'
+    jurisdiction = 'co'
 
     def lxmlize(self, url):
         with self.urlopen(url) as page:

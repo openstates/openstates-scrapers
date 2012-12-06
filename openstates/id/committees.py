@@ -20,7 +20,7 @@ class IDCommitteeScraper(CommitteeScraper):
     and the pdfs I have encountered from Idaho convert to html
     consistantly, so we could get membership and committee minutes if we really
     want."""
-    state = 'id'
+    jurisdiction = 'id'
 
     def get_jfac(self, name, url):
         """gets membership info for the Joint Finance and Appropriations

@@ -8,7 +8,7 @@ _party_map = {'D': 'Democratic', 'R': 'Republican', 'U': 'Independent'}
 
 
 class MELegislatorScraper(LegislatorScraper):
-    state = 'me'
+    jurisdiction = 'me'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

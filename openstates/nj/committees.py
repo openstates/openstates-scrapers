@@ -9,7 +9,7 @@ from dbfpy import dbf
 import scrapelib
 
 class NJCommitteeScraper(CommitteeScraper, DBFMixin):
-    state = 'nj'
+    jurisdiction = 'nj'
 
     def scrape(self, term, chambers):
         year_abr = term[0:4]

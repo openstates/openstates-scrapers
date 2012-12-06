@@ -25,7 +25,7 @@ def parse_datetime(s, year):
 
 
 class LAEventScraper(EventScraper):
-    state = 'la'
+    jurisdiction = 'la'
 
     def scrape(self, chamber, session):
         if chamber == 'lower':

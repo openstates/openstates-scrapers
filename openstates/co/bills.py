@@ -20,7 +20,7 @@ class COBillScraper(BillScraper):
     does both bill and vote scraping, and can be a bit overwhelming.
     """
 
-    state = 'co'
+    jurisdiction = 'co'
     categorizer = Categorizer()
 
     def get_bill_folder(self, session, chamber):

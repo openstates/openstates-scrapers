@@ -57,7 +57,7 @@ def action_type(action):
 
 
 class SCBillScraper(BillScraper):
-    state = 'sc'
+    jurisdiction = 'sc'
     urls = {
         'lower' : {
           'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",

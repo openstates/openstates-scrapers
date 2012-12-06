@@ -15,7 +15,7 @@ from billy.scrape import NoDataForPeriod
 import ksapi
 
 class KSBillScraper(BillScraper):
-    state = 'ks'
+    jurisdiction = 'ks'
     latest_only = True
 
     def scrape(self, chamber, session):

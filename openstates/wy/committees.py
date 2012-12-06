@@ -5,7 +5,7 @@ import lxml.html
 import re
 
 class WYCommitteeScraper(CommitteeScraper):
-    state = "wy"
+    jurisdiction = "wy"
 
     members = {}
     urls = {

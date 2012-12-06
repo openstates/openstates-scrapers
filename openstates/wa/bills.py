@@ -13,7 +13,7 @@ import feedparser
 
 
 class WABillScraper(BillScraper):
-    state = 'wa'
+    jurisdiction = 'wa'
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
     categorizer = Categorizer()
     _subjects = defaultdict(list)

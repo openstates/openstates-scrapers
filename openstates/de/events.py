@@ -17,7 +17,7 @@ chambers = {
 }
 
 class DEEventScraper(EventScraper):
-    state = 'de'
+    jurisdiction = 'de'
 
     _tz = pytz.timezone('US/Eastern')
 

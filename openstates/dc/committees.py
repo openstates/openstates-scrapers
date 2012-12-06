@@ -4,7 +4,7 @@ import re
 
 
 class DCCommitteeScraper(CommitteeScraper):
-    state = 'dc'
+    jurisdiction = 'dc'
 
     def scrape(self, term, chambers):
         com_url = 'http://www.dccouncil.washington.dc.us/committees'

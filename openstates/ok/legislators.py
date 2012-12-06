@@ -15,7 +15,7 @@ def scrub(text):
 
 
 class OKLegislatorScraper(LegislatorScraper):
-    state = 'ok'
+    jurisdiction = 'ok'
     latest_only = True
 
     def scrape(self, chamber, term):

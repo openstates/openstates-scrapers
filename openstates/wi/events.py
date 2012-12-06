@@ -9,7 +9,7 @@ import pytz
 calurl = "http://committeeschedule.legis.wisconsin.gov/Schedule.aspx"
 
 class WIEventScraper(EventScraper):
-    state = 'wi'
+    jurisdiction = 'wi'
     _tz = pytz.timezone('US/Eastern')
     def lxmlize(self, url):
         with self.urlopen(url) as page:

@@ -3,7 +3,7 @@ import lxml.html
 import scrapelib
 
 class NELegislatorScraper(LegislatorScraper):
-    state = 'ne'
+    jurisdiction = 'ne'
     latest_only = True
 
     def scrape(self, term, chambers):

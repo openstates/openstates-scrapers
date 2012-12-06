@@ -93,7 +93,7 @@ def convert_sv_char(c):
 
 
 class NMBillScraper(BillScraper):
-    state = 'nm'
+    jurisdiction = 'nm'
     categorizer = Categorizer()
 
     def _init_mdb(self, session):

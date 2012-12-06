@@ -72,7 +72,7 @@ def _handle_3rd_reading(action, chamber, date, passed):
 
 
 class ORBillScraper(BillScraper):
-    state         = 'or'
+    jurisdiction = 'or'
 
     baseFtpUrl    = 'ftp://landru.leg.state.or.us'
 

@@ -9,7 +9,7 @@ from billy.scrape.votes import VoteScraper, Vote
 import lxml.html
 
 class NVBillScraper(BillScraper):
-    state = 'nv'
+    jurisdiction = 'nv'
 
     _classifiers = (
         ('Approved by the Governor', 'governor:signed'),

@@ -8,7 +8,7 @@ import lxml.html
 
 
 class WVLegislatorScraper(LegislatorScraper):
-    state = 'wv'
+    jurisdiction = 'wv'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

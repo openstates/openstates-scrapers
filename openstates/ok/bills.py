@@ -14,7 +14,7 @@ from .actions import Categorizer
 
 class OKBillScraper(BillScraper):
 
-    state = 'ok'
+    jurisdiction = 'ok'
     bill_types = ['B', 'JR', 'CR', 'R']
     subject_map = collections.defaultdict(list)
 

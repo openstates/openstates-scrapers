@@ -26,7 +26,7 @@ def utf_8_encoder(unicode_csv_data):
 
 
 class ARBillScraper(BillScraper):
-    state = 'ar'
+    jurisdiction = 'ar'
 
     def scrape(self, chamber, session):
         self.bills = {}

@@ -9,7 +9,7 @@ import pytz
 mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
 
 class MIEventScraper(EventScraper):
-    state = 'mi'
+    jurisdiction = 'mi'
 
     _tz = pytz.timezone('US/Eastern')
 

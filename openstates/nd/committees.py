@@ -4,7 +4,7 @@ import lxml.html
 import re
 
 class NDCommitteeScraper(CommitteeScraper):
-    state = 'nd'
+    jurisdiction = 'nd'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

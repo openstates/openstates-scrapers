@@ -37,7 +37,7 @@ def check_vote_counts(vote):
 
 
 class INBillScraper(BillScraper):
-    state = 'in'
+    jurisdiction = 'in'
 
     categorizer = Categorizer()
 

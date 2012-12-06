@@ -9,7 +9,7 @@ legislator_name_pattern = re.compile('(Representative|Senator) (.*)')
 legislator_line_pattern = re.compile('Party: ([A-Za-z]+).*First Term: ([0-9]+)')
 
 class KSLegislatorScraper(LegislatorScraper):
-    state = 'ks'
+    jurisdiction = 'ks'
 
     def scrape(self, chamber, term):
         if chamber == 'lower':

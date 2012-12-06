@@ -8,7 +8,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 
 class WILegislatorScraper(LegislatorScraper):
-    state = 'wi'
+    jurisdiction = 'wi'
     latest_only = True
 
     def scrape(self, chamber, term):

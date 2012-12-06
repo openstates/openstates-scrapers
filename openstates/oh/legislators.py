@@ -14,7 +14,7 @@ JOINT_COMMITTEE_OVERRIDE = [  # without Joint" in the name.
 
 
 class OHLegislatorScraper(LegislatorScraper):
-    state = 'oh'
+    jurisdiction = 'oh'
     latest_only = True
 
     def scrape(self, chamber, term):

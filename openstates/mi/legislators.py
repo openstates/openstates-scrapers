@@ -6,7 +6,7 @@ import lxml.html
 abbr = {'D': 'Democratic', 'R': 'Republican'}
 
 class MILegislatorScraper(LegislatorScraper):
-    state = 'mi'
+    jurisdiction = 'mi'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

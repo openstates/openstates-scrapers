@@ -43,7 +43,7 @@ def extract_amendment_id(action):
 
 
 class NHBillScraper(BillScraper):
-    state = 'nh'
+    jurisdiction = 'nh'
 
     def scrape(self, chamber, session):
         zip_url = self.metadata['session_details'][session]['zip_url']

@@ -13,7 +13,7 @@ event_page = "http://www.leg.wa.gov/legislature/pages/showagendas.aspx?chamber=%
 # 3ed arg: end date (5/31/2012)
 
 class WAEventScraper(EventScraper):
-    state = 'wa'
+    jurisdiction = 'wa'
 
     _tz = pytz.timezone('US/Pacific')
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}

@@ -40,7 +40,7 @@ TIMECODES = {
 
 
 class AREventScraper(EventScraper):
-    state = 'ar'
+    jurisdiction = 'ar'
 
     def scrape(self, chamber, session):
         if chamber == 'other':

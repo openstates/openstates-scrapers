@@ -16,7 +16,7 @@ _PHONE_NUMBERS = {'hom':'phone_number',
 
 class IDLegislatorScraper(LegislatorScraper):
     """Legislator data seems to be available for the current term only."""
-    state = 'id'
+    jurisdiction = 'id'
 
     def scrape_sub(self, chamber, term, district, sub_url):
         "Scrape basic info for a legislator's substitute."

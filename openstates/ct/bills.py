@@ -12,7 +12,7 @@ import lxml.html
 
 
 class CTBillScraper(BillScraper):
-    state = 'ct'
+    jurisdiction = 'ct'
     latest_only = True
 
     def scrape(self, session, chambers):
