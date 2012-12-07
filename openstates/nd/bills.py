@@ -16,12 +16,31 @@ class NDBillScraper(BillScraper):
     """
     jurisdiction = 'nd'
 
-    def scrape_subject(self, href):
+    def scrape_actions(self, subject, href):
+        with self.urlopen(href) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(href)
+        table = page.xpath("//table[@summary='Measure Number Breakdown']")[1]
+        for row in table.xpath(".//tr"):
+            if row.text_content().strip() == '':
+                continue
+
+            row = row.xpath("./*")
+            row = [x.text_content().strip() for x in row]
+
+            if len(row) > 3:
+                row = row[:3]
+
+            date, chamber, action = row
+
+
+    def scrape_subject(self, href, subject):
         with self.urlopen(href) as page:
             page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
-        print bills
+        for bill in bills:
+            self.scrape_actions(subject, bill.attrib['href'])
 
     def scrape(self, term, chambers):
         # figuring out starting year from metadata
@@ -46,4 +65,4 @@ class NDBillScraper(BillScraper):
                 continue
 
             href = subject.attrib['href']
-            self.scrape_subject(href)
+            self.scrape_subject(href, subject.text)
