@@ -19,7 +19,8 @@ class DCLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
-        urls = set(doc.xpath('//a[contains(@href, "/council/")]/@href'))
+        urls = set(doc.xpath('//a[contains(@href, "dccouncil.us/council/")]/@href'))
+        print '\n'.join(urls)
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
         for url in urls:
