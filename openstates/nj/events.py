@@ -34,6 +34,7 @@ class NJEventScraper(EventScraper, DBFMixin):
             'LRC': 'New Jersey Law Revision Commission',
             'PHBC': 'Pension and Health Benefits Review Commission',
             'SBAB': 'Senate Budget and Appropriations Committee',
+            'JLSU': 'Space Leasing and Space Utilization Committee',
             'SUTC': 'Sales and Use Tax Review Commission',
             'SPLS': 'Special Session'
         }
