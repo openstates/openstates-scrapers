@@ -29,7 +29,7 @@ class OKLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'District')]")[3:]:
+        for link in page.xpath("//a[contains(@href, 'District')]")[2:]:
             name = link.text.strip()
             district = link.xpath("string(../../td[3])").strip()
 
@@ -69,12 +69,15 @@ class OKLegislatorScraper(LegislatorScraper):
 
             # Get the room number.
             xpath = '//*[contains(@id, "CapitolRoom")]/text()'
-            room = address_div.xpath(xpath).pop()
-
-            parts = map(scrub, list(address_div.itertext()))
-            phone = parts.pop()
-            parts = [parts[0], 'Room ' + room, parts[-1]]
-            address = '\n'.join(parts)
+            room = address_div.xpath(xpath)
+            if room:
+                parts = map(scrub, list(address_div.itertext()))
+                phone = parts.pop()
+                parts = [parts[0], 'Room ' + room[0], parts[-1]]
+                address = '\n'.join(parts)
+            else:
+                address = None
+                phone = None
 
             if not phone:
                 phone = None
