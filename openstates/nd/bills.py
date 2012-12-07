@@ -5,6 +5,7 @@ import lxml.html
 from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
+import re
 
 base_url = "http://www.legis.nd.gov/assembly/%s-%s/subject-index/major-topic.html"
 
@@ -16,11 +17,30 @@ class NDBillScraper(BillScraper):
     """
     jurisdiction = 'nd'
 
-    def scrape_actions(self, subject, href):
+    def scrape_actions(self, session, subject, href, bid):
         with self.urlopen(href) as page:
             page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
-        table = page.xpath("//table[@summary='Measure Number Breakdown']")[1]
+        ttable, table = page.xpath(
+            "//table[@summary='Measure Number Breakdown']"
+        )
+
+        title = re.sub("\s+", " ", ttable.text_content()).strip()
+
+        chamber = {
+            "H": "lower",
+            "S": "upper"
+        }[bid[0]]
+
+        bill = Bill(session,
+                    chamber,
+                    bid,
+                    title,
+                    subject=subject)
+
+        bill.add_source(href)
+
+        dt = None
         for row in table.xpath(".//tr"):
             if row.text_content().strip() == '':
                 continue
@@ -33,14 +53,36 @@ class NDBillScraper(BillScraper):
 
             date, chamber, action = row
 
+            try:
+                chamber = {
+                    "House": "lower",
+                    "Senate": "upper"
+                }[chamber]
+            except KeyError:
+                chamber = "other"
 
-    def scrape_subject(self, href, subject):
+            if date != '':
+                dt = datetime.strptime(date, "%m/%d")
+
+            bill.add_action(chamber,
+                            action,
+                            dt,
+                            type='other')
+
+
+        self.save_bill(bill)
+
+
+    def scrape_subject(self, session, href, subject):
         with self.urlopen(href) as page:
             page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
         for bill in bills:
-            self.scrape_actions(subject, bill.attrib['href'])
+            bt = bill.text_content()
+            typ, idd, _, = bt.split()
+            bid = "%s %s" % (typ, idd)
+            self.scrape_actions(session, subject, bill.attrib['href'], bid)
 
     def scrape(self, term, chambers):
         # figuring out starting year from metadata
@@ -65,4 +107,4 @@ class NDBillScraper(BillScraper):
                 continue
 
             href = subject.attrib['href']
-            self.scrape_subject(href, subject.text)
+            self.scrape_subject(term, href, subject.text)
