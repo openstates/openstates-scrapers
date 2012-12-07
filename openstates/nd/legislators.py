@@ -81,10 +81,43 @@ class NDLegislatorScraper(LegislatorScraper):
                 "Senate": "upper",
                 "House": "lower"
             }[metainf['chamber']]
+
+            kwargs = {
+                "party": metainf['party']
+            }
+            if photo:
+                kwargs['photo_url'] = photo
+
             leg = Legislator(term,
                              chamber,
                              district,
                              name,
-                             party=metainf['party'])
+                             **kwargs)
+
+            kwargs = {
+                "address": address
+            }
+
+            for key, leg_key in [
+                ('email', 'email'),
+                ('home-telephone', 'home_phone'),
+                ('cellphone', 'cellphone'),
+                ('fax', 'fax'),
+                ('office-telephone', 'office_phone'),
+            ]:
+                if key in metainf:
+                    kwargs[leg_key] = metainf[key]
+
+
+            leg.add_office('district',
+                           'District Office',
+                           **kwargs)
+
+            for committee in committees:
+                leg.add_role('committee member',
+                             term=term,
+                             chamber=chamber,
+                             committee=committee)
+
             leg.add_source(url)
             self.save_legislator(leg)
