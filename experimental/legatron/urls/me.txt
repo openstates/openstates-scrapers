@@ -1,0 +1,14 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328026
+http://www.kjonline.com/mainepolitics.rss
+http://bangordailynews.com/feed/
+http://ericrussell.bangordailynews.com/feed/
+http://pinetreepolitics.bangordailynews.com/feed/
+http://mainepolitics.net/rss.xml
+http://www.dirigoblue.com/feed/
+http://downeast.com/blog/2000345/feed
+http://feeds.feedburner.com/collins_watch
+http://colinwoodard.blogspot.com/feeds/posts/default
+http://politicalpulse.sunjournal.com/rss
+http://www.pressherald.com/capitolticker.rss
+http://www.pressherald.com/openseason.rss
+http://maineprogressiveswarehouse.wordpress.com/feed/
