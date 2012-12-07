@@ -3,7 +3,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 class ILCommitteeScraper(CommitteeScraper):
-    state = 'il'
+    jurisdiction = 'il'
 
     def scrape_members(self, com, url):
         data = self.urlopen(url)

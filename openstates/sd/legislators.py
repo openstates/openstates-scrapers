@@ -5,7 +5,7 @@ import lxml.html
 
 
 class SDLegislatorScraper(LegislatorScraper):
-    state = 'sd'
+    jurisdiction = 'sd'
 
     def scrape(self, chamber, term):
         start_year = None

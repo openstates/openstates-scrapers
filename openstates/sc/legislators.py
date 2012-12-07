@@ -4,7 +4,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 class SCLegislatorScraper(LegislatorScraper):
-    state = 'sc'
+    jurisdiction = 'sc'
 
     def scrape(self, chamber, term):
         # CSS isn't there without this, it serves up a mobile version

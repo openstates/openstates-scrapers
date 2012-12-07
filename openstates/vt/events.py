@@ -6,7 +6,7 @@ import pytz
 import lxml.html
 
 class VTEventScraper(EventScraper):
-    state = 'vt'
+    jurisdiction = 'vt'
 
     _tz = pytz.timezone('US/Eastern')
 

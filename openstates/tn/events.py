@@ -14,7 +14,7 @@ cal_chamber_text = {
 }
 
 class TNEventScraper(EventScraper):
-    state = 'tn'
+    jurisdiction = 'tn'
 
     _tz = pytz.timezone('US/Eastern')
 

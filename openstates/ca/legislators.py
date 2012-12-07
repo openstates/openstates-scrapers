@@ -28,7 +28,7 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
 
 class CALegislatorScraper(LegislatorScraper):
 
-    state = 'ca'
+    jurisdiction = 'ca'
 
     urls = {'upper': 'http://senate.ca.gov/senators',
             'lower': 'http://assembly.ca.gov/assemblymembers'}

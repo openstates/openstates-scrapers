@@ -19,7 +19,7 @@ def _combine_lines(lines):
     return newlines
 
 class MSBillScraper(BillScraper):
-    state = 'ms'
+    jurisdiction = 'ms'
 
     _action_types = (
         ('Died in Committee', 'committee:failed'),

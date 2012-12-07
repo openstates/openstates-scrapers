@@ -11,7 +11,7 @@ pages = {
 }
 
 class OHEventScraper(EventScraper):
-    state = 'oh'
+    jurisdiction = 'oh'
 
     _tz = pytz.timezone('US/Eastern')
 

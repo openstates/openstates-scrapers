@@ -8,7 +8,7 @@ import pytz
 
 
 class KYEventScraper(EventScraper):
-    state = 'ky'
+    jurisdiction = 'ky'
 
     _tz = pytz.timezone('US/Eastern')
 

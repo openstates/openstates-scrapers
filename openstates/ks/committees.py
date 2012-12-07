@@ -9,7 +9,7 @@ from billy.scrape.committees import Committee, CommitteeScraper
 import ksapi
 
 class KSBillScraper(CommitteeScraper):
-    state = 'ks'
+    jurisdiction = 'ks'
 
     def scrape(self, chamber, term):
         # older terms are accessible but through an archived site

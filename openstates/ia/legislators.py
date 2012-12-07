@@ -7,7 +7,7 @@ import lxml.html
 
 
 class IALegislatorScraper(LegislatorScraper):
-    state = 'ia'
+    jurisdiction = 'ia'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

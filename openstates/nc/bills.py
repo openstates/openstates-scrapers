@@ -8,7 +8,7 @@ from billy.scrape.bills import BillScraper, Bill
 
 class NCBillScraper(BillScraper):
 
-    state = 'nc'
+    jurisdiction = 'nc'
 
     _action_classifiers = {
         'Vetoed': 'governor:vetoed',

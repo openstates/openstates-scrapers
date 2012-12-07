@@ -4,7 +4,7 @@ import datetime as dt
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 class MOLegislatorScraper(LegislatorScraper):
-    state = 'mo'
+    jurisdiction = 'mo'
     assumed_telephone_prefix = '573'
     assumed_address_fmt = ('201 West Capitol Avenue %s, ' 'Jefferson City, MO 65101')
     senator_url = 'http://www.senate.mo.gov/%sinfo/senalpha.htm'

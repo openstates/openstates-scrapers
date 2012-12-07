@@ -14,7 +14,7 @@ COMM_BLACKLIST = [
 ]
 
 class RICommitteeScraper(CommitteeScraper):
-    state = 'ri'
+    jurisdiction = 'ri'
 
     def scrape(self, chamber, term_name):
         self.validate_term(term_name, latest_only=True)

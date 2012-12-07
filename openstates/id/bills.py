@@ -94,7 +94,7 @@ def get_bill_type(bill_id):
         return _BILL_TYPES[suffix[1:]]
 
 class IDBillScraper(BillScraper):
-    state = 'id'
+    jurisdiction = 'id'
 
     # the following are only used for parsing legislation from 2008 and earlier
     vote = None

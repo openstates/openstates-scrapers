@@ -3,7 +3,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 class NCCommitteeScraper(CommitteeScraper):
-    state = 'nc'
+    jurisdiction = 'nc'
 
     def scrape_committee(self, committee, url):
         url = url.replace(' ', '%20') + '&bPrintable=true'

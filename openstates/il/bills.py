@@ -140,7 +140,7 @@ def chamber_slug(chamber):
 
 class ILBillScraper(BillScraper):
 
-    state = 'il'
+    jurisdiction = 'il'
 
     def url_to_doc(self, url):
         html = self.urlopen(url)

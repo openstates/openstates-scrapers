@@ -38,7 +38,7 @@ action_classifiers = {
 
 
 class WIBillScraper(BillScraper):
-    state = 'wi'
+    jurisdiction = 'wi'
 
     def scrape_subjects(self, year, site_id):
         last_url = None

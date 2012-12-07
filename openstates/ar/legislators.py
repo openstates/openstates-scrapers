@@ -8,7 +8,7 @@ import lxml.html
 
 
 class ARLegislatorScraper(LegislatorScraper):
-    state = 'ar'
+    jurisdiction = 'ar'
     latest_only = True
 
     def scrape(self, chamber, term):

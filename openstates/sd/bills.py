@@ -9,7 +9,7 @@ import lxml.html
 
 
 class SDBillScraper(BillScraper):
-    state = 'sd'
+    jurisdiction = 'sd'
 
     def scrape(self, chamber, session):
         url = 'http://legis.state.sd.us/sessions/%s/BillList.aspx' % (

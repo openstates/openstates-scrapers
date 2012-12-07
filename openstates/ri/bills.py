@@ -62,7 +62,7 @@ BILL_STRING_FLAGS = {
 }
 
 class RIBillScraper(BillScraper):
-    state = 'ri'
+    jurisdiction = 'ri'
 
     def parse_results_page( self, page ):
         blocks  = []

@@ -15,7 +15,7 @@ def clean_spaces(s):
 
 
 class PRCommitteeScraper(CommitteeScraper):
-    state = 'pr'
+    jurisdiction = 'pr'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

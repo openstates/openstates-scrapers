@@ -13,7 +13,7 @@ def get_popup_url(link):
 
 
 class IABillScraper(BillScraper):
-    state = 'ia'
+    jurisdiction = 'ia'
 
     _subjects = defaultdict(list)
 

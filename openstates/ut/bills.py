@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger('openstates')
 
 class UTBillScraper(BillScraper):
-    state = 'ut'
+    jurisdiction = 'ut'
 
     def accept_response(self, response):
         # check for rate limit pages

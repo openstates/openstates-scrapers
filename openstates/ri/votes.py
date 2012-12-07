@@ -10,7 +10,7 @@ import re
 RI_URL_BASE = "http://webserver.rilin.state.ri.us"
 
 class RIVoteScraper(VoteScraper):
-    state = 'ri'
+    jurisdiction = 'ri'
 
     def get_dates(self, page):
         dates = url_xpath( page, "//select[@name='votedate']" )[0].\

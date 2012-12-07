@@ -36,7 +36,7 @@ class _Url(object):
 
 
 class WVBillScraper(BillScraper):
-    state = 'wv'
+    jurisdiction = 'wv'
     categorizer = Categorizer()
 
     bill_types = {'B': 'bill',

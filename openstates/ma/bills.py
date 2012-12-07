@@ -31,7 +31,7 @@ def classify_action(action):
     return ('other', whom)
 
 class MABillScraper(BillScraper):
-    state = 'ma'
+    jurisdiction = 'ma'
 
     def __init__(self, *args, **kwargs):
         super(MABillScraper, self).__init__(*args, **kwargs)

@@ -14,7 +14,7 @@ def last_space(string):
     return None
 
 class MDEventScraper(EventScraper):
-    state = 'md'
+    jurisdiction = 'md'
     _tz = pytz.timezone('US/Eastern')
     def lxmlize(self, url):
         with self.urlopen(url) as page:

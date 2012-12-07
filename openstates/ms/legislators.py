@@ -11,7 +11,7 @@ CAP_ADDRESS = """P. O. Box 1018
 Jackson, MS 39215"""
 
 class MSLegislatorScraper(LegislatorScraper):
-    state = 'ms'
+    jurisdiction = 'ms'
 
     def scrape(self, chamber, term_name):
         self.validate_term(term_name, latest_only=True)

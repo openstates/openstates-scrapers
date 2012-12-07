@@ -6,7 +6,7 @@ from .utils import open_csv
 
 
 class CTLegislatorScraper(LegislatorScraper):
-    state = 'ct'
+    jurisdiction = 'ct'
     latest_only = True
 
     _committee_names = {}

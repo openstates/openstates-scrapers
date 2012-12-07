@@ -7,7 +7,7 @@ from billy.scrape.votes import VoteScraper, Vote
 import lxml.html
 
 class MNVoteScraper(VoteScraper):
-    state = 'mn'
+    jurisdiction = 'mn'
 
     yeanay_re = re.compile(r'(\d+) YEA and (\d+) Nay')
     date_re = re.compile(r'Date: (\d+/\d+/\d+)')

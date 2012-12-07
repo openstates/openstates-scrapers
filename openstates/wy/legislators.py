@@ -6,7 +6,7 @@ import lxml.html
 
 
 class WYLegislatorScraper(LegislatorScraper):
-    state = 'wy'
+    jurisdiction = 'wy'
 
     def scrape(self, chamber, term):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]

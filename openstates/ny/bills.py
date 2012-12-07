@@ -13,7 +13,7 @@ from .actions import Categorizer
 
 class NYBillScraper(BillScraper):
 
-    state = 'ny'
+    jurisdiction = 'ny'
 
     categorizer = Categorizer()
 

@@ -7,7 +7,7 @@ import lxml.html
 
 
 class OKEventScraper(EventScraper):
-    state = 'ok'
+    jurisdiction = 'ok'
 
     def scrape(self, chamber, session):
         if chamber == 'upper':

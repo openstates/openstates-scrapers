@@ -3,7 +3,7 @@ from .util import get_client, get_url
 
 
 class GALegislatorScraper(LegislatorScraper):
-    state = 'ga'
+    jurisdiction = 'ga'
     sservice = get_client("Members").service
     ssource = get_url("Members")
 

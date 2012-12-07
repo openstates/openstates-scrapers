@@ -7,7 +7,7 @@ import scrapelib
 
 
 class INLegislatorScraper(LegislatorScraper):
-    state = 'in'
+    jurisdiction = 'in'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)

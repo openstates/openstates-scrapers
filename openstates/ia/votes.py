@@ -10,7 +10,7 @@ from billy.scrape.votes import VoteScraper, Vote
 
 
 class IAVoteScraper(VoteScraper):
-    state = 'ia'
+    jurisdiction = 'ia'
 
     def scrape(self, chamber, session):
 

@@ -24,7 +24,7 @@ member_cache = {}
 
 
 class GABillScraper(BillScraper):
-    state = 'ga'
+    jurisdiction = 'ga'
     lservice = get_client("Legislation").service
     mservice = get_client("Members").service
     lsource = get_url("Legislation")

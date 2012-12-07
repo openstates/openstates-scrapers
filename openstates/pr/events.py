@@ -11,7 +11,7 @@ import feedparser
 
 
 class PREventScraper(EventScraper):
-    state = 'pr'
+    jurisdiction = 'pr'
 
     _tz = pytz.timezone('US/Alaska')
 

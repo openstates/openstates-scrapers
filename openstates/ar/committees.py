@@ -13,7 +13,7 @@ COMM_TYPES = {'joint': 'Joint',
 
 
 class ARCommitteeScraper(CommitteeScraper):
-    state = 'ar'
+    jurisdiction = 'ar'
     latest_only = True
 
     _seen = set()

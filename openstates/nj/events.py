@@ -9,7 +9,7 @@ from billy.scrape.events import EventScraper, Event
 agenda_dbf = "ftp://www.njleg.state.nj.us/ag/2012data/AGENDAS.DBF"
 
 class NJEventScraper(EventScraper, DBFMixin):
-    state = 'nj'
+    jurisdiction = 'nj'
     _tz = pytz.timezone('US/Eastern')
 
     def initialize_committees(self, year_abr):
@@ -34,6 +34,7 @@ class NJEventScraper(EventScraper, DBFMixin):
             'LRC': 'New Jersey Law Revision Commission',
             'PHBC': 'Pension and Health Benefits Review Commission',
             'SBAB': 'Senate Budget and Appropriations Committee',
+            'JLSU': 'Space Leasing and Space Utilization Committee',
             'SUTC': 'Sales and Use Tax Review Commission',
             'SPLS': 'Special Session'
         }

@@ -18,7 +18,7 @@ def clean_input( line ):
         return re.sub( " +", " ", re.sub( "(\n|\r)+", " ", line ))
 
 class COLegislatorScraper(LegislatorScraper):
-    state = 'co'
+    jurisdiction = 'co'
 
     def get_district_list(self, chamber, session ):
         session = session[:4] + "A"

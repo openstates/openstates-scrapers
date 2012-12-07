@@ -25,7 +25,7 @@ def convert_date(text):
 
 
 class DCBillScraper(BillScraper):
-    state = 'dc'
+    jurisdiction = 'dc'
 
     def scrape_bill(self, bill):
         bill_url = 'http://dcclims1.dccouncil.us/lims/legislation.aspx?LegNo=' + bill['bill_id']

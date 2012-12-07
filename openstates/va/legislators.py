@@ -4,7 +4,7 @@ import re
 import lxml.html
 
 class VALegislatorScraper(LegislatorScraper):
-    state = 'va'
+    jurisdiction = 'va'
 
     def scrape(self, chamber, term):
         abbr = {'upper': 'S', 'lower': 'H'}

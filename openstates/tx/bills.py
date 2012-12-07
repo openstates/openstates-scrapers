@@ -13,7 +13,7 @@ import lxml.etree
 
 
 class TXBillScraper(BillScraper):
-    state = 'tx'
+    jurisdiction = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
     def scrape(self, chamber, session):

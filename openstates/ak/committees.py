@@ -4,7 +4,7 @@ import lxml.html
 
 
 class AKCommitteeScraper(CommitteeScraper):
-    state = 'ak'
+    jurisdiction = 'ak'
 
     def scrape(self, chamber, term):
         url = ("http://www.legis.state.ak.us/basis/commbr_info.asp"

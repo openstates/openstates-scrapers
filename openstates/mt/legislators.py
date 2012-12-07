@@ -21,7 +21,7 @@ def url_xpath(url):
 
 class MTLegislatorScraper(LegislatorScraper):
 
-    state = 'mt'
+    jurisdiction = 'mt'
 
     def scrape(self, chamber, term):
 

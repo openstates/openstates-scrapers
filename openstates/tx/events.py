@@ -9,7 +9,7 @@ import lxml.html
 
 
 class TXEventScraper(EventScraper):
-    state = 'tx'
+    jurisdiction = 'tx'
     _tz = pytz.timezone('US/Central')
     def lxmlize(self, url):
         with self.urlopen(url) as page:

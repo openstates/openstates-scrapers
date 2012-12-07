@@ -19,7 +19,7 @@ def session_url(session):
 
 
 class KYBillScraper(BillScraper):
-    state = 'ky'
+    jurisdiction = 'ky'
 
     _subjects = defaultdict(list)
 

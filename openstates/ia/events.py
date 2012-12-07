@@ -7,7 +7,7 @@ import lxml.html
 
 
 class IAEventScraper(EventScraper):
-    state = 'ia'
+    jurisdiction = 'ia'
 
     def scrape(self, chamber, session):
         if chamber == 'other':

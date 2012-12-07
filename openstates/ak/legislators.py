@@ -7,7 +7,7 @@ import lxml.html
 
 
 class AKLegislatorScraper(LegislatorScraper):
-    state = 'ak'
+    jurisdiction = 'ak'
     latest_only = True
 
     def scrape(self, chamber, term):

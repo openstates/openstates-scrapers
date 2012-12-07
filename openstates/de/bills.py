@@ -97,7 +97,7 @@ class DEBillScraper(BillScraper):
     See http://legis.delaware.gov/LEGISLATURE.NSF/LookUp/LIS_archives?opendocument
     '''
 
-    state = 'de'
+    jurisdiction = 'de'
 
     categorizer = actions.Categorizer()
 

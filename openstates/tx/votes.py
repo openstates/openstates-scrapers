@@ -239,7 +239,7 @@ def viva_voce_votes(root, session):
 
 
 class TXVoteScraper(VoteScraper):
-    state = 'tx'
+    jurisdiction = 'tx'
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
     def scrape(self, chamber, session):

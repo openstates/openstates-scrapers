@@ -39,7 +39,7 @@ def categorize_action(action):
             return atype
 
 class MIBillScraper(BillScraper):
-    state = 'mi'
+    jurisdiction = 'mi'
 
     def scrape_bill(self, chamber, session, bill_id):
         # try and get bill for current year

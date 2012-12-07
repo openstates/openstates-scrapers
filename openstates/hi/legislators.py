@@ -18,7 +18,7 @@ def get_chamber_listing_url( chamber ):
     )
 
 class HILegislatorScraper(LegislatorScraper):
-    state = 'hi'
+    jurisdiction = 'hi'
 
     def get_page( self, url ):
         with self.urlopen(url) as html:

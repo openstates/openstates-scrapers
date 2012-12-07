@@ -10,7 +10,7 @@ import lxml.html
 phone_re = re.compile('\(\d{3}\) \d{3}-\d{4}')
 
 class TXLegislatorScraper(LegislatorScraper):
-    state = 'tx'
+    jurisdiction = 'tx'
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
