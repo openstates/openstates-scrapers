@@ -5,11 +5,6 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
-    (r'^api/', include('billy.web.api.urls')),
-    (r'^admin/', include('billy.web.admin.urls')),
-    (r'^djadmin/', include(admin.site.urls)),
-    (r'^', include('billy.web.public.urls')),
 
     # flat pages
     (r'^about/$', 'django.views.generic.simple.direct_to_template',
@@ -42,6 +37,12 @@ urlpatterns = patterns('',
      {'template':'flat/api/events.html'}),
     (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/api/districts.html'}),
+
+    (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
+    (r'^api/', include('billy.web.api.urls')),
+    (r'^admin/', include('billy.web.admin.urls')),
+    (r'^djadmin/', include(admin.site.urls)),
+    (r'^', include('billy.web.public.urls')),
 )
 
 if settings.DEBUG:
