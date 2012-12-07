@@ -77,4 +77,14 @@ class NDLegislatorScraper(LegislatorScraper):
 
                 metainf[item_mapping[key]] = items.text_content().strip()
 
-            print metainf
+            chamber = {
+                "Senate": "upper",
+                "House": "lower"
+            }[metainf['chamber']]
+            leg = Legislator(term,
+                             chamber,
+                             district,
+                             name,
+                             party=metainf['party'])
+            leg.add_source(url)
+            self.save_legislator(leg)
