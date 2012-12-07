@@ -1,0 +1,6 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328048
+http://www.timesfreepress.com/rss/headlines/politics/local/
+http://www.tennessean.com/apps/pbcs.dll/section?prof=1972&Category=profilerss&mime=xml&nocache=1&rsstitle=NEWS%20GOVERNMENT%20&%20POLITICS
+http://www.commercialappeal.com/feeds/headlines/news/local/politics/
+http://www.knoxnews.com/feeds/headlines/news/politics/
+http://blogs.knoxnews.com/humphrey/atom.xml

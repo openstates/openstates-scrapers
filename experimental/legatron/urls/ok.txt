@@ -1,0 +1,8 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328042&type=OpinionRoundup
+http://blog.newsok.com/politics/feed/
+http://feeds.feedburner.com/BlueOklahoma-FrontPage
+http://okpolicy.org/blog/feed/
+http://www.capitolbeatok.com/RSSRetrieve.aspx?ID=6432&Type=RSS20
+http://oklahoma.watchdog.org/feed/
+http://okcapitolinvestments.wordpress.com/feed/
+http://www.okhouse.gov/feed/Default.aspx

@@ -1,0 +1,10 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328007
+http://blog.al.com/politics_impact/atom.xml
+http://blog.al.com/bblalock/atom.xml
+http://blog.al.com/tscarritt/atom.xml
+http://connect.al.com/user/pgattis/index.xml
+http://connect.al.com/user/gtalbot/index.xml
+http://blog.al.com/sweethome/atom.xml
+http://www.politicalparlor.net/feed/
+http://madvertiserblogs.com/southunionstreet/?feed=rss2
+http://blog.al.com/archiblog/atom.xml

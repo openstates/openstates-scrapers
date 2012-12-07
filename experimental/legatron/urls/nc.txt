@@ -1,0 +1,16 @@
+http://www.newsobserver.com/politics/index.rss
+http://www.ncga.state.nc.us/gascripts/News/NewsRSS.pl
+http://www.ncga.state.nc.us/LegislativeCalendar/?view=RSS
+http://www.news-record.com/news/government/feed
+http://triad.johnlocke.org/blog/?feed=rss2
+http://triangle.johnlocke.org/blog/?feed=rss2
+http://pulse.ncpolicywatch.org/feed/
+http://feeds.feedburner.com/civitas
+http://projects.newsobserver.com/rss/dome/blog
+http://www.wral.com/rs/rss/839
+http://bluenc.com/polls/feed
+http://www.indyweek.com/indyweek/Rss.xml?category=1279123
+http://www.talkingaboutpolitics.com/DesktopModules/DnnForge%20-%20NewsArticles/Rss.aspx?TabID=36&ModuleID=364&MaxCount=25
+http://www.charlotteobserver.com/politics/index.rss
+http://blog.wataugawatch.net/feeds/posts/default
+http://www.ncga.state.nc.us/gascripts/News/NewsRSS.pl

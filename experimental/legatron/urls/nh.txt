@@ -1,0 +1,13 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328035
+http://www.concordmonitor.com/politics/feed
+http://www.wmur.com/politics/topstory.rss
+http://birchpaper.com/rss
+http://www.miscellanyblue.com/rss
+http://granitegrok.com/feed
+http://www.freestateblogs.net/rss.xml
+http://www.nhgop.org/feeds/rss/6
+http://www.nhdp.org/feed/
+http://solidgranite.blogspot.com/feeds/posts/default
+http://nhsenatedemocrats.org/feed/
+http://www.nhgop.org/feeds/rss/6
+http://nhhousedems.org/feed/

@@ -1,0 +1,4 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328014
+http://www.delawareonline.com/section/news02&template=rss_gd
+http://blogs.delawareonline.com/dialoguedelaware/?feed=rss2
+http://www.delawareliberal.net/feed/

@@ -1,0 +1,2 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328047
+http://rapidcityjournal.com/search/?f=rss&c=news/legislature&l=25&s=start_time&sd=desc

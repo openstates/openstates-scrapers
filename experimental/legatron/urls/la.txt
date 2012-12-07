@@ -1,0 +1,13 @@
+http://wwwprd.doa.louisiana.gov/LaNews/PublicPages/RSSFeed.xml
+http://blogs.theadvocate.com/politicsblog/feed/
+http://thehayride.com/feed/
+http://kpel965.com/category/political/feed/
+http://www.wwltv.com/news/politics/index.rss2
+http://www.wwltv.com/news/politics
+http://www.politicsla.com/home?format=feed&type=rss
+http://forgotston.com/feed/
+http://www.wwltv.com/news/politics/index.rss2
+http://www.wwltv.com/news/index.rss2
+http://thehayride.com/feed/
+http://feeds2.feedburner.com/publiusforum/ytUW
+http://blog.nola.com/nola_river/atom.xml

@@ -1,0 +1,16 @@
+http://feeds.stateline.org/StatelineorgRss-Texas
+http://www.texasinsider.org/?feed=atom
+http://blog.chron.com/texaspolitics/feed/
+http://www.statesman.com/section-rss.do?source=texas-politics
+http://www.burntorangereport.com/rss/rss2.xml
+http://feeds.feedburner.com/bigjollypolitics/feed
+http://www.texaswatchdog.org/rss
+http://www.dallasnews.com/news/politics/state-politics/?rss
+http://dallasnews.com/news/politics/texas-legislature/headlines/?rss
+http://www.texastribune.org/feeds/main/
+http://blog.mysanantonio.com/politics/feed/
+http://www.star-telegram.com/legislature/index.atom
+http://www.txdemocrats.org/feed/
+http://www.house.state.tx.us/rss/rss.php
+http://www.txhousedems.com/feed/
+http://governor.state.tx.us/rss/

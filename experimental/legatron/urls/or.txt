@@ -1,0 +1,7 @@
+http://www.pewstates.org/projects/stateline/headlines.rss?states=328043
+http://blog.oregonlive.com/politics_impact/atom.xml
+http://impact.oregonlive.com/mapes/atom.xml
+http://www.statesmanjournal.com/apps/pbcs.dll/section?category=rss05&mime=xml
+http://www.katu.com/news/politics/index.rss2
+http://www.blueoregon.com/feeds/latest/
+http://feeds2.feedburner.com/OregonCatalyst
