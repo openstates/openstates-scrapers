@@ -69,7 +69,7 @@ class SCBillScraper(BillScraper):
 
     _subjects = defaultdict(set)
 
-    def scrape_subjects(self, session):
+    def scrape_subjects(self, session_code):
 
         # only need to do it once
         if self._subjects:
@@ -77,7 +77,7 @@ class SCBillScraper(BillScraper):
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.urlopen(subject_search_url, 'POST',
-                            (('GETINDEX','Y'), ('SESSION', session),
+                            (('GETINDEX','Y'), ('SESSION', session_code),
                              ('INDEXCODE','0'), ('INDEXTEXT', ''),
                              ('AORB', 'B'), ('PAGETYPE', '0')))
         doc = lxml.html.fromstring(data)
@@ -87,7 +87,7 @@ class SCBillScraper(BillScraper):
             code = option.get('value')
 
             url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
-                                                         session, code)
+                                                         session_code, code)
             data = self.urlopen(url)
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
@@ -250,7 +250,8 @@ class SCBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         # start with subjects
-        self.scrape_subjects(session)
+        session_code = self.metadata['session_details'][session]['_code']
+        self.scrape_subjects(session_code)
 
         # get bill index
         index_url = self.urls[chamber]['daily-bill-index']
