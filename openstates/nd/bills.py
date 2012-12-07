@@ -25,8 +25,10 @@ class NDBillScraper(BillScraper):
             "//table[@summary='Measure Number Breakdown']"
         )
 
-        title = re.sub("\s+", " ", ttable.text_content()).strip()
-
+        ttrows = ttable.xpath(".//tr")
+        descr = ttrows[-1]
+        title = re.sub("\s+", " ", descr.text_content()).strip()
+        ttrows = ttrows[:-1]
         chamber = {
             "H": "lower",
             "S": "upper"
@@ -39,6 +41,21 @@ class NDBillScraper(BillScraper):
                     subject=subject)
 
         bill.add_source(href)
+
+        for row in ttrows:
+            sponsors = row.text_content().strip()
+            sinf = re.match(
+                "(?i)introduced by( (rep\.|sen\.))? (?P<sponsors>.*)",
+                sponsors
+            )
+            if sinf:
+                sponsors = sinf.groupdict()
+                for sponsor in [
+                    x.strip() for x in sponsors['sponsors'].split(",")
+                ]:
+                    bill.add_sponsor('primary',
+                                     sponsor)
+
 
         dt = None
         for row in table.xpath(".//tr"):
