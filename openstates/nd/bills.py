@@ -87,8 +87,23 @@ class NDBillScraper(BillScraper):
                             type='other')
 
 
+        version_url = page.xpath("//a[contains(text(), 'Versions')]")
+        if len(version_url) == 1:
+            href = version_url[0].attrib['href']
+            bill = self.scrape_versions(bill, href)
+
         self.save_bill(bill)
 
+    def scrape_versions(self, bill, href):
+        with self.urlopen(href) as page:
+            page = lxml.html.fromstring(page)
+        page.make_links_absolute(href)
+        versions = page.xpath("//a[contains(@href, '/documents/')]")
+        for version in versions:
+            name, href = version.text, version.attrib['href']
+            bill.add_version(name, href, mimetype='application/pdf')
+
+        return bill
 
     def scrape_subject(self, session, href, subject):
         with self.urlopen(href) as page:
