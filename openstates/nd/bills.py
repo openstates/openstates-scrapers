@@ -5,6 +5,7 @@ import lxml.html
 from billy.scrape import NoDataForPeriod, ScrapeError
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
+from .actions import NDCategorizer
 import re
 
 base_url = "http://www.legis.nd.gov/assembly/%s-%s/subject-index/major-topic.html"
@@ -16,6 +17,7 @@ class NDBillScraper(BillScraper):
     Dakota legislature and stores it in the openstates  backend.
     """
     jurisdiction = 'nd'
+    categorizer = NDCategorizer()
 
     def scrape_actions(self, session, subject, href, bid):
         with self.urlopen(href) as page:
