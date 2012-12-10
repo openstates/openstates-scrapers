@@ -10,7 +10,26 @@ class NDCommitteeScraper(CommitteeScraper):
         with self.urlopen(href) as page:
             page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
-        print name
+        members =page.xpath("//div[@class='view-content']"
+                            "//a[contains(@href, 'members')]/text()")
+
+        if '/joint/' in href:
+            chamber = 'joint'
+        elif '/senate/' in href:
+            chamber = 'upper'
+        elif '/house/' in href:
+            chamber = 'lower'
+        else:
+            print "XXX: Fail! %s" % (href)
+            return
+
+        cttie = Committee(chamber, name)
+
+        for member in members:
+            cttie.add_member(member)
+
+        cttie.add_source(href)
+        self.save_committee(cttie)
 
     def scrape(self, term, chambers):
         self.validate_term(term, latest_only=True)
