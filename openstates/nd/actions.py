@@ -2,7 +2,10 @@ from billy.scrape.actions import Rule, BaseCategorizer
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
-    # pass
+    Rule(r'^Filed with ', 'bill:introduced'),
+    Rule(r'^Introduced', 'bill:introduced'),
+    Rule(r'^Second reading', 'bill:reading:2'),
+    Rule(r'^Signed by Governor', 'governor:signed'),
 )
 
 

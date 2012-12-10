@@ -83,10 +83,12 @@ class NDBillScraper(BillScraper):
             if date != '':
                 dt = datetime.strptime(date, "%m/%d")
 
+            kwargs = self.categorizer.categorize(action)
+
             bill.add_action(chamber,
                             action,
                             dt,
-                            type='other')
+                            **kwargs)
 
 
         version_url = page.xpath("//a[contains(text(), 'Versions')]")
