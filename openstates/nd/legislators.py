@@ -95,7 +95,8 @@ class NDLegislatorScraper(LegislatorScraper):
                              **kwargs)
 
             kwargs = {
-                "address": address
+                "address": address,
+                "url": url
             }
 
             for key, leg_key in [

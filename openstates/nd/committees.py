@@ -26,7 +26,7 @@ class NDCommitteeScraper(CommitteeScraper):
         cttie = Committee(chamber, name)
 
         for member in members:
-            cttie.add_member(member)
+            cttie.add_member(member)  # XXX: Role isn't exactly right.
 
         cttie.add_source(href)
         self.save_committee(cttie)
