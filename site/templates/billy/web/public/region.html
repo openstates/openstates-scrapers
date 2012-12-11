@@ -28,10 +28,17 @@
 
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
-        <div class="twoCol colLt withDash centeredText" id="totalLeg">
-            <ul>
+        <p class="tip">{% trans "Click on a district to view corresponding legislators." %}</p>
+
+        <div class="sixCol colLtSm">
+            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
+            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
+        </div>
+
+        <div class="sixCol colLtSm centeredText bottomDash" id="totalLeg">
+            <ul class="inlineHalves">
                 {% for chamber in chambers %}
-                 <li class="medModule">
+                 <li class="withDash">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
                         <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
@@ -45,7 +52,7 @@
 
                  {# if unicameral, put the committee listing here too #}
                  {% if chambers|length == 1 %}
-                 <li class="medModule">
+                 <li class="noDash">
                     <a href="{% url 'committees' metadata.abbr %}">
                         <h4 class="titleNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
                     </a>
@@ -53,12 +60,8 @@
                 {% endif %}
             </ul>
         </div>
-        <div class="fourCol colLtSm">
-            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
-            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
-        </div>
+
         <div class="sixCol colRt">
-            <p class="tip centeredText">{% trans "Click on a district to view corresponding legislators." %}</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
