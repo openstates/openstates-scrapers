@@ -178,6 +178,8 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .module .sixCol { width: 420px; }
 .module .threeCol { width: 189px; }
 .withDash { border-right: 1px dashed #e2e2dd;}
+.bottomDash { border-bottom: 1px dashed #E2E2DD; margin-bottom:20px; }
+.noDash { border-right: 0px dashed #FFF;}
 .sevenCol { width: 520px; }
 .module .eightCol { width: 569px; border-right: 1px dashed #e2e2dd;}
 .module .sevenCol { width: 489px; border-right: 1px dashed #e2e2dd;}
@@ -313,6 +315,8 @@ ul .three { padding-left: 24px; }
 
 .inlineHalves li { float: left; width: 50%; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;}
 .inlineHalves_module li { float: left; width: 275px; }
+.inlineHalves li li{ float: none; width: 100%;}
+
 
 .columnThirds ul { margin-bottom: 20px; }
 .columnThirds li { padding-right: 35px; width: 151px; }
@@ -844,4 +848,13 @@ div.notification-preference {
     width: 85px;
     height: 33px;
     float: left;
+}
+
+#mbtooltip-ca{
+    height:20px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: oblique;
+    color: #b4b1ab;
+    font-height: 10px;
+
 }
