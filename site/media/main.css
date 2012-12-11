@@ -119,7 +119,26 @@ button, .buttonLink { width: auto; text-indent: -9999em; display: block; border:
 
 #container, footer, #mainHeader { width: 940px; margin: 0 auto; padding: 0 10px; }
 body { background: #fafaf6 url(images/bg.jpg) top center repeat-x; }
-.home #container { background: url(images/bg_map.jpg) right top no-repeat; margin-top: -60px; padding-top: 60px; min-height: 450px;}
+.home #container { min-height: 450px;}
+.home .sidebar{
+	background: #efefe8; /* Old browsers */
+	background: -moz-linear-gradient(left,  #efefe8 0%, #f7f7f1 12%, #f7f7f1 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, right top, color-stop(0%,#efefe8), color-stop(12%,#f7f7f1), color-stop(100%,#f7f7f1)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* IE10+ */
+	background: linear-gradient(to right,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efefe8', endColorstr='#f7f7f1',GradientType=1 ); /* IE6-9 */
+	border-left: 1px dashed #e2e2dd;
+	padding-top: 30px;
+	width: 310px;
+}
+
+.container {
+	width: 940px;
+	margin: 0 auto;
+	padding: 0 10px;
+}
 
 button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; border-bottom: none; }
 .module { padding-left: 30px; padding-bottom: 80px; background: url(images/bg_moduleborder.jpg) center bottom no-repeat;}
@@ -127,8 +146,31 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .smModule { margin-bottom: 20px;}
 .medModule { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px dashed #e2e2dd;}
 .medModuleSm { margin-bottom: 30px;}
-.home .module { padding-left: 0;}
+.home .module { padding-left: 0; background: 0; padding-top: 30px; text-align: center;}
+.home .sidebar .module { border-bottom:1px dashed #e2e2dd; padding: 30px 30px 30px 30px; text-align: left;}
 .ulTitle{ padding-left: 30px}
+
+.home .module h3{
+	text-align: left;
+	font-weight: 300;
+}
+.fancyOr{
+	text-align: center;
+	font-family: "Georgia","Times New Roman","Times",serif;
+	font-size: 250%;
+	color: #d8d5c8;
+	text-shadow: rgba(160, 164, 162, 0.5) -1px 0, rgba(160, 164, 162, 0.3) 0 -1px, rgba(255, 255, 255, 0.5) 0 1px, rgba(160, 164, 162, 0.3) -1px -2px;
+	font-style: italic;
+	font-weight: 200;
+	padding-top: 30px;
+}
+.byState{
+	margin-top: 30px;
+}
+.byState img{
+	margin-top: 20px;
+}
+
 
 .customWidth { width: 235px;}
 
@@ -150,6 +192,9 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .colRt, .colLt, .colLtSm { float: left; }
 .colLt { margin-right: 30px; padding-right: 29px; }
 .colLtSm { margin-right: 20px; padding-right: 0;}
+.home .colLt{
+	margin-right: 0;
+}
 
 .filterCol { background-color: #f5f4e8; padding: 20px 15px 40px; border-top: 1px solid #e1e1d9; border-right: 1px solid #ECEADD; border-left: 1px solid #ECEADD; border-bottom: 1px solid #ECEADD;}
 .filterCol select { width: 120px;}
@@ -165,6 +210,10 @@ h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: bloc
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
 .h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
 h1 { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 220%; line-height: 30px; font-weight: normal;}
+
+.sidebar h4{
+	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+}
 
 .moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px;}
 .inlineTitle { float: left; margin-right: 15px;}
@@ -186,6 +235,7 @@ a.tip:hover { color: #d6ac04; }
 
 /* header */
 #searchform { float: right; width: 265px; margin-top: 5px; }
+#searchAddressform { width: 100%; margin-top: 5px; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
@@ -204,6 +254,12 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
 #searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
+
+#searchAddressform button { border-width: 3px; background: url(images/btn_searchAddress.png) top left no-repeat; width: 45px; height: 46px; float: left;}
+#searchAddressform input { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 11px 5px 9px; float: left; margin-right: 15px; font-size: 105%; width: 510px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
+#container #searchAddressform input{
+	border: 3px solid #d8d5c8;
+}
 
 #shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
@@ -295,6 +351,9 @@ address { font-style: normal; }
 #container input { border: 2px solid #e8eadd;}
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
+#container img.noBorder {
+	border: none;
+}
 #container #map { float: right; width: 98%; height: 150px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
 #container .legMap #map { height: 300px; width: 100%;}
@@ -322,8 +381,23 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
 .callOutBox { padding: 20px 15px 30px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
-
-.callOut { font-size: 240%; line-height: 42px; margin-bottom: 20px;  }
+.callOutBox.tagline{ border: 0; -moz-border-radius: 0; -webkit-border-radius: 0; margin-right: 0;text-align: center; width: 100%; background: url('images/bg_tagline.jpg') center top repeat-x; height: 149px; margin-top: -70px; font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; }
+.callOutBox.tagline ul{
+	padding-left: 15px;
+	margin-top: 25px;
+}
+.callOutBox.tagline ul li{
+	display: inline;
+	font-size: 128%;
+	background: url('images/bg_tagline_star.png') right top no-repeat;
+	padding: 0 30px 0 10px;
+	font-weight: 300;
+	color: #474644;
+}
+.callOutBox.tagline ul li:last-child{
+	background: none;
+}
+.callOut { max-width: 100%; font-weight: 300;font-size: 357%; text-transform: uppercase;line-height: 42px; margin-bottom: 20px; color: #fffffe; text-shadow: rgba(160, 164, 162,0.5) -1px 0, rgba(160, 164, 162,0.3) 0 -1px, rgba(255,255,255,0.5) 0 1px, rgba(160, 164, 162,0.3) -1px -2px;}
 #notify input { font-size: 102%; margin-right: 10px; float: left}
 
 #notify button { background: url(images/btn_submit.png) top left no-repeat; width: 85px; height: 33px; float: left;}
@@ -504,7 +578,10 @@ div.flatpage table#download_list { width: auto; }
 #stateimg-wi { background: url(images/state/wisconsin.jpg) left center no-repeat; }
 #stateimg-wy { background: url(images/state/wyoming.jpg) left center no-repeat; }
 
-#dataBox { background: url(images/bg_data.jpg) top left no-repeat; padding-left: 110px; min-height: 140px; width: 325px;}
+#dataBox { background: url(images/bg_dataBox.png) center top no-repeat; padding-top: 140px; }
+#videoBox {  }
+#appBox { background: url(images/bg_appBox.png) center top no-repeat; padding-top: 90px; }
+
 /* mapbox */
 .mapbox.leaflet-container  { background: transparent; }
 #container .mapbox img { padding: 0px; border: 0px; }
@@ -515,7 +592,9 @@ ul#billSearchLongDesc li { margin-right: 1em; float: left;  }
 
 
 /* footer */
-
+.home #footerWrapper {
+	padding-top: 0;
+}
 #footerWrapper { background: url(images/bg_footer.jpg) bottom center repeat-x; height: 370px; padding-top: 120px;}
 #sunlight { background: url(images/bg_sunlightLogo.png) top left no-repeat; width: 193px; height: 57px; margin-bottom: 50px;}
 
