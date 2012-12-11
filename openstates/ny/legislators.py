@@ -154,7 +154,8 @@ class NYLegislatorScraper(LegislatorScraper):
             else:
                 link = None
 
-            if email:  # XXX: Missing email from a record on the page
+            if email is not None:
+            # XXX: Missing email from a record on the page
             # as of 12/11/12. -- PRT
                 email = email.xpath(".//a[contains(@href, 'mailto')]")
                 if email != []:
