@@ -57,7 +57,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
             email = page.xpath('//span[@class="spamspan"]')[0].text_content()
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
-            if email:
+            if email is not None:
                 legislator['email'] = email
 
             dist_str = page.xpath("string(//div[@class = 'district'])")
@@ -184,7 +184,7 @@ class NYLegislatorScraper(LegislatorScraper):
             # Legislator
             self.scrape_lower_offices(leg_url, legislator)
 
-            if email:
+            if email is not None:
                 email = email.text_content().strip()
                 legislator['email'] = email
 
