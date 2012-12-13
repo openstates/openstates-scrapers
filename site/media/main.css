@@ -357,6 +357,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 #container img.noBorder {
 	border: none;
+	padding: 0;
 }
 #container #map { float: right; width: 98%; height: 150px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
@@ -857,4 +858,7 @@ div.notification-preference {
     color: #b4b1ab;
     font-height: 10px;
 
+}
+.calendar img{
+	width: 284px;
 }

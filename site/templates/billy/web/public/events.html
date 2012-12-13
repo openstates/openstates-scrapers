@@ -1,16 +1,39 @@
 {% extends "billy/web/public/base.html" %}
 {% load i18n %}
 {% load customtags %}
+{% load static from staticfiles %}
 
 {% block title %}{{state.name}} {% trans "events" %}{% endblock %}
 
 {% block content %}
-<div class="fullWidth">
-    <h3>{% trans "Past & Future events" %}</h3>
+<div class="fullWidth module clear">
+<h2>{% trans "Past & Future events" %}</h2>
+</div>
+<div class="calendar fourCol colLt">
+	<img class="noBorder" src="{% static 'images/placeholder_calendar.png' %}">
+</div>
+<div class="eightCol colRt">
+    
     <ul>
 {% for event in events %}
-    <li><a href="{{ event.get_absolute_url }}"
-        >{{ event.description|trunc }} @ {{ event.when|date:"M j, Y"}}</a></li>
+    <li>
+    	<h4 class="">
+    		{{ event.description|trunc }}
+    		<a href="">Add to iCal</a> | <a href="">Add to Google Calendar</a>
+    	</h4>
+    	<dl>
+    		<dt>When:</dt>
+    		<dd>{{ event.when|date:"M j, Y"}}</dd>
+    		<dt>Where:</dt>
+    		<dd>{{ event.location }}</dd>
+    		<dt>Host:</dt>
+    		<dd><{{participant.type|title}}/dd>
+    		<dt>Chair:</dt>
+    		<dd></dd>
+    	</dl>
+    	<small>Source: <a href="">{% sources event %}</a></small>
+    	<a href="{{ event.get_absolute_url }}">{{ event.description|trunc }} @ {{ event.when|date:"M j, Y"}}</a>
+    </li>
 {% endfor %}
     </ul>
 </div>
