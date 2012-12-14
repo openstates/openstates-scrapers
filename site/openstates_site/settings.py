@@ -140,7 +140,7 @@ ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
                       'ar', 'co', 'in', 'ia', 'ky',
                       'ma', 'ms', 'ne', 'nm', 'or',
                       'pa', 'ri', 'tn', 'vt', 'va',
-                      'pr'
+                      'pr', 'ct'
                      ])
 
 LOGIN_REDIRECT_URL = '/'
