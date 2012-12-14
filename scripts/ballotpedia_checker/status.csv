@@ -1,0 +1,53 @@
+state,planned phase,maintainer,next session,2013 data live?,scraping again?,notes,population,lower members list,lower ballotpedia 2012 results,upper members list,upper ballotpedia 2012 results
+Alabama,phase 3,james,2/5/2013,,yes,,4802740,,,,
+Alaska,live,paultag,1/15/2013,no - 11/27,,,722718,,,,
+Arizona,live,thom,1/14/2013,no - 12/11,,,6482505,http://www.azleg.gov/memberroster.asp?body=H,"http://ballotpedia.org/wiki/index.php/Arizona_House_of_Representatives_elections,_2012",http://www.azleg.gov/MemberRoster.asp?Body=S&SortBy=1,"http://ballotpedia.org/wiki/index.php/Arizona_State_Senate_elections,_2012"
+Arkansas,live,Thom,1/14/2013,no - 12/11,,Senators-elect added but incumbents not removed,2937979,http://www.arkansashouse.org/members,"http://ballotpedia.org/wiki/index.php/Arkansas_House_of_Representatives_elections,_2012",http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages/LegislatorSearchResults.aspx?member=&committee=All&chamber=,"http://ballotpedia.org/wiki/index.php/Arkansas_State_Senate_elections,_2012"
+California,live,thom,full time legis. starts session 12/3/12,yes - 12/4,could be,Members,37691912,http://assembly.ca.gov/assemblymembers,"http://ballotpedia.org/wiki/index.php/California_State_Assembly_elections,_2012",http://senate.ca.gov/senators,"http://ballotpedia.org/wiki/index.php/California_State_Senate_elections,_2012"
+Colorado,live,paultag,,no - 11/30,,,5116769,,,,
+Connecticut,phase 3,james,1/9/2013,not at ftp://ftp.cga.ct.gov/pub/data,,,3580709,,,,
+Delaware,live,thom,1/8/2013,"Legs, no committees - 12/11","could be, needs data ack","leg scrapers still works; just needs committees (fixed, 12/13/12, PRT)",907135,,,http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate,"http://ballotpedia.org/wiki/index.php/Delaware_State_Senate_elections,_2012"
+District of Columbia,live,james,,,yes,,617996,,,,
+Florida,live,thom,3/5/2013 (regular session),yes,could be,leg and committee scrapers both worked with minor tweaks,19057542,,,http://www.flsenate.gov/Senators/,"http://ballotpedia.org/wiki/index.php/Florida_State_Senate_elections,_2012"
+Georgia,phase 3,paultag,,"yes, over API - 11/30",,,9815210,,,,
+Hawaii,live,paultag,,no - 11/30,,,1374810,,,,
+Idaho,live,paultag,,no - 11/30,,,1584985,,,,
+Illinois,live,thom,1/9/2013,no - 12/11,,,12869257,http://www.ilga.gov/house/,"http://ballotpedia.org/wiki/index.php/Illinois_State_Senate_elections,_2012",http://www.ilga.gov/senate/,"http://ballotpedia.org/wiki/index.php/Illinois_State_Senate_elections,_2012"
+Indiana,live,Thom,1/15/2013,no - 12/11,,"legs list page updated, but some profile pages are (completely) empty",6516922,http://www.in.gov/cgi-bin/legislative/listing/listing-2.pl?data=alpha&chamber=Senate,"http://ballotpedia.org/wiki/index.php/Indiana_House_of_Representatives_elections,_2fry012",http://www.in.gov/cgi-bin/legislative/listing/listing-2.pl?data=alpha&chamber=Senate,"http://ballotpedia.org/wiki/index.php/Indiana_State_Senate_elections,_2012"
+Iowa,live,paultag,1/14/2013,no - 11/30,,,3062309,,,,
+Kansas,phase 3,james,1/14/2013,no - 12/7,,,2871238,,,,
+Kentucky,live,james,1/2/2013,no - 12/7,,,4369356,,,,
+Louisiana,live,paultag,4/8/2013,no - 11/30,,,4574836,,,,
+Maine,phase 3,thom,12/5/2013,no - 12/11,,senators not updated yet,1328188,,,http://www.maine.gov/legis/senate/,"http://ballotpedia.org/wiki/index.php/Maine_State_Senate_elections,_2012"
+Maryland,live,james,1/9/2013,new site coming - transition in place,,,5828289,,,,
+Massachusetts,live,thom,1/2/2013,no - 12/12,,,6587536,http://www.malegislature.gov/People/House,"http://ballotpedia.org/wiki/index.php/Massachusetts_House_of_Representatives_elections,_2012",http://www.malegislature.gov/People/Senate,"http://ballotpedia.org/wiki/index.php/Massachusetts_State_Senate_elections,_2012"
+Michigan,phase 3,james,,no,yes,,9876187,,,,
+Minnesota,live,james,1/8/2013,no - 12/7,,new site?,5344861,,,,
+Mississippi,live,paultag,1/8/2013,no - 11/30 - no election,,,2978512,,,,
+Missouri,phase 3,paultag,,no - 11/30,,,6010688,,,,
+Montana,live,thom,1/7/2013,no - 12/12,,,998199,,,,
+Nebraska,live,james,1/9/2013,no - 12/7,,,1842641,,,,
+Nevada,phase 3,james,2/4/2013,partial? http://www.leg.state.nv.us/Session/77th2013/Legislators/77NewAlpha.cfm,,,2723322,,,,
+New Hampshire,live,thom,1/2/2013,yes 12/14 - keep checking http://www.gencourt.state.nh.us/downloads/,,"legislators, no bills",1318194,,,,
+New Jersey,live,james,,,yes,,8821155,,,,
+New Mexico,live,paultag,1/15/2013,no - 11/30 - no election,,,2082224,,,,
+New York,phase 3,thom,1/9/2013 (est),no - 12/13,,,19465197,http://assembly.state.ny.us/mem/,"http://ballotpedia.org/wiki/index.php/New_York_State_Assembly_elections,_2012",,
+North Carolina,live,james,1/9/2012,no - 12/7,,,9656401,,,,
+North Dakota,phase 3,paultag,1/8/2013,yes - 11/30,as soon as bills are filed - no bills as of 12/11/12,"code rewritten for new site, appears to work as of 12/10/12",683932,,,,
+Ohio,live,paultag,1/7/2013,no - 11/30,,,11544951,,,,
+Oklahoma,phase 3,james,1/8/2013,,as soon as bills are filed,,3791508,,,,
+Oregon,live,paultag,,no - 11/30,,,3871859,,,,
+Pennsylvania,live,thom,1/2/2013,partial - 12/4,No D. Raja yet,,12742886,http://www.legis.state.pa.us/cfdocs/legis/home/member_information/mbrList.cfm?body=H&sort=alpha,"http://ballotpedia.org/wiki/index.php/Pennsylvania_House_of_Representatives_elections,_2012",http://www.legis.state.pa.us/cfdocs/legis/home/member_information/mbrList.cfm?body=S&sort=alpha,"http://ballotpedia.org/wiki/index.php/Pennsylvania_State_Senate_elections,_2012"
+Puerto Rico,live,james,,no,yes,,3706690,,,,
+Rhode Island,live,paultag,,no - 11/30,,,1051302,,,,
+South Carolina,phase 3,james,12/4/2012,,yes,,4679230,,,,
+South Dakota,phase 3,james,1/8/2013,no - 12/7,,,824082,,,,
+Tennessee,live,thom,1/8/2013,"Legs, no committees - 12/5",could be,,6403353,,,http://www.capitol.tn.gov/senate/members/,"http://ballotpedia.org/wiki/index.php/Tennessee_State_Senate_elections,_2012"
+Texas,live,paultag,1/8/2013,no - 11/30,,,25674681,,,,
+Utah,live,paultag,,no - 11/30,,,2817222,,,,
+Vermont,live,thom,1/9/2013,no - 12/5,,,626431,,,http://www.leg.state.vt.us/lms/legdir/alpha.asp?Body=S&Session=2012,"http://ballotpedia.org/wiki/index.php/Vermont_State_Senate_elections,_2012"
+Virginia,live,james,,,yes,new site,8096604,,,,
+Washington,phase 3,thom,1/14/2013,no - 12/5,,,6830038,,,http://apps.leg.wa.gov/rosters/Members.aspx?Chamber=S,"http://ballotpedia.org/wiki/index.php/Washington_State_Senate_elections,_2012"
+West Virginia,phase 3,thom,1/9/2013,partial - 12/5,,,1855364,,,,
+Wisconsin,live,james,1/7/2013,no - 12/7,,,5711767,,,,
+Wyoming,phase 3,paultag,1/8/2013,no - 11/30,,,568158,,,,
