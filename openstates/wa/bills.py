@@ -155,6 +155,9 @@ class WABillScraper(BillScraper):
         )
 
         with self.urlopen(url) as page:
+            if "Bill Not Found" in page:
+                return
+
             page = lxml.html.fromstring(page)
             actions = page.xpath("//table")[6]
             found_heading = False
