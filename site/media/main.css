@@ -874,8 +874,110 @@ div.notification-preference {
 	padding: 10px;
 	border: 1px solid #dcdfe2;
 }
+#calendar {
+	border: 1px solid #e4e4dc;
+	text-align: center;
+}
+#calendar #current-month{
+	font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
+	color: #ffffff;
+	font-size: 130%;
+	background: #88bcb4; /* Old browsers */
+	background: -moz-linear-gradient(top,  #88bcb4 0%, #60a195 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#88bcb4), color-stop(100%,#60a195)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #88bcb4 0%,#60a195 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#88bcb4', endColorstr='#60a195',GradientType=0 ); /* IE6-9 */
+	font-weight: 300;
+	border-bottom: 1px solid #f0f4f8;
+	margin-bottom: 0;
+	padding: 6px 0;
 
-
+}
+#calendar th{
+	background: #bcc980; /* Old browsers */
+	background: -moz-linear-gradient(top,  #bcc980 0%, #9db167 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bcc980), color-stop(100%,#9db167)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #bcc980 0%,#9db167 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bcc980', endColorstr='#9db167',GradientType=0 ); /* IE6-9 */
+	color: #ffffff;
+	font-size: 80%;
+	font-weight: normal;
+	text-transform: uppercase;
+	text-align: center;
+	padding: 5px 0 1px 0;
+}
+#calendar td{
+	padding: 4px 0 4px 0;
+	border: 1px solid #dedede;
+	font-size: 110%;
+	width: 26px;
+	height: 29px;
+	background-color: #fafaf5;
+	cursor: pointer;
+}
+#calendar .current-month#today {
+	background: #ffffff;
+}
+#calendar .current-month#selected-day {
+	background: #d57129;
+	color: #ffffff;
+}
+#calendar .current-month#selected-day .events{
+	background-color: #ffffff;
+	-webkit-box-shadow: inset -1px 1px 1px 0 #fafaf5;
+	box-shadow: inset -1px 1px 1px 0 #fafaf5;
+}
+#calendar .events{
+	display: block;
+	border-radius: 3px;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	background-color: #d57129;
+	height: 6px;
+	width: 6px;
+	text-indent: -9999em;
+	margin: 2px auto 0 auto;
+	-webkit-box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
+	box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
+}
+#calendar .current-month:hover{
+	background: #ffffff;
+}
+#calendar .other-month{
+	color: #cecfcd;
+}
+#calendar .other-month:hover{
+	background: #ffffff;
+}
+#calendar .nav-prev, #calendar .nav-next{
+	display: block;
+	width: 10px;
+	height: 14px;
+	text-indent: -9999em;
+	margin-top: -30px;
+}
+#calendar .nav-prev{
+	float: left;	
+	background: url(images/btn_calendar_prevNext.png) top left no-repeat;
+	margin-left: 30px;
+}
+#calendar .nav-prev:hover{
+	background: url(images/btn_calendar_prevNext.png) bottom left no-repeat;
+}
+#calendar .nav-next{
+	float: right;
+	background: url(images/btn_calendar_prevNext.png) top right no-repeat;
+	margin-right: 30px;
+}
+#calendar .nav-next:hover{
+	background: url(images/btn_calendar_prevNext.png) bottom right no-repeat;
+}
 
 
 

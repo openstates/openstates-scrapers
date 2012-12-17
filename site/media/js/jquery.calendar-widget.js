@@ -14,7 +14,7 @@
 		$.extend(opts, params);
 		
 		var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-		var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 		month = i = parseInt(opts.month);
 		year = parseInt(opts.year);
 		var m = 0;
@@ -36,8 +36,8 @@
 				
 			table += ('<h3 id="current-month">'+monthNames[month]+' '+year+'</h3>');
 			// uncomment the following lines if you'd like to display calendar month based on 'month' and 'view' paramaters from the URL
-			//table += ('<div class="nav-prev">'+ prev_month +'</div>');
-			//table += ('<div class="nav-next">'+ next_month +'</div>');
+			table += ('<div class="nav-prev">'+ prev_month +'</div>');
+			table += ('<div class="nav-next">'+ next_month +'</div>');
 			table += ('<table class="calendar-month " ' +'id="calendar-month'+i+' " cellspacing="0">');	
 		
 			table += '<tr>';
