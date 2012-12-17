@@ -41,7 +41,7 @@
         </ul>
 
         <div class="fullWidth mainModule">
-            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
+            <span class="tip scout-link"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
             </span>
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}

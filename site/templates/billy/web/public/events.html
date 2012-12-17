@@ -23,22 +23,21 @@
     <ul>
 {% for event in events %}
     <li class="event">
-    	<h4 class="">
+    	<h3 class="">
     		{{ event.description|trunc }}
     		<a href="">Add to iCal</a> | <a href="">Add to Google Calendar</a>
-    	</h4>
+    	</h3>
     	<dl>
     		<dt>When:</dt>
     		<dd>{{ event.when|date:"M j, Y"}}</dd>
     		<dt>Where:</dt>
     		<dd>{{ event.location }}</dd>
     		<dt>Host:</dt>
-    		<dd><{{participant.type|title}}/dd>
+    		<dd>&nbsp{{participant.type|title}}</dd>
     		<dt>Chair:</dt>
-    		<dd></dd>
+    		<dd>A chair!</dd>
     	</dl>
-    	<small>Source: <a href="">{% sources event %}</a></small>
-    	<a href="{{ event.get_absolute_url }}">{{ event.description|trunc }} @ {{ event.when|date:"M j, Y"}}</a>
+    	{% sources event %}
     </li>
 {% endfor %}
     </ul>
