@@ -54,14 +54,14 @@ DBADMIN = join(DATA, 'ca', 'dbadmin')
 # ----------------------------------------------------------------------------
 # Logging config
 #logger = logging.getLogger('billy')
-logger = logging.getLogger('mysql-update')
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('billy.ca-update')
+# logger.setLevel(logging.INFO)
 
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(message)s',
-                              datefmt='%H:%M:%S')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+# ch = logging.StreamHandler()
+# formatter = logging.Formatter('%(asctime)s - %(message)s',
+#                               datefmt='%H:%M:%S')
+# ch.setFormatter(formatter)
+# logger.addHandler(ch)
 
 # ---------------------------------------------------------------------------
 # Miscellaneous db admin commands.
