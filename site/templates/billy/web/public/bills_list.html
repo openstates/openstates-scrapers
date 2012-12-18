@@ -103,6 +103,16 @@ $(document).ready(function(){
                         <input type="text" name="search_text" id="id_search_text" value="{{form.data.search_text}}"/>
                       </li>
 
+                      <li><label for="id_status">Status:</label>
+                        <ul>
+                        {% for value, status in form.fields.status.widget.choices %}
+                          <li>
+                            <label for="id_status_{{forloop.counter0}}">
+                              <input type="checkbox" name="status" value="{{value}}" id="id_chamber_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/>{{status}}</label>
+                        {% endfor %}
+                        </ul>
+                      </li>
+
                       <li>
                         <label for="id_session">Session:</label>
                         <select name="session" id="id_session">
@@ -118,18 +128,10 @@ $(document).ready(function(){
                         {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
                           <li>
                             <label for="id_chamber_{{forloop.counter0}}">
-                              <input type="checkbox" name="chamber" value="upper" id="id_chamber_0" {% if chamber in form.data.chamber %}checked{% endif %}/>{{chamber_name}}</label>
+                              <input type="checkbox" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber in form.chamber.data %}checked{% endif %}/>{{chamber_name}}</label>
                           </li>
                         {% endfor %}
                         </ul>
-                      </li>
-
-                      <li><label for="id_status">Status:</label>
-                        <select name="status" id="id_status">
-                          {% for value, name in form.fields.status.widget.choices %}
-                            <option value="{{value}}" {% if value in form.data.status %}selected{% endif %}>{{name}}</option>
-                          {% endfor %}
-                        </select>
                       </li>
 
                       <li>
