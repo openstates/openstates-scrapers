@@ -341,7 +341,7 @@ img.firstHalfModule  { width: 100px;}
 .withBorderLine { float: left; margin-right: 10px; padding-right: 10px; border-right: 1px solid #cecac1; }
 .entryMetaData { line-height: 13px;}
 
-.sources { text-align: right; display: block; }
+.scout-link { text-align: right; display: block; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
 a.viewMore { background: #fff url(images/bg_viewMore.png) 15px center no-repeat; display: inline-block; margin-top: 20px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-size: 115%; padding: 3px 15px 3px 32px; color: #a3a730; }
 a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
@@ -859,10 +859,7 @@ div.notification-preference {
     font-height: 10px;
 
 }
-.calendar img{
-	width: 284px;
-}
-.event>h4{
+.event>h3{
 	background: #f4f4f0; /* Old browsers */
 	background: -moz-linear-gradient(top, #f4f4f0 0%, #eae8e2 100%); /* FF3.6+ */
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f4f4f0), color-stop(100%,#eae8e2)); /* Chrome,Safari4+ */
@@ -871,9 +868,49 @@ div.notification-preference {
 	background: -ms-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* IE10+ */
 	background: linear-gradient(to bottom, #f4f4f0 0%,#eae8e2 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f4f4f0', endColorstr='#eae8e2',GradientType=0 ); /* IE6-9 */
-	padding: 10px;
+	padding: 10px 20px;
 	border: 1px solid #dcdfe2;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-se;
+	font-size: 100%;
+	font-weight: bold;
 }
+.event>h3 a {
+	font-weight: normal;
+}
+.event dl{
+	margin-left: 20px;
+}
+.event dt, .event dd{
+	margin-bottom: 13px;
+}
+.event dt{
+	display: block;
+	float: left;
+	clear: left;
+	width: 70px;
+	text-transform: uppercase;
+}
+.event dd{
+	display: block;
+	margin-left: 60px;
+}
+.event .sources{
+	font-size: 80%;
+	padding-left: 90px;
+	padding-bottom: 40px;
+	background: none;
+}
+.event .sources h4{
+	font-size: 80%;
+	display: inline;
+	color: #989898;
+	text-transform: capitalize;
+}
+.event .sources ul, .event .sources li{
+	display: inline;
+}
+
+
 #calendar {
 	border: 1px solid #e4e4dc;
 	text-align: center;

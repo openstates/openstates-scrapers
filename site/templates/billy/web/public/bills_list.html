@@ -72,7 +72,7 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        <span class="tip sources withTipSm">
+        <span class="tip scout-link withTipSm">
             {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">{% trans 'Receive alerts about' %} "{{request.GET.search_text}}"</a> {% trans 'with Scout.' %}
             {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states.' %}</a></span>{% endif %}
             {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a> {% trans 'with Scout.'%}
@@ -92,11 +92,73 @@ $(document).ready(function(){
             <div class="fourCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
-                    <ul>
-                        <li>
-                            <input id="submit" type="submit"/>
-                        </li>
-                        {{ form.as_ul }}
+                   <ul>
+
+                      <li>
+                        <input id="submit" type="submit"/>
+                      </li>
+
+                      <li>
+                        <label for="id_search_text">Search text:</label>
+                        <input type="text" name="search_text" id="id_search_text" value="{{form.data.search_text}}"/>
+                      </li>
+
+                      <li>
+                        <label for="id_session">Session:</label>
+                        <select name="session" id="id_session">
+                          {% for value, session in form.fields.session.widget.choices %}
+                            <option value="{{value}}" {% if value in form.data.session %}selected{% endif %}>{{session}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <label for="id_chamber_0">Chamber:</label>
+                        <ul>
+                        {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
+                          <li>
+                            <label for="id_chamber_{{forloop.counter0}}">
+                              <input type="checkbox" name="chamber" value="upper" id="id_chamber_0" {% if chamber in form.data.chamber %}checked{% endif %}/>{{chamber_name}}</label>
+                          </li>
+                        {% endfor %}
+                        </ul>
+                      </li>
+
+                      <li><label for="id_status">Status:</label>
+                        <select name="status" id="id_status">
+                          {% for value, name in form.fields.status.widget.choices %}
+                            <option value="{{value}}" {% if value in form.data.status %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <label for="id_sponsor__leg_id">Sponsor name:</label>
+                        <select name="sponsor__leg_id" id="id_sponsor__leg_id">
+                          {% for value, name in form.fields.sponsor__leg_id.widget.choices %}
+                              <option value="{{value}}" {% if value in form.data.sponsor__leg_id %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <label for="id_type">Type:</label>
+                        <select name="type" id="id_type">
+                          {% for value, name in form.fields.type.widget.choices %}
+                            <option value='{{value}}' {% if value in form.data.type %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <label for="id_subjects">Subjects:</label>
+                        <select multiple="multiple" name="subjects" id="id_subjects">
+                          {% for value, name in form.fields.subjects.widget.choices %}
+                            <option value='{{value}}' {% if value in form.data.subjects %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
                     </ul>
                 </form>
             </div>
