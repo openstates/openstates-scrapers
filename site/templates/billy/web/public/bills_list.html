@@ -89,7 +89,7 @@ $(document).ready(function(){
             {% for item in long_description %} <li class="tip">{{item}}{% if not forloop.last %}, {% endif %}</li> {% endfor %}
         </ul>
         {% endif %}
-            <div class="twoCol colLtSm filterCol clear">
+            <div class="fourCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                    <ul>
@@ -164,7 +164,7 @@ $(document).ready(function(){
                     </ul>
                 </form>
             </div>
-            <div class="tenCol colRt">
+            <div class="eightCol colRt">
                 {% if not object_list.count %}
                     {% trans "No bills found matching those criteria. Try widening your criteria." %}
                 {% else %}
@@ -173,9 +173,9 @@ $(document).ready(function(){
                 <table class="withFilter">
                     <thead>
                         <tr id="titles">
-                            <td>{% trans "Title" %}</td>
-                            <td>{% trans "Introduced" %}</td>
-                            <td>{% trans "Recent Action" %}</td>
+                            <td><h6 class="withTipSm">{% trans "Title" %}</h6></td>
+                            <td><h6 class="withTipSm">{% trans "Introduced" %}</h6></td>
+                            <td><h6 class="withTipSm">{% trans "Recent Action" %}</h6></td>
                         </tr>
                     </thead>
                     <tbody>

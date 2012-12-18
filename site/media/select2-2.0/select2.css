@@ -14,10 +14,10 @@ Version: 2.0 Timestamp: Wed, May 16, 2012 10:38:37 AM
 .select2-drop,
 .select2-search,
 .select2-container .select2-search input{
-  /* 
+  /*
     Force border-box so that % widths fit the parent
     container without overlap because of margin/padding.
-    
+
     More Info : http://www.quirksmode.org/css/box.html
   */
   -moz-box-sizing: border-box;    /* firefox */
@@ -166,7 +166,7 @@ Version: 2.0 Timestamp: Wed, May 16, 2012 10:38:37 AM
     box-shadow: none;
     border-radius: 0;
     -moz-border-radius: 0;
-    -webkit-border-radius: 0;  
+    -webkit-border-radius: 0;
 }
 
 .select2-container .select2-search input.select2-active {
@@ -231,7 +231,7 @@ Version: 2.0 Timestamp: Wed, May 16, 2012 10:38:37 AM
   max-height: 200px;
 }
 .select2-container .select2-results li {
-  line-height: 80%;
+  line-height: 110%;
   padding: 7px 7px 8px;
   margin: 0;
   list-style: none;
