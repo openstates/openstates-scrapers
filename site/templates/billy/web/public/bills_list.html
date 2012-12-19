@@ -99,11 +99,12 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_search_text">Search text:</label>
+                        <h6 class="withTipSm"><label for="id_search_text">Search text:</label></h6>
                         <input type="text" name="search_text" id="id_search_text" value="{{form.data.search_text}}"/>
                       </li>
 
-                      <li><label for="id_status">Status:</label>
+                      <li>
+                          <h6 class="withTipSm"><label for="id_status">Status:</label></h6>
                         <ul>
                         {% for value, status in form.fields.status.widget.choices %}
                           <li>
@@ -114,7 +115,7 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_session">Session:</label>
+                        <h6 class="withTipSm"><label for="id_session">Session:</label></h6>
                         <select name="session" id="id_session">
                           {% for value, session in form.fields.session.widget.choices %}
                             <option value="{{value}}" {% if value in form.data.session %}selected{% endif %}>{{session}}</option>
@@ -123,7 +124,7 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_chamber_0">Chamber:</label>
+                        <h6 class="withTipSm"><label for="id_chamber_0">Chamber:</label></h6>
                         <ul>
                         {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
                           <li>
@@ -135,7 +136,7 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_sponsor__leg_id">Sponsor name:</label>
+                        <h6 class="withTipSm"><label for="id_sponsor__leg_id">Sponsor name:</label></h6>
                         <select name="sponsor__leg_id" id="id_sponsor__leg_id">
                           {% for value, name in form.fields.sponsor__leg_id.widget.choices %}
                               <option value="{{value}}" {% if value in form.data.sponsor__leg_id %}selected{% endif %}>{{name}}</option>
@@ -144,7 +145,7 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_type">Type:</label>
+                        <h6 class="withTipSm"><label for="id_type">Type:</label></h6>
                         <select name="type" id="id_type">
                           {% for value, name in form.fields.type.widget.choices %}
                             <option value='{{value}}' {% if value in form.data.type %}selected{% endif %}>{{name}}</option>
@@ -153,7 +154,7 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <label for="id_subjects">Subjects:</label>
+                        <h6 class="withTipSm"><label for="id_subjects">Subjects:</label></h6>
                         <select multiple="multiple" name="subjects" id="id_subjects">
                           {% for value, name in form.fields.subjects.widget.choices %}
                             <option value='{{value}}' {% if value in form.data.subjects %}selected{% endif %}>{{name}}</option>

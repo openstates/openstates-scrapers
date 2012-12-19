@@ -1000,7 +1000,7 @@ div.notification-preference {
 	margin-top: -30px;
 }
 #calendar .nav-prev{
-	float: left;	
+	float: left;
 	background: url(images/btn_calendar_prevNext.png) top left no-repeat;
 	margin-left: 30px;
 }
@@ -1019,3 +1019,32 @@ div.notification-preference {
 
 
 
+/* Bills Filter styles */
+
+#id_search_text{
+    width: 255px;
+}
+
+#id_session{
+     width: 295px;
+}
+
+#id_sponsor__leg_id{
+    width: 295px;
+}
+
+#id_type{
+    width: 295px;
+}
+
+#id_subjects{
+    width: 265px;
+}
+
+#id_chamber_0{
+    display:none;
+}
+
+#id_chamber_1{
+    float:left;
+}
