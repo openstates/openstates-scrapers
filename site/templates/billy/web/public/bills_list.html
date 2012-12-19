@@ -105,11 +105,11 @@ $(document).ready(function(){
 
                       <li>
                           <h6 class="withTipSm"><label for="id_status">Status:</label></h6>
-                        <ul>
+                        <ul class="basline">
                         {% for value, status in form.fields.status.widget.choices %}
                           <li>
                             <label for="id_status_{{forloop.counter0}}">
-                              <input type="checkbox" name="status" value="{{value}}" id="id_status_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/>{{status}}</label>
+                              <input type="checkbox" name="status" value="{{value}}" id="id_status_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/><span class="checkboxlabel">{{status}}</span></label>
                         {% endfor %}
                         </ul>
                       </li>
@@ -125,11 +125,11 @@ $(document).ready(function(){
 
                       <li>
                         <h6 class="withTipSm"><label for="id_chamber_0">Chamber:</label></h6>
-                        <ul>
+                        <ul class="basline">
                         {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
                           <li>
                             <label for="id_chamber_{{forloop.counter0}}">
-                              <input type="checkbox" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber in form.chamber.data %}checked{% endif %}/>{{chamber_name}}</label>
+                              <input type="checkbox" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber in form.chamber.data %}checked{% endif %}/><span class="checkboxlabel">{{chamber_name}}</span></label>
                           </li>
                         {% endfor %}
                         </ul>

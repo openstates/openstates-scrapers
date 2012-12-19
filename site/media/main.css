@@ -1026,25 +1026,51 @@ div.notification-preference {
 }
 
 #id_session{
-     width: 295px;
+     width: 265px;
 }
 
 #id_sponsor__leg_id{
-    width: 295px;
+    width: 265px;
 }
 
 #id_type{
-    width: 295px;
+    width: 265px;
 }
 
 #id_subjects{
     width: 265px;
 }
 
-#id_chamber_0{
-    display:none;
+.filterCol input{
+    margin-right:20px;
+    width: 120px;
 }
 
-#id_chamber_1{
-    float:left;
+
+.checkboxlabel{
+    padding-left:9px;
+    font-size: 13px;
+    vertical-align: baseline;
+    margin:0;
 }
+
+#id_status_0{
+
+}
+
+.basline li{
+    vertical-align: baseline;
+    margin:1px 0;
+}
+
+.basline input {
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    margin:0;
+    vertical-align: bottom;
+    position: relative;
+    top: -3px;
+    *overflow: hidden;
+}
+
