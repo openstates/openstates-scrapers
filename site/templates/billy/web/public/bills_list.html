@@ -109,7 +109,7 @@ $(document).ready(function(){
                         {% for value, status in form.fields.status.widget.choices %}
                           <li>
                             <label for="id_status_{{forloop.counter0}}">
-                              <input type="checkbox" name="status" value="{{value}}" id="id_chamber_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/>{{status}}</label>
+                              <input type="checkbox" name="status" value="{{value}}" id="id_status_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/>{{status}}</label>
                         {% endfor %}
                         </ul>
                       </li>
