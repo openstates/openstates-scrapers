@@ -12,10 +12,46 @@
 <script src="{% static 'js/jquery.pjax.min.js' %}"></script>
 <script>
 $(document).ready(function() {
+
+    // Where 'current' refers to the current state of the calendar widget.
+    window.current_month = {{now.month}};
+    window.current_year = {{now.year}};
+
     $("#calendar").calendarWidget();
 
     // See the template include for #data-main.
-    this.pjax('ul', '[data-pjax]');
+    $(this).pjax('a', '#events-pjax');
+
+    var update_calendar = function(month, year){
+      $("#calendar").calendarWidget(month, year);
+      var url = '/{{abbr}}/events/json_for_date/' + year + '/' + month + '/';
+      $.getJSON(url, function(data){
+        $.each(data, function(i, event_){
+
+          // Serialized dates are seconds since the epoch. We need millisecs.
+          var event_date = new Date(event_.when * 1000),
+              event_month = event_date.getMonth(),
+              event_year = event_date.getYear();
+          if (event_month === month && event_year === year) {
+            var day = $('.day' + event_date.getDay());
+            console.log(day);
+            day.append('<span class="events">' + event_.description + '</span>');
+            }
+        });
+      });
+      window.current_month = month;
+      window.current_year = year;
+    }
+
+    // Update the calendar on pressing the month nav links on the calendar.
+    $('#calendar .nav-prev').click(function(){
+      // XXX: This shit will fail in January!!!!!!!!!!
+      // Also, javascript date months are 0 based.
+      console.log('Nav prev');
+      var prev_month = window.current_month - 1;
+      update_calendar(prev_month, window.current_year - 1)
+      });
+    update_calendar({{now.month}}, {{now.year}});
 });
 </script>
 {% endblock %}
@@ -26,13 +62,12 @@ $(document).ready(function() {
 </div>
 <div class="calendar fourCol colLt">
   <div id="calendar">
+    <p>Please enable Javascript to view this calendar.</p>
   </div>
 </div>
 <div class="eightCol colRt">
-
-
+{% include "billy/web/public/events-pjax.html" %}
 </div>
 <div class="clear"></div>
 
-{% include "billy/web/public/events-pjax.html" %}
 {% endblock %}
