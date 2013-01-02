@@ -1,10 +1,12 @@
 import re
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
+import scrapelib
 import lxml.html
 import xlrd
 
-_party_map = {'D': 'Democratic', 'R': 'Republican', 'U': 'Independent'}
+_party_map = {'D': 'Democratic', 'R': 'Republican', 'U': 'Independent',
+              'I': 'Independent'}
 
 
 class MELegislatorScraper(LegislatorScraper):
@@ -31,7 +33,13 @@ class MELegislatorScraper(LegislatorScraper):
                 else:
                     path = '/html/body/p[%s]/a[2]' % (district + 4)
 
-                link = page.xpath(path)[0]
+                try:
+                    link = page.xpath(path)[0]
+                except IndexError:
+                    # If the the district % 10 == 0 query doesn't
+                    # produce a link, retry the second link. Horrible.
+                    path = '/html/body/p[%s]/a[2]' % (district + 4)
+                    link = page.xpath(path)[0]
 
                 leg_url = link.get('href')
                 name = link.text_content()
@@ -54,6 +62,18 @@ class MELegislatorScraper(LegislatorScraper):
                                          district_name=district_name)
                         leg.add_source(url)
                         leg.add_source(leg_url)
+
+                        # Get the photo url.
+                        html = self.urlopen(leg_url)
+                        doc = lxml.html.fromstring(html)
+                        doc.make_links_absolute(leg_url)
+                        xpath = ('//img')
+                        photo_url = doc.xpath(xpath)[0]
+                        if 'src' in photo_url.attrib:
+                            photo_url = photo_url.attrib.pop('src')
+                            leg['photo_url'] = photo_url
+                        else:
+                            photo_url = None
 
                         self.scrape_lower_offices(leg, page, leg_url)
                         self.save_legislator(leg)
@@ -182,8 +202,6 @@ class MELegislatorScraper(LegislatorScraper):
 
     def scrape_senators(self, chamber, term):
         session = ((int(term[0:4]) - 2009) / 2) + 124
-        url = ('http://www.maine.gov/legis/senate/senators/email/'
-               '%sSenatorsList.xls' % session)
 
         DISTRICT = 1
         FIRST_NAME = 3
@@ -206,7 +224,34 @@ class MELegislatorScraper(LegislatorScraper):
             'email': 14,
         }
 
-        fn, result = self.urlretrieve(url)
+        # The sheet changed from session 126.
+        if session == 126:
+            mapping = {
+                'district': 0,
+                'first_name': 1,
+                'middle_name': 2,
+                'last_name': 3,
+                # 'suffix': 6,
+                'party': 4,
+                # 'resident_county': 8,
+                'street_addr': 5,
+                'city': 6,
+                'zip_code': 8,
+                # 'phone': 13,
+                'email': 9,
+            }
+
+
+        url = ('http://www.maine.gov/legis/senate/senators/email/'
+               '%dSenatorsList.xls' % session)
+
+        try:
+            fn, result = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            url = 'http://www.maine.gov/legis/senate/%dthSenatorsList.xls'
+            url = url % session
+            fn, result = self.urlretrieve(url)
+
         wb = xlrd.open_workbook(fn)
         sh = wb.sheet_by_index(0)
 
@@ -214,10 +259,14 @@ class MELegislatorScraper(LegislatorScraper):
             # get fields out of mapping
             d = {}
             for field, col_num in mapping.iteritems():
-                d[field] = str(sh.cell(rownum, col_num).value)
+                try:
+                    d[field] = str(sh.cell(rownum, col_num).value)
+                except IndexError:
+                    # This col_num doesn't exist in the sheet.
+                    pass
 
             full_name = " ".join((d['first_name'], d['middle_name'],
-                                  d['last_name'], d['suffix']))
+                                  d['last_name']))
             full_name = re.sub(r'\s+', ' ', full_name).strip()
 
             address = "{street_addr}\n{city}, ME {zip_code}".format(**d)
@@ -225,7 +274,7 @@ class MELegislatorScraper(LegislatorScraper):
             # For matching up legs with votes
             district_name = d['city']
 
-            phone = d['phone']
+            # phone = d['phone']
 
             district = d['district'].split('.')[0]
 
@@ -233,17 +282,30 @@ class MELegislatorScraper(LegislatorScraper):
 
             leg = Legislator(term, chamber, district, full_name,
                              d['first_name'], d['last_name'], d['middle_name'],
-                             _party_map[d['party']], suffix=d['suffix'],
-                             resident_county=d['resident_county'],
+                             _party_map[d['party']],
+                             # resident_county=d['resident_county'],
                              office_address=address,
-                             office_phone=phone,
+                             # office_phone=phone,
                              email=None,
                              district_name=district_name,
                              url=leg_url)
             leg.add_source(url)
+            leg.add_source(leg_url)
+
+            html = self.urlopen(leg_url)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(leg_url)
+            xpath = '//td[@class="XSP_MAIN_PANEL"]/descendant::img/@src'
+            photo_url = doc.xpath(xpath)
+            if photo_url:
+                photo_url = photo_url.pop()
+                leg['photo_url'] = photo_url
+            else:
+                photo_url = None
+
 
             office = dict(
-                    name='District Office', type='district', phone=phone,
+                    name='District Office', type='district',
                     fax=None, email=None,
                     address=''.join(address))
 
