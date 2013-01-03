@@ -10,8 +10,11 @@ def get_table_item(doc, name):
     span = doc.xpath('//span[text()="{0}"]'.format(name))[0]
     # get neighboring td's span
     dataspan = span.getparent().getnext().getchildren()[0]
-    return (dataspan.text + '\n' +
-            '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
+    if dataspan.text:
+        return (dataspan.text + '\n' +
+                '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
+    else:
+        return None
 
 class NCLegislatorScraper(LegislatorScraper):
     jurisdiction = 'nc'
@@ -60,7 +63,7 @@ class NCLegislatorScraper(LegislatorScraper):
             ldoc.make_links_absolute('http://www.ncga.state.nc.us')
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
             phone = get_table_item(ldoc, 'Phone:')
-            address = get_table_item(ldoc, 'Legislative Mailing Address:')
+            address = get_table_item(ldoc, 'Legislative Mailing Address:') or None
             email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0].text or ''
 
             # save legislator
