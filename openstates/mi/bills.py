@@ -195,6 +195,8 @@ class MIBillScraper(BillScraper):
                     vtype = vote.no
                 elif 'Excused' in p or 'Not Voting' in p:
                     vtype = vote.other
+                elif 'Roll Call No' in p:
+                    continue
                 elif p.startswith('In The Chair:'):
                     break
                 else:
