@@ -70,7 +70,10 @@ class INLegislatorScraper(LegislatorScraper):
 
         about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
         about = self.urlopen(about_url)
-        about = lxml.html.fromstring(about)
+        try:
+            about = lxml.html.fromstring(about)
+        except:
+            import ipdb;ipdb.set_trace()
         about.make_links_absolute(about_url)
 
         leg.add_source(about_url)
