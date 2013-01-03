@@ -133,6 +133,12 @@ metadata = dict(
             ],
             'start_year': 2011, 'end_year': 2012
         },
+        {'name': '51',
+            'sessions': [
+            '51st-1st-regular',
+            ],
+            'start_year': 2013, 'end_year': 2014
+        },
         ],
         session_details={
             #'42nd-1st-regular':
@@ -474,6 +480,11 @@ metadata = dict(
                 '_scraped_name': 'Fiftieth Legislature - Second Regular Session',
                 #'start_date': , 'end_date':
                 },
+            '51st-1st-regular':
+                {'type': 'primary', 'session_id': 108,
+                 'display_name': '51st Legislature - First Regular Session',
+                 '_scraped_name': 'Fifty-first Legislature - First Regular Session'
+                }
         },
         _ignored_scraped_sessions=[
             'Forty-second Legislature - First Regular Session',

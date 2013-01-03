@@ -19,7 +19,7 @@ class DCLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
-        urls = set(doc.xpath('//a[contains(@href, "dccouncil.us/council/")]/@href'))
+        urls = set(doc.xpath('//a[contains(@href, "/council/")]/@href'))
         print '\n'.join(urls)
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
@@ -53,7 +53,11 @@ class DCLegislatorScraper(LegislatorScraper):
 
             office_address = get_field(doc, "Office:")
             phone = get_field(doc, "Tel:")
-            phone, fax = phone.split(' | Fax: ')
+            if phone.endswith('| Fax:'):
+                fax = None
+                phone = phone.strip('| Fax:') or None
+            else:
+                phone, fax = phone.split(' | Fax: ')
 
             email = doc.xpath('//a[starts-with(text(), "Send an email")]/@href')[0].split(':')[1]
 
