@@ -55,9 +55,10 @@ class NYLegislatorScraper(LegislatorScraper):
             xpath = '//a[contains(@href, "profile-pictures")]/@href'
             legislator['photo_url'] = page.xpath(xpath).pop()
 
-            email = page.xpath('//span[@class="spamspan"]')[0].text_content()
-            email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
-            if email is not None:
+            email = page.xpath('//span[@class="spamspan"]')
+            if email:
+                email = email[0].text_content()
+                email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
                 legislator['email'] = email
 
             dist_str = page.xpath("string(//div[@class = 'district'])")
@@ -186,7 +187,8 @@ class NYLegislatorScraper(LegislatorScraper):
 
             if email is not None:
                 email = email.text_content().strip()
-                legislator['email'] = email
+                if email:
+                    legislator['email'] = email
 
             self.save_legislator(legislator)
 
@@ -199,10 +201,12 @@ class NYLegislatorScraper(LegislatorScraper):
         email = contact.xpath(".//a[contains(@href, 'mailto:')]")
         if email != []:
             email = email[0].attrib['href'].replace("mailto:", "").strip()
+            if not email:
+                email = None
         else:
             email = None
 
-        # Sometimes clsas is "addrcol1", others "addrcola"
+        # Sometimes class is "addrcol1", others "addrcola"
         col_generators = [
 
             # Try alpha second.

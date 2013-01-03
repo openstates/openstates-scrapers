@@ -2,7 +2,8 @@
 pip install google-api-python-client
 '''
 import StringIO
-import csv
+import unicodecsv
+import unicodedata
 #import logging
 
 import logbook
@@ -13,7 +14,7 @@ import name_tools
 import drive_api
 
 #logger = logging.getLogger('billy.ballotpedia-check')
-logger = logbook.Logger('billy.ballotpedia-check')
+logger = logbook.Logger('ballotpedia-check')
 
 request_defaults = {
     'timeout': 5.0,
@@ -30,16 +31,22 @@ request_defaults = {
 session = scrapelib.Scraper(**request_defaults)
 
 
+def strip_accents(s):
+   return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+
+
 def fetch(url):
     logger.info('session.get %r' % url)
     resp = session.get(url)
-    html = resp.text.encode('utf-8')
+    html = strip_accents(resp.text).encode('utf-8')
     doc = lxml.html.fromstring(html)
     doc.make_links_absolute(url)
     return html, doc
 
 
 def main():
+    import sys
+
     try:
         with open('status.csv') as f:
             doc = f.read()
@@ -49,11 +56,11 @@ def main():
         for file_obj in files:
             if file_obj['title'] == u'open states internal status':
                 doc = drive_api.download_csv(service, file_obj)
-                with open('status', 'w') as f:
+                with open('status.csv', 'w') as f:
                     f.write(doc)
                 break
 
-    data = csv.DictReader(StringIO.StringIO(doc))
+    data = unicodecsv.DictReader(StringIO.StringIO(doc))
 
     LOWER_LIST = 'lower members list'
     LOWER_BP = 'lower ballotpedia 2012 results'
@@ -62,6 +69,9 @@ def main():
 
     for row in data:
 
+        if sys.argv[1:] and not set([row['maintainer'], row['abbr']]) & set(sys.argv[1:]):
+            continue
+
         state_passed = True
 
         if row['scraping again?'] == 'yes':
@@ -69,7 +79,7 @@ def main():
 
         logger.info('')
         logger.info('')
-        logger.info('Starting %s - lower' % row['state'])
+        logger.info('Starting %r - lower' % row['state'])
         lower = row[LOWER_LIST]
         lower_bp = row[LOWER_BP]
         if lower and lower_bp:
@@ -90,41 +100,51 @@ def main():
             failed = False
             failcount = 0
             for name in elected:
-                print name
-                for form in name_tools.name_forms(name):
+                name = strip_accents(unicode(name)).encode('utf-8')
+                try:
+                    forms = name_tools.name_forms(name)
+                except:
+                    logger.warning("Couldn't get name forms for %r" % name)
+                    continue
+                for form in forms:
                     if form in html_lower:
-                        # logger.info('    -PASS: elected %s found' % name)
+                        # logger.info('    -PASS: elected %r found' % name)
                         break
                 else:
-                    logger.info('    -FAIL: elected %s not found' % name)
+                    logger.info('    -FAIL: elected %r not found' % name)
                     failed = True
                     failcount += 1
             if failed:
                 state_passed = False
                 logger.info('')
-                msg = '%s lower FAILED: %d elected not found'
+                msg = '%r lower FAILED: %d elected not found'
                 logger.info(msg % (row['state'], failcount))
 
             logger.info('  Testing retired incumbent names:')
             failed = False
             failcount = True
             for name in retiring:
-                print name
-                for form in name_tools.name_forms(name):
+                name = strip_accents(unicode(name)).encode('utf-8')
+                try:
+                    forms = name_tools.name_forms(name)
+                except:
+                    logger.warning("Couldn't get name forms for %r" % name)
+                    continue
+                for form in forms:
                     if form in html_lower:
-                        logger.info('    -FAIL: retiree %s found' % name)
+                        logger.info('    -FAIL: retiree %r found' % name)
                         failed = True
                         failcount += 1
                 else:
                     pass
-                    # logger.info('    -PASS: retiree %s not found' % name)
+                    # logger.info('    -PASS: retiree %r not found' % name)
             if failed:
                 state_passed = False
                 logger.info('')
-                msg = '%s lower FAILED: %d retirees found'
+                msg = '%r lower FAILED: %d retirees found'
                 logger.info(msg % (row['state'], failcount))
 
-        logger.info('Starting %s - upper' % row['state'])
+        logger.info('Starting %r - upper' % row['state'])
         upper = row[UPPER_LIST]
         upper_bp = row[UPPER_BP]
         if upper and upper_bp:
@@ -145,44 +165,49 @@ def main():
             failed = False
             failcount = True
             for name in elected:
-                print name
-                for form in name_tools.name_forms(name):
+                name = strip_accents(unicode(name)).encode('utf-8')
+                try:
+                    forms = name_tools.name_forms(name)
+                except:
+                    logger.warning("Couldn't get name forms for %r" % name)
+                    continue
+                for form in forms:
                     if form in html_lower:
-                        # logger.info('    -PASS: elected %s found' % name)
+                        # logger.info('    -PASS: elected %r found' % name)
                         break
                 else:
-                    logger.info('    -FAIL: elected %s not found' % name)
+                    logger.info('    -FAIL: elected %r not found' % name)
                     failed = True
                     failcount += 1
 
             logger.info('')
             if failed:
                 state_passed = False
-                msg = '%s upper FAILED: %d elected not found'
+                msg = '%r upper FAILED: %d elected not found'
                 logger.info(msg % (row['state'], failcount))
 
             logger.info('  Testing retired incumbent names:')
             failed = False
-            failcount = True
             for name in retiring:
-                print name
-                for form in name_tools.name_forms(name):
-                    if form in html_lower:
-                        logger.info('    -FAIL: retiree %s found' % name)
+                name = strip_accents(unicode(name)).encode('utf-8')
+                try:
+                    forms = name_tools.name_forms(name)
+                except:
+                    logger.info('    -FAIL: retiree %r found' % name)
 
                 else:
                     pass
-                    # logger.info('    -PASS: retiree %s not found' % name)
+                    # logger.info('    -PASS: retiree %r not found' % name)
             if failed:
                 state_passed = False
                 logger.info('')
-                msg = '%s upper FAILED: %d retirees found'
+                msg = '%r upper FAILED: %d retirees found'
                 logger.info(msg % (row['state'], failcount))
 
         if state_passed:
-            logger.critical('%s PASSED. GOOD TO GO.' % row['state'].upper())
+            logger.critical('%r PASSED. GOOD TO GO.' % row['state'].upper())
         else:
-            logger.critical('%s FAILED. No dice.' % row['state'].upper())
+            logger.critical('%r FAILED. No dice.' % row['state'].upper())
 
         import pdb;pdb.set_trace()
 
