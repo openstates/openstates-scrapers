@@ -14,7 +14,13 @@ class GACommitteeScraper(CommitteeScraper):
         sid = self.metadata['session_details'][session]['_guid']
         committees = self.cservice.GetCommitteesBySession(
             sid
-        )['CommitteeListing']
+        )
+
+        #if committees.strip() == "":
+        #    return  # If we get here, it's a problem.
+        # Commenting this out for future debugging. - PRT
+
+        committees = committees['CommitteeListing']
         for committee in committees:
             cid = committee['Id']
             committee = self.cservice.GetCommittee(cid)
