@@ -88,8 +88,8 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://mlis.state.md.us/other/PriorSession/index.htm',
-                     '(//table)[2]//th/text()')[1:]
+    return url_xpath('http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3',
+                     '//select[contains(@name, "cboSession")]/option/text()')
 
 
 def extract_text(doc, data):

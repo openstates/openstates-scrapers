@@ -21,6 +21,12 @@ metadata = {
             'start_year': 2011,
             'name': '187',
             'sessions': [ '187th' ]
+        },
+        {
+            'end_year': 2013,
+            'start_year': 2014,
+            'name': '188',
+            'sessions': [ '188th' ]
         }
     ],
     'name': 'Massachusetts',
@@ -35,6 +41,11 @@ metadata = {
             'type': 'primary',
             'display_name': '187th Legislature',
             '_scraped_name': '187th',
+        },
+        '188th': {
+            'type': 'primary',
+            'display_name': '188th Legislature',
+            '_scraped_name': '188th',
         }
     },
     'legislature_name': 'Massachusetts General Court',
