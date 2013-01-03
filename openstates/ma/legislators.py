@@ -72,6 +72,9 @@ class MALegislatorScraper(LegislatorScraper):
         if len(district):
             district = district[0].text.strip()
             district = clean_district(district)
+        else:
+            self.logger.warning('No district tab found for this hot garbage. Skipping.')
+            return
 
         party = root.xpath('//span[@class="legislatorAffiliation"]/text()')[0]
 
