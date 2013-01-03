@@ -1,6 +1,7 @@
 '''
 pip install google-api-python-client
 '''
+import re
 import StringIO
 import unicodecsv
 import unicodedata
@@ -10,6 +11,7 @@ import logbook
 import lxml.html
 import scrapelib
 import name_tools
+from nltk.tokenize import wordpunct_tokenize
 
 import drive_api
 
@@ -33,6 +35,25 @@ session = scrapelib.Scraper(**request_defaults)
 
 def strip_accents(s):
    return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+
+
+
+def clean_html(html):
+    """
+    Remove HTML markup from the given string. Borrowed from nltk.
+    """
+    # First we remove inline JavaScript/CSS:
+    cleaned = re.sub(r"(?is)<(script|style).*?>.*?(</\1>)", "", html.strip())
+    # Then we remove html comments. This has to be done before removing regular
+    # tags since comments can contain '>' characters.
+    cleaned = re.sub(r"(?s)<!--(.*?)-->[\n]?", "", cleaned)
+    # Next we can remove the remaining tags:
+    cleaned = re.sub(r"(?s)<.*?>", " ", cleaned)
+    # Finally, we deal with whitespace
+    cleaned = re.sub(r"&nbsp;", " ", cleaned)
+    cleaned = re.sub(r"  ", " ", cleaned)
+    cleaned = re.sub(r"  ", " ", cleaned)
+    return cleaned.strip()
 
 
 def fetch(url):
@@ -93,7 +114,8 @@ def main():
 
             # Get the actual legislature's page.
             html, doc = fetch(lower)
-            html_lower = html.lower()
+            html_lower = clean_html(html).lower()
+            html_lower_lines = html_lower.splitlines()
 
             logger.info('')
             logger.info('  Testing newly elected legislator names:')
@@ -106,14 +128,27 @@ def main():
                 except:
                     logger.warning("Couldn't get name forms for %r" % name)
                     continue
+                succeeded = False
                 for form in forms:
-                    if form in html_lower:
-                        # logger.info('    -PASS: elected %r found' % name)
-                        break
-                else:
+                    if len(form.split()) > 1:
+                        if form in html_lower:
+                            succeeded = True
+                            # logger.info('    -PASS: elected %r found' % name)
+                            break
+
+                    # Try a looser test to assume away middle initials.
+                    for line in html_lower_lines:
+                        toks = set(wordpunct_tokenize(form))
+                        if toks.issubset(set(wordpunct_tokenize(line))):
+                            succeeded = True
+                            break
+
+                if not succeeded:
+                    # This is such epic crap.
                     logger.info('    -FAIL: elected %r not found' % name)
                     failed = True
                     failcount += 1
+
             if failed:
                 state_passed = False
                 logger.info('')
@@ -131,13 +166,12 @@ def main():
                     logger.warning("Couldn't get name forms for %r" % name)
                     continue
                 for form in forms:
-                    if form in html_lower:
-                        logger.info('    -FAIL: retiree %r found' % name)
-                        failed = True
-                        failcount += 1
-                else:
-                    pass
-                    # logger.info('    -PASS: retiree %r not found' % name)
+                    if len(form.split()) > 1:
+                        if form in html_lower:
+                            logger.info('    -FAIL: retiree %r found' % name)
+                            failed = True
+                            failcount += 1
+
             if failed:
                 state_passed = False
                 logger.info('')
@@ -158,7 +192,7 @@ def main():
 
             # Get the actual legislature's page.
             html, doc = fetch(upper)
-            html_lower = html.lower()
+            html_lower = clean_html(html).lower()
 
             logger.info('')
             logger.info('  Testing newly elected legislator names:')
@@ -171,11 +205,24 @@ def main():
                 except:
                     logger.warning("Couldn't get name forms for %r" % name)
                     continue
+
+                succeeded = False
                 for form in forms:
-                    if form in html_lower:
-                        # logger.info('    -PASS: elected %r found' % name)
-                        break
-                else:
+                    if len(form.split()) > 1:
+                        if form in html_lower:
+                            succeeded = True
+                            # logger.info('    -PASS: elected %r found' % name)
+                            break
+
+                    # Try a looser test to assume away middle initials.
+                    for line in html_lower_lines:
+                        toks = set(wordpunct_tokenize(form))
+                        if toks.issubset(set(wordpunct_tokenize(line))):
+                            succeeded = True
+                            break
+
+                if not succeeded:
+                    # This is such epic crap.
                     logger.info('    -FAIL: elected %r not found' % name)
                     failed = True
                     failcount += 1
@@ -193,11 +240,15 @@ def main():
                 try:
                     forms = name_tools.name_forms(name)
                 except:
-                    logger.info('    -FAIL: retiree %r found' % name)
+                    logger.warning("Couldn't get name forms for %r" % name)
+                    continue
+                for form in forms:
+                    if len(form.split()) > 1:
+                        if form in html_lower:
+                            logger.info('    -FAIL: retiree %r found' % name)
+                            failed = True
+                            failcount += 1
 
-                else:
-                    pass
-                    # logger.info('    -PASS: retiree %r not found' % name)
             if failed:
                 state_passed = False
                 logger.info('')
