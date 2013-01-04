@@ -1046,7 +1046,6 @@ div.notification-preference {
     width: 120px;
 }
 
-
 .checkboxlabel{
     padding-left:9px;
     font-size: 13px;
@@ -1054,9 +1053,6 @@ div.notification-preference {
     margin:0;
 }
 
-#id_status_0{
-
-}
 
 .basline li{
     vertical-align: baseline;
@@ -1072,5 +1068,16 @@ div.notification-preference {
     position: relative;
     top: -3px;
     *overflow: hidden;
+}
+
+
+/* Bill Document Page */
+
+.iframeborder {
+    border: 1px solid #e5e5e5;
+}
+
+.bottomPad{
+    margin-bottom: 40px;
 }
 
