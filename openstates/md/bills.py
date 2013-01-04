@@ -158,14 +158,8 @@ class MDBillScraper(BillScraper):
             if (href and "votes" in href and href.endswith('htm') and 
                 href not in seen_votes):
                 seen_votes.add(href)
-                vote_url = href
-
-                if bill['session'] in ('2007', '2007s1', '2008', '2009',
-                                       '2010', '2011'):
-                    vote = self.parse_old_vote_page(vote_url)
-                else:
-                    vote = self.parse_vote_page(vote_url)
-                vote.add_source(vote_url)
+                vote = self.parse_vote_page(href)
+                vote.add_source(href)
                 bill.add_vote(vote)
 
 
@@ -222,7 +216,7 @@ class MDBillScraper(BillScraper):
 
         return vote
 
-    def scrape_bill_old(self, chamber, session, bill_id, url):
+    def scrape_bill_2012(self, chamber, session, bill_id, url):
         """ Creates a bill object """
         if len(session) == 4:
             session_url = session+'rs'
@@ -262,8 +256,9 @@ class MDBillScraper(BillScraper):
 
 
     def scrape(self, chamber, session):
+        session_slug = session if 's' in session else session + 'rs'
 
-        main_page = 'http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3&ys=' + session
+        main_page = 'http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3&ys=' + session_slug
         chamber_prefix = 'S' if chamber == 'upper' else 'H'
         html = self.urlopen(main_page)
         doc = lxml.html.fromstring(html)
@@ -277,5 +272,5 @@ class MDBillScraper(BillScraper):
                     self.info('scraping %ss %s-%s', prefix, begin, end)
                     for number in range(int(begin), int(end)+1):
                         bill_id = prefix + str(number)
-                        url = 'http://mgaleg.maryland.gov/webmga/frmMain.aspx?id=%s&stab=01&pid=billpage&tab=subject3&ys=%s' % (bill_id, session)
-                        self.scrape_bill_old(chamber, session, bill_id, url)
+                        url = 'http://mgaleg.maryland.gov/webmga/frmMain.aspx?id=%s&stab=01&pid=billpage&tab=subject3&ys=%s' % (bill_id, session_slug)
+                        self.scrape_bill_2012(chamber, session, bill_id, url)
