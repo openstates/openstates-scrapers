@@ -102,6 +102,8 @@ class COLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(p_url) as html:
             page = lxml.html.fromstring(html)
+            page.make_links_absolute(p_url)
+
             info = page.xpath( '//table/tr' )[1]
             tds = {
                 "name"  : 0,

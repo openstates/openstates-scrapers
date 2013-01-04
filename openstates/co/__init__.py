@@ -14,7 +14,7 @@ metadata = dict(
         {'name': '2011-2012',
          'sessions': ['2011A', '2012A', '2012B'],
          'start_year': 2011, 'end_year': 2012},
-        {'name': '2011-2012',
+        {'name': '2013-2014',
          'sessions': ['2013A'],
          'start_year': 2013, 'end_year': 2014},
         ],
