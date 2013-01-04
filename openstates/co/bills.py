@@ -1,6 +1,7 @@
 import datetime as dt
 import re
 import lxml.html
+import scrapelib
 from urlparse import urlparse
 
 from billy.scrape.bills import BillScraper, Bill
@@ -169,46 +170,50 @@ class COBillScraper(BillScraper):
         """
         Parse a bill versions page for all the versions
         """
-        with self.urlopen(bill_versions_url) as versions_html:
-            bill_versions_page = lxml.html.fromstring(versions_html)
-            trs = bill_versions_page.xpath('//form/table/tr')[3:]
-            cols = {
-                "type": 0,
-                "pdf": 1,
-                "wpd": 2
-            }
-            versions = []
-            for tr in trs:
-                if len(tr) == 3:  # jeezum crackers.
-                    name = tr[cols["type"]].text_content()
-                    if name[-1:] == ":":
-                        name = name[:-1]
+        try:
+            with self.urlopen(bill_versions_url) as versions_html:
+                bill_versions_page = lxml.html.fromstring(versions_html)
+        except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
+            return []
 
-                    wpd_link = tr[cols["wpd"]][0]
-                    wpd_text = wpd_link.text_content().strip()
-                    wpd_link = wpd_link.attrib["href"]
+        trs = bill_versions_page.xpath('//form/table/tr')[3:]
+        cols = {
+            "type": 0,
+            "pdf": 1,
+            "wpd": 2
+        }
+        versions = []
+        for tr in trs:
+            if len(tr) == 3:  # jeezum crackers.
+                name = tr[cols["type"]].text_content()
+                if name[-1:] == ":":
+                    name = name[:-1]
 
-                    pdf_link = tr[cols["pdf"]][0]
-                    pdf_text = pdf_link.text_content().strip()
-                    pdf_link = pdf_link.attrib["href"]
+                wpd_link = tr[cols["wpd"]][0]
+                wpd_text = wpd_link.text_content().strip()
+                wpd_link = wpd_link.attrib["href"]
 
-                    if pdf_link.strip() != "" and pdf_text != "":
-                        link = CO_URL_BASE + pdf_link
-                        format = "application/pdf"
-                        versions.append({
-                            "name": name,
-                            "mimetype": format,
-                            "link": link
-                        })
+                pdf_link = tr[cols["pdf"]][0]
+                pdf_text = pdf_link.text_content().strip()
+                pdf_link = pdf_link.attrib["href"]
 
-                    if wpd_link.strip() != "" and wpd_text != "":
-                        link = CO_URL_BASE + wpd_link
-                        format = "application/vnd.wordperfect"
-                        versions.append({
-                            "name": name,
-                            "mimetype": format,
-                            "link": link
-                        })
+                if pdf_link.strip() != "" and pdf_text != "":
+                    link = CO_URL_BASE + pdf_link
+                    format = "application/pdf"
+                    versions.append({
+                        "name": name,
+                        "mimetype": format,
+                        "link": link
+                    })
+
+                if wpd_link.strip() != "" and wpd_text != "":
+                    link = CO_URL_BASE + wpd_link
+                    format = "application/vnd.wordperfect"
+                    versions.append({
+                        "name": name,
+                        "mimetype": format,
+                        "link": link
+                    })
 
             return versions
 
@@ -247,29 +252,33 @@ class COBillScraper(BillScraper):
         except KeyError:
             return ret
 
-        with self.urlopen(bill_history_url) as history_html:
-            bill_history_page = lxml.html.fromstring(history_html)
-            nodes = bill_history_page.xpath('//form/b/font')
+        try:
+            with self.urlopen(bill_history_url) as history_html:
+                bill_history_page = lxml.html.fromstring(history_html)
+        except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
+            return []
 
-            actions = nodes[3].text_content()
+        nodes = bill_history_page.xpath('//form/b/font')
 
-            for action in actions.split('\n'):
-                if action.strip() == "":
-                    continue
+        actions = nodes[3].text_content()
 
-                date_string = action[:action.find(" ")]
-                if ":" in date_string:
-                    date_string = action[:action.find(":")]
-                if "No" == date_string:  # XXX Remove me
-                # as soon as sanity is on:
-                # http://www.leg.state.co.us/clics/clics2012a/csl.nsf/billsummary/C150552896590FA587257961006E7C0B?opendocument
-                    continue
+        for action in actions.split('\n'):
+            if action.strip() == "":
+                continue
 
-                date_time = dt.datetime.strptime(date_string, "%m/%d/%Y")
-                action = action[action.find(" ") + 1:]
-                ret.append((action, date_time))
+            date_string = action[:action.find(" ")]
+            if ":" in date_string:
+                date_string = action[:action.find(":")]
+            if "No" == date_string:  # XXX Remove me
+            # as soon as sanity is on:
+            # http://www.leg.state.co.us/clics/clics2012a/csl.nsf/billsummary/C150552896590FA587257961006E7C0B?opendocument
+                continue
 
-            return ret
+            date_time = dt.datetime.strptime(date_string, "%m/%d/%Y")
+            action = action[action.find(" ") + 1:]
+            ret.append((action, date_time))
+
+        return ret
 
     def scrape_bill_sheet(self, session, chamber):
         """
@@ -307,6 +316,9 @@ class COBillScraper(BillScraper):
 
                 bill_title = title_and_sponsor.text
                 bill_title_and_sponsor = title_and_sponsor.text_content()
+                if bill_title is None:
+                    continue  # Odd ...
+
                 sponsors = bill_title_and_sponsor.replace(bill_title, "").\
                     replace(" & ...", "").split("--")
 
