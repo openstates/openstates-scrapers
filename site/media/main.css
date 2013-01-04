@@ -204,6 +204,8 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 
 /* header titles */
 
+
+
 h1, h2, h3, h4 { font-weight: normal; color: #635f5c; max-width: 580px;}
 h2 { margin-bottom: 30px; font-size: 230%; line-height: 35px; margin-top: 40px;}
 h3, .h2 { margin-bottom: 30px; font-size: 190%; color: #504a45; line-height: 32px;}
@@ -211,7 +213,7 @@ h4, .h3 { margin-bottom: 25px; font-size: 140%; line-height: 29px; text-transfor
 h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: block;}
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
 .h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
-h1 { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 220%; line-height: 30px; font-weight: normal;}
+h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 800; font-size: 220%; line-height: 30px;}
 
 .sidebar h4{
 	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
@@ -223,7 +225,7 @@ h1 { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 220%; lin
 a.colorRollover:link, a.colorRollover:active, a.colorRollover:visited { color: #55524f; border-bottom: 1px dotted #d2cdc4;}
 a.colorRollover:hover { color: #be9c16; }
 
-.tip, time, .author { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #b4b1ab; display: block;}
+.tip, time, .author { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #b4b1ab; display: block; text-transform: none;}
 .tip { margin-bottom: 20px;}
 .tipSm { margin-bottom: 10px; font-weight: normal;}
 #rtColumn .tip { color: #8e8883;}
@@ -427,16 +429,16 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
     font-size: 80%;
     vertical-align: middle;
     line-height: 1.5;
-    text-align: left;
+    text-align: center;
 }
-#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #d3d0c9; padding-top: 4px; padding-left: 21px;}
+#stage1 { background: url(images/bg_bill1.png) top left no-repeat; width: 83px; height: 47px; color: #635F5C; padding-top: 4px; padding-left: 21px;}
 .active #stage1 { background: url(images/bg_bill1.png) bottom left no-repeat; color: #6f6b66;}
-#stage2, #stage3, #stage4, #stage5 { background-color: #f4f8e7; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #d3d0c9; padding: 4px 7px 0 7px; max-height: 48px !important; }
+#stage2, #stage3, #stage4, #stage5 { background-color: #D1E2DB; border: 1px solid #dcddd2; width: 78px; height: 45px; color: #98958A; padding: 4px 7px 0 7px; max-height: 48px !important; }
 #stage2, #stage3 { width: 120px; max-height: 47px !important;}
-.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background-color: #EBECE2; border: 1px solid #DADBD2; color: #6f6b66;}
+.active #stage2, .active #stage3, .active #stage4, .active #stage5 { background-color: #B1D1CA; border: 1px solid #DADBD2; color: #6f6b66;}
 
 
-#billAction { float: right; font-family: "josefin-1","josefin-2",sans-serif; font-style: normal; font-weight: 300; text-transform: uppercase;}
+#billAction { float: right; font-family: arial, sans-serif; font-style: normal; font-weight: 300; text-transform: uppercase;}
 #billAction li { float: left; margin-left: 3px; text-align: center;}
 #billAction .tip { font-size: 90%; margin-top: 2px;}
 .withTimeline { padding-top: 60px; max-width: 450px;}
