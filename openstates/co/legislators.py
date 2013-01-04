@@ -75,6 +75,7 @@ class COLegislatorScraper(LegislatorScraper):
                 pass
             infoblock = page.xpath("//center")
             info = infoblock[0].text_content()
+
             number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)
             if len(number) > 0:
                 number = number[0]
@@ -102,6 +103,8 @@ class COLegislatorScraper(LegislatorScraper):
 
         with self.urlopen(p_url) as html:
             page = lxml.html.fromstring(html)
+            page.make_links_absolute(p_url)
+
             info = page.xpath( '//table/tr' )[1]
             tds = {
                 "name"  : 0,
@@ -119,11 +122,11 @@ class COLegislatorScraper(LegislatorScraper):
 
             urls = page.xpath( '//a' )
             ret['photo_url'] = ""
+            home_page = page.xpath("//a[contains(text(), 'Home Page')]")
 
-            if len(urls) > 0:
-                home_page = urls[0]
+            if home_page != []:
+                home_page = home_page[0]
                 ret['homepage'] = home_page.attrib['href'].strip()
-                # home_page.attrib['href']
                 homepage = self.parse_homepage(
                     home_page.attrib['href'].strip() )
 
