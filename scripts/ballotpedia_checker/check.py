@@ -122,6 +122,7 @@ def main():
             failed = False
             failcount = 0
             for name in elected:
+                name = name.lower()
                 name = strip_accents(unicode(name)).encode('utf-8')
                 try:
                     forms = name_tools.name_forms(name)
@@ -159,6 +160,7 @@ def main():
             failed = False
             failcount = True
             for name in retiring:
+                name = name.lower()
                 name = strip_accents(unicode(name)).encode('utf-8')
                 try:
                     forms = name_tools.name_forms(name)
@@ -192,13 +194,17 @@ def main():
 
             # Get the actual legislature's page.
             html, doc = fetch(upper)
-            html_lower = clean_html(html).lower()
+            html_upper = clean_html(html).lower()
+            html_upper_lines = html_upper.splitlines()
 
             logger.info('')
             logger.info('  Testing newly elected legislator names:')
             failed = False
             failcount = True
             for name in elected:
+                name = name.lower()
+                # if 'mcdowell' in name:
+                #     import ipdb;ipdb.set_trace()
                 name = strip_accents(unicode(name)).encode('utf-8')
                 try:
                     forms = name_tools.name_forms(name)
@@ -209,15 +215,22 @@ def main():
                 succeeded = False
                 for form in forms:
                     if len(form.split()) > 1:
-                        if form in html_lower:
+                        if form in html_upper:
                             succeeded = True
                             # logger.info('    -PASS: elected %r found' % name)
                             break
 
                     # Try a looser test to assume away middle initials.
-                    for line in html_lower_lines:
+                    for line in html_upper_lines:
                         toks = set(wordpunct_tokenize(form))
-                        if toks.issubset(set(wordpunct_tokenize(line))):
+                        toks = toks - set('.,-();:')
+                        line_toks = set(wordpunct_tokenize(line))
+                        # if toks & line_toks:
+                        #     print '-'  *50
+                        #     print toks
+                        #     print list(sorted(line_toks))
+                        #     import ipdb;ipdb.set_trace()
+                        if toks.issubset(line_toks):
                             succeeded = True
                             break
 
@@ -236,6 +249,7 @@ def main():
             logger.info('  Testing retired incumbent names:')
             failed = False
             for name in retiring:
+                name = name.lower()
                 name = strip_accents(unicode(name)).encode('utf-8')
                 try:
                     forms = name_tools.name_forms(name)
