@@ -47,7 +47,7 @@ class GALegislatorScraper(LegislatorScraper):
                     legislative_service = leg_service
 
             # legislative_service shouldn't be empty but just in case it is,
-            # we set chamber, party and district to None causing an expection
+            # we set chamber, party and district to None causing an exception
             # when trying to add the legislator
 
             if legislative_service:	
@@ -72,7 +72,7 @@ class GALegislatorScraper(LegislatorScraper):
                 party = None
                 chamber, district = [None,None]
             
-            # leaving off first and last for upstream
+            # Leaving off first and last for upstream
             legislator = Legislator(
                 term,
                 chamber,
@@ -145,7 +145,7 @@ class GALegislatorScraper(LegislatorScraper):
                     email=district_contact_info[0]
                 )
 
-            # add committees
+            # Add committees
             if hasattr(legislative_service['CommitteeMemberships'],'CommitteeMembership') and (legislative_service['CommitteeMemberships']['CommitteeMembership']) > 0:
                 for committee_membership in legislative_service['CommitteeMemberships']['CommitteeMembership']:
                     committee_name = committee_membership['Committee']['Name']
@@ -159,8 +159,6 @@ class GALegislatorScraper(LegislatorScraper):
         
             legislator.add_source(self.ssource)
             self.save_legislator(legislator)
-
-            pp.pprint(legislator)
 
     def scrape(self, term, chambers):
         for t in self.metadata['terms']:
