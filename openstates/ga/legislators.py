@@ -1,8 +1,6 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
 
-import pprint as pp
-
 class GALegislatorScraper(LegislatorScraper):
 	jurisdiction = 'ga'
 	sservice = get_client("Members").service
