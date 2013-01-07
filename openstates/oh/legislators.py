@@ -152,7 +152,6 @@ class OHLegislatorScraper(LegislatorScraper):
                 "\d+\.png",
                 legislator.attrib['style']
             )[-1].split(".", 1)[0]
-            print district
 
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=homepage, photo_url=img)
