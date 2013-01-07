@@ -18,6 +18,9 @@ metadata = dict(
         {'name': '82',
          'sessions': ['82', '821'],
          'start_year': 2011, 'end_year': 2012,},
+        {'name': '83',
+         'sessions': ['83'],
+         'start_year': 2013, 'end_year': 2014,},
         ],
     session_details={
         '81': {'start_date': datetime.date(2009, 1, 13),
@@ -40,7 +43,13 @@ metadata = dict(
         '821': {'type': 'special',
                 'display_name': '82nd Legislature, 1st Called Session',
                 '_scraped_name': '82(1) - 2011',
-               }
+               },
+        '83': {'start_year': 2013,
+               'end_year': 2014,
+               'type': 'primary',
+               'display_name': '83ed Legislature',
+               '_scraped_name': '83(R) - 2013',
+              },
     },
     feature_flags=['events', 'subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
