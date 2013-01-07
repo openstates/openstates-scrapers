@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 import datetime
-import itertools
 import re
 
 import lxml.html
-from scrapelib import HTTPError
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
@@ -59,6 +56,15 @@ def _clean_sponsor(name):
     if ', District' in name:
         name = name.rsplit(',', 1)[0]
     return name.strip().strip('*')
+
+
+def _get_td(doc, th_text):
+    td = doc.xpath('//th[text()="%s"]/following-sibling::td' % th_text)
+    if td:
+        return td[0]
+    td = doc.xpath('//th/span[text()="Broad Subject(s):"]/../following-sibling::td')
+    if td:
+        return td[0]
 
 
 class MDBillScraper(BillScraper):
@@ -255,6 +261,89 @@ class MDBillScraper(BillScraper):
         self.save_bill(bill)
 
 
+    def scrape_bill(self, chamber, session, bill_id, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        title = doc.xpath('//h3[@class="h3billright"]')[0].text
+        # TODO: grab summary (none present at time of writing)
+
+        if 'B' in bill_id:
+            _type = ['bill']
+        elif 'J' in bill_id:
+            _type = ['joint resolution']
+        else:
+            raise ValueError('unknown bill type ' + bill_id)
+
+        bill = Bill(session, chamber, bill_id, title, type=_type)
+        bill.add_source(url)
+
+        # process sponsors
+        sponsors = _get_td(doc, 'All Sponsors:').text_content()
+        sponsors = sponsors.strip('Delegates ')
+        sponsors = sponsors.strip('Delegate ')
+        sponsors = sponsors.strip('Senator ')
+        sponsors = sponsors.strip('Senators ')
+        sponsor_type = 'primary'
+        for sponsor in re.split(', (?:and )?', sponsors):
+            bill.add_sponsor(sponsor_type, sponsor)
+            sponsor_type = 'cosponsor'
+
+        # subjects
+        subjects = _get_td(doc, 'Narrow Subject(s):').text_content()
+        bill['subjects'] = [subjects.split(' -see also-')[0]]
+
+        # documents
+        self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
+        # actions
+        self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
+
+        # TODO: votes??
+
+        self.save_bill(bill)
+
+
+    def scrape_documents(self, bill, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        for td in doc.xpath('//table[@class="billdocs"]//td'):
+            a = td.xpath('a')[0]
+            if a.text == 'Text':
+                bill.add_version('Bill Text', a.get('href'),
+                                 mimetype='application/pdf')
+            else:
+                raise ValueError('unknown document type')
+
+
+    def scrape_actions(self, bill, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        for row in doc.xpath('//table[@class="billgrid"]/tr')[1:]:
+            new_chamber, cal_date, leg_date, action, proceedings = row.xpath('td')
+
+            if new_chamber.text == 'Senate':
+                chamber = 'upper'
+            elif new_chamber.text == 'House':
+                chamber = 'lower'
+            elif new_chamber.text is not None:
+                raise ValueError('unexpected chamber: ' + new_chamber.text)
+
+            action = action.text
+            action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
+
+            atype, committee = _classify_action(action)
+            kwargs = { "type": atype }
+            if committee is not None:
+                kwargs['committees'] = committee
+
+            bill.add_action(chamber, action, action_date, **kwargs)
+
+
     def scrape(self, chamber, session):
         session_slug = session if 's' in session else session + 'rs'
 
@@ -273,4 +362,7 @@ class MDBillScraper(BillScraper):
                     for number in range(int(begin), int(end)+1):
                         bill_id = prefix + str(number)
                         url = 'http://mgaleg.maryland.gov/webmga/frmMain.aspx?id=%s&stab=01&pid=billpage&tab=subject3&ys=%s' % (bill_id, session_slug)
-                        self.scrape_bill_2012(chamber, session, bill_id, url)
+                        if session < '2013':
+                            self.scrape_bill_2012(chamber, session, bill_id, url)
+                        else:
+                            self.scrape_bill(chamber, session, bill_id, url)
