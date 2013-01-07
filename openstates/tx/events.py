@@ -18,7 +18,7 @@ class TXEventScraper(EventScraper):
         return page
 
     def scrape(self, chamber, session):
-        if not session.startswith('82'):
+        if not session.startswith('83'):  # XXX: Fixme
             raise NoDataForPeriod(session)
 
         self.scrape_committee_upcoming(session, chamber)
