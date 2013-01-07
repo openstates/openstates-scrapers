@@ -43,6 +43,11 @@ class WALegislatorScraper(LegislatorScraper):
                     party, party)
 
                 district = xpath(member, "string(wa:District)")
+                if district == '0':
+                    # For some reason, an empty record for district 0
+                    # was added in 2013. Skip it.
+                    continue
+
                 email = xpath(member, "string(wa:Email)")
                 leg_id = xpath(member, "string(wa:Id)")
                 phone = xpath(member, "string(wa:Phone)")
