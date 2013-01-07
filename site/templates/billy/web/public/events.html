@@ -14,16 +14,34 @@
 $(document).ready(function() {
 
     // Where 'current' refers to the current state of the calendar widget.
-    window.display_month = {{now.month}};
-    window.display_year = {{now.year}};
+    window.display_month = {{display_date.month}};
+    window.display_year = {{display_date.year}};
 
     var doc = $(this);
 
     // See the template include for #data-main.
-    $(this).pjax('a', '#events-pjax');
+    // $(this).pjax('a', '#events-pjax');
 
+    var update_events_list = function(year, month){
+      console.log('Updating list to month: ' + month + ', and year: ' + year);
+      var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
+      console.log(url);
 
-    var update_calendar = function(month, year){
+      $.ajax({
+        url: url,
+        success:function(data){
+          var events = $("#events");
+          if(data.length == 0){
+            events.append('<div>No events where found for this month.</div>')
+          } else {
+            events.empty();
+            events.append(data);
+          }
+        }
+      });
+    }
+
+    var update_calendar = function(year, month){
       console.log('Updating calendar to month: ' + month + ', and year: ' + year);
 
       $("#calendar").calendarWidget({month: month, year: year});
@@ -32,7 +50,6 @@ $(document).ready(function() {
           days_with_events = [];
 
       $.getJSON(url, function(data){
-        console.log(data.length);
         $.each(data, function(i, event_){
 
           events_count += 1;
@@ -77,8 +94,8 @@ $(document).ready(function() {
     }
 
     // Load events for the current year on page load.
-    update_calendar({{now.month}} - 1, {{now.year}});
-    window.update_calendar = update_calendar;
+    update_events_list({{display_date.year}}, {{display_date.month}} - 1);
+    update_calendar({{display_date.year}}, {{display_date.month}} - 1);
 
     // The calendar has been rendered; now we can bind functions to the it.
     // Update the calendar on pressing the month nav links on the calendar.
@@ -94,7 +111,8 @@ $(document).ready(function() {
           prev_month = window.display_month - 1;
           prev_year = window.display_year;
         }
-        update_calendar(prev_month, prev_year)
+        update_events_list(prev_year, prev_month)
+        update_calendar(prev_year, prev_month)
         });
     }
 
@@ -109,21 +127,21 @@ $(document).ready(function() {
           next_month = window.display_month + 1;
           next_year = window.display_year;
         }
-        update_calendar(next_month, next_year)
+        update_events_list(next_year, next_month)
+        update_calendar(next_year, next_month)
         });
     }
-
-    // Tell pjax not to jump to the top of the
-    // page after loading.
-    $.pjax.defaults.scrollTo = false;
 
     // When the pjax operation is done, re-run pjax_setup to bind
     // the various calendar listeners.
     doc.bind('calendar:redraw', {}, bind_nav_prev);
     doc.bind('calendar:redraw', {}, bind_nav_next);
 
+    update_events_list({{displa}})
     doc.trigger('calendar:redraw');
 
+    window.update_calendar = update_calendar;
+    window.update_events_list = update_events_list;
 });
 </script>
 {% endblock %}
@@ -137,8 +155,7 @@ $(document).ready(function() {
     <p>Please enable Javascript to view this calendar.</p>
   </div>
 </div>
-<div class="eightCol colRt">
-{% include "billy/web/public/events-pjax.html" %}
+<div id="events" class="eightCol colRt">
 </div>
 <div class="clear"></div>
 
