@@ -7,48 +7,46 @@ class MDCommitteeScraper(CommitteeScraper):
     jurisdiction = 'md'
 
     def scrape(self, term, chambers):
-        lower = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
-        upper = 'http://www.msa.md.gov/msa/mdmanual/05sen/html/sencom.html'
-        joint = 'http://www.msa.md.gov/msa/mdmanual/07leg/html/ga.html'
-
-        if 'lower' in chambers:
-            self.scrape_committees('lower', lower)
-        if 'upper' in chambers:
-            self.scrape_committees('upper', upper)
-            self.scrape_committees('joint', joint)
-
-    def scrape_committees(self, chamber, url):
+        # committee list
+        url = 'http://mgaleg.maryland.gov/webmga/frmcommittees.aspx?pid=commpage&tab=subject7'
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
-        # distinct URLs containing /com/
-        committees = set([l.get('href') for l in doc.xpath('//li/a')
-                          if l.get('href', '').find('/com/') != -1])
+        doc.make_links_absolute(url)
 
-        for com in committees:
-            com_url = 'http://www.msa.md.gov'+com
-            chtml = self.urlopen(com_url)
-            cdoc = lxml.html.fromstring(chtml)
-            for h in cdoc.xpath('//*[self::h2 or self::h3]'):
-                if h.text:
-                    committee_name = h.text
-                    break
+        for a in doc.xpath('//a[contains(@href, "cmtepage")]'):
+            url = a.get('href').replace('stab=01', 'stab=04')
+            chamber = {'House': 'lower', 'Senate': 'upper'}[a.xpath('../following-sibling::td')[-2].text]
+            if chamber in chambers:
+                self.scrape_committee(chamber, a.text, url)
 
-            # non committees
-            if 'DEFUNCT' in committee_name or 'ORGANIZATION' in committee_name:
-                continue
 
-            cur_com = Committee(chamber, committee_name)
-            cur_com.add_source(com_url)
-            for l in cdoc.xpath('//a[@href]'):
-                txt = l.text or ''
-                if ' SUBCOMMITTEE' in txt or 'OVERSIGHT COMMITTEE' in txt:
-                    self.save_committee(cur_com)
-                    cur_com = Committee(chamber, committee_name, l.text)
-                    cur_com.add_source(com_url)
-                elif 'html/msa' in l.get('href'):
-                    prev = l.getprevious()
-                    name = l.text
-                    if name.endswith(','):
-                        name = name[:-1]
-                    cur_com.add_member(name)
-            self.save_committee(cur_com)
+    def scrape_committee(self, chamber, name, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        com = Committee(chamber, name)
+        com.add_source(url)
+
+        for table in doc.xpath('//table[@class="grid"]'):
+            rows = table.xpath('tr')
+            sub_name = rows[0].getchildren()[0].text
+
+            # new table - subcommittee
+            if sub_name != 'Full Committee':
+                com = Committee(chamber, name, subcommittee=sub_name)
+                com.add_source(url)
+
+            for row in rows[1:]:
+                name = row.getchildren()[0].text_content()
+                if name.endswith(' (Chair)'):
+                    name = name.strip(' (Chair)')
+                    role = 'chair'
+                elif name.endswith(' (Vice Chair)'):
+                    name = name.strip(' (Vice Chair)')
+                    role = 'vice chair'
+                else:
+                    role = 'member'
+                com.add_member(name, role)
+
+            self.save_committee(com)
