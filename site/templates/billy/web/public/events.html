@@ -17,13 +17,17 @@ $(document).ready(function() {
     window.current_month = {{now.month}};
     window.current_year = {{now.year}};
 
-    $("#calendar").calendarWidget();
+    var doc = $(this);
+    // $("#calendar").calendarWidget();
 
     // See the template include for #data-main.
     $(this).pjax('a', '#events-pjax');
 
+
     var update_calendar = function(month, year){
-      $("#calendar").calendarWidget(month, year);
+      console.log('Updating calendar to month: ' + month + ', and year: ' + year);
+
+      $("#calendar").calendarWidget({month: month, year: year});
       var url = '/{{abbr}}/events/json_for_date/' + year + '/' + month + '/';
       $.getJSON(url, function(data){
         $.each(data, function(i, event_){
@@ -34,24 +38,64 @@ $(document).ready(function() {
               event_year = event_date.getYear();
           if (event_month === month && event_year === year) {
             var day = $('.day' + event_date.getDay());
-            console.log(day);
+            // Append a dot to this day on the calendar.
             day.append('<span class="events">' + event_.description + '</span>');
             }
         });
       });
       window.current_month = month;
       window.current_year = year;
+
+      doc.trigger('calendar:redraw');
     }
 
+    // Load events for the current year on page load.
+    update_calendar({{now.month}} - 1, {{now.year}});
+
+    // The calendar has been rendered; now we can bind functions to the it.
     // Update the calendar on pressing the month nav links on the calendar.
-    $('#calendar .nav-prev').click(function(){
-      // XXX: This shit will fail in January!!!!!!!!!!
-      // Also, javascript date months are 0 based.
-      console.log('Nav prev');
-      var prev_month = window.current_month - 1;
-      update_calendar(prev_month, window.current_year - 1)
-      });
-    update_calendar({{now.month}}, {{now.year}});
+    function bind_nav_prev(){
+      $('#calendar .nav-prev').click(function(){
+        var prev_month, prev_year;
+
+        // If current month is January...
+        if (window.current_month == 0) {
+          prev_month = 11;
+          prev_year = window.current_year - 1;
+        } else {
+          prev_month = window.current_month - 1;
+          prev_year = window.current_year;
+        }
+        update_calendar(prev_month, prev_year)
+        });
+    }
+
+    function bind_nav_next() {
+      $('#calendar .nav-next').click(function(){
+        var next_month, next_year;
+        // If current month is January...
+        if (window.current_month == 11) {
+          next_month = 0;
+          next_year = window.current_year + 1;
+        } else {
+          next_month = window.current_month + 1;
+          next_year = window.current_year;
+        }
+        update_calendar(next_month, next_year)
+        });
+    }
+
+    // Tell pjax not to jump to the top of the
+    // page after loading.
+    $.pjax.defaults.scrollTo = false;
+
+    // When the pjax operation is done, re-run pjax_setup to bind
+    // the various calendar listeners.
+    doc.bind('calendar:redraw', {}, bind_nav_prev);
+    doc.bind('calendar:redraw', {}, bind_nav_next);
+
+    doc.trigger('calendar:redraw');
+
 });
 </script>
 {% endblock %}
