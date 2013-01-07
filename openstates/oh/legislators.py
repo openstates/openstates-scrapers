@@ -133,7 +133,9 @@ class OHLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for legislator in page.xpath("//div[@class='memberModule']"):
+        for legislator in page.xpath("//div[contains(concat(' ', "
+                "normalize-space(@class), ' '), ' memberModule ')]"):
+
             img = legislator.xpath(
                 ".//div[@class='thumbnail']//img")[0].attrib['src']
             data = legislator.xpath(".//div[@class='data']")[0]
@@ -150,6 +152,7 @@ class OHLegislatorScraper(LegislatorScraper):
                 "\d+\.png",
                 legislator.attrib['style']
             )[-1].split(".", 1)[0]
+            print district
 
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=homepage, photo_url=img)
