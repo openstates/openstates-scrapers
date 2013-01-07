@@ -109,86 +109,56 @@ class OHLegislatorScraper(LegislatorScraper):
                     leg.add_source(rep_url)
                     self.save_legislator(leg)
 
-    def scrape_senate_committees(self, url):
-        committees = []
-        with self.urlopen(url) as page:
+    def scrape_senate_homepage(self, leg, homepage, term):
+        with self.urlopen(homepage) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-        for link in page.xpath(
-            "//table[@class='blackGold']//a[contains(@href, 'committees')]"):
+        page.make_links_absolute(homepage)
+        bio = page.xpath(
+            "//div[@class='biography']//div[@class='right']//p/text()")
+        if bio != []:
+            bio = bio[0]
+            leg['biography'] = bio
 
-            committee = link.text_content()
-            title = "Member"
-
-            if "(" in committee:
-                committee, title = committee.rsplit("(", 1)
-                title, _ = title.split(")", 1)
-                committee, title = committee.strip(), title.strip()
-
-            committees.append({
-                "committee": committee,
-                "title": title
-            })
-        return committees
-
+        ctties = page.xpath("//div[@class='committeeList']//a")
+        for entry in [x.text_content() for x in ctties]:
+            chmbr = "joint" if "joint" in entry.lower() else "upper"
+            leg.add_role('committee member',
+                         term=term,
+                         chamber=chmbr,
+                         committee=entry)
 
     def scrape_senators(self, chamber, term):
-        url = 'http://www.ohiosenate.gov/directory.html'
+        url = 'http://www.ohiosenate.gov/senate/members/senate-directory'
         with self.urlopen(url) as page:
             page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page.make_links_absolute(url)
 
-            for el in page.xpath('//table[@class="fullWidth"]/tr/td'):
-                sen_link = el.xpath('a[@class="senatorLN"]')[1]
-                sen_url = sen_link.get('href')
+        for legislator in page.xpath("//div[@class='memberModule']"):
+            img = legislator.xpath(
+                ".//div[@class='thumbnail']//img")[0].attrib['src']
+            data = legislator.xpath(".//div[@class='data']")[0]
+            homepage = data.xpath(".//a[@class='black']")[0]
+            full_name = homepage.text_content()
+            homepage = homepage.attrib['href']
+            party = data.xpath(
+                ".//span[@class='partyLetter']")[0].text_content()
+            party = {"R": "Republican", "D": "Democratic"}[party]
+            office_lines = data.xpath("child::text()")
+            phone = office_lines.pop(-1)
+            office = "\n".join(office_lines)
+            district = re.findall(
+                "\d+\.png",
+                legislator.attrib['style']
+            )[-1].split(".", 1)[0]
 
-                full_name = sen_link.text
-                full_name = full_name[0:-2]
-                if full_name == 'To Be Announced':
-                    continue
+            leg = Legislator(term, chamber, district, full_name,
+                             party=party, url=homepage, photo_url=img)
 
-                district = el.xpath('string(h3)').split()[1]
+            leg.add_office('capitol', 'Capitol Office',
+                           address=office,
+                           phone=phone)
 
-                party = el.xpath('string(a[@class="senatorLN"]/span)')
+            self.scrape_senate_homepage(leg, homepage, term)
 
-                if party == "D":
-                    party = "Democratic"
-                elif party == "R":
-                    party = "Republican"
-
-                office_phone = el.xpath("b[text() = 'Phone']")[0].tail
-                office_phone = office_phone.strip(' :')
-
-                office = ", ".join([x.strip() for x in \
-                                    el.xpath("./text()")[2:-1]])
-
-                photo_url = el.xpath("a/img")[0].attrib['src']
-                email = el.xpath('.//span[@class="tan"]/text()')[1]
-
-                leg = Legislator(term, chamber, district, full_name,
-                                 party=party, photo_url=photo_url, url=sen_url,
-                                 email="")
-
-                committees = self.scrape_senate_committees(sen_url)
-
-                leg.add_office('capitol',
-                               'Capitol Office',
-                               address=office,
-                               phone=office_phone)
-
-                leg.add_source(url)
-                leg.add_source(sen_url)
-
-                for committee in committees:
-                    chmbr = chamber
-                    if "joint" in committee['committee'].lower():
-                        chmbr = "joint"
-
-                    leg.add_role('committee member',
-                        term=term,
-                        chamber=chmbr,
-                        committee=committee['committee'],
-                        position=committee['title']
-                    )
-
-                self.save_legislator(leg)
+            leg.add_source(url)
+            self.save_legislator(leg)
