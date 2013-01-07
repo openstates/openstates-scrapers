@@ -47,16 +47,19 @@
             <p>{{ bill.title|capfirst }}</p>
         </div>
 
-        <h3>{{version.name}}</h3>
-        <a href="{{version.url}}">Original Document</a>
+        <h3 class="tenCol colLt">{{version.name}}</h3>
 
-        <iframe src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+        <div class="tenCol colLtSm bottomPad">
+            <a class="fourCol colLt" href="{{version.url}}">Original Document</a>
 
-        <h4>Other Versions</h4>
-        <ul>
-            <li><a href="#">Introduced Version</a></li>
-            <li><a href="#">Amended Version</a></li>
-        </ul>
+            <p class="twoCol colLtSm author">Other Versions:</p>
+                <ul>
+                    <li class="twoCol colLtSm"><a href="#">Introduced Version</a></li>
+                    <li class="twoCol colLtSm"><a href="#">Amended Version</a></li>
+                </ul>
+        </div>
+        <iframe class="iframeborder" src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+
     </div>
 
     {% sources bill %}
