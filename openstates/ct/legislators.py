@@ -15,16 +15,14 @@ class CTLegislatorScraper(LegislatorScraper):
         super(CTLegislatorScraper, self).__init__(*args, **kwargs)
         self._scrape_committee_names()
 
-    def scrape(self, chamber, term):
-
-        office_code = {'upper': 'S', 'lower': 'H'}[chamber]
-
+    def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         data = self.urlopen(leg_url)
         page = open_csv(data)
 
         for row in page:
-            if office_code != row['office code']:
+            chamber = {'H': 'lower', 'S': 'upper'}[row['office_code']]
+            if chamber not in chambers:
                 continue
 
             district = row['dist'].lstrip('0')
