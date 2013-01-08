@@ -6,15 +6,13 @@ class GALegislatorScraper(LegislatorScraper):
     sservice = get_client("Members").service
     ssource = get_url("Members")
 
-    def clean_list(self,dirty_list):
+    def clean_list(self, dirty_list):
         new_list = []
-
         for x in dirty_list:
             if x is None:
                 new_list.append(x)
             else:
                 new_list.append(x.strip())
-
         return new_list
 
     def scrape_session(self, term, chambers, session):
@@ -46,11 +44,7 @@ class GALegislatorScraper(LegislatorScraper):
                 if leg_service['Session']['Id'] == sid:
                     legislative_service = leg_service
 
-            # legislative_service shouldn't be empty but just in case it is,
-            # we set chamber, party and district to None causing an exception
-            # when trying to add the legislator
-
-            if legislative_service:	
+            if legislative_service:
                 party = legislative_service['Party']
 
                 if party == 'Democrat':
@@ -58,37 +52,43 @@ class GALegislatorScraper(LegislatorScraper):
 
                 if party.strip() == '':
                     party = 'other'
-                
+
                 chamber, district = (
-                    legislative_service['District'][x] for x in ['Type', 'Number']
+                    legislative_service['District'][x] for x in [
+                        'Type', 'Number'
+                    ]
                 )
 
                 chamber = {
                     "House": 'lower',
                     "Senate": 'upper'
                 }[chamber]
-
             else:
-                party = None
-                chamber, district = [None,None]
-            
-            # Leaving off first and last for upstream
+                raise Exception("Something very bad is going on with the "
+                                "Legislative service")
+
+
             legislator = Legislator(
                 term,
                 chamber,
                 str(district),
                 full_name,
                 party=party,
-            #	last_name=last_name,
-            #	first_name=first_name,
+                last_name=last_name,
+                first_name=first_name,
                 _guid=guid
             )
 
             capital_address = self.clean_list([
-                member_info['Address'][x] for x in ['Street', 'City', 'State', 'Zip']
+                member_info['Address'][x] for x in [
+                    'Street', 'City', 'State', 'Zip'
+                ]
             ])
 
-            capital_address = (" ".join(addr_component for addr_component in capital_address if addr_component)).strip()
+            capital_address = (" ".join(
+                addr_component for addr_component
+                    in capital_address if addr_component
+            )).strip()
 
             capital_contact_info = self.clean_list([
                 member_info['Address'][x] for x in [
@@ -100,7 +100,7 @@ class GALegislatorScraper(LegislatorScraper):
             # If it doesn't have a @ character, simply set it to None
             # examples:
             # 01X5dvct3G1lV6RQ7I9o926Q==&c=xT8jBs5X4S7ZX2TOajTx2W7CBprTaVlpcvUvHEv78GI=
-            # 01X5dvct3G1lV6RQ7I9o926Q==&c=eSH9vpfdy3XJ989Gpw4MOdUa3n55NTA8ev58RPJuzA8=	
+            # 01X5dvct3G1lV6RQ7I9o926Q==&c=eSH9vpfdy3XJ989Gpw4MOdUa3n55NTA8ev58RPJuzA8=
 
             if capital_contact_info[0] and '@' not in capital_contact_info[0]:
                 capital_contact_info[0] = None
@@ -133,7 +133,11 @@ class GALegislatorScraper(LegislatorScraper):
             if district_contact_info[0] and '@' not in district_contact_info[0]:
                 district_contact_info[0] = None
 
-            district_address = (" ".join(addr_component for addr_component in district_address if addr_component)).strip()
+            district_address = (
+                " ".join(
+                    addr_component for addr_component
+                        in district_address if addr_component
+                )).strip()
 
             if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
                 legislator.add_office(
@@ -145,18 +149,6 @@ class GALegislatorScraper(LegislatorScraper):
                     email=district_contact_info[0]
                 )
 
-            # Add committees
-            if hasattr(legislative_service['CommitteeMemberships'],'CommitteeMembership') and (legislative_service['CommitteeMemberships']['CommitteeMembership']) > 0:
-                for committee_membership in legislative_service['CommitteeMemberships']['CommitteeMembership']:
-                    committee_name = committee_membership['Committee']['Name']
-                    committee_role = committee_membership['Role'].lower()
-
-                    legislator.add_role(
-                        role=committee_role,
-                        term=term,
-                        name=committee_name
-                    )
-        
             legislator.add_source(self.ssource)
             self.save_legislator(legislator)
 
