@@ -31,7 +31,7 @@ class RILegislatorScraper(LegislatorScraper):
             rep_type = 'Representative '
             source_url = 'http://www.rilin.state.ri.us/representatives/default.aspx'
             source_url_title_replacement = 'Rep. '
-        
+
         self.urlretrieve(url, 'ri_leg.xls')
 
         wb = xlrd.open_workbook('ri_leg.xls')
@@ -43,9 +43,9 @@ class RILegislatorScraper(LegislatorScraper):
         leg_source_url_map = {}
         leg_page = lxml.html.fromstring(self.urlopen(source_url))
         leg_page.make_links_absolute(source_url)
-        
+
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):
-            leg_name = link.text_content().replace(source_url_title_replacement,'')	
+            leg_name = link.text_content().replace(source_url_title_replacement,'')
             leg_url = link.xpath("..//a")[0].attrib['href']
             leg_source_url_map[leg_name] = leg_url
 
@@ -62,17 +62,26 @@ class RILegislatorScraper(LegislatorScraper):
                 "Independent" : "Independent"
             }
 
+            homepage_url = None
             if full_name in leg_source_url_map.keys():
-                source_url = leg_source_url_map[full_name]	
-            else:
-                source_url = url
+                homepage_url = leg_source_url_map[full_name]
+
+            kwargs = {
+                "town_represented": d['town_represented'],
+                "email": d['email']
+            }
+
+            if homepage_url is not None:
+                kwargs['url'] = homepage_url
 
             leg = Legislator(term, chamber, district_name, full_name,
                              '', '', '',
                              translate[d['party']],
-                             town_represented=d['town_represented'],
-                             email=d['email'])
+                             **kwargs)
+
             leg.add_office('district', 'Address', address=d['address'])
             leg.add_source(source_url)
+            if homepage_url:
+                leg.add_source(homepage_url)
             self.save_legislator(leg)
 
