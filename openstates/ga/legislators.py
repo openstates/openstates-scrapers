@@ -1,5 +1,25 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
+import re
+
+def extract_nick_name(nick_name):
+    """Returns a nickname string"""	
+    new_nick_name = None
+    
+    if re.search(r'"[^"]+"', nick_name):
+        # "Able" Mable
+        # Pedro "Pete"
+        # E. Culver "Rusty"
+        new_nick_name = re.search(r'"([^"]+)"', nick_name).group(1)
+    elif ' ' in nick_name:
+        # Mary Margaret
+        # Freddie Powell
+        new_nick_name = nick_name.split(" ")[0]
+    else:
+        # Bill
+        new_nick_name = nick_name
+        
+    return new_nick_name
 
 class GALegislatorScraper(LegislatorScraper):
     jurisdiction = 'ga'
@@ -33,13 +53,15 @@ class GALegislatorScraper(LegislatorScraper):
                     'Nickname', 'First', 'Middle', 'Last'
                 ]
             )
-
-            first_name = nick_name if nick_name else first_name
+            
+            if nick_name:
+                nick_name = extract_nick_name(nick_name)
+                first_name = nick_name
 
             if middle_name:
-                full_name = "%s %s %s" % (first_name, middle_name, last_name)
+                full_name = "%s %s %s" % (first_name.strip(), middle_name.strip(), last_name.strip())
             else:
-                full_name = "%s %s" % (first_name, last_name)
+                full_name = "%s %s" % (first_name.strip(), last_name.strip())
 
             legislative_service = []
             for leg_service in member_info['SessionsInService']['LegislativeService']:
@@ -146,16 +168,20 @@ class GALegislatorScraper(LegislatorScraper):
                 )
 
             # Add committees
-            if hasattr(legislative_service['CommitteeMemberships'],'CommitteeMembership') and (legislative_service['CommitteeMemberships']['CommitteeMembership']) > 0:
-                for committee_membership in legislative_service['CommitteeMemberships']['CommitteeMembership']:
-                    committee_name = committee_membership['Committee']['Name']
-                    committee_role = committee_membership['Role'].lower()
+            # I don't think this is actually needed.
+            # The committees scraper should take care of this.
+            # Commenting out for now.
 
-                    legislator.add_role(
-                        role=committee_role,
-                        term=term,
-                        name=committee_name
-                    )
+            #if hasattr(legislative_service['CommitteeMemberships'],'CommitteeMembership') and (legislative_service['CommitteeMemberships']['CommitteeMembership']) > 0:
+            #	for committee_membership in legislative_service['CommitteeMemberships']['CommitteeMembership']:
+            #		committee_name = committee_membership['Committee']['Name']
+            #		committee_role = committee_membership['Role'].lower()
+
+            #		legislator.add_role(
+            #			role=committee_role,
+            #			term=term,
+            #			name=committee_name
+            #		)
         
             legislator.add_source(self.ssource)
             self.save_legislator(legislator)
