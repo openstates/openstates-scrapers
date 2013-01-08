@@ -367,7 +367,7 @@ class Extractor(object):
         name = committee['committee']
         ch = committee['chamber']
         if ch != 'joint':
-            chamber_name = self.metadata['chamber'][ch]['name']
+            chamber_name = self.metadata['chambers'][ch]['name']
         else:
             chamber_name = 'Joint'
 
