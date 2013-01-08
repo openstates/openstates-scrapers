@@ -11,7 +11,9 @@ metadata = {
     },
     'terms': [
         {'name': '2011-2012', 'sessions': ['2011', '2012'],
-         'start_year': 2011, 'end_year': 2012}
+         'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014', 'sessions': ['2013'],
+         'start_year': 2013, 'end_year': 2014}
     ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
@@ -21,6 +23,10 @@ metadata = {
         '2012': {'display_name': '2012 Regular Session',
                  'zip_url': 'http://gencourt.state.nh.us/downloads/2012%20Session%20Bill%20Status%20Tables.zip',
                  '_scraped_name': '2012 Session',
+                },
+        '2013': {'display_name': '2013 Regular Session',
+                 'zip_url': 'http://gencourt.state.nh.us/downloads/2013%20Session%20Bill%20Status%20Tables.zip',
+                 '_scraped_name': '2013 Session',
                 },
     },
     'feature_flags': ['influenceexplorer'],

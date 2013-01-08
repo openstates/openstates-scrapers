@@ -43,10 +43,13 @@ if __name__ == '__main__':
 
         extractor = Extractor(abbr)
         for url in urls:
-            feed = Feed(url)
+            feed = Feed(url, jurisdiction=abbr)
+            import ipdb;ipdb.set_trace()
+            et = list(feed.entries())
+            if not et:
+                import ipdb;ipdb.set_trace()
             for entry in feed.entries():
                 extractor.process_entry(entry.entry)
-                import ipdb;ipdb.set_trace()
                 entry.finish_report(abbr)
                 entry.save_if_entities_found()
             feed.finish_report()

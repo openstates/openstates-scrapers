@@ -16,6 +16,8 @@ metadata = dict(
          'start_year': 2009, 'end_year': 2010},
         {'name': '2011-2012', 'sessions': ['129'],
          'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014', 'sessions': ['130'],
+         'start_year': 2013, 'end_year': 2014},
     ],
     session_details={
         '128': { 'display_name': '128th Legislature',
@@ -24,6 +26,9 @@ metadata = dict(
         '129': {'start_date': datetime.date(2011, 1, 3),
                 'display_name': '129th Legislature',
                 '_scraped_name': '129',
+               },
+        '130': { 'display_name': '130th Legislature',
+                '_scraped_name': '130',
                },
     },
     feature_flags=[ 'events', 'influenceexplorer' ],

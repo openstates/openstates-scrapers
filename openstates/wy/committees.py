@@ -57,5 +57,6 @@ class WYCommitteeScraper(CommitteeScraper):
                         name = tds[0].text_content().strip()
                         role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
                         comm.add_member(name, role, chamber=chamber)
-                    comm.add_source(detail_url)
+
+                comm.add_source(detail_url)
                 self.save_committee(comm)

@@ -17,11 +17,14 @@ metadata = dict(
         # 'start_year': 2009, 'end_year': 2010},
         {'name': '2011-2012', 'sessions': ['19'],
          'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014', 'sessions': ['20'],
+         'start_year': 2013, 'end_year': 2014},
         ],
     session_details={
         '19': {'display_name': '19th Council Period',
-               '_scraped_name': '19',
-              }
+               '_scraped_name': '19' },
+        '20': {'display_name': '20th Council Period',
+               '_scraped_name': '20' },
     },
     feature_flags=[],
     _ignored_scraped_sessions=['18', '17', '16', '15', '14', '13', '12', '11',

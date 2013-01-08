@@ -16,30 +16,33 @@ class MICommitteeScraper(CommitteeScraper):
             self.scrape_senate_committees()
 
     def scrape_house_committees(self):
-        base_url = 'http://house.michigan.gov/committeeinfo.asp?'
-        with self.urlopen('http://house.michigan.gov/committees.asp') as html:
+        base_url = 'http://house.mi.gov/MHRPublic/CommitteeInfo.aspx?comkey='
+        with self.urlopen('http://house.mi.gov/mhrpublic/committee.aspx') as html:
             doc = lxml.html.fromstring(html)
 
             # get values out of drop down
-            for cname in doc.xpath('//option/@value'):
-                # skip subcommittee, redirects to a PDF
-                if cname in ('subcommittee', 'statutorycommittee'):
+            for opt in doc.xpath('//option'):
+                name = opt.text
+                # skip invalid choice
+                if opt.text in ('Statutory Committees', 'Select One'):
                     continue
-                com_url = base_url + urllib.urlencode({'lstcommittees':cname})
+                com_url = base_url + opt.get('value')
                 with self.urlopen(com_url) as com_html:
                     cdoc = lxml.html.fromstring(com_html)
-                    name = cdoc.xpath('//h4/text()')[0]
                     com = Committee(chamber='lower', committee=name)
                     com.add_source(com_url)
+
+                    for a in doc.xpath('//a[starts-with(@id, "memberLink")]'):
+                        name = a.text.strip()
 
                     # all links to http:// pages in servicecolumn2 are legislators
                     for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
                         name = a.text.strip()
-                        text = a.xpath('../following-sibling::font[1]/text()')
-                        if text[0].startswith('Committee Chair'):
-                            role = 'chairman'
-                        elif 'Vice-Chair' in text[0]:
-                            role = 'vice chairman'
+                        text = a.xpath('following-sibling::span/text()')[0]
+                        if 'Committee Chair' in text:
+                            role = 'chair'
+                        elif 'Vice-Chair' in text:
+                            role = 'vice chair'
                         else:
                             role = 'member'
                         com.add_member(name, role=role)

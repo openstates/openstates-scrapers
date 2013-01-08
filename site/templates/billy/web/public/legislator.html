@@ -336,7 +336,7 @@
 
 {% if legislator.district %}
 <script>
-    var map_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
+    var map_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
     var map = new L.Map('mapbox-{{metadata.abbr}}',
       { attributionControl:true, dragging:false, touchZoom: false,
         scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,

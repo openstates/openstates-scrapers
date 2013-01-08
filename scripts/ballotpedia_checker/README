@@ -1,0 +1,5 @@
+To use this script:
+
+ - First, if the statuts spreadsheet (google doc) has changed since the
+   last time the script ran, delete it.
+ - Run the script

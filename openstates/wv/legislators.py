@@ -40,8 +40,8 @@ class WVLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        dist_link = page.xpath("//a[contains(@href, 'dist=')]")[0]
-        district = dist_link.xpath('string()').strip().lstrip('0')
+        xpath = '//select[@name="sel_district"]/option[@selected]/text()'
+        district = page.xpath(xpath).pop().strip().lstrip('0')
 
         mem_span = page.xpath("//span[contains(@class, 'memname')]")[0]
         mem_tail = mem_span.tail.strip()
@@ -98,7 +98,7 @@ class WVLegislatorScraper(LegislatorScraper):
         office = dict(
             name='Capitol Office',
             type='capitol',
-            phone=officedata['Capitol Phone:'].pop(),
+            phone=(officedata['Capitol Phone:'] or [None]).pop(),
             fax=None,
             email=officedata['E-mail:'].pop(),
             address='\n'.join(officedata['Capitol Address:']))

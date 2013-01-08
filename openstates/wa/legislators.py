@@ -25,13 +25,14 @@ class WALegislatorScraper(LegislatorScraper):
             page = lxml.etree.fromstring(page.bytes)
 
             for member in xpath(page, "//wa:Member"):
+
                 mchamber = xpath(member, "string(wa:Agency)")
                 mchamber = {'House': 'lower', 'Senate': 'upper'}[mchamber]
 
                 if mchamber != chamber:
                     continue
 
-                name = xpath(member, "string(wa:Name)")
+                name = xpath(member, "string(wa:Name)").strip()
 
                 # if the legislator isn't in the listing, skip them
                 if name not in cur_members:
@@ -43,12 +44,17 @@ class WALegislatorScraper(LegislatorScraper):
                     party, party)
 
                 district = xpath(member, "string(wa:District)")
+                if district == '0':
+                    # Skip phony district 0.
+                    continue
+
                 email = xpath(member, "string(wa:Email)")
                 leg_id = xpath(member, "string(wa:Id)")
                 phone = xpath(member, "string(wa:Phone)")
 
                 last = xpath(member, "string(wa:LastName)")
                 last = last.lower().replace(' ', '')
+
 
                 if chamber == 'upper':
                     leg_url = ("http://www.leg.wa.gov/senate/senators/"

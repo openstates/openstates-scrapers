@@ -161,8 +161,13 @@ class Office(object):
             lines = lines[::-1]
 
         # Make extra sure "PA 12345" line is last.
-        while not re.search('PA \d{5}', lines[-1]):
+        count = 0
+        while not re.search(', PA( \d{5})?', lines[-1]):
             lines = lines[-1:] + lines[:-1]
+            count += 1
+            if count > 1000:
+                # If we're here, this address is badly hosed; skip.
+                return
         address = '\n'.join(lines)
         return address
 
