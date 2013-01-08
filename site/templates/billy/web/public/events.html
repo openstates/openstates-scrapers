@@ -30,7 +30,7 @@ $(document).ready(function() {
         success:function(html){
           var events = $("#events");
           if($(html).children().length == 0){
-            events.append('<div>No events were found for this month.</div>')
+            events.html('<div>No events were found for this month.</div>')
           } else {
 
             // Remove all the previous month's events.
