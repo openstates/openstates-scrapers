@@ -63,7 +63,7 @@ $(document).ready(function() {
             var day = $('.day' + event_date.getDate());
             // Append a dot to this day on the calendar, unless there are
             // already three dots displayed for this day.
-            if (day.find('.events').length < 3){
+            if (day.find('.events').length < 1){
               day.append('<span class="events">' + event_.description + '</span>');
               // Set the index of this event so we can select it when clicked.
               day.data('event_index', events_count);
