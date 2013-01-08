@@ -1,0 +1,59 @@
+{% load url from future %}
+{% load customtags %}
+    <ul id="events-list">
+    {% for event in events %}
+    <li class="event">
+        <h3 class="">
+            {{ event.description|trunc }}
+            <a href="{% url 'event_ical' abbr event.id %}">Add to iCal</a> |
+        <a href="https://www.google.com/calendar/render?{{event.gcal_string}}">Add to Google Calendar</a>
+        </h3>
+        <dl>
+          {% if event.host %}
+            <dt>Host:</dt>
+            <dd>
+              <a href="{{event.host.get_absolute_url}}">
+                {{event.host.display_name}}
+              </a>
+              {% if self.other_committees %}
+                {% for committee in self.other_committees %}
+                  <a href="{{committee.get_absolute_url}}">
+                    {{committee.display_name}}
+                  </a>
+                  {% if not forloop.last %},{% endif %}
+                {% endfor %}
+              {% endif %}
+            </dd>
+          {% endif %}
+        <dt>Chair:</dt>
+        <dd>
+          {% for member, full_member in event.host_chairs %}
+            <a href="{{full_member.get_absolute_url}}">
+              {{full_member.display_name}}
+            </a>
+            {% if event.host_has_multiple_chairs %}
+              ({{member.role}})
+            {% endif %}
+            {% if not forloop.last %},{% endif %}
+          {% endfor %}
+        </dd>
+        <dt>When:</dt>
+        <dd>{{ event.when|date:"M j, Y"}}</dd>
+        <dt>Where:</dt>
+        <dd>{{ event.location }}</dd>
+        {% if event.related_bills %}
+        <dt>Bills:</dt>
+        <dd>
+        {% if event.related_bills %}
+          {% for bill in event.bills_objects %}
+            <a href="{% url 'bill_noslug' abbr bill.id %}">
+              {{bill.bill_id}}</a>{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        {% endif %}
+        </dd>
+        {% endif %}
+      </dl>
+    {% sources event %}
+    </li>
+    {% endfor %}
+    </ul>

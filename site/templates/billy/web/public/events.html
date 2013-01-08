@@ -6,74 +6,157 @@
 
 {% block title %}{{state.name}} {% trans "events" %}{% endblock %}
 
-{% block content %}
+{% block headblock %}
 
-<script type="text/javascript">
-    $(function() { $("#calendar").calendarWidget(); });
+<script src="{% static 'js/datatables.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+
+    // Where 'current' refers to the current state of the calendar widget.
+    window.display_month = {{display_date.month}};
+    window.display_year = {{display_date.year}};
+
+    var doc = $(this);
+
+    // See the template include for #data-main.
+    // $(this).pjax('a', '#events-pjax');
+
+    var update_events_list = function(year, month){
+      console.log('Updating list to month: ' + month + ', and year: ' + year);
+      var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
+      console.log(url);
+
+      $.ajax({
+        url: url,
+        success:function(data){
+          var events = $("#events");
+          if(data.length == 0){
+            events.append('<div>No events where found for this month.</div>')
+          } else {
+            events.empty();
+            events.append(data);
+          }
+        }
+      });
+    }
+
+    var update_calendar = function(year, month){
+      console.log('Updating calendar to month: ' + month + ', and year: ' + year);
+
+      $("#calendar").calendarWidget({month: month, year: year});
+      var url = '/{{abbr}}/events/json_for_date/' + year + '/' + month + '/',
+          events_count = 0;
+          days_with_events = [];
+
+      $.getJSON(url, function(data){
+        $.each(data, function(i, event_){
+
+          events_count += 1;
+
+          // Serialized dates are seconds since the epoch. We need millisecs.
+          var event_date = new Date(event_.when * 1000),
+              event_month = event_date.getMonth(),
+              event_year = event_date.getFullYear();
+
+          if (event_month === month && event_year === year) {
+            var day = $('.day' + event_date.getDate());
+            // Append a dot to this day on the calendar, unless there are
+            // already three dots displayed for this day.
+            if (day.find('.events').length < 1){
+              day.append('<span class="events">' + event_.description + '</span>');
+              // Set the index of this event so we can select it when clicked.
+              day.data('event_index', events_count);
+              }
+            /* Keep track of the days with events so we can set click handlers,
+            because doing this synchronously with selectors was a
+            hilarious failure. */
+            day.click(function(){
+              var event_index = $(this).data('event_index'),
+                  event_display = $('.event:nth(' + event_index + ')');
+                console.log('Trying even selector ".event:nth(' + event_index + ')"');
+                console.log(event_display);
+              $('html, body').animate({scrollTop: event_display.offset().top}, 250);
+            });
+          }
+        });
+      });
+      window.display_month = month;
+      window.display_year = year;
+
+      // Select today.
+      var today = new Date();
+      if (month == today.getMonth()){
+        $('#calendar .day' + today.getDate()).attr('id', 'today');
+      }
+
+      doc.trigger('calendar:redraw');
+    }
+
+    // Load events for the current year on page load.
+    update_events_list({{display_date.year}}, {{display_date.month}} - 1);
+    update_calendar({{display_date.year}}, {{display_date.month}} - 1);
+
+    // The calendar has been rendered; now we can bind functions to the it.
+    // Update the calendar on pressing the month nav links on the calendar.
+    function bind_nav_prev(){
+      $('#calendar .nav-prev').click(function(){
+        var prev_month, prev_year;
+
+        // If current month is January...
+        if (window.display_month == 0) {
+          prev_month = 11;
+          prev_year = window.display_year - 1;
+        } else {
+          prev_month = window.display_month - 1;
+          prev_year = window.display_year;
+        }
+        update_events_list(prev_year, prev_month)
+        update_calendar(prev_year, prev_month)
+        });
+    }
+
+    function bind_nav_next() {
+      $('#calendar .nav-next').click(function(){
+        var next_month, next_year;
+        // If current month is January...
+        if (window.display_month == 11) {
+          next_month = 0;
+          next_year = window.display_year + 1;
+        } else {
+          next_month = window.display_month + 1;
+          next_year = window.display_year;
+        }
+        update_events_list(next_year, next_month)
+        update_calendar(next_year, next_month)
+        });
+    }
+
+    // When the pjax operation is done, re-run pjax_setup to bind
+    // the various calendar listeners.
+    doc.bind('calendar:redraw', {}, bind_nav_prev);
+    doc.bind('calendar:redraw', {}, bind_nav_next);
+
+    update_events_list({{displa}})
+    doc.trigger('calendar:redraw');
+
+    window.update_calendar = update_calendar;
+    window.update_events_list = update_events_list;
+});
 </script>
+{% endblock %}
 
+{% block content %}
 <div class="fullWidth module clear">
 <h2>{% trans "Past & Future events" %}</h2>
 </div>
 <div class="calendar fourCol colLt">
-	<div id="calendar">
-	</div>
+  <div id="calendar">
+    <p>Please enable Javascript to view this calendar.</p>
+  </div>
 </div>
-<div class="eightCol colRt">
-
-    <ul>
-{% for event in events %}
-    <li class="event">
-    	<h3 class="">
-    		{{ event.description|trunc }}
-    		<a href="{% url 'event_ical' abbr event.id %}">Add to iCal</a> |
-        <a href="https://www.google.com/calendar/render?{{event.gcal_string}}">Add to Google Calendar</a>
-    	</h3>
-    	<dl>
-          {% if event.host %}
-            <dt>Host:</dt>
-            <dd>
-              <a href="{{event.host.get_absolute_url}}">
-                {{event.host.display_name}}
-              </a>
-              {% if self.other_committees %}
-                {% for committee in self.other_committees %}
-                  <a href="{{committee.get_absolute_url}}">
-                    {{committee.display_name}}
-                  </a>
-                  {% if not forloop.last %},{% endif %}
-                {% endfor %}
-              {% endif %}
-            </dd>
-          {% endif %}
-        <dt>Chair:</dt>
-        <dd>
-          {% for member, full_member in event.host_chairs %}
-            <a href="{{full_member.get_absolute_url}}">
-              {{full_member.display_name}}
-            </a>
-            {% if event.host_has_multiple_chairs %}
-              ({{member.role}})
-            {% endif %}
-            {% if not forloop.last %},{% endif %}
-          {% endfor %}
-        </dd>
-        <dt>When:</dt>
-        <dd>{{ event.when|date:"M j, Y"}}</dd>
-        <dt>Where:</dt>
-        <dd>{{ event.location }}</dd>
-        {% if event.related_bills %}
-          {% for bill in event.bills %}
-            <a href="{% url 'bill_noslug' bill.id %}">
-              {{bill.bill_id}}</a>{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        {% endif %}
-
-      </dl>
-    {% sources event %}
-    </li>
-{% endfor %}
-    </ul>
+<div id="events" class="eightCol colRt">
 </div>
 <div class="clear"></div>
+
 {% endblock %}

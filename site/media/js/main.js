@@ -314,3 +314,25 @@ function user_profile_form_submit(){
     profile_form.append(lat_input);
     profile_form.append(lng_input);
 }
+
+
+// // Events calendar.
+// var events_pjax_setup = function(){
+
+//     $('form#toggleBtns button').click(function(e){
+
+//         // Prevent the normal form submission.
+//         e.preventDefault();
+
+//         // Derive the form url.
+//         var form_url = $('form#toggleBtns').attr('action');
+//         var value = $(this).attr('value');
+//         form_url = form_url + '?chamber=' + encodeURIComponent(value);
+
+//         // Use pjax to retrieve and insert the new content.
+//         $.pjax({
+//               url: form_url,
+//               container: 'div[data-pjax]'
+//         });
+//     });
+// };
