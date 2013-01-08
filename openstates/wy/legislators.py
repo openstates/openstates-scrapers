@@ -57,8 +57,11 @@ class WYLegislatorScraper(LegislatorScraper):
             leg = Legislator(term, chamber, district, name, party=party,
                              email=email_address, photo_url=photo_url,
                              url=leg_url)
-            leg.add_office('district', 'Contact Information',
-                           address=' '.join(address), phone=phone, fax=fax)
+
+            adr = " ".join(address)
+            if adr.strip() != "":
+                leg.add_office('district', 'Contact Information',
+                               address=adr, phone=phone, fax=fax)
 
             leg.add_source(url)
             leg.add_source(leg_url)
