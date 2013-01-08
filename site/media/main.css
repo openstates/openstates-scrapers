@@ -239,7 +239,7 @@ a.tip:hover { color: #d6ac04; }
 
 /* header */
 #searchform { float: right; width: 265px; margin-top: 5px; }
-#searchAddressform { width: 100%; margin-top: 5px; }
+#searchAddressform { width: ; margin-top: 5px; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
@@ -1083,3 +1083,31 @@ div.notification-preference {
     margin-bottom: 40px;
 }
 
+.topPad{
+    margin-top: 40px;
+}
+
+/* Profile Page */
+#find_your_leg button {
+    border-width: 3px;
+    background: url(images/btn_searchAddress.png) top left no-repeat;
+    width: 45px;
+    height: 46px;
+    float: left;
+    }
+
+#find_your_leg input {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding: 11px 5px 9px;
+    float: left;
+    margin-right: 15px;
+    font-size: 105%;
+    width: 360px;
+    margin-top: 2px;
+    margin-bottom: 20px;
+    -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;
+    }
+
+#container #find_your_leg input{
+	border: 3px solid #d8d5c8;
+}

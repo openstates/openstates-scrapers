@@ -42,57 +42,62 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-    <div id="container">
+    <div class="clearfix medModuleSm">
+
+    <h3>Save information to your user profile:</h3>
         {% if saved_changes %}
-            Your changes were saved!....Or were they? Hehehehehe!
+            <h6>Your changes were saved!</h6>
         {% endif %}
-        <form id="find_your_leg">
-            <input type="hidden" value="cow" id="_request" />
-            <div class="module">
-            <h3 class="moduleTitle">{% trans "Set Your Location" %}</h3>
-            <input type="text" name="leg_search" id="leg_search"
-                {% if profile.location.text %}
-                    value="{{profile.location.text}}"</input>
-                {% else %}
-                    placeholder="{% trans 'Your address...' %}"></input>
-                {% endif %}
-                    <button type="submit" value="{% trans 'Lookup' %}" style="text-indent: 0px; display: inline;">
-                    <span>{% trans "Lookup" %}</span>
-                </button>
+       <div class="clearfix sixCol colLt withDash">
+            <form id="find_your_leg">
+                <input type="hidden" value="cow" id="_request" />
+                <div class="smModule">
+                    <h5>{% trans "Set Your Location" %}</h5>
+                    <p class="author">Save your location to remember your state information at the start. Someone please rewrite this.</p>
+                    <input type="text" name="leg_search" id="leg_search"
+                        {% if profile.location.text %}
+                        value="{{profile.location.text}}"</input>
+                    {% else %}
+                        placeholder="{% trans 'Your address, city or zipcode' %}">
+                    {% endif %}
+                        <button type="submit" value="{% trans 'Lookup' %}" style="text-indent: 0px; display: inline;">
+                        </button>
+                </div>
             </form>
-            <div class="clear"></div>
-            <div id="communicate"></div>
+
+            <div class="sixCol colLt legMap">
+                <div id="map"></div>
+            </div>
         </div>
 
-        <div class="sixCol colLt withDash legMap">
-            <div id="map"></div>
-        </div>
-        <div class="clear"></div>
+
+        <div class="moduleNoBorder clearfix fiveCol colLt">
+            <form action="/profile" method="POST" id="profile_form">
+                {% csrf_token %}
+
+                    <h5>{% trans "API Key" %}</h5>
+                    <p class="author">View code snippets to get more data. Someone please rewrite this.</p>
+
+                    <div class="smModule">
+                        <h6>Have an API key? Enter it here:</h6>
+                        {% if profile.api_key %}
+                        <input type="text" name="api_key" value="{{profile.api_key}}"></input>
+                        {% else %}
+                        <input type="text" name="api_key" placeholder="{% trans 'Your API key' %}"></input>
+                        {% endif %}
+                        <p class="author topPad">Don't have one and want one? <a href="http://services.sunlightlabs.com/accounts/register/">Get one</a></p>
+                    </div>
+
+              </form>
+           </div>
+           <div class="clearfix container tenCol">
+               <form action="/profile" method="POST" id="profile_form">
+                   {% csrf_token %}
+               <button type="submit" value="{% trans 'Save information' %}">
+                   <span>{% trans "Save information" %}</span>
+               </button>
+               </form>
             </div>
-        </form>
 
-        <form action="/profile" method="POST" id="profile_form">
-            <hr/>
-            {% csrf_token %}
-            <div class="medModule">
-                <h3 class="moduleTitle">{% trans "API Key" %}</h3>
-                <div>
-                <span>Have an API key? Enter it here:</span>
-                {% if profile.api_key %}
-                    <input type="text" name="api_key" value="{{profile.api_key}}"></input>
-                {% else %}
-                    <input type="text" name="api_key" placeholder="{% trans 'Your API key...' %}"></input>
-                {% endif %}
-                </div>
-                <div>
-                    <span>Don't have one and want one? <a href="http://services.sunlightlabs.com/accounts/register/">Get one</a></span>
-                </div>
-
-            </div>
-
-            <button type="submit" value="{% trans 'Submit' %}">
-                <span>{% trans "Submit" %}</span>
-            </button>
-        </form>
     </div> <!-- container -->
 {% endblock %}
