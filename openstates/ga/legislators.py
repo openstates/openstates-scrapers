@@ -1,81 +1,153 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
 
-
 class GALegislatorScraper(LegislatorScraper):
     jurisdiction = 'ga'
     sservice = get_client("Members").service
     ssource = get_url("Members")
 
+    def clean_list(self, dirty_list):
+        new_list = []
+        for x in dirty_list:
+            if x is None:
+                new_list.append(x)
+            else:
+                new_list.append(x.strip())
+        return new_list
+
     def scrape_session(self, term, chambers, session):
         session = self.metadata['session_details'][session]
         sid = session['_guid']
         members = self.sservice.GetMembersBySession(sid)['MemberListing']
+
         for member in members:
+
             guid = member['Id']
-            # print member['Name']
+
+            member_info = self.sservice.GetMember(guid)
+
             nick_name, first_name, middle_name, last_name = (
-                member['Name'][x] for x in [
+                member_info['Name'][x] for x in [
                     'Nickname', 'First', 'Middle', 'Last'
                 ]
             )
-            chamber, district = (
-                member['District'][x] for x in ['Type', 'Number']
-            )
 
-            party = member['Party']
-            if party == 'Democrat':
-                party = 'Democratic'
-
-            # print first_name, middle_name, last_name, party
-            # print chamber, district
             first_name = nick_name if nick_name else first_name
-            # XXX: Due to the upstream handling...
 
-            # if middle_name:
-            #     name = "%s %s %s" % (first_name, middle_name, last_name)
-            # else:
-            # blocked out due to GA putting middle_name in first_name ...
-            name = "%s %s" % (first_name, last_name)
+            if middle_name:
+                full_name = "%s %s %s" % (first_name, middle_name, last_name)
+            else:
+                full_name = "%s %s" % (first_name, last_name)
 
-            chamber = {
-                "House": 'lower',
-                "Senate": 'upper'
-            }[chamber]
+            legislative_service = []
+            for leg_service in member_info['SessionsInService']['LegislativeService']:
+                if leg_service['Session']['Id'] == sid:
+                    legislative_service = leg_service
 
-            if party.strip() == '':
-                party = 'other'
+            if legislative_service:
+                party = legislative_service['Party']
+
+                if party == 'Democrat':
+                    party = 'Democratic'
+
+                if party.strip() == '':
+                    party = 'other'
+
+                chamber, district = (
+                    legislative_service['District'][x] for x in [
+                        'Type', 'Number'
+                    ]
+                )
+
+                chamber = {
+                    "House": 'lower',
+                    "Senate": 'upper'
+                }[chamber]
+            else:
+                raise Exception("Something very bad is going on with the "
+                                "Legislative service")
+
 
             legislator = Legislator(
                 term,
                 chamber,
                 str(district),
-                name,
+                full_name,
                 party=party,
-#                last_name=last_name,
-#                first_name=first_name,
+                last_name=last_name,
+                first_name=first_name,
                 _guid=guid
             )
-#            if middle_name:
-#                legislator['middle_name'] = middle_name
 
-#           Sadly, upstream isn't good about keeping first names first only,
-#           so I'm blocking this out.
-
-            ainfo = [
-                member['DistrictAddress'][x] for x in [
+            capital_address = self.clean_list([
+                member_info['Address'][x] for x in [
                     'Street', 'City', 'State', 'Zip'
                 ]
-            ]
-            if not None in ainfo:
-                # XXX: Debug this nonsense.
-                ainfo = [x.strip() for x in ainfo]
-                address = " ".join(ainfo)
-                email = member['DistrictAddress']['Email']
-                legislator.add_office('district',
-                                      'District Address',
-                                      address=address,
-                                      email=email)
+            ])
+
+            capital_address = (" ".join(
+                addr_component for addr_component
+                    in capital_address if addr_component
+            )).strip()
+
+            capital_contact_info = self.clean_list([
+                member_info['Address'][x] for x in [
+                    'Email', 'Phone', 'Fax'
+                ]
+            ])
+
+            # Sometimes email is set to a long cryptic string.
+            # If it doesn't have a @ character, simply set it to None
+            # examples:
+            # 01X5dvct3G1lV6RQ7I9o926Q==&c=xT8jBs5X4S7ZX2TOajTx2W7CBprTaVlpcvUvHEv78GI=
+            # 01X5dvct3G1lV6RQ7I9o926Q==&c=eSH9vpfdy3XJ989Gpw4MOdUa3n55NTA8ev58RPJuzA8=
+
+            if capital_contact_info[0] and '@' not in capital_contact_info[0]:
+                capital_contact_info[0] = None
+
+            # if we have more than 2 chars (eg state)
+            # or a phone/fax/email address record the info
+            if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
+                legislator.add_office(
+                    'capitol',
+                    'Capitol Address',
+                    address=capital_address,
+                    phone=capital_contact_info[1],
+                    fax=capital_contact_info[2],
+                    email=capital_contact_info[0]
+                )
+
+            district_address = self.clean_list([
+                member_info['DistrictAddress'][x] for x in [
+                    'Street', 'City', 'State', 'Zip'
+                ]
+            ])
+
+            district_contact_info = self.clean_list([
+                member_info['DistrictAddress'][x] for x in [
+                    'Email', 'Phone', 'Fax'
+                ]
+            ])
+
+            # Same issue with district email. See above comment
+            if district_contact_info[0] and '@' not in district_contact_info[0]:
+                district_contact_info[0] = None
+
+            district_address = (
+                " ".join(
+                    addr_component for addr_component
+                        in district_address if addr_component
+                )).strip()
+
+            if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
+                legislator.add_office(
+                    'district',
+                    'District Address',
+                    address=district_address,
+                    phone=district_contact_info[1],
+                    fax=district_contact_info[2],
+                    email=district_contact_info[0]
+                )
 
             legislator.add_source(self.ssource)
             self.save_legislator(legislator)
