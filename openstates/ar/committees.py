@@ -19,8 +19,16 @@ class ARCommitteeScraper(CommitteeScraper):
     _seen = set()
 
     def scrape(self, chamber, term):
-        base_url = ("http://www.arkleg.state.ar.us/assembly/2011/2011R/"
+
+        # Get start year of term.
+        for termdict in self.metadata['terms']:
+            if termdict['name'] == term:
+                break
+        start_year = termdict['start_year']
+
+        base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%sR/"
                     "Pages/Committees.aspx?committeetype=")
+        base_url = base_url % (start_year, start_year)
 
         for chamber, url_ext in COMM_TYPES.iteritems():
             chamber_url = urlescape(base_url + url_ext)

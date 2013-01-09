@@ -12,9 +12,16 @@ class ARLegislatorScraper(LegislatorScraper):
     latest_only = True
 
     def scrape(self, chamber, term):
-        url = ('http://www.arkleg.state.ar.us/assembly/2011/2011R/Pages/'
-               'LegislatorSearchResults.aspx?member=&committee=All&chamber=')
 
+        # Get start year of term.
+        for termdict in self.metadata['terms']:
+            if termdict['name'] == term:
+                break
+        start_year = termdict['start_year']
+
+        url = ('http://www.arkleg.state.ar.us/assembly/%s/%sR/Pages/'
+               'LegislatorSearchResults.aspx?member=&committee=All&chamber=')
+        url = url % (start_year, start_year)
         with self.urlopen(url) as page:
             root = lxml.html.fromstring(page)
 

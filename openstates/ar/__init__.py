@@ -14,7 +14,11 @@ metadata = dict(
         {'name': '2011-2012',
          'start_year': 2011,
          'end_year': 2012,
-         'sessions': ['2011', '2012F']}
+         'sessions': ['2011', '2012F']},
+        {'name': '2013-2014',
+         'start_year': 2013,
+         'end_year': 2014,
+         'sessions': ['2013']}
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -29,6 +33,12 @@ metadata = dict(
                  '_scraped_name': 'Fiscal Session 2012',
                  'type': 'special',
                  'slug': '2012F',
+                },
+        '2013': {'start_date': datetime.date(2013, 1, 14),
+                 'display_name': '2013 Regular Session',
+                 '_scraped_name': 'Regular Session, 2013',
+                 'type': 'primary',
+                 'slug': '2013R',
                 }
         },
     feature_flags=['influenceexplorer'],
@@ -69,8 +79,8 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath(
-        'http://www.arkleg.state.ar.us/assembly/2011/2011R/Pages/Previous%20Legislatures.aspx',
-        '//div[@id="ctl00_ctl15_g_95338513_84cb_48ec_85d1_4e6a889e8035_panel"]//a')
+        'http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages/Previous%20Legislatures.aspx',
+        '//div[@id="ctl00_ctl15_g_91c28874_44ca_4b3e_9969_7202c1ca63dd_panel"]//a')
     return [s.text_content() for s in sessions if s.text_content()]
 
 
