@@ -21,7 +21,7 @@ class CTLegislatorScraper(LegislatorScraper):
         page = open_csv(data)
 
         for row in page:
-            chamber = {'H': 'lower', 'S': 'upper'}[row['office_code']]
+            chamber = {'H': 'lower', 'S': 'upper'}[row['office code']]
             if chamber not in chambers:
                 continue
 
