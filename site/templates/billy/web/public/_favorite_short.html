@@ -1,0 +1,24 @@
+{% load i18n %}
+{% load customtags %}
+                <div class="favorite" data-obj_id="{{ obj_id }}"
+                                   data-obj_type="{{ obj_type }}"
+                                   data-is_favorite="{{ is_favorite|lower }}"
+                                   {% if obj_type == "search" %}
+                                   data-search_params='{{params}}'
+                                   data-search_abbr="{{abbr}}"
+                                   {% endif %}>
+
+                    <button type="submit" value="{% trans 'Submit' %}" class="favorite-button" style="text-indent: 0px;"/>
+                      <span class="favorite-message">
+                          {% if is_favorite %}
+                              {% blocktrans %}
+                              Unfollow
+                              {% endblocktrans %}
+                          {% else %}
+                              {% blocktrans %}
+                              Follow again
+                              {% endblocktrans %}
+                          {% endif %}
+                      </span>
+                    </button>
+                </div>
