@@ -25,7 +25,7 @@ metadata = {
                  '_scraped_name': '2011 Regular Session',
                 },
         '2013': {'display_name': '2013 Regular Session',
-                 'years': [2011, 2012],
+                 'years': [2013, 2014],
                  '_scraped_name': '2013 Regular Session',
                 },
     },

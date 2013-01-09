@@ -73,6 +73,7 @@ class OHLegislatorScraper(LegislatorScraper):
                     legislator.attrib['style']
                 )[-1].split(".", 1)[0]
 
+            full_name = re.sub("\s+", " ", full_name).strip()
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=homepage, photo_url=img)
 
