@@ -171,7 +171,7 @@ class CTBillScraper(BillScraper):
     def scrape_subjects(self):
         for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             url = ('http://www.cga.ct.gov/asp/cgasubjectsearch/'
-                   'default.asp?LeadingChar=' + letter)
+                   'default.asp?which_year1=2013&LeadingChar=' + letter)
             html = self.urlopen(url)
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
