@@ -314,6 +314,9 @@ class MDBillScraper(BillScraper):
             if a.text == 'Text':
                 bill.add_version('Bill Text', a.get('href'),
                                  mimetype='application/pdf')
+            elif a.text == 'Analysis':
+                bill.add_document(a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
             else:
                 raise ValueError('unknown document type')
 

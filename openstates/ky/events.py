@@ -26,6 +26,9 @@ class KYEventScraper(EventScraper):
                     # No meetings
                     continue
 
+                if ':' not in time:
+                    self.warning('skipping event with invalid time: %s', time)
+                    continue
                 when = "%s %s" % (date, time)
                 when = datetime.datetime.strptime(when,
                                                   "%A, %B %d, %Y %I:%M%p")

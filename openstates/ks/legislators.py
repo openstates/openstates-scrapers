@@ -4,9 +4,10 @@ import lxml.html
 import re
 
 ksleg = 'http://www.kslegislature.org'
-legislator_list_url = ksleg + '/li/b2011_12/chamber/%s/roster/'
+legislator_list_url = ksleg + '/li/b2013_14/chamber/%s/roster/'
 legislator_name_pattern = re.compile('(Representative|Senator) (.*)')
-legislator_line_pattern = re.compile('Party: ([A-Za-z]+).*First Term: ([0-9]+)')
+legislator_line_pattern = re.compile('Party: ([A-Za-z]+).*First Term:')
+
 
 class KSLegislatorScraper(LegislatorScraper):
     jurisdiction = 'ks'

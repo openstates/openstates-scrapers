@@ -10,11 +10,9 @@ import ksapi
 
 class KSBillScraper(CommitteeScraper):
     jurisdiction = 'ks'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        # older terms are accessible but through an archived site
-        self.validate_term(term, latest_only=True)
-
         # some committees, 500, let them go
         self.retry_attempts = 0
 

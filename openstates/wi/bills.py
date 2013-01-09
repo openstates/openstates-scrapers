@@ -179,19 +179,14 @@ class WIBillScraper(BillScraper):
                                                          a.text))
 
         # add actions (second history dl is the full list)
-        history_dl = doc.xpath('//dl[@class="history"]')[-1]
-        for dt in history_dl.xpath('dt'):
-            date = dt.text.strip()
+        hist_table = doc.xpath('//table[@class="history"]')[1]
+        for row in hist_table.xpath('.//tr[@class="historyRow"]'):
+            date_house, action_td, journal = row.getchildren()
+
+            date, actor = date_house.text_content().split()
             date = datetime.datetime.strptime(date, '%m/%d/%Y')
-            actor = dt.xpath('abbr/text()')[0]
             actor = {'Asm.': 'lower', 'Sen.': 'upper'}[actor]
-            # text is in the dd immediately following
-            dd = dt.xpath('following-sibling::dd[1]')[0]
-            action = dd.text_content()
-            # get the journal number from the end of the line & strip it
-            jspan = dd.xpath('string(.//span[@class="journal noprint"])')
-            if jspan:
-                action = action[:-len(jspan)]
+            action = action_td.text_content()
 
             if 'Introduced by' in action:
                 self.parse_sponsors(bill, action)
@@ -214,8 +209,8 @@ class WIBillScraper(BillScraper):
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
-                dd = dt.xpath('following-sibling::dd[1]')[0]
-                self.add_vote(bill, actor, date, action, dd)
+                vote_url = action_td.xpath('a/@href')[0]
+                self.add_vote(bill, actor, date, action, vote_url)
 
         bill.add_source(url)
         self.save_bill(bill)
@@ -271,7 +266,7 @@ class WIBillScraper(BillScraper):
                     bill.add_sponsor(sponsor_type, r.strip(),
                                      chamber=sponsor_chamber)
 
-    def add_vote(self, bill, chamber, date, text, dd):
+    def add_vote(self, bill, chamber, date, text, url):
         votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
 
@@ -284,16 +279,14 @@ class WIBillScraper(BillScraper):
         v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
 
         # fetch the vote itself
-        link = dd.xpath('.//a[contains(@href, "/votes/")]')
-        if link:
-            link = link[0].get('href')
-            v.add_source(link)
+        if url:
+            v.add_source(url)
 
-            filename, resp = self.urlretrieve(link)
+            filename, resp = self.urlretrieve(url)
 
-            if 'av' in link:
+            if 'av' in url:
                 self.add_house_votes(v, filename)
-            elif 'sv' in link:
+            elif 'sv' in url:
                 self.add_senate_votes(v, filename)
 
             os.remove(filename)
