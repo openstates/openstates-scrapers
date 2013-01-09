@@ -31,7 +31,7 @@ class NVLegislatorScraper(LegislatorScraper):
             leg = Legislator(term_name, chamber, item['DistrictNbr'],
                              item['FullName'], party=item['Party'],
                              photo_url=item['PhotoURL'])
-            leg_url = leg_base_url + str(item['MemberID'])
+            leg_url = leg_base_url + item['DistrictNbr']
 
             # fetch office from legislator page
             try:
