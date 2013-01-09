@@ -282,73 +282,54 @@ class WIBillScraper(BillScraper):
         if url:
             v.add_source(url)
 
-            filename, resp = self.urlretrieve(url)
-
             if 'av' in url:
-                self.add_house_votes(v, filename)
+                self.add_house_votes(v, url)
             elif 'sv' in url:
-                self.add_senate_votes(v, filename)
+                self.add_senate_votes(v, url)
 
-            os.remove(filename)
-
+        v.validate()
         bill.add_vote(v)
 
 
-    def add_senate_votes(self, vote, filename):
-        xml = convert_pdf(filename, 'xml')
-        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
+    def add_senate_votes(self, vote, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
         # what to do with the pieces
         vfunc = None
 
-        for textitem in doc.xpath('//text'):
-
-            text = textitem.text_content().strip()
-
-            if text.startswith('AYES'):
-                vfunc = vote.yes
-                vote['yes_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('NAYS'):
-                vfunc = vote.no
-                vote['no_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('NOT VOTING'):
-                vfunc = vote.other
-                vote['other_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('SEQUENCE NO'):
-                vfunc = None
-            elif vfunc:
-                vfunc(text)
-
-
-    def add_house_votes(self, vote, filename):
-        vcount_re = re.compile('AYES.* (\d+).*NAYS.* (\d+).*NOT VOTING.* (\d+).* PAIRED.*(\d+)')
-        xml = convert_pdf(filename, 'xml')
-        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
-
-        # function to call on next legislator name
-        vfunc = None
-        name = ''
-
-        for textitem in doc.xpath('//text/text()'):
-            if textitem.startswith('AYES'):
-                ayes, nays, nv, paired = vcount_re.match(textitem).groups()
-                vote['yes_count'] = int(ayes)
-                vote['no_count'] = int(nays)
-                vote['other_count'] = int(nv)
-                # NOTE: paired do not count in WI's counts so we omit them
-            elif textitem == 'N':
-                vfunc = vote.no
-                name = ''
-            elif textitem == 'Y':
-                vfunc = vote.yes
-                name = ''
-            elif textitem == 'x':
-                vfunc = vote.other
-                name = ''
-            elif textitem in ('R', 'D', 'I'):
-                vfunc(name)
+        # a game of div-div-table
+        for ddt in doc.xpath('//div/div/table'):
+            text = ddt.text_content()
+            if 'Wisconsin Senate' in text or 'SEQUENCE NO' in text:
+                continue
+            elif 'AYES -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.yes(name.strip())
+            elif 'NAYS -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.no(name.strip())
+            elif 'NOT VOTING -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.other(name.strip())
             else:
-                if name:
-                    name += ' ' + textitem
-                else:
-                    name = textitem
+                raise ValueError('unexpected block in vote')
+
+    def add_house_votes(self, vote, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+
+        for td in doc.xpath('//td[@width="120"]'):
+            name = td.text_content()
+            if name == 'NAME':
+                continue
+            for vote_td in td.xpath('./preceding-sibling::td'):
+                if vote_td.text_content() == 'Y':
+                    vote.yes(name)
+                elif vote_td.text_content() == 'N':
+                    vote.no(name)
+                elif vote_td.text_content() == 'NV':
+                    vote.other(name)
