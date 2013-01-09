@@ -839,12 +839,6 @@ pre {
     border:           1px solid #E0DEDB;
 }
 
-div.notification-preference {
-    border: 1px solid #e6e6da;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    background-color: #f4f4ee;
-}
 
 #profile_form button {
     background: url(images/btn_submit.png) top left no-repeat;
@@ -1110,4 +1104,19 @@ div.notification-preference {
 
 #container #find_your_leg input{
 	border: 3px solid #d8d5c8;
+}
+
+.textLt{
+    text-align:left;
+}
+
+
+div.notification-preference {
+    text-align:bottom;
+    padding-top:8px;
+}
+
+.notification-preference label {
+    padding-right:15px;
+        padding-left:5px;
 }
