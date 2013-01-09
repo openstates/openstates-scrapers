@@ -64,10 +64,10 @@ class MTLegislatorScraper(LegislatorScraper):
                 continue
 
             # City.
-            entry['city'] = entry['city'].title()
+            entry['city'] = entry['city']
 
             # Address.
-            entry['address'] = entry['address'].title()
+            entry['address'] = entry['address']
 
             # District.
             district = entry['district']
@@ -104,8 +104,20 @@ class MTLegislatorScraper(LegislatorScraper):
 
             # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
-            deets = self._scrape_details(detail_url)
 
+            # Get the office.
+            address = '\n'.join([
+                entry['address'],
+                '%s, %s %s' % (entry['city'], entry['state'], entry['zip'])
+                ])
+
+            office = dict(
+                name='District Office', type='district', phone=None,
+                fax=None, email=None,
+                address=address)
+
+            deets = self._scrape_details(detail_url)
+            # import ipdb;ipdb.set_trace()
             # Add the details and delete junk.
             entry.update(deets)
             del entry['first_name'], entry['last_name']
@@ -116,6 +128,20 @@ class MTLegislatorScraper(LegislatorScraper):
             legislator.add_source(detail_url)
             legislator.add_source(url)
             legislator['url'] = detail_url
+
+            office['phone'] = deets.get('phone')
+            office['fax'] = deets.get('fax')
+            legislator.add_office(**office)
+
+            print legislator['url']
+            print legislator['photo_url']
+            x = re.search(r'(\d+)\.jpg', legislator['photo_url'])
+            if x:
+                y = x.group(1)
+                if y not in legislator['url']:
+                    import ipdb;ipdb.set_trace()
+            else:
+                import ipdb;ipdb.set_trace()
 
             self.save_legislator(legislator)
 
@@ -142,21 +168,21 @@ class MTLegislatorScraper(LegislatorScraper):
         url = doc.xpath('//a[contains(@href, "roster.asp")]/@href')[0]
 
         # Fetch it.
-        self.raise_errors = False
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        self.raise_errors = True
-        # try:
-        #     with open('mt_hotgarbage.txt') as f:
-        #         html = f.read()
-        #         doc = lxml.html.fromstring(html)
-        # except IOError:
-        #     self.raise_errors = False
-        #     html = self.urlopen(url)
-        #     doc = lxml.html.fromstring(html)
-        #     self.raise_errors = True
-        #     with open('mt_hotgarbage.txt', 'w') as f:
-        #         f.write(html)
+        # self.raise_errors = False
+        # html = self.urlopen(url)
+        # doc = lxml.html.fromstring(html)
+        # self.raise_errors = True
+        try:
+            with open('mt_hotgarbage.txt') as f:
+                html = f.read()
+                doc = lxml.html.fromstring(html)
+        except IOError:
+            self.raise_errors = False
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
+            self.raise_errors = True
+            with open('mt_hotgarbage.txt', 'w') as f:
+                f.write(html)
 
         # Get the new baseurl, like 'http://leg.mt.gov/css/Sessions/62nd/'
         parts = urlparse.urlparse(url)
@@ -189,9 +215,10 @@ class MTLegislatorScraper(LegislatorScraper):
         '''
         doc = self.url_xpath(url)
 
+        xpath = '//img[contains(@src, "legislator")]/@src'
+        photo_url = doc.xpath(xpath).pop()
         details = {
-            'photo_url': doc.xpath('//table[@name][1]/'
-                                   'descendant::img/@src')[0],
+            'photo_url': photo_url
             }
 
         # Get base url.
@@ -201,25 +228,25 @@ class MTLegislatorScraper(LegislatorScraper):
 
         doc.make_links_absolute(baseurl)
 
-        # Parse address.
+        # # Parse address.
         elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])
-        # dropper = lambda element: element.tag != 'b'
-        # elements = dropwhile(dropper, elements)
-        # assert next(elements).text == 'Address'
-        # elements = list(takewhile(taker, elements))
+        # # dropper = lambda element: element.tag != 'b'
+        # # elements = dropwhile(dropper, elements)
+        # # assert next(elements).text == 'Address'
+        # # elements = list(takewhile(taker, elements))
 
-        # MT's website currently has a typo that places the "address"
-        # heading inline with the "Information Office" phone number.
-        # This hack tempprarily makes things work.
+        # # MT's website currently has a typo that places the "address"
+        # # heading inline with the "Information Office" phone number.
+        # # This hack tempprarily makes things work.
         elements = elements[3:]
         chunks = []
         for br in elements:
             chunks.extend(filter(None, [br.text, br.tail]))
 
         # As far as I can tell, MT legislators don't have capital offices.
-        office = dict(name='District Office', type='district', phone=None,
-                      fax=None, email=None,
-                      address='\n'.join(chunks[:2]))
+        # office = dict(name='District Office', type='district', phone=None,
+        #               fax=None, email=None,
+        #               address='\n'.join(chunks[:2]))
         for line in chunks[2:]:
             if not line.strip():
                 continue
@@ -231,9 +258,10 @@ class MTLegislatorScraper(LegislatorScraper):
             if number:
                 number = number.group()
                 if key:
-                    office[key] = number
+                    # Used to set this on the office.
+                    details[key] = number
 
-        details['offices'] = [office]
+        # details['offices'] = [office]
 
         try:
             email = doc.xpath('//b[contains(., "Email")]/..')[0]
