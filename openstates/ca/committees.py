@@ -77,6 +77,10 @@ class CACommitteeScraper(CommitteeScraper):
                         c.add_source(source)
 
                 if len(c['members']) == 0:
+                    # Some committees weren't staff in early
+                    # 2013; opting to skip rather than blow
+                    # up the whole scrape.
+                    return
                     cname = c['committee']
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
@@ -111,6 +115,10 @@ class CACommitteeScraper(CommitteeScraper):
                         c.add_source(source)
 
                 if len(c['members']) == 0:
+                    # Some committees weren't staff in early
+                    # 2013; opting to skip rather than blow
+                    # up the whole scrape.
+                    return
                     cname = c['committee']
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
