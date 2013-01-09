@@ -6,7 +6,7 @@
 {% load url from future %}
 
 {% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
-{% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
+{% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they&rsquo;ve voted, and browse bills, committees and events." %} {% endblock %}
 
 {% block headblock %}
 <script>
@@ -21,57 +21,58 @@ $(document).ready(function() {
 
 {% block content %}
     <div id="container">
-        <div class="fullWidth module">
+        <div class="fullWidth clearfix">
             <div class="sixCol colRt">
-                <a href="/profile">Edit your profile</a>
+                <p class="author">Need to change something? <a href="/profile">Edit your profile.</a></p>
             </div>
         </div>
-        <div class="fullWidth mainModule">
+        <div class="fullWidth clearfix">
 
             {% if favorites %}
-            <div class="sixCol colLt">
-                <h1 class="moduleTitle">You're following:</h1>
-                <ul style="padding-left: 25px">
-                    {% for type, objs in favorites.items %}
-                    <li>
-                        <h5>{{objs|length|apnumber|title}}
+                <h3 class="topPad">You're following:</h3>
+               <!--- <ul>
+                   {% for type, objs in favorites.items %}
+                      <li>
+                       <h5>{{objs|length|apnumber|title}}
                         {% if type != 'search' %}
                             <a href="#{{type}}">{{type|title}}{{objs|pluralize}}</a>
                         {% else %}
                             <a href="#{{type}}">Searches</a>
                         {% endif %}
-                        </h5></li>
+                        </h5>
+
+                        </li>
                     </li>
                     {% endfor %}
-                </ul>
-            </div>
+                </ul> -->
             {% else %}
-                <h1>You're not following anything yet.</h1>
+                <h3 class="topPad">You're not following anything yet.</h3>
                 <p>You can follow bills, legislators, committees, and searches by clicking
-                    star on each item's page. Get busy!</p>
+                    the star on each item's page. Get busy!</p>
             {% endif %}
-            <div class="clear"></div>
         </div>
 
-
+<!-- bills -->
         {% if favorites.has_bills %}
         <div class="module">
             <a name="bill" id="bill"></a>
+
+            <h3 class="moduleTitle colLt">{% trans "Bills" %}</h3>
             {% notification_preference 'bill' profile %}
-            <h3 class="moduleTitle">{% trans "Bills" %}</h3>
             <table class="withFilter">
                 <thead>
                     <tr id="titles">
-                        <th class="invisible">Favorite</th>
+
                         <th>{% trans "State" %}</th>
                         <th>{% trans "Title" %}</th>
                         <th>{% trans "Session" %}</th>
                         <th>{% trans "Recent Action" %}</th>
+                        <th class="invisible">Favorite</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for fave in favorites.bill %}
-                    <tr>
+                    <tr class="{% cycle 'even' 'odd' %} textLt">
                     {% with obj=fave.obj %}
                         <td>{% favorite_short obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
                         <td>{{obj.metadata.name}}</td>
@@ -84,6 +85,7 @@ $(document).ready(function() {
                             <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
                         {% endwith %}
                     {% endwith %}
+                    <td>{% favorite obj.id 'bill' obj.metadata.abbr 'is_favorite' %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -91,28 +93,33 @@ $(document).ready(function() {
         </div>
         {% endif %}
 
+
+<!-- legislators -->
         {% if favorites.has_legislators %}
 
         <div class="module">
             <a name="legislator" id="legislator"></a>
+
+            <h3 class="moduleTitle colLt">{% trans "Legislators" %}</h3>
             {% notification_preference 'legislator' profile %}
-            <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
             <table id="main-table">
                 <thead>
                     <tr id="title">
-                        <th class="invisible">Favorite</th>
+
                         <th class="invisible">{% trans "Picture" %}</th>
                         <th>{% trans "State" %}</a></th>
                         <th>{% trans "Name" %}</a></th>
                         <th>{% trans "District" %}</a></th>
                         <th>{% trans "Party" %}</a></th>
                         <th>{% trans "Chamber" %}</a></th>
+                        <th class="invisible">Favorite</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %}">
                         <td>{% favorite_short obj_short.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
+
                         <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
                         <td>{{obj.metadata.name}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
@@ -123,6 +130,7 @@ $(document).ready(function() {
                         {% else %}
                             <td>{% trans "inactive" %}</td>
                         {% endif %}
+                        <td>{% favorite obj.id 'legislator' obj.metadata.abbr 'is_favorite' %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -130,24 +138,29 @@ $(document).ready(function() {
         </div>
         {% endif %}
 
+
+<!-- Committee -->
         {% if favorites.has_committees %}
         <div class="module">
             <a name="committee" id="committee"></a>
+
+            <h3 class="moduleTitle colLt">{% trans "Committees" %}</h3>
             {% notification_preference 'committee' profile %}
-            <h3 class="moduleTitle">{% trans "Committees" %}</h3>
            <table id="main-table">
               <thead>
                 <tr>
-                  <th class="invisible">Favorite</th>
+
                   <th>{% trans "State" %}</th>
                   <th>{% trans "Chamber" %}</th>
                   <th>{% trans "Name" %}</th>
                   <th>{% trans "Members" %}</th>
+                  <th class="invisible">Favorite</th>
                 </tr>
               </thead>
               {% for obj in committees %}
               <tr class="{% cycle odd,even %}">
                 <td>{% favorite_short obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
+
                 <td>{{ obj.metadata.name }}</td>
                 <td>{{ obj.chamber_name }}</td>
                 <td><a href="{{ obj.get_absolute_url }}">{{ obj.display_name }}</a></td>
@@ -170,23 +183,27 @@ $(document).ready(function() {
                     </ul>
                   {% endif %}
                 </td>
+                <td>{% favorite obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
               </tr>
               {% endfor %}
             </table>
         </div>
         {% endif %}
 
+<!-- Searches -->
         {% if favorites.has_searches %}
         <div class="module">
             <a name="search" id="search"></a>
+
+            <h3 class="moduleTitle colLt">{% trans "Searches" %}</h3>
             {% notification_preference 'search' profile %}
-            <h3 class="moduleTitle">{% trans "Searches" %}</h3>
             <table>
                 <thead>
                     <tr>
-                        <th class="invisible">Favorite</th>
+
                         <th>Search term</th>
                         <th>Scope</th>
+                        <th class="invisible">Favorite</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -195,6 +212,7 @@ $(document).ready(function() {
                             <td>{% favorite_short obj.id 'search' obj.metadata.abbr 'is_favorite' obj.search_params %}</td>
                             <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td>{{obj.scope|safe}}</td>
+                            <td>{% favorite obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
