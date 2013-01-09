@@ -96,7 +96,7 @@ class KSBillScraper(BillScraper):
         if 'resolution' in bill['type']:
             base_url = 'http://www.kslegislature.org/li/b2013_14/year1/measures/'
 
-        url = base_url + bill['bill_id'].lower()
+        url = base_url + bill['bill_id'].lower() + '/'
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
 
