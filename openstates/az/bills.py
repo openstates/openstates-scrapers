@@ -17,6 +17,10 @@ SPONSOR_TYPES = {'P': ('primary', 'P'),
                  'PZ': ('primary', 'PZ'),
                  'CZ': ('cosponsor', 'CZ')}
 
+# This string of hot garbage appears when a document hasn't been posted yet.
+hot_garbage_404_fail = ('The Requested Document Has Not Been '
+                        'Posted To The Web Site Yet.')
+
 class AZBillScraper(BillScraper):
     def accept_response(self, response):
         normal = super(AZBillScraper, self).accept_response(response)
@@ -40,7 +44,14 @@ class AZBillScraper(BillScraper):
         session_id = self.get_session_id(session)
         url = BASE_URL + 'DocumentsForBill.asp?Bill_Number=%s&Session_ID=%s' % (
                                            bill_id.replace(' ', ''), session_id)
+
         with self.urlopen(url) as docs_for_bill:
+
+            if hot_garbage_404_fail in docs_for_bill:
+                # Bailing here will prevent the bill from being saved, which
+                # occurs in the scrape_actions method below.
+                return
+
             root = html.fromstring(docs_for_bill)
             bill_title = root.xpath(
                             '//div[@class="ContentPageTitle"]')[1].text.strip()
@@ -130,6 +141,11 @@ class AZBillScraper(BillScraper):
         bill_id = bill['bill_id'].replace(' ', '')
         action_url = BASE_URL + 'FormatDocument.asp?inDoc=/legtext/%s/bills/%so.asp' % (ses_num, bill_id.lower())
         with self.urlopen(action_url) as action_page:
+
+            if hot_garbage_404_fail in action_page:
+                # Bailing here prevents the bill from being saved.
+                return
+
             bill.add_source(action_url)
             root = html.fromstring(action_page)
             base_table = root.xpath('//table[@class="ContentAreaBackground"]')[0]

@@ -125,9 +125,9 @@ class MIBillScraper(BillScraper):
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
             version = self.parse_doc_row(row)
             if version:
-                if version['url'].endswith('.pdf'):
+                if version[1].endswith('.pdf'):
                     mimetype = 'application/pdf'
-                elif version['url'].endswith('.htm'):
+                elif version[1].endswith('.htm'):
                     mimetype = 'text/html'
                 bill.add_version(*version, mimetype=mimetype)
 
@@ -195,6 +195,8 @@ class MIBillScraper(BillScraper):
                     vtype = vote.no
                 elif 'Excused' in p or 'Not Voting' in p:
                     vtype = vote.other
+                elif 'Roll Call No' in p:
+                    continue
                 elif p.startswith('In The Chair:'):
                     break
                 else:

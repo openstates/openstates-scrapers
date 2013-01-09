@@ -55,9 +55,10 @@ class NYLegislatorScraper(LegislatorScraper):
             xpath = '//a[contains(@href, "profile-pictures")]/@href'
             legislator['photo_url'] = page.xpath(xpath).pop()
 
-            email = page.xpath('//span[@class="spamspan"]')[0].text_content()
-            email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
+            email = page.xpath('//span[@class="spamspan"]')
             if email:
+                email = email[0].text_content()
+                email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
                 legislator['email'] = email
 
             dist_str = page.xpath("string(//div[@class = 'district'])")
@@ -130,8 +131,38 @@ class NYLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link, email in zip(page.xpath("//a[contains(@href, '/mem/')]"),
-                               page.xpath("//a[contains(@href, 'mailto')]")):
+        def _split_list_on_tag(lis, tag):
+            data = []
+            for entry in lis:
+                if entry.attrib['class'] == tag:
+                    yield data
+                    data = []
+                else:
+                    data.append(entry)
+
+        for row in _split_list_on_tag(page.xpath("//div[@id='mememailwrap']/*"),
+                                      "emailclear"):
+
+            try:
+                name, district, email = row
+            except ValueError:
+                name, district = row
+                email = None
+
+            link = name.xpath(".//a[contains(@href, '/mem/')]")
+            if link != []:
+                link = link[0]
+            else:
+                link = None
+
+            if email is not None:
+            # XXX: Missing email from a record on the page
+            # as of 12/11/12. -- PRT
+                email = email.xpath(".//a[contains(@href, 'mailto')]")
+                if email != []:
+                    email = email[0]
+                else:
+                    email = None
 
             name = link.text.strip()
             if name == 'Assembly Members':
@@ -154,9 +185,11 @@ class NYLegislatorScraper(LegislatorScraper):
             # Legislator
             self.scrape_lower_offices(leg_url, legislator)
 
-            email = email.text_content().strip()
-            if email:
-                legislator['email'] = email
+            if email is not None:
+                email = email.text_content().strip()
+                if email:
+                    legislator['email'] = email
+
             self.save_legislator(legislator)
 
     def scrape_lower_offices(self, url, legislator):
@@ -165,8 +198,15 @@ class NYLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(url)
 
         contact = doc.xpath('//div[@id="addrinfo"]')[0]
+        email = contact.xpath(".//a[contains(@href, 'mailto:')]")
+        if email != []:
+            email = email[0].attrib['href'].replace("mailto:", "").strip()
+            if not email:
+                email = None
+        else:
+            email = None
 
-        # Sometimes clsas is "addrcol1", others "addrcola"
+        # Sometimes class is "addrcol1", others "addrcola"
         col_generators = [
 
             # Try alpha second.
@@ -212,7 +252,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
                 office = dict(
                     name=office_name, type=office_type, phone=phone,
-                    fax=None, email=None,
+                    fax=None, email=email,
                     address=''.join(address).strip())
 
                 legislator.add_office(**office)

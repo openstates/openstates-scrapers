@@ -12,10 +12,10 @@ metadata = {
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     'terms': [
-        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013_14']},
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
-         'sessions': ['2011_12', '2011_ss']}
+         'sessions': ['2011_12', '2011_ss']},
+        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
+         'sessions': ['2013_14']}
      ],
     'session_details': {
         '2013_14': {

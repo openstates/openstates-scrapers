@@ -43,13 +43,20 @@ class CALegislatorScraper(LegislatorScraper):
         parse = self.parse_legislator
         for tr in rows:
             legislator = parse(tr, term, chamber)
+            # Try to spot on the janky ways the site expresses vacant seats.
             if legislator['full_name'].startswith('Vacant'):
                 continue
             if '[ Vacant ]' in legislator['full_name']:
                 continue
+            fullname = legislator['full_name']
+            if not legislator['first_name'] and fullname.endswith('Vacant'):
+                continue
             legislator.add_source(url)
             #pprint.pprint(legislator)
-            self.save_legislator(legislator)
+            try:
+                self.save_legislator(legislator)
+            except:
+                import ipdb;ipdb.set_trace()
 
     def parse_legislator(self, tr, term, chamber,
 

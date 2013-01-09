@@ -20,6 +20,8 @@ metadata = dict(
          'sessions': ['2009', '2010']},
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011', '2011s', '2012']},
+        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
+         'sessions': ['2013']},
         ],
     session_details={
         '2009': {'display_name': '2009 Regular Session',
@@ -36,6 +38,9 @@ metadata = dict(
                   '_scraped_name': '2011 (86th) Special Session',
                  },
         '2012': {'display_name': '2012 Regular Session',
+                 '_scraped_name': '2012 (87th) Session',
+                },
+        '2013': {'display_name': '2013 Regular Session',
                 }
     },
     feature_flags=['subjects', 'influenceexplorer'],

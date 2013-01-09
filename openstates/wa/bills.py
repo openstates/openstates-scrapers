@@ -1,5 +1,6 @@
 import re
 import datetime
+import scrapelib
 from collections import defaultdict
 
 from .actions import Categorizer, committees_abbrs
@@ -44,35 +45,38 @@ class WABillScraper(BillScraper):
             self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
-            with self.urlopen(url) as page:
-                page = lxml.etree.fromstring(page.bytes)
+            try:
+                with self.urlopen(url) as page:
+                    page = lxml.etree.fromstring(page.bytes)
+            except scrapelib.HTTPError:
+                continue  # future years.
 
-                for leg_info in xpath(page, "//wa:LegislationInfo"):
-                    bill_id = xpath(leg_info, "string(wa:BillId)")
-                    bill_num = int(bill_id.split()[1])
+            for leg_info in xpath(page, "//wa:LegislationInfo"):
+                bill_id = xpath(leg_info, "string(wa:BillId)")
+                bill_num = int(bill_id.split()[1])
 
-                    # Skip gubernatorial appointments
-                    if bill_num >= 9000:
-                        continue
+                # Skip gubernatorial appointments
+                if bill_num >= 9000:
+                    continue
 
-                    # Senate bills are numbered starting at 5000,
-                    # House at 1000
-                    if bill_num > 5000:
-                        bill_chamber = 'upper'
-                    else:
-                        bill_chamber = 'lower'
+                # Senate bills are numbered starting at 5000,
+                # House at 1000
+                if bill_num > 5000:
+                    bill_chamber = 'upper'
+                else:
+                    bill_chamber = 'lower'
 
-                    if bill_chamber != chamber:
-                        continue
+                if bill_chamber != chamber:
+                    continue
 
-                    # normalize bill_id
-                    bill_id_norm = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
-                                              bill_id)
-                    if not bill_id_norm:
-                        self.warning("illegal bill_id %s" % bill_id)
-                        continue
+                # normalize bill_id
+                bill_id_norm = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
+                                          bill_id)
+                if not bill_id_norm:
+                    self.warning("illegal bill_id %s" % bill_id)
+                    continue
 
-                    bill_id_list.append(bill_id_norm[0])
+                bill_id_list.append(bill_id_norm[0])
 
         # de-dup bill_id
         for bill_id in list(set(bill_id_list)):
@@ -151,6 +155,9 @@ class WABillScraper(BillScraper):
         )
 
         with self.urlopen(url) as page:
+            if "Bill Not Found" in page:
+                return
+
             page = lxml.html.fromstring(page)
             actions = page.xpath("//table")[6]
             found_heading = False

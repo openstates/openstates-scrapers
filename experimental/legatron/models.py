@@ -5,22 +5,32 @@ have useful entries, which states or particular legislators don't have many
 entries, etc. These things will help in curating and debugging the news feed
 scraping so we can figure out whether some states need more links or more
 specific patterns added to identify bills, committees, legislators.
+
+Note: Script needs to blast the feed cache at the beginning of each run.
+
 '''
 import time
 import datetime
 import traceback
 import hashlib
+import shutil
 
 import feedparser
 
 import scrapelib
+from scrapelib.cache import FileCache
 from billy.core import logging
 from billy.core import feeds_db
 
 
 USER_AGENT = ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
               'Gecko/20100101 Firefox/10.0.2')
+
 FASTMODE = True
+
+# This assumes the script will be run with openstates as the cwd.
+FEEDS_CACHE = 'cache/feeds'
+ENTRIES_CACHE = 'cache/entries'
 
 
 def _request_defaults(kwargs):
@@ -49,15 +59,20 @@ class Feed(object):
     report dictionary that gets augmented each time one of the feed's
     entries is scanned for relevant entities.
     '''
+
     request_defaults = dict(
+        cache_obj=FileCache(FEEDS_CACHE),
         requests_per_minute=0,
         cache_write_only=False)
 
-    session = scrapelib.Scraper(**_request_defaults(request_defaults))
+    session = scrapelib.Scraper(
+        **_request_defaults(request_defaults))
     logger = logging.getLogger('billy.feed-model')
 
-    def __init__(self, url):
+    def __init__(self, url, jurisdiction):
         self.url = url
+        self.jurisdiction = jurisdiction
+
         self.succeeded = None
         self.default_report = {
             'entries': {
@@ -75,14 +90,22 @@ class Feed(object):
 
             # The info is stored under the jurisdiction key
             # to avoid over-writing data for feeds with national scope that
-            # are scanned for multiple jursidictions. For example:
-            'ex': self.default_report
+            # are scanned for multiple jursidictions.
+            jurisdiction: self.default_report
             }
 
-        # Delete example data.
-        self.report['ex']
 
+        # Make sure this feed has a mongo id.
         self._initial_save()
+
+    @staticmethod
+    def blast_cache(self):
+        '''Remove the scrapelib.Scraper fastmode cache for feed retrieval.
+        Done before a scrape, but not before multiple jurisdictions in a
+        single run, in case a feed of national scope needs to get processed
+        for each state.
+        '''
+        shutil.rmtree(FEEDS_CACHE)
 
     def _initial_save(self):
         '''Perform the initial save (to get us the mongo_id if none exists yet.
@@ -90,7 +113,8 @@ class Feed(object):
         spec = dict(url=self.url)
         update = {'$set': spec}
         self.logger.info('feed._initial_save %r' % self.url)
-        doc = feeds_db.feeds.find_and_modify(spec, update, upsert=True)
+        doc = feeds_db.feeds.find_and_modify(
+            spec, update, upsert=True, new=True)
         self.mongo_id = doc['_id']
 
     def _get_feed(self):
@@ -98,22 +122,19 @@ class Feed(object):
         the exception. Finally, update the report with details of the
         success/failure of the fetch.
         '''
-        self.logger.info('feed GET %r' % self.url)
         try:
             text = self.session.get(self.url).text
         except Exception:
             tb = traceback.format_exc()
             self._handle_fetch_exception(tb)
-            return
+        else:
+            self.succeeded = True
 
-        self.succeeded = True
-
-        # XXX: This will fail if the link doesn't point to a valid feed.
-        data = feedparser.parse(text)
-        self._data = data
+            # XXX: This will fail if the text isn't a valid feed.
+            data = feedparser.parse(text)
+            self._data = data
 
         self._update_report_after_fetch()
-        return data
 
     @property
     def data(self):
@@ -140,16 +161,14 @@ class Feed(object):
             }
         if not self.succeeded:
             last_fetch['traceback'] = self.traceback
-        report = {
-            'url': self.url,
-            'last_fetch': last_fetch
-            }
-        self.report.update(report)
+        self.report[self.jurisdiction].update(last_fetch=last_fetch)
 
     def entries(self):
         '''A generator of wrapped entries for this feed.
         '''
-        for entry in self.data['entries']:
+        data = self.data or {}
+        entries = data.get('entries', [])
+        for entry in entries:
             yield Entry(entry, feed=self)
 
     def serializable(self):
@@ -159,14 +178,16 @@ class Feed(object):
         return {'$set': self.report}
 
     def finish_report(self):
-        '''
+        '''Extra stuff to go in the report goes here.
         '''
 
     def save(self):
         '''
         '''
         spec = dict(url=self.url)
-        feeds_db.feeds.find_and_modify(spec, self.serializable(), upsert=True)
+        update = {'$set': self.report}
+        self.logger.info('feed.finish_report %r' % self.url)
+        feeds_db.feeds.find_and_modify(spec, update, upsert=True, new=True)
         self.logger.info('feed.save: %r' % self.url)
 
 
@@ -174,6 +195,7 @@ class Entry(object):
     '''Wrap a parsed feed entry dictionary thingy from feedparser.
     '''
     request_defaults = dict(
+        cache_obj=FileCache(ENTRIES_CACHE),
         requests_per_minute=0,
         cache_write_only=False)
 
@@ -188,6 +210,12 @@ class Entry(object):
         # Whether a fetch of the full text was tried and succeeded.
         self.tried = False
         self.succeeded = None
+
+    @staticmethod
+    def blast_cache(self):
+        '''Just in case you want to blast the entries cache.
+        '''
+        shutil.rmtree(ENTRIES_CACHE)
 
     def mongo_id(self):
         '''Get a unique mongo id based on this entry's url and title.

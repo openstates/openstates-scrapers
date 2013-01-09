@@ -18,7 +18,7 @@ metadata = dict(
          'biennium': '86',
         },
         {'name': '2011-2012',
-         'sessions': ['2011-2012', '2011s1'],
+         'sessions': ['2011-2012', '2011s1', '2012s1'],
          'start_year': 2011,
          'end_year': 2012,
          'biennium': '87',
