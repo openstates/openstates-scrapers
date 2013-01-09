@@ -73,7 +73,7 @@ $(document).ready(function() {
                 {% for fave in favorites.bill %}
                     <tr>
                     {% with obj=fave.obj %}
-                        <td>{% favorite obj.id 'bill' obj.metadata.abbr 'is_favorite' %}</td>
+                        <td>{% favorite_short obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
                         <td>{{obj.metadata.name}}</td>
                         <td>
                             <a href="{{ obj.get_absolute_url }}">{{obj.bill_id}}</a>
@@ -112,7 +112,7 @@ $(document).ready(function() {
                 <tbody>
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %}">
-                        <td>{% favorite obj.id 'legislator' obj.metadata.abbr 'is_favorite' %}</td>
+                        <td>{% favorite_short obj_short.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
                         <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
                         <td>{{obj.metadata.name}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
@@ -147,7 +147,7 @@ $(document).ready(function() {
               </thead>
               {% for obj in committees %}
               <tr class="{% cycle odd,even %}">
-                <td>{% favorite obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
+                <td>{% favorite_short obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
                 <td>{{ obj.metadata.name }}</td>
                 <td>{{ obj.chamber_name }}</td>
                 <td><a href="{{ obj.get_absolute_url }}">{{ obj.display_name }}</a></td>
@@ -192,7 +192,7 @@ $(document).ready(function() {
                 <tbody>
                     {% for obj in favorites.search %}
                         <tr class="{% cycle odd,even %}">
-                            <td>{% favorite obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
+                            <td>{% favorite_short obj.id 'search' obj.metadata.abbr 'is_favorite' obj.search_params %}</td>
                             <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td>{{obj.scope|safe}}</td>
                         </tr>
