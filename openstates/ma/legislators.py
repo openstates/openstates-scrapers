@@ -7,6 +7,8 @@ def clean_district(district):
     mappings = (
         ('\s+', ' '),
         ('Consisting.*', ''),
+        ('Consistng.*', ''),
+        ('Consiting.*', ''),
         (u'\xe2.*', ''),
         ('\..*', ''),
         (' a(m|n)d ', '&'),
@@ -27,13 +29,12 @@ def clean_district(district):
         ('yseventh', 'y-Seventh'),
         ('yeighth', 'y-Eighth'),
         ('yninth', 'y-Ninth'),
+        ('\s*-+\s*$', ''),
     )
     district = district.title()
     for pattern, repl in mappings:
         district = re.sub(pattern, repl, district)
-    district = district.strip()
-    if district.endswith(','):
-        district = district[:-1]
+    district = district.strip(', -')
     return district
 
 
@@ -65,8 +66,10 @@ class MALegislatorScraper(LegislatorScraper):
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         full_name = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@alt')[0]
 
+
         email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
         email = email.replace('mailto:','')
+        # if full_name == 'Frank A. Moran':
 
         district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
         if len(district):
@@ -114,4 +117,6 @@ class MALegislatorScraper(LegislatorScraper):
             leg.add_office(otype, office_name, phone=phone, fax=fax,
                            address='\n'.join(address), email=email)
 
+        if leg['last_name'] == 'Moran':
+            import ipdb;ipdb.set_trace()
         self.save_legislator(leg)
