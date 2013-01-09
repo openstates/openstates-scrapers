@@ -117,6 +117,4 @@ class MALegislatorScraper(LegislatorScraper):
             leg.add_office(otype, office_name, phone=phone, fax=fax,
                            address='\n'.join(address), email=email)
 
-        if leg['last_name'] == 'Moran':
-            import ipdb;ipdb.set_trace()
         self.save_legislator(leg)
