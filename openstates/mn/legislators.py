@@ -1,3 +1,7 @@
+from collections import defaultdict
+import csv
+from cStringIO import StringIO
+
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
 
@@ -22,87 +26,93 @@ class MNLegislatorScraper(LegislatorScraper):
 100 Rev. Dr. Martin Luther King Jr. Blvd.
 Saint Paul, Minnesota 55155'''
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-            # skip first header row
-            for row in doc.xpath('//tr')[1:]:
-                tds = [td.text_content().strip() for td in row.xpath('td')]
-                if len(tds) == 5:
-                    district = tds[0].lstrip('0')
-                    name, party = tds[1].rsplit(' ', 1)
-                    if party == '(R)':
-                        party = 'Republican'
-                    elif party == '(DFL)':
-                        party = 'Democratic-Farmer-Labor'
-                    leg_url = row.xpath('td[2]/p/a/@href')[0]
-                    addr = tds[2] + office_addr
-                    phone = tds[3]
-                    email = tds[4]
+        # skip first header row
+        for row in doc.xpath('//tr')[1:]:
+            tds = [td.text_content().strip() for td in row.xpath('td')]
+            if len(tds) == 5:
+                district = tds[0].lstrip('0')
+                name, party = tds[1].rsplit(' ', 1)
+                if party == '(R)':
+                    party = 'Republican'
+                elif party == '(DFL)':
+                    party = 'Democratic-Farmer-Labor'
+                leg_url = row.xpath('td[2]/p/a/@href')[0]
+                addr = tds[2] + office_addr
+                phone = tds[3]
+                email = tds[4]
 
-                leg = Legislator(term, 'lower', district, name,
-                                 party=party, email=email, url=leg_url)
+            leg = Legislator(term, 'lower', district, name,
+                             party=party, email=email, url=leg_url)
 
-                addr = ('{0} State Office Building\n'
-                        '100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
-                        'St. Paul, MN 55155').format(addr)
-                leg.add_office('capitol', 'Capitol Office', address=addr,
-                               phone=phone)
+            addr = ('{0} State Office Building\n'
+                    '100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
+                    'St. Paul, MN 55155').format(addr)
+            leg.add_office('capitol', 'Capitol Office', address=addr,
+                           phone=phone)
 
-                # add photo_url
-                with self.urlopen(leg_url) as leg_html:
-                    leg_doc = lxml.html.fromstring(leg_html)
-                    img_src = leg_doc.xpath('//img[contains(@src, "memberimg")]/@src')
-                    if img_src:
-                        leg['photo_url'] = img_src[0]
+            # add photo_url
+            leg_html = self.urlopen(leg_url)
+            leg_doc = lxml.html.fromstring(leg_html)
+            img_src = leg_doc.xpath('//img[contains(@src, "memberimg")]/@src')
+            if img_src:
+                leg['photo_url'] = img_src[0]
 
-                leg.add_source(url)
-                leg.add_source(leg_url)
-                self.save_legislator(leg)
+            leg.add_source(url)
+            leg.add_source(leg_url)
+            self.save_legislator(leg)
 
     def scrape_senate(self, term):
-        BASE_URL = 'http://www.senate.leg.state.mn.us/'
-        url = 'http://www.senate.leg.state.mn.us/members/member_list.php'
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        index_url = 'http://www.senate.mn/members/index.php'
+        doc = lxml.html.fromstring(self.urlopen(index_url))
+        doc.make_links_absolute(index_url)
 
-            for row in doc.xpath('//tr'):
-                tds = row.xpath('td')
-                if len(tds) == 5 and tds[1].text_content() in self._parties:
-                    district = tds[0].text_content().lstrip('0')
-                    party = tds[1].text_content()
-                    name_a = tds[2].xpath('a')[0]
-                    name = name_a.text.strip()
-                    leg_url = BASE_URL + name_a.get('href')
-                    addr, phone = tds[3].text_content().split(u'\xa0\xa0')
-                    email = tds[4].text_content()
+        leg_data = defaultdict(dict)
 
-                    leg = Legislator(term, 'upper', district, name,
-                                     party=self._parties[party],
-                                     url=leg_url)
+        # get all the tds in a certain div
+        tds = doc.xpath('//div[@id="hide_show_alpha_all"]//td[@style="vertical-align:top;"]')
+        for td in tds:
+            # each td has 2 <a>s- site & email
+            main_link, email = td.xpath('.//a')
+            # get name
+            name = main_link.text_content().split(' (')[0]
+            leg = leg_data[name]
+            leg['leg_url'] = main_link.get('href')
+            leg['photo_url'] = td.xpath('./preceding-sibling::td/a/img/@src')[0]
+            if 'mailto:' in email.get('href'):
+                leg['email'] = email.get('href').replace('mailto:', '')
 
-                    if 'State Office' in addr:
-                        addr = ('100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
-                                'Room {0}\n'
-                                'St. Paul, MN 55155-1206').format(addr)
-                    elif 'Capitol' in addr:
-                        addr = ('75 Rev. Dr. Martin Luther King Jr. Blvd.\n'
-                                'Room {0}\n'
-                                'St. Paul, MN 55155-1606').format(addr)
-                    leg.add_office('capitol', 'Capitol Office', address=addr,
-                                   phone=phone)
+        self.info('collected preliminary data on %s legislators', len(leg_data))
+        assert leg_data
 
-                    if '@' in email:
-                        leg['email'] = email
+        # use CSV for most of data
+        csv_url = 'http://www.senate.mn/members/member_list_ascii.php?ls='
+        csvfile = self.urlopen(csv_url)
 
-                    with self.urlopen(leg_url) as leg_html:
-                        leg_doc = lxml.html.fromstring(leg_html)
-                        img_src = leg_doc.xpath('//img[@height=164]/@src')
-                        if img_src:
-                            leg['photo_url'] = BASE_URL + img_src[0]
+        for row in csv.DictReader(StringIO(csvfile)):
+            if not row['First Name']:
+                continue
+            name = '%s %s' % (row['First Name'], row['Last Name'])
+            party = self._parties[row['Party']]
+            leg = Legislator(term, 'upper', row['District'], name,
+                             party=party,
+                             first_name=row['First Name'],
+                             last_name=row['Last Name'],
+                             **leg_data[name]
+                            )
+            leg.add_office('capitol', 'Capitol Office',
+                           address='%s\nRoom %s\n%s, %s %s' % (
+                               row['Office Address'], row['Rm. Number'],
+                               row['City'], row['State'], row['Zipcode']),
+                           phone='%s-%s' % (row['Area Code'],
+                                            row['Office Phone']))
 
-                    leg.add_source(url)
 
-                    self.save_legislator(leg)
+            leg.add_source(csv_url)
+            leg.add_source(index_url)
+
+            self.save_legislator(leg)
