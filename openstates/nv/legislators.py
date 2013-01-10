@@ -1,12 +1,11 @@
-import re
-import urlparse
+import json
 import datetime
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import clean_committee_name
 
 import lxml.html
+import scrapelib
 
 class NVLegislatorScraper(LegislatorScraper):
     jurisdiction = 'nv'
@@ -19,60 +18,36 @@ class NVLegislatorScraper(LegislatorScraper):
                 slug = self.metadata['session_details'][session]['slug']
 
         if chamber == 'upper':
-            leg_url = 'http://www.leg.state.nv.us/Session/' + slug  + '/legislators/Senators/slist.cfm'
-            num_districts = 22
+            chamber_slug = 'Senate'
         elif chamber == 'lower':
-            leg_url = 'http://www.leg.state.nv.us/Session/' + slug  + '/legislators/Assembly/alist.cfm'
-            num_districts = 43
+            chamber_slug = 'Assembly'
 
-        with self.urlopen(leg_url) as page:
-            page = page.replace("&nbsp;", " ")
-            root = lxml.html.fromstring(page)
+        leg_base_url = 'http://www.leg.state.nv.us/App/Legislator/A/%s/%s/' % (chamber_slug, slug)
+        leg_json_url = 'http://www.leg.state.nv.us/App/Legislator/A/api/%s/Legislator?house=%s' % (slug, chamber_slug)
 
-            #Going through the districts
-            for row_index in range(2, num_districts+1):
-                namepath = 'string(//table[%s]/tr/td/table[1]/tr/td[2])' % row_index
-                last_name = root.xpath(namepath).split()[0]
-                last_name = last_name[0 : len(last_name) - 1]
-                middle_name = ''
+        resp = json.loads(self.urlopen(leg_json_url))
 
-                if len(root.xpath(namepath).split()) == 2:
-                    first_name = root.xpath(namepath).split()[1]
-                elif len(root.xpath(namepath).split()) == 3:
-                    first_name = root.xpath(namepath).split()[1]
-                    middle_name = root.xpath(namepath).split()[2]
-                elif len(root.xpath(namepath).split()) == 4:
-                    first_name = root.xpath(namepath).split()[2]
-                    middle_name = root.xpath(namepath).split()[3]
-                    last_name = last_name + " " + root.xpath(namepath).split()[1]
-                    last_name = last_name[0: len(last_name) - 1]
+        for item in resp:
+            leg = Legislator(term_name, chamber, item['DistrictNbr'],
+                             item['FullName'], party=item['Party'],
+                             photo_url=item['PhotoURL'])
+            leg_url = leg_base_url + item['DistrictNbr']
 
-                if len(middle_name) > 0:
-                    full_name = first_name + " " + middle_name + " " + last_name
-                else:
-                    full_name = first_name + " " + last_name
+            # fetch office from legislator page
+            try:
+                doc = lxml.html.fromstring(self.urlopen(leg_url))
+                address = doc.xpath('//div[@class="contactAddress"]')[0].text_content()
+                address2 = doc.xpath('//div[@class="contactAddress2"]')
+                if address2:
+                    address += ' ' + address2[0].text_content()
+                address += '\n' + doc.xpath('//div[@class="contactCityStateZip"]')[0].text_content()
+                phone = doc.xpath('//div[@class="contactPhone"]')[0].text_content()
 
-                partypath = 'string(//table[%s]/tr/td/table[1]/tr/td[3])' % row_index
-                party = root.xpath(partypath).split()[-1]
-                if party == 'Democrat':
-                    party = 'Democratic'
+                leg.add_office('district', 'District Address', address=address,
+                               phone=phone)
+            except scrapelib.HTTPError:
+                self.warning('could not fetch %s' % leg_url)
+                pass
 
-                districtpath = 'string(//table[%s]/tr/td/table[1]/tr/td[4])' % row_index
-                district = root.xpath(districtpath).strip()[11:]
-                if district.startswith('No.'):
-                    district = district[3:].strip()
-
-                termpath = 'string(//table[%s]/tr/td/table[2]/tr/td[5])' % row_index
-                end_date = root.xpath(termpath)[12: 21]
-                email = root.xpath(termpath).split()[-1]
-
-                addresspath = 'string(//table[%s]/tr/td/table[2]/tr/td[2])' % row_index
-                address = root.xpath(addresspath)
-
-                leg = Legislator(term_name, chamber, district, full_name,
-                                 first_name, last_name, middle_name, party,
-                                 email=email, address=address, url=leg_url)
-                leg.add_source(leg_url)
-                self.save_legislator(leg)
-
-
+            leg.add_source(leg_url)
+            self.save_legislator(leg)

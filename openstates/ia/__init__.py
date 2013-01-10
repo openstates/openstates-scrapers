@@ -20,6 +20,12 @@ metadata = dict(
             'end_year': 2012,
             'sessions': ['2011-2012'],
         },
+        {
+            'name': '2013-2014',
+            'start_year': 2013,
+            'end_year': 2014,
+            'sessions': ['2013-2014'],
+        },
     ],
     session_details={
         '2011-2012': {'display_name': '2011-2012 Regular Session',
@@ -28,6 +34,9 @@ metadata = dict(
                       'start_date': datetime.date(2011, 1, 10),
                       'end_date': datetime.date(2013, 1, 13),
                      },
+        '2013-2014': {'display_name': '2013-2014 Regular Session',
+                      '_scraped_name': 'General Assembly: 85',
+                      'number': '85', },
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',

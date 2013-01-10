@@ -142,6 +142,9 @@ class PRBillScraper(BillScraper):
     def scrape_bill(self, chamber, session, bill_id, bill_type):
         url = '%s?r=%s' % (self.base_url, bill_id)
         with self.urlopen(url) as html:
+            if "error '80020009'" in html:
+                self.warning('asp error on page, skipping %s', bill_id)
+                return
             doc = lxml.html.fromstring(html)
             # search for Titulo, accent over i messes up lxml, so use 'tulo'
             title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')

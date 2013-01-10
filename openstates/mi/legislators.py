@@ -64,13 +64,17 @@ class MILegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(html)
             for row in doc.xpath('//table[@width=550]/tr')[1:39]:
                 # party, dist, member, office_phone, office_fax, office_loc
-                party = abbr[row.xpath('td[1]/text()')[0]]
-                district = row.xpath('td[2]/a/text()')[0]
-                leg_url = row.xpath('td[3]/a/@href')[0]
-                name = row.xpath('td[3]/a/text()')[0]
-                office_phone = row.xpath('td[4]/text()')[0]
-                office_fax = row.xpath('td[5]/text()')[0]
-                office_loc = row.xpath('td[6]/text()')[0]
+                party, dist, member, phone, fax, loc = row.getchildren()
+                party = abbr[party.text]
+                district = dist.text_content().strip()
+                name = member.text_content().strip()
+                if name == 'Vacant':
+                    self.info('district %s is vacant', district)
+                    continue
+                leg_url = member.xpath('a/@href')[0]
+                office_phone = phone.text
+                office_fax = fax.text
+                office_loc = loc.text
                 leg = Legislator(term=term, chamber=chamber,
                                  district=district,
                                  full_name=name,

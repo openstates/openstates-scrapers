@@ -4,7 +4,7 @@ import lxml.html
 metadata = dict(
     name='Indiana',
     abbreviation='in',
-    capitol_timezone='America/New_York',
+    capitol_timezone='America/Indiana/Indianapolis',
     legislature_name='Indiana General Assembly',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

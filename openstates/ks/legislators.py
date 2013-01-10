@@ -25,9 +25,9 @@ class KSLegislatorScraper(LegislatorScraper):
         if party == 'Democrat':
             party = 'Democratic'
 
-        leg_url = 'http://www.kslegislature.org/li/b2013_14/members/%s/' % kpid
+        slug = {'2013-2014': 'b2013_14'}[term]
+        leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
         photo_url = 'http://www.kslegislature.org/li/m/images/pics/%s.jpg' % kpid
-        print photo_url
         #photo = legislator_page.xpath('//img[@class="profile-picture"]/@src')[0]
 
         legislator = Legislator(term, chamber, str(content['DISTRICT']),
