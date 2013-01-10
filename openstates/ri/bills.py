@@ -103,21 +103,20 @@ class RIBillScraper(BillScraper):
                 self.warning("This should never happen!!! Oh noes!!!")
         return blocks
 
-    def get_subject_bill_dict(self):
+    def get_subject_bill_dict(self, session):
         global bill_subjects
         if bill_subjects != None:
             return bill_subjects
         ret = {}
         subjects = get_postable_subjects()
+        self.info('getting subjects (total=%s)', len(subjects))
         for subject in subjects:
 
             default_headers = get_default_headers( SEARCH_URL )
 
             default_headers['ctl00$rilinContent$cbCategory'] = \
                 subjects[subject]
-
-            default_headers['ctl00$rilinContent$cbYear'] = \
-                "2012" # XXX: Fixme
+            default_headers['ctl00$rilinContent$cbYear'] = session
 
             #headers = urllib.urlencode( default_headers )
             blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
@@ -252,5 +251,5 @@ class RIBillScraper(BillScraper):
                 # print bill['bill_id'], subs
 
     def scrape(self, chamber, session):
-        subjects = self.get_subject_bill_dict()
+        subjects = self.get_subject_bill_dict(session)
         self.scrape_bills( chamber, session, subjects )

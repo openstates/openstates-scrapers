@@ -109,8 +109,9 @@ class WABillScraper(BillScraper):
                         type=[bill_type])
 
             chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
-            version_url = ("http://www.leg.wa.gov/pub/billinfo/2011-12/"
-                           "Htm/Bills/%s %ss/%s.htm" % (chamber_name,
+            version_url = ("http://www.leg.wa.gov/pub/billinfo/%s/"
+                           "Htm/Bills/%s %ss/%s.htm" % (biennium,
+                                                        chamber_name,
                                                         bill_type.title(),
                                                         bill_num))
             bill.add_version(bill_id, version_url, mimetype='text/html')

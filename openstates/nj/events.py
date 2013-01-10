@@ -6,7 +6,6 @@ from .utils import DBFMixin
 
 from billy.scrape.events import EventScraper, Event
 
-agenda_dbf = "ftp://www.njleg.state.nj.us/ag/2012data/AGENDAS.DBF"
 
 class NJEventScraper(EventScraper, DBFMixin):
     jurisdiction = 'nj'
@@ -95,5 +94,5 @@ class NJEventScraper(EventScraper, DBFMixin):
                                   'committee',
                                   committee_code=record['COMMHOUSE'],
                                   chamber=chamber)
-            event.add_source(agenda_dbf)
+            event.add_source(url)
             self.save_event(event)

@@ -6,14 +6,6 @@ import lxml
 import os
 import re
 
-
-PAGES = {
-    "upper":
-      "http://www.legis.nd.gov/assembly/62-2011/journals/senate-journal.html",
-    "lower":
-      "http://www.legis.nd.gov/assembly/62-2011/journals/house-journal.html"
-}
-
 fin_re = r"(?i).*(?P<bill_id>(S|H|J)(B|R|M) \d+).*(?P<passfail>(passed|lost)).*"
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY), .*\d{1,2},\s\d{4}).*"
 
@@ -28,10 +20,11 @@ class NDVoteScraper(VoteScraper):
 
 
     def scrape(self, chamber, session):
-        if chamber not in PAGES:
-            return
+        chamber_name = 'senate' if chamber == 'lower' else 'house'
+        session_slug = {'62': '62-2011', '63': '63-2013'}[session]
 
-        url = PAGES[chamber]
+        url = "http://www.legis.nd.gov/assembly/%s/journals/%s-journal.html" % (
+            session_slug, chamber_name)
         page = self.lxmlize(url)
         pdfs = page.xpath("//a[contains(@href, '.pdf')]")
         for pdf in pdfs:
