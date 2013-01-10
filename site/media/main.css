@@ -1100,7 +1100,7 @@ pre {
     margin-top: 40px;
 }
 
-/* Profile Page */
+/* Profile and Favorites Pages */
 #find_your_leg button {
     border-width: 3px;
     background: url(images/btn_searchAddress.png) top left no-repeat;
@@ -1138,6 +1138,21 @@ div.notification-preference {
 .notification-preference label {
     padding-right:15px;
         padding-left:5px;
+}
+
+.favHead {
+    text-align:left;
+    background-color: #00FF00;
+
+}
+
+.favHead th{
+    padding-bottom: 5px;
+    padding-top:5px;
+}
+
+.followBox {
+    width:40px;
 }
 
 

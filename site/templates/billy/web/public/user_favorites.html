@@ -61,7 +61,7 @@ $(document).ready(function() {
             {% notification_preference 'bill' profile %}
             <table class="withFilter">
                 <thead>
-                    <tr id="titles">
+                    <tr class="favHead">
 
                         <th>{% trans "State" %}</th>
                         <th>{% trans "Title" %}</th>
@@ -104,7 +104,7 @@ $(document).ready(function() {
             {% notification_preference 'legislator' profile %}
             <table id="main-table">
                 <thead>
-                    <tr id="title">
+                    <tr class="favHead">
 
                         <th class="invisible">{% trans "Picture" %}</th>
                         <th>{% trans "State" %}</a></th>
@@ -117,8 +117,7 @@ $(document).ready(function() {
                 </thead>
                 <tbody>
                     {% for obj in legislators %}
-                    <tr class="{% cycle 'even' 'odd' %}">
-                        <td>{% favorite_short obj_short.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
+                    <tr class="{% cycle 'even' 'odd' %} textLt">
 
                         <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
                         <td>{{obj.metadata.name}}</td>
@@ -130,7 +129,7 @@ $(document).ready(function() {
                         {% else %}
                             <td>{% trans "inactive" %}</td>
                         {% endif %}
-                        <td>{% favorite obj.id 'legislator' obj.metadata.abbr 'is_favorite' %}</td>
+                         <td>{% favorite_short obj_short.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -148,7 +147,7 @@ $(document).ready(function() {
             {% notification_preference 'committee' profile %}
            <table id="main-table">
               <thead>
-                <tr>
+                <tr class="favHead">
 
                   <th>{% trans "State" %}</th>
                   <th>{% trans "Chamber" %}</th>
@@ -159,7 +158,7 @@ $(document).ready(function() {
               </thead>
               {% for obj in committees %}
               <tr class="{% cycle odd,even %}">
-                <td>{% favorite_short obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
+                
 
                 <td>{{ obj.metadata.name }}</td>
                 <td>{{ obj.chamber_name }}</td>
@@ -183,7 +182,7 @@ $(document).ready(function() {
                     </ul>
                   {% endif %}
                 </td>
-                <td>{% favorite obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
+                <td>{% favorite_short obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
               </tr>
               {% endfor %}
             </table>
@@ -199,7 +198,7 @@ $(document).ready(function() {
             {% notification_preference 'search' profile %}
             <table>
                 <thead>
-                    <tr>
+                    <tr class="favHead">
 
                         <th>Search term</th>
                         <th>Scope</th>
@@ -209,10 +208,10 @@ $(document).ready(function() {
                 <tbody>
                     {% for obj in favorites.search %}
                         <tr class="{% cycle odd,even %}">
-                            <td>{% favorite_short obj.id 'search' obj.metadata.abbr 'is_favorite' obj.search_params %}</td>
+
                             <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td>{{obj.scope|safe}}</td>
-                            <td>{% favorite obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
+                            <td>{% favorite_short obj.id 'search' obj.metadata.abbr 'is_favorite' obj.search_params %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
