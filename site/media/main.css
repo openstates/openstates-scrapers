@@ -728,7 +728,7 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
     color: white;
 }
 
-.selected { background-color: #ffffd6; }
+.selected { background-color: #E9E6DF; }
 
 input[type="checkbox"] {
     width: 1em;
