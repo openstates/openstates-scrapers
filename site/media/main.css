@@ -118,7 +118,7 @@ button, .buttonLink { width: auto; text-indent: -9999em; display: block; border:
 /* structure */
 
 #container, footer, #mainHeader { width: 940px; margin: 0 auto; padding: 0 10px; }
-body { background: #fafaf6 url(images/bg.jpg) top center repeat-x; }
+body { background: #fafaf6 url(images/bg.jpg) top center repeat-x;}
 .home #container { min-height: 450px;}
 .home .sidebar{
 	background: #efefe8; /* Old browsers */
@@ -238,12 +238,20 @@ a.tip:hover { color: #d6ac04; }
 
 
 /* header */
-#searchform { float: right; width: 265px; margin-top: 5px; }
+#searchform { float: right; width: 265px; margin-top: 35px; }
+
+#searchform label {
+    color:#766d6d;
+    font-size: 15px;
+    font-weight: 300;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+}
+
 #searchAddressform { width: ; margin-top: 5px; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
-#mainHeader h1 { width: 414px; height: 46px; padding-top: 35px; margin-bottom: 34px; float: left;}
+#mainHeader h1 { width: 414px; height: 46px; padding-top: 60px; margin-bottom: 34px; float: left;}
 #mainHeader h1 a { background: url(images/logo.png) top left no-repeat; width: 414px; height: 46px; }
 
 #mainFilter { margin-bottom: 10px;}
@@ -265,7 +273,7 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 	border: 3px solid #d8d5c8;
 }
 
-#shareBtns { float: right; clear: right; margin-top: 85px; height: 16px;}
+#shareBtns { float: right; clear: right; margin-top: 50px; height: 16px;}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
 #shareBtns li a { width: 16px; height: 16px; }
 #facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
@@ -301,6 +309,17 @@ div.flatpage .social-links li { float:left; height:16px; margin-bottom:15px;
 .social-youtube:hover { background-position:left -86px; }
 .content .join-social>ul > li { list-style-type:none; }
 .content .join-social>ul { margin-left: 0; }
+
+.footerheaders{
+    color:#6d655f;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-weight:300;
+    font-style: normal;
+}
+
+.noCap {
+    text-transform:none;
+}
 
 /*  lists  */
 dt { font-weight: bold;}
@@ -387,7 +406,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
-.callOutBox { padding: 20px 15px 30px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
+.callOutBox { padding: 20px 0px 30px 0; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
 .callOutBox.tagline{ border: 0; -moz-border-radius: 0; -webkit-border-radius: 0; margin-right: 0;text-align: center; width: 100%; background: url('images/bg_tagline.jpg') center top repeat-x; height: 149px; margin-top: -70px; font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; }
 .callOutBox.tagline ul{
 	padding-left: 15px;
@@ -1120,3 +1139,31 @@ div.notification-preference {
     padding-right:15px;
         padding-left:5px;
 }
+
+
+/* Sunlight Hat */
+
+.hatWrap {
+    background: url("images/hat.jpg") repeat-x scroll center top transparent;
+    height: 53px;
+}
+
+.hatWrap div.contentWrapper {
+    margin-top: 0;
+    overflow: visible;
+    width:940px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.productOf {
+    background: url("images/productof.jpg") no-repeat scroll center top transparent;
+    display: block;
+    float: right;
+    height: 29px;
+    margin-right: 10px;
+    margin-top: 6px;
+    text-indent: -99999em;
+    width: 218px;
+}
+

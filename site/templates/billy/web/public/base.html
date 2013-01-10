@@ -68,14 +68,24 @@
 </head>
 
 <body class="{% block bodyclass %}{% endblock %}">
+    <div class="hatWrap">
+            <div class="contentWrapper">
+                <a href="http://www.sunlightfoundation.com" class="productOf">
+                        a product of Sunlight Foundation
+                </a>
+            </div>
+     </div>
+
     <header id="mainHeader">
+
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'search the site' %}">
+            <label>Search for bills or legislation:</label>
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'search all states' %}">
             <button type="submit">
                 <span>{% trans "Search" %}</span>
             </button>
         </form>
-        <h1 class="clear"><a class="textReplace" href="/">Open States</a></h1>
+        <h1><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns"></div>
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
@@ -120,7 +130,7 @@
             </div>
             <div id="footerRt">
                 <div id="recources">
-                    <h4 class="h5">{% trans 'Resources ' %}</h4>
+                    <h4 class="footerheaders">{% trans 'Resources ' %}</h4>
                     <dl class="inlineList">
                         <dt>{% trans 'Use Our Data:' %}</dt>
                         <dd>
@@ -150,7 +160,7 @@
                         </dd>
                     </dl>
                 </div>
-                <h4 class="withTip h5">{% trans "Like This Project and Want to Discover Others Like It?" %}</h4>
+                <h4 class="withTip footerheaders noCap">{% trans "Like This Project and Want to Discover Others Like It?" %}</h4>
                 <span class="tip">{% trans "Join the Sunlight Foundation&rsquo;s open government community to learn more" %}</span>
                 <form action="http://organizing.sunlightfoundation.com/page/s/open-states" method="post" id="submit">
                     <input type="text" name="email" placeholder="{% trans 'your email address' %}">
