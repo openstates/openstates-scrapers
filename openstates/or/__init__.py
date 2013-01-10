@@ -31,7 +31,7 @@ metadata = dict(
         '2012 Special Session' : {
             'display_name': '2012 Speical Session',
             '_scraped_name': '2012 Special Session (December 14)',
-            'slug': '12s',
+            'slug': '12ss1',
         }
     },
     feature_flags=['influenceexplorer'],
