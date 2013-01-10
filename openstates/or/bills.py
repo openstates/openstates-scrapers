@@ -198,7 +198,6 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        print line.split(u"\ufffd")
         (type, combined_id, number, title, relating_to) = line.split(u"\ufffd")
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
