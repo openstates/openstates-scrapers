@@ -90,7 +90,6 @@ class FLLegislatorScraper(LegislatorScraper):
                 if party == 'Democrat':
                     party = 'Democratic'
 
-                print term
                 if term != '2013-2014':
                     raise ValueError('Please change the senate photo_url string.')
                 photo_url = ("http://www.flsenate.gov/userContent/"
