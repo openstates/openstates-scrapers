@@ -129,7 +129,7 @@ $(document).ready(function() {
                         {% else %}
                             <td>{% trans "inactive" %}</td>
                         {% endif %}
-                         <td>{% favorite_short obj_short.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
+                         <td>{% favorite_short obj.id 'legislator' obj.metadata.abbr 'is_favorite'%}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
