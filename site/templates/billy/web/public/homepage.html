@@ -7,6 +7,35 @@
 {% block title %}{% trans "Open States: discover politics in your state" %}{% endblock %}
 {% block description %}{% trans "Follow politics in your state legislature. Find your legislators, see how they've voted, and browse bills, committees and events." %} {% endblock %}
 
+{% block headblock %}
+<script src="{% static 'js/d3.v3.min.js' %}"></script>
+<script>
+    var blue = '#75afa5';
+    var green = '#a5b765';
+    $(function() {
+        d3.xml("{% static 'images/frontpage-map.svg' %}", "image/svg+xml", function(xml) {
+            /* inject the map into page */
+            var map = document.importNode(xml.documentElement, true);
+            d3.select('#svgmap').node().appendChild(map);
+            /* add a mouseover handler for each g */
+            d3.selectAll('g')
+            //.each(function() { if(!this.id) { console.log(this);}  } )
+            .on("mouseover", function() {
+                d3.select(this).selectAll('stop').style('stop-color', blue);
+            })
+            .on("mouseout", function() {
+                d3.select(this).selectAll('stop').style('stop-color', green);
+            })
+            .on("click", function() {
+                if(this.id.length == 2) {
+                    document.location = '/' + this.id + '/';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
 {% block bodyclass %}home{% endblock %}
 
 {% block callOut %}
@@ -32,6 +61,7 @@
         </div>
 	</div>
 {% endblock callOut %}
+
 {% block content %}
     <div id="container">
         <div class="module eightCol colLt">
@@ -47,8 +77,8 @@
             </div>
             <span class="fancyOr">or:</span>
             <div class="module byState">
-            	<h3>{% trans "Browse by state:" %}</h3>
-		        <img class="noBorder" src="{% static 'images/openstatesmap.svg' %}">
+                <h3>{% trans "Browse by state:" %}</h3>
+                <div id="svgmap" class="noBorder"></div>
             </div>
         </div>
         <div class="sidebar fourCol colRt">
