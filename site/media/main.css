@@ -728,7 +728,7 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
     color: white;
 }
 
-.selected { background-color: #ffffd6; }
+.selected { background-color: #E9E6DF; }
 
 input[type="checkbox"] {
     width: 1em;
@@ -1142,7 +1142,7 @@ div.notification-preference {
 
 .favHead {
     text-align:left;
-    background-color: #00FF00;
+    background-color: #E9E6DF;
 
 }
 
@@ -1151,8 +1151,9 @@ div.notification-preference {
     padding-top:5px;
 }
 
-.followBox {
-    width:40px;
+.followBox  {
+    width:50px;
+    height: 50px;
 }
 
 .topAlign td{
@@ -1160,6 +1161,14 @@ div.notification-preference {
     vertical-align:top;
 }
 
+.favorite-button {
+    background-color:#E7B300;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+    padding:4px;
+    color:#504A45;
+}
 
 /* Sunlight Hat */
 
