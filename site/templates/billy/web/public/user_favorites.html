@@ -72,9 +72,9 @@ $(document).ready(function() {
                 </thead>
                 <tbody>
                 {% for fave in favorites.bill %}
-                    <tr class="{% cycle 'even' 'odd' %} textLt">
+                    <tr class="{% cycle 'even' 'odd' %} textLt topAlign">
                     {% with obj=fave.obj %}
-                        <td>{% favorite_short obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
+
                         <td>{{obj.metadata.name}}</td>
                         <td>
                             <a href="{{ obj.get_absolute_url }}">{{obj.bill_id}}</a>
@@ -85,7 +85,7 @@ $(document).ready(function() {
                             <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
                         {% endwith %}
                     {% endwith %}
-                    <td>{% favorite obj.id 'bill' obj.metadata.abbr 'is_favorite' %}</td>
+                     <td>{% favorite_short obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -157,8 +157,8 @@ $(document).ready(function() {
                 </tr>
               </thead>
               {% for obj in committees %}
-              <tr class="{% cycle odd,even %}">
-                
+              <tr class="{% cycle odd,even %} textLt">
+
 
                 <td>{{ obj.metadata.name }}</td>
                 <td>{{ obj.chamber_name }}</td>
@@ -207,7 +207,7 @@ $(document).ready(function() {
                 </thead>
                 <tbody>
                     {% for obj in favorites.search %}
-                        <tr class="{% cycle odd,even %}">
+                        <tr class="{% cycle odd,even %} textLt">
 
                             <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td>{{obj.scope|safe}}</td>

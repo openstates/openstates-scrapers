@@ -1155,6 +1155,11 @@ div.notification-preference {
     width:40px;
 }
 
+.topAlign td{
+    text-align:top;
+    vertical-align:top;
+}
+
 
 /* Sunlight Hat */
 
