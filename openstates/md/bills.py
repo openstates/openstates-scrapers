@@ -337,7 +337,8 @@ class MDBillScraper(BillScraper):
                 raise ValueError('unexpected chamber: ' + new_chamber.text)
 
             action = action.text
-            action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
+            if cal_date.text:
+                action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
 
             atype, committee = _classify_action(action)
             kwargs = { "type": atype }
