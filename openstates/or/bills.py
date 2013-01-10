@@ -184,7 +184,7 @@ class ORBillScraper(BillScraper):
                                                a['date'], type=action_type)
 
     def _parse_action_line(self, line):
-        combined_id, prefix, number, house, date, time, note = line.split(u"\xe4")
+        combined_id, prefix, number, house, date, time, note = line.split(u"\ufffd")
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
         actor = "upper" if house == "S" else "lower"
@@ -198,7 +198,8 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        (type, combined_id, number, title, relating_to) = line.split(u"\xe4")
+        print line.split(u"\ufffd")
+        (type, combined_id, number, title, relating_to) = line.split(u"\ufffd")
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
 
