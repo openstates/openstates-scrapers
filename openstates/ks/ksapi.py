@@ -1,5 +1,5 @@
 ksleg = 'http://www.kslegislature.org/li'
-url = '%s/api/v5/rev-1/' % ksleg
+url = '%s/api/v7/rev-1/' % ksleg
 
 # in order from sec 10.1 of KLISS doc
 action_codes = {

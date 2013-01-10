@@ -179,19 +179,14 @@ class WIBillScraper(BillScraper):
                                                          a.text))
 
         # add actions (second history dl is the full list)
-        history_dl = doc.xpath('//dl[@class="history"]')[-1]
-        for dt in history_dl.xpath('dt'):
-            date = dt.text.strip()
+        hist_table = doc.xpath('//table[@class="history"]')[1]
+        for row in hist_table.xpath('.//tr[@class="historyRow"]'):
+            date_house, action_td, journal = row.getchildren()
+
+            date, actor = date_house.text_content().split()
             date = datetime.datetime.strptime(date, '%m/%d/%Y')
-            actor = dt.xpath('abbr/text()')[0]
             actor = {'Asm.': 'lower', 'Sen.': 'upper'}[actor]
-            # text is in the dd immediately following
-            dd = dt.xpath('following-sibling::dd[1]')[0]
-            action = dd.text_content()
-            # get the journal number from the end of the line & strip it
-            jspan = dd.xpath('string(.//span[@class="journal noprint"])')
-            if jspan:
-                action = action[:-len(jspan)]
+            action = action_td.text_content()
 
             if 'Introduced by' in action:
                 self.parse_sponsors(bill, action)
@@ -214,8 +209,8 @@ class WIBillScraper(BillScraper):
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
-                dd = dt.xpath('following-sibling::dd[1]')[0]
-                self.add_vote(bill, actor, date, action, dd)
+                vote_url = action_td.xpath('a/@href')[0]
+                self.add_vote(bill, actor, date, action, vote_url)
 
         bill.add_source(url)
         self.save_bill(bill)
@@ -271,7 +266,7 @@ class WIBillScraper(BillScraper):
                     bill.add_sponsor(sponsor_type, r.strip(),
                                      chamber=sponsor_chamber)
 
-    def add_vote(self, bill, chamber, date, text, dd):
+    def add_vote(self, bill, chamber, date, text, url):
         votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
 
@@ -284,78 +279,57 @@ class WIBillScraper(BillScraper):
         v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
 
         # fetch the vote itself
-        link = dd.xpath('.//a[contains(@href, "/votes/")]')
-        if link:
-            link = link[0].get('href')
-            v.add_source(link)
+        if url:
+            v.add_source(url)
 
-            filename, resp = self.urlretrieve(link)
+            if 'av' in url:
+                self.add_house_votes(v, url)
+            elif 'sv' in url:
+                self.add_senate_votes(v, url)
 
-            if 'av' in link:
-                self.add_house_votes(v, filename)
-            elif 'sv' in link:
-                self.add_senate_votes(v, filename)
-
-            os.remove(filename)
-
+        v.validate()
         bill.add_vote(v)
 
 
-    def add_senate_votes(self, vote, filename):
-        xml = convert_pdf(filename, 'xml')
-        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
+    def add_senate_votes(self, vote, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
         # what to do with the pieces
         vfunc = None
 
-        for textitem in doc.xpath('//text'):
-
-            text = textitem.text_content().strip()
-
-            if text.startswith('AYES'):
-                vfunc = vote.yes
-                vote['yes_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('NAYS'):
-                vfunc = vote.no
-                vote['no_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('NOT VOTING'):
-                vfunc = vote.other
-                vote['other_count'] = int(text.split(u' \u2212 ')[1])
-            elif text.startswith('SEQUENCE NO'):
-                vfunc = None
-            elif vfunc:
-                vfunc(text)
-
-
-    def add_house_votes(self, vote, filename):
-        vcount_re = re.compile('AYES.* (\d+).*NAYS.* (\d+).*NOT VOTING.* (\d+).* PAIRED.*(\d+)')
-        xml = convert_pdf(filename, 'xml')
-        doc = lxml.html.fromstring(xml)  # use lxml.html for text_content()
-
-        # function to call on next legislator name
-        vfunc = None
-        name = ''
-
-        for textitem in doc.xpath('//text/text()'):
-            if textitem.startswith('AYES'):
-                ayes, nays, nv, paired = vcount_re.match(textitem).groups()
-                vote['yes_count'] = int(ayes)
-                vote['no_count'] = int(nays)
-                vote['other_count'] = int(nv)
-                # NOTE: paired do not count in WI's counts so we omit them
-            elif textitem == 'N':
-                vfunc = vote.no
-                name = ''
-            elif textitem == 'Y':
-                vfunc = vote.yes
-                name = ''
-            elif textitem == 'x':
-                vfunc = vote.other
-                name = ''
-            elif textitem in ('R', 'D', 'I'):
-                vfunc(name)
+        # a game of div-div-table
+        for ddt in doc.xpath('//div/div/table'):
+            text = ddt.text_content()
+            if 'Wisconsin Senate' in text or 'SEQUENCE NO' in text:
+                continue
+            elif 'AYES -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.yes(name.strip())
+            elif 'NAYS -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.no(name.strip())
+            elif 'NOT VOTING -' in text:
+                for name in text.split('\n\n\n\n\n')[1:]:
+                    if name.strip():
+                        vote.other(name.strip())
             else:
-                if name:
-                    name += ' ' + textitem
-                else:
-                    name = textitem
+                raise ValueError('unexpected block in vote')
+
+    def add_house_votes(self, vote, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+
+        for td in doc.xpath('//td[@width="120"]'):
+            name = td.text_content()
+            if name == 'NAME':
+                continue
+            for vote_td in td.xpath('./preceding-sibling::td'):
+                if vote_td.text_content() == 'Y':
+                    vote.yes(name)
+                elif vote_td.text_content() == 'N':
+                    vote.no(name)
+                elif vote_td.text_content() == 'NV':
+                    vote.other(name)

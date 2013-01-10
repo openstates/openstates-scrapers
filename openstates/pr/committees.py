@@ -16,29 +16,18 @@ def clean_spaces(s):
 
 class PRCommitteeScraper(CommitteeScraper):
     jurisdiction = 'pr'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
-        if chamber == "upper":
+    def scrape(self, term, chambers):
+        if 'upper' in chambers:
             self.scrape_upper()
-        elif chamber == "lower":
+        elif 'lower' in chambers:
             self.scrape_lower()
 
     def scrape_upper(self):
-        self.scrape_upper_committee('http://senadopr.us/SiteCollectionDocuments/Comisiones_Permanentes(2009-2012).pdf')
-#       joint_comm = 'http://senadopr.us/SiteCollectionDocuments/Comisiones_Conjuntas(2009-2012).pdf';
-#       self.scrape_joint_committee(joint_comm);
+        raise Exception('needs to be rewritten for 2013')
 
-    def scrape_joint_committee(self,url):
-        filename, resp = self.urlretrieve(url)
-        root = lxml.etree.fromstring(convert_pdf(filename,'xml'))
-        for link in root.xpath('/pdf2xml/page'):
-            comm = None
-            self.log(lxml.etree.tostring(root))
-            return
-
-    def scrape_upper_committee(self,url):
+    def scrape_upper_committee(self, url):
         filename, resp = self.urlretrieve(url)
         root = lxml.etree.fromstring( convert_pdf(filename,'xml'))
         for link in root.xpath('/pdf2xml/page'):

@@ -67,6 +67,12 @@ metadata = dict(
             ],
             'start_year': 2011, 'end_year': 2012
         },
+        {'name': '2013-2014',
+            'sessions': [
+                '2013',
+            ],
+            'start_year': 2013, 'end_year': 2014
+        },
     ],
     session_details = {
         #'1998':
@@ -155,6 +161,11 @@ metadata = dict(
             {'type': 'primary',
             'display_name': '61st Legislature, 2nd Regular Session',
             '_scraped_name': '2012 Session Information',
+            },
+        '2013':
+            {'type': 'primary',
+            'display_name': '62ed Legislature, 1st Regular Session',
+            '_scraped_name': '2013 Session Information',
             },
     },
     feature_flags=['influenceexplorer'],

@@ -314,6 +314,9 @@ class MDBillScraper(BillScraper):
             if a.text == 'Text':
                 bill.add_version('Bill Text', a.get('href'),
                                  mimetype='application/pdf')
+            elif a.text == 'Analysis':
+                bill.add_document(a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
             else:
                 raise ValueError('unknown document type')
 
@@ -334,7 +337,8 @@ class MDBillScraper(BillScraper):
                 raise ValueError('unexpected chamber: ' + new_chamber.text)
 
             action = action.text
-            action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
+            if cal_date.text:
+                action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
 
             atype, committee = _classify_action(action)
             kwargs = { "type": atype }

@@ -26,7 +26,10 @@ class NELegislatorScraper(LegislatorScraper):
                 address += page.xpath('//div[@id="sidebar"]/ul[1]/li[4]')[0].text.strip() + '\n'
                 address += page.xpath('//div[@id="sidebar"]/ul[1]/li[5]')[0].text.strip()
                 phone = page.xpath('//div[@id="sidebar"]/ul[1]/li[6]')[0].text.split()
-                phone = phone[1] + '-' + phone[2]
+                if len(phone) > 2:
+                    phone = phone[1] + ' ' + phone[2]
+                else:
+                    phone = None
                 email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
 
                 #Nebraska is offically nonpartisan

@@ -22,7 +22,7 @@ class CTBillScraper(BillScraper):
         self._subjects = defaultdict(list)
 
         self.scrape_committee_names()
-        self.scrape_subjects()
+        self.scrape_subjects(session)
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
         self.scrape_bill_info(session, chambers)
@@ -168,10 +168,11 @@ class CTBillScraper(BillScraper):
             bill.add_vote(vote)
 
 
-    def scrape_subjects(self):
+    def scrape_subjects(self, session):
         for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             url = ('http://www.cga.ct.gov/asp/cgasubjectsearch/'
-                   'default.asp?LeadingChar=' + letter)
+                   'default.asp?which_year1=%s&LeadingChar=%s' % (session,
+                                                                  letter))
             html = self.urlopen(url)
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)

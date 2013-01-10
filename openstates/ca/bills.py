@@ -279,18 +279,21 @@ class CABillScraper(BillScraper):
         self.validate_session(session)
 
         bill_types = {
-            'ACA': 'constitutional amendment',
-            'ACR': 'concurrent resolution',
-            'AJR': 'joint resolution',
-            'HR': 'resolution',
-            'SB': 'bill',
-            'SCA': 'constitutional amendment',
-            'SCR': 'concurrent resolution',
-            'SR': 'resolution',
+            'lower': {
+                'ACA': 'constitutional amendment',
+                'ACR': 'concurrent resolution',
+                'AJR': 'joint resolution',
+                'HR': 'resolution',
+                },
+            'upper': {
+                'SB': 'bill',
+                'SCA': 'constitutional amendment',
+                'SCR': 'concurrent resolution',
+                'SR': 'resolution',
+                }
             }
 
-
-        for abbr, type_ in bill_types.items():
+        for abbr, type_ in bill_types[chamber].items():
             self.scrape_bill_type(chamber, session, type_, abbr)
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr,

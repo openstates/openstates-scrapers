@@ -83,7 +83,7 @@ metadata = {
                                  'end_date': datetime.date(2014,1,13),
                                  'type': 'primary',
                                  'display_name': '2013 Regular Session',
-                                 '_scraped_name': '20xx Regular Session',
+                                 '_scraped_name': '2013 Regular Session',
                                 },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],

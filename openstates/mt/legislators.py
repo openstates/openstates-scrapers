@@ -12,16 +12,20 @@ import scrapelib
 from .committees import scrape_committees
 
 
-def url_xpath(url):
-    html = scrapelib.urlopen(url)
-    html = html
-    doc = lxml.html.fromstring(html)
-    return doc
-
-
 class MTLegislatorScraper(LegislatorScraper):
 
     jurisdiction = 'mt'
+
+    def url_xpath(self, url):
+        # Montana's legislator page was returning valid content with 500
+        # code as of 1/9/2013. Previous discussions with them after similar
+        # incidents in the past suggest some external part of their stack
+        # is having some issue and the error is bubbling up to the ret code.
+        self.raise_errors = False
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        self.raise_errors = True
+        return doc
 
     def scrape(self, chamber, term):
 
@@ -34,8 +38,8 @@ class MTLegislatorScraper(LegislatorScraper):
         # Scrape committees. Also produce a name dictionary that can be
         # used for fuzzy matching between the committee page names and the
         # all-caps csv names.
-        for name_dict, _ in scrape_committees(year, chamber):
-            pass
+        # for name_dict, _ in scrape_committees(year, chamber):
+        #     pass
 
         # Fetch the csv.
         url = 'http://leg.mt.gov/content/sessions/%s/%d%sMembers.txt' % \
@@ -52,15 +56,18 @@ class MTLegislatorScraper(LegislatorScraper):
 
         district_leg_urls = self._district_legislator_dict()
 
+        # Toss the row headers.
+        next(csv_parser)
+
         for entry in csv_parser:
             if not entry:
                 continue
 
             # City.
-            entry['city'] = entry['city'].title()
+            entry['city'] = entry['city']
 
             # Address.
-            entry['address'] = entry['address'].title()
+            entry['address'] = entry['address']
 
             # District.
             district = entry['district']
@@ -74,31 +81,43 @@ class MTLegislatorScraper(LegislatorScraper):
             del entry['party']
 
             # Get full name properly capped.
-            _fullname = '%s %s' % (entry['first_name'].capitalize(),
+            fullname = _fullname = '%s %s' % (entry['first_name'].capitalize(),
                                    entry['last_name'].capitalize())
 
             city_lower = entry['city'].lower()
-            fullname = difflib.get_close_matches(
-                           _fullname, name_dict[city_lower], cutoff=0.5)
+            # fullname = difflib.get_close_matches(
+            #                _fullname, name_dict[city_lower], cutoff=0.5)
 
             # If there are no close matches with the committee page,
             # use the title-capped first and last name.
-            if len(fullname) < 1:
-                fullname = _fullname
-                # msg = 'No matches found for "%s" with "%s" from %r'
-                # self.debug(msg % (_fullname, fullname,
-                #                   name_dict[city_lower]))
-            else:
-                fullname = fullname[0]
-                # if _fullname != fullname:
-                #     msg = 'matched "%s" with "%s" from %r'
-                #     self.debug(msg % (_fullname, fullname,
-                #                       name_dict[city_lower]))
+            # if len(fullname) < 1:
+            #     fullname = _fullname
+            #     # msg = 'No matches found for "%s" with "%s" from %r'
+            #     # self.debug(msg % (_fullname, fullname,
+            #     #                   name_dict[city_lower]))
+            # else:
+            #     fullname = fullname[0]
+            #     # if _fullname != fullname:
+            #     #     msg = 'matched "%s" with "%s" from %r'
+            #     #     self.debug(msg % (_fullname, fullname,
+            #     #                       name_dict[city_lower]))
 
             # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
-            deets = self._scrape_details(detail_url)
 
+            # Get the office.
+            address = '\n'.join([
+                entry['address'],
+                '%s, %s %s' % (entry['city'], entry['state'], entry['zip'])
+                ])
+
+            office = dict(
+                name='District Office', type='district', phone=None,
+                fax=None, email=None,
+                address=address)
+
+            deets = self._scrape_details(detail_url)
+            # import ipdb;ipdb.set_trace()
             # Add the details and delete junk.
             entry.update(deets)
             del entry['first_name'], entry['last_name']
@@ -109,6 +128,20 @@ class MTLegislatorScraper(LegislatorScraper):
             legislator.add_source(detail_url)
             legislator.add_source(url)
             legislator['url'] = detail_url
+
+            office['phone'] = deets.get('phone')
+            office['fax'] = deets.get('fax')
+            legislator.add_office(**office)
+
+            print legislator['url']
+            print legislator['photo_url']
+            x = re.search(r'(\d+)\.jpg', legislator['photo_url'])
+            if x:
+                y = x.group(1)
+                if y not in legislator['url']:
+                    import ipdb;ipdb.set_trace()
+            else:
+                import ipdb;ipdb.set_trace()
 
             self.save_legislator(legislator)
 
@@ -128,14 +161,28 @@ class MTLegislatorScraper(LegislatorScraper):
         baseurl = parts.geturl()
 
         # Go the find-a-legislator page.
-        doc = url_xpath(url)
+        doc = self.url_xpath(url)
         doc.make_links_absolute(baseurl)
 
         # Get the link to the current member roster.
         url = doc.xpath('//a[contains(@href, "roster.asp")]/@href')[0]
 
         # Fetch it.
-        doc = url_xpath(url)
+        # self.raise_errors = False
+        # html = self.urlopen(url)
+        # doc = lxml.html.fromstring(html)
+        # self.raise_errors = True
+        try:
+            with open('mt_hotgarbage.txt') as f:
+                html = f.read()
+                doc = lxml.html.fromstring(html)
+        except IOError:
+            self.raise_errors = False
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
+            self.raise_errors = True
+            with open('mt_hotgarbage.txt', 'w') as f:
+                f.write(html)
 
         # Get the new baseurl, like 'http://leg.mt.gov/css/Sessions/62nd/'
         parts = urlparse.urlparse(url)
@@ -166,11 +213,12 @@ class MTLegislatorScraper(LegislatorScraper):
         Things available but not currently scraped are office address,
         and waaay too much contanct info, including personal email, phone.
         '''
-        doc = url_xpath(url)
+        doc = self.url_xpath(url)
 
+        xpath = '//img[contains(@src, "legislator")]/@src'
+        photo_url = doc.xpath(xpath).pop()
         details = {
-            'photo_url': doc.xpath('//table[@name][1]/'
-                                   'descendant::img/@src')[0],
+            'photo_url': photo_url
             }
 
         # Get base url.
@@ -180,21 +228,25 @@ class MTLegislatorScraper(LegislatorScraper):
 
         doc.make_links_absolute(baseurl)
 
-        # Parse address.
+        # # Parse address.
         elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])
-        dropper = lambda element: element.tag != 'b'
-        elements = dropwhile(dropper, elements)
-        assert next(elements).text == 'Address'
-        taker = lambda element: element.tag == 'br'
-        elements = list(takewhile(taker, elements))
+        # # dropper = lambda element: element.tag != 'b'
+        # # elements = dropwhile(dropper, elements)
+        # # assert next(elements).text == 'Address'
+        # # elements = list(takewhile(taker, elements))
+
+        # # MT's website currently has a typo that places the "address"
+        # # heading inline with the "Information Office" phone number.
+        # # This hack tempprarily makes things work.
+        elements = elements[3:]
         chunks = []
         for br in elements:
             chunks.extend(filter(None, [br.text, br.tail]))
 
         # As far as I can tell, MT legislators don't have capital offices.
-        office = dict(name='District Office', type='district', phone=None,
-                      fax=None, email=None,
-                      address='\n'.join(chunks[:2]))
+        # office = dict(name='District Office', type='district', phone=None,
+        #               fax=None, email=None,
+        #               address='\n'.join(chunks[:2]))
         for line in chunks[2:]:
             if not line.strip():
                 continue
@@ -206,9 +258,10 @@ class MTLegislatorScraper(LegislatorScraper):
             if number:
                 number = number.group()
                 if key:
-                    office[key] = number
+                    # Used to set this on the office.
+                    details[key] = number
 
-        details['offices'] = [office]
+        # details['offices'] = [office]
 
         try:
             email = doc.xpath('//b[contains(., "Email")]/..')[0]

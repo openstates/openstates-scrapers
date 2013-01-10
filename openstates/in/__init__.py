@@ -4,7 +4,7 @@ import lxml.html
 metadata = dict(
     name='Indiana',
     abbreviation='in',
-    capitol_timezone='America/New_York',
+    capitol_timezone='America/Indiana/Indianapolis',
     legislature_name='Indiana General Assembly',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
@@ -14,7 +14,7 @@ metadata = dict(
         {'name': '2011-2012', 'start_year': 2011,
          'end_year': 2012, 'sessions': ['2011', '2012']},
         {'name': '2013-2014', 'start_year': 2013,
-         'end_year': 2014, 'sessions': ['2013', '2014']},
+         'end_year': 2014, 'sessions': ['2013']},
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 5),
@@ -25,8 +25,6 @@ metadata = dict(
                  '_scraped_name': '2012 Regular Session',},
         '2013': {'display_name': '2013 Regular Session',
                  '_scraped_name': '2013 Regular Session',},
-        '2014': {'display_name': '2014 Regular Session',
-                 '_scraped_name': '2014 Regular Session',},
         },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[

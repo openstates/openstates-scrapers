@@ -15,10 +15,16 @@ metadata = dict(
         {'name': '2009-2012',
          'sessions': ['2009-2012'],
          'start_year': 2009, 'end_year': 2012},
+        {'name': '2013-2016',
+         'sessions': ['2013-2016'],
+         'start_year': 2013, 'end_year': 2016},
      ],
     session_details={
         '2009-2012': {'display_name': '2009-2012 Session',
                       '_scraped_name': '2009-2012'
+                     },
+        '2013-2016': {'display_name': '2013-2016 Session',
+                      '_scraped_name': '2013-2016'
                      },
     },
     feature_flags=[],
@@ -29,7 +35,7 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     # this URL should work even for future sessions
-    return url_xpath('http://www.oslpr.org/legislatura/tl2009/buscar_2009.asp',
+    return url_xpath('http://www.oslpr.org/legislatura/tl2013/buscar_2013.asp',
                      '//select[@name="URL"]/option/text()')
 
 def extract_text(doc, data):

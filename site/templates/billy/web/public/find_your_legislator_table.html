@@ -1,4 +1,5 @@
 {% load i18n %}
+{{legislators}}
 {% if legislators|length > 0 %}
 <table>
     <thead>
@@ -28,7 +29,7 @@
 </div>
 {% else %}
 <div class="find_your_legislator_errorbox">
-    {% trans "<b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
-    check you gave a location in the United States." %}
+    {% blocktrans %}"<b>Oh no!</b> We can't locate any U.S. Legislators for that location. Double
+    check you gave a location in the United States." {% endblocktrans %}
 </div>
 {% endif %}

@@ -143,7 +143,11 @@ class AZBillScraper(BillScraper):
         with self.urlopen(action_url) as action_page:
 
             if hot_garbage_404_fail in action_page:
-                # Bailing here prevents the bill from being saved.
+                # This bill has no actions yet, but that
+                # happened frequently with pre-filed bills
+                # before the 2013 session, so skipping probably
+                # isn't the thing to do.
+                self.save_bill(bill)
                 return
 
             bill.add_source(action_url)

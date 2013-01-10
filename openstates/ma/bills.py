@@ -132,8 +132,13 @@ class MABillScraper(BillScraper):
                     petitioners.pop(k, None)
 
                 for sponsor in sponsors.values():
+                    if sponsor == 'NONE':
+                        continue
                     bill.add_sponsor('primary', sponsor)
+
                 for petitioner in petitioners.values():
+                    if sponsor == 'NONE':
+                        continue
                     bill.add_sponsor('cosponsor', petitioner)
 
                 # sometimes html link is just missing

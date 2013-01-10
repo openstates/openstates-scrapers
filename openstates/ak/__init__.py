@@ -42,7 +42,7 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.ak.us/basis/start.asp',
-                     '(//ul)[last()]/li/a/nobr/text()')
+                     "//div[@id='rightnav']//a[contains(@href, 'start.asp?session=')]//nobr/text()")
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
