@@ -13,8 +13,7 @@ class FLEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
-        if chamber == 'upper' and session == '2011':
-            self.scrape_upper_events(session)
+        self.scrape_upper_events(session)
 
     def scrape_upper_events(self, session):
         url = "http://flsenate.gov/Session/DailyCalendarRSS.cfm?format=rss"

@@ -93,6 +93,9 @@ class AZEventScraper(EventScraper):
 
                 description = agenda_info['description']
                 member_list = agenda_info['member_list']
+                for member in member_list:
+                    member.update(participant_type='legislator',
+                                  type='participant')
                 meeting_type = agenda_info['meeting_type']
                 agenda_items = agenda_info['agenda_items']
                 related_bills= agenda_info['related_bills']
@@ -101,7 +104,8 @@ class AZEventScraper(EventScraper):
                 event = Event(session, when, 'committee:meeting', title,
                               location=room, link=link, details=description) #,
                               #agenda=agenda_items)
-                event.add_participant('committee', committee, 'committee',
+
+                event.add_participant('host', committee, 'committee',
                                       chamber=chamber)
 
                 for i in range(0, len(related_bills)):
