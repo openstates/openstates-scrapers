@@ -158,44 +158,44 @@ ma,lower,Ninth Norfolk,1,sldl/ma-9th-norfolk
 ma,lower,Ninth Plymouth,1,sldl/ma-9th-plymouth
 ma,lower,Ninth Suffolk,1,sldl/ma-9th-suffolk
 ma,lower,Ninth Worcester,1,sldl/ma-9th-worcester
-ma,lower,Barnstable Dukes Nantucket,1,sldl/ma-barnstable-dukes-nantucket
-ma,upper,Berkshire Hampshire Franklin Hampden,1,sldu/ma-berkshire-hampshire-franklin-hampden
-ma,upper,Bristol Norfolk,1,sldu/ma-bristol-norfolk
+ma,lower,"Barnstable, Dukes, and Nantucket",1,sldl/ma-barnstable-dukes-nantucket
+ma,upper,"Berkshire, Hampshire, Franklin, and Hampden",1,sldu/ma-berkshire-hampshire-franklin-hampden
+ma,upper,Bristol and Norfolk,1,sldu/ma-bristol-norfolk
 ma,upper,Cape Islands,1,sldu/ma-cape-islands
 ma,upper,Fifth Middlesex,1,sldu/ma-fifth-middlesex
-ma,upper,First Bristol Plymouth,1,sldu/ma-first-bristol-plymouth
+ma,upper,First Bristol and Plymouth,1,sldu/ma-first-bristol-plymouth
 ma,upper,First Essex,1,sldu/ma-first-essex
-ma,upper,First Essex Middlesex,1,sldu/ma-first-essex-middlesex
-ma,upper,First Hampden Hampshire,1,sldu/ma-first-hampden-hampshire
+ma,upper,First Essex and Middlesex,1,sldu/ma-first-essex-middlesex
+ma,upper,First Hampden and Hampshire,1,sldu/ma-first-hampden-hampshire
 ma,upper,First Middlesex,1,sldu/ma-first-middlesex
-ma,upper,First Middlesex Norfolk,1,sldu/ma-first-middlesex-norfolk
-ma,upper,First Plymouth Bristol,1,sldu/ma-first-plymouth-bristol
+ma,upper,First Middlesex and Norfolk,1,sldu/ma-first-middlesex-norfolk
+ma,upper,First Plymouth and Bristol,1,sldu/ma-first-plymouth-bristol
 ma,upper,First Suffolk,1,sldu/ma-first-suffolk
-ma,upper,First Suffolk Middlesex,1,sldu/ma-first-suffolk-middlesex
+ma,upper,First Suffolk and Middlesex,1,sldu/ma-first-suffolk-middlesex
 ma,upper,First Worcester,1,sldu/ma-first-worcester
 ma,upper,Fourth Middlesex,1,sldu/ma-fourth-middlesex
 ma,upper,Hampden,1,sldu/ma-hampden
-ma,upper,Hampshire Franklin Worcester,1,sldu/ma-hampshire-franklin-worcester
-ma,upper,Middlesex Suffolk,1,sldu/ma-middlesex-suffolk
-ma,upper,Middlesex Worcester,1,sldu/ma-middlesex-worcester
-ma,upper,Norfolk Bristol Middlesex,1,sldu/ma-norfolk-bristol-middlesex
-ma,upper,Norfolk Bristol Plymouth,1,sldu/ma-norfolk-bristol-plymouth
-ma,upper,Norfolk Plymouth,1,sldu/ma-norfolk-plymouth
-ma,upper,Norfolk Suffolk,1,sldu/ma-norfolk-suffolk
-ma,upper,Plymouth Barnstable,1,sldu/ma-plymouth-barnstable
-ma,upper,Plymouth Norfolk,1,sldu/ma-plymouth-norfolk
+ma,upper,"Hampshire, Franklin, and Worcester",1,sldu/ma-hampshire-franklin-worcester
+ma,upper,Middlesex and Suffolk,1,sldu/ma-middlesex-suffolk
+ma,upper,Middlesex and Worcester,1,sldu/ma-middlesex-worcester
+ma,upper,"Norfolk, Bristol, and Middlesex",1,sldu/ma-norfolk-bristol-middlesex
+ma,upper,"Norfolk, Bristol, and Plymouth",1,sldu/ma-norfolk-bristol-plymouth
+ma,upper,Norfolk and Plymouth,1,sldu/ma-norfolk-plymouth
+ma,upper,Norfolk and Suffolk,1,sldu/ma-norfolk-suffolk
+ma,upper,Plymouth and Barnstable,1,sldu/ma-plymouth-barnstable
+ma,upper,Plymouth and Norfolk,1,sldu/ma-plymouth-norfolk
 ma,upper,Second Bristol Plymouth,1,sldu/ma-second-bristol-plymouth
 ma,upper,Second Essex,1,sldu/ma-second-essex
 ma,upper,Second Essex Middlesex,1,sldu/ma-second-essex-middlesex
-ma,upper,Second Hampden Hampshire,1,sldu/ma-second-hampden-hampshire
+ma,upper,Second Hampden and Hampshire,1,sldu/ma-second-hampden-hampshire
 ma,upper,Second Middlesex,1,sldu/ma-second-middlesex
-ma,upper,Second Middlesex Norfolk,1,sldu/ma-second-middlesex-norfolk
-ma,upper,Second Plymouth Bristol,1,sldu/ma-second-plymouth-bristol
+ma,upper,Second Middlesex and Norfolk,1,sldu/ma-second-middlesex-norfolk
+ma,upper,Second Plymouth and Bristol,1,sldu/ma-second-plymouth-bristol
 ma,upper,Second Suffolk,1,sldu/ma-second-suffolk
-ma,upper,Second Suffolk Middlesex,1,sldu/ma-second-suffolk-middlesex
+ma,upper,Second Suffolk and Middlesex,1,sldu/ma-second-suffolk-middlesex
 ma,upper,Second Worcester,1,sldu/ma-second-worcester
 ma,upper,Third Essex,1,sldu/ma-third-essex
 ma,upper,Third Middlesex,1,sldu/ma-third-middlesex
-ma,upper,Worcester Hampden Hampshire Middlesex,1,sldu/ma-worcester-hampden-hampshire-middlesex
-ma,upper,Worcester Middlesex,1,sldu/ma-worcester-middlesex
-ma,upper,Worcester Norfolk,1,sldu/ma-worcester-norfolk
+ma,upper,"Worcester, Hampden, Hampshire, and Middlesex",1,sldu/ma-worcester-hampden-hampshire-middlesex
+ma,upper,Worcester and Middlesex,1,sldu/ma-worcester-middlesex
+ma,upper,Worcester and Norfolk,1,sldu/ma-worcester-norfolk
