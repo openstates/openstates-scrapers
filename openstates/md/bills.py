@@ -281,12 +281,13 @@ class MDBillScraper(BillScraper):
 
         # process sponsors
         sponsors = _get_td(doc, 'All Sponsors:').text_content()
-        sponsors = sponsors.strip('Delegates ')
-        sponsors = sponsors.strip('Delegate ')
-        sponsors = sponsors.strip('Senator ')
-        sponsors = sponsors.strip('Senators ')
+        sponsors = sponsors.replace('Delegates ', '')
+        sponsors = sponsors.replace('Delegate ', '')
+        sponsors = sponsors.replace('Senator ', '')
+        sponsors = sponsors.replace('Senators ', '')
         sponsor_type = 'primary'
         for sponsor in re.split(', (?:and )?', sponsors):
+            #self.debug('sponsor: %s', sponsor)
             bill.add_sponsor(sponsor_type, sponsor)
             sponsor_type = 'cosponsor'
 
@@ -316,6 +317,10 @@ class MDBillScraper(BillScraper):
                                  mimetype='application/pdf')
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Vote - Senate - Committee':
+                bill.add_document('Senate %s Committee Vote' %
+                                  a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
             else:
                 raise ValueError('unknown document type')
@@ -362,7 +367,7 @@ class MDBillScraper(BillScraper):
             if match:
                 prefix, begin, end = match.groups()
                 if prefix[0] == chamber_prefix:
-                    self.info('scraping %ss %s-%s', prefix, begin, end)
+                    self.debug('scraping %ss %s-%s', prefix, begin, end)
                     for number in range(int(begin), int(end)+1):
                         bill_id = prefix + str(number)
                         url = 'http://mgaleg.maryland.gov/webmga/frmMain.aspx?id=%s&stab=01&pid=billpage&tab=subject3&ys=%s' % (bill_id, session_slug)

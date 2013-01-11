@@ -184,7 +184,7 @@ class ORBillScraper(BillScraper):
                                                a['date'], type=action_type)
 
     def _parse_action_line(self, line):
-        combined_id, prefix, number, house, date, time, note = line.split(u"\xe4")
+        combined_id, prefix, number, house, date, time, note = line.split(u"\ufffd")
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
         actor = "upper" if house == "S" else "lower"
@@ -198,7 +198,7 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        (type, combined_id, number, title, relating_to) = line.split(u"\xe4")
+        (type, combined_id, number, title, relating_to) = line.split(u"\ufffd")
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
 
@@ -271,7 +271,10 @@ class ORBillScraper(BillScraper):
                     inner_str = inner_str.replace('Senator','')
 
                     for name in inner_str.split(', '):
-                        self.all_bills[bill_id].add_sponsor('primary', name)
+                        if bill_id in self.all_bills:
+                            self.all_bills[bill_id].add_sponsor('primary', name)
+                            # XXX: 2012ss1 seems to not have sponsors, due to
+                            #      a missing sponsor sheet.
 
 
     def parse_subjects(self, url, chamber_letter):

@@ -7,7 +7,10 @@ class MOLegislatorScraper(LegislatorScraper):
     jurisdiction = 'mo'
     assumed_telephone_prefix = '573'
     assumed_address_fmt = ('201 West Capitol Avenue %s, ' 'Jefferson City, MO 65101')
-    senator_url = 'http://www.senate.mo.gov/%sinfo/senalpha.htm'
+    # senator_url = 'http://www.senate.mo.gov/%sinfo/senalpha.htm'
+    # ^^^^^^^^^^^ pre-2013 URL. Keep if we need to scrape old pages.
+
+    senator_url = 'http://www.senate.mo.gov/%sinfo/SenateRoster.htm'
     senator_details_url = 'http://www.senate.mo.gov/%sinfo/members/mem%02d.htm'
     senator_address_url = 'http://www.senate.mo.gov/%sinfo/members/d%02d/OfficeInfo.htm'
     reps_url = 'http://www.house.mo.gov/member.aspx?year=%s'

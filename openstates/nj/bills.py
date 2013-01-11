@@ -364,6 +364,7 @@ class NJBillScraper(BillScraper, DBFMixin):
             else:
                 self.warning('invalid bill id in BILLSUBJ.DBF: %s' % bill_id)
 
+        phony_bill_count = 0
         # save all bills at the end
         for bill in bill_dict.itervalues():
             # add sources
@@ -371,4 +372,12 @@ class NJBillScraper(BillScraper, DBFMixin):
             bill.add_source(bill_document_url)
             bill.add_source(bill_action_url)
             bill.add_source(subject_url)
-            self.save_bill(bill)
+            if not bill['actions'] and not bill['versions']:
+                self.warning('probable phony bill detected %s',
+                             bill['bill_id'])
+                phony_bill_count += 1
+            else:
+                self.save_bill(bill)
+
+        if phony_bill_count:
+            self.warning('%s total phony bills detected', phony_bill_count)
