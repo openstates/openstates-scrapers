@@ -51,9 +51,9 @@ class SCEventScraper(EventScraper):
                     time_string = '12:00 am'
 
                 # if it's a block of time, use the start time
-                if re.search(r'[0-9]{1,2}:[0-9]{2} - [0-9]{1,2}:[0-9]{2} [ap]m',time_string):
-                    start_time = re.search(r'([0-9]{1,2}:[0-9]{2}) - [0-9]{1,2}:[0-9]{2} [ap]m',time_string).group(1)
-                    meridiem = re.search(r'[0-9]{1,2}:[0-9]{2} - [0-9]{1,2}:[0-9]{2} ([ap]m)',time_string).group(1)
+                block_reg = re.compile(r'([0-9]{1,2}:[0-9]{2}) - [0-9]{1,2}:[0-9]{2} ([ap]m)')
+                if re.search(block_reg,time_string):
+                    start_time, meridiem = re.search(block_reg,time_string).groups()
                     start_hour = int(start_time.split(':')[0])
 
                     if meridiem == 'pm' and start_hour < 12:
@@ -83,7 +83,7 @@ class SCEventScraper(EventScraper):
                 if agenda_url:
                     agenda_url = agenda_url[0].attrib['href']
                     event.add_source(agenda_url)
-                    
+            
                 self.save_event(event)
 
 
