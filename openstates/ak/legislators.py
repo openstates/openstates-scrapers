@@ -55,8 +55,14 @@ class AKLegislatorScraper(LegislatorScraper):
             elif line:
                 address += (line + '\n')
 
+        kwargs = {}
+        if fax:
+            kwargs['fax'] = fax
+        if phone:
+            kwargs['phone'] = phone
+
         leg.add_office(addr_type, addr_name, address=address.strip(),
-                       phone=phone, fax=fax)
+                       **kwargs)
 
 
     def scrape_legislator(self, chamber, term, name, url):
@@ -67,10 +73,27 @@ class AKLegislatorScraper(LegislatorScraper):
 
             info = page.xpath('string(//div[@id = "fullpage"])')
 
-            district = re.search(r'District ([\w\d]+)', info).group(1)
+            district = re.search(r'District ([\w\d]+)', info)
+            if district is None:
+                maddr = page.xpath("//div[@id='fullpage']//a[contains(@href, 'mailto')]")
+                if maddr == []:
+                    return   # Needed for http://senate.legis.state.ak.us/senator.php?id=cog ..
+                maddr = maddr[0]
+                district = maddr.getnext().tail
+                # This hack needed for http://house.legis.state.ak.us/rep.php?id=dru
+                # please remove as soon as this is alive.
+            else:
+                district = district.group(1)
+
             party = re.search(r'Party: (.+) Toll-Free', info).group(1).strip()
             email = re.search(r'Email: ([\w_]+@legis\.state\.ak\.us)',
-                              info).group(1)
+                              info)
+
+            if email is None:
+                email = re.search(r'Email: (.+@akleg\.gov)',
+                                  info)
+
+            email = email.group(1)
 
             # for consistency
             if party == 'Democrat':
