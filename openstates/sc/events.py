@@ -83,7 +83,18 @@ class SCEventScraper(EventScraper):
                 if agenda_url:
                     agenda_url = agenda_url[0].attrib['href']
                     event.add_source(agenda_url)
-            
+                    
+                    agenda_page = self.get_page_from_url(agenda_url)
+                    
+                    for bill in agenda_page.xpath(".//a[contains(@href,'billsearch.php')]"):
+                        bill_id = bill.text_content().replace('.','').replace(' ','')
+
+                        event.add_related_bill(
+                            bill_id=bill_id,
+                            type='consideration',
+                            description=description
+                        )
+    
                 self.save_event(event)
 
 
