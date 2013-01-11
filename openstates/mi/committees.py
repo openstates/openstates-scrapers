@@ -26,6 +26,9 @@ class MICommitteeScraper(CommitteeScraper):
                 # skip invalid choice
                 if opt.text in ('Statutory Committees', 'Select One'):
                     continue
+                if 'have not been created' in opt.text:
+                    self.warning('no committees yet for the house')
+                    return
                 com_url = base_url + opt.get('value')
                 with self.urlopen(com_url) as com_html:
                     cdoc = lxml.html.fromstring(com_html)
