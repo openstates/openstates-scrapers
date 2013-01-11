@@ -281,12 +281,13 @@ class MDBillScraper(BillScraper):
 
         # process sponsors
         sponsors = _get_td(doc, 'All Sponsors:').text_content()
-        sponsors = sponsors.strip('Delegates ')
-        sponsors = sponsors.strip('Delegate ')
-        sponsors = sponsors.strip('Senator ')
-        sponsors = sponsors.strip('Senators ')
+        sponsors = sponsors.replace('Delegates ', '')
+        sponsors = sponsors.replace('Delegate ', '')
+        sponsors = sponsors.replace('Senator ', '')
+        sponsors = sponsors.replace('Senators ', '')
         sponsor_type = 'primary'
         for sponsor in re.split(', (?:and )?', sponsors):
+            self.debug('sponsor: %s', sponsor)
             bill.add_sponsor(sponsor_type, sponsor)
             sponsor_type = 'cosponsor'
 
