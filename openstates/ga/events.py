@@ -34,7 +34,7 @@ class GAEventScraper(EventScraper):
                 continue
             elif row.attrib['class'] in ('cssItemsRowDark', 'cssItemsRowLight'):
 
-                meeting_time = row.xpath('./td[@class="cssItemTimeCell"]')[0].text_content().strip()
+                meeting_time = row.xpath('.//td[@class="cssItemTimeCell"]')[0].text_content().strip()
                 (start_time, end_time,) = meeting_time.split(' - ')
                 start_date_time = datetime.datetime.strptime(date_string + ' ' + start_time, '%A, %B %d, %Y %I:%M %p')
                 end_date_time = datetime.datetime.strptime(date_string + ' ' + end_time, '%A, %B %d, %Y %I:%M %p')
@@ -42,7 +42,7 @@ class GAEventScraper(EventScraper):
                 subject_info = row.xpath('.//a[@class="cssItemsSubjectHyperLink"]')
                 description = subject_info[0].text_content().strip()
                 meeting_url = subject_info[0].attrib['href'].strip()
-                location = row.xpath('string(//td[@class="cssItemLocationCell"])').strip()
+                location = row.xpath('string(.//td[@class="cssItemLocationCell"])').strip()
 
                 event = Event(
                     session, 
