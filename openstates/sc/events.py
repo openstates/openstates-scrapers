@@ -17,9 +17,9 @@ class SCEventScraper(EventScraper):
         
     def scrape(self, chamber, session):
         if chamber == 'upper':
-            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=S&&headerfooter=0'
+            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=S'
         elif chamber == 'lower':
-            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=H&headerfooter=0'
+            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=H'
         else:
             return
 
@@ -50,7 +50,7 @@ class SCEventScraper(EventScraper):
                 if re.search(r'adjourn',time_string):
                     time_string = '12:00 am'
 
-                # if it's a block, use the start time
+                # if it's a block of time, use the start time
                 if re.search(r'[0-9]{1,2}:[0-9]{2} - [0-9]{1,2}:[0-9]{2} [ap]m',time_string):
                     start_time = re.search(r'([0-9]{1,2}:[0-9]{2}) - [0-9]{1,2}:[0-9]{2} [ap]m',time_string).group(1)
                     meridiem = re.search(r'[0-9]{1,2}:[0-9]{2} - [0-9]{1,2}:[0-9]{2} ([ap]m)',time_string).group(1)
@@ -62,13 +62,28 @@ class SCEventScraper(EventScraper):
                         time_string = start_time + ' ' + meridiem
 
                 date_time_string = meeting_year + ' ' + date_string + ' ' + time_string
-                date_time_obj = datetime.datetime.strptime(date_time_string, "%Y %A, %B %d %I:%M %p")
+                date_time = datetime.datetime.strptime(date_time_string, "%Y %A, %B %d %I:%M %p")
 
-                #event = Event(
-                #	session,
-                #	datetime,
-                #	'committee:meeting',
+                meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]
+
+                location, description = re.search(r'-- (.*?) -- (.*)', meeting_info).groups()
                     
-                print date_time_string, date_time_obj, meeting
-            
+                event = Event(
+                    session,
+                    date_time,
+                    'committee:meeting',
+                    description,
+                    location
+                )
+                
+                event.add_source(events_url)
+                    
+                agenda_url = meeting.xpath(".//a[contains(@href,'agendas')]")
+
+                if agenda_url:
+                    agenda_url = agenda_url[0].attrib['href']
+                    event.add_source(agenda_url)
+                    
+                self.save_event(event)
+
 
