@@ -1162,12 +1162,36 @@ div.notification-preference {
 }
 
 .favorite-button {
-    background-color:#E7B300;
-    -webkit-border-radius: 2px;
-    -moz-border-radius: 2px;
-    border-radius: 2px;
-    padding:4px;
-    color:#504A45;
+    background-color:transparent;
+
+
+}
+.favbutton {
+    background-color:#F1EFEA;
+    padding:5px 10px;
+    color:#E7B300;
+    font-size: 14px;
+    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    -webkit-border-radius: 7px;
+    -moz-border-radius: 7px;
+    border-radius: 7px;
+
+}
+
+.star{
+    font-size:25px;
+    vertical-align: center;
+    padding-right:10px;
+}
+.starOn{
+    text-shadow: -1px -1px white, 1px 1px #666;
+    color:#E9B400;
+}
+
+.starOff{
+    text-shadow: 1px 1px white, -1px -1px #666;
+    color:#DCD7D2;
 }
 
 /* Sunlight Hat */

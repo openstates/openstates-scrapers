@@ -55,8 +55,6 @@ $(document).ready(function() {
 <!-- bills -->
         {% if favorites.has_bills %}
         <div class="module">
-            <a name="bill" id="bill"></a>
-
             <h3 class="moduleTitle colLt">{% trans "Bills" %}</h3>
             {% notification_preference 'bill' profile %}
             <table class="withFilter">
@@ -98,8 +96,6 @@ $(document).ready(function() {
         {% if favorites.has_legislators %}
 
         <div class="module">
-            <a name="legislator" id="legislator"></a>
-
             <h3 class="moduleTitle colLt">{% trans "Legislators" %}</h3>
             {% notification_preference 'legislator' profile %}
             <table>
@@ -141,8 +137,6 @@ $(document).ready(function() {
 <!-- Committee -->
         {% if favorites.has_committees %}
         <div class="module">
-            <a name="committee" id="committee"></a>
-
             <h3 class="moduleTitle colLt">{% trans "Committees" %}</h3>
             {% notification_preference 'committee' profile %}
            <table>
@@ -192,8 +186,6 @@ $(document).ready(function() {
 <!-- Searches -->
         {% if favorites.has_searches %}
         <div class="module">
-            <a name="search" id="search"></a>
-
             <h3 class="moduleTitle colLt">{% trans "Searches" %}</h3>
             {% notification_preference 'search' profile %}
             <table>
