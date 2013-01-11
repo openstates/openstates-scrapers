@@ -271,7 +271,10 @@ class ORBillScraper(BillScraper):
                     inner_str = inner_str.replace('Senator','')
 
                     for name in inner_str.split(', '):
-                        self.all_bills[bill_id].add_sponsor('primary', name)
+                        if bill_id in self.all_bills:
+                            self.all_bills[bill_id].add_sponsor('primary', name)
+                            # XXX: 2012ss1 seems to not have sponsors, due to
+                            #      a missing sponsor sheet.
 
 
     def parse_subjects(self, url, chamber_letter):
