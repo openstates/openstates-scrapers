@@ -10,7 +10,7 @@ vt,lower,Bennington-2-1,1,sldl/vt-bennington-2-1
 vt,lower,Bennington-2-2,1,sldl/vt-bennington-2-2
 vt,lower,Bennington-3,1,sldl/vt-bennington-3
 vt,lower,Bennington-4,1,sldl/vt-bennington-4
-vt,lower,Bennington-rutland,1,sldl/vt-bennington-rutland
+vt,lower,Bennington-Rutland,1,sldl/vt-bennington-rutland
 vt,lower,Caledonia-1,1,sldl/vt-caledonia-1
 vt,lower,Caledonia-2,1,sldl/vt-caledonia-2
 vt,lower,Caledonia-3,1,sldl/vt-caledonia-3
@@ -50,7 +50,7 @@ vt,lower,Franklin-4,1,sldl/vt-franklin-4
 vt,lower,Franklin-5,1,sldl/vt-franklin-5
 vt,lower,Franklin-6,1,sldl/vt-franklin-6
 vt,lower,Franklin-7,1,sldl/vt-franklin-7
-vt,lower,Grand-Isle-Chittenden,1,sldl/vt-grand-isle-chittenden
+vt,lower,Grand Isle-Chittenden,1,sldl/vt-grand-isle-chittenden
 vt,lower,Lamoille-1,1,sldl/vt-lamoille-1
 vt,lower,Lamoille-2,1,sldl/vt-lamoille-2
 vt,lower,Lamoille-3,1,sldl/vt-lamoille-3
@@ -109,7 +109,7 @@ vt,upper,Caledonia,1,sldu/vt-caledonia
 vt,upper,Chittenden,1,sldu/vt-chittenden
 vt,upper,Essex-Orleans,1,sldu/vt-essex-orleans
 vt,upper,Franklin,1,sldu/vt-franklin
-vt,upper,Grand-Isle-Chittenden,1,sldu/vt-grand-isle-chittenden
+vt,upper,Chittenden-Grand Isle,1,sldu/vt-grand-isle-chittenden
 vt,upper,Lamoille,1,sldu/vt-lamoille
 vt,upper,Orange,1,sldu/vt-orange
 vt,upper,Rutland,1,sldu/vt-rutland
