@@ -62,11 +62,11 @@ class CTBillScraper(BillScraper):
                         type=bill_type)
             bill.add_source(info_url)
 
-            self.scrape_bill_page(bill)
-
             for introducer in self._introducers[bill_id]:
                 bill.add_sponsor('primary', introducer,
                                  official_type='introducer')
+
+            self.scrape_bill_page(bill)
 
             bill['subjects'] = self._subjects[bill_id]
 
