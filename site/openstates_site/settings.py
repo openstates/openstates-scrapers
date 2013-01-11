@@ -59,7 +59,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'locksmith.mongoauth.middleware.APIKeyMiddleware',
-    'billy.web.public.middleware.LimitStatesMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -120,40 +119,10 @@ LOGGING = {
     }
 }
 
-
-# billy/web/public
-ACTIVE_STATES = [u'co', u'de', u'ny', u'in', u'tn',
-                 u'me', u'wv', u'mt', u'va', u'ak',
-                 u'al', u'ar', u'ct', u'az', u'ca',
-                 u'dc', u'fl', u'ga', u'hi', u'ia',
-                 u'id', u'il', u'ks', u'ky', u'la',
-                 u'ma', u'md', u'mi', u'mn', u'mo',
-                 u'ms', u'nc', u'nd', u'ne', u'nh',
-                 u'nj', u'nm', u'nv', u'oh', u'or',
-                 u'pr', u'ri', u'sc', u'sd', u'tx',
-                 u'ut', u'vt', u'wa', u'wi', u'wy',
-                 u'ok', u'pa'].sort()
-ACTIVE_STATES=sorted(['ca', 'il', 'la', 'md', 'mn',
-                      'nh', 'nj', 'nc', 'tx', 'dc',
-                      'wi', 'oh', 'id', 'hi', 'az',
-                      'ut', 'de', 'fl', 'ak', 'mt',
-                      'ar', 'co', 'in', 'ia', 'ky',
-                      'ma', 'ms', 'ne', 'nm', 'or',
-                      'pa', 'ri', 'tn', 'vt', 'va',
-                      'pr', 'ct'
-                     ])
-
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
 
 LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
-
-# Display API urls on pages.
-NERD_MODE = True
-
-# Display links to admin pages where relevant.
-ADMIN_MODE = True
-
 
 try:
     from .local_settings import *
