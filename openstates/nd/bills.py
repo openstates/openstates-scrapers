@@ -23,14 +23,26 @@ class NDBillScraper(BillScraper):
         with self.urlopen(href) as page:
             page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
-        ttable, table = page.xpath(
+        table = page.xpath(
             "//table[@summary='Measure Number Breakdown']"
         )
 
-        ttrows = ttable.xpath(".//tr")
+        if len(table) > 1:  # Pre-2013 pages.
+            ttable, table = table
+            ttrows = ttable.xpath(".//tr")
+        else:
+            table = table[0]
+            curnode = page.xpath("//div[@id='fastpath']")[0].getnext()
+            ret = []
+            while curnode.tag != "table":
+                curnode = curnode.getnext()
+                ret.append(curnode)
+            ttrows = ret
+
         descr = ttrows[-1]
         title = re.sub("\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
+
         chamber = {
             "H": "lower",
             "S": "upper"
@@ -62,6 +74,11 @@ class NDBillScraper(BillScraper):
         dt = None
         for row in table.xpath(".//tr"):
             if row.text_content().strip() == '':
+                continue
+
+            if "Meeting Description" in [
+                x.strip() for x in row.xpath(".//th/text()")
+            ]:
                 continue
 
             row = row.xpath("./*")
@@ -132,8 +149,8 @@ class NDBillScraper(BillScraper):
             page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         subjects = page.xpath(
-            "//table[@summary='Links table']//"
-            "a[not(contains(@href, 'major-topic'))]"
+            "//div[@id='application']"
+            "//a[not(contains(@href, 'major-topic'))]"
         )
         for subject in subjects:
             subject_name = subject.xpath("text()")
@@ -143,4 +160,4 @@ class NDBillScraper(BillScraper):
                 continue
 
             href = subject.attrib['href']
-            self.scrape_subject(term, href, subject.text)
+            self.scrape_subject(term, href, subject.text.strip())
