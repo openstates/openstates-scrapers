@@ -287,7 +287,7 @@ class MDBillScraper(BillScraper):
         sponsors = sponsors.replace('Senators ', '')
         sponsor_type = 'primary'
         for sponsor in re.split(', (?:and )?', sponsors):
-            self.debug('sponsor: %s', sponsor)
+            #self.debug('sponsor: %s', sponsor)
             bill.add_sponsor(sponsor_type, sponsor)
             sponsor_type = 'cosponsor'
 
@@ -367,7 +367,7 @@ class MDBillScraper(BillScraper):
             if match:
                 prefix, begin, end = match.groups()
                 if prefix[0] == chamber_prefix:
-                    self.info('scraping %ss %s-%s', prefix, begin, end)
+                    self.debug('scraping %ss %s-%s', prefix, begin, end)
                     for number in range(int(begin), int(end)+1):
                         bill_id = prefix + str(number)
                         url = 'http://mgaleg.maryland.gov/webmga/frmMain.aspx?id=%s&stab=01&pid=billpage&tab=subject3&ys=%s' % (bill_id, session_slug)
