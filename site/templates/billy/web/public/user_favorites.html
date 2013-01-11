@@ -84,8 +84,8 @@ $(document).ready(function() {
                         {% with action=obj.most_recent_action %}
                             <td>{{action.date|date:"M j, Y"}} <span class="tip">{{action.action}}</span></td>
                         {% endwith %}
+                        <td class="followBox">{% favorite_short obj obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
                     {% endwith %}
-                     <td class="followBox">{% favorite_short obj.id 'bill' obj.metadata.abbr 'is_favorite'%}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
