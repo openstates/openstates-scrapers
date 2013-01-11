@@ -11,7 +11,6 @@ def clean_district(district):
         ('Consiting.*', ''),
         (u'\xe2.*', ''),
         ('\..*', ''),
-        (' a(m|n)d ', '&'),
         ('Frist', 'First'),
         ('Norfok', 'Norfolk'),
         # these have a capitol T because we call title() first
@@ -29,12 +28,14 @@ def clean_district(district):
         ('yseventh', 'y-Seventh'),
         ('yeighth', 'y-Eighth'),
         ('yninth', 'y-Ninth'),
+        (' And ', ' and '),
         ('\s*-+\s*$', ''),
     )
     district = district.title()
     for pattern, repl in mappings:
         district = re.sub(pattern, repl, district)
     district = district.strip(', -')
+    district = district.strip(' -')
     return district
 
 
