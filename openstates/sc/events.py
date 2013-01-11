@@ -67,11 +67,16 @@ class SCEventScraper(EventScraper):
                 meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]
 
                 location, description = re.search(r'-- (.*?) -- (.*)', meeting_info).groups()
+
+                if re.search(r'committee', description, re.I):
+                    meeting_type = 'committee:meeting'
+                else:
+                    meeting_type = 'other:meeting'
                     
                 event = Event(
                     session,
                     date_time,
-                    'committee:meeting',
+                    meeting_type,
                     description,
                     location
                 )
