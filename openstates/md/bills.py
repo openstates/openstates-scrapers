@@ -317,6 +317,10 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Vote - Senate - Committee':
+                bill.add_document('Senate %s Committee Vote' %
+                                  a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
             else:
                 raise ValueError('unknown document type')
 
