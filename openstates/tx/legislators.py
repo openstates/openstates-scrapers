@@ -22,115 +22,115 @@ class TXLegislatorScraper(LegislatorScraper):
 
         url = ("http://www.legdir.legis.state.tx.us/members.aspx?type=%s" %
                chamber_type)
-        with self.urlopen(url) as page:
-            root = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        root = lxml.html.fromstring(page)
 
-            for li in root.xpath('//ul[@class="options"]/li'):
-                member_url = re.match(r"goTo\('(MemberInfo[^']+)'\);",
-                                      li.attrib['onclick']).group(1)
-                member_url = ("http://www.legdir.legis.state.tx.us/" +
-                              member_url)
-                self.scrape_member(chamber, term, member_url)
+        for li in root.xpath('//ul[@class="options"]/li'):
+            member_url = re.match(r"goTo\('(MemberInfo[^']+)'\);",
+                                  li.attrib['onclick']).group(1)
+            member_url = ("http://www.legdir.legis.state.tx.us/" +
+                          member_url)
+            self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
-        with self.urlopen(member_url) as page:
-            root = lxml.html.fromstring(page)
-            root.make_links_absolute(member_url)
+        page = self.urlopen(member_url)
+        root = lxml.html.fromstring(page)
+        root.make_links_absolute(member_url)
 
-            sdiv = root.xpath('//div[@class="subtitle"]')[0]
-            table = sdiv.getnext()
+        sdiv = root.xpath('//div[@class="subtitle"]')[0]
+        table = sdiv.getnext()
 
-            photo_url = table.xpath('//img[@id="ctl00_ContentPlaceHolder1'
-                                    '_imgMember"]')[0].attrib['src']
+        photo_url = table.xpath('//img[@id="ctl00_ContentPlaceHolder1'
+                                '_imgMember"]')[0].attrib['src']
 
-            td = table.xpath('//td[@valign="top"]')[0]
+        td = table.xpath('//td[@valign="top"]')[0]
 
-            type = td.xpath('string(//div[1]/strong)').strip()
+        type = td.xpath('string(//div[1]/strong)').strip()
 
-            full_name = td.xpath('string(//div[2]/strong)').strip()
-            full_name = re.sub(r'\s+', ' ', full_name)
+        full_name = td.xpath('string(//div[2]/strong)').strip()
+        full_name = re.sub(r'\s+', ' ', full_name)
 
-            district = td.xpath('string(//div[3])').strip()
-            district = district.replace('District ', '')
+        district = td.xpath('string(//div[3])').strip()
+        district = district.replace('District ', '')
 
-            party = td.xpath('string(//div[4])').strip()[0]
-            if party == 'D':
-                party = 'Democratic'
-            elif party == 'R':
-                party = 'Republican'
+        party = td.xpath('string(//div[4])').strip()[0]
+        if party == 'D':
+            party = 'Democratic'
+        elif party == 'R':
+            party = 'Republican'
 
-            if type == 'Lt. Gov.':
-                leg = Person(full_name)
-                leg.add_role('Lt. Governor', term, party=party)
+        if type == 'Lt. Gov.':
+            leg = Person(full_name)
+            leg.add_role('Lt. Governor', term, party=party)
+        else:
+            leg = Legislator(term, chamber, district, full_name,
+                             party=party, photo_url=photo_url,
+                             url=member_url)
+
+        leg.add_source(urlescape(member_url))
+
+        # add addresses
+        for atype, text in (('capitol', 'Capitol address'),
+                            ('district', 'District address')):
+            aspan = root.xpath("//span[. = '%s:']" % text)
+            addr = ''
+            phone = None
+            if aspan:
+                # cycle through brs
+                addr = aspan[0].tail.strip()
+                elem = aspan[0].getnext()
+                while elem is not None and elem.tag == 'br':
+                    if elem.tail:
+                        if not phone_re.match(elem.tail):
+                            addr += "\n" + elem.tail
+                        else:
+                            phone = elem.tail
+                    elem = elem.getnext()
+                # now add the addresses
+                leg.add_office(atype, text, address=addr, phone=phone)
+
+        # add committees
+        comm_div = root.xpath('//div[string() = "Committee Membership:"]'
+                              '/following-sibling::div'
+                              '[@class="rcwcontent"]')[0]
+
+        for link in comm_div.xpath('*/a'):
+            name = link.text
+
+            if '(Vice Chair)' in name:
+                mtype = 'vice chair'
+            elif '(Chair)' in name:
+                mtype = 'chair'
             else:
-                leg = Legislator(term, chamber, district, full_name,
-                                 party=party, photo_url=photo_url,
-                                 url=member_url)
+                mtype = 'member'
 
-            leg.add_source(urlescape(member_url))
+            name = clean_committee_name(link.text)
 
-            # add addresses
-            for atype, text in (('capitol', 'Capitol address'),
-                                ('district', 'District address')):
-                aspan = root.xpath("//span[. = '%s:']" % text)
-                addr = ''
-                phone = None
-                if aspan:
-                    # cycle through brs
-                    addr = aspan[0].tail.strip()
-                    elem = aspan[0].getnext()
-                    while elem is not None and elem.tag == 'br':
-                        if elem.tail:
-                            if not phone_re.match(elem.tail):
-                                addr += "\n" + elem.tail
-                            else:
-                                phone = elem.tail
-                        elem = elem.getnext()
-                    # now add the addresses
-                    leg.add_office(atype, text, address=addr, phone=phone)
-
-            # add committees
-            comm_div = root.xpath('//div[string() = "Committee Membership:"]'
-                                  '/following-sibling::div'
-                                  '[@class="rcwcontent"]')[0]
-
-            for link in comm_div.xpath('*/a'):
-                name = link.text
-
-                if '(Vice Chair)' in name:
-                    mtype = 'vice chair'
-                elif '(Chair)' in name:
-                    mtype = 'chair'
-                else:
-                    mtype = 'member'
-
-                name = clean_committee_name(link.text)
-
-                # There's no easy way to determine whether a committee
-                # is joint or not using the mobile legislator directory
-                # (without grabbing a whole bunch of pages, at least)
-                # so for now we will hard-code the one broken case
-                if (name == "Oversight of HHS Eligibility System" and
-                    term == '82'):
-                    comm_chamber = 'joint'
-                else:
-                    comm_chamber = chamber
-
-                if name.startswith('Appropriations-S/C on '):
-                    sub = name.replace('Appropriations-S/C on ', '')
-                    leg.add_role('committee member', term,
-                                 chamber=comm_chamber,
-                                 committee='Appropriations',
-                                 subcommittee=sub,
-                                 position=mtype)
-                else:
-                    leg.add_role('committee member', term,
-                                 chamber=comm_chamber,
-                                 committee=name,
-                                 position=mtype)
-
-            if type == 'Lt. Gov.':
-                self.save_object(leg)
+            # There's no easy way to determine whether a committee
+            # is joint or not using the mobile legislator directory
+            # (without grabbing a whole bunch of pages, at least)
+            # so for now we will hard-code the one broken case
+            if (name == "Oversight of HHS Eligibility System" and
+                term == '82'):
+                comm_chamber = 'joint'
             else:
-                if district:
-                    self.save_legislator(leg)
+                comm_chamber = chamber
+
+            if name.startswith('Appropriations-S/C on '):
+                sub = name.replace('Appropriations-S/C on ', '')
+                leg.add_role('committee member', term,
+                             chamber=comm_chamber,
+                             committee='Appropriations',
+                             subcommittee=sub,
+                             position=mtype)
+            else:
+                leg.add_role('committee member', term,
+                             chamber=comm_chamber,
+                             committee=name,
+                             position=mtype)
+
+        if type == 'Lt. Gov.':
+            self.save_object(leg)
+        else:
+            if district:
+                self.save_legislator(leg)

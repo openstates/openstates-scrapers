@@ -25,15 +25,15 @@ class VALegislatorScraper(LegislatorScraper):
         elif chamber == 'upper':
             column = 'lColRt'
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-            for link in doc.xpath('//div[@class="%s"]/ul/li/a' % column):
-                if 'resigned' in link.text:
-                    self.log('skipping %s' % link.text)
-                    continue
-                self.fetch_member(link.get('href'), link.text, term, chamber)
+        for link in doc.xpath('//div[@class="%s"]/ul/li/a' % column):
+            if 'resigned' in link.text:
+                self.log('skipping %s' % link.text)
+                continue
+            self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
@@ -50,37 +50,37 @@ class VALegislatorScraper(LegislatorScraper):
             elif action == 'Member':
                 pass # TODO: set start date
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            party_district_line = doc.xpath('//h3/font/text()')[0]
-            party, district = party_district_re.match(party_district_line).groups()
+        party_district_line = doc.xpath('//h3/font/text()')[0]
+        party, district = party_district_re.match(party_district_line).groups()
 
-            leg = Legislator(term, chamber, district, name.strip(),
-                             party=party_map[party], url=url)
-            leg.add_source(url)
+        leg = Legislator(term, chamber, district, name.strip(),
+                         party=party_map[party], url=url)
+        leg.add_source(url)
 
-            for ul in doc.xpath('//ul[@class="linkNon"]'):
-                address = []
-                phone = None
-                email = None
-                for li in ul.getchildren():
-                    text = li.text_content()
-                    if re.match('\(\d{3}\)', text):
-                        phone = text
-                    elif text.startswith('email:'):
-                        email = text.strip('email: ')
-                    else:
-                        address.append(text)
-                    type = ('capitol' if 'Capitol Square' in address
-                            else 'district')
-                    name = ('Capitol Office' if type == 'capitol'
-                            else 'District Office')
-                    leg.add_office(type, name, address='\n'.join(address),
-                                   phone=phone, email=email)
+        for ul in doc.xpath('//ul[@class="linkNon"]'):
+            address = []
+            phone = None
+            email = None
+            for li in ul.getchildren():
+                text = li.text_content()
+                if re.match('\(\d{3}\)', text):
+                    phone = text
+                elif text.startswith('email:'):
+                    email = text.strip('email: ')
+                else:
+                    address.append(text)
+                type = ('capitol' if 'Capitol Square' in address
+                        else 'district')
+                name = ('Capitol Office' if type == 'capitol'
+                        else 'District Office')
+                leg.add_office(type, name, address='\n'.join(address),
+                               phone=phone, email=email)
 
-            for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
-                leg.add_role('committee member', term=term, chamber=chamber,
-                             committee=com)
+        for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
+            leg.add_role('committee member', term=term, chamber=chamber,
+                         committee=com)
 
-            self.save_legislator(leg)
+        self.save_legislator(leg)

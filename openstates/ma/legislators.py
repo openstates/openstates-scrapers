@@ -51,17 +51,17 @@ class MALegislatorScraper(LegislatorScraper):
             chamber_type = 'House'
 
         url = "http://www.malegislature.gov/People/%s" % chamber_type
-        with self.urlopen(url) as page:
-            doc = lxml.html.fromstring(page)
-            doc.make_links_absolute("http://www.malegislature.gov")
+        page = self.urlopen(url)
+        doc = lxml.html.fromstring(page)
+        doc.make_links_absolute("http://www.malegislature.gov")
 
-            for member_url in doc.xpath('//td[@class="nameCol firstCol"]/a/@href'):
-                self.scrape_member(chamber, term, member_url)
+        for member_url in doc.xpath('//td[@class="nameCol firstCol"]/a/@href'):
+            self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
-        with self.urlopen(member_url) as page:
-            root = lxml.html.fromstring(page)
-            root.make_links_absolute(member_url)
+        page = self.urlopen(member_url)
+        root = lxml.html.fromstring(page)
+        root.make_links_absolute(member_url)
 
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]

@@ -18,35 +18,35 @@ class INLegislatorScraper(LegislatorScraper):
         url = ("http://www.in.gov/cgi-bin/legislative/listing/"
                "listing-2.pl?data=alpha&chamber=%s" % chamber_name)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for link in page.xpath("//div[@id='col2']/p/a"):
+        for link in page.xpath("//div[@id='col2']/p/a"):
 
-                name = link.text.strip()
-                href = link.get('href')
+            name = link.text.strip()
+            href = link.get('href')
 
-                details = link.getnext().text.strip()
+            details = link.getnext().text.strip()
 
-                party = details.split(',')[0]
-                if party == 'Democrat':
-                    party = 'Democratic'
+            party = details.split(',')[0]
+            if party == 'Democrat':
+                party = 'Democratic'
 
-                district = re.search(r'District (\d+)', details).group(1)
-                district = district.lstrip('0')
+            district = re.search(r'District (\d+)', details).group(1)
+            district = district.lstrip('0')
 
-                # Get the legislator's bio page.
+            # Get the legislator's bio page.
 
-                leg = Legislator(term, chamber, district, name, party=party,
-                                 url=href)
-                leg.add_source(url)
-                leg.add_source(href)
+            leg = Legislator(term, chamber, district, name, party=party,
+                             url=href)
+            leg.add_source(url)
+            leg.add_source(href)
 
-                details = self.scrape_details(chamber, term, href, page, party, leg)
-                if details:
-                    leg.update(details)
+            details = self.scrape_details(chamber, term, href, page, party, leg)
+            if details:
+                leg.update(details)
 
-                self.save_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_details(self, *args):
         chamber, term, href, page, party, leg = args

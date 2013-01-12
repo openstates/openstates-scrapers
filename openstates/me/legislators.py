@@ -22,61 +22,61 @@ class MELegislatorScraper(LegislatorScraper):
 
     def scrape_reps(self, chamber, term_name):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            # There are 151 districts
-            for district in xrange(1, 152):
-                if (district % 10) == 0:
-                    path = '/html/body/p[%s]/a[3]' % (district + 4)
-                else:
-                    path = '/html/body/p[%s]/a[2]' % (district + 4)
+        # There are 151 districts
+        for district in xrange(1, 152):
+            if (district % 10) == 0:
+                path = '/html/body/p[%s]/a[3]' % (district + 4)
+            else:
+                path = '/html/body/p[%s]/a[2]' % (district + 4)
 
-                try:
-                    link = page.xpath(path)[0]
-                except IndexError:
-                    # If the the district % 10 == 0 query doesn't
-                    # produce a link, retry the second link. Horrible.
-                    path = '/html/body/p[%s]/a[2]' % (district + 4)
-                    link = page.xpath(path)[0]
+            try:
+                link = page.xpath(path)[0]
+            except IndexError:
+                # If the the district % 10 == 0 query doesn't
+                # produce a link, retry the second link. Horrible.
+                path = '/html/body/p[%s]/a[2]' % (district + 4)
+                link = page.xpath(path)[0]
 
-                leg_url = link.get('href')
-                name = link.text_content()
+            leg_url = link.get('href')
+            name = link.text_content()
 
-                if len(name) > 0:
-                    if name.split()[0] != 'District':
-                        mark = name.find('(')
-                        party = name[mark + 1]
-                        district_name = name[mark + 3:-1]
-                        name = name[15:mark]
+            if len(name) > 0:
+                if name.split()[0] != 'District':
+                    mark = name.find('(')
+                    party = name[mark + 1]
+                    district_name = name[mark + 3:-1]
+                    name = name[15:mark]
 
-                        # vacant
-                        if party == "V":
-                            continue
-                        else:
-                            party = _party_map[party]
+                    # vacant
+                    if party == "V":
+                        continue
+                    else:
+                        party = _party_map[party]
 
-                        leg = Legislator(term_name, chamber, str(district),
-                                         name, party=party, url=leg_url,
-                                         district_name=district_name)
-                        leg.add_source(url)
-                        leg.add_source(leg_url)
+                    leg = Legislator(term_name, chamber, str(district),
+                                     name, party=party, url=leg_url,
+                                     district_name=district_name)
+                    leg.add_source(url)
+                    leg.add_source(leg_url)
 
-                        # Get the photo url.
-                        html = self.urlopen(leg_url)
-                        doc = lxml.html.fromstring(html)
-                        doc.make_links_absolute(leg_url)
-                        xpath = ('//img')
-                        photo_url = doc.xpath(xpath)[0]
-                        if 'src' in photo_url.attrib:
-                            photo_url = photo_url.attrib.pop('src')
-                            leg['photo_url'] = photo_url
-                        else:
-                            photo_url = None
+                    # Get the photo url.
+                    html = self.urlopen(leg_url)
+                    doc = lxml.html.fromstring(html)
+                    doc.make_links_absolute(leg_url)
+                    xpath = ('//img')
+                    photo_url = doc.xpath(xpath)[0]
+                    if 'src' in photo_url.attrib:
+                        photo_url = photo_url.attrib.pop('src')
+                        leg['photo_url'] = photo_url
+                    else:
+                        photo_url = None
 
-                        self.scrape_lower_offices(leg, page, leg_url)
-                        self.save_legislator(leg)
+                    self.scrape_lower_offices(leg, page, leg_url)
+                    self.save_legislator(leg)
 
     def scrape_lower_offices(self, legislator, list_page, url):
         html = self.urlopen(url)

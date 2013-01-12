@@ -17,35 +17,35 @@ class PALegislatorScraper(LegislatorScraper):
 
         leg_list_url = legislators_url(chamber)
 
-        with self.urlopen(leg_list_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(leg_list_url)
+        page = self.urlopen(leg_list_url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(leg_list_url)
 
-            for link in page.xpath("//a[contains(@href, '_bio.cfm')]"):
-                full_name = link.text
-                district = link.getparent().getnext().tail.strip()
-                district = re.search("District (\d+)", district).group(1)
+        for link in page.xpath("//a[contains(@href, '_bio.cfm')]"):
+            full_name = link.text
+            district = link.getparent().getnext().tail.strip()
+            district = re.search("District (\d+)", district).group(1)
 
-                party = link.getparent().tail.strip()[-2]
-                if party == 'R':
-                    party = 'Republican'
-                elif party == 'D':
-                    party = 'Democratic'
+            party = link.getparent().tail.strip()[-2]
+            if party == 'R':
+                party = 'Republican'
+            elif party == 'D':
+                party = 'Democratic'
 
-                url = link.get('href')
+            url = link.get('href')
 
-                legislator = Legislator(term, chamber, district,
-                                        full_name, party=party, url=url)
-                legislator.add_source(leg_list_url)
+            legislator = Legislator(term, chamber, district,
+                                    full_name, party=party, url=url)
+            legislator.add_source(leg_list_url)
 
-                # Scrape email, offices, photo.
-                page = self.urlopen(url)
-                doc = lxml.html.fromstring(page)
-                doc.make_links_absolute(url)
+            # Scrape email, offices, photo.
+            page = self.urlopen(url)
+            doc = lxml.html.fromstring(page)
+            doc.make_links_absolute(url)
 
-                self.scrape_email_address(url, page, legislator)
-                self.scrape_offices(url, doc, legislator)
-                self.save_legislator(legislator)
+            self.scrape_email_address(url, page, legislator)
+            self.scrape_offices(url, doc, legislator)
+            self.save_legislator(legislator)
 
     def scrape_email_address(self, url, page, legislator):
         if re.search(r'var \S+\s+= "(\S+)";', page):

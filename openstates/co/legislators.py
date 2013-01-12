@@ -34,24 +34,24 @@ class COLegislatorScraper(LegislatorScraper):
 
     def scrape_directory(self, next_page, chamber, session):
         ret = {}
-        with self.urlopen(next_page) as html:
-            page = lxml.html.fromstring(html)
-            # Alright. We'll get all the districts.
-            dID = page.xpath( "//div[@id='viewBody']" )[0] # should be only one
-            distr = dID.xpath( "./table/tr/td/b/font/a" ) # What a mess...
-            for d in distr:
-                url = CO_BASE_URL + d.attrib['href']
-                ret[d.text] = url
+        html = self.urlopen(next_page)
+        page = lxml.html.fromstring(html)
+        # Alright. We'll get all the districts.
+        dID = page.xpath( "//div[@id='viewBody']" )[0] # should be only one
+        distr = dID.xpath( "./table/tr/td/b/font/a" ) # What a mess...
+        for d in distr:
+            url = CO_BASE_URL + d.attrib['href']
+            ret[d.text] = url
 
-            nextPage = page.xpath( "//table/tr" )
-            navBar = nextPage[0]
-            np = CO_BASE_URL + navBar[len(navBar) - 1][0].attrib['href']
-            #     ^ TR   ^^^^ TD         ^^^ a
-            if not next_page == np:
-                subnodes = self.scrape_directory( np, chamber, session )
-                for node in subnodes:
-                    ret[node] = subnodes[node]
-            return ret
+        nextPage = page.xpath( "//table/tr" )
+        navBar = nextPage[0]
+        np = CO_BASE_URL + navBar[len(navBar) - 1][0].attrib['href']
+        #     ^ TR   ^^^^ TD         ^^^ a
+        if not next_page == np:
+            subnodes = self.scrape_directory( np, chamber, session )
+            for node in subnodes:
+                ret[node] = subnodes[node]
+        return ret
 
     def normalize_party( self, party_id ):
         try:
@@ -64,34 +64,34 @@ class COLegislatorScraper(LegislatorScraper):
         ret = []
         obj = {}
         image = ""
-        with self.urlopen(hp_url) as html:
-            page = lxml.html.fromstring(html)
-            try:
-                email = page.xpath("//a[contains(@href, 'mailto')]")[0]
-                email = email.attrib['href']
-                email = email.split(":", 1)[1]
-                obj['email'] = email
-            except IndexError:
-                pass
-            infoblock = page.xpath("//center")
-            info = infoblock[0].text_content()
+        html = self.urlopen(hp_url)
+        page = lxml.html.fromstring(html)
+        try:
+            email = page.xpath("//a[contains(@href, 'mailto')]")[0]
+            email = email.attrib['href']
+            email = email.split(":", 1)[1]
+            obj['email'] = email
+        except IndexError:
+            pass
+        infoblock = page.xpath("//center")
+        info = infoblock[0].text_content()
 
-            number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)
-            if len(number) > 0:
-                number = number[0]
-                number = "%s %s %s" % (
-                    number[0],
-                    number[2],
-                    number[3]
-                )
-                obj['number'] = number
-            ctty_apptmts = page.xpath('//ul/li/b/a')
-            for ctty in ctty_apptmts:
-                cttyid = clean_input(ctty.text)
-                if cttyid != None and cttyid.strip() != "" and \
-                  cttyid not in CTTY_BLACKLIST:
-                    ret.append(cttyid)
-            image = hp_url[:-3] + "jpg"
+        number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)
+        if len(number) > 0:
+            number = number[0]
+            number = "%s %s %s" % (
+                number[0],
+                number[2],
+                number[3]
+            )
+            obj['number'] = number
+        ctty_apptmts = page.xpath('//ul/li/b/a')
+        for ctty in ctty_apptmts:
+            cttyid = clean_input(ctty.text)
+            if cttyid != None and cttyid.strip() != "" and \
+              cttyid not in CTTY_BLACKLIST:
+                ret.append(cttyid)
+        image = hp_url[:-3] + "jpg"
         obj.update({
             "ctty"  : ret,
             "photo" : image
@@ -101,45 +101,45 @@ class COLegislatorScraper(LegislatorScraper):
     def process_person( self, p_url ):
         ret = { "homepage" : p_url }
 
-        with self.urlopen(p_url) as html:
-            page = lxml.html.fromstring(html)
-            page.make_links_absolute(p_url)
+        html = self.urlopen(p_url)
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(p_url)
 
-            info = page.xpath( '//table/tr' )[1]
-            tds = {
-                "name"  : 0,
-                "dist"  : 1,
-                "party" : 3,
-                "occup" : 4,
-                "cont"  : 6
-            }
+        info = page.xpath( '//table/tr' )[1]
+        tds = {
+            "name"  : 0,
+            "dist"  : 1,
+            "party" : 3,
+            "occup" : 4,
+            "cont"  : 6
+        }
 
-            party_id = info[tds['party']].text_content()
+        party_id = info[tds['party']].text_content()
 
-            person_name = clean_input(info[tds['name']].text_content())
-            person_name = clean_input(re.sub( '\(.*$', '', person_name).strip())
-            occupation  = clean_input(info[tds['occup']].text_content())
+        person_name = clean_input(info[tds['name']].text_content())
+        person_name = clean_input(re.sub( '\(.*$', '', person_name).strip())
+        occupation  = clean_input(info[tds['occup']].text_content())
 
-            urls = page.xpath( '//a' )
-            ret['photo_url'] = ""
-            home_page = page.xpath("//a[contains(text(), 'Home Page')]")
+        urls = page.xpath( '//a' )
+        ret['photo_url'] = ""
+        home_page = page.xpath("//a[contains(text(), 'Home Page')]")
 
-            if home_page != []:
-                home_page = home_page[0]
-                ret['homepage'] = home_page.attrib['href'].strip()
-                homepage = self.parse_homepage(
-                    home_page.attrib['href'].strip() )
+        if home_page != []:
+            home_page = home_page[0]
+            ret['homepage'] = home_page.attrib['href'].strip()
+            homepage = self.parse_homepage(
+                home_page.attrib['href'].strip() )
 
-                ret['ctty'] = homepage['ctty']
-                ret['photo_url'] = homepage['photo']
-                if "email" in homepage:
-                    ret['email'] = homepage['email']
-                if "number" in homepage:
-                    ret['number'] = homepage['number']
+            ret['ctty'] = homepage['ctty']
+            ret['photo_url'] = homepage['photo']
+            if "email" in homepage:
+                ret['email'] = homepage['email']
+            if "number" in homepage:
+                ret['number'] = homepage['number']
 
-            ret['party'] = self.normalize_party(party_id)
-            ret['name']  = person_name
-            ret['occupation'] = occupation
+        ret['party'] = self.normalize_party(party_id)
+        ret['name']  = person_name
+        ret['occupation'] = occupation
         return ret
 
     def scrape(self, chamber, session):
