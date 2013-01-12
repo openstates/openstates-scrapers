@@ -12,8 +12,8 @@ class TXEventScraper(EventScraper):
     jurisdiction = 'tx'
     _tz = pytz.timezone('US/Central')
     def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
