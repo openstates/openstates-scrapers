@@ -14,25 +14,25 @@ class WACommitteeScraper(CommitteeScraper):
         biennium = "%s-%s" % (term[0:4], term[7:9])
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
+        page =  self.urlopen(url)
+        page = lxml.etree.fromstring(page.bytes)
 
-            for comm in xpath(page, "//wa:Committee"):
-                agency = xpath(comm, "string(wa:Agency)")
-                comm_chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
-                if comm_chamber != chamber:
-                    continue
+        for comm in xpath(page, "//wa:Committee"):
+            agency = xpath(comm, "string(wa:Agency)")
+            comm_chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
+            if comm_chamber != chamber:
+                continue
 
-                name = xpath(comm, "string(wa:Name)")
-                comm_id = xpath(comm, "string(wa:Id)")
-                acronym = xpath(comm, "string(wa:Acronym)")
-                phone = xpath(comm, "string(wa:Phone)")
+            name = xpath(comm, "string(wa:Name)")
+            comm_id = xpath(comm, "string(wa:Id)")
+            acronym = xpath(comm, "string(wa:Acronym)")
+            phone = xpath(comm, "string(wa:Phone)")
 
-                comm = Committee(chamber, name, _code=comm_id,
-                                 office_phone=phone)
-                self.scrape_members(comm, agency)
-                comm.add_source(url)
-                self.save_committee(comm)
+            comm = Committee(chamber, name, _code=comm_id,
+                             office_phone=phone)
+            self.scrape_members(comm, agency)
+            comm.add_source(url)
+            self.save_committee(comm)
 
     def scrape_members(self, comm, agency):
         # Can't get them to accept special characters (e.g. &) in URLs,

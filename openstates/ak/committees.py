@@ -10,41 +10,41 @@ class AKCommitteeScraper(CommitteeScraper):
         url = ("http://www.legis.state.ak.us/basis/commbr_info.asp"
                "?session=%s" % term)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
+        chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-            for link in page.xpath("//a[contains(@href, 'comm=')]"):
-                name = link.text.strip().title()
+        for link in page.xpath("//a[contains(@href, 'comm=')]"):
+            name = link.text.strip().title()
 
-                if name.startswith('Conference Committee'):
-                    continue
+            if name.startswith('Conference Committee'):
+                continue
 
-                url = link.attrib['href']
-                if ('comm=%s' % chamber_abbrev) in url:
-                    self.scrape_committee(chamber, name, url)
+            url = link.attrib['href']
+            if ('comm=%s' % chamber_abbrev) in url:
+                self.scrape_committee(chamber, name, url)
 
     def scrape_committee(self, chamber, name, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            if page.xpath("//h3[. = 'Joint Committee']"):
-                chamber = 'joint'
+        if page.xpath("//h3[. = 'Joint Committee']"):
+            chamber = 'joint'
 
-            comm = Committee(chamber, name)
-            comm.add_source(url)
+        comm = Committee(chamber, name)
+        comm.add_source(url)
 
-            for link in page.xpath("//a[contains(@href, 'member=')]"):
-                member = link.text.strip()
+        for link in page.xpath("//a[contains(@href, 'member=')]"):
+            member = link.text.strip()
 
-                mtype = link.xpath("string(../preceding-sibling::td[1])")
-                mtype = mtype.strip(": \r\n\t").lower()
+            mtype = link.xpath("string(../preceding-sibling::td[1])")
+            mtype = mtype.strip(": \r\n\t").lower()
 
-                comm.add_member(member, mtype)
+            comm.add_member(member, mtype)
 
-            if not comm['members']:
-                self.warning('not saving %s, appears to be empty' % name)
-            else:
-                self.save_committee(comm)
+        if not comm['members']:
+            self.warning('not saving %s, appears to be empty' % name)
+        else:
+            self.save_committee(comm)

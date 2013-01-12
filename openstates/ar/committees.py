@@ -32,23 +32,23 @@ class ARCommitteeScraper(CommitteeScraper):
 
         for chamber, url_ext in COMM_TYPES.iteritems():
             chamber_url = urlescape(base_url + url_ext)
-            with self.urlopen(chamber_url) as page:
-                page = lxml.html.fromstring(page)
+            page = self.urlopen(chamber_url)
+            page = lxml.html.fromstring(page)
 
-                for a in page.xpath('//td[@class="dxtl dxtl__B0"]/a'):
-                    if a.attrib.get('colspan') == '2':
-                        # colspan=2 signals a subcommittee, but it's easier
-                        # to pick those up from links on the committee page,
-                        # so we do that in scrape_committee() and skip
-                        # it here
-                        continue
+            for a in page.xpath('//td[@class="dxtl dxtl__B0"]/a'):
+                if a.attrib.get('colspan') == '2':
+                    # colspan=2 signals a subcommittee, but it's easier
+                    # to pick those up from links on the committee page,
+                    # so we do that in scrape_committee() and skip
+                    # it here
+                    continue
 
-                    name = re.sub(r'\s*-\s*(SENATE|HOUSE)$', '', a.text).strip()
+                name = re.sub(r'\s*-\s*(SENATE|HOUSE)$', '', a.text).strip()
 
-                    comm_url = urlescape(a.attrib['href'])
-                    if chamber == 'task_force':
-                        chamber = 'joint'
-                    self.scrape_committee(chamber, name, comm_url)
+                comm_url = urlescape(a.attrib['href'])
+                if chamber == 'task_force':
+                    chamber = 'joint'
+                self.scrape_committee(chamber, name, comm_url)
 
     def scrape_committee(self, chamber, name, url, subcommittee=None):
         if subcommittee:
@@ -64,37 +64,37 @@ class ARCommitteeScraper(CommitteeScraper):
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for tr in page.xpath('//table[@class="gridtable"]/'
-                                 'tr[position()>1]'):
-                if tr.xpath('string(td[1])'):
-                    mtype = tr.xpath('string(td[1])')
-                else:
-                    mtype = 'member'
-
-                member = tr.xpath('string(td[3])').split()
-                title = member[0]
-                member = ' '.join(member[1:])
-
-                if title == 'Senator':
-                    mchamber = 'upper'
-                elif title == 'Representative':
-                    mchamber = 'lower'
-                else:
-                    # skip non-legislative members
-                    continue
-
-                comm.add_member(member, mtype, chamber=mchamber)
-
-            for a in page.xpath('//ul/li/a'):
-                sub_name = a.text.strip()
-                sub_url = urlescape(a.attrib['href'])
-                self.scrape_committee(chamber, name, sub_url,
-                                      subcommittee=sub_name)
-
-            if not comm['members']:
-                self.warning('not saving empty committee %s' % name)
+        for tr in page.xpath('//table[@class="gridtable"]/'
+                             'tr[position()>1]'):
+            if tr.xpath('string(td[1])'):
+                mtype = tr.xpath('string(td[1])')
             else:
-                self.save_committee(comm)
+                mtype = 'member'
+
+            member = tr.xpath('string(td[3])').split()
+            title = member[0]
+            member = ' '.join(member[1:])
+
+            if title == 'Senator':
+                mchamber = 'upper'
+            elif title == 'Representative':
+                mchamber = 'lower'
+            else:
+                # skip non-legislative members
+                continue
+
+            comm.add_member(member, mtype, chamber=mchamber)
+
+        for a in page.xpath('//ul/li/a'):
+            sub_name = a.text.strip()
+            sub_url = urlescape(a.attrib['href'])
+            self.scrape_committee(chamber, name, sub_url,
+                                  subcommittee=sub_name)
+
+        if not comm['members']:
+            self.warning('not saving empty committee %s' % name)
+        else:
+            self.save_committee(comm)

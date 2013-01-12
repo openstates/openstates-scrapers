@@ -60,43 +60,43 @@ class PRCommitteeScraper(CommitteeScraper):
 
     def scrape_lower(self):
         url = 'http://www.camaraderepresentantes.org/comisiones.asp'
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-            for link in doc.xpath('//a[contains(@href, "comisiones2")]'):
-                self.scrape_lower_committee(link.text, link.get('href'))
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for link in doc.xpath('//a[contains(@href, "comisiones2")]'):
+            self.scrape_lower_committee(link.text, link.get('href'))
 
     def scrape_lower_committee(self, name, url):
         com = Committee('lower', name)
         com.add_source(url)
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            contact, directiva, reps = doc.xpath('//div[@class="sbox"]/div[2]')
-            # all members are tails of images (they use img tags for bullets)
-            # first three members are in the directiva div
-            chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
-            vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')
-            sec = directiva.xpath('b[text()="Secretario(a):"]/following-sibling::img[1]')
-            member = 0;
-            if chair and chair[0].tail is not None:
-                chair = chair[0].tail
-                com.add_member(clean_spaces(chair), 'chairman')
-                member += 1
-            if vchair and vchair[0].tail is not None:
-                vchair = vchair[0].tail
-                com.add_member(clean_spaces(vchair), 'vice chairman')
-                member += 1
-            if sec and sec is not None:
-                sec = sec[0].tail
-                com.add_member(clean_spaces(sec), 'secretary')
-                member += 1
+        contact, directiva, reps = doc.xpath('//div[@class="sbox"]/div[2]')
+        # all members are tails of images (they use img tags for bullets)
+        # first three members are in the directiva div
+        chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
+        vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')
+        sec = directiva.xpath('b[text()="Secretario(a):"]/following-sibling::img[1]')
+        member = 0;
+        if chair and chair[0].tail is not None:
+            chair = chair[0].tail
+            com.add_member(clean_spaces(chair), 'chairman')
+            member += 1
+        if vchair and vchair[0].tail is not None:
+            vchair = vchair[0].tail
+            com.add_member(clean_spaces(vchair), 'vice chairman')
+            member += 1
+        if sec and sec is not None:
+            sec = sec[0].tail
+            com.add_member(clean_spaces(sec), 'secretary')
+            member += 1
 
-            for img in reps.xpath('.//img'):
-                member_name = clean_spaces(img.tail)
-                if member_name is not None:
-                    com.add_member(member_name)
-                    member += 1
-            if member > 0:
-                self.save_committee(com)
+        for img in reps.xpath('.//img'):
+            member_name = clean_spaces(img.tail)
+            if member_name is not None:
+                com.add_member(member_name)
+                member += 1
+        if member > 0:
+            self.save_committee(com)

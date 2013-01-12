@@ -29,33 +29,33 @@ class RICommitteeScraper(CommitteeScraper):
     def scrape_comm_list(self, ctype):
         url = 'http://webserver.rilin.state.ri.us/Sitemap.html'
         self.log("looking for "+ctype)
-        with self.urlopen(url) as page:
-            root = lxml.html.fromstring(page)
-            return root.xpath("//a[contains(@href,'"+ctype+"')]")
+        page = self.urlopen(url)
+        root = lxml.html.fromstring(page)
+        return root.xpath("//a[contains(@href,'"+ctype+"')]")
 
     def add_members(self,comm,url):
-        with self.urlopen(url) as page:
-            self.log(comm)
-            root = lxml.html.fromstring(page)
-            # The first <tr> in the table of members
-            membertable=root.xpath('//p[@class="style28"]/ancestor::table[1]')[0]
-            members = membertable.xpath("*")[1:]
-   
-            order = {
-                "name" : 0,
-                "appt" : 1,
-                "email" : 2
-            }
+        page = self.urlopen(url)
+        self.log(comm)
+        root = lxml.html.fromstring(page)
+        # The first <tr> in the table of members
+        membertable=root.xpath('//p[@class="style28"]/ancestor::table[1]')[0]
+        members = membertable.xpath("*")[1:]
 
-            prefix = "Senator"
+        order = {
+            "name" : 0,
+            "appt" : 1,
+            "email" : 2
+        }
 
-            for member in members:
-                name = member[order['name']].text_content().strip()
-                if name[:len(prefix)] == prefix:
-                    name = name[len(prefix):].strip()
-                appt = member[order['appt']].text_content().strip()
-                self.log("name "+ name +" role " + appt)
-                comm.add_member(name, appt)
+        prefix = "Senator"
+
+        for member in members:
+            name = member[order['name']].text_content().strip()
+            if name[:len(prefix)] == prefix:
+                name = name[len(prefix):].strip()
+            appt = member[order['appt']].text_content().strip()
+            self.log("name "+ name +" role " + appt)
+            comm.add_member(name, appt)
 
     def scrape_reps_comm(self):
         base = 'http://webserver.rilin.state.ri.us'

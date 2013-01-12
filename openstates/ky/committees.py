@@ -47,11 +47,11 @@ class KYCommitteeScraper(CommitteeScraper):
                 self.save_committee(comm)
 
     def scrape_members(self, comm, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            comm.add_source(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        comm.add_source(url)
 
-            for link in page.xpath("//a[contains(@href, 'Legislator')]"):
-                name = re.sub(r'^(Rep\.|Sen\.) ', '', link.text).strip()
-                comm.add_member(name)
+        for link in page.xpath("//a[contains(@href, 'Legislator')]"):
+            name = re.sub(r'^(Rep\.|Sen\.) ', '', link.text).strip()
+            comm.add_member(name)

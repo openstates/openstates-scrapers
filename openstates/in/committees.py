@@ -17,40 +17,40 @@ class INCommitteeScraper(CommitteeScraper):
         url = ("http://www.in.gov/apps/lsa/session/billwatch/"
                "billinfo?request=getCommitteeList")
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            path = "//a[contains(@href, 'chamber=%s')]" % chamber_abbr
-            for link in page.xpath(path):
-                name = link.text.strip()
-                comm_url = link.attrib['href']
-                self.scrape_committee(chamber, term, name, comm_url)
+        path = "//a[contains(@href, 'chamber=%s')]" % chamber_abbr
+        for link in page.xpath(path):
+            name = link.text.strip()
+            comm_url = link.attrib['href']
+            self.scrape_committee(chamber, term, name, comm_url)
 
     def scrape_committee(self, chamber, term, name, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            mlist = page.xpath("//strong[contains(., 'Members:')]")[0].tail
-            mlist = re.sub(r'\s+', ' ', mlist)
+        mlist = page.xpath("//strong[contains(., 'Members:')]")[0].tail
+        mlist = re.sub(r'\s+', ' ', mlist)
 
-            committee = Committee(chamber, name)
-            committee.add_source(url)
+        committee = Committee(chamber, name)
+        committee.add_source(url)
 
-            # split on periods not preceeded by capital letters
-            for member in re.split('(?<![A-Z])[.,] ', mlist):
-                member = re.sub(r'R\.M\.(M\.)?$', '', member.strip()).strip()
-                if member:
-                    committee.add_member(member)
+        # split on periods not preceeded by capital letters
+        for member in re.split('(?<![A-Z])[.,] ', mlist):
+            member = re.sub(r'R\.M\.(M\.)?$', '', member.strip()).strip()
+            if member:
+                committee.add_member(member)
 
-            chair = page.xpath("//strong[contains(., 'Chair:')]")[0]
-            chair_name = chair.tail.strip()
-            if chair_name:
-                committee.add_member(chair_name, 'chair')
+        chair = page.xpath("//strong[contains(., 'Chair:')]")[0]
+        chair_name = chair.tail.strip()
+        if chair_name:
+            committee.add_member(chair_name, 'chair')
 
-            vc = page.xpath("//strong[contains(., 'Vice Chair:')]")[0]
-            vc_name = vc.tail.strip()
-            if vc_name:
-                committee.add_member(vc_name, 'vice chair')
+        vc = page.xpath("//strong[contains(., 'Vice Chair:')]")[0]
+        vc_name = vc.tail.strip()
+        if vc_name:
+            committee.add_member(vc_name, 'vice chair')
 
-            self.save_committee(committee)
+        self.save_committee(committee)

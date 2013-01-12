@@ -24,39 +24,39 @@ class KSBillScraper(CommitteeScraper):
         else:
             chambers = ['house_committees']
 
-        with self.urlopen(ksapi.url + 'ctte/') as committee_request:
-            committee_json = json.loads(committee_request)
+        committee_request = self.urlopen(ksapi.url + 'ctte/')
+        committee_json = json.loads(committee_request)
 
-            for com_type in chambers:
-                committees = committee_json['content'][com_type]
+        for com_type in chambers:
+            committees = committee_json['content'][com_type]
 
-                for committee_data in committees:
+            for committee_data in committees:
 
-                    # set to joint if we are using the special_committees
-                    com_chamber = ('joint' if com_type == 'special_committees'
-                                   else chamber)
+                # set to joint if we are using the special_committees
+                com_chamber = ('joint' if com_type == 'special_committees'
+                               else chamber)
 
-                    committee = Committee(com_chamber, committee_data['TITLE'])
+                committee = Committee(com_chamber, committee_data['TITLE'])
 
-                    com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
-                    try:
-                        detail_json = self.urlopen(com_url)
-                    except scrapelib.HTTPError:
-                        self.warning("error fetching committee %s" % com_url)
-                        continue
-                    details = json.loads(detail_json)['content']
-                    for chair in details['CHAIR']:
-                        committee.add_member(chair['FULLNAME'], 'chairman')
-                    for vicechair in details['VICECHAIR']:
-                        committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
-                    for rankedmember in details['RMMEM']:
-                        committee.add_member(rankedmember['FULLNAME'], 'ranking member')
-                    for member in details['MEMBERS']:
-                        committee.add_member(member['FULLNAME'])
+                com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
+                try:
+                    detail_json = self.urlopen(com_url)
+                except scrapelib.HTTPError:
+                    self.warning("error fetching committee %s" % com_url)
+                    continue
+                details = json.loads(detail_json)['content']
+                for chair in details['CHAIR']:
+                    committee.add_member(chair['FULLNAME'], 'chairman')
+                for vicechair in details['VICECHAIR']:
+                    committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
+                for rankedmember in details['RMMEM']:
+                    committee.add_member(rankedmember['FULLNAME'], 'ranking member')
+                for member in details['MEMBERS']:
+                    committee.add_member(member['FULLNAME'])
 
-                    if not committee['members']:
-                        self.warning('skipping blank committee %s' %
-                                     committee_data['TITLE'])
-                    else:
-                        committee.add_source(com_url)
-                        self.save_committee(committee)
+                if not committee['members']:
+                    self.warning('skipping blank committee %s' %
+                                 committee_data['TITLE'])
+                else:
+                    committee.add_source(com_url)
+                    self.save_committee(committee)
