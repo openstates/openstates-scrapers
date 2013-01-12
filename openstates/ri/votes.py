@@ -20,104 +20,104 @@ class RIVoteScraper(VoteScraper):
 
     def get_votes(self, url, session):
         ret = {}
-        with self.urlopen(url) as html:
-            p = lxml.html.fromstring(html)
-            tables = \
-                p.xpath("//td[@background='/images/capBG.jpg']/div/table")
+        html = self.urlopen(url)
+        p = lxml.html.fromstring(html)
+        tables = \
+            p.xpath("//td[@background='/images/capBG.jpg']/div/table")
 
-            metainf = tables[0]
-            table   = tables[1]
+        metainf = tables[0]
+        table   = tables[1]
 
-            inf = metainf.xpath("./tr/td/pre")[0]
-            headers = [ br.tail for br in inf.xpath("./*") ]
+        inf = metainf.xpath("./tr/td/pre")[0]
+        headers = [ br.tail for br in inf.xpath("./*") ]
 
-            dateinf = metainf.xpath("./tr/td")[3]
-            date = dateinf.text
-            time = dateinf.xpath("./*")[0].tail
+        dateinf = metainf.xpath("./tr/td")[3]
+        date = dateinf.text
+        time = dateinf.xpath("./*")[0].tail
 
-            vote_digest = metainf.xpath("./tr/td[@colspan='3']")
-            digest = vote_digest[2].text_content()
-            dig = []
-            for d in digest.split("\n"):
-                lis = d.strip().split("-")
-                for l in lis:
-                    if l != None and l != "":
-                        dig.append(l.strip())
-            digest = dig
+        vote_digest = metainf.xpath("./tr/td[@colspan='3']")
+        digest = vote_digest[2].text_content()
+        dig = []
+        for d in digest.split("\n"):
+            lis = d.strip().split("-")
+            for l in lis:
+                if l != None and l != "":
+                    dig.append(l.strip())
+        digest = dig
 
-            il = iter( digest )
-            d = dict(zip(il, il))
-            vote_count = d
-            vote_count['passage'] = int(vote_count['YEAS']) > \
-                    int(vote_count['NAYS'])
-            # XXX: This here has a greater then normal chance of failing.
-            # However, it's an upstream issue.
+        il = iter( digest )
+        d = dict(zip(il, il))
+        vote_count = d
+        vote_count['passage'] = int(vote_count['YEAS']) > \
+                int(vote_count['NAYS'])
+        # XXX: This here has a greater then normal chance of failing.
+        # However, it's an upstream issue.
 
-            time_string = "%s %s" % ( time, date )
+        time_string = "%s %s" % ( time, date )
 
-            fmt_string = "%I:%M:%S %p %A, %B %d, %Y"
-            # 4:31:14 PM TUESDAY, JANUARY 17, 2012
-            date_time = dt.datetime.strptime( time_string, fmt_string )
+        fmt_string = "%I:%M:%S %p %A, %B %d, %Y"
+        # 4:31:14 PM TUESDAY, JANUARY 17, 2012
+        date_time = dt.datetime.strptime( time_string, fmt_string )
 
-            bill_s_n_no = r"(?P<year>[0-9]{2,4})(?P<chamber>[SH])\s*(?P<bill>[0-9]+)"
-            # This is technically wrong, but it's close enough to be fine.
-            # something like "123S  3023" is technically valid, even though it's
-            # silly
+        bill_s_n_no = r"(?P<year>[0-9]{2,4})(?P<chamber>[SH])\s*(?P<bill>[0-9]+)"
+        # This is technically wrong, but it's close enough to be fine.
+        # something like "123S  3023" is technically valid, even though it's
+        # silly
 
-            bill_metainf = None
-            remaining    = None
+        bill_metainf = None
+        remaining    = None
 
-            for hid in range(0,len(headers)):
-                h = headers[hid]
-                inf = re.search( bill_s_n_no, h )
-                if inf != None:
-                    bill_metainf = inf.groupdict()
-                    if bill_metainf['year'][-2:] != session[-2:]:
-                        self.log(
+        for hid in range(0,len(headers)):
+            h = headers[hid]
+            inf = re.search( bill_s_n_no, h )
+            if inf != None:
+                bill_metainf = inf.groupdict()
+                if bill_metainf['year'][-2:] != session[-2:]:
+                    self.log(
 "Skipping vote - it's in the %s session, we're in the %s session." % (
-    bill_metainf['year'][-2:],
-    session[-2:]
+bill_metainf['year'][-2:],
+session[-2:]
 )
-                        )
-                        return ret
-                    remaining = headers[hid+1:]
+                    )
+                    return ret
+                remaining = headers[hid+1:]
 
-            if bill_metainf == None:
-                self.warning("No metainf for this bill. Aborting snag")
-                return ret
+        if bill_metainf == None:
+            self.warning("No metainf for this bill. Aborting snag")
+            return ret
 
-            try:
-                motion = remaining[-2]
-            except IndexError:
-                self.warning("Mission motion on this vote")
-                motion = "Unknown" # XXX: Because the motion is not on some
-                #                         pages.
+        try:
+            motion = remaining[-2]
+        except IndexError:
+            self.warning("Mission motion on this vote")
+            motion = "Unknown" # XXX: Because the motion is not on some
+            #                         pages.
 
-            bill_metainf['extra'] = {
-                "motion" : motion
-            }
+        bill_metainf['extra'] = {
+            "motion" : motion
+        }
 
-            votes = []
+        votes = []
 
-            for t in table.xpath("./tr/td"):
-                nodes = t.xpath("./*")
-                for node in nodes:
-                    if node.tag == "span":
-                        vote = node.text.strip().upper()
-                        name = node.tail.strip()
-                        votes.append({
-                            "name" : name,
-                            "vote" : vote
-                        })
-                if len(votes) > 0:
-                    bid = bill_metainf['bill']
-                    ret[bid] = {
-                        "votes" : votes,
-                        "meta"  : bill_metainf,
-                        "time"  : date_time,
-                        "count" : vote_count,
-                        "source": url
-                    }
+        for t in table.xpath("./tr/td"):
+            nodes = t.xpath("./*")
+            for node in nodes:
+                if node.tag == "span":
+                    vote = node.text.strip().upper()
+                    name = node.tail.strip()
+                    votes.append({
+                        "name" : name,
+                        "vote" : vote
+                    })
+            if len(votes) > 0:
+                bid = bill_metainf['bill']
+                ret[bid] = {
+                    "votes" : votes,
+                    "meta"  : bill_metainf,
+                    "time"  : date_time,
+                    "count" : vote_count,
+                    "source": url
+                }
         return ret
 
     def parse_vote_page(self, page, context_url, session):
