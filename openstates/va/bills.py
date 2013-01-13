@@ -51,11 +51,11 @@ class VABillScraper(BillScraper):
                 and 'the source database is temporarily unavailable' not in response.text)
 
     def get_page_bills(self, issue_name, href):
-        with self.urlopen('http://lis.virginia.gov' + href,
-                          retry_on_404=True) as issue_html:
-            idoc = lxml.html.fromstring(issue_html)
-            for ilink in idoc.xpath(self.link_xpath):
-                self.subject_map[ilink.text].append(issue_name)
+        issue_html = self.urlopen('http://lis.virginia.gov' + href,
+                                  retry_on_404=True)
+        idoc = lxml.html.fromstring(issue_html)
+        for ilink in idoc.xpath(self.link_xpath):
+            self.subject_map[ilink.text].append(issue_name)
 
         more_links = idoc.xpath('//a/b[text()="More..."]/../@href')
         if more_links:
