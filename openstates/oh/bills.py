@@ -121,73 +121,73 @@ class OHBillScraper(BillScraper):
                 bill.add_version(name, base_url + link,
                                  mimetype='application/pdf')
 
-        with self.urlopen(base_url + piece) as html:
-            # pass over missing bills - (unclear why this happens)
-            if 'could not be found.' in html:
-                self.warning('missing page: %s' % base_url + piece)
-                return
+        html = self.urlopen(base_url + piece)
+        # pass over missing bills - (unclear why this happens)
+        if 'could not be found.' in html:
+            self.warning('missing page: %s' % base_url + piece)
+            return
 
-            _get_html_or_pdf_version(html)
-            doc = lxml.html.fromstring(html)
-            for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
-                if a != piece:
-                    _get_html_or_pdf_version(self.urlopen(base_url + a))
-            for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
-                if a != piece:
-                    _get_html_or_pdf_version(self.urlopen(base_url + a))
+        _get_html_or_pdf_version(html)
+        doc = lxml.html.fromstring(html)
+        for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
+            if a != piece:
+                _get_html_or_pdf_version(self.urlopen(base_url + a))
+        for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
+            if a != piece:
+                _get_html_or_pdf_version(self.urlopen(base_url + a))
 
     def scrape_votes(self, bill, bill_prefix, number, session):
         vote_url = ('http://www.legislature.state.oh.us/votes.cfm?ID=' +
                     session + '_' + bill_prefix + '_' + str(number))
 
-        with self.urlopen(vote_url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(vote_url)
+        page = lxml.html.fromstring(page)
 
-            for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
-                date = datetime.datetime.strptime(jlink.text,
-                                                  "%m/%d/%Y").date()
+        for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):
+            date = datetime.datetime.strptime(jlink.text,
+                                              "%m/%d/%Y").date()
 
-                details = jlink.xpath("string(../../../td[2])")
+            details = jlink.xpath("string(../../../td[2])")
 
-                chamber = details.split(" - ")[0]
-                if chamber == 'House':
-                    chamber = 'lower'
-                elif chamber == 'Senate':
-                    chamber = 'upper'
-                else:
-                    raise ScrapeError("Bad chamber: %s" % chamber)
+            chamber = details.split(" - ")[0]
+            if chamber == 'House':
+                chamber = 'lower'
+            elif chamber == 'Senate':
+                chamber = 'upper'
+            else:
+                raise ScrapeError("Bad chamber: %s" % chamber)
 
-                motion = details.split(" - ")[1].split("\n")[0].strip()
+            motion = details.split(" - ")[1].split("\n")[0].strip()
 
-                vote_row = jlink.xpath("../../..")[0].getnext()
+            vote_row = jlink.xpath("../../..")[0].getnext()
 
-                yea_div = vote_row.xpath(
-                    "td/font/div[contains(@id, 'Yea')]")[0]
-                yeas = []
-                for td in yea_div.xpath("table/tr/td"):
-                    name = td.xpath("string()")
-                    if name:
-                        yeas.append(name)
+            yea_div = vote_row.xpath(
+                "td/font/div[contains(@id, 'Yea')]")[0]
+            yeas = []
+            for td in yea_div.xpath("table/tr/td"):
+                name = td.xpath("string()")
+                if name:
+                    yeas.append(name)
 
-                no_div = vote_row.xpath(
-                    "td/font/div[contains(@id, 'Nay')]")[0]
-                nays = []
-                for td in no_div.xpath("table/tr/td"):
-                    name = td.xpath("string()")
-                    if name:
-                        nays.append(name)
+            no_div = vote_row.xpath(
+                "td/font/div[contains(@id, 'Nay')]")[0]
+            nays = []
+            for td in no_div.xpath("table/tr/td"):
+                name = td.xpath("string()")
+                if name:
+                    nays.append(name)
 
-                yes_count = len(yeas)
-                no_count = len(nays)
+            yes_count = len(yeas)
+            no_count = len(nays)
 
-                vote = Vote(chamber, date, motion, yes_count > no_count,
-                            yes_count, no_count, 0)
+            vote = Vote(chamber, date, motion, yes_count > no_count,
+                        yes_count, no_count, 0)
 
-                for yes in yeas:
-                    vote.yes(yes)
-                for no in nays:
-                    vote.no(no)
+            for yes in yeas:
+                vote.yes(yes)
+            for no in nays:
+                vote.no(no)
 
-                vote.add_source(vote_url)
+            vote.add_source(vote_url)
 
-                bill.add_vote(vote)
+            bill.add_vote(vote)

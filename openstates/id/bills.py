@@ -138,36 +138,36 @@ class IDBillScraper(BillScraper):
     def scrape_post_2009(self, chamber, session):
         "scrapes legislation for 2009 and above"
         url = BILLS_URL % session
-        with self.urlopen(url) as bill_index:
-            html = lxml.html.fromstring(bill_index)
-            # I check for rows with an id that contains 'bill' and startswith
-            # 'H' or 'S' to make sure I dont get any links from the menus
-            # might not be necessary
-            bill_rows = html.xpath('//tr[contains(@id, "bill") and '\
-                                   'starts-with(descendant::td/a/text(), "%s")]'\
-                                   % _CHAMBERS[chamber][0])
-            for row in bill_rows:
-                matches = re.match(r'([A-Z]*)([0-9]+)',
-                                            row[0].text_content().strip())
-                bill_id = " ".join(matches.groups()).strip()
-                short_title = row[1].text_content().strip()
-                self.scrape_bill(chamber, session, bill_id, short_title)
+        bill_index = self.urlopen(url)
+        html = lxml.html.fromstring(bill_index)
+        # I check for rows with an id that contains 'bill' and startswith
+        # 'H' or 'S' to make sure I dont get any links from the menus
+        # might not be necessary
+        bill_rows = html.xpath('//tr[contains(@id, "bill") and '\
+                               'starts-with(descendant::td/a/text(), "%s")]'\
+                               % _CHAMBERS[chamber][0])
+        for row in bill_rows:
+            matches = re.match(r'([A-Z]*)([0-9]+)',
+                                        row[0].text_content().strip())
+            bill_id = " ".join(matches.groups()).strip()
+            short_title = row[1].text_content().strip()
+            self.scrape_bill(chamber, session, bill_id, short_title)
 
     def scrape_pre_2009(self, chamber, session):
         """scrapes legislation from 2008 and below."""
         url = BILLS_URL + 'l'
         url = url % session
-        with self.urlopen(url) as bill_index:
-            html = lxml.html.fromstring(bill_index)
-            html.make_links_absolute(url)
-            links = html.xpath('//a')
-            exprs = r'(%s[A-Z]*)([0-9]+)' % _CHAMBERS[chamber][0]
-            for link in links:
-                matches = re.match(exprs, link.text)
-                if matches:
-                    bill_id = " ".join(matches.groups())
-                    short_title = link.tail[:link.tail.index('..')]
-                    self.scrape_pre_2009_bill(chamber, session, bill_id, short_title)
+        bill_index = self.urlopen(url)
+        html = lxml.html.fromstring(bill_index)
+        html.make_links_absolute(url)
+        links = html.xpath('//a')
+        exprs = r'(%s[A-Z]*)([0-9]+)' % _CHAMBERS[chamber][0]
+        for link in links:
+            matches = re.match(exprs, link.text)
+            if matches:
+                bill_id = " ".join(matches.groups())
+                short_title = link.tail[:link.tail.index('..')]
+                self.scrape_pre_2009_bill(chamber, session, bill_id, short_title)
 
     def scrape_bill(self, chamber, session, bill_id, short_title=None):
         """
@@ -175,167 +175,167 @@ class IDBillScraper(BillScraper):
         bills from the 2009 session and above.
         """
         url = BILL_URL % (session, bill_id.replace(' ', ''))
-        with self.urlopen(url) as bill_page:
-            html = lxml.html.fromstring(bill_page)
-            html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
-            bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
-            title = bill_tables[1].text_content().strip()
-            bill_type = get_bill_type(bill_id)
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            bill.add_source(url)
-            bill['subjects'] = self._subjects[bill_id.replace(' ', '')]
+        bill_page = self.urlopen(url)
+        html = lxml.html.fromstring(bill_page)
+        html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
+        bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
+        title = bill_tables[1].text_content().strip()
+        bill_type = get_bill_type(bill_id)
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill.add_source(url)
+        bill['subjects'] = self._subjects[bill_id.replace(' ', '')]
 
-            if short_title and bill['title'].lower() != short_title.lower():
-                bill.add_title(short_title)
+        if short_title and bill['title'].lower() != short_title.lower():
+            bill.add_title(short_title)
 
-            # documents
-            doc_links = html.xpath('//span/a')
-            for link in doc_links:
-                name = link.text_content().strip()
-                href = link.get('href')
-                if 'Engrossment' in name or 'Bill Text' in name:
-                    bill.add_version(name, href, mimetype='application/pdf')
-                else:
-                    bill.add_document(name, href)
+        # documents
+        doc_links = html.xpath('//span/a')
+        for link in doc_links:
+            name = link.text_content().strip()
+            href = link.get('href')
+            if 'Engrossment' in name or 'Bill Text' in name:
+                bill.add_version(name, href, mimetype='application/pdf')
+            else:
+                bill.add_document(name, href)
 
-            def _split(thing, split_on):
-                ret = []
-                bld = ""
-                for char in thing:
-                    if char in split_on:
-                        ret.append(bld)
-                ret.append(bld)
-                ret = filter(lambda x: x != "", ret)
-                return ret
+        def _split(thing, split_on):
+            ret = []
+            bld = ""
+            for char in thing:
+                if char in split_on:
+                    ret.append(bld)
+            ret.append(bld)
+            ret = filter(lambda x: x != "", ret)
+            return ret
 
-            # sponsors range from a committee to one legislator to a group of legs
-            sponsor_lists = bill_tables[0].text_content().split('by')
-            if len(sponsor_lists) > 1:
-                for sponsors in sponsor_lists[1:]:
-                    for person in _split(sponsors, [",", "AND"]):
-                        bill.add_sponsor('primary', person)
+        # sponsors range from a committee to one legislator to a group of legs
+        sponsor_lists = bill_tables[0].text_content().split('by')
+        if len(sponsor_lists) > 1:
+            for sponsors in sponsor_lists[1:]:
+                for person in _split(sponsors, [",", "AND"]):
+                    bill.add_sponsor('primary', person)
 
-            actor = chamber
-            last_date = None
-            for row in bill_tables[2]:
-                # lots of empty rows
-                if len(row) == 1:
-                    continue
-                _, date, action, _ = [x.text_content().strip() for x in row]
+        actor = chamber
+        last_date = None
+        for row in bill_tables[2]:
+            # lots of empty rows
+            if len(row) == 1:
+                continue
+            _, date, action, _ = [x.text_content().strip() for x in row]
 
-                if date:
-                    last_date = date
-                else:
-                    date = last_date
+            if date:
+                last_date = date
+            else:
+                date = last_date
 
-                date = datetime.datetime.strptime(date+ '/' + session[0:4],
-                                                  "%m/%d/%Y")
-                if action.startswith('House'):
-                    actor = 'lower'
-                elif action.startswith('Senate'):
-                    actor = 'upper'
+            date = datetime.datetime.strptime(date+ '/' + session[0:4],
+                                              "%m/%d/%Y")
+            if action.startswith('House'):
+                actor = 'lower'
+            elif action.startswith('Senate'):
+                actor = 'upper'
 
-                # votes
-                if 'AYES' in action or 'NAYS' in action:
-                    vote = self.parse_vote(actor, date, row[2])
-                    vote.add_source(url)
-                    bill.add_vote(vote)
-                # some td's text is seperated by br elements
-                if len(row[2]):
-                    action = "".join(row[2].itertext())
-                action = action.replace(u'\xa0', ' ').strip()
-                atype = get_action(actor, action)
-                bill.add_action(actor, action, date, type=atype)
-                # after voice vote/roll call and some actions the bill is sent
-                # 'to House' or 'to Senate'
-                if 'to House' in action:
-                    actor = 'lower'
-                elif 'to Senate' in action:
-                    actor = 'upper'
-            self.save_bill(bill)
+            # votes
+            if 'AYES' in action or 'NAYS' in action:
+                vote = self.parse_vote(actor, date, row[2])
+                vote.add_source(url)
+                bill.add_vote(vote)
+            # some td's text is seperated by br elements
+            if len(row[2]):
+                action = "".join(row[2].itertext())
+            action = action.replace(u'\xa0', ' ').strip()
+            atype = get_action(actor, action)
+            bill.add_action(actor, action, date, type=atype)
+            # after voice vote/roll call and some actions the bill is sent
+            # 'to House' or 'to Senate'
+            if 'to House' in action:
+                actor = 'lower'
+            elif 'to Senate' in action:
+                actor = 'upper'
+        self.save_bill(bill)
 
     def scrape_pre_2009_bill(self, chamber, session, bill_id, short_title=''):
         """bills from 2008 and below are in a 'pre' element and is simpler to
         parse them as text"""
         url = 'http://legislature.idaho.gov/legislation/%s/%s.html' % (session, bill_id.replace(' ', ''))
-        with self.urlopen(url) as bill_page:
-            html = lxml.html.fromstring(bill_page)
-            text = html.xpath('//pre')[0].text.split('\r\n')
+        bill_page = self.urlopen(url)
+        html = lxml.html.fromstring(bill_page)
+        text = html.xpath('//pre')[0].text.split('\r\n')
 
-            # title
-            title = " - ".join([ x.strip() for x in text[1].split('-') if x.isupper() ])
-            # bill type
-            bill_type = get_bill_type(bill_id)
+        # title
+        title = " - ".join([ x.strip() for x in text[1].split('-') if x.isupper() ])
+        # bill type
+        bill_type = get_bill_type(bill_id)
 
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            # sponsors
-            sponsors = text[0].split('by')[-1]
-            for sponsor in sponsors.split(','):
-                bill.add_sponsor('primary', sponsor)
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        # sponsors
+        sponsors = text[0].split('by')[-1]
+        for sponsor in sponsors.split(','):
+            bill.add_sponsor('primary', sponsor)
 
-            actor = chamber
-            self.flag() # clear last bills vote flags
-            self.vote = None #
+        actor = chamber
+        self.flag() # clear last bills vote flags
+        self.vote = None #
 
-            for line in text:
+        for line in text:
 
-                if re.match(r'^\d\d/\d\d', line):
-                    date = date = datetime.datetime.strptime(line[0:5] + '/' + session[0:4],
-                                                  "%m/%d/%Y")
-                    self.last_date = date
-                    action_text = line[5:].strip()
-                    # actor
-                    if action_text.lower().startswith('house') or \
-                       action_text.lower().startswith('senate'):
-                        actor = {'H':'lower', 'S':'upper'}[action_text[0]]
+            if re.match(r'^\d\d/\d\d', line):
+                date = date = datetime.datetime.strptime(line[0:5] + '/' + session[0:4],
+                                              "%m/%d/%Y")
+                self.last_date = date
+                action_text = line[5:].strip()
+                # actor
+                if action_text.lower().startswith('house') or \
+                   action_text.lower().startswith('senate'):
+                    actor = {'H':'lower', 'S':'upper'}[action_text[0]]
 
-                    action = get_action(actor, action_text)
-                    bill.add_action(actor,action_text, date, type=action)
-                    if "bill:passed" in action or "bill:failed" in action:
-                        passed = False if 'FAILED' in action_text else True
-                        votes = re.search(r'(\d+)-(\d+)-(\d+)', action_text)
-                        if votes:
-                            yes, no, other = votes.groups()
-                            self.in_vote = True
-                            self.vote = Vote(chamber, date, action_text, passed,
-                                         int(yes), int(no), int(other))
-                else:
-                    date = self.last_date
-                    # nothing to do if its not a vote
-                    if "Floor Sponsor" in line:
-                        self.in_vote = False
-                        if self.vote:
-                            bill.add_vote(self.vote)
-                            self.vote = None
+                action = get_action(actor, action_text)
+                bill.add_action(actor,action_text, date, type=action)
+                if "bill:passed" in action or "bill:failed" in action:
+                    passed = False if 'FAILED' in action_text else True
+                    votes = re.search(r'(\d+)-(\d+)-(\d+)', action_text)
+                    if votes:
+                        yes, no, other = votes.groups()
+                        self.in_vote = True
+                        self.vote = Vote(chamber, date, action_text, passed,
+                                     int(yes), int(no), int(other))
+            else:
+                date = self.last_date
+                # nothing to do if its not a vote
+                if "Floor Sponsor" in line:
+                    self.in_vote = False
+                    if self.vote:
+                        bill.add_vote(self.vote)
+                        self.vote = None
 
-                    if not self.in_vote:
-                        continue
-                    if 'AYES --' in line:
-                        self.flag(ayes=True)
-                    elif 'NAYS --' in line:
-                        self.flag(nays=True)
-                    elif 'Absent and excused' in line:
-                        self.flag(other=True)
+                if not self.in_vote:
+                    continue
+                if 'AYES --' in line:
+                    self.flag(ayes=True)
+                elif 'NAYS --' in line:
+                    self.flag(nays=True)
+                elif 'Absent and excused' in line:
+                    self.flag(other=True)
 
-                    if self.ayes:
-                        for name in line.replace('AYES --', '').split(','):
-                            name = name.strip()
-                            if name:
-                                self.vote.yes(name)
+                if self.ayes:
+                    for name in line.replace('AYES --', '').split(','):
+                        name = name.strip()
+                        if name:
+                            self.vote.yes(name)
 
-                    if self.nays:
-                        for name in line.replace('NAYS --', '').split(','):
-                            name = name.strip()
-                            if name:
-                                self.vote.no(name)
+                if self.nays:
+                    for name in line.replace('NAYS --', '').split(','):
+                        name = name.strip()
+                        if name:
+                            self.vote.no(name)
 
-                    if self.other:
-                        for name in line.replace('Absent and excused --', '').split(','):
-                            name = name.strip()
-                            if name:
-                                self.vote.other(name)
+                if self.other:
+                    for name in line.replace('Absent and excused --', '').split(','):
+                        name = name.strip()
+                        if name:
+                            self.vote.other(name)
 
-            self.save_bill(bill)
+        self.save_bill(bill)
 
     def parse_vote(self, actor, date, row):
         """

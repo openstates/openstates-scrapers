@@ -20,8 +20,8 @@ class NDBillScraper(BillScraper):
     categorizer = NDCategorizer()
 
     def scrape_actions(self, session, subject, href, bid):
-        with self.urlopen(href) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(href)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         table = page.xpath(
             "//table[@summary='Measure Number Breakdown']"
@@ -116,8 +116,8 @@ class NDBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_versions(self, bill, href):
-        with self.urlopen(href) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(href)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         versions = page.xpath("//a[contains(@href, '/documents/')]")
         for version in versions:
@@ -127,8 +127,8 @@ class NDBillScraper(BillScraper):
         return bill
 
     def scrape_subject(self, session, href, subject):
-        with self.urlopen(href) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(href)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
         for bill in bills:
@@ -145,8 +145,8 @@ class NDBillScraper(BillScraper):
                 break
 
         url = base_url % (term, start_year)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         subjects = page.xpath(
             "//div[@id='application']"

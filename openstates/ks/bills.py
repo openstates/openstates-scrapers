@@ -26,69 +26,69 @@ class KSBillScraper(BillScraper):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
-        with self.urlopen(ksapi.url + 'bill_status/') as bill_request:
-            bill_request_json = json.loads(bill_request)
-            bills = bill_request_json['content']
-            for bill_data in bills:
+        bill_request = self.urlopen(ksapi.url + 'bill_status/')
+        bill_request_json = json.loads(bill_request)
+        bills = bill_request_json['content']
+        for bill_data in bills:
 
-                bill_id = bill_data['BILLNO']
+            bill_id = bill_data['BILLNO']
 
-                # filter other chambers
-                if not bill_id.startswith(chamber_letter):
-                    continue
+            # filter other chambers
+            if not bill_id.startswith(chamber_letter):
+                continue
 
-                if 'CR' in bill_id:
-                    btype = 'concurrent resolution'
-                elif 'R' in bill_id:
-                    btype = 'resolution'
-                elif 'B' in bill_id:
-                    btype = 'bill'
+            if 'CR' in bill_id:
+                btype = 'concurrent resolution'
+            elif 'R' in bill_id:
+                btype = 'resolution'
+            elif 'B' in bill_id:
+                btype = 'bill'
 
-                title = bill_data['SHORTTITLE'] or bill_data['LONGTITLE']
+            title = bill_data['SHORTTITLE'] or bill_data['LONGTITLE']
 
-                # main
-                bill = Bill(session, chamber, bill_id, title,
-                            type=btype, status=bill_data['STATUS'])
-                bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
+            # main
+            bill = Bill(session, chamber, bill_id, title,
+                        type=btype, status=bill_data['STATUS'])
+            bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
-                if (bill_data['LONGTITLE'] and
-                    bill_data['LONGTITLE'] != bill['title']):
-                    bill.add_title(bill_data['LONGTITLE'])
+            if (bill_data['LONGTITLE'] and
+                bill_data['LONGTITLE'] != bill['title']):
+                bill.add_title(bill_data['LONGTITLE'])
 
-                for sponsor in bill_data['SPONSOR_NAMES']:
-                    stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
-                             else 'cosponsor')
-                    bill.add_sponsor(stype, sponsor)
+            for sponsor in bill_data['SPONSOR_NAMES']:
+                stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
+                         else 'cosponsor')
+                bill.add_sponsor(stype, sponsor)
 
-                # history is backwards
-                for event in reversed(bill_data['HISTORY']):
+            # history is backwards
+            for event in reversed(bill_data['HISTORY']):
 
-                    actor = ('upper' if event['chamber'] == 'Senate'
-                             else 'lower')
+                actor = ('upper' if event['chamber'] == 'Senate'
+                         else 'lower')
 
-                    date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
-                    # append committee names if present
-                    if 'committee_names' in event:
-                        action = (event['status'] + ' ' +
-                                  ' and '.join(event['committee_names']))
-                    else:
-                        action = event['status']
+                date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
+                # append committee names if present
+                if 'committee_names' in event:
+                    action = (event['status'] + ' ' +
+                              ' and '.join(event['committee_names']))
+                else:
+                    action = event['status']
 
-                    if event['action_code'] not in ksapi.action_codes:
-                        self.warning('unknown action code on %s: %s %s' %
-                                     (bill_id, event['action_code'],
-                                      event['status']))
-                        atype = 'other'
-                    else:
-                        atype = ksapi.action_codes[event['action_code']]
-                    bill.add_action(actor, action, date, type=atype)
+                if event['action_code'] not in ksapi.action_codes:
+                    self.warning('unknown action code on %s: %s %s' %
+                                 (bill_id, event['action_code'],
+                                  event['status']))
+                    atype = 'other'
+                else:
+                    atype = ksapi.action_codes[event['action_code']]
+                bill.add_action(actor, action, date, type=atype)
 
-                try:
-                    self.scrape_html(bill)
-                except scrapelib.HTTPError as e:
-                    self.warning('unable to fetch HTML for bill {0}'.format(
-                        bill['bill_id']))
-                self.save_bill(bill)
+            try:
+                self.scrape_html(bill)
+            except scrapelib.HTTPError as e:
+                self.warning('unable to fetch HTML for bill {0}'.format(
+                    bill['bill_id']))
+            self.save_bill(bill)
 
     def scrape_html(self, bill):
         slug = {'2013-2014': 'b2013_14'}[bill['session']]

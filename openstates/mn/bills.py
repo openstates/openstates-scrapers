@@ -46,20 +46,20 @@ class MNBillScraper(BillScraper):
 
         url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
             BILL_DETAIL_URL_BASE, search_chamber, search_session)
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            # skip first one ('--- All ---')
-            for option in doc.xpath('//select[@name="topic[]"]/option')[1:]:
-                # Subjects look like "Name of Subject (##)" -- split off the #
-                subject = option.text.rsplit(' (')[0]
-                value = option.get('value')
-                opt_url = '%sstatus_results.php?body=%s&search=topic&session=%s&topic[]=%s' % (
-                    BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
-                with self.urlopen(opt_url) as opt_html:
-                    opt_doc = lxml.html.fromstring(opt_html)
-                    for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
-                        bill = re.sub(r'(\w+?)0*(\d+)', r'\1\2', bill)
-                        self._subject_mapping[bill].append(subject)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        # skip first one ('--- All ---')
+        for option in doc.xpath('//select[@name="topic[]"]/option')[1:]:
+            # Subjects look like "Name of Subject (##)" -- split off the #
+            subject = option.text.rsplit(' (')[0]
+            value = option.get('value')
+            opt_url = '%sstatus_results.php?body=%s&search=topic&session=%s&topic[]=%s' % (
+                BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
+            opt_html = self.urlopen(opt_url)
+            opt_doc = lxml.html.fromstring(opt_html)
+            for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
+                bill = re.sub(r'(\w+?)0*(\d+)', r'\1\2', bill)
+                self._subject_mapping[bill].append(subject)
 
     def extract_bill_actions(self, doc, current_chamber):
         """Extract the actions taken on a bill.

@@ -62,26 +62,26 @@ class NVBillScraper(BillScraper):
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/TablesAndIndex/%s_%s-index.html' % (insert, year, session)
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            # first, a bit about this page:
-            # Level0 are the bolded titles
-            # Level1,2,3,4 are detailed titles, contain links to bills
-            # all links under a Level0 we can consider categorized by it
-            # there are random newlines *everywhere* that should get replaced
+        # first, a bit about this page:
+        # Level0 are the bolded titles
+        # Level1,2,3,4 are detailed titles, contain links to bills
+        # all links under a Level0 we can consider categorized by it
+        # there are random newlines *everywhere* that should get replaced
 
-            subject = None
+        subject = None
 
-            for p in doc.xpath('//p'):
-                if p.get('class') == 'Level0':
-                    subject = p.text_content().replace('\r\n', ' ')
-                else:
-                    if subject:
-                        for a in p.xpath('.//a'):
-                            bill_id = (a.text.replace('\r\n', '') if a.text
-                                       else None)
-                            self.subject_mapping[bill_id].append(subject)
+        for p in doc.xpath('//p'):
+            if p.get('class') == 'Level0':
+                subject = p.text_content().replace('\r\n', ' ')
+            else:
+                if subject:
+                    for a in p.xpath('.//a'):
+                        bill_id = (a.text.replace('\r\n', '') if a.text
+                                   else None)
+                        self.subject_mapping[bill_id].append(subject)
 
     def scrape_senate_bills(self, chamber, insert, session, year):
         doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
@@ -95,7 +95,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
 
-                with self.urlopen(page_path) as page:
+                page = self.urlopen(page_path)  # DEDENT
                     page = page.replace(u"\xa0", " ")
                     root = lxml.html.fromstring(page)
 
@@ -147,7 +147,7 @@ class NVBillScraper(BillScraper):
             for link in links:
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
-                with self.urlopen(page_path) as page:
+                page = self.urlopen(page_path)  # DEDENT
                     page = page.replace(u"\xa0", " ")
                     root = lxml.html.fromstring(page)
 
@@ -188,7 +188,7 @@ class NVBillScraper(BillScraper):
     def scrape_links(self, url):
         links = []
 
-        with self.urlopen(url) as page:
+        page = self.urlopen(url)  # DEDENT
             root = lxml.html.fromstring(page)
             path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
             for mr in root.xpath(path):
@@ -255,7 +255,7 @@ class NVBillScraper(BillScraper):
             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
                 insert, link.get('href'))
             bill.add_source(vote_url)
-            with self.urlopen(vote_url) as page:
+            page = self.urlopen(vote_url)  # DEDENT
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 

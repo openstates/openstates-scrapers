@@ -66,8 +66,8 @@ class HIBillScraper(BillScraper):
     jurisdiction = 'hi'
 
     def get_short_codes(self):
-        with self.urlopen(SHORT_CODES) as list_html:
-            list_page = lxml.html.fromstring(list_html)
+        list_html = self.urlopen(SHORT_CODES)
+        list_page = lxml.html.fromstring(list_html)
         rows = list_page.xpath(
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
         self.short_ids = {}
@@ -179,41 +179,41 @@ class HIBillScraper(BillScraper):
                 bill.add_document(name, pdf_link, mimetype="application/pdf")
 
     def scrape_bill(self, session, chamber, bill_type, url):
-        with self.urlopen(url) as bill_html:
-            bill_page = lxml.html.fromstring(bill_html)
-            scraped_bill_id = bill_page.xpath(
-                "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
-            bill_id = scraped_bill_id.split(' ')[0]
-            versions = bill_page.xpath( "//table[contains(@id, 'GridViewVersions')]" )[0]
+        bill_html = self.urlopen(url)
+        bill_page = lxml.html.fromstring(bill_html)
+        scraped_bill_id = bill_page.xpath(
+            "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
+        bill_id = scraped_bill_id.split(' ')[0]
+        versions = bill_page.xpath( "//table[contains(@id, 'GridViewVersions')]" )[0]
 
-            tables = bill_page.xpath("//table")
-            metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
-            action_table  = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
+        tables = bill_page.xpath("//table")
+        metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
+        action_table  = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
-            meta  = self.parse_bill_metainf_table(metainf_table)
+        meta  = self.parse_bill_metainf_table(metainf_table)
 
-            subs = [ s.strip() for s in meta['Report Title'].split(";") ]
-            if "" in subs:
-                subs.remove("")
+        subs = [ s.strip() for s in meta['Report Title'].split(";") ]
+        if "" in subs:
+            subs.remove("")
 
-            b = Bill(session, chamber, bill_id, title=meta['Measure Title'],
-                     summary=meta['Description'],
-                     referral=meta['Current Referral'],
-                     subjects=subs,
-                     type=bill_type)
-            b.add_source(url)
+        b = Bill(session, chamber, bill_id, title=meta['Measure Title'],
+                 summary=meta['Description'],
+                 referral=meta['Current Referral'],
+                 subjects=subs,
+                 type=bill_type)
+        b.add_source(url)
 
-            companion = meta['Companion'].strip()
-            if companion:
-                b['companion'] = companion
+        companion = meta['Companion'].strip()
+        if companion:
+            b['companion'] = companion
 
-            for sponsor in meta['Introducer(s)']:
-                b.add_sponsor(type='primary', name=sponsor)
+        for sponsor in meta['Introducer(s)']:
+            b.add_sponsor(type='primary', name=sponsor)
 
-            actions  = self.parse_bill_actions_table(b, action_table)
-            versions = self.parse_bill_versions_table(b, versions)
+        actions  = self.parse_bill_actions_table(b, action_table)
+        versions = self.parse_bill_versions_table(b, versions)
 
-            self.save_bill(b)
+        self.save_bill(b)
 
     def parse_vote(self, action):
         pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
@@ -237,11 +237,11 @@ class HIBillScraper(BillScraper):
             "r"    : "resolution"
         }[billtype]
 
-        with self.urlopen(report_page_url) as list_html:
-            list_page = lxml.html.fromstring(list_html)
-            for bill_url in list_page.xpath("//a[@class='report']"):
-                bill_url = HI_URL_BASE + bill_url.attrib['href']
-                self.scrape_bill(session, chamber, billy_billtype, bill_url)
+        list_html = self.urlopen(report_page_url)
+        list_page = lxml.html.fromstring(list_html)
+        for bill_url in list_page.xpath("//a[@class='report']"):
+            bill_url = HI_URL_BASE + bill_url.attrib['href']
+            self.scrape_bill(session, chamber, billy_billtype, bill_url)
 
 
     def scrape(self, session, chamber):

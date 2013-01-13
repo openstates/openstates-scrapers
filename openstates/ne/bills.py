@@ -15,21 +15,21 @@ class NEBillScraper(BillScraper):
 
     def scrape_year(self, session, year):
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
-        with self.urlopen(main_url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(main_url)
+        page = lxml.html.fromstring(page)
 
-            for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
-                bill_abbr = docs.text
+        for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
+            bill_abbr = docs.text
 
-                #POST request for search form
-                post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
-                #headers = urllib.urlencode(post_dict)
-                bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
-                                         method="POST", body=post_dict)
-                bill_link = bill_page.response.url
+            #POST request for search form
+            post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
+            #headers = urllib.urlencode(post_dict)
+            bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
+                                     method="POST", body=post_dict)
+            bill_link = bill_page.response.url
 
-                #scrapes info from bill page
-                self.bill_info(bill_link, session, main_url, bill_page)
+            #scrapes info from bill page
+            self.bill_info(bill_link, session, main_url, bill_page)
 
     #Scrapes info from the bill page
     def bill_info(self, bill_link, session, main_url, bill_page):

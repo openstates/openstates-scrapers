@@ -108,16 +108,16 @@ class ORBillScraper(BillScraper):
         self.all_bills = {}
 
         # get the actual bills
-        with self.urlopen(measure_url) as bill_data:
-            # skip header row
-            for line in bill_data.split("\n")[1:]:
-                if line:
-                    self.parse_bill(session, chamber, line.strip())
+        bill_data = self.urlopen(measure_url)
+        # skip header row
+        for line in bill_data.split("\n")[1:]:
+            if line:
+                self.parse_bill(session, chamber, line.strip())
 
         # add actions
         chamber_letter = 'S' if chamber == 'upper' else 'H'
-        with self.urlopen(action_url) as action_data:
-            self.parse_actions(action_data, chamber_letter)
+        action_data = self.urlopen(action_url)
+        self.parse_actions(action_data, chamber_letter)
 
         # add versions
         session_slug = self.metadata['session_details'][session]['slug']
@@ -215,66 +215,66 @@ class ORBillScraper(BillScraper):
 
     def parse_versions(self, url, chamber):
         chamber = 'House' if chamber == 'lower' else 'Senate'
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-            links = doc.xpath('//a[starts-with(text(), "%s")]' % chamber)
-            for link in links:
-                self.parse_version_page(link.get('href'))
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        links = doc.xpath('//a[starts-with(text(), "%s")]' % chamber)
+        for link in links:
+            self.parse_version_page(link.get('href'))
 
     def parse_version_page(self, url):
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-            for row in doc.xpath('//table[2]/tr'):
-                named_a = row.xpath('.//a/@name')
-                if named_a:
-                    bill_id = named_a[0]
-                    bill_id = re.sub(r'([A-Z]+)(\d+)', r'\1 \2', bill_id)
-                else:
-                    name_td = row.xpath('td[@width="83%"]/text()')
-                    if name_td:
-                        name = name_td[0]
-                        html, pdf = row.xpath('.//a/@href')
+        for row in doc.xpath('//table[2]/tr'):
+            named_a = row.xpath('.//a/@name')
+            if named_a:
+                bill_id = named_a[0]
+                bill_id = re.sub(r'([A-Z]+)(\d+)', r'\1 \2', bill_id)
+            else:
+                name_td = row.xpath('td[@width="83%"]/text()')
+                if name_td:
+                    name = name_td[0]
+                    html, pdf = row.xpath('.//a/@href')
 
-                        if bill_id not in self.all_bills:
-                            self.warning("unknown bill %s" % bill_id)
-                            continue
+                    if bill_id not in self.all_bills:
+                        self.warning("unknown bill %s" % bill_id)
+                        continue
 
-                        self.all_bills[bill_id].add_version(name,
-                                                            html,
-                                                        mimetype='text/html')
+                    self.all_bills[bill_id].add_version(name,
+                                                        html,
+                                                    mimetype='text/html')
 
     def parse_authors(self, url):
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            for measure_str in doc.xpath('//p[@class="MHMeasure"]'):
-                measure_str = measure_str.text_content()
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        for measure_str in doc.xpath('//p[@class="MHMeasure"]'):
+            measure_str = measure_str.text_content()
 
-                # bill_id is first part
-                bill_id = measure_str.rsplit('\t', 1)[0]
-                bill_id = re.sub('\s+', ' ', bill_id.strip())
+            # bill_id is first part
+            bill_id = measure_str.rsplit('\t', 1)[0]
+            bill_id = re.sub('\s+', ' ', bill_id.strip())
 
-                # pull out everything within the By -- bookends
-                inner_str = (re.search('By (.+) --', measure_str) or
-                         re.search('\(at the request of (.+?)\)? --', measure_str))
-                if inner_str:
-                    inner_str = inner_str.groups()[0]
+            # pull out everything within the By -- bookends
+            inner_str = (re.search('By (.+) --', measure_str) or
+                     re.search('\(at the request of (.+?)\)? --', measure_str))
+            if inner_str:
+                inner_str = inner_str.groups()[0]
 
-                    # TODO: find out if this semicolon is significant
-                    # (might split primary/cosponsors)
-                    inner_str = inner_str.replace('; ', ', ')
-                    inner_str = inner_str.replace('Representatives','')
-                    inner_str = inner_str.replace('Representative','')
-                    inner_str = inner_str.replace('Senators','')
-                    inner_str = inner_str.replace('Senator','')
+                # TODO: find out if this semicolon is significant
+                # (might split primary/cosponsors)
+                inner_str = inner_str.replace('; ', ', ')
+                inner_str = inner_str.replace('Representatives','')
+                inner_str = inner_str.replace('Representative','')
+                inner_str = inner_str.replace('Senators','')
+                inner_str = inner_str.replace('Senator','')
 
-                    for name in inner_str.split(', '):
-                        if bill_id in self.all_bills:
-                            self.all_bills[bill_id].add_sponsor('primary', name)
-                            # XXX: 2012ss1 seems to not have sponsors, due to
-                            #      a missing sponsor sheet.
+                for name in inner_str.split(', '):
+                    if bill_id in self.all_bills:
+                        self.all_bills[bill_id].add_sponsor('primary', name)
+                        # XXX: 2012ss1 seems to not have sponsors, due to
+                        #      a missing sponsor sheet.
 
 
     def parse_subjects(self, url, chamber_letter):
