@@ -29,55 +29,50 @@ class WYEventScraper(EventScraper):
             time_string = time_string.replace(ap + '.m.', ap + 'm')
 
         if re.search(r'[0-9]{1,2}:[0-9]{1,2}[ap]m', time_string):
-            hour_minutes, meridiem = re.search(r'([0-9]{1,2}:[0-9]{1,2})([ap]m)', time_string).groups()
+            hour_minutes, meridiem = re.search(
+                r'([0-9]{1,2}:[0-9]{1,2})([ap]m)', time_string).groups()
             time_string = hour_minutes + ' ' + meridiem
 
-        if re.search(r'^[0-9]{1,2}:[0-9]{1,2} [ap]m', time_string) and not re.search(r'^[0-9]{1,2}:[0-9]{1,2} [ap]m$', time_string):
-            time_string = re.search(r'^([0-9]{1,2}:[0-9]{1,2} [ap]m)', time_string).group(1)
+        if re.search(
+            r'^[0-9]{1,2}:[0-9]{1,2} [ap]m', time_string
+        ) and not re.search(r'^[0-9]{1,2}:[0-9]{1,2} [ap]m$', time_string):
+            time_string = re.search(
+                r'^([0-9]{1,2}:[0-9]{1,2} [ap]m)', time_string).group(1)
 
         if not re.search(r'^[0-9]{1,2}:[0-9]{1,2} [ap]m$', time_string):
             # if at this point it doesn't match our format return 12:00 am
             time_string = '12:00 am'
-
         return time_string
 
     def get_meeting_time(self, meeting_data):
-    
-        meeting_time = meeting_data[0].xpath('.//p[@class="MsoNormal"]')[0].text_content().strip()
+        meeting_time = meeting_data[0].xpath(
+            './/p[@class="MsoNormal"]')[0].text_content().strip()
         meeting_time = self.normalize_time(meeting_time)
-
         return meeting_time
 
     def get_committee(self, meeting_data):
-
-        committee = meeting_data[0].xpath('.//p[@class="MsoNormal"]')[1].text_content().strip()
-        #committee = meeting_data[0].xpath('.//td[2]')[0].text_content().strip()
-
+        committee = meeting_data[0].xpath(
+            './/p[@class="MsoNormal"]')[1].text_content().strip()
         if committee == '':
             committee = None
         else:
             committee = re.sub(r'^[0-9]+-','',committee)
             committee = self.clean_string(committee)
 
-            
         return committee
 
     def get_location(self, meeting_data):
-
         tr = meeting_data[0].xpath('.//p[@class="MsoNormal"]')
         room = tr[len(tr)-1].text_content().strip()
 
         room = self.clean_string(room)
-
         if room == '':
             room = None
-        
+
         return room
 
     def get_meeting_description(self, meeting_data):
-        
         descriptions = ''
-
         if len(meeting_data) > 1:
             start_at = 1
         else:
@@ -88,7 +83,7 @@ class WYEventScraper(EventScraper):
             descriptions += ' ' + description
 
         descriptions = self.clean_string(descriptions).strip()
-            
+
         return descriptions
 
     def get_bills(self, meeting_data):
@@ -100,22 +95,21 @@ class WYEventScraper(EventScraper):
             if bills:
                 for bill in bills:
                     bill_id = bill.text_content().strip()
-                    bill_description = self.clean_string(tr.xpath('.//td[3]/p')[0].text_content().strip())
-                    bill_url = bill.attrib['href'].strip() #pdf file
+                    bill_description = self.clean_string(
+                        tr.xpath('.//td[3]/p')[0].text_content().strip())
+                    bill_url = bill.attrib['href'].strip()  #pdf file
 
-                    # dont include bad HTML links for bills. thankfully they're duplicates and already listed properly
+                    # dont include bad HTML links for bills. thankfully
+                    # they're duplicates and already listed properly
                     if 'href' not in bill_url and '</a>' not in bill_url:
-
                         bill_data.append({
                             'bill_id': bill_id,
                             'bill_description' : bill_description,
                             'bill_url' : bill_url
                         })
-    
         return bill_data
-            
-    def clean_string(self, my_string):
 
+    def clean_string(self, my_string):
         my_string = my_string.encode('ascii','ignore')
         my_string = re.sub(r'(\n|\r\n)',' ', my_string)
         my_string = re.sub(r'\s{2,}',' ', my_string)
@@ -124,7 +118,6 @@ class WYEventScraper(EventScraper):
         return my_string
 
     def is_row_a_new_meeting(self, row):
-
         if len(row) == 3:
             td1 = row.xpath('.//td[1]/p[@class="MsoNormal"]')
             td2 = row.xpath('.//td[2]/p[@class="MsoNormal"]')
@@ -132,23 +125,24 @@ class WYEventScraper(EventScraper):
 
             if len(td2) == 0:
                 td2 = row.xpath('.//td[2]/h1')
-            
+
             if len(td1) == 0 or len(td2) == 0:
                 return False
-            
-            if self.clean_string(td1[0].text_content()) == '' or self.clean_string(td2[0].text_content()) == '' or self.clean_string(td3[0].text_content()) == '':
+
+            if (self.clean_string(td1[0].text_content()) == ''
+                    or self.clean_string(td2[0].text_content()) == ''
+                    or self.clean_string(td3[0].text_content()) == ''):
                 return False
         else:
             return False
-
         return True
-                    
-    def scrape(self, chamber, session):
 
+    def scrape(self, chamber, session):
         if chamber == 'other':
             return
 
-        calendar_url = 'http://legisweb.state.wy.us/%s/Calendar/CalendarMenu/CommitteeMenu.aspx' % str(session)
+        calendar_url = ("http://legisweb.state.wy.us/%s/Calendar/"
+            "CalendarMenu/CommitteeMenu.aspx" % str(session))
 
         page = self.get_page_from_url(calendar_url)
 
@@ -157,51 +151,53 @@ class WYEventScraper(EventScraper):
         for i,row in enumerate(rows):
 
             row_ident = '%02d' % (i + 2)
-            
-            date_xpath = './/span[@id="ctl00_cphContent_gvCalendars_ctl%s_lblDate"]' % str(row_ident)
+
+            date_xpath = ('.//span[@id="ctl00_cphContent_gv'
+                'Calendars_ctl%s_lblDate"]' % str(row_ident))
             date_string = row.xpath(date_xpath)[0].text_content()
 
             chamber_char = self.metadata['chambers'][chamber]['name'][0].upper()
-            meeting_xpath = './/a[@id="ctl00_cphContent_gvCalendars_ctl%s_hl%scallink"]' % (str(row_ident), chamber_char)
+            meeting_xpath = ('.//a[@id="ctl00_cphContent_gv'
+                'Calendars_ctl%s_hl%scallink"]' % (
+                    str(row_ident), chamber_char
+                ))
             meeting_url = row.xpath(meeting_xpath)
 
-            if len(meeting_url) == 1 and meeting_url[0].text_content().strip() != '' :
-        
+            if (len(meeting_url) == 1 and
+                    meeting_url[0].text_content().strip() != ''):
                 meeting_url = meeting_url[0].attrib['href']
-
                 meeting_page = self.get_page_from_url(meeting_url)
-                meetings = meeting_page.xpath('.//table[@class="MsoNormalTable"]/tr')
-                
+                meetings = meeting_page.xpath(
+                    './/table[@class="MsoNormalTable"]/tr')
                 meeting_idents = []
                 meeting_ident = 0
 
-                # breaking the meetings into arrays (meeting_data) for processing. 
-                # meeting_ident is the first row of the meeting (time, committee, location)
+                # breaking the meetings into arrays (meeting_data) for
+                # processing. meeting_ident is the first row of the meeting
+                # (time, committee, location)
                 for meeting in meetings:
                     if self.is_row_a_new_meeting(meeting):
                         meeting_idents.append(meeting_ident)
                     meeting_ident += 1
 
                 for i,meeting_ident in enumerate(meeting_idents):
-                    
 
                     if len(meeting_idents) == 1 or i + 1 == len(meeting_idents):
                         ident_start, ident_end = [meeting_ident, 0]
                         meeting_data = meetings[ident_start:]
                     else:
-                        ident_start, ident_end = [meeting_ident, meeting_idents[i+1] - 1]
+                        ident_start, ident_end = [
+                            meeting_ident, meeting_idents[i+1] - 1
+                        ]
 
                         if ident_end - ident_start == 1:
                             ident_end = ident_start + 2
 
                         meeting_data = meetings[ident_start:ident_end]
-
-                    #print "ident_start=%d|ident_end=%d|meeting_data_len=%d" % (ident_start, ident_end, len(meeting_data))
-    
                     committee = self.get_committee(meeting_data)
-
                     meeting_time = self.get_meeting_time(meeting_data)
-                    meeting_date_time = datetime.datetime.strptime(date_string + ' ' + meeting_time, '%m/%d/%Y %I:%M %p')
+                    meeting_date_time = datetime.datetime.strptime(
+                        date_string + ' ' + meeting_time, '%m/%d/%Y %I:%M %p')
                     meeting_date_time = self._tz.localize(meeting_date_time)
 
                     location = self.get_location(meeting_data)
@@ -210,8 +206,6 @@ class WYEventScraper(EventScraper):
 
                     if description == '':
                         description = committee
-    
-                    #print "committee=%s|location=%s|description=%s|" % (committee, location, description)
 
                     event = Event(
                         session,
@@ -220,11 +214,11 @@ class WYEventScraper(EventScraper):
                         description,
                         location
                     )
-    
+
                     event.add_source(meeting_url)
 
                     for bill in bills:
-                    
+
                         if bill['bill_description'] == '':
                             bill['bill_description'] = committee
 
