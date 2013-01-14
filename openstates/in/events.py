@@ -3,8 +3,6 @@ import pytz
 import datetime
 import lxml.html
 
-import pprint as pp
-
 from billy.scrape.utils import convert_pdf
 from billy.scrape.events import EventScraper, Event
 
@@ -13,7 +11,11 @@ class INEventScraper(EventScraper):
 
     _tz = pytz.timezone('US/Central')
 
-    scrape_mode = 'txt' # pdf or txt (lowercase)
+    # scrape pdf or txt (lowercase). pdf is preferred since data from txt files, from IN, appear to be getting truncated
+    # it isn't clear yet which may be the better route, if not a completely different solution
+    #http://www.in.gov/legislative/reports/2013/BSCHDS.TXT
+    #http://www.in.gov/legislative/reports/2013/BSCHDS.PDF
+    scrape_mode = 'pdf' 
 
     def get_page_from_url(self, url):
         with self.urlopen(url) as page:
@@ -26,15 +28,18 @@ class INEventScraper(EventScraper):
         committee = ''
         committee_data = meeting_data[0]
 
-        committee_regex = re.compile('^(\s+)?AGENDA FOR\s:\s+(.*)', re.I)
+        committee_regex = re.compile('^(\s+)?AGENDA FOR\s+:\s+(.*)', re.I)
     
         if re.search(committee_regex, committee_data):
+
             if self.scrape_mode == 'txt':
-                committee = re.search(committee_regex,committee_data).group(1)
+                committee = re.search(committee_regex,committee_data).group(2)
             elif self.scrape_mode == 'pdf':
                 committee = re.search(r': (.*?) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+,', committee_data).group(1)
 
-        return committee.strip()
+            committee = committee.strip()
+
+        return committee
 
     def get_meeting_info(self, meeting_data):
 
@@ -112,18 +117,19 @@ class INEventScraper(EventScraper):
             bills_data = meeting_data[bills_start:]
 
         for bill_data in bills_data:
+            bill_data = bill_data.strip()
 
             if bill_data == '':
                 continue
 
             # clean up
-            hearing_reg = re.compile(r'\s+Hearing\s+:\s+', re.I)
+            hearing_reg = re.compile(r'(\s+)?Hearing\s+:\s+', re.I)
             if re.search(hearing_reg, bill_data):
                 bill_data = hearing_reg.sub('', bill_data)
             
             if re.search(r'^([A-Z]{2,4}\s+[0-9]+)', bill_data):
 
-                bill_id = re.search(r'^([A-Z]{2,4}\s+[0-9]+)', bill_data).group(1).encode('ascii','ignore').strip()
+                bill_id = re.search(r'^([A-Z]{2,4}\s+[0-9]+)', bill_data).group(1).strip()
                 bill_id = re.sub(r'\s{2,}', ' ', bill_id)
     
                 bill_meta = self.get_bill_intro_meta(session, bill_id)
@@ -167,13 +173,12 @@ class INEventScraper(EventScraper):
 
         for data in meeting_data:
             if re.search('CHAIRMAN\s+:', data, re.I):
-                chair_name = re.search(r'(\s+)?CHAIRMAN\s+:\s+(.*)', data, re.I).group(2)
+                chair_name = re.search(r'(\s+)?CHAIRMAN\s+:\s+(.*)', data, re.I).group(2).strip()
                 participants.append({
                     'type' : 'chair',
                     'participant' : chair_name,
                     'participant_type' : 'legislator'
                 })
-
 
         # find out what rows member start and end on
         members_start, members_end = [0,0]
@@ -186,7 +191,11 @@ class INEventScraper(EventScraper):
                 break
 
         member_names = []
+
         for members_data in meeting_data[members_start:members_end]:
+        
+            members_data = members_data.strip()
+    
             if members_data == '':
                 continue
 
@@ -195,11 +204,11 @@ class INEventScraper(EventScraper):
             if re.search(time_reg, members_data):
                 members_data = time_reg.sub('', members_data)
 
-            member_header_reg = re.compile(r'^(\s)?Members\s+:\s+', re.I)
+            member_header_reg = re.compile(r'^(\s+)?Members\s+:\s+', re.I)
             if re.search(member_header_reg, members_data):
                 members_data = member_header_reg.sub('', members_data)
 
-            members_data = members_data.strip('.').strip(',').encode('ascii','ignore')
+            members_data = members_data.strip('.').strip(',')
             new_members = [member.strip() for member in members_data.split(',')]
             member_names += new_members
 
@@ -225,14 +234,6 @@ class INEventScraper(EventScraper):
         if chamber == 'other':
             return 
 
-        # the pages for older sessions exist but don't have any data - odd. perhaps it still exists in that format, somewhere.
-        # http://www.in.gov/legislative/reports/2012/BSCHDH.TXT
-        # http://www.in.gov/legislative/reports/2011/BSCHDS.TXT
-        # http://www.in.gov/legislative/reports/2011/BSCHDH.PDF
-
-        # some older years do have data.
-        # google search inurl:in.gov "BSCHDS.TXT" OR "BSCHDH.TXT" and you will see
-
         if str(session) != '2013':
             self.error("Events for the %s session are not implemented." % str(session))	
             
@@ -240,9 +241,10 @@ class INEventScraper(EventScraper):
         
         if self.scrape_mode.lower() == 'pdf':
             (path, response) = self.urlretrieve(meetings_url)
-            meetings_data = convert_pdf(path, type='text')
+            meetings_data = convert_pdf(path, type='text').encode('ascii','ignore')
+
         elif self.scrape_mode.lower() == 'txt':
-            meetings_data = self.urlopen(meetings_url)
+            meetings_data = self.urlopen(meetings_url).encode('ascii','ignore')
 
         meetings_data = meetings_data.split("\n")
 
@@ -270,7 +272,7 @@ class INEventScraper(EventScraper):
             
             committee = self.get_committee(meeting_data)
             description = committee
-            
+
             event = Event(
                 session,
                 meeting_date_time,
@@ -298,7 +300,5 @@ class INEventScraper(EventScraper):
                     type = 'bill'
                 )
     
-            pp.pprint(event)
-
-            #self.save_event(event)
+            self.save_event(event)
 
