@@ -43,14 +43,10 @@
         </ul>
         <div class="fullWidth mainModule legislator">
             <!-- <div class="medModule"> -->
-                <div class="eightCol colLt">
-
-                    {% if request.user.is_authenticated %}
-                        {% favorite legislator.id "legislator" %}
-                    {% endif %}
+                <div class="sixCol colLt">
 
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
-                    <div class="eightsLg clearfix">
+                    <div class="sixLg clearfix">
                         <h2 class="withTipSm">
                             {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}
                         </h2>
@@ -66,22 +62,28 @@
                             {{legislator.full_name}} {% trans "<b>no longer serves</b> in the" %} {{metadata.legislature_name}}.
                             {% endif %}
                             </dd>
-                            <dt class="clear">{% trans "Available Terms:" %}</dt>
-                            <dd> <ul>
+                            <dt>{% trans "Available Terms:" %}</dt>
+                            <dd class="tipSm"> <ul>
                             {% for term in legislator.all_terms %}
                                 <li class="clear">{{term}}</li>
                             {% endfor %}
+
                             </ul> </dd>
                         </dl>
+                        <div class="tip">
+                        {% if request.user.is_authenticated %}
+                            {% favorite legislator.id "legislator" %}
+                        {% endif %}
+                        </div>
                     </div>
                 </div>
-                <div class="fourCol colRt">
+                <div class="sixCol colRt">
                     {% if legislator.active %}
                     <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 200px"></div>
                     {% endif %}
                 </div>
                 <div class="clear"></div>
-                <div class="eightCol clearfix">
+                <div class="eightCol tip clearfix">
                     <ul class="inlineList tip noSpace" id="legLinks">
                         <li><a href="#committees">{% trans "View committee membership" %}</a></li>
                         <li><a href="#bills">{% trans "View sponsored bills" %}</a></li>
