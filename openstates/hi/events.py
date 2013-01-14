@@ -168,7 +168,6 @@ class HIEventScraper(EventScraper):
             item_xpath =  info_xpath % (item,item)
 
             item_value = page.xpath(item_xpath)[0]
-            old_value = item_value
             item_value = self.clean_string(item_value.text_content())
 
             if item == 'TIME':
