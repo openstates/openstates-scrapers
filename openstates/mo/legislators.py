@@ -110,66 +110,66 @@ class MOLegislatorScraper(LegislatorScraper):
                 #print "em = %s" % email
             self.save_legislator(leg)
 
-def scrape_reps(self, chamber, session, term):
-    url = (self.reps_url % (session))
-    page = self.urlopen(url)
-    page = lxml.html.fromstring(page)
-    # This is the ASP.net table container
-    table_xpath = ('id("ContentPlaceHolder1_'
-                    'gridMembers_DXMainTable")')
-    table = page.xpath(table_xpath)[0]
-    for tr in table.xpath('tr')[1:]:
-        tds = tr.xpath('td')
-        leg_code = tds[0].xpath('a[1]')[0].attrib.get('href')
-        last_name = tds[0].text_content().strip()
-        first_name = tds[1].text_content().strip()
-        full_name = '%s %s' % (first_name, last_name)
-        district = str(int(tds[2].text_content().strip()))
-        party = tds[3].text_content().strip()
-        if party == 'Democrat':
-            party = 'Democratic'
-        phone = tds[4].text_content().strip()
-        room = tds[5].text_content().strip()
-        address = self.assumed_address_fmt % (room if room else '')
-        if last_name == 'Vacant':
-            leg = Legislator(term, chamber, district, full_name=full_name,
-                        first_name=first_name, last_name=last_name,
-                        party=party, _code=leg_code, url=url)
+    def scrape_reps(self, chamber, session, term):
+        url = (self.reps_url % (session))
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        # This is the ASP.net table container
+        table_xpath = ('id("ContentPlaceHolder1_'
+                        'gridMembers_DXMainTable")')
+        table = page.xpath(table_xpath)[0]
+        for tr in table.xpath('tr')[1:]:
+            tds = tr.xpath('td')
+            leg_code = tds[0].xpath('a[1]')[0].attrib.get('href')
+            last_name = tds[0].text_content().strip()
+            first_name = tds[1].text_content().strip()
+            full_name = '%s %s' % (first_name, last_name)
+            district = str(int(tds[2].text_content().strip()))
+            party = tds[3].text_content().strip()
+            if party == 'Democrat':
+                party = 'Democratic'
+            phone = tds[4].text_content().strip()
+            room = tds[5].text_content().strip()
+            address = self.assumed_address_fmt % (room if room else '')
+            if last_name == 'Vacant':
+                leg = Legislator(term, chamber, district, full_name=full_name,
+                            first_name=first_name, last_name=last_name,
+                            party=party, _code=leg_code, url=url)
 
-            leg.add_office('capitol', "Capitol Office",
-                           address=address,
-                           phone=phone)
+                leg.add_office('capitol', "Capitol Office",
+                               address=address,
+                               phone=phone)
 
-            leg.add_source(url)
-            self.save_vacant_legislator(leg)
-        else:
-            leg = Legislator(term, chamber, district, full_name=full_name,
-                      first_name=first_name, last_name=last_name,
-                      party=party, _code=leg_code, url=url)
+                leg.add_source(url)
+                self.save_vacant_legislator(leg)
+            else:
+                leg = Legislator(term, chamber, district, full_name=full_name,
+                          first_name=first_name, last_name=last_name,
+                          party=party, _code=leg_code, url=url)
 
-            leg.add_office('capitol', 'Capitol Office',
-                           address=address,
-                           phone=phone)
+                leg.add_office('capitol', 'Capitol Office',
+                               address=address,
+                               phone=phone)
 
-            url = (self.rep_details_url % (session,district))
-            leg.add_source(url)
-            details_page = self.urlopen(url)
-            page = lxml.html.fromstring(details_page)
-            picture = page.xpath('//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
-            email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')
-            terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
-            committees = page.xpath('//*[@id="ContentPlaceHolder1_lblCommittees"]/li/a')
-            for c in committees:
-                leg.add_role('committee member', term, committee=c.text_content().strip(), chamber=chamber)
-            # TODO home address?
-            if len(email) > 0 and email[0] != 'mailto:':
-                #print "Found email : %s" % email[0]
-                leg['email'] = email[0].split(':')[1]
-            if len(picture) > 0:
-                #print "Found picture : %s" % picture[0]
-                leg['photo_url'] = picture[0]
-            #leg.add_source(url)
-            self.save_legislator(leg)
+                url = (self.rep_details_url % (session,district))
+                leg.add_source(url)
+                details_page = self.urlopen(url)
+                page = lxml.html.fromstring(details_page)
+                picture = page.xpath('//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
+                email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')
+                terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
+                committees = page.xpath('//*[@id="ContentPlaceHolder1_lblCommittees"]/li/a')
+                for c in committees:
+                    leg.add_role('committee member', term, committee=c.text_content().strip(), chamber=chamber)
+                # TODO home address?
+                if len(email) > 0 and email[0] != 'mailto:':
+                    #print "Found email : %s" % email[0]
+                    leg['email'] = email[0].split(':')[1]
+                if len(picture) > 0:
+                    #print "Found picture : %s" % picture[0]
+                    leg['photo_url'] = picture[0]
+                #leg.add_source(url)
+                self.save_legislator(leg)
 
     def save_vacant_legislator(self,leg):
         # Here is a stub to save the vacant records - but its not really being used
