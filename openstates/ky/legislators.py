@@ -99,45 +99,45 @@ class KYLegislatorScraper(LegislatorScraper):
         party = name_list[-1]
         party = re.sub(r'\(|\)', '', party)
         if party == 'R':
-        party = 'Republican'
+            party = 'Republican'
         elif party == 'D':
-        party = 'Democratic'
+            party = 'Democratic'
         elif party == 'I':
-        party = 'Independent'
+            party = 'Independent'
 
         member['party'] = party
 
         boldList = [bold.text for bold in table.iterdescendants(tag='b')]
 
         for item in boldList:
-        if item == None:
-            continue
-        elif 'District' in item:
-            district = item.split(' ')[-1]
-            member['district'] = district.strip()
-        else:
-            if 'additionalRoles' in member:
-                member['additionalRoles'].append(item)
+            if item == None:
+                continue
+            elif 'District' in item:
+                district = item.split(' ')[-1]
+                member['district'] = district.strip()
             else:
-                member['additionalRoles'] = [item]
+                if 'additionalRoles' in member:
+                    member['additionalRoles'].append(item)
+                else:
+                    member['additionalRoles'] = [item]
 
         contact_rows = member_root.xpath(
-        '//body/div[2]/div[1]/table/tr/td/table[1]/tr')
+            '//body/div[2]/div[1]/table/tr/td/table[1]/tr')
 
         for row in contact_rows:
-        row_text = self.get_child_text(row)
+            row_text = self.get_child_text(row)
 
-        if len(row_text) > 0:
-            if row_text[0] == 'Frankfort Address(es)':
-                member['office_address'] = '\n'.join(row_text[1:])
+            if len(row_text) > 0:
+                if row_text[0] == 'Frankfort Address(es)':
+                    member['office_address'] = '\n'.join(row_text[1:])
 
-            if row_text[0] == 'Phone Number(s)':
-                for item in row_text:
-                    # Use the first capitol annex phone
-                    if item.startswith('Annex:'):
-                        member['office_phone'] = item.replace(
-                            'Annex:', '').strip()
-                        break
+                if row_text[0] == 'Phone Number(s)':
+                    for item in row_text:
+                        # Use the first capitol annex phone
+                        if item.startswith('Annex:'):
+                            member['office_phone'] = item.replace(
+                                'Annex:', '').strip()
+                            break
 
         office_info = self.scrape_office_info(member_url)
 
@@ -152,23 +152,23 @@ class KYLegislatorScraper(LegislatorScraper):
 
         kwargs = {}
         if office_info['Email Address(es)'] != []:
-        kwargs['email'] = office_info['Email Address(es)'][0]
-        leg['email'] = office_info['Email Address(es)'][0]
+            kwargs['email'] = office_info['Email Address(es)'][0]
+            leg['email'] = office_info['Email Address(es)'][0]
 
         if office_info['Phone Number(s)']['Annex'] != []:
-        kwargs['phone'] = office_info['Phone Number(s)']['Annex'][0]
+            kwargs['phone'] = office_info['Phone Number(s)']['Annex'][0]
 
         if office_info['Frankfort Address(es)'] != []:
-        kwargs['address'] = office_info['Frankfort Address(es)'][0]
+            kwargs['address'] = office_info['Frankfort Address(es)'][0]
 
         if kwargs != {}:
-        leg.add_office('capitol',
-                       'Annex Office',
-                       **kwargs)
+            leg.add_office('capitol',
+                           'Annex Office',
+                           **kwargs)
 
         if 'additionalRoles' in member:
-        for role in member['additionalRoles']:
-            leg.add_role(role, year, chamber=chamber)
+            for role in member['additionalRoles']:
+                leg.add_role(role, year, chamber=chamber)
 
         self.save_legislator(leg)
 

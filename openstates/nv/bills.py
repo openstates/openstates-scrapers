@@ -95,44 +95,44 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
 
-                page = self.urlopen(page_path)  # DEDENT
-                    page = page.replace(u"\xa0", " ")
-                    root = lxml.html.fromstring(page)
+                page = self.urlopen(page_path)
+                page = page.replace(u"\xa0", " ")
+                root = lxml.html.fromstring(page)
 
-                    bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                    title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+                bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
+                title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
 
-                    bill = Bill(session, chamber, bill_id, title,
-                                type=bill_type)
-                    bill['subjects'] = self.subject_mapping[bill_id]
+                bill = Bill(session, chamber, bill_id, title,
+                            type=bill_type)
+                bill['subjects'] = self.subject_mapping[bill_id]
 
-                    bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
-                    text_url = "http://www.leg.state.nv.us" + bill_text
-                    bill.add_version("Bill Text", text_url,
-                                     mimetype='application/pdf')
+                bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
+                text_url = "http://www.leg.state.nv.us" + bill_text
+                bill.add_version("Bill Text", text_url,
+                                 mimetype='application/pdf')
 
-                    primary, secondary = self.scrape_sponsors(page)
+                primary, secondary = self.scrape_sponsors(page)
 
-                    for leg in primary:
-                        bill.add_sponsor('primary', leg)
-                    for leg in secondary:
-                        bill.add_sponsor('cosponsor', leg)
+                for leg in primary:
+                    bill.add_sponsor('primary', leg)
+                for leg in secondary:
+                    bill.add_sponsor('cosponsor', leg)
 
 
-                    minutes_count = 2
-                    for mr in root.xpath('//table[4]/tr/td[3]/a'):
-                        minutes =  mr.xpath("string(@href)")
-                        minutes_url = "http://www.leg.state.nv.us" + minutes
-                        minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
-                        minutes_date = mr.xpath(minutes_date_path).split()
-                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Agenda"
-                        bill.add_document(minutes_date, minutes_url)
-                        minutes_count = minutes_count + 1
+                minutes_count = 2
+                for mr in root.xpath('//table[4]/tr/td[3]/a'):
+                    minutes =  mr.xpath("string(@href)")
+                    minutes_url = "http://www.leg.state.nv.us" + minutes
+                    minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
+                    minutes_date = mr.xpath(minutes_date_path).split()
+                    minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Agenda"
+                    bill.add_document(minutes_date, minutes_url)
+                    minutes_count = minutes_count + 1
 
-                    self.scrape_actions(root, bill, "upper")
-                    self.scrape_votes(page, bill, insert, year)
-                    bill.add_source(page_path)
-                    self.save_bill(bill)
+                self.scrape_actions(root, bill, "upper")
+                self.scrape_votes(page, bill, insert, year)
+                bill.add_source(page_path)
+                self.save_bill(bill)
 
 
 
@@ -147,54 +147,54 @@ class NVBillScraper(BillScraper):
             for link in links:
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
-                page = self.urlopen(page_path)  # DEDENT
-                    page = page.replace(u"\xa0", " ")
-                    root = lxml.html.fromstring(page)
+                page = self.urlopen(page_path)
+                page = page.replace(u"\xa0", " ")
+                root = lxml.html.fromstring(page)
 
-                    bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                    title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+                bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
+                title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
 
-                    bill = Bill(session, chamber, bill_id, title,
-                                type=bill_type)
-                    bill['subjects'] = self.subject_mapping[bill_id]
-                    bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
-                    text_url = "http://www.leg.state.nv.us" + bill_text
-                    bill.add_version("Bill Text", text_url,
-                                     mimetype='application/pdf')
+                bill = Bill(session, chamber, bill_id, title,
+                            type=bill_type)
+                bill['subjects'] = self.subject_mapping[bill_id]
+                bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
+                text_url = "http://www.leg.state.nv.us" + bill_text
+                bill.add_version("Bill Text", text_url,
+                                 mimetype='application/pdf')
 
-                    primary, secondary = self.scrape_sponsors(page)
+                primary, secondary = self.scrape_sponsors(page)
 
-                    for leg in primary:
-                        bill.add_sponsor('primary', leg)
-                    for leg in secondary:
-                        bill.add_sponsor('cosponsor', leg)
+                for leg in primary:
+                    bill.add_sponsor('primary', leg)
+                for leg in secondary:
+                    bill.add_sponsor('cosponsor', leg)
 
-                    minutes_count = 2
-                    for mr in root.xpath('//table[4]/tr/td[3]/a'):
-                        minutes =  mr.xpath("string(@href)")
-                        minutes_url = "http://www.leg.state.nv.us" + minutes
-                        minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
-                        minutes_date = mr.xpath(minutes_date_path).split()
-                        minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
-                        bill.add_document(minutes_date, minutes_url)
-                        minutes_count = minutes_count + 1
+                minutes_count = 2
+                for mr in root.xpath('//table[4]/tr/td[3]/a'):
+                    minutes =  mr.xpath("string(@href)")
+                    minutes_url = "http://www.leg.state.nv.us" + minutes
+                    minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
+                    minutes_date = mr.xpath(minutes_date_path).split()
+                    minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
+                    bill.add_document(minutes_date, minutes_url)
+                    minutes_count = minutes_count + 1
 
 
-                    self.scrape_actions(root, bill, "lower")
-                    self.scrape_votes(page, bill, insert, year)
-                    bill.add_source(page_path)
-                    self.save_bill(bill)
+                self.scrape_actions(root, bill, "lower")
+                self.scrape_votes(page, bill, insert, year)
+                bill.add_source(page_path)
+                self.save_bill(bill)
 
     def scrape_links(self, url):
         links = []
 
-        page = self.urlopen(url)  # DEDENT
-            root = lxml.html.fromstring(page)
-            path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
-            for mr in root.xpath(path):
-                if '*' not in mr.text:
-                    web_end = mr.xpath('string(@href)')
-                    links.append(web_end)
+        page = self.urlopen(url)
+        root = lxml.html.fromstring(page)
+        path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
+        for mr in root.xpath(path):
+            if '*' not in mr.text:
+                web_end = mr.xpath('string(@href)')
+                links.append(web_end)
         return links
 
 
@@ -255,33 +255,33 @@ class NVBillScraper(BillScraper):
             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
                 insert, link.get('href'))
             bill.add_source(vote_url)
-            page = self.urlopen(vote_url)  # DEDENT
-                page = page.replace(u"\xa0", " ")
-                root = lxml.html.fromstring(page)
+            page = self.urlopen(vote_url)
+            page = page.replace(u"\xa0", " ")
+            root = lxml.html.fromstring(page)
 
-                date = root.xpath('//h1/text()')[-1].strip()
-                date = datetime.strptime(date, "%B %d, %Y at %H:%M %p")
-                top_block_text = root.xpath('//div[@align="center"]')[0].text_content()
-                yes_count = int(re.findall("(\d+) Yea", top_block_text)[0])
-                no_count = int(re.findall("(\d+) Nay", top_block_text)[0])
-                excused = int(re.findall("(\d+) Excused", top_block_text)[0])
-                not_voting = int(re.findall("(\d+) Not Voting", top_block_text)[0])
-                absent = int(re.findall("(\d+) Absent", top_block_text)[0])
-                other_count = excused + not_voting + absent
-                passed = yes_count > no_count
+            date = root.xpath('//h1/text()')[-1].strip()
+            date = datetime.strptime(date, "%B %d, %Y at %H:%M %p")
+            top_block_text = root.xpath('//div[@align="center"]')[0].text_content()
+            yes_count = int(re.findall("(\d+) Yea", top_block_text)[0])
+            no_count = int(re.findall("(\d+) Nay", top_block_text)[0])
+            excused = int(re.findall("(\d+) Excused", top_block_text)[0])
+            not_voting = int(re.findall("(\d+) Not Voting", top_block_text)[0])
+            absent = int(re.findall("(\d+) Absent", top_block_text)[0])
+            other_count = excused + not_voting + absent
+            passed = yes_count > no_count
 
-                vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                            other_count, not_voting=not_voting, absent=absent)
+            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+                        other_count, not_voting=not_voting, absent=absent)
 
-                for el in root.xpath('//table[2]/tr'):
-                    tds = el.xpath('td')
-                    name = tds[1].text_content().strip()
-                    vote_result = tds[2].text_content().strip()
+            for el in root.xpath('//table[2]/tr'):
+                tds = el.xpath('td')
+                name = tds[1].text_content().strip()
+                vote_result = tds[2].text_content().strip()
 
-                    if vote_result == 'Yea':
-                        vote.yes(name)
-                    elif vote_result == 'Nay':
-                        vote.no(name)
-                    else:
-                        vote.other(name)
-                bill.add_vote(vote)
+                if vote_result == 'Yea':
+                    vote.yes(name)
+                elif vote_result == 'Nay':
+                    vote.no(name)
+                else:
+                    vote.other(name)
+            bill.add_vote(vote)
