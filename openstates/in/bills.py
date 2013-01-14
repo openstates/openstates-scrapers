@@ -58,191 +58,191 @@ class INBillScraper(BillScraper):
         }
 
         for type, url in bill_types.iteritems():
-            with self.urlopen(url) as page:
-                page = lxml.html.fromstring(page)
-                page.make_links_absolute(url)
-
-                abbrev = {'upper': 'S', 'lower': 'H'}[chamber] + type
-                xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
-                for link in page.xpath(xpath):
-                    bill_id = link.text.strip()
-
-                    short_title = link.tail.split(' -- ')[1].strip()
-
-                    self.scrape_bill(session, chamber, bill_id, short_title,
-                                     link.attrib['href'])
-
-    def scrape_bill(self, session, chamber, bill_id, short_title, url):
-
-        with self.urlopen(url) as page:
+            page = self.urlopen(url)
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            # check for Bill Withdrawn header
-            h1text = page.xpath('//h1/text()')
-            if h1text and h1text[0] == 'Bill Withdrawn':
-                return
+            abbrev = {'upper': 'S', 'lower': 'H'}[chamber] + type
+            xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
+            for link in page.xpath(xpath):
+                bill_id = link.text.strip()
 
-            title = page.xpath("//br")[8].tail
-            if not title:
-                title = short_title
-            title = title.strip()
+                short_title = link.tail.split(' -- ')[1].strip()
 
-            abbrev = bill_id.split()[0]
-            if abbrev.endswith('B'):
-                bill_type = ['bill']
-            elif abbrev.endswith('JR'):
-                bill_type = ['joint resolution']
-            elif abbrev.endswith('CR'):
-                bill_type = ['concurrent resolution']
-            elif abbrev.endswith('R'):
-                bill_type = ['resolution']
+                self.scrape_bill(session, chamber, bill_id, short_title,
+                                 link.attrib['href'])
 
-            bill = Bill(session, chamber, bill_id, title,
-                        type=bill_type)
-            bill.add_source(url)
+    def scrape_bill(self, session, chamber, bill_id, short_title, url):
 
-            action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
-            self.scrape_actions(bill, action_link.attrib['href'])
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            version_path = "//a[contains(., '%s')]"
-            for version_type in ('Introduced Bill', 'House Bill',
-                                 'Senate Bill', 'Engrossed Bill',
-                                 'Enrolled Act'):
-                path = version_path % version_type
-                links = page.xpath(path)
-                if links:
+        # check for Bill Withdrawn header
+        h1text = page.xpath('//h1/text()')
+        if h1text and h1text[0] == 'Bill Withdrawn':
+            return
 
-                    _url = links[0].attrib['href']
+        title = page.xpath("//br")[8].tail
+        if not title:
+            title = short_title
+        title = title.strip()
 
-                    # Set the mimetype.
-                    if 'pdf' in _url:
-                        mimetype = 'application/pdf'
-                    else:
-                        mimetype = 'text/html'
+        abbrev = bill_id.split()[0]
+        if abbrev.endswith('B'):
+            bill_type = ['bill']
+        elif abbrev.endswith('JR'):
+            bill_type = ['joint resolution']
+        elif abbrev.endswith('CR'):
+            bill_type = ['concurrent resolution']
+        elif abbrev.endswith('R'):
+            bill_type = ['resolution']
 
-                    bill.add_version(version_type, _url, mimetype=mimetype)
+        bill = Bill(session, chamber, bill_id, title,
+                    type=bill_type)
+        bill.add_source(url)
 
-            for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
-                self.scrape_senate_vote(bill, vote_link.attrib['href'])
+        action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
+        self.scrape_actions(bill, action_link.attrib['href'])
 
-            for vote_link in page.xpath("//a[contains(@href, 'Hrollcal')]"):
-                self.scrape_house_vote(bill, vote_link.attrib['href'])
+        version_path = "//a[contains(., '%s')]"
+        for version_type in ('Introduced Bill', 'House Bill',
+                             'Senate Bill', 'Engrossed Bill',
+                             'Enrolled Act'):
+            path = version_path % version_type
+            links = page.xpath(path)
+            if links:
 
-            for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
-                num = doc_link.text.strip().split("(")[0]
-                bill.add_document("Fiscal Impact Statement #%s" % num,
-                                  doc_link.attrib['href'])
-
-            bill['subjects'] = self.subjects[bill_id]
-
-            # Also retrieve the "latest printing" bill if it hasn't
-            # been found yet.
-            latest_printing = '//a[contains(@href, "bills")]/@href'
-            for url in set(page.xpath(latest_printing)):
+                _url = links[0].attrib['href']
 
                 # Set the mimetype.
-                if 'pdf' in url:
+                if 'pdf' in _url:
                     mimetype = 'application/pdf'
                 else:
                     mimetype = 'text/html'
 
-                try:
-                    bill.add_version('Latest printing', url,
-                                     mimetype=mimetype)
-                except ValueError:
-                    # The url was a duplicate.
-                    pass
+                bill.add_version(version_type, _url, mimetype=mimetype)
 
-            if not bill['sponsors']:
+        for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
+            self.scrape_senate_vote(bill, vote_link.attrib['href'])
 
-                # Indiana has so-called 'vehicle bills', which are empty
-                # placeholders that may later get injected with content
-                # concerning such innocuous topics as redistricting
-                # (2011 SB 0192) and marijuana studies (2011 SB 0192).
-                url = bill['sources'][0]['url']
-                page = self.urlopen(url)
-                if 'Vehicle Bill' in page:
-                    msg = 'Skipping vehicle bill: {bill_id}.'
+        for vote_link in page.xpath("//a[contains(@href, 'Hrollcal')]"):
+            self.scrape_house_vote(bill, vote_link.attrib['href'])
+
+        for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
+            num = doc_link.text.strip().split("(")[0]
+            bill.add_document("Fiscal Impact Statement #%s" % num,
+                              doc_link.attrib['href'])
+
+        bill['subjects'] = self.subjects[bill_id]
+
+        # Also retrieve the "latest printing" bill if it hasn't
+        # been found yet.
+        latest_printing = '//a[contains(@href, "bills")]/@href'
+        for url in set(page.xpath(latest_printing)):
+
+            # Set the mimetype.
+            if 'pdf' in url:
+                mimetype = 'application/pdf'
+            else:
+                mimetype = 'text/html'
+
+            try:
+                bill.add_version('Latest printing', url,
+                                 mimetype=mimetype)
+            except ValueError:
+                # The url was a duplicate.
+                pass
+
+        if not bill['sponsors']:
+
+            # Indiana has so-called 'vehicle bills', which are empty
+            # placeholders that may later get injected with content
+            # concerning such innocuous topics as redistricting
+            # (2011 SB 0192) and marijuana studies (2011 SB 0192).
+            url = bill['sources'][0]['url']
+            page = self.urlopen(url)
+            if 'Vehicle Bill' in page:
+                msg = 'Skipping vehicle bill: {bill_id}.'
+                self.logger.info(msg.format(**bill))
+                return
+
+            # And some bills are withdrawn before first reading, which
+            # case they don't really exist, and the main version link
+            # will 404.
+            withdrawn = 'Withdrawn prior to first reading'
+            if bill['actions']:
+                if bill['actions'][-1]['action'] == withdrawn:
+                    msg = ('Skipping bill withdrawn before first '
+                           'reading: {bill_id}.')
                     self.logger.info(msg.format(**bill))
                     return
 
-                # And some bills are withdrawn before first reading, which
-                # case they don't really exist, and the main version link
-                # will 404.
-                withdrawn = 'Withdrawn prior to first reading'
-                if bill['actions']:
-                    if bill['actions'][-1]['action'] == withdrawn:
-                        msg = ('Skipping bill withdrawn before first '
-                               'reading: {bill_id}.')
-                        self.logger.info(msg.format(**bill))
-                        return
-
-            self.save_bill(bill)
+        self.save_bill(bill)
 
     def scrape_actions(self, bill, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            bill.add_source(url)
+        bill.add_source(url)
 
-            slist = page.xpath("//strong[contains(., 'Authors:')]")[0]
-            slist = slist.tail.split(',')
-            sponsors = []
-            for sponsor in slist:
-                name = sponsor.strip()
-                if not name:
-                    continue
-                if name == 'Jr.':
-                    sponsors[-1] = sponsors[-1] + ", Jr."
-                else:
-                    sponsors.append(name)
-            for sponsor in sponsors:
-                bill.add_sponsor('primary', sponsor)
+        slist = page.xpath("//strong[contains(., 'Authors:')]")[0]
+        slist = slist.tail.split(',')
+        sponsors = []
+        for sponsor in slist:
+            name = sponsor.strip()
+            if not name:
+                continue
+            if name == 'Jr.':
+                sponsors[-1] = sponsors[-1] + ", Jr."
+            else:
+                sponsors.append(name)
+        for sponsor in sponsors:
+            bill.add_sponsor('primary', sponsor)
 
-            act_table = page.xpath("//table")[1]
-            read_yet = False
+        act_table = page.xpath("//table")[1]
+        read_yet = False
 
-            for row in act_table.xpath("tr")[1:]:
-                date = row.xpath("string(td[1])").strip()
-                date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+        for row in act_table.xpath("tr")[1:]:
+            date = row.xpath("string(td[1])").strip()
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
-                chamber = row.xpath("string(td[2])").strip()
-                if chamber == 'S':
-                    chamber = 'upper'
-                elif chamber == 'H':
-                    chamber = 'lower'
+            chamber = row.xpath("string(td[2])").strip()
+            if chamber == 'S':
+                chamber = 'upper'
+            elif chamber == 'H':
+                chamber = 'lower'
 
-                action = row.xpath("string(td[4])").strip(' ;\t\n')
+            action = row.xpath("string(td[4])").strip(' ;\t\n')
 
-                if not action:
-                    # sometimes there are blank actions, just skip these
-                    continue
+            if not action:
+                # sometimes there are blank actions, just skip these
+                continue
 
-                attrs = self.categorizer.categorize(action)
+            attrs = self.categorizer.categorize(action)
 
-                bill.add_action(chamber, action, date, **attrs)
+            bill.add_action(chamber, action, date, **attrs)
 
     def build_subject_mapping(self, session):
         self.subjects = defaultdict(list)
 
         url = ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
                "?year=%s&session=1&request=getSubjectList" % session)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'getSubject')]"):
-                subject = link.text.strip()
+        for link in page.xpath("//a[contains(@href, 'getSubject')]"):
+            subject = link.text.strip()
 
-                self.scrape_subject(subject, link.attrib['href'])
+            self.scrape_subject(subject, link.attrib['href'])
 
     def scrape_subject(self, subject, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for link in page.xpath("//a[contains(@href, 'getBill')]"):
-                self.subjects[link.text.strip()].append(subject)
+        for link in page.xpath("//a[contains(@href, 'getBill')]"):
+            self.subjects[link.text.strip()].append(subject)
 
     def scrape_house_vote(self, bill, url):
         (path, resp) = self.urlretrieve(url)

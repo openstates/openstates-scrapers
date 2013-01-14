@@ -18,51 +18,51 @@ class PACommitteeScraper(CommitteeScraper):
             url = ('http://www.legis.state.pa.us/cfdocs/legis/'
                    'home/member_information/representatives_ca.cfm')
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            committees = {}
+        committees = {}
 
-            for li in page.xpath("//a[contains(@href, 'bio.cfm')]/../.."):
-                name = li.xpath("string(b/a[contains(@href, 'bio.cfm')])")
-                name = name[0:-4]
+        for li in page.xpath("//a[contains(@href, 'bio.cfm')]/../.."):
+            name = li.xpath("string(b/a[contains(@href, 'bio.cfm')])")
+            name = name[0:-4]
 
-                for link in li.xpath("a"):
-                    if not link.tail:
-                        continue
+            for link in li.xpath("a"):
+                if not link.tail:
+                    continue
 
-                    committee_name = link.tail.strip()
-                    committee_name = re.sub(r"\s+", " ", committee_name)
-                    subcommittee_name = None
-                    role = 'member'
+                committee_name = link.tail.strip()
+                committee_name = re.sub(r"\s+", " ", committee_name)
+                subcommittee_name = None
+                role = 'member'
 
-                    rest = link.getnext().text
-                    if rest:
-                        match = re.match(r',\s+(Subcommittee on .*)\s+-',
-                                         rest)
+                rest = link.getnext().text
+                if rest:
+                    match = re.match(r',\s+(Subcommittee on .*)\s+-',
+                                     rest)
 
-                        if match:
-                            subcommittee_name = match.group(1)
-                            role = rest.rsplit('-', 1)[-1].strip().lower()
-                        else:
-                            role = rest.replace(', ', '').strip().lower()
+                    if match:
+                        subcommittee_name = match.group(1)
+                        role = rest.rsplit('-', 1)[-1].strip().lower()
+                    else:
+                        role = rest.replace(', ', '').strip().lower()
 
-                        if role == 'chairman':
-                            role = 'chair'
+                    if role == 'chairman':
+                        role = 'chair'
 
-                    try:
-                        committee = committees[(chamber, committee_name,
-                                                subcommittee_name)]
-                    except KeyError:
-                        committee = Committee(chamber, committee_name)
-                        committee.add_source(url)
+                try:
+                    committee = committees[(chamber, committee_name,
+                                            subcommittee_name)]
+                except KeyError:
+                    committee = Committee(chamber, committee_name)
+                    committee.add_source(url)
 
-                        if subcommittee_name:
-                            committee['subcommittee'] = subcommittee_name
+                    if subcommittee_name:
+                        committee['subcommittee'] = subcommittee_name
 
-                        committees[(chamber, committee_name,
-                                    subcommittee_name)] = committee
-                    committee.add_member(name, role)
+                    committees[(chamber, committee_name,
+                                subcommittee_name)] = committee
+                committee.add_member(name, role)
 
-            for committee in committees.values():
-                self.save_committee(committee)
+        for committee in committees.values():
+            self.save_committee(committee)

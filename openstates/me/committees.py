@@ -25,54 +25,54 @@ class MECommitteeScraper(CommitteeScraper):
 
     def scrape_reps_comm(self):
 
-       url = 'http://www.maine.gov/legis/house/hsecoms.htm'
+        url = 'http://www.maine.gov/legis/house/hsecoms.htm'
 
-       with self.urlopen(url) as page:
-            root = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        root = lxml.html.fromstring(page)
 
-            count = 0
+        count = 0
 
-            for n in range(1, 12, 2):
-                path = 'string(//body/center[%s]/h1/a)' % (n)
-                comm_name = root.xpath(path)
-                committee = Committee('lower', comm_name)
-                count = count + 1
+        for n in range(1, 12, 2):
+            path = 'string(//body/center[%s]/h1/a)' % (n)
+            comm_name = root.xpath(path)
+            committee = Committee('lower', comm_name)
+            count = count + 1
 
-                path2 = '/html/body/ul[%s]/li/a' % (count)
+            path2 = '/html/body/ul[%s]/li/a' % (count)
 
-                for el in root.xpath(path2):
-                   rep = el.text
-                   if rep.find('(') != -1:
-                        mark = rep.find('(')
-                        rep = rep[15: mark]
-                   committee.add_member(rep)
-                committee.add_source(url)
+            for el in root.xpath(path2):
+               rep = el.text
+               if rep.find('(') != -1:
+                    mark = rep.find('(')
+                    rep = rep[15: mark]
+               committee.add_member(rep)
+            committee.add_source(url)
 
-                self.save_committee(committee)
+            self.save_committee(committee)
 
     def scrape_senate_comm(self):
         url = 'http://www.maine.gov/legis/senate/Senate-Standing-Committees.html'
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            # committee titles
-            for item in doc.xpath('//span[@style="FONT-SIZE: 11pt"]'):
-                text = item.text_content().strip()
-                # some contain COMMITTEE ON & some are blank, drop those
-                if not text or text.startswith('COMMITTEE'):
-                    continue
+        # committee titles
+        for item in doc.xpath('//span[@style="FONT-SIZE: 11pt"]'):
+            text = item.text_content().strip()
+            # some contain COMMITTEE ON & some are blank, drop those
+            if not text or text.startswith('COMMITTEE'):
+                continue
 
-                # titlecase committee name
-                com = Committee('upper', text.title())
-                com.add_source(url)
+            # titlecase committee name
+            com = Committee('upper', text.title())
+            com.add_source(url)
 
-                # up two and get ul sibling
-                for leg in item.xpath('../../following-sibling::ul[1]/li'):
-                    lname = leg.text_content().strip().split(' of ')[0]
-                    com.add_member(lname)
+            # up two and get ul sibling
+            for leg in item.xpath('../../following-sibling::ul[1]/li'):
+                lname = leg.text_content().strip().split(' of ')[0]
+                com.add_member(lname)
 
-                self.save_committee(com)
+            self.save_committee(com)
 
     def scrape_joint_comm(self):
         fileurl = 'http://www.maine.gov/legis/house/commlist.xls'

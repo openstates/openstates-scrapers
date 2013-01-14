@@ -21,20 +21,20 @@ class WABillScraper(BillScraper):
 
     def build_subject_mapping(self, year):
         url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s' % year
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
-            for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
-                subject = link.rsplit('=', 1)[-1]
-                link = link.replace(' ', '%20')
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
+        for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
+            subject = link.rsplit('=', 1)[-1]
+            link = link.replace(' ', '%20')
 
-                # Strip invalid characters
-                rss = re.sub(r'^[^<]+', '', self.urlopen(link))
-                rss = feedparser.parse(rss)
-                for e in rss['entries']:
-                    match = re.match('\w\w \d{4}', e['title'])
-                    if match:
-                        self._subjects[match.group()].append(subject)
+            # Strip invalid characters
+            rss = re.sub(r'^[^<]+', '', self.urlopen(link))
+            rss = feedparser.parse(rss)
+            for e in rss['entries']:
+                match = re.match('\w\w \d{4}', e['title'])
+                if match:
+                    self._subjects[match.group()].append(subject)
 
     def scrape(self, chamber, session):
         bill_id_list = []
@@ -46,8 +46,8 @@ class WABillScraper(BillScraper):
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             try:
-                with self.urlopen(url) as page:
-                    page = lxml.etree.fromstring(page.bytes)
+                page = self.urlopen(url)
+                page = lxml.etree.fromstring(page.bytes)
             except scrapelib.HTTPError:
                 continue  # future years.
 
@@ -91,41 +91,41 @@ class WABillScraper(BillScraper):
         url = ("%s/GetLegislation?biennium=%s&billNumber"
                "=%s" % (self._base_url, biennium, bill_num))
 
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
-            page = xpath(page, "//wa:Legislation")[0]
+        page = self.urlopen(url)
+        page = lxml.etree.fromstring(page.bytes)
+        page = xpath(page, "//wa:Legislation")[0]
 
-            title = xpath(page, "string(wa:LongDescription)")
+        title = xpath(page, "string(wa:LongDescription)")
 
-            bill_type = xpath(
-                page,
-                "string(wa:ShortLegislationType/wa:LongLegislationType)")
-            bill_type = bill_type.lower()
+        bill_type = xpath(
+            page,
+            "string(wa:ShortLegislationType/wa:LongLegislationType)")
+        bill_type = bill_type.lower()
 
-            if bill_type == 'gubernatorial appointment':
-                return
+        if bill_type == 'gubernatorial appointment':
+            return
 
-            bill = Bill(session, chamber, bill_id, title,
-                        type=[bill_type])
+        bill = Bill(session, chamber, bill_id, title,
+                    type=[bill_type])
 
-            chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
-            version_url = ("http://www.leg.wa.gov/pub/billinfo/%s/"
-                           "Htm/Bills/%s %ss/%s.htm" % (biennium,
-                                                        chamber_name,
-                                                        bill_type.title(),
-                                                        bill_num))
-            bill.add_version(bill_id, version_url, mimetype='text/html')
+        chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
+        version_url = ("http://www.leg.wa.gov/pub/billinfo/%s/"
+                       "Htm/Bills/%s %ss/%s.htm" % (biennium,
+                                                    chamber_name,
+                                                    bill_type.title(),
+                                                    bill_num))
+        bill.add_version(bill_id, version_url, mimetype='text/html')
 
-            fake_source = ("http://apps.leg.wa.gov/billinfo/"
-                           "summary.aspx?bill=%s&year=%s" % (
-                               bill_num, session[0:4]))
-            bill.add_source(fake_source)
+        fake_source = ("http://apps.leg.wa.gov/billinfo/"
+                       "summary.aspx?bill=%s&year=%s" % (
+                           bill_num, session[0:4]))
+        bill.add_source(fake_source)
 
-            self.scrape_sponsors(bill)
-            self.scrape_actions(bill, bill_num)
-            self.scrape_votes(bill)
+        self.scrape_sponsors(bill)
+        self.scrape_actions(bill, bill_num)
+        self.scrape_votes(bill)
 
-            return bill
+        return bill
 
     def scrape_sponsors(self, bill):
         bill_id = bill['bill_id'].replace(' ', '%20')
@@ -135,11 +135,11 @@ class WABillScraper(BillScraper):
         url = "%s/GetSponsors?biennium=%s&billId=%s" % (
             self._base_url, biennium, bill_id)
 
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
+        page = self.urlopen(url)
+        page = lxml.etree.fromstring(page.bytes)
 
-            for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
-                bill.add_sponsor('primary', sponsor.text)
+        for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
+            bill.add_sponsor('primary', sponsor.text)
 
     def scrape_actions(self, bill, bill_num):
         bill_id = bill['bill_id'].replace(' ', '%20')
@@ -155,67 +155,67 @@ class WABillScraper(BillScraper):
             biennium
         )
 
-        with self.urlopen(url) as page:
-            if "Bill Not Found" in page:
-                return
+        page = self.urlopen(url)
+        if "Bill Not Found" in page:
+            return
 
-            page = lxml.html.fromstring(page)
-            actions = page.xpath("//table")[6]
-            found_heading = False
-            out = False
-            curchamber = bill['chamber']
-            curday = None
-            curyear = None
+        page = lxml.html.fromstring(page)
+        actions = page.xpath("//table")[6]
+        found_heading = False
+        out = False
+        curchamber = bill['chamber']
+        curday = None
+        curyear = None
 
-            for action in actions.xpath(".//tr"):
-                if out:
-                    continue
+        for action in actions.xpath(".//tr"):
+            if out:
+                continue
 
-                if not found_heading:
-                    if action.xpath(".//td[@colspan='3']//b") != []:
-                        found_heading = True
-                    else:
-                        continue
-
-                if action.xpath(".//a[@href='#history']"):
-                    out = True
-                    continue
-
-                rows = action.xpath(".//td")
-                rows = rows[1:]
-                if len(rows) == 1:
-                    txt = rows[0].text_content().strip()
-
-                    session = re.findall(r"(\d{4}) (.*) SESSION", txt)
-                    chamber = re.findall(r"IN THE (HOUSE|SENATE)", txt)
-
-                    if session != []:
-                        session = session[0]
-                        year, session_type = session
-                        curyear = year
-
-                    if chamber != []:
-                        curchamber = {
-                            "SENATE": 'upper',
-                            "HOUSE": 'lower'
-                        }[chamber[0]]
+            if not found_heading:
+                if action.xpath(".//td[@colspan='3']//b") != []:
+                    found_heading = True
                 else:
-                    _, day, action = [x.text_content().strip() for x in rows]
-                    if day != "":
-                        curday = day
-                    if curday is None or curyear is None:
-                        continue
+                    continue
 
-                    for abbr in re.findall(r'([A-Z]{3,})', action):
-                        if abbr in committees_abbrs:
-                            action = action.replace(
-                                abbr, committees_abbrs[abbr], 1)
+            if action.xpath(".//a[@href='#history']"):
+                out = True
+                continue
 
-                    date = "%s %s" % (curyear, curday)
-                    date = datetime.datetime.strptime(date, "%Y %b %d")
-                    attrs = dict(actor=curchamber, date=date, action=action)
-                    attrs.update(self.categorizer.categorize(action))
-                    bill.add_action(**attrs)
+            rows = action.xpath(".//td")
+            rows = rows[1:]
+            if len(rows) == 1:
+                txt = rows[0].text_content().strip()
+
+                session = re.findall(r"(\d{4}) (.*) SESSION", txt)
+                chamber = re.findall(r"IN THE (HOUSE|SENATE)", txt)
+
+                if session != []:
+                    session = session[0]
+                    year, session_type = session
+                    curyear = year
+
+                if chamber != []:
+                    curchamber = {
+                        "SENATE": 'upper',
+                        "HOUSE": 'lower'
+                    }[chamber[0]]
+            else:
+                _, day, action = [x.text_content().strip() for x in rows]
+                if day != "":
+                    curday = day
+                if curday is None or curyear is None:
+                    continue
+
+                for abbr in re.findall(r'([A-Z]{3,})', action):
+                    if abbr in committees_abbrs:
+                        action = action.replace(
+                            abbr, committees_abbrs[abbr], 1)
+
+                date = "%s %s" % (curyear, curday)
+                date = datetime.datetime.strptime(date, "%Y %b %d")
+                attrs = dict(actor=curchamber, date=date, action=action)
+                attrs.update(self.categorizer.categorize(action))
+                bill.add_action(**attrs)
 
     def scrape_votes(self, bill):
         session = bill['session']
@@ -225,40 +225,40 @@ class WABillScraper(BillScraper):
         url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
                "GetRollCalls?billNumber=%s&biennium=%s" % (
                    bill_num, biennium))
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page.bytes)
+        page = self.urlopen(url)
+        page = lxml.etree.fromstring(page.bytes)
 
-            for rc in xpath(page, "//wa:RollCall"):
-                motion = xpath(rc, "string(wa:Motion)")
+        for rc in xpath(page, "//wa:RollCall"):
+            motion = xpath(rc, "string(wa:Motion)")
 
-                date = xpath(rc, "string(wa:VoteDate)").split("T")[0]
-                date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+            date = xpath(rc, "string(wa:VoteDate)").split("T")[0]
+            date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
-                yes_count = int(xpath(rc, "string(wa:YeaVotes/wa:Count)"))
-                no_count = int(xpath(rc, "string(wa:NayVotes/wa:Count)"))
-                abs_count = int(
-                    xpath(rc, "string(wa:AbsentVotes/wa:Count)"))
-                ex_count = int(
-                    xpath(rc, "string(wa:ExcusedVotes/wa:Count)"))
+            yes_count = int(xpath(rc, "string(wa:YeaVotes/wa:Count)"))
+            no_count = int(xpath(rc, "string(wa:NayVotes/wa:Count)"))
+            abs_count = int(
+                xpath(rc, "string(wa:AbsentVotes/wa:Count)"))
+            ex_count = int(
+                xpath(rc, "string(wa:ExcusedVotes/wa:Count)"))
 
-                other_count = abs_count + ex_count
+            other_count = abs_count + ex_count
 
-                agency = xpath(rc, "string(wa:Agency)")
-                chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
+            agency = xpath(rc, "string(wa:Agency)")
+            chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
 
-                vote = Vote(chamber, date, motion,
-                            yes_count > (no_count + other_count),
-                            yes_count, no_count, other_count)
+            vote = Vote(chamber, date, motion,
+                        yes_count > (no_count + other_count),
+                        yes_count, no_count, other_count)
 
-                for sv in xpath(rc, "wa:Votes/wa:Vote"):
-                    name = xpath(sv, "string(wa:Name)")
-                    vtype = xpath(sv, "string(wa:VOte)")
+            for sv in xpath(rc, "wa:Votes/wa:Vote"):
+                name = xpath(sv, "string(wa:Name)")
+                vtype = xpath(sv, "string(wa:VOte)")
 
-                    if vtype == 'Yea':
-                        vote.yes(name)
-                    elif vtype == 'Nay':
-                        vote.no(name)
-                    else:
-                        vote.other(name)
+                if vtype == 'Yea':
+                    vote.yes(name)
+                elif vtype == 'Nay':
+                    vote.no(name)
+                else:
+                    vote.other(name)
 
-                bill.add_vote(vote)
+            bill.add_vote(vote)

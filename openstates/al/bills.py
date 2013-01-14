@@ -69,83 +69,83 @@ class ALBillScraper(BillScraper):
 
         self.refresh_session()
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            # bills are all their own table with cellspacing=4 (skip first)
-            bill_tables = doc.xpath('//table[@cellspacing="4"]')
-            for bt in bill_tables[1:]:
+        # bills are all their own table with cellspacing=4 (skip first)
+        bill_tables = doc.xpath('//table[@cellspacing="4"]')
+        for bt in bill_tables[1:]:
 
-                # each table has 3 rows: detail row, description, blank
-                details, desc, _ = bt.xpath('tr')
+            # each table has 3 rows: detail row, description, blank
+            details, desc, _ = bt.xpath('tr')
 
-                # first <tr> has img, button, sponsor, topic, current house
-                #   current status, committee, committee2, last action
-                _, button, sponsor, subject, _, _, com1, com2, _ = details.xpath('td')
+            # first <tr> has img, button, sponsor, topic, current house
+            #   current status, committee, committee2, last action
+            _, button, sponsor, subject, _, _, com1, com2, _ = details.xpath('td')
 
-                # contains script tag that has a document.write that writes the
-                # bill_id, we have to pull that out (gross, but only way)
-                script_text = button.text_content()
-                # skip SBIR/HBIR
-                if 'SBIR' in script_text or 'HBIR' in script_text:
-                    continue
+            # contains script tag that has a document.write that writes the
+            # bill_id, we have to pull that out (gross, but only way)
+            script_text = button.text_content()
+            # skip SBIR/HBIR
+            if 'SBIR' in script_text or 'HBIR' in script_text:
+                continue
 
-                """ script text looks like:
-                   document.write("<input type=button id=BTN71139 name=BTN71139 style='font-weight:normal' value='SB1'");
-                   document.write(" onClick=\"javascript:instrumentSelected(this,'71139','SB1','ON','ON','ON','");
-                   document.write(status + "','OFF','SB1-int.pdf,,','SB1-int.pdf,,')\">");
-                """
+            """ script text looks like:
+               document.write("<input type=button id=BTN71139 name=BTN71139 style='font-weight:normal' value='SB1'");
+               document.write(" onClick=\"javascript:instrumentSelected(this,'71139','SB1','ON','ON','ON','");
+               document.write(status + "','OFF','SB1-int.pdf,,','SB1-int.pdf,,')\">");
+            """
 
-                oid, bill_id, fnotes = re.findall(r"instrumentSelected\(this,'(\d+)','(\w+)','ON','ON','(ON|OFF)'",
-                                                  script_text)[0]
-                second_piece = re.findall(r"status \+ \"','(ON|OFF)','([^,]*),([^,]*),([^,]*)\'", script_text)
-                if second_piece:
-                    amend, intver, engver, enrver = second_piece[0]
-                else:
-                    intver = engver = enrver = None
+            oid, bill_id, fnotes = re.findall(r"instrumentSelected\(this,'(\d+)','(\w+)','ON','ON','(ON|OFF)'",
+                                              script_text)[0]
+            second_piece = re.findall(r"status \+ \"','(ON|OFF)','([^,]*),([^,]*),([^,]*)\'", script_text)
+            if second_piece:
+                amend, intver, engver, enrver = second_piece[0]
+            else:
+                intver = engver = enrver = None
 
-                sponsor = sponsor.text_content()
-                subject = subject.text_content()
-                com1 = com1.text_content()
-                com2 = com2.text_content()
-                desc = desc.text_content()
+            sponsor = sponsor.text_content()
+            subject = subject.text_content()
+            com1 = com1.text_content()
+            com2 = com2.text_content()
+            desc = desc.text_content()
 
-                if 'B' in bill_id:
-                    bill_type = 'bill'
-                elif 'JR' in bill_id:
-                    bill_type = 'joint resolution'
-                elif 'R' in bill_id:
-                    bill_type = 'resolution'
+            if 'B' in bill_id:
+                bill_type = 'bill'
+            elif 'JR' in bill_id:
+                bill_type = 'joint resolution'
+            elif 'R' in bill_id:
+                bill_type = 'resolution'
 
-                # title is missing on a few bills
-                title = desc.strip()
-                if not title:
-                    return
+            # title is missing on a few bills
+            title = desc.strip()
+            if not title:
+                return
 
-                # create bill
-                bill = Bill(session, chamber, bill_id, title, type=bill_type)
-                if subject:
-                    bill['subjects'] = [subject]
+            # create bill
+            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            if subject:
+                bill['subjects'] = [subject]
 
-                if fnotes == 'ON':
-                    bill.add_document('fiscal notes', 'http://alisondb.legislature.state.al.us/acas/ACTIONFiscalNotesFrameMac.asp?OID=%s&LABEL=%s' %
-                                      (oid, bill_id))
+            if fnotes == 'ON':
+                bill.add_document('fiscal notes', 'http://alisondb.legislature.state.al.us/acas/ACTIONFiscalNotesFrameMac.asp?OID=%s&LABEL=%s' %
+                                  (oid, bill_id))
 
-                self.get_sponsors(bill, oid)
-                self.get_actions(bill, oid)
+            self.get_sponsors(bill, oid)
+            self.get_actions(bill, oid)
 
-                # craft bill URLs
-                if intver:
-                    bill.add_version('introduced', self.base_doc_url + intver,
-                                     mimetype='application/pdf')
-                if engver:
-                    bill.add_version('engrossed', self.base_doc_url + engver,
-                                     mimetype='application/pdf')
-                if enrver:
-                    bill.add_version('enrolled', self.base_doc_url + enrver,
-                                     mimetype='application/pdf')
+            # craft bill URLs
+            if intver:
+                bill.add_version('introduced', self.base_doc_url + intver,
+                                 mimetype='application/pdf')
+            if engver:
+                bill.add_version('engrossed', self.base_doc_url + engver,
+                                 mimetype='application/pdf')
+            if enrver:
+                bill.add_version('enrolled', self.base_doc_url + enrver,
+                                 mimetype='application/pdf')
 
-                self.save_bill(bill)
+            self.save_bill(bill)
 
 
     def get_actions(self, bill, oid):
@@ -153,47 +153,47 @@ class ALBillScraper(BillScraper):
 
         bill.add_source(url)
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            for row in doc.xpath('//tr[@valign="top"]'):
-                # date, amend/subst, matter, committee, nay, yea, abs, vote
-                tds = row.xpath('td')
+        for row in doc.xpath('//tr[@valign="top"]'):
+            # date, amend/subst, matter, committee, nay, yea, abs, vote
+            tds = row.xpath('td')
 
-                # only change date if it exists (actions w/o date get old date)
-                if tds[0].text_content():
-                    date = datetime.datetime.strptime(tds[0].text_content(),
-                                                      '%m/%d/%Y')
-                scraped_chamber = tds[1].text_content().strip()
-                if scraped_chamber == 'S':
-                    action_chamber = 'upper'
-                elif scraped_chamber == 'H':
-                    action_chamber = 'lower'
-                else:
-                    action_chamber = 'executive'
+            # only change date if it exists (actions w/o date get old date)
+            if tds[0].text_content():
+                date = datetime.datetime.strptime(tds[0].text_content(),
+                                                  '%m/%d/%Y')
+            scraped_chamber = tds[1].text_content().strip()
+            if scraped_chamber == 'S':
+                action_chamber = 'upper'
+            elif scraped_chamber == 'H':
+                action_chamber = 'lower'
+            else:
+                action_chamber = 'executive'
 
-                amendment = tds[2].xpath('.//input/@value')
-                if amendment:
-                    amendment = amendment[0]
-                    bill.add_document('amendment ' + amendment,
-                                      self.base_doc_url + amendment + '.pdf')
-                else:
-                    amendment = None
+            amendment = tds[2].xpath('.//input/@value')
+            if amendment:
+                amendment = amendment[0]
+                bill.add_document('amendment ' + amendment,
+                                  self.base_doc_url + amendment + '.pdf')
+            else:
+                amendment = None
 
-                action = tds[3].text_content().strip()
+            action = tds[3].text_content().strip()
 
-                if action:
-                    atype = _categorize_action(action)
-                    bill.add_action(action_chamber, action, date,
-                                    type=atype, amendment=amendment)
+            if action:
+                atype = _categorize_action(action)
+                bill.add_action(action_chamber, action, date,
+                                type=atype, amendment=amendment)
 
-                # pulling values out of javascript
-                vote_button = tds[-1].xpath('input')
-                if vote_button:
-                    vote_js = vote_button[0].get('onclick')
-                    moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
-                    self.scrape_vote(bill, moid, vote, body, inst, action,
-                                     action_chamber)
+            # pulling values out of javascript
+            vote_button = tds[-1].xpath('input')
+            if vote_button:
+                vote_js = vote_button[0].get('onclick')
+                moid, vote, body, inst = re.match(".*\('(\d+)','(\d+)','(\d+)','(\w+)'", vote_js).groups()
+                self.scrape_vote(bill, moid, vote, body, inst, action,
+                                 action_chamber)
 
 
 
@@ -202,16 +202,16 @@ class ALBillScraper(BillScraper):
 
         bill.add_source(url)
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            # primary sponsors
-            for cs in doc.xpath('//table[2]/tr/td[1]/table/tr/td/text()'):
-                if cs:
-                    bill.add_sponsor('primary', cs)
-            # cosponsors in really weird table layout (likely to break)
-            for cs in doc.xpath('//table[2]/tr/td[2]/table/tr/td/text()'):
-                if cs:
-                    bill.add_sponsor('cosponsor', cs)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        # primary sponsors
+        for cs in doc.xpath('//table[2]/tr/td[1]/table/tr/td/text()'):
+            if cs:
+                bill.add_sponsor('primary', cs)
+        # cosponsors in really weird table layout (likely to break)
+        for cs in doc.xpath('//table[2]/tr/td[2]/table/tr/td/text()'):
+            if cs:
+                bill.add_sponsor('cosponsor', cs)
 
 
     def scrape_vote(self, bill, moid, vote_id, body, inst, motion, chamber):

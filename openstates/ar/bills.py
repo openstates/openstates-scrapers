@@ -214,5 +214,5 @@ class ARBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)

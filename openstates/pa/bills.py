@@ -29,12 +29,12 @@ class PABillScraper(BillScraper):
     def scrape_session(self, chamber, session, special=0):
         url = bill_list_url(chamber, session, special)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath('//a[contains(@href, "billinfo")]'):
-                self.parse_bill(chamber, session, special, link)
+        for link in page.xpath('//a[contains(@href, "billinfo")]'):
+            self.parse_bill(chamber, session, special, link)
 
     def parse_bill(self, chamber, session, special, link):
         bill_num = link.text.strip()
@@ -48,35 +48,35 @@ class PABillScraper(BillScraper):
         bill_id = "%s%s %s" % (bill_abbr(chamber), type_abbr, bill_num)
 
         url = info_url(chamber, session, special, type_abbr, bill_num)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            title = page.xpath(
-                "//td[text() = 'Short Title:']/following-sibling::td")[0]
-            title = title.text.strip()
+        title = page.xpath(
+            "//td[text() = 'Short Title:']/following-sibling::td")[0]
+        title = title.text.strip()
 
-            bill = Bill(session, chamber, bill_id, title, type=btype)
-            bill.add_source(url)
+        bill = Bill(session, chamber, bill_id, title, type=btype)
+        bill.add_source(url)
 
-            self.parse_bill_versions(bill, page)
+        self.parse_bill_versions(bill, page)
 
-            vote_count = self.parse_history(bill,
-                                history_url(chamber, session, special,
+        vote_count = self.parse_history(bill,
+                            history_url(chamber, session, special,
+                                        type_abbr, bill_num))
+
+        # only fetch votes if votes were seen in history
+        if vote_count:
+            self.parse_votes(bill, vote_url(chamber, session, special,
                                             type_abbr, bill_num))
 
-            # only fetch votes if votes were seen in history
-            if vote_count:
-                self.parse_votes(bill, vote_url(chamber, session, special,
-                                                type_abbr, bill_num))
+        # Dedupe sources.
+        sources = bill['sources']
+        for source in sources:
+            if 1 < sources.count(source):
+                sources.remove(source)
 
-            # Dedupe sources.
-            sources = bill['sources']
-            for source in sources:
-                if 1 < sources.count(source):
-                    sources.remove(source)
-
-            self.save_bill(bill)
+        self.save_bill(bill)
 
     def parse_bill_versions(self, bill, page):
         for link in page.xpath(
@@ -160,85 +160,85 @@ class PABillScraper(BillScraper):
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for td in page.xpath("//td[@class = 'vote']"):
-                caption = td.xpath("string(preceding-sibling::td)").strip()
+        for td in page.xpath("//td[@class = 'vote']"):
+            caption = td.xpath("string(preceding-sibling::td)").strip()
 
-                if caption == 'Senate':
-                    chamber = 'upper'
-                elif caption == 'House':
-                    chamber = 'lower'
-                else:
-                    committee = re.findall(r'\t(.+)', caption).pop()
-                    self.parse_committee_votes(committee,
-                        chamber, bill, td.xpath('a')[0].attrib['href'])
+            if caption == 'Senate':
+                chamber = 'upper'
+            elif caption == 'House':
+                chamber = 'lower'
+            else:
+                committee = re.findall(r'\t(.+)', caption).pop()
+                self.parse_committee_votes(committee,
+                    chamber, bill, td.xpath('a')[0].attrib['href'])
 
-                self.parse_chamber_votes(chamber, bill,
-                                         td.xpath('a')[0].attrib['href'])
+            self.parse_chamber_votes(chamber, bill,
+                                     td.xpath('a')[0].attrib['href'])
 
     def parse_chamber_votes(self, chamber, bill, url):
         bill.add_source(url)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            xpath = "//a[contains(@href, 'rc_view_action2')]"
-            for link in page.xpath(xpath)[::-1]:
-                date_str = link.xpath("../../../td")[0].text.strip()
-                date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
-                vote = self.parse_roll_call(link, chamber, date)
-                bill.add_vote(vote)
+        xpath = "//a[contains(@href, 'rc_view_action2')]"
+        for link in page.xpath(xpath)[::-1]:
+            date_str = link.xpath("../../../td")[0].text.strip()
+            date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
+            vote = self.parse_roll_call(link, chamber, date)
+            bill.add_vote(vote)
 
     def parse_roll_call(self, link, chamber, date):
         url = link.attrib['href']
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            motion_divs = page.xpath("//div[@class='font8text']")
-            motion = motion_divs[3].text.strip()
-            if not motion:
-                try:
-                    motion = motion_divs[3].getnext().tail.strip()
-                except AttributeError:
-                    motion = motion_divs[4].text.strip()
+        motion_divs = page.xpath("//div[@class='font8text']")
+        motion = motion_divs[3].text.strip()
+        if not motion:
+            try:
+                motion = motion_divs[3].getnext().tail.strip()
+            except AttributeError:
+                motion = motion_divs[4].text.strip()
 
-            if motion == 'FP':
-                motion = 'FINAL PASSAGE'
+        if motion == 'FP':
+            motion = 'FINAL PASSAGE'
 
-            if motion == 'FINAL PASSAGE':
-                type = 'passage'
-            elif re.match(r'CONCUR(RENCE)? IN \w+ AMENDMENTS', motion):
-                type = 'amendment'
+        if motion == 'FINAL PASSAGE':
+            type = 'passage'
+        elif re.match(r'CONCUR(RENCE)? IN \w+ AMENDMENTS', motion):
+            type = 'amendment'
+        else:
+            type = 'other'
+            motion = link.text_content()
+
+        yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
+        nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
+        lve = int(page.xpath("//div[text() = 'LVE']")[0].getnext().text)
+        nv = int(page.xpath("//div[text() = 'N/V']")[0].getnext().text)
+        other = lve + nv
+
+        passed = yeas > (nays + other)
+
+        vote = Vote(chamber, date, motion, passed, yeas, nays, other,
+                    type=type)
+
+        for span in page.xpath("//span[text() = 'Y' or text() = 'N'"
+                               "or text() = 'X' or text() = 'E']"):
+            name = span.getnext().text.strip()
+
+            if span.text == 'Y':
+                vote.yes(name)
+            elif span.text == 'N':
+                vote.no(name)
             else:
-                type = 'other'
-                motion = link.text_content()
+                vote.other(name)
 
-            yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
-            nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
-            lve = int(page.xpath("//div[text() = 'LVE']")[0].getnext().text)
-            nv = int(page.xpath("//div[text() = 'N/V']")[0].getnext().text)
-            other = lve + nv
-
-            passed = yeas > (nays + other)
-
-            vote = Vote(chamber, date, motion, passed, yeas, nays, other,
-                        type=type)
-
-            for span in page.xpath("//span[text() = 'Y' or text() = 'N'"
-                                   "or text() = 'X' or text() = 'E']"):
-                name = span.getnext().text.strip()
-
-                if span.text == 'Y':
-                    vote.yes(name)
-                elif span.text == 'N':
-                    vote.no(name)
-                else:
-                    vote.other(name)
-
-            return vote
+        return vote
 
     def parse_committee_votes(self, committee, chamber, bill, url):
         bill.add_source(url)

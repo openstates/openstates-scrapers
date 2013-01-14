@@ -15,32 +15,32 @@ class UTCommitteeScraper(CommitteeScraper):
         chamber_abbr = {'upper': 's', 'lower': 'h'}[chamber]
 
         url = "http://le.utah.gov/asp/interim/standing.asp?house=%s" % chamber_abbr
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
-                comm_name = comm_link.text.strip()
+        for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
+            comm_name = comm_link.text.strip()
 
-                # Drop leading "House" or "Senate" from name
-                comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
+            # Drop leading "House" or "Senate" from name
+            comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
 
-                comm = Committee(chamber, comm_name)
+            comm = Committee(chamber, comm_name)
 
-                for mbr_link in comm_link.xpath(
-                    "../../../font[2]/a[not(contains(@href, 'mailto'))]"):
+            for mbr_link in comm_link.xpath(
+                "../../../font[2]/a[not(contains(@href, 'mailto'))]"):
 
-                    name = mbr_link.text.strip()
+                name = mbr_link.text.strip()
 
-                    next_el = mbr_link.getnext()
-                    if next_el is not None and next_el.tag == 'i':
-                        type = next_el.text.strip()
-                    else:
-                        type = 'member'
+                next_el = mbr_link.getnext()
+                if next_el is not None and next_el.tag == 'i':
+                    type = next_el.text.strip()
+                else:
+                    type = 'member'
 
-                    comm.add_member(name, type)
+                comm.add_member(name, type)
 
-                comm.add_source(url)
-                comm.add_source(comm_link.get('href'))
+            comm.add_source(url)
+            comm.add_source(comm_link.get('href'))
 
-                self.save_committee(comm)
+            self.save_committee(comm)

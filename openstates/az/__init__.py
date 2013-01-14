@@ -481,10 +481,11 @@ metadata = dict(
                 #'start_date': , 'end_date':
                 },
             '51st-1st-regular':
-                {'type': 'primary', 'session_id': 108,
+                {'type': 'primary', 'session_id': 110,
                  'display_name': '51st Legislature - First Regular Session',
                  '_scraped_name': 'Fifty-first Legislature - First Regular Session'
                 }
+                # get session id from http://www.azleg.gov/SelectSession.asp select
         },
         _ignored_scraped_sessions=[
             'Forty-second Legislature - First Regular Session',

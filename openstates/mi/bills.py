@@ -171,36 +171,36 @@ class MIBillScraper(BillScraper):
             return name, url
 
     def parse_roll_call(self, vote, url, rc_num):
-        with self.urlopen(url) as html:
-            if 'In The Chair' not in html:
-                self.warning('"In The Chair" indicator not found, unable to extract vote')
-                return
-            vote_doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        if 'In The Chair' not in html:
+            self.warning('"In The Chair" indicator not found, unable to extract vote')
+            return
+        vote_doc = lxml.html.fromstring(html)
 
-            # split the file into lines using the <p> tags
-            pieces = [p.text_content().replace(u'\xa0', ' ')
-                      for p in vote_doc.xpath('//p')]
+        # split the file into lines using the <p> tags
+        pieces = [p.text_content().replace(u'\xa0', ' ')
+                  for p in vote_doc.xpath('//p')]
 
-            # go until we find the roll call
-            for i, p in enumerate(pieces):
-                if p.startswith(u'Roll Call No. %s' % rc_num):
-                    break
+        # go until we find the roll call
+        for i, p in enumerate(pieces):
+            if p.startswith(u'Roll Call No. %s' % rc_num):
+                break
 
-            # once we find the roll call, go through voters
-            for p in pieces[i:]:
-                # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
-                if 'Yeas' in p:
-                    vtype = vote.yes
-                elif 'Nays' in p:
-                    vtype = vote.no
-                elif 'Excused' in p or 'Not Voting' in p:
-                    vtype = vote.other
-                elif 'Roll Call No' in p:
-                    continue
-                elif p.startswith('In The Chair:'):
-                    break
-                else:
-                    # split on spaces not preceeded by commas
-                    for l in re.split('(?<!,)\s+', p):
-                        if l:
-                            vtype(l)
+        # once we find the roll call, go through voters
+        for p in pieces[i:]:
+            # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
+            if 'Yeas' in p:
+                vtype = vote.yes
+            elif 'Nays' in p:
+                vtype = vote.no
+            elif 'Excused' in p or 'Not Voting' in p:
+                vtype = vote.other
+            elif 'Roll Call No' in p:
+                continue
+            elif p.startswith('In The Chair:'):
+                break
+            else:
+                # split on spaces not preceeded by commas
+                for l in re.split('(?<!,)\s+', p):
+                    if l:
+                        vtype(l)

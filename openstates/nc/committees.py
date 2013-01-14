@@ -7,19 +7,19 @@ class NCCommitteeScraper(CommitteeScraper):
 
     def scrape_committee(self, committee, url):
         url = url.replace(' ', '%20') + '&bPrintable=true'
-        with self.urlopen(url) as data:
-            doc = lxml.html.fromstring(data)
-            for row in doc.xpath('//table/tr'):
-                children = row.getchildren()
-                if len(children) != 2:
-                    self.log('skipping members for ' + committee['committee'])
-                    continue
-                mtype, members = row.getchildren()
-                if mtype.text == 'Members':
-                    for m in members.getchildren():
-                        committee.add_member(m.text)
-                else:
-                    committee.add_member(members.text_content(), mtype.text)
+        data = self.urlopen(url)
+        doc = lxml.html.fromstring(data)
+        for row in doc.xpath('//table/tr'):
+            children = row.getchildren()
+            if len(children) != 2:
+                self.log('skipping members for ' + committee['committee'])
+                continue
+            mtype, members = row.getchildren()
+            if mtype.text == 'Members':
+                for m in members.getchildren():
+                    committee.add_member(m.text)
+            else:
+                committee.add_member(members.text_content(), mtype.text)
 
 
     def scrape(self, term, chambers):

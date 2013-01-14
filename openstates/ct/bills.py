@@ -77,32 +77,32 @@ class CTBillScraper(BillScraper):
                "cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill['bill_id'],
                                                bill['session']))
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            bill.add_source(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        bill.add_source(url)
 
-            spon_type = 'primary'
-            if not bill['sponsors']:
-                for sponsor in page.xpath('//td[contains(string(), "Introduced by:")]')[1].xpath('text()'):
-                    sponsor = sponsor.replace('Introduced by:', '').strip()
-                    if sponsor:
-                        bill.add_sponsor(spon_type, sponsor,
-                                         official_type='introducer')
-                    spon_type = 'cosponsor'
+        spon_type = 'primary'
+        if not bill['sponsors']:
+            for sponsor in page.xpath('//td[contains(string(), "Introduced by:")]')[1].xpath('text()'):
+                sponsor = sponsor.replace('Introduced by:', '').strip()
+                if sponsor:
+                    bill.add_sponsor(spon_type, sponsor,
+                                     official_type='introducer')
+                spon_type = 'cosponsor'
 
 
-            for link in page.xpath("//a[contains(@href, '/FN/')]"):
-                bill.add_document(link.text.strip(), link.attrib['href'])
+        for link in page.xpath("//a[contains(@href, '/FN/')]"):
+            bill.add_document(link.text.strip(), link.attrib['href'])
 
-            for link in page.xpath("//a[contains(@href, '/BA/')]"):
-                bill.add_document(link.text.strip(), link.attrib['href'])
+        for link in page.xpath("//a[contains(@href, '/BA/')]"):
+            bill.add_document(link.text.strip(), link.attrib['href'])
 
-            for link in page.xpath("//a[contains(@href, 'VOTE')]"):
-                # 2011 HJ 31 has a blank vote, others might too
-                if link.text:
-                    self.scrape_vote(bill, link.text.strip(),
-                                     link.attrib['href'])
+        for link in page.xpath("//a[contains(@href, 'VOTE')]"):
+            # 2011 HJ 31 has a blank vote, others might too
+            if link.text:
+                self.scrape_vote(bill, link.text.strip(),
+                                 link.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
         if "VOTE/H" in url:
@@ -118,59 +118,59 @@ class CTBillScraper(BillScraper):
             yes_offset = 1
             no_offset = 2
 
-        with self.urlopen(url) as page:
-            if 'BUDGET ADDRESS' in page:
-                return
+        page = self.urlopen(url)
+        if 'BUDGET ADDRESS' in page:
+            return
 
-            page = lxml.html.fromstring(page)
+        page = lxml.html.fromstring(page)
 
-            yes_count = page.xpath(
-                "string(//span[contains(., 'Those voting Yea')])")
-            yes_count = int(re.match(r'[^\d]*(\d+)[^\d]*', yes_count).group(1))
+        yes_count = page.xpath(
+            "string(//span[contains(., 'Those voting Yea')])")
+        yes_count = int(re.match(r'[^\d]*(\d+)[^\d]*', yes_count).group(1))
 
-            no_count = page.xpath(
-                "string(//span[contains(., 'Those voting Nay')])")
-            no_count = int(re.match(r'[^\d]*(\d+)[^\d]*', no_count).group(1))
+        no_count = page.xpath(
+            "string(//span[contains(., 'Those voting Nay')])")
+        no_count = int(re.match(r'[^\d]*(\d+)[^\d]*', no_count).group(1))
 
-            other_count = page.xpath(
-                "string(//span[contains(., 'Those absent')])")
-            other_count = int(
-                re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
+        other_count = page.xpath(
+            "string(//span[contains(., 'Those absent')])")
+        other_count = int(
+            re.match(r'[^\d]*(\d+)[^\d]*', other_count).group(1))
 
-            need_count = page.xpath(
-                "string(//span[contains(., 'Necessary for')])")
-            need_count = int(
-                re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
+        need_count = page.xpath(
+            "string(//span[contains(., 'Necessary for')])")
+        need_count = int(
+            re.match(r'[^\d]*(\d+)[^\d]*', need_count).group(1))
 
-            date = page.xpath("string(//span[contains(., 'Taken on')])")
-            date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
-            date = date.replace(' ', '')
-            date = datetime.datetime.strptime(date + " " + bill['session'],
-                                              "%m/%d %Y").date()
+        date = page.xpath("string(//span[contains(., 'Taken on')])")
+        date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
+        date = date.replace(' ', '')
+        date = datetime.datetime.strptime(date + " " + bill['session'],
+                                          "%m/%d %Y").date()
 
-            vote = Vote(vote_chamber, date, name, yes_count > need_count,
-                        yes_count, no_count, other_count)
-            vote.add_source(url)
+        vote = Vote(vote_chamber, date, name, yes_count > need_count,
+                    yes_count, no_count, other_count)
+        vote.add_source(url)
 
-            table = page.xpath("//table")[0]
-            for row in table.xpath("tr"):
-                for i in cols:
-                    name = row.xpath("string(td[%d])" % (
-                        i + name_offset)).strip()
+        table = page.xpath("//table")[0]
+        for row in table.xpath("tr"):
+            for i in cols:
+                name = row.xpath("string(td[%d])" % (
+                    i + name_offset)).strip()
 
-                    if not name or name == 'VACANT':
-                        continue
+                if not name or name == 'VACANT':
+                    continue
 
-                    if "Y" in row.xpath("string(td[%d])" %
-                                        (i + yes_offset)):
-                        vote.yes(name)
-                    elif "N" in row.xpath("string(td[%d])" %
-                                          (i + no_offset)):
-                        vote.no(name)
-                    else:
-                        vote.other(name)
+                if "Y" in row.xpath("string(td[%d])" %
+                                    (i + yes_offset)):
+                    vote.yes(name)
+                elif "N" in row.xpath("string(td[%d])" %
+                                      (i + no_offset)):
+                    vote.no(name)
+                else:
+                    vote.other(name)
 
-            bill.add_vote(vote)
+        bill.add_vote(vote)
 
 
     def scrape_subjects(self, session):
@@ -264,21 +264,21 @@ class CTBillScraper(BillScraper):
         versions_url = "ftp://ftp.cga.ct.gov/%s/tob/%s/" % (
             session, chamber_letter)
 
-        with self.urlopen(versions_url) as page:
-            files = parse_directory_listing(page)
+        page = self.urlopen(versions_url)
+        files = parse_directory_listing(page)
 
-            for f in files:
-                match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
-                                 f.filename)
-                bill_id = match.group(1).replace('-', '')
+        for f in files:
+            match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
+                             f.filename)
+            bill_id = match.group(1).replace('-', '')
 
-                try:
-                    bill = self.bills[bill_id]
-                except KeyError:
-                    continue
+            try:
+                bill = self.bills[bill_id]
+            except KeyError:
+                continue
 
-                url = versions_url + f.filename
-                bill.add_version(match.group(2), url, mimetype='text/html')
+            url = versions_url + f.filename
+            bill.add_version(match.group(2), url, mimetype='text/html')
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
@@ -295,20 +295,20 @@ class CTBillScraper(BillScraper):
         chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
         url = "http://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
-                name = link.xpath("string(../../td[1])").strip()
-                name = re.match("^S?\d+\s+-\s+(.*)$", name).group(1)
+        for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
+            name = link.xpath("string(../../td[1])").strip()
+            name = re.match("^S?\d+\s+-\s+(.*)$", name).group(1)
 
-                self.scrape_introducer(name, link.attrib['href'])
+            self.scrape_introducer(name, link.attrib['href'])
 
     def scrape_introducer(self, name, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for link in page.xpath("//a[contains(@href, 'billstatus')]"):
-                bill_id = link.text.strip()
-                self._introducers[bill_id].add(name)
+        for link in page.xpath("//a[contains(@href, 'billstatus')]"):
+            bill_id = link.text.strip()
+            self._introducers[bill_id].add(name)

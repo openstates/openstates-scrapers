@@ -20,41 +20,41 @@ class FLCommitteeScraper(CommitteeScraper):
 
     def scrape_upper_committees(self):
         url = "http://flsenate.gov/Committees/"
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            path = "//a[contains(@href, 'Committees/Show')]"
-            for link in page.xpath(path):
-                comm_name = link.text.strip()
+        path = "//a[contains(@href, 'Committees/Show')]"
+        for link in page.xpath(path):
+            comm_name = link.text.strip()
 
-                if comm_name.startswith('Joint'):
-                    continue
+            if comm_name.startswith('Joint'):
+                continue
 
-                if 'Subcommittee on' in comm_name:
-                    comm_name, sub_name = comm_name.split(' Subcommittee on ')
-                else:
-                    comm_name, sub_name = comm_name, None
+            if 'Subcommittee on' in comm_name:
+                comm_name, sub_name = comm_name.split(' Subcommittee on ')
+            else:
+                comm_name, sub_name = comm_name, None
 
-                comm = Committee('upper', comm_name, sub_name)
-                self.scrape_upper_committee(comm, link.attrib['href'])
-                self.save_committee(comm)
+            comm = Committee('upper', comm_name, sub_name)
+            self.scrape_upper_committee(comm, link.attrib['href'])
+            self.save_committee(comm)
 
     def scrape_upper_committee(self, comm, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            comm.add_source(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        comm.add_source(url)
 
-            path = "//a[contains(@href, 'Senators')]/name"
-            for name in page.xpath(path):
-                dt = name.xpath("../../preceding-sibling::dt")
-                if dt:
-                    mtype = dt[0].text.strip(': \r\n\t').lower()
-                else:
-                    mtype = 'member'
+        path = "//a[contains(@href, 'Senators')]/name"
+        for name in page.xpath(path):
+            dt = name.xpath("../../preceding-sibling::dt")
+            if dt:
+                mtype = dt[0].text.strip(': \r\n\t').lower()
+            else:
+                mtype = 'member'
 
-                member = re.sub(r'\s+', ' ', name.text.strip())
-                comm.add_member(member, mtype)
+            member = re.sub(r'\s+', ' ', name.text.strip())
+            comm.add_member(member, mtype)
 
     def scrape_lower_committees(self):
         url = ("http://www.myfloridahouse.gov/Sections/Committees/"

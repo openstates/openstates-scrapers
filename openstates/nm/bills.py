@@ -385,68 +385,68 @@ class NMBillScraper(BillScraper):
         doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
         doc_path = doc_path % (session_path, doctype, chamber_name)
 
-        with self.urlopen(doc_path) as html:
+        html = self.urlopen(doc_path)
 
-            doc = lxml.html.fromstring(html)
+        doc = lxml.html.fromstring(html)
 
-            # all links but first one
-            for fname in doc.xpath('//a/text()')[1:]:
+        # all links but first one
+        for fname in doc.xpath('//a/text()')[1:]:
 
-                # skip PDFs for now -- everything but votes have HTML versions
-                if fname.endswith('pdf') and 'VOTE' not in fname:
-                    continue
+            # skip PDFs for now -- everything but votes have HTML versions
+            if fname.endswith('pdf') and 'VOTE' not in fname:
+                continue
 
-                match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
-                bill_type, bill_num, suffix = match.groups()
+            match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            bill_type, bill_num, suffix = match.groups()
 
-                # adapt to bill_id format
-                bill_id = bill_type.replace('B', '') + bill_num
-                try:
-                    bill = self.bills[bill_id]
-                except KeyError:
-                    self.warning('document for unknown bill %s' % fname)
-                    continue
+            # adapt to bill_id format
+            bill_id = bill_type.replace('B', '') + bill_num
+            try:
+                bill = self.bills[bill_id]
+            except KeyError:
+                self.warning('document for unknown bill %s' % fname)
+                continue
 
-                # no suffix = just the bill
-                if suffix == '':
-                    bill.add_version('introduced version', doc_path + fname,
-                                     mimetype='text/html')
+            # no suffix = just the bill
+            if suffix == '':
+                bill.add_version('introduced version', doc_path + fname,
+                                 mimetype='text/html')
 
-                # floor amendments
-                elif re.match('F(S|H)\d', suffix):
-                    a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
-                    a_chamber = 'House' if a_chamber == 'H' else 'Senate'
-                    bill.add_document('%s Floor Amendment %s' %
-                                      (a_chamber, num),
-                                      doc_path + fname)
+            # floor amendments
+            elif re.match('F(S|H)\d', suffix):
+                a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
+                a_chamber = 'House' if a_chamber == 'H' else 'Senate'
+                bill.add_document('%s Floor Amendment %s' %
+                                  (a_chamber, num),
+                                  doc_path + fname)
 
-                # committee substitutes
-                elif suffix.endswith('S'):
-                    committee_name = suffix[:-1]
-                    bill.add_version('%s substitute' % committee_name,
-                                     doc_path + fname, mimetype='text/html')
+            # committee substitutes
+            elif suffix.endswith('S'):
+                committee_name = suffix[:-1]
+                bill.add_version('%s substitute' % committee_name,
+                                 doc_path + fname, mimetype='text/html')
 
-                # votes
-                elif 'SVOTE' in suffix:
-                    vote = self.parse_senate_vote(doc_path + fname)
+            # votes
+            elif 'SVOTE' in suffix:
+                vote = self.parse_senate_vote(doc_path + fname)
+                bill.add_vote(vote)
+            elif 'HVOTE' in suffix:
+                vote = self.parse_house_vote(doc_path + fname)
+                if vote:
                     bill.add_vote(vote)
-                elif 'HVOTE' in suffix:
-                    vote = self.parse_house_vote(doc_path + fname)
-                    if vote:
-                        bill.add_vote(vote)
 
-                # committee reports
-                elif re.match('\w{2,3,4}\d', suffix):
-                    committee_name = re.match('[A-Z]+', suffix).group()
-                    bill.add_document('%s committee report' % committee_name,
-                                      doc_path + fname)
+            # committee reports
+            elif re.match('\w{2,3,4}\d', suffix):
+                committee_name = re.match('[A-Z]+', suffix).group()
+                bill.add_document('%s committee report' % committee_name,
+                                  doc_path + fname)
 
-                # ignore list, mostly typos reuploaded w/ proper name
-                elif suffix in ('HEC', 'HOVTE', 'GUI'):
-                    pass
-                else:
-                    # warn about unknown suffix
-                    self.warning('unknown document suffix %s' % (fname))
+            # ignore list, mostly typos reuploaded w/ proper name
+            elif suffix in ('HEC', 'HOVTE', 'GUI'):
+                pass
+            else:
+                # warn about unknown suffix
+                self.warning('unknown document suffix %s' % (fname))
 
     def parse_senate_vote(self, url):
         """ senate PDFs -> garbled text -> good text -> Vote """
