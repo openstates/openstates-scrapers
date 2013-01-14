@@ -59,7 +59,7 @@ class INEventScraper(EventScraper):
                     data = re.compile('((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)').split(data)
                     data = orig_data.replace(data[0], '')[:]
 
-                    # hack to insert a time of none exist
+                    # hack to insert a time if none exist
                     if not re.search(r'[0-9]{1,2}:[0-9]{2} [AP]', data, re.I):
 
                         if re.search(r'upon adjournment,', data, re.I):
