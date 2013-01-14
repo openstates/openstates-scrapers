@@ -5,9 +5,9 @@ import lxml.html
 
 from billy.scrape.events import EventScraper, Event
 
-
 class SCEventScraper(EventScraper):
     jurisdiction = 'sc'
+    _tz = pytz.timezone('US/Eastern')
 
     def get_page_from_url(self,url):
         with self.urlopen(url) as page:
@@ -49,6 +49,8 @@ class SCEventScraper(EventScraper):
                 # 1 1/2 hours after the House adjourns
                 if re.search(r'adjourn',time_string):
                     time_string = '12:00 am'
+                if re.search(r' noon', time_string):
+                    time_string = time_string.replace(' noon', ' pm')
 
                 # if it's a block of time, use the start time
                 block_reg = re.compile(r'([0-9]{1,2}:[0-9]{2}) - [0-9]{1,2}:[0-9]{2} ([ap]m)')
@@ -63,8 +65,12 @@ class SCEventScraper(EventScraper):
 
                 date_time_string = meeting_year + ' ' + date_string + ' ' + time_string
                 date_time = datetime.datetime.strptime(date_time_string, "%Y %A, %B %d %I:%M %p")
+                date_time = self._tz.localize(date_time)
 
-                meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]
+                if len(meeting.xpath('.//span[contains(text(), "CANCELED")]')) > 0:
+                    continue
+        
+                meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]			
 
                 location, description = re.search(r'-- (.*?) -- (.*)', meeting_info).groups()
 
@@ -101,5 +107,3 @@ class SCEventScraper(EventScraper):
                         )
     
                 self.save_event(event)
-
-
