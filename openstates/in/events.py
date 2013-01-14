@@ -3,12 +3,17 @@ import pytz
 import datetime
 import lxml.html
 
+import pprint as pp
+
+from billy.scrape.utils import convert_pdf
 from billy.scrape.events import EventScraper, Event
 
 class INEventScraper(EventScraper):
     jurisdiction = 'in'
 
     _tz = pytz.timezone('US/Central')
+
+    scrape_mode = 'txt' # pdf or txt (lowercase)
 
     def get_page_from_url(self, url):
         with self.urlopen(url) as page:
@@ -21,10 +26,13 @@ class INEventScraper(EventScraper):
         committee = ''
         committee_data = meeting_data[0]
 
-        committee_regex = re.compile('^   AGENDA FOR :  (.*)')
+        committee_regex = re.compile('^(\s+)?AGENDA FOR\s:\s+(.*)', re.I)
     
         if re.search(committee_regex, committee_data):
-            committee = re.search(committee_regex,committee_data).group(1)
+            if self.scrape_mode == 'txt':
+                committee = re.search(committee_regex,committee_data).group(1)
+            elif self.scrape_mode == 'pdf':
+                committee = re.search(r': (.*?) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+,', committee_data).group(1)
 
         return committee.strip()
 
@@ -38,8 +46,26 @@ class INEventScraper(EventScraper):
 
         for data in meeting_data:
 
-            if re.search(r'^\s+MEETING\s+:', data):
-                data = re.sub('^\s+MEETING\s+:\s+','', data)
+            if (self.scrape_mode == 'txt' and re.search(r'^\s+MEETING\s+:', data)) or (self.scrape_mode == 'pdf' and re.search(r'^Agenda for\s:\s+', data)):
+            
+                if self.scrape_mode == 'pdf':
+
+                    orig_data = data[:]
+                    data = re.compile('((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)').split(data)
+                    data = orig_data.replace(data[0], '')[:]
+
+                    # hack to insert a time of none exist
+                    if not re.search(r'[0-9]{1,2}:[0-9]{2} [AP]', data, re.I):
+
+                        if re.search(r'upon adjournment,', data, re.I):
+                            adjourn_reg = re.compile(r'upon adjournment,', re.I)
+                            data = adjourn_reg.sub('', data)
+
+                        date = re.search(r'((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)', data).group(1)
+                        data = re.sub('^((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+),', date + ', 12:00 am,', data)
+                        
+                elif self.scrape_mode == 'txt':
+                    data = re.sub('^\s+MEETING\s+:\s+','', data)
 
                 for i,item in enumerate(data.split(',')):
                     item_value = item.strip()
@@ -51,7 +77,6 @@ class INEventScraper(EventScraper):
                         meeting_info['time'] = item_value
                     elif i == 2:
                         meeting_info['location'] = item_value
-
                 break
 
         return meeting_info
@@ -73,20 +98,34 @@ class INEventScraper(EventScraper):
 
         bills = []
 
-        bills_ident = 0
+        bills_start, bills_end = [0,0]
         for i, data in enumerate(meeting_data):
-            if re.search(r'HEARING\s+:', data):
-                bills_ident = i
+            if re.search(r'HEARING\s+:', data, re.I):
+                bills_start = i
+            if re.search(r'SENATE COMMITTEE SCHEDULE', data, re.I) and bills_start > 0:
+                bills_end = i
                 break
 
-        bills_data = meeting_data[bills_ident:]
-
-        bill_regex = re.compile(r'^(\s+HEARING\s+:\s+|\s{18})([A-Z]{2,4}\s+[0-9]+)\s+')
+        if bills_end > 0:				
+            bills_data = meeting_data[bills_start:bills_end]
+        else:
+            bills_data = meeting_data[bills_start:]
 
         for bill_data in bills_data:
-            if re.search(bill_regex, bill_data):
-                
-                bill_id = re.search(bill_regex, bill_data).group(2).replace('  ', ' ')
+
+            if bill_data == '':
+                continue
+
+            # clean up
+            hearing_reg = re.compile(r'\s+Hearing\s+:\s+', re.I)
+            if re.search(hearing_reg, bill_data):
+                bill_data = hearing_reg.sub('', bill_data)
+            
+            if re.search(r'^([A-Z]{2,4}\s+[0-9]+)', bill_data):
+
+                bill_id = re.search(r'^([A-Z]{2,4}\s+[0-9]+)', bill_data).group(1).encode('ascii','ignore').strip()
+                bill_id = re.sub(r'\s{2,}', ' ', bill_id)
+    
                 bill_meta = self.get_bill_intro_meta(session, bill_id)
 
                 bills.append({
@@ -106,6 +145,7 @@ class INEventScraper(EventScraper):
 
         bill_num = bill_id.split(' ')[1]
         bill_intro_url = 'http://www.in.gov/legislative/bills/%s/IN/IN%s.1.html' % (session, bill_num)
+
         bill_intro_page = self.get_page_from_url(bill_intro_url)
 
         # b synopsis elements are missing sometimes so get it with regex
@@ -126,23 +166,49 @@ class INEventScraper(EventScraper):
         participants = []
 
         for data in meeting_data:
-            if re.search(r'^\s+(CHAIRMAN|MEMBERS|AGENDA FOR)\s+:', data):
-                if 'CHAIRMAN' in data:
-                    chair_name = re.search(r'\s+CHAIRMAN\s+:\s+([^\s]+)', data).group(1)
-                    participants.append({
-                        'type' : 'chair',
-                        'participant' : chair_name,
-                        'participant_type' : 'legislator'
-                    })
-                elif 'MEMBERS' in data:
-                    leg_names = re.search(r'^\s+MEMBERS\s+:\s+(.*)', data).group(1).encode('ascii','ignore').strip().strip(',')
-                    leg_names = [leg_name.strip() for leg_name in leg_names.split(',')]
-                    for leg_name in leg_names:
-                        participants.append({
-                            'type' : 'participant',
-                            'participant' : leg_name,
-                            'participant_type' : 'legislator'
-                        })
+            if re.search('CHAIRMAN\s+:', data, re.I):
+                chair_name = re.search(r'(\s+)?CHAIRMAN\s+:\s+(.*)', data, re.I).group(2)
+                participants.append({
+                    'type' : 'chair',
+                    'participant' : chair_name,
+                    'participant_type' : 'legislator'
+                })
+
+
+        # find out what rows member start and end on
+        members_start, members_end = [0,0]
+        for i, data in enumerate(meeting_data):
+            if re.search('MEMBERS\s+:', data, re.I):
+                members_start = i
+
+            if re.search('(^\s{10,}Authors|DATE HAS BEEN CHANGED|Upon adjournment)', data, re.I) and members_start > 0:
+                members_end = i
+                break
+
+        member_names = []
+        for members_data in meeting_data[members_start:members_end]:
+            if members_data == '':
+                continue
+
+            # clean rows
+            time_reg = re.compile(r'[0-9]+:[0-9]+ [AP]M', re.I)
+            if re.search(time_reg, members_data):
+                members_data = time_reg.sub('', members_data)
+
+            member_header_reg = re.compile(r'^(\s)?Members\s+:\s+', re.I)
+            if re.search(member_header_reg, members_data):
+                members_data = member_header_reg.sub('', members_data)
+
+            members_data = members_data.strip('.').strip(',').encode('ascii','ignore')
+            new_members = [member.strip() for member in members_data.split(',')]
+            member_names += new_members
+
+        for member_name in member_names:
+            participants.append({
+                'type' : 'participant',
+                'participant' : member_name,
+                'participant_type' : 'legislator'
+            })
         
         cmte_name = self.get_committee(meeting_data)
         participants.append({
@@ -167,22 +233,24 @@ class INEventScraper(EventScraper):
         # some older years do have data.
         # google search inurl:in.gov "BSCHDS.TXT" OR "BSCHDH.TXT" and you will see
 
-        # although heavier to consumer, the PDF's might be a better route as they also contain more data.
-        # probably wise to not enable, see if the 2013 files are updated in the coming weeks, and/or use another method 
-        # http://www.in.gov/legislative/reports/2013/BSCHDS.PDF
-
         if str(session) != '2013':
             self.error("Events for the %s session are not implemented." % str(session))	
             
-        meetings_url = "http://www.in.gov/legislative/reports/%s/BSCHD%s.TXT" % (str(session), str(self.metadata['chambers'][chamber]['name'])[0].upper())
+        meetings_url = "http://www.in.gov/legislative/reports/%s/BSCHD%s.%s" % (str(session), str(self.metadata['chambers'][chamber]['name'])[0].upper(), self.scrape_mode.upper())
         
-        meetings_data = self.urlopen(meetings_url)
+        if self.scrape_mode.lower() == 'pdf':
+            (path, response) = self.urlretrieve(meetings_url)
+            meetings_data = convert_pdf(path, type='text')
+        elif self.scrape_mode.lower() == 'txt':
+            meetings_data = self.urlopen(meetings_url)
+
         meetings_data = meetings_data.split("\n")
 
         meeting_idents = []
 
         for i, line in enumerate(meetings_data):
-            if re.search(r'AGENDA FOR :', line):
+
+            if re.search(r'^(\s+)?AGENDA FOR\s:', line, re.I):
                 meeting_idents.append(i)
 
         for i, meeting_ident in enumerate(meeting_idents):
@@ -195,6 +263,7 @@ class INEventScraper(EventScraper):
                 meeting_data = meetings_data[start_ident:end_ident]
 
             meeting_info = self.get_meeting_info(meeting_data)
+
             location = meeting_info['location']
             meeting_date_time = datetime.datetime.strptime(meeting_info['date'] + ' ' + str(session) + ' ' + meeting_info['time'], '%B %d %Y %I:%M %p')
             meeting_date_time = self._tz.localize(meeting_date_time)
@@ -229,7 +298,7 @@ class INEventScraper(EventScraper):
                     type = 'bill'
                 )
     
-            #pp.pprint(event)
+            pp.pprint(event)
 
-            self.save_event(event)
+            #self.save_event(event)
 
