@@ -274,8 +274,8 @@
                 <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <h4>{% trans "Sponsored Bills" %}</h4>
                 <ul>
-                {% if sponsored_bills.count %}
-                    {% for bill in sponsored_bills %}
+                {% if sponsored_bills %}
+                    {% for bill in sponsored_bills|slice:":3" %}
                         <li class="medModuleSm">
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
@@ -294,8 +294,8 @@
             <div class="fiveCol colLt">
                 <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <ul>
-                {% if sponsored_bills.count %}
-                    {% for bill in sponsored_bills %}
+                {% if sponsored_bills %}
+                    {% for bill in sponsored_bills|slice:"3:" %}
                         <li class="medModuleSm">
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
@@ -330,7 +330,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for vote_value, vote in legislator_votes %}
+                        {% for vote_value, vote in legislator_votes|slice:":3" %}
                         <tr>
                             <td>
                                 <time class="published">{{vote.date|date:"M j, Y"}}</time>
@@ -371,7 +371,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for vote_value, vote in legislator_votes %}
+                        {% for vote_value, vote in legislator_votes|slice:"3:" %}
                         <tr>
                             <td>
                                 <time class="published">{{vote.date|date:"M j, Y"}}</time>
