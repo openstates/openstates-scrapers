@@ -6,6 +6,8 @@ import lxml.html
 
 from billy.scrape.events import EventScraper, Event
 
+# the committee abbreviations are in the urls. this is for 
+# looking up committees if the name isn't in the meeting page.
 cmte_lookup = {
     'lower' : (
         {'cmte_abbv' : 'AGR', 'cmte_name' : 'Agriculture'},                                                                                                                                                                      
@@ -64,7 +66,6 @@ cmte_lookup = {
     )
 }
 
-
 class HIEventScraper(EventScraper):
     jurisdiction = 'hi'
 
@@ -88,6 +89,9 @@ class HIEventScraper(EventScraper):
             meeting_url = file.attrib['href']
             
             if self.is_summary_page(meeting_url=meeting_url):
+                continue
+
+            if re.search('/CONF_', meeting_url, re.I):
                 continue
 
             meeting_page = self.get_page_from_url(meeting_url)
@@ -306,12 +310,14 @@ class HIEventScraper(EventScraper):
 
         return None		
 
-    def get_committee_string(self, committees):
+    def get_description(self, committees):
 
         committee_string = ''
 
+        committees = set(committees)
+
         for committee in committees:
-            committee_string += ', ' + self.get_committee_name_from_cmte_abbv(committee)
+            committee_string += ', ' + committee 
 
         committee_string = self.clean_string(committee_string).lstrip(', ')
 
@@ -327,6 +333,22 @@ class HIEventScraper(EventScraper):
                 break
 
         return committee_name
+
+    def get_committees(self, meeting_page):
+        committees = []
+
+        #for committee in meeting_page.xpath('.//u[contains(normalize-space(text()),"COMMITTEE ON")]|.//a[contains(normalize-space(text()),"COMMITTEE ON")]|'):
+        for committee in meeting_page.xpath('.//a[contains(normalize-space(text()),"COMMITTEE ON")] | .//u[contains(normalize-space(text()),"COMMITTEE ON")]'):
+            committee = self.clean_string(committee.text_content())
+            
+            if committee == '':
+                continue
+
+            committee = committee.replace('COMMITTEE ON ','')
+            committees.append(committee)
+
+
+        return committees		
 
     def scrape(self, term, chambers):
 
@@ -351,11 +373,14 @@ class HIEventScraper(EventScraper):
                 meeting_page = meeting['meeting_page']
                 meeting_url = meeting['meeting_url']
 
-                cmte_abbvs = self.get_cmte_abbvs(meeting_url)
-                cmte_names_string = self.get_committee_string(cmte_abbvs)
-                chamber_cmte_type = self.get_chamber_cmte_type(cmte_abbvs)
+                committees = self.get_committees(meeting_page)
 
-                description = chamber_cmte_type + ' - ' + cmte_names_string
+                if len(committees) == 0:
+                    for committee_abbv in self.get_cmte_abbvs(meeting_url):
+                        committee = self.get_committee_name_from_cmte_abbv(committee_abbv)
+                        committees.append(committee)
+
+                description = self.get_description(committees)
 
                 meeting_info = self.get_meeting_info(meeting_page)
                 bills = self.get_bills(meeting_page)
@@ -375,14 +400,11 @@ class HIEventScraper(EventScraper):
 
                 event.add_source(meeting_url)
 
-                for cmte_abbv in cmte_abbvs:
-                    chamber = self.get_chamber_from_cmte_abbv(cmte_abbv)
-                    cmte_name = self.get_committee_name_from_cmte_abbv(cmte_abbv)
+                for committee in committees:
                     event.add_participant(
                         type='host',
-                        participant=cmte_name,
+                        participant=committee,
                         participant_type='committee',
-                        chamber=chamber
                     )
 
                 for bill in bills:
