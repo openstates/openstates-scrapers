@@ -43,14 +43,10 @@
         </ul>
         <div class="fullWidth mainModule legislator">
             <!-- <div class="medModule"> -->
-                <div class="eightCol colLt">
-
-                    {% if request.user.is_authenticated %}
-                        {% favorite legislator.id "legislator" %}
-                    {% endif %}
+                <div class="sixCol colLt">
 
                     <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
-                    <div class="eightsLg clearfix">
+                    <div class="sixLg clearfix">
                         <h2 class="withTipSm">
                             {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}
                         </h2>
@@ -66,22 +62,28 @@
                             {{legislator.full_name}} {% trans "<b>no longer serves</b> in the" %} {{metadata.legislature_name}}.
                             {% endif %}
                             </dd>
-                            <dt class="clear">{% trans "Available Terms:" %}</dt>
-                            <dd> <ul>
+                            <dt>{% trans "Available Terms:" %}</dt>
+                            <dd class="tipSm"> <ul>
                             {% for term in legislator.all_terms %}
                                 <li class="clear">{{term}}</li>
                             {% endfor %}
+
                             </ul> </dd>
                         </dl>
+                        <div class="tip">
+                        {% if request.user.is_authenticated %}
+                            {% favorite legislator.id "legislator" %}
+                        {% endif %}
+                        </div>
                     </div>
                 </div>
-                <div class="fourCol colRt">
+                <div class="sixCol colRt">
                     {% if legislator.active %}
                     <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 200px"></div>
                     {% endif %}
                 </div>
                 <div class="clear"></div>
-                <div class="eightCol clearfix">
+                <div class="eightCol tip clearfix">
                     <ul class="inlineList tip noSpace" id="legLinks">
                         <li><a href="#committees">{% trans "View committee membership" %}</a></li>
                         <li><a href="#bills">{% trans "View sponsored bills" %}</a></li>
@@ -265,15 +267,16 @@
             <div class="clear"></div>
         </div>
         {% endif %}
-        <div class="fullWidth module">
+        <div class="fullWidth module clearfix">
             <a name="bills"></a>
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
-            <div class="eightCol colLt">
-                <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
-                <h4>{% trans "Sponsored Bills" %}</h4>
+            <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
+            <h4>{% trans "Sponsored Bills" %}</h4>
+
+            <div class="sixCol colLt withDash">
                 <ul>
-                {% if sponsored_bills.count %}
-                    {% for bill in sponsored_bills %}
+                {% if sponsored_bills %}
+                    {% for bill in sponsored_bills|slice:":3" %}
                         <li class="medModuleSm">
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
@@ -281,18 +284,43 @@
                             <p class="clear">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
-                </ul>
-                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
-                {% else %}
-                    <li>{% trans "No sponsored bills to display." %}</li>
-                </ul>
                 {% endif %}
+                </ul>
+
 
             </div>
-            <div class="fourCol colRt">
-                <a name="votes"></a>
+            <div class="sixCol colRt">
+                <ul>
+                {% if sponsored_bills %}
+                    {% for bill in sponsored_bills|slice:"3:" %}
+                        <li class="medModuleSm">
+	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            <p class="clear">{{bill.title|smallcaps}}</p>
+                        </li>
+                    {% endfor %}
+                {% endif %}
+                </ul>
+
+            </div>
+
+
+            {% if sponsored_bills %}
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
+            {% else %}
+                <li>{% trans "No sponsored bills to display." %}</li>
+            </ul>
+            {% endif %}
+        </div>
+
+        <div class="fullWidth module clearfix">
+            <div class="fullWidth clearfix">
+                <h3 class="moduleTitle">{% trans "Votes" %}</h3>
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
-                <h4 class="withTip">{% trans "Votes" %}</h4>
+            </div>
+            <div class="sixCol colLt withDash">
+                <a name="votes"></a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -305,7 +333,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for vote_value, vote in legislator_votes %}
+                        {% for vote_value, vote in legislator_votes|slice:":3" %}
                         <tr>
                             <td>
                                 <time class="published">{{vote.date|date:"M j, Y"}}</time>
@@ -327,13 +355,57 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+                {% if legislator_votes %}
+                    <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
-            <div class="clear"></div>
-        </div>
+
+            <div class="sixCol colRt">
+                <a name="votes"></a>
+                {% if not legislator_votes %}{% trans "No votes to display." %}
+                {% else %}
+                <table class="noPaddingTable voteChart">
+                    <col width="200" />
+                    <col width="80" />
+                    <thead>
+                        <tr id="titles">
+                            <th class="invisible">{% trans "Bill" %}</th>
+                            <th class="twoColFlow right">{% trans "Legislator Vote" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vote_value, vote in legislator_votes|slice:"3:" %}
+                        <tr>
+                            <td>
+                                <time class="published">{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
+                                <p>{{vote.motion|truncatewords:30}}</p>
+                                <ul class="barChart">
+                                    <li class="yes">
+                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
+                                    </li>
+                                    <li class="no clear">
+                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td class="right"><b>{{vote_value|title}}</b></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+
+            {% endif %}
+    </div>
+
+    <div class="clearfix">
         {% sources legislator %}
 
+    </div>
 {% if legislator.district %}
 <script>
     var map_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';

@@ -12,11 +12,11 @@
                       <span class="favorite-message">
                           {% if is_favorite %}
                               {% blocktrans %}
-                              Unfollow this {{obj_type}}.
+                             <span class="star starOn">&#9733;</span><span class="favbutton"> Unfollow this {{obj_type}}.</span>
                               {% endblocktrans %}
                           {% else %}
                               {% blocktrans %}
-                              Follow this {{obj_type}}.
+                               <span class="star starOff">&#9733;</span> <span class="favbutton">Follow this {{obj_type}}.</span>
                               {% endblocktrans %}
                           {% endif %}
                       </span>
