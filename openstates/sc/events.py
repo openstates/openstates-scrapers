@@ -23,15 +23,22 @@ class SCEventScraper(EventScraper):
             time_string = time_string.replace(' noon', ' pm')
         # remove extra spaces
         if re.search('[^ ]+ ?- ?[0-9]', time_string):
-            start, end = re.search(r'([^ ]+) ?- ?([0-9])', time_string).groups()	
-            time_string = re.sub(start + ' ?- ?' + end, start + '-' + end, time_string)
+            start, end = re.search(r'([^ ]+) ?- ?([0-9])',
+                                   time_string).groups()
+            time_string = re.sub(start + ' ?- ?' + end,
+                                 start + '-' + end, time_string)
         # if it's a block of time, use the start time
-        block_reg = re.compile(r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
+        block_reg = re.compile(
+            r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
+
         if re.search(block_reg,time_string):
-            start_time, start_meridiem, end_meridiem = re.search(block_reg,time_string).groups()
+            start_time, start_meridiem, end_meridiem = re.search(
+                block_reg,time_string).groups()
+
             start_hour = int(start_time.split(':')[0])
             if start_meridiem:
-                time_string = re.search('^([0-9]{1,2}:[0-9]{2} [ap]m)', time_string).group(1)
+                time_string = re.search(
+                    '^([0-9]{1,2}:[0-9]{2} [ap]m)', time_string).group(1)
             else:
                 if end_meridiem == 'pm' and start_hour < 12:
                     time_string = start_time + ' am'
@@ -41,11 +48,15 @@ class SCEventScraper(EventScraper):
 
     def get_bill_description(self, url):
         bill_page = self.get_page_from_url(url)
-        bill_text = bill_page.xpath('.//div[@id="resultsbox"]/div[2]')[0]
-        bill_description = bill_text.text_content().encode('utf-8').split('\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0')[0]
-        bill_description = re.search(r'Summary: (.*)', bill_description).group(1).strip()
+        bill_text = bill_page.xpath(
+            './/div[@id="resultsbox"]/div[2]')[0]
+        bill_description = bill_text.text_content().encode(
+            'utf-8').split('\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0')[0]
+
+        bill_description = re.search(
+            r'Summary: (.*)', bill_description).group(1).strip()
         return bill_description
-        
+
     def scrape(self, chamber, session):
         if chamber == 'other':
             return
@@ -55,8 +66,11 @@ class SCEventScraper(EventScraper):
         )
         page = self.get_page_from_url(events_url)
 
-        meeting_year = page.xpath('//h2[@class="barheader"]/span')[0].text_content()
-        meeting_year = re.search(r'Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})', meeting_year).group(1)
+        meeting_year = page.xpath(
+            '//h2[@class="barheader"]/span')[0].text_content()
+        meeting_year = re.search(
+            r'Week of [A-Z][a-z]+\s+[0-9]{1,2}, ([0-9]{4})',
+            meeting_year).group(1)
 
         dates = page.xpath("//div[@id='contentsection']/ul")
 
@@ -71,20 +85,27 @@ class SCEventScraper(EventScraper):
             for meeting in date.xpath('li'):
                 time_string = meeting.xpath('span')[0].text_content()
 
-                if time_string == 'CANCELED' or len(meeting.xpath('.//span[contains(text(), "CANCELED")]')) > 0:
+                if time_string == 'CANCELED' or len(
+                        meeting.xpath(
+                            './/span[contains(text(), "CANCELED")]')) > 0:
                     continue
 
                 time_string = self.normalize_time(time_string)
-                date_time = datetime.datetime.strptime(meeting_year + ' ' + date_string + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
+                date_time = datetime.datetime.strptime(
+                    meeting_year + ' ' + date_string
+                    + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
+
                 date_time = self._tz.localize(date_time)
-                meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]			
-                location, description = re.search(r'-- (.*?) -- (.*)', meeting_info).groups()
+                meeting_info = meeting.xpath(
+                    'br[1]/preceding-sibling::node()')[1]
+                location, description = re.search(
+                    r'-- (.*?) -- (.*)', meeting_info).groups()
 
                 if re.search(r'committee', description, re.I):
                     meeting_type = 'committee:meeting'
                 else:
                     meeting_type = 'other:meeting'
-                    
+
                 event = Event(
                     session,
                     date_time,
@@ -101,9 +122,11 @@ class SCEventScraper(EventScraper):
                     event.add_source(agenda_url)
                     agenda_page = self.get_page_from_url(agenda_url)
 
-                    for bill in agenda_page.xpath(".//a[contains(@href,'billsearch.php')]"):
+                    for bill in agenda_page.xpath(
+                            ".//a[contains(@href,'billsearch.php')]"):
                         bill_url = bill.attrib['href']
-                        bill_id = bill.text_content().replace('.','').replace(' ','')
+                        bill_id = bill.text_content().replace(
+                            '.','').replace(' ','')
                         bill_description = self.get_bill_description(bill_url)
 
                         event.add_related_bill(
