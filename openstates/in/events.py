@@ -59,7 +59,7 @@ class INEventScraper(EventScraper):
                     data = re.compile('((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)').split(data)
                     data = orig_data.replace(data[0], '')[:]
 
-                    # hack to insert a time if none exist
+                    # hack to insert a time if none exists
                     if not re.search(r'[0-9]{1,2}:[0-9]{2} [AP]', data, re.I):
 
                         if re.search(r'upon adjournment,', data, re.I):
@@ -182,37 +182,53 @@ class INEventScraper(EventScraper):
 
         # find out what rows member start and end on
         members_start, members_end = [0,0]
+        start_regex = re.compile(r'MEMBERS\s+:', re.I)
+        end_regex = re.compile(
+            r'(^\s{10,}Authors|' +
+            'DATE HAS BEEN CHANGED|' +
+            'PLEASE NOTE TIME CORRECTION|' +
+            'Upon adjournment|' +
+            'TESTIMONY ONLY|' +
+            '[A-Z][a-z]+, [A-Z][a-z]+ [0-9]{1,2}, [0-9]{4})',
+            re.I)
+
         for i, data in enumerate(meeting_data):
-            if re.search('MEMBERS\s+:', data, re.I):
+            if start_regex.search(data):
                 members_start = i
 
-            if re.search('(^\s{10,}Authors|DATE HAS BEEN CHANGED|Upon adjournment)', data, re.I) and members_start > 0:
+            if end_regex.search(data) and members_start > 0:
                 members_end = i
                 break
 
+        members_string = ''
         member_names = []
 
         for members_data in meeting_data[members_start:members_end]:
-        
+    
             members_data = members_data.strip()
     
             if members_data == '':
                 continue
 
-            # clean rows
             time_reg = re.compile(r'[0-9]+:[0-9]+ [AP]M', re.I)
             if re.search(time_reg, members_data):
-                members_data = time_reg.sub('', members_data)
+                members_data = time_reg.sub('', members_data).strip()
 
             member_header_reg = re.compile(r'^(\s+)?Members\s+:\s+', re.I)
+
             if re.search(member_header_reg, members_data):
                 members_data = member_header_reg.sub('', members_data)
 
-            members_data = members_data.strip('.').strip(',')
-            new_members = [member.strip() for member in members_data.split(',')]
-            member_names += new_members
+            if re.search(r'\.$', members_data):
+                members_data = re.sub(r'\.$', ',', members_data)
+
+            members_string += ' ' + members_data
+
+        members_string = members_string.replace('- ', '-').strip(',')
+        member_names = [member.strip() for member in members_string.split(',')]
 
         for member_name in member_names:
+        
             participants.append({
                 'type' : 'participant',
                 'participant' : member_name,
