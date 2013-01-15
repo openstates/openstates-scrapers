@@ -189,6 +189,8 @@ class INEventScraper(EventScraper):
             'PLEASE NOTE TIME CORRECTION|' +
             'Upon adjournment|' +
             'TESTIMONY ONLY|' +
+            'Informational meeting|' +
+            'Amend & Vote|' + 
             '[A-Z][a-z]+, [A-Z][a-z]+ [0-9]{1,2}, [0-9]{4})',
             re.I)
 
