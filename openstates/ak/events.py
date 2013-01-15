@@ -25,7 +25,7 @@ class AKEventScraper(EventScraper):
     _tz = pytz.timezone('US/Alaska')
 
     def scrape(self, chamber, session):
-        if session != '27':
+        if session != '28':
             raise NoDataForPeriod(session)
 
         if chamber == 'other':
@@ -105,4 +105,7 @@ class AKEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting',
                           description, location=where)
             event.add_source(url)
+            event.add_participant('host',
+                                  comm,
+                                  participant_type='committee')
             self.save_event(event)

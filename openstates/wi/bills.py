@@ -322,6 +322,11 @@ class WIBillScraper(BillScraper):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
+        header_td = doc.xpath('//td[@align="center"]')[0].text_content()
+        ayes_nays = re.findall('AYES - (\d+) .*? NAYS - (\d+)', header_td)
+        vote['yes_count'] = int(ayes_nays[0][0])
+        vote['no_count'] = int(ayes_nays[0][1])
+
         for td in doc.xpath('//td[@width="120"]'):
             name = td.text_content()
             if name == 'NAME':

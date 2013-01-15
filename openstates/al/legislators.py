@@ -54,7 +54,14 @@ class ALLegislatorScraper(LegislatorScraper):
         email = doc.xpath('//a[starts-with(@href, "mailto")]/@href')
         if email:
             leg['email'] = email[0].strip('mailto:')
-        for com in doc.xpath('//strong[text()="Committees"]/../following-sibling::ul/li'):
+
+        # find lis after the strong (or p) containing Committees
+        coms = doc.xpath('//strong[contains(text(), "Committees")]/following::li')
+        if not coms:
+            coms = doc.xpath('//p[contains(text(), "Committees")]/following::li')
+        if not coms:
+            self.warning('no committees?')
+        for com in coms:
             com = com.text_content()
             if '(' in com:
                 com, position = com.split('(')
