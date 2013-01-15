@@ -270,8 +270,8 @@
         <div class="fullWidth module clearfix">
             <a name="bills"></a>
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
+            <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
             <div class="fiveCol colLt">
-                <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <h4>{% trans "Sponsored Bills" %}</h4>
                 <ul>
                 {% if sponsored_bills %}
@@ -283,16 +283,12 @@
                             <p class="clear">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
-                </ul>
-                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
-                {% else %}
-                    <li>{% trans "No sponsored bills to display." %}</li>
-                </ul>
                 {% endif %}
+                </ul>
+
 
             </div>
             <div class="fiveCol colLt">
-                <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <ul>
                 {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:"3:" %}
@@ -303,21 +299,25 @@
                             <p class="clear">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
-                </ul>
-                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
-                {% else %}
-                    <li>{% trans "No sponsored bills to display." %}</li>
-                </ul>
                 {% endif %}
+                </ul>
 
             </div>
+
+
+            {% if sponsored_bills %}
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
+            {% else %}
+                <li>{% trans "No sponsored bills to display." %}</li>
+            </ul>
+            {% endif %}
         </div>
 
         <div class="fullWidth module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
+            <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
             <div class="fourCol colRt">
                 <a name="votes"></a>
-                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -352,13 +352,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
 
             <div class="fourCol colRt">
                 <a name="votes"></a>
-                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -393,11 +391,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
-
-
+            {% if legislator_votes %}
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+            {% endif %}
     </div>
 
     <div class="clearfix">
