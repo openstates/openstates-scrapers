@@ -33,6 +33,8 @@ class NVCommitteeScraper(CommitteeScraper):
         root = lxml.html.fromstring(page)
         for com_a in root.xpath('//strong/a'):
             com_url = url + com_a.get('href')
+            if com_a.text == 'Committee of the Whole':
+                continue
             com = Committee(chamber, com_a.text)
             com.add_source(com_url)
             self.scrape_comm_members(chamber, com, com_url)
