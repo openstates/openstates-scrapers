@@ -216,7 +216,7 @@
             <div class="sixCol colLt  withDash">
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
-                    {% for vote in bill.votes_manager %}
+                    {% for vote in votes_col1 %}
                     <li>
                         <time class="published">{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
@@ -241,14 +241,12 @@
                     </li>
                     {% endfor %}
                 </ul>
-                {% else %}
-                {% trans "No vote data is available yet." %}
                 {% endif %}
             </div>
             <div class="sixCol colRt">
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
-                    {% for vote in bill.votes_manager %}
+                    {% for vote in votes_col2 %}
                     <li>
                         <time class="published">{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
