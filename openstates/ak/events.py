@@ -25,7 +25,7 @@ class AKEventScraper(EventScraper):
     _tz = pytz.timezone('US/Alaska')
 
     def scrape(self, chamber, session):
-        if session != '27':
+        if session != '28':
             raise NoDataForPeriod(session)
 
         if chamber == 'other':
