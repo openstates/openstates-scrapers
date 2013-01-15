@@ -315,9 +315,9 @@
 
         <div class="fullWidth module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
+            <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
             <div class="fourCol colRt">
                 <a name="votes"></a>
-                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -352,13 +352,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
 
             <div class="fourCol colRt">
                 <a name="votes"></a>
-                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -393,11 +391,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
-
-
+            {% if legislator_votes %}
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+            {% endif %}
     </div>
 
     <div class="clearfix">
