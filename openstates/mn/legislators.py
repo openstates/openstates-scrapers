@@ -98,7 +98,7 @@ Saint Paul, Minnesota 55155'''
                 continue
             name = '%s %s' % (row['First Name'], row['Last Name'])
             party = self._parties[row['Party']]
-            leg = Legislator(term, 'upper', row['District'], name,
+            leg = Legislator(term, 'upper', row['District'].lstrip('0'), name,
                              party=party,
                              first_name=row['First Name'],
                              last_name=row['Last Name'],
