@@ -42,5 +42,8 @@ class NCCommitteeScraper(CommitteeScraper):
                     committee = Committee(chamber, name)
                     self.scrape_committee(committee, url)
                     committee.add_source(url)
-                    self.save_committee(committee)
+                    if not committee['members']:
+                        self.warning('empty committee: %s', name)
+                    else:
+                        self.save_committee(committee)
 

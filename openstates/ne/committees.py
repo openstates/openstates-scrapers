@@ -30,7 +30,10 @@ class NECommitteeScraper(CommitteeScraper):
                        role = 'member'
                        senator = senator[5:].strip()
                    committee.add_member(senator, role)
-               self.save_committee(committee)
+               if not committee['members']:
+                   self.warning('no members in %s', committee['committee'])
+               else:
+                   self.save_committee(committee)
            else:
                name = comm_names.xpath('h2/a')[0].text
                committee = Committee('upper', name)
