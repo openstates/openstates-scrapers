@@ -81,7 +81,7 @@ class TNCommitteeScraper(CommitteeScraper):
             role = (a.tail or 'member').strip(', ')
             com.add_member(member_name, role)
 
-        com.add_source(a.attrib['href'])
+        com.add_source(link)
         self.save_committee(com)
 
     #Scrapes all the House Committees
