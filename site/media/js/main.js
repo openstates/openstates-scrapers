@@ -32,7 +32,9 @@ $(document).ready( function() {
     // Favorite buttons.
     $(".favorite-button").click(function(event){
         var favorite_div = $(this).parent(),
-            favorite_msg = $(favorite_div).find('.favorite-message');
+            favorite_msg = $(favorite_div).find('.favorite-message'),
+            favorite_btn = $(favorite_div).find('.favbutton'),
+            favorite_star = $(favorite_div).find('.star');
 
         $.ajax({
           type: 'POST',
@@ -44,9 +46,13 @@ $(document).ready( function() {
             //console.log("Favorite button got clicked.");
             //console.log(favorite_div.data());
             if (favorite_div.data('is_favorite')) {
-                favorite_msg.text("Follow again");
+                favorite_star.removeClass('starOn');
+                favorite_star.addClass('starOff');
+                favorite_btn.text("Follow again");
             } else {
-                favorite_msg.text("Unfollow");
+                favorite_star.removeClass('starOff');
+                favorite_star.addClass('starOn');
+                favorite_btn.text("Unfollow");
                 }
             // Toggle is_favorite.
             favorite_div.data('is_favorite', !favorite_div.data('is_favorite'));
