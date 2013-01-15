@@ -227,7 +227,7 @@ a.colorRollover:hover { color: #be9c16; }
 
 .tip, time, .author { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #b4b1ab; display: block; text-transform: none;}
 .tip { margin-bottom: 20px;}
-.tipBig{ margin-bottom: 40px}
+.tipBig{ margin-top: 40px}
 .tipSm { margin-bottom: 10px; font-weight: normal;}
 #rtColumn .tip { color: #8e8883;}
 .withTip { margin-bottom: 5px;}
