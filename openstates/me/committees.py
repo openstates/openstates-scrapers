@@ -116,5 +116,4 @@ class MECommitteeScraper(CommitteeScraper):
             import pprint
             pprint.pprint(committee)
             committee.add_source(fileurl)
-            import ipdb;ipdb.set_trace()
             self.save_committee(committee)
