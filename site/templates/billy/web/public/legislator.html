@@ -267,10 +267,10 @@
             <div class="clear"></div>
         </div>
         {% endif %}
-        <div class="fullWidth module">
+        <div class="fullWidth module clearfix">
             <a name="bills"></a>
             <h3 class="moduleTitle">{% trans "Bills" %}</h3>
-            <div class="eightCol colLt">
+            <div class="fiveCol colLt">
                 <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
                 <h4>{% trans "Sponsored Bills" %}</h4>
                 <ul>
@@ -291,10 +291,33 @@
                 {% endif %}
 
             </div>
+            <div class="fiveCol colLt">
+                <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
+                <ul>
+                {% if sponsored_bills.count %}
+                    {% for bill in sponsored_bills %}
+                        <li class="medModuleSm">
+	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
+                                {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                            <p class="clear">{{bill.title|smallcaps}}</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
+                {% else %}
+                    <li>{% trans "No sponsored bills to display." %}</li>
+                </ul>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <div class="fullWidth module clearfix">
+            <h3 class="moduleTitle">{% trans "Votes" %}</h3>
             <div class="fourCol colRt">
                 <a name="votes"></a>
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
-                <h4 class="withTip">{% trans "Votes" %}</h4>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
                 <table class="noPaddingTable voteChart">
@@ -332,10 +355,55 @@
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
-            <div class="clear"></div>
-        </div>
+
+            <div class="fourCol colRt">
+                <a name="votes"></a>
+                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+                {% if not legislator_votes %}{% trans "No votes to display." %}
+                {% else %}
+                <table class="noPaddingTable voteChart">
+                    <col width="200" />
+                    <col width="80" />
+                    <thead>
+                        <tr id="titles">
+                            <th class="invisible">{% trans "Bill" %}</th>
+                            <th class="twoColFlow right">{% trans "Legislator Vote" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vote_value, vote in legislator_votes %}
+                        <tr>
+                            <td>
+                                <time class="published">{{vote.date|date:"M j, Y"}}</time>
+                                <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
+                                <p>{{vote.motion|truncatewords:30}}</p>
+                                <ul class="barChart">
+                                    <li class="yes">
+                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
+                                    </li>
+                                    <li class="no clear">
+                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td class="right"><b>{{vote_value|title}}</b></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+                {% endif %}
+            </div>
+
+
+    </div>
+
+    <div class="clearfix">
         {% sources legislator %}
 
+    </div>
 {% if legislator.district %}
 <script>
     var map_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
