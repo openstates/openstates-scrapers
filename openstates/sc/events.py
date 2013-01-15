@@ -10,8 +10,8 @@ class SCEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def get_page_from_url(self,url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
@@ -38,6 +38,13 @@ class SCEventScraper(EventScraper):
                 else:
                     time_string = start_time + ' ' + end_meridiem
         return time_string
+
+    def get_bill_description(self, url):
+        bill_page = self.get_page_from_url(url)
+        bill_text = bill_page.xpath('.//div[@id="resultsbox"]/div[2]')[0]
+        bill_description = bill_text.text_content().encode('utf-8').split('\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0')[0]
+        bill_description = re.search(r'Summary: (.*)', bill_description).group(1).strip()
+        return bill_description
         
     def scrape(self, chamber, session):
         if chamber == 'other':
@@ -69,6 +76,7 @@ class SCEventScraper(EventScraper):
 
                 time_string = self.normalize_time(time_string)
                 date_time = datetime.datetime.strptime(meeting_year + ' ' + date_string + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
+                date_time = self._tz.localize(date_time)
                 meeting_info = meeting.xpath('br[1]/preceding-sibling::node()')[1]			
                 location, description = re.search(r'-- (.*?) -- (.*)', meeting_info).groups()
 
@@ -92,11 +100,15 @@ class SCEventScraper(EventScraper):
                     agenda_url = agenda_url[0].attrib['href']
                     event.add_source(agenda_url)
                     agenda_page = self.get_page_from_url(agenda_url)
+
                     for bill in agenda_page.xpath(".//a[contains(@href,'billsearch.php')]"):
+                        bill_url = bill.attrib['href']
                         bill_id = bill.text_content().replace('.','').replace(' ','')
+                        bill_description = self.get_bill_description(bill_url)
+
                         event.add_related_bill(
                             bill_id=bill_id,
                             type='consideration',
-                            description=description
+                            description=bill_description
                         )
                 self.save_event(event)
