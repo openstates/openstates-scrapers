@@ -1,6 +1,7 @@
 import re
 import urlparse
 import datetime
+from collections import defaultdict
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
@@ -81,53 +82,39 @@ class MECommitteeScraper(CommitteeScraper):
         wb = xlrd.open_workbook(fname)
         sh = wb.sheet_by_index(0)
 
-        cur_comm_name = ''
         chamber = 'joint'
+
+        # Special default dict.
+        class Committees(dict):
+            def __missing__(self, key):
+                val = Committee('joint', key)
+                self[key] = val
+                return val
+        committees = Committees()
 
         for rownum in range(1, sh.nrows):
 
             comm_name = sh.cell(rownum, 0).value
+            committee = committees[comm_name]
 
-            first_name = sh.cell(rownum, 3).value
-            middle_name = sh.cell(rownum, 4).value
-            last_name = sh.cell(rownum, 5).value
-            jrsr = sh.cell(rownum, 6).value
-            full_name = first_name + " " + middle_name + " " + last_name + " " + jrsr
+            ischair = sh.cell(rownum, 1).value
+            role = 'chair' if ischair else 'member'
+            chamber = sh.cell(rownum, 2).value
+            first = sh.cell(rownum, 3).value
+            middle = sh.cell(rownum, 4).value
+            last = sh.cell(rownum, 5).value
+            suffix = sh.cell(rownum, 6).value
 
-            party = sh.cell(rownum, 7).value
-            legalres = sh.cell(rownum, 8).value
-            address1 = sh.cell(rownum, 9).value
-            address2 = sh.cell(rownum, 10).value
-            town = sh.cell(rownum, 11).value
-            state = sh.cell(rownum, 12).value
-            zipcode = int(sh.cell(rownum, 13).value)
-            phone = str(sh.cell(rownum, 14).value)
-            home_email = sh.cell(rownum, 15).value
-            leg_email = sh.cell(rownum, 16).value
+            name = filter(None, [first, middle, last])
+            name = ' '.join(name)
+            if suffix:
+                name += ', ' + suffix
 
-            leg_chamber = sh.cell(rownum, 2).value
-            chair = sh.cell(rownum, 1).value
-            role = "member"
+            committee.add_member(name, role)
 
-            if chair == 1:
-                role = leg_chamber + " " + "Chair"
-
-            if comm_name != cur_comm_name:
-                cur_comm_name = comm_name
-                committee = Committee(chamber, comm_name)
-                committee.add_member(full_name, role = role, party = party,
-                                     legalres= legalres, address1 = address1,
-                                     address2 = address2, town = town,
-                                     state = state, zipcode = zipcode,
-                                     phone = phone, home_email = home_email,
-                                     leg_email = leg_email)
-                committee.add_source(fileurl)
-            else:
-                committee.add_member(full_name, role = role, party = party,
-                                     legalres = legalres, address1 = address1,
-                                     address2 = address2, town = town, 
-                                     state = state, zipcode = zipcode,
-                                     phone = phone, home_email = home_email,
-                                     leg_email = leg_email)
-
+        for _, committee in committees.items():
+            import pprint
+            pprint.pprint(committee)
+            committee.add_source(fileurl)
+            import ipdb;ipdb.set_trace()
             self.save_committee(committee)
