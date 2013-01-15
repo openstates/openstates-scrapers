@@ -209,39 +209,11 @@
             </div>
         {% endif %}
 
-        <div class="module">
-            <h3 class="moduleTitle">{% trans "Activity" %}</h3>
-            <div class="eightCol colLt">
-                <h4>{% trans "Actions" %}</h4>
-                <table class="normalTable" id="actions-table">
-                    <thead>
-                        <tr id="titles">
-                            <th style="min-width: 6em;">{% trans "Date" %}</th>
-                            <th>{% trans "Chamber" %}</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for action in bill.actions_manager %}
-                        <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
-                            <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
-                            <td>{{ action.actor_name }}</td>
-                        {% if action.related_votes %}
-                        <td>{{ action.action_display|safe|smallcaps }}
-                            {% for vote in action.related_votes %}
-                                - <a href = '/{{abbr}}/votes/{{vote}}' >Related Vote</a>
-                            {% endfor %}
-                        </td>
-                        {% else %}
-                            <td>{{ action.action_display|safe|smallcaps }}</td>
-                        {% endif %}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="fourCol colRt">
-                <h4>{% trans "Votes" %}</h4>
+        <div class="module clearfix">
+            <h3 class="moduleTitle">{% trans "Votes" %}</h3>
+
+
+            <div class="sixCol colLt  withDash">
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
@@ -273,6 +245,73 @@
                 {% trans "No vote data is available yet." %}
                 {% endif %}
             </div>
+            <div class="sixCol colRt">
+                {% if bill.votes_manager.count %}
+                <ul class="largerList voteChart">
+                    {% for vote in bill.votes_manager %}
+                    <li>
+                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
+                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
+                        {% if vote.has_votes %}
+                        <ul class="barChart">
+                            <li class="yes">
+                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
+                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
+                            </li>
+                            <li class="no clear">
+                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
+                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
+                            </li>
+                        </ul>
+                        {% else %}
+                            {% trans "No vote counts available." %}
+                        {% endif %}
+                        {% if not vote.has_voters %}
+                        <span class="right"><b>{{vote_value|title}}</b></span>
+                            {% trans "No vote roll call available." %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                {% trans "No vote data is available yet." %}
+                {% endif %}
+            </div>
+       </div>
+
+
+       <div class="module">
+            <h3 class="moduleTitle">{% trans "Actions" %}</h3>
+
+            <div class="fullWidth colLt clearfix">
+                <table class="normalTable" id="actions-table">
+                    <thead>
+                        <tr id="titles">
+                            <th style="min-width: 7em;">{% trans "Date" %}</th>
+                            <th>{% trans "Chamber" %}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for action in bill.actions_manager %}
+                        <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
+                            <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
+                            <td>{{ action.actor_name }}</td>
+                        {% if action.related_votes %}
+                        <td>{{ action.action_display|safe|smallcaps }}
+                            {% for vote in action.related_votes %}
+                                - <a href = '/{{abbr}}/votes/{{vote}}' >Related Vote</a>
+                            {% endfor %}
+                        </td>
+                        {% else %}
+                            <td>{{ action.action_display|safe|smallcaps }}</td>
+                        {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
             <div class="clear"></div>
         </div>
 {% if events|length > 0 %}
