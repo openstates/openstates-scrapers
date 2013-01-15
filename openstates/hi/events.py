@@ -288,36 +288,6 @@ class HIEventScraper(EventScraper):
 
         return date_string
 
-    def get_chamber_cmte_type(self, committees):
-    
-        chambers = []
-
-        for committee in committees:
-            if committee in [c['cmte_abbv'] for c in cmte_lookup['lower']]:
-                chambers.append('House')
-            if committee in [c['cmte_abbv'] for c in cmte_lookup['upper']]:
-                chambers.append('Senate')
-            if committee in [c['cmte_abbv'] for c in cmte_lookup['joint']]:
-                chambers.append('Joint')
-
-        chambers = set(chambers)
-
-        if len(chambers) == 1:
-            return chambers.pop()
-        elif len(chambers) > 1:
-            return 'Joint'
-        else:
-            return ''
-
-    def get_chamber_from_cmte_abbv(self,cmte_abbv):
-
-        for chamber in cmte_lookup.keys():
-            for cmte_abbvs in cmte_lookup[chamber]:
-                if cmte_abbv == cmte_abbvs['cmte_abbv']:
-                    return chamber
-
-        return None		
-
     def get_description(self, committees):
 
         committee_string = ''
