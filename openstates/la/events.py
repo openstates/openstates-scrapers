@@ -43,6 +43,15 @@ class LAEventScraper(EventScraper):
         for link in page.xpath("//a[contains(@href, 'agenda.asp')]"):
             self.scrape_meeting(session, chamber, link.attrib['href'])
 
+    def scrape_bills(self, line):
+        ret = []
+        for blob in [x.strip() for x in line.split(",")]:
+            if (blob[0] in ['H', 'S', 'J'] and
+                    blob[1] in ['R', 'M', 'B', 'C']):
+                blob = blob.replace("-", "")
+                ret.append(blob)
+        return ret
+
     def scrape_meeting(self, session, chamber, url):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
@@ -71,7 +80,11 @@ class LAEventScraper(EventScraper):
             if when_and_where.strip() == "":
                 continue
 
-            when = parse_datetime(when_and_where, session)
+            year = datetime.datetime.now().year
+            when = parse_datetime(when_and_where, year)  # We can only scrape
+            # current year's events in LA.
+
+            bills = self.scrape_bills(when_and_where)
 
             description = 'Committee Meeting: %s' % committee
 
@@ -82,6 +95,9 @@ class LAEventScraper(EventScraper):
                                   chamber='lower')
             event.add_document("Agenda", guid, type='agenda',
                                mimetype="application/pdf")
+            for bill in bills:
+                event.add_related_bill(bill, description=when_and_where,
+                                       type='consideration')
             event['link'] = guid
 
             self.save_event(event)
