@@ -141,6 +141,9 @@ class ORBillScraper(BillScraper):
 
         # save all bills
         for bill in self.all_bills.itervalues():
+            if bill is None:
+                continue
+
             bill.add_source(author_url)
             bill.add_source(version_url)
             bill.add_source(measure_url)
@@ -179,12 +182,20 @@ class ORBillScraper(BillScraper):
                                            False)
                 self.all_bills[bill_id].add_vote(vote)
 
+            if self.all_bills[bill_id] is None:
+                continue
 
             self.all_bills[bill_id].add_action(a['actor'], a['action'],
                                                a['date'], type=action_type)
 
     def _parse_action_line(self, line):
-        combined_id, prefix, number, house, date, time, note = line.split(u"\ufffd")
+        info = line.split(u"\ufffd")
+        if len(info) == 1:
+            info = line.split(u"\u05d4")
+            if len(info) != 5:
+                info = line.split(u"\xe4")
+
+        combined_id, prefix, number, house, date, time, note = info
         (month, day, year)     = date.split("/")
         (hour, minute, second) = time.split(":")
         actor = "upper" if house == "S" else "lower"
@@ -198,7 +209,13 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        (type, combined_id, number, title, relating_to) = line.split(u"\ufffd")
+        info = line.split(u"\ufffd")
+        if len(info) != 5:
+            info = line.split(u"\u05d4")
+            if len(info) != 5:
+                raise Exception(info)
+
+        (type, combined_id, number, title, relating_to) = info
         if ((type[0] == 'H' and chamber == 'lower') or
             (type[0] == 'S' and chamber == 'upper')):
 
@@ -210,7 +227,11 @@ class ORBillScraper(BillScraper):
             # may encounter an ellipsis in the source data
             title = title.replace(u'\x85', '...')
 
-            self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
+            if title.strip() == "":
+                self.all_bills[bill_id] = None
+                return
+
+            self.all_bills[bill_id] = Bill(session, chamber, bill_id, title,
                                             type=bill_type)
 
     def parse_versions(self, url, chamber):
@@ -240,6 +261,9 @@ class ORBillScraper(BillScraper):
 
                     if bill_id not in self.all_bills:
                         self.warning("unknown bill %s" % bill_id)
+                        continue
+
+                    if self.all_bills[bill_id] is None:
                         continue
 
                     self.all_bills[bill_id].add_version(name,

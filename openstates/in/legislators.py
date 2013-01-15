@@ -70,6 +70,12 @@ class INLegislatorScraper(LegislatorScraper):
 
         about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
         about = self.urlopen(about_url)
+        if about.strip() == "":
+            self.logger.info("WARNING: Blank page @ %s - skipping" % (
+                about_url
+            ))
+            return
+
         about = lxml.html.fromstring(about)
         about.make_links_absolute(about_url)
 
