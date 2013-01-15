@@ -53,14 +53,14 @@
             </ol>
             <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
             <div class="medModule">
-
+                <h2 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h2>
+                <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
+                <p>{{ bill.title|capfirst|smallcaps }}</p>
+                <div class="tip">
                 {% if request.user.is_authenticated %}
                     {% favorite bill.id "bill" %}
                 {% endif %}
-
-                <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
-                <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-                <p>{{ bill.title|capfirst|smallcaps }}</p>
+                </div>
             </div>
 
             <dl class="inlineList">
