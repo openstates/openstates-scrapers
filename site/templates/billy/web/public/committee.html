@@ -39,12 +39,18 @@ $(document).ready(function() {
         » {{committee.display_name}}
     </li>
 </ul>
+<div class="clearfix">
+    <h2 class="colLt">{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 
-<h2>{{ committee.display_name }} ({{committee.chamber_name}})</h2>
-<div class="fullWidth module">
+    <div class="tip tipBig colLt">
     {% if request.user.is_authenticated %}
         {% favorite committee.id "committee" %}
     {% endif %}
+    </div>
+</div>
+
+<div class="fullWidth module">
+
     <h3 class="moduleTitle">{% trans "Members" %}</h3>
     <table id="main-table">
         <thead>
@@ -118,7 +124,7 @@ $(document).ready(function() {
                 <td>{% for bill in event.related_bills %}
                         {% if bill.bill_id %}
                         <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
-                            >{{bill|underscore_field:"scraped_bill_id"}}</a>
+                            >{{bill.bill_id}}</a>
                         {% else %}
 {{bill|underscore_field:"scraped_bill_id"}}
                         {% endif %}

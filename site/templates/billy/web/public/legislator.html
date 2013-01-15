@@ -269,10 +269,10 @@
         {% endif %}
         <div class="fullWidth module clearfix">
             <a name="bills"></a>
-            <h3 class="moduleTitle">{% trans "Bills" %}</h3>
+            <h3 class="moduleTitle">{% trans "Sponsored Bills" %}</h3>
             <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
-            <div class="fiveCol colLt">
-                <h4>{% trans "Sponsored Bills" %}</h4>
+
+            <div class="sixCol colLt withDash">
                 <ul>
                 {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:":3" %}
@@ -288,7 +288,7 @@
 
 
             </div>
-            <div class="fiveCol colLt">
+            <div class="sixCol colRt">
                 <ul>
                 {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:"3:" %}
@@ -314,9 +314,11 @@
         </div>
 
         <div class="fullWidth module clearfix">
-            <h3 class="moduleTitle">{% trans "Votes" %}</h3>
-            <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
-            <div class="fourCol colRt">
+            <div class="fullWidth clearfix">
+                <h3 class="moduleTitle">{% trans "Votes" %}</h3>
+                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+            </div>
+            <div class="sixCol colLt withDash">
                 <a name="votes"></a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
@@ -352,10 +354,12 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% if legislator_votes %}
+                    <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
                 {% endif %}
             </div>
 
-            <div class="fourCol colRt">
+            <div class="sixCol colRt">
                 <a name="votes"></a>
                 {% if not legislator_votes %}{% trans "No votes to display." %}
                 {% else %}
@@ -393,8 +397,7 @@
                 </table>
                 {% endif %}
             </div>
-            {% if legislator_votes %}
-                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+
             {% endif %}
     </div>
 
