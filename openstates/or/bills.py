@@ -141,6 +141,9 @@ class ORBillScraper(BillScraper):
 
         # save all bills
         for bill in self.all_bills.itervalues():
+            if bill is None:
+                continue
+
             bill.add_source(author_url)
             bill.add_source(version_url)
             bill.add_source(measure_url)
@@ -179,6 +182,8 @@ class ORBillScraper(BillScraper):
                                            False)
                 self.all_bills[bill_id].add_vote(vote)
 
+            if self.all_bills[bill_id] is None:
+                continue
 
             self.all_bills[bill_id].add_action(a['actor'], a['action'],
                                                a['date'], type=action_type)
@@ -210,7 +215,11 @@ class ORBillScraper(BillScraper):
             # may encounter an ellipsis in the source data
             title = title.replace(u'\x85', '...')
 
-            self.all_bills[bill_id] =  Bill(session, chamber, bill_id, title,
+            if title.strip() == "":
+                self.all_bills[bill_id] = None
+                return
+
+            self.all_bills[bill_id] = Bill(session, chamber, bill_id, title,
                                             type=bill_type)
 
     def parse_versions(self, url, chamber):
@@ -240,6 +249,9 @@ class ORBillScraper(BillScraper):
 
                     if bill_id not in self.all_bills:
                         self.warning("unknown bill %s" % bill_id)
+                        continue
+
+                    if self.all_bills[bill_id] is None:
                         continue
 
                     self.all_bills[bill_id].add_version(name,
