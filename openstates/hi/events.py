@@ -72,8 +72,8 @@ class HIEventScraper(EventScraper):
     _tz = pytz.timezone('US/Hawaii')
 
     def get_page_from_url(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
@@ -139,7 +139,9 @@ class HIEventScraper(EventScraper):
 
         bills = []
 
-        bills_xpath = '//table[@class="MsoNormalTable"]/tr[td[p[a[contains(@href, "/Bills/") or contains(@href, "/bills/")]]]]'
+        bills_xpath = '//table[@class="MsoNormalTable"]/tr[td[p[a[' \
+            'contains(@href, "/Bills/") or ' \
+            'contains(@href, "/bills/")]]]]'
         
         for tr in page.xpath(bills_xpath):
             bill_description = tr.xpath('.//td[2]')[0]
@@ -199,7 +201,9 @@ class HIEventScraper(EventScraper):
             if 'SUMMARY_INFO' in kwargs['meeting_url']:
                 return True
         elif 'meeting_page' in kwargs.keys():
-            td = kwargs['meeting_page'].xpath('//div[@class="Section1"]/table[@class="MsoNormalTable" and @border="1"][1]/tr[1]/td')
+            td = kwargs['meeting_page'].xpath('//div[@class="Section1"]/table['
+                '@class="MsoNormalTable" and @border="1"][1]/tr[1]/td'
+            )
             if td:	
                 summary_header = " ".join([i.text_content().strip().upper() for i in td])
                 if 'DATE TIME LOCATION SUBJECT' == summary_header:
@@ -274,9 +278,13 @@ class HIEventScraper(EventScraper):
         # Friday February 10 2012 Monday February 13 2012
         # Tuesday February 21 2012 Wednesday February 22 2012
         # Tuesday February 28 2012 Wednesday February 29 2012
-
-        if re.search(r'((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{1,2} [0-9]{4} (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{1,2} [0-9]{4})', date_string):
-            date_string = re.search(r'((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{1,2} [0-9]{4}) ((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]{1,2} [0-9]{4})', date_string).group(4)
+        dates_regex = re.compile('((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) '
+            '(January|February|March|April|May|June|July|August|September|October|November|December) '
+            '[0-9]{1,2} '
+            '[0-9]{4})')
+        date_matches = dates_regex.findall(date_string)
+        if len(date_matches) == 2:
+            date_string = date_matches[len(date_matches)-1][0]
 
         return date_string
 
@@ -315,10 +323,8 @@ class HIEventScraper(EventScraper):
         committee_string = ''
 
         committees = set(committees)
-
         for committee in committees:
             committee_string += ', ' + committee 
-
         committee_string = self.clean_string(committee_string).lstrip(', ')
 
         return committee_string
@@ -335,19 +341,19 @@ class HIEventScraper(EventScraper):
         return committee_name
 
     def get_committees(self, meeting_page):
+
         committees = []
 
-        #for committee in meeting_page.xpath('.//u[contains(normalize-space(text()),"COMMITTEE ON")]|.//a[contains(normalize-space(text()),"COMMITTEE ON")]|'):
-        for committee in meeting_page.xpath('.//a[contains(normalize-space(text()),"COMMITTEE ON")] | .//u[contains(normalize-space(text()),"COMMITTEE ON")]'):
+        for committee in meeting_page.xpath(
+            './/a[contains(normalize-space(text()),"COMMITTEE ON")]' 
+            '|'
+            ' .//u[contains(normalize-space(text()),"COMMITTEE ON")]'
+        ):
             committee = self.clean_string(committee.text_content())
-            
             if committee == '':
                 continue
-
             committee = committee.replace('COMMITTEE ON ','')
             committees.append(committee)
-
-
         return committees		
 
     def scrape(self, term, chambers):
@@ -356,7 +362,6 @@ class HIEventScraper(EventScraper):
 
         if term == 'other':
             return
-        
         for meta_term in self.metadata['terms']:
             if term in meta_term['sessions']:
                 if int(meta_term['start_year']) <= int(datetime.date.today().year):
@@ -365,11 +370,9 @@ class HIEventScraper(EventScraper):
                     years.append(meta_term['end_year'])
 
         for year in years:
-
             meetings = self.get_meetings(year)
 
             for meeting in meetings:
-
                 meeting_page = meeting['meeting_page']
                 meeting_url = meeting['meeting_url']
 
@@ -385,7 +388,10 @@ class HIEventScraper(EventScraper):
                 meeting_info = self.get_meeting_info(meeting_page)
                 bills = self.get_bills(meeting_page)
 
-                meeting_date_time = datetime.datetime.strptime(meeting_info['DATE'] + ' ' + meeting_info['TIME'], '%A %B %d %Y %I:%M %p')
+                meeting_date_time = datetime.datetime.strptime(
+                    meeting_info['DATE'] + ' ' + meeting_info['TIME'],
+                    '%A %B %d %Y %I:%M %p'
+                )
                 meeting_date_time = self._tz.localize(meeting_date_time)
                 
                 location = meeting_info['PLACE']
