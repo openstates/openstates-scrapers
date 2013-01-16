@@ -3,6 +3,8 @@ import pytz
 import datetime
 import lxml.html
 
+import pprint as pp
+
 from billy.scrape.utils import convert_pdf
 from billy.scrape.events import EventScraper, Event
 
@@ -31,12 +33,11 @@ class INEventScraper(EventScraper):
         committee_regex = re.compile('^(\s+)?AGENDA FOR\s+:\s+(.*)', re.I)
     
         if re.search(committee_regex, committee_data):
-
             if self.scrape_mode == 'txt':
                 committee = re.search(committee_regex,committee_data).group(2)
             elif self.scrape_mode == 'pdf':
-                committee = re.search(r': (.*?) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+,', committee_data).group(1)
-
+                committee = re.search(r': (.*?) (January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+,',
+                    committee_data).group(1)
             committee = committee.strip()
 
         return committee
@@ -49,26 +50,25 @@ class INEventScraper(EventScraper):
             'location' : ''
         }
 
-        for data in meeting_data:
+        date_regex = re.compile('((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)')
 
-            if (self.scrape_mode == 'txt' and re.search(r'^\s+MEETING\s+:', data)) or (self.scrape_mode == 'pdf' and re.search(r'^Agenda for\s:\s+', data)):
+        for data in meeting_data:
+            if (self.scrape_mode == 'txt' and re.search(r'^\s+MEETING\s+:', data)) or \
+                (self.scrape_mode == 'pdf' and re.search(r'^Agenda for\s:\s+', data)):
             
                 if self.scrape_mode == 'pdf':
-
                     orig_data = data[:]
-                    data = re.compile('((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)').split(data)
+                    data = date_regex.split(data)
                     data = orig_data.replace(data[0], '')[:]
 
                     # hack to insert a time if none exists
                     if not re.search(r'[0-9]{1,2}:[0-9]{2} [AP]', data, re.I):
-
                         if re.search(r'upon adjournment,', data, re.I):
                             adjourn_reg = re.compile(r'upon adjournment,', re.I)
                             data = adjourn_reg.sub('', data)
-
-                        date = re.search(r'((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+)', data).group(1)
-                        data = re.sub('^((January|February|March|April|May|June|July|August|September|October|November|December) [0-9]+),', date + ', 12:00 am,', data)
-                        
+                        date = date_regex.search(data).group(1)
+                        date_regex = re.compile(date_regex.pattern + ',')
+                        data = date_regex.sub(date + ', 12:00 am,', data)
                 elif self.scrape_mode == 'txt':
                     data = re.sub('^\s+MEETING\s+:\s+','', data)
 
@@ -83,6 +83,15 @@ class INEventScraper(EventScraper):
                     elif i == 2:
                         meeting_info['location'] = item_value
                 break
+
+        # if room wasn't found on the line we expected, search the entire meeting
+        if not meeting_info['location']:
+            for data in meeting_data:
+                if re.search('ROOM [0-9A-Z ]+', data, re.I):
+                    meeting_info['location'] = re.search('(ROOM [0-9A-Z ]+)', data, re.I).group(1)
+                    break
+        if not meeting_info['location']:
+            meeting_info['location'] = 'Unavailable'
 
         return meeting_info
 
@@ -255,7 +264,10 @@ class INEventScraper(EventScraper):
         if str(session) != '2013':
             self.error("Events for the %s session are not implemented." % str(session))	
             
-        meetings_url = "http://www.in.gov/legislative/reports/%s/BSCHD%s.%s" % (str(session), str(self.metadata['chambers'][chamber]['name'])[0].upper(), self.scrape_mode.upper())
+        meetings_url = "http://www.in.gov/legislative/reports/%s/BSCHD%s.%s" % (
+            str(session),
+            str(self.metadata['chambers'][chamber]['name'])[0].upper(),
+            self.scrape_mode.upper())
         
         if self.scrape_mode.lower() == 'pdf':
             (path, response) = self.urlretrieve(meetings_url)
@@ -282,10 +294,17 @@ class INEventScraper(EventScraper):
                 start_ident, end_ident = [meeting_ident, meeting_idents[i+1]-1]
                 meeting_data = meetings_data[start_ident:end_ident]
 
+            canceled = set([1 if re.search(r'MEETING HAS BEEN CANCELED', data, re.I) else 0 
+                for data in meeting_data])
+            if 1 in canceled:
+                continue
+
             meeting_info = self.get_meeting_info(meeting_data)
 
             location = meeting_info['location']
-            meeting_date_time = datetime.datetime.strptime(meeting_info['date'] + ' ' + str(session) + ' ' + meeting_info['time'], '%B %d %Y %I:%M %p')
+            meeting_date_time = datetime.datetime.strptime(
+                meeting_info['date'] + ' ' + str(session) + ' ' + meeting_info['time'],
+                '%B %d %Y %I:%M %p')
             meeting_date_time = self._tz.localize(meeting_date_time)
             
             committee = self.get_committee(meeting_data)
