@@ -120,6 +120,7 @@ class MTCommitteeScraper(CommitteeScraper):
 
                 # Move on.
                 in_senate_subcommittees = True
+                chamber = 'joint'
                 continue
 
             if is_committee_name(line):
