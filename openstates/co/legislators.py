@@ -73,7 +73,7 @@ class COLegislatorScraper(LegislatorScraper):
             obj['email'] = email
         except IndexError:
             pass
-        infoblock = page.xpath("//center")
+        infoblock = page.xpath("//div[@align='center']")
         info = infoblock[0].text_content()
 
         number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)
