@@ -302,8 +302,9 @@ class CTBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
             name = link.xpath("string(../../td[1])").strip()
             name = re.match("^S?\d+\s+-\s+(.*)$", name).group(1)
-
-            self.scrape_introducer(name, link.attrib['href'])
+            # we encode the URL here because there are weird characters that
+            # cause problems
+            self.scrape_introducer(name, link.attrib['href'].encode('utf8'))
 
     def scrape_introducer(self, name, url):
         page = self.urlopen(url)
