@@ -47,6 +47,10 @@ class NEBillScraper(BillScraper):
             title += long_title[x] + ' '
         title = title[0:-1]
 
+        if not title:
+            self.error('no title, skipping %s', bill_id)
+            return
+
         #bill_type
         bill_type = 'resolution' if 'LR' in bill_id else 'bill'
 
