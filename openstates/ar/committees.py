@@ -61,7 +61,7 @@ class ARCommitteeScraper(CommitteeScraper):
             return
         self._seen.add((name, subcommittee))
 
-        comm = Committee(chamber, name, subcommittee=subcommittee)
+        comm = Committee(chamber, name.title(), subcommittee=subcommittee)
         comm.add_source(url)
 
         page = self.urlopen(url)
