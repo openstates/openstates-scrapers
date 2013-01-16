@@ -3,8 +3,6 @@ import pytz
 import datetime
 import lxml.html
 
-import pprint as pp
-
 from billy.scrape.utils import convert_pdf
 from billy.scrape.events import EventScraper, Event
 
