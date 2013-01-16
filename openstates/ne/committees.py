@@ -3,6 +3,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 
+
 class NECommitteeScraper(CommitteeScraper):
     jurisdiction = 'ne'
     latest_only = True
@@ -30,10 +31,6 @@ class NECommitteeScraper(CommitteeScraper):
                        role = 'member'
                        senator = senator[5:].strip()
                    committee.add_member(senator, role)
-               if not committee['members']:
-                   self.warning('no members in %s', committee['committee'])
-               else:
-                   self.save_committee(committee)
            else:
                name = comm_names.xpath('h2/a')[0].text
                committee = Committee('upper', name)
@@ -47,6 +44,10 @@ class NECommitteeScraper(CommitteeScraper):
                        role = 'member'
                        senator = senator[5:].strip()
                    committee.add_member(senator, role)
+
+           if not committee['members']:
+               self.warning('no members in %s', committee['committee'])
+           else:
                self.save_committee(committee)
 
 
