@@ -9,8 +9,10 @@ from billy.scrape.utils import url_xpath
 subjects      = None
 bill_subjects = None
 
-HB_START_BILLNO=7000
-SB_START_BILLNO=2000
+#HB_START_BILLNO=7000
+#SB_START_BILLNO=2000
+HB_START_BILLNO=5000
+SB_START_BILLNO=1
 
 START_IDEX = {
     "lower" : HB_START_BILLNO,

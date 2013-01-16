@@ -41,12 +41,14 @@ class COLegislatorScraper(LegislatorScraper):
         distr = dID.xpath( "./table/tr/td/b/font/a" ) # What a mess...
         for d in distr:
             url = CO_BASE_URL + d.attrib['href']
+            if "Save Conflict" in d.text:
+                continue
+
             ret[d.text] = url
 
         nextPage = page.xpath( "//table/tr" )
         navBar = nextPage[0]
         np = CO_BASE_URL + navBar[len(navBar) - 1][0].attrib['href']
-        #     ^ TR   ^^^^ TD         ^^^ a
         if not next_page == np:
             subnodes = self.scrape_directory( np, chamber, session )
             for node in subnodes:
@@ -73,7 +75,7 @@ class COLegislatorScraper(LegislatorScraper):
             obj['email'] = email
         except IndexError:
             pass
-        infoblock = page.xpath("//center")
+        infoblock = page.xpath("//div[@align='center']")
         info = infoblock[0].text_content()
 
         number = re.findall("(\d{3})(-|\))?(\d{3})-(\d{4})", info)

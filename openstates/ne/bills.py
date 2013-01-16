@@ -47,6 +47,10 @@ class NEBillScraper(BillScraper):
             title += long_title[x] + ' '
         title = title[0:-1]
 
+        if not title:
+            self.error('no title, skipping %s', bill_id)
+            return
+
         #bill_type
         bill_type = 'resolution' if 'LR' in bill_id else 'bill'
 
@@ -83,7 +87,7 @@ class NEBillScraper(BillScraper):
             version_url = 'http://nebraskalegislature.gov/' + version_url[3:len(version_url)]
             version_name = versions.text
             # replace Current w/ session number
-            version_url.replace('Current', session)
+            version_url = version_url.replace('Current', session)
             bill.add_version(version_name, version_url,
                              mimetype='application/pdf')
 

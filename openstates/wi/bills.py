@@ -315,7 +315,7 @@ class WIBillScraper(BillScraper):
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip():
                         vote.other(name.strip())
-            else:
+            elif text.strip():
                 raise ValueError('unexpected block in vote')
 
     def add_house_votes(self, vote, url):

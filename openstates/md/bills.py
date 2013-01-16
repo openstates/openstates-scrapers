@@ -318,12 +318,15 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Amendments':
+                bill.add_document('Amendments - ' + a.tail.strip(),
+                                  a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate - Committee':
                 bill.add_document('Senate %s Committee Vote' %
                                   a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
             else:
-                raise ValueError('unknown document type')
+                raise ValueError('unknown document type: %s', a.text)
 
 
     def scrape_actions(self, bill, url):
