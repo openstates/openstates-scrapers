@@ -113,7 +113,5 @@ class MECommitteeScraper(CommitteeScraper):
             committee.add_member(name, role)
 
         for _, committee in committees.items():
-            import pprint
-            pprint.pprint(committee)
             committee.add_source(fileurl)
             self.save_committee(committee)
