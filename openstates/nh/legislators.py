@@ -80,7 +80,7 @@ class NHLegislatorScraper(LegislatorScraper):
             for com in (com1, com2, com3, com4, com5):
                 if com:
                     leg.add_role('committee member', term=term,
-                                  chamber=chamber, committee=com)
+                                  chamber=chamber, committee=com.title())
 
             if 'url' in leg:
                 leg['photo_url'] = self.get_photo(leg['url'], chamber)
