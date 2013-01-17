@@ -44,16 +44,16 @@ $(document).ready(function() {
 {% block content %}
     <div class="clearfix medModuleSm">
 
-    <h3>Save information to your user profile:</h3>
+        <h3>{% trans "Edit your profile:" %}</h3>
         {% if saved_changes %}
-            <h6>Your changes were saved!</h6>
+        <h6>{% trans "Your changes were saved!" %}</h6>
         {% endif %}
        <div class="clearfix sixCol colLt withDash">
             <form id="find_your_leg">
                 <input type="hidden" value="cow" id="_request" />
                 <div class="smModule">
                     <h5>{% trans "Set Your Location" %}</h5>
-                    <p class="author">Save your location to remember your state information at the start. Someone please rewrite this.</p>
+                    <!--<p class="author">{% trans "set your location so you can be remembered" %}</p>-->
                     <input type="text" name="leg_search" id="leg_search"
                         {% if profile.location.text %}
                         value="{{profile.location.text}}"</input>
