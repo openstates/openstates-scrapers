@@ -384,7 +384,25 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 #container #map { float: right; width: 98%; height: 150px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
 #container .legMap #map { height: 300px; width: 100%;}
-#billState { float: right; padding: 5px 25px 3px; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; border: 1px solid #e6e6da; text-transform: uppercase; font-size: 120%; margin-bottom: 25px;}
+#billState {
+    float: right;
+    margin-top:70px;
+    padding: 15px 25px 13px 25px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    background-color: #B0D1C9;
+    border: 1px solid #B9B4B1;
+    text-transform: uppercase;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-weight: 700;
+    font-size: 120%;
+    letter-spacing:1px;
+    margin-bottom: 25px;
+    color: #FFF;
+    -webkit-box-shadow: inset -2px -2px 4px 5px #A9C1B9;
+    box-shadow: inset -2px -2px 4px 5px #A9C1B9;
+    }
 #voteMap { float: right;}
 .map-overlay{
     background-color:     #679ee8;

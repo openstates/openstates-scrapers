@@ -267,6 +267,9 @@
             <div class="clear"></div>
         </div>
         {% endif %}
+
+
+<!-- Bills -->
         <div class="fullWidth module clearfix">
             <a name="bills"></a>
             <h3 class="moduleTitle">{% trans "Sponsored Bills" %}</h3>
@@ -285,6 +288,7 @@
                     {% endfor %}
                 {% endif %}
                 </ul>
+                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
 
 
             </div>
@@ -301,18 +305,18 @@
                     {% endfor %}
                 {% endif %}
                 </ul>
-
             </div>
 
 
             {% if sponsored_bills %}
-                <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
+
             {% else %}
                 <li>{% trans "No sponsored bills to display." %}</li>
             </ul>
             {% endif %}
         </div>
 
+<!-- Votes -->
         <div class="fullWidth module clearfix">
             <div class="fullWidth clearfix">
                 <h3 class="moduleTitle">{% trans "Votes" %}</h3>
