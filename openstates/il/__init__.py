@@ -28,6 +28,8 @@ metadata = {
     'session_details': {
         '98th': {'display_name': '98th Regular Session',
                  '_scraped_name': '',
+                 'speaker': 'Madigan',
+                 'president': 'Cullerton',
                  'params': { 'GA': '98', 'SessionId': '85' },
 
         },
