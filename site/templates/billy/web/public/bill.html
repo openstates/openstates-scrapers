@@ -56,10 +56,15 @@
                 <h2 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h2>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
                 <p>{{ bill.title|capfirst|smallcaps }}</p>
-                <div class="tip">
-                {% if request.user.is_authenticated %}
-                    {% favorite bill.id "bill" %}
-                {% endif %}
+                <div class="clearfix">
+                    <div class="tip colLt">
+                    {% if request.user.is_authenticated %}
+                        {% favorite bill.id "bill" %}
+                    {% endif %}
+                    </div>
+                    <div class="colRt">
+                    <a class="viewMore" href="#">View full bill text.</a>
+                    </div>
                 </div>
             </div>
 

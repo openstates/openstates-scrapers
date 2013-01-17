@@ -365,7 +365,22 @@ img.firstHalfModule  { width: 100px;}
 
 .scout-link { text-align: right; display: block; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
-a.viewMore { background: #fff url(images/bg_viewMore.png) 15px center no-repeat; display: inline-block; margin-top: 20px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-size: 115%; padding: 3px 15px 3px 32px; color: #a3a730; }
+
+a.viewMore {
+    background: #fff url(images/bg_viewMore.png) 15px center no-repeat;
+    display: inline-block;
+    margin-top: 20px;
+    border: 1px solid #e6e6da;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: oblique;
+    font-size: 115%;
+    padding: 3px 15px 3px 32px;
+    color: #a3a730;
+    }
+
 a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
 
 span.qualityException { padding-top: 2em; display: block; }
@@ -400,8 +415,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
     letter-spacing:1px;
     margin-bottom: 25px;
     color: #FFF;
-    -webkit-box-shadow: inset -2px -2px 4px 5px #A9C1B9;
-    box-shadow: inset -2px -2px 4px 5px #A9C1B9;
+
     }
 #voteMap { float: right;}
 .map-overlay{
@@ -1182,20 +1196,23 @@ div.notification-preference {
 
 .favorite-button {
     background-color:transparent;
+    margin-top:15px;
 
 
 }
-.favbutton {
-    background-color:#F1EFEA;
+
+.favbutton{
+    background-color:#FFF;
+    display: inline-block;
+    border: 1px solid #e6e6da;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-style: oblique;
+    font-size: 135%;
     padding:5px 10px;
     color:#E7B300;
-    font-size: 14px;
-    font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: bold;
-    -webkit-border-radius: 7px;
-    -moz-border-radius: 7px;
-    border-radius: 7px;
-
 }
 
 .star{

@@ -31,7 +31,7 @@
         <div class="fullWidth mainModule">
             <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div><!--  class="medModule"> -->
-                <h2 class="withTip" style="padding-top: 30px;">
+                <h2 class="withTipbillState" style="padding-top: 30px;">
                     {{ vote.chamber_name }} {% trans "Vote on" %} <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h2>
