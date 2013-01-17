@@ -9,7 +9,7 @@ from billy.scrape.events import EventScraper, Event
 class INEventScraper(EventScraper):
     jurisdiction = 'in'
 
-    _tz = pytz.timezone('US/Central')
+    _tz = pytz.timezone('America/Indiana/Indianapolis')
 
     # scrape pdf or txt (lowercase). pdf is preferred since data from txt files, from IN, appear to be getting truncated
     # it isn't clear yet which may be the better route, if not a completely different solution
@@ -18,8 +18,8 @@ class INEventScraper(EventScraper):
     scrape_mode = 'pdf' 
 
     def get_page_from_url(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
@@ -190,23 +190,13 @@ class INEventScraper(EventScraper):
         # find out what rows member start and end on
         members_start, members_end = [0,0]
         start_regex = re.compile(r'MEMBERS\s+:', re.I)
-        end_regex = re.compile(
-            r'(^\s{10,}Authors|' +
-            'DATE HAS BEEN CHANGED|' +
-            'PLEASE NOTE TIME CORRECTION|' +
-            'Upon adjournment|' +
-            'TESTIMONY ONLY|' +
-            'Informational meeting|' +
-            'Amend & Vote|' + 
-            '[A-Z][a-z]+, [A-Z][a-z]+ [0-9]{1,2}, [0-9]{4})',
-            re.I)
+        end_regex = re.compile(r'^\s{14}[A-Z]')
 
         for i, data in enumerate(meeting_data):
             if start_regex.search(data):
                 members_start = i
-
             if end_regex.search(data) and members_start > 0:
-                members_end = i
+                members_end = i+1
                 break
 
         members_string = ''
@@ -237,7 +227,7 @@ class INEventScraper(EventScraper):
         member_names = [member.strip() for member in members_string.split(',')]
 
         for member_name in member_names:
-        
+    
             participants.append({
                 'type' : 'participant',
                 'participant' : member_name,
