@@ -46,6 +46,7 @@ class INLegislatorScraper(LegislatorScraper):
             if details:
                 leg.update(details)
 
+            self.fix_hotgarbage(leg)
             self.save_legislator(leg)
 
     def scrape_details(self, *args):
@@ -286,6 +287,14 @@ class INLegislatorScraper(LegislatorScraper):
                 images[_district] = p.xpath('a/img/@src')[0]
         cache['images'] = images
         return images.get(district)
+
+
+    def fix_hotgarbage(self, leg):
+        '''In this heinous function, we manually fix any terribleness
+        we find.
+        '''
+        if leg['full_name'] == 'Peter. Miller':
+            leg['full_name'] = 'Peter Miller'
 
 
 def get_chunks(el, buff=None, offset=' '):
