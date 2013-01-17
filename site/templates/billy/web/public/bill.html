@@ -63,7 +63,12 @@
                     {% endif %}
                     </div>
                     <div class="colRt">
-                    <a class="viewMore" href="#">View full bill text.</a>
+
+                    {% with latest_version=bill.versions_preview|last %}
+                    {% if latest_version %}
+                    <a class="viewMore" href="{% url 'document' bill.state bill.session bill.bill_id latest_version.doc_id %}">View latest bill text.</a>
+                    {% endif %}
+                    {% endwith %}
                     </div>
                 </div>
             </div>
@@ -175,7 +180,7 @@
                         <ul class="inlineThirds">
                         {% for version in bill.versions_preview %}
                             <li class="{% cycle 'one' 'two' 'three' %}">
-                                <a href="{{version.url}}">{{ version.name }}</a>
+                            <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
                                 {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
                             </li>
                         {% endfor %}
