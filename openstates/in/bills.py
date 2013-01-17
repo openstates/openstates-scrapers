@@ -58,8 +58,8 @@ class INBillScraper(BillScraper):
         }
 
         for type, url in bill_types.iteritems():
-            page = self.urlopen(url)
-            page = lxml.html.fromstring(page)
+            html = self.urlopen(url)
+            page = lxml.html.fromstring(html)
             page.make_links_absolute(url)
 
             abbrev = {'upper': 'S', 'lower': 'H'}[chamber] + type
@@ -69,6 +69,10 @@ class INBillScraper(BillScraper):
 
                 short_title = link.tail.split(' -- ')[1].strip()
 
+                if not short_title:
+                    msg = 'Bill %r has no title; skipping.'
+                    self.logger.warning(msg % bill_id)
+                    continue
                 self.scrape_bill(session, chamber, bill_id, short_title,
                                  link.attrib['href'])
 
