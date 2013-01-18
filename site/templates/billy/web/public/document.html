@@ -53,13 +53,21 @@
             <a class="fourCol colLt" href="{{version.url}}">Original Document</a>
 
             <p class="twoCol colLtSm author">Other Versions:</p>
-                <ul>
-                    <li class="twoCol colLtSm"><a href="#">Introduced Version</a></li>
-                    <li class="twoCol colLtSm"><a href="#">Amended Version</a></li>
+            <ul>
+                    {% for ver in bill.versions %}
+                    {% if ver.doc_id != version.doc_id %}
+                    <li class="twoCol colLtSm"><a href="{% url 'document' bill.state bill.session bill.bill_id ver.doc_id %}">{{ ver.name }}</a></li>
+                    {% endif %}
+                    {% endfor %}
                 </ul>
         </div>
+
+        {% if version.mimetype == "text/html" %}
+        <iframe class="iframeborder" src="http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+        {% else %}
         <iframe class="iframeborder" src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
 
+        {% endif %}
     </div>
 
     {% sources bill %}

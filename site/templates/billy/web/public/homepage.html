@@ -67,8 +67,8 @@
         <div class="module eightCol colLt">
             <div class="module byAddress">
             	<h3>{% trans "Enter your address:" %}</h3>
-            	 <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchAddressform">
-		            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'e.g. 1818 N Street NW Washington, DC 20036' %}">
+            	 <form action="/find_your_legislator/" method="get" id="searchAddressform">
+		            <input class="transparent search" type="search" name="q" id="id_q" placeholder="{% trans 'e.g. 1818 N Street NW Washington, DC 20036' %}">
 		            <button type="submit">
 		                <span>{% trans "Search" %}</span>
 		            </button>
@@ -84,7 +84,7 @@
         <div class="sidebar fourCol colRt">
             <div class="module" >
                 <h4 id="appBox" class="tipSm">{% trans "Want the app?" %}</h4>
-                <p>{% trans 'Explore Open States on your iPhone or iPad. Download the free app. <a href="/api/">API</a> and <a href="/downloads/">bulk downloads</a>.' %}</p>
+                <p>{% trans 'Explore Open States on your iPhone or iPad.' %} <a href="https://itunes.apple.com/us/app/open-states/id500672932?mt=8">{% trans 'Download the free app.' %}</a></p>
     	    </div>
             <div class="module" >
                 <h4 id="videoBox" class="tipSm">{% trans "Need more info?" %}</h4>
