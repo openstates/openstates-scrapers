@@ -41,15 +41,15 @@
         <dd>{{ event.when|date:"M j, Y"}}</dd>
         <dt>Where:</dt>
         <dd>{{ event.location }}</dd>
+
         {% if event.related_bills %}
+        {{event.related_bills}}
         <dt>Bills:</dt>
         <dd>
-        {% if event.related_bills %}
           {% for bill in event.bills_objects %}
             <a href="{% url 'bill_noslug' abbr bill.id %}">
               {{bill.bill_id}}</a>{% if not forloop.last %},{% endif %}
           {% endfor %}
-        {% endif %}
         </dd>
         {% endif %}
       </dl>
