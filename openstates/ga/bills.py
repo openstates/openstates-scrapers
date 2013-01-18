@@ -92,6 +92,8 @@ class GABillScraper(BillScraper):
                 "SFR": ["bill:reading:1"],
                 "HRECM": ["bill:withdrawn", "committee:referred"],
                 "SRECM": ["bill:withdrawn", "committee:referred"],
+                "SW&C": ["bill:withdrawn", "committee:referred"],
+                "HW&C": ["bill:withdrawn", "committee:referred"],
                 "HRA": ["bill:passed"],
                 "SRA": ["bill:passed"],
                 "HPA": ["bill:passed"],
