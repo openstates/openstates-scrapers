@@ -1,7 +1,7 @@
 import re
 import lxml.html
 
-from billy.scrape.committees import CommitteeScraper, Committee 
+from billy.scrape.committees import CommitteeScraper, Committee
 
 
 class DECommitteeScraper(CommitteeScraper):
@@ -10,7 +10,7 @@ class DECommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         urls = {
-            'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees', 
+            'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees',
             'lower': 'http://legis.delaware.gov/LIS/LIS%s.nsf/HCommittees'
         }
 
