@@ -94,15 +94,13 @@ class COLegislatorScraper(LegislatorScraper):
                 number[3]
             )
             obj['number'] = number
-        ctty_apptmts = page.xpath('//ul/li/b/a')
-        for ctty in ctty_apptmts:
-            cttyid = clean_input(ctty.text)
-            if cttyid != None and cttyid.strip() != "" and \
-              cttyid not in CTTY_BLACKLIST:
-                ret.append(cttyid)
+        ctty_apptmts = [clean_input(x) for x in
+                         page.xpath("//a[contains(@href, 'CLC')]//font/text()")]
+        ctty_apptmts = filter(lambda x: x.strip() != "" and x not in CTTY_BLACKLIST, ctty_apptmts)
+
         image = hp_url[:-3] + "jpg"
         obj.update({
-            "ctty"  : ret,
+            "ctty"  : ctty_apptmts,
             "photo" : image
         })
         return obj
