@@ -1,0 +1,22 @@
+{% load i18n %}
+<table class="noPaddingTable voteChart">
+    <thead>
+        <tr id="titles">
+            <th class="invisible">{% trans "Bill" %}</th>
+            <th class="twoColFlow right">{% trans "Legislator Vote" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vote_value, vote in votes %}
+        <tr>
+            <td>
+                <time class="published">{{vote.date|date:"M j, Y"}}</time>
+                <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
+                <p>{{vote.motion|truncatewords:30}}</p>
+                {% include "billy/web/public/_vote_chart_table.html" %}
+            </td>
+            <td class="right"><b>{{vote_value|title}}</b></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

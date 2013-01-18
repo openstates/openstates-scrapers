@@ -1,5 +1,6 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load static from staticfiles %}
 {% load customtags %}
 {% load markup_tags %}
 {% load i18n %}
@@ -19,10 +20,12 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{vote.get_absolute_url}}">
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
     <script>
     $(document).ready(function(){
         var doc = $(document);
         doc.bind("keydown", "alt+j", function(){window.location = '{{vote.get_admin_json_url}}'});
+        make_vote_charts(200, 150, 70);
         });
     </script>
 {% endblock %}
@@ -43,20 +46,7 @@
 
                 <h4>Vote Breakdown</h4> -->
                 {% if vote.has_votes %}
-                <ul class="barChart">
-                    <li class="yes">
-                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                    </li>
-                    <li class="no">
-                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                    </li>
-                    <li class="no clear">
-                        <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.other_count}} {% trans "Other" %}</span>
-                    </li>
-                </ul>
+                    {% include "billy/web/public/_vote_chart_table.html" %}
                 {% else %}
                     {% if vote.is_probably_a_voice_vote %}
                     <p>{% blocktrans %} <strong>No vote counts were available for this motion.</strong> This vote appears to be a
