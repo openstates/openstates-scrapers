@@ -66,7 +66,8 @@ class MTCommitteeScraper(CommitteeScraper):
             with open(fn) as f:
                 doc = lxml.html.fromstring(response.text)
                 for name_dict, c in scrape_committees_html(year, chamber, doc):
-                    self.save_committee(c)
+                    if c['members']:
+                        self.save_committee(c)
 
     def scrape_committees_pdf(self, year, chamber, filename, url):
         text = convert_pdf(filename, type='text-nolayout')
@@ -132,7 +133,7 @@ class MTCommitteeScraper(CommitteeScraper):
                 else:
                     committee = line
 
-                if comm:
+                if comm and comm['members']:
                     self.save_committee(comm)
 
                 comm = Committee(chamber, committee=committee,
@@ -150,7 +151,8 @@ class MTCommitteeScraper(CommitteeScraper):
                     role = 'member'
                 comm.add_member(name, role)
 
-        self.save_committee(comm)
+        if comm['members']:
+            self.save_committee(comm)
 
 
 def scrape_committees_html(year, chamber, doc):
