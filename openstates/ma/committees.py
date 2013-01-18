@@ -55,4 +55,5 @@ class MACommitteeScraper(CommitteeScraper):
         for member in doc.xpath('//div[@class="committeeRegularMembers"]//a/text()'):
             com.add_member(member)
 
-        self.save_committee(com)
+        if com['members']:
+            self.save_committee(com)
