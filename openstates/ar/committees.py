@@ -57,9 +57,9 @@ class ARCommitteeScraper(CommitteeScraper):
                 subcommittee = '-'.join(split_sub[1:])
             subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee.strip())
 
-        if (name, subcommittee) in self._seen:
+        if (chamber, name, subcommittee) in self._seen:
             return
-        self._seen.add((name, subcommittee))
+        self._seen.add((chamber, name, subcommittee))
 
         comm = Committee(chamber, name.title(), subcommittee=subcommittee)
         comm.add_source(url)
@@ -67,8 +67,7 @@ class ARCommitteeScraper(CommitteeScraper):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
-        for tr in page.xpath('//table[@class="gridtable"]/'
-                             'tr[position()>1]'):
+        for tr in page.xpath('//table[@class="gridtable"]/tr[position()>1]'):
             if tr.xpath('string(td[1])'):
                 mtype = tr.xpath('string(td[1])')
             else:
