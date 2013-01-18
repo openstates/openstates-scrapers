@@ -109,16 +109,6 @@ class MTLegislatorScraper(LegislatorScraper):
             office['fax'] = deets.get('fax')
             legislator.add_office(**office)
 
-            print legislator['url']
-            print legislator['photo_url']
-            x = re.search(r'(\d+)\.jpg', legislator['photo_url'])
-            if x:
-                y = x.group(1)
-                if y not in legislator['url']:
-                    import ipdb;ipdb.set_trace()
-            else:
-                import ipdb;ipdb.set_trace()
-
             self.save_legislator(legislator)
 
     def _district_legislator_dict(self):
