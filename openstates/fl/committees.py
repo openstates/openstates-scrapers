@@ -38,7 +38,8 @@ class FLCommitteeScraper(CommitteeScraper):
 
             comm = Committee('upper', comm_name, sub_name)
             self.scrape_upper_committee(comm, link.attrib['href'])
-            self.save_committee(comm)
+            if comm['members']:
+                self.save_committee(comm)
 
     def scrape_upper_committee(self, comm, url):
         page = self.urlopen(url)
@@ -74,7 +75,8 @@ class FLCommitteeScraper(CommitteeScraper):
 
             comm = Committee('lower', parent, sub)
             self.scrape_lower_committee(comm, link.get('href'))
-            self.save_committee(comm)
+            if comm['members']:
+                self.save_committee(comm)
 
         for link in page.xpath('//a[contains(@href, "committees/joint")]/@href'):
             self.scrape_joint_committee(link)
@@ -101,7 +103,8 @@ class FLCommitteeScraper(CommitteeScraper):
                 title = 'member'
             comm.add_member(a.text.split(' (')[0].strip(), title)
 
-        self.save_committee(comm)
+        if comm['members']:
+            self.save_committee(comm)
 
     def scrape_lower_committee(self, comm, url):
         page = self.urlopen(url)
