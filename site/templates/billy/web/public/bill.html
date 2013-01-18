@@ -20,6 +20,7 @@
     <script>
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
+        make_vote_charts(150, 150, 70);
     });
     </script>
 {% endblock %}
@@ -231,18 +232,7 @@
                         <time class="published">{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
                         {% if vote.has_votes %}
-                        <div class="vote-chart">
-                            <table class="twoCol colRt">
-                                <tbody>
-                                    <tr><td>{% trans "Yes" %}</td>
-                                        <td>{{vote.yes_count}}</td><td>{{vote.yes_ratio}}</td></tr>
-                                    <tr><td>{% trans "No" %}</td>
-                                        <td>{{vote.no_count}}</td><td>{{vote.no_ratio}}</td></tr>
-                                    <tr><td>{% trans "Other" %}</td>
-                                        <td>{{vote.other_count}}</td><td>{{vote.other_ratio}}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        {% include "billy/web/public/_vote_chart_table.html" %}
                         {% else %}
                             {% trans "No vote counts available." %}
                         {% endif %}
@@ -253,34 +243,6 @@
                     </li>
                     {% endfor %}
                 </ul>
-
-            <script>
-                var width = 180;
-                var height = 180;
-                var radius = 75;
-                d3.selectAll('.vote-chart').each(function() {
-                    var data = [];
-                    d3.select(this).selectAll('table tbody tr').each(function() {
-                        var vote = {};
-                        vote.type = d3.select(this).select("td:first-child").text();
-                        // get text then remove ratio from table
-                        vote.count = d3.select(this).select("td:nth-child(3)").remove().text();
-                        data.push(vote);
-                    });
-                    var arc = d3.svg.arc().outerRadius(radius);
-                    var pie = d3.layout.pie().value(function(d) { return d.count; } );
-                    var vis = d3.select(this).insert('svg:svg', ':first-child')
-                        .data([data])
-                        .attr('width', width).attr('height', height)
-                        .attr('class', 'threeCol colLt')
-                        .append('svg:g')
-                        .attr('transform', 'translate(' + radius + ',' + radius + ')');
-                    var arcs = vis.selectAll('g.slice').data(pie).enter().append('svg:g').attr('class', 'slice');
-                    arcs.append('svg:path').attr('fill', function(d, i) {
-                        return ['#a3b56d', '#b85233', '#dfdfd2'][i];
-                    }).attr('d', arc);
-                });
-            </script>
         {% endif %}
        </div>
 

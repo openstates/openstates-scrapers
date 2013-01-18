@@ -24,6 +24,12 @@
     <!--[if lte IE 8]><link rel="stylesheet" href="{% static 'maps/leaflet.ie.css' %}" /><![endif]-->
     <script src="{% static "maps/leaflet.js" %}"></script>
     <script src="{% static "maps/wax.leaf.min.js" %}"></script>
+    <script src="{% static "js/d3.v3.min.js" %}"></script>
+    <script>
+    $(document).ready(function(){
+        make_vote_charts(150, 150, 70);
+    });
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -317,56 +323,28 @@
         </div>
 
 <!-- Votes -->
+        <a name="votes"></a>
         <div class="fullWidth module clearfix">
             <div class="fullWidth clearfix">
                 <h3 class="moduleTitle">{% trans "Votes" %}</h3>
                 <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
             </div>
-            <div class="sixCol colLt withDash">
-                <a name="votes"></a>
-                {% if not legislator_votes %}{% trans "No votes to display." %}
-                {% else %}
-                <table class="noPaddingTable voteChart">
-                    <col width="200" />
-                    <col width="80" />
-                    <thead>
-                        <tr id="titles">
-                            <th class="invisible">{% trans "Bill" %}</th>
-                            <th class="twoColFlow right">{% trans "Legislator Vote" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for vote_value, vote in legislator_votes|slice:":3" %}
-                        <tr>
-                            <td>
-                                <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                                <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
-                                <p>{{vote.motion|truncatewords:30}}</p>
-                                <ul class="barChart">
-                                    <li class="yes">
-                                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                                    </li>
-                                    <li class="no clear">
-                                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                                    </li>
-                                </ul>
-                            </td>
-                            <td class="right"><b>{{vote_value|title}}</b></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if legislator_votes %}
-                    <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
-                {% endif %}
+
+            {% with votes=legislator_votes|slice:":3" %}
+                <div class="sixCol colLt withDash">
+                    {% include "billy/web/public/_legislator_vote_column.html" %}
+                </div>
+            {% endwith %}
+            {% with votes=legislator_votes|slice:"3:" %}
+                <div class="sixCol colRt">
+                    {% include "billy/web/public/_legislator_vote_column.html" %}
+                </div>
+            {% endwith %}
+
             </div>
 
             <div class="sixCol colRt">
                 <a name="votes"></a>
-                {% if not legislator_votes %}{% trans "No votes to display." %}
-                {% else %}
                 <table class="noPaddingTable voteChart">
                     <col width="200" />
                     <col width="80" />
@@ -399,10 +377,12 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% endif %}
             </div>
 
+            {% if legislator_votes %}
+                <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
             {% endif %}
+
     </div>
 
     <div class="clearfix">
