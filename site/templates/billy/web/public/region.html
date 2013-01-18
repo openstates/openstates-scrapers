@@ -40,7 +40,7 @@
                 {% for chamber in chambers %}
                  <li class="withDash">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
-                        <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
+                        <h4 class="titleNumber bigNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
                     <ul class="tip noSpace">
                         {% for party, count in chamber.legislators.party_counts.items %}
@@ -54,7 +54,7 @@
                  {% if chambers|length == 1 %}
                  <li class="noDash">
                     <a href="{% url 'committees' metadata.abbr %}">
-                        <h4 class="titleNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
+                        <h4 class="titleNumber bigNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
                     </a>
                 </li>
                 {% endif %}
@@ -82,7 +82,7 @@
 
             {% for chamber in chambers %}
                 <a href="{% url 'committees' abbr %}?chamber={{chamber.type}}">
-                <li class="{% cycle 'one' 'two' %} titleNumber withTip">
+                <li class="{% cycle 'one' 'two' %} titleNumber bigNumber withTip">
                 {{ chamber.committees_count }}<span>{{ chamber.name }} {% trans "Committees" %}</span></li>
                 </a>
             {% endfor %}
