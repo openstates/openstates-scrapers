@@ -47,6 +47,22 @@
 	<polygon fill="url(#SVGID_4_)" points="69.422,97.764 123.865,108.948 112.525,172.892 110.708,182.935 108.568,184.608 
 		106.923,182.964 103.605,185.262 101.989,196.123 60.862,135.092 	"/>
 </g>
+<g id="pr">
+    <radialGradient
+       id="SVGID_80_"
+       cx="442.832"
+       cy="391.3965"
+       r="7.0663"
+       gradientUnits="userSpaceOnUse">
+        <stop  offset="0" style="stop-color:#A5B765;stop-opacity:0.75"/>
+        <stop  offset="0.9447" style="stop-color:#A5B765;stop-opacity:0.9862"/>
+        <stop  offset="1" style="stop-color:#A5B765"/>
+    </radialGradient>
+<polygon
+   fill="url(#SVGID_80_)"
+   points="433.5,389.62 434.613,388.112 435.689,387.825 438.454,388.077 440.535,388.041   443.049,388.077 445.884,388.4 448.576,388.58 451.483,389.477 451.771,390.661 452.165,390.877 452.058,391.415 450.729,391.882   449.76,393.21 448.252,394.251 445.273,394.825 444.483,394.969 442.187,394.036 437.197,394.718 434.075,394.574 434.505,391.451   "
+   id="pr-polygon" />
+</g>
 <g id="az">
 	<radialGradient id="SVGID_5_" cx="129.5542" cy="215.0098" r="37.2817" gradientUnits="userSpaceOnUse">
 		<stop  offset="0" style="stop-color:#A5B765;stop-opacity:0.75"/>
@@ -298,7 +314,7 @@
 		390.358,121.463 395.418,120.988 408.29,119.329 409.239,120.04 413.667,157.363 404.409,165.28 403.775,168.681 393.048,172.787 
 		389.723,171.203 	"/>
 </g>
-<g id="oh">
+<g id="al">
 	<radialGradient id="SVGID_29_" cx="405.6636" cy="241.5156" r="26.2567" gradientUnits="userSpaceOnUse">
 		<stop  offset="0" style="stop-color:#A5B765;stop-opacity:0.75"/>
 		<stop  offset="0.9447" style="stop-color:#A5B765;stop-opacity:0.9862"/>
@@ -360,7 +376,7 @@
 		457.755,300.187 455.542,298.368 456.648,289.512 451.587,282.001 438.777,271.958 435.851,272.274 430.473,277.335 
 		424.068,278.679 423.593,275.988 415.924,272.193 409.834,271.324 405.406,271.88 400.344,273.698 	"/>
 </g>
-<g id="oh_1">
+<g id="oh">
 	<radialGradient id="SVGID_34_" cx="431.8608" cy="134.0977" r="22.6457" gradientUnits="userSpaceOnUse">
 		<stop  offset="0" style="stop-color:#A5B765;stop-opacity:0.75"/>
 		<stop  offset="0.9447" style="stop-color:#A5B765;stop-opacity:0.9862"/>
