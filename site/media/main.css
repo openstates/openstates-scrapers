@@ -381,6 +381,10 @@ a.viewMore {
     color: #a3a730;
     }
 
+a.viewMore:hover {
+    color: #8C941F;
+    }
+
 a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
 
 span.qualityException { padding-top: 2em; display: block; }
@@ -496,7 +500,13 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .withTimeline { padding-top: 60px; max-width: 450px;}
 h2.withTimeline { margin-top: 30px;}
 
-.titleNumber { font-size: 600%; line-height: 50px; font-weight: bold; text-transform: uppercase; line-height: 70px; }
+.titleNumber {
+    font-size: 600%;
+    line-height: 50px;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 70px; }
+
 .titleNumber span { display: block; font-size: 20%; padding-top: 5px; font-weight: normal; line-height: 20px;}
 
 #totalLeg .titleNumber { font-size: 450%; line-height: 60px;}
@@ -726,39 +736,47 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
 
 /* pulled in from external css */
 
+
 .label-bill-subject {
-    font-size: 10.998px;
+    font-size: 12px;
     font-weight: bold;
-    line-height: 14px;
-    color: #ffffff;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 16px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #999999;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    background-color:#FFF;
 }
 .label-bill-subject a {
-    color: white;
+    color: #C69600;
 }
+.label-bill-subject a:hover {
+   color: #A37700;
+}
+
 .label-bill-type {
-    font-size: 10.998px;
+    font-size: 12px;
     font-weight: bold;
-    line-height: 14px;
-    color: black;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 18px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #D6AC04;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    background-color: #D6AC04;
 }
 .label-bill-type a {
-    color: white;
+    color: #FFF;
+}
+.label-bill-type a:hover {
+    background-color: #AD7E00;
 }
 
 .selected { background-color: #E9E6DF; }
@@ -774,20 +792,25 @@ input[type="checkbox"] {
 .label {
     font-size: 10.998px;
     font-weight: bold;
-    line-height: 14px;
-    color: black;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 26px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #999999;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    margin: 1px;
 }
 .label a {
-    color: white;
+    color: #C69600;
 }
+
+.label a:hover {
+    color: #AD7E00;
+}
+
 
 .pagesNum {
   height: 36px;
@@ -1151,7 +1174,9 @@ pre {
     width: 360px;
     margin-top: 2px;
     margin-bottom: 20px;
-    -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
     }
 
 #container #find_your_leg input{
@@ -1201,7 +1226,7 @@ div.notification-preference {
 
 }
 
-.favbutton{
+.favbutton {
     background-color:#FFF;
     display: inline-block;
     border: 1px solid #e6e6da;
@@ -1213,6 +1238,10 @@ div.notification-preference {
     font-size: 135%;
     padding:5px 10px;
     color:#E7B300;
+}
+
+.favbutton:hover{
+    color:#00FF00;
 }
 
 .star{
@@ -1256,3 +1285,10 @@ div.notification-preference {
     width: 218px;
 }
 
+
+.bigNumber{
+    color:#B9B4B1;
+}
+.bigNumber:hover{
+    color:#99AF33;
+}
