@@ -82,7 +82,8 @@ class TNCommitteeScraper(CommitteeScraper):
             com.add_member(member_name, role)
 
         com.add_source(link)
-        self.save_committee(com)
+        if com['members']:
+            self.save_committee(com)
 
     #Scrapes all the House Committees
     def scrape_house_committees(self, url):
@@ -126,7 +127,8 @@ class TNCommitteeScraper(CommitteeScraper):
                 com.add_member(name, role)
 
         com.add_source(link)
-        self.save_committee(com)
+        if com['members']:
+            self.save_committee(com)
 
     #Scrapes joint committees
     def scrape_joint_committees(self):
@@ -188,4 +190,5 @@ class TNCommitteeScraper(CommitteeScraper):
                 if member_name != "":
                     com.add_member(member_name, role)
         com.add_source(url)
-        self.save_committee(com)
+        if com['members']:
+            self.save_committee(com)
