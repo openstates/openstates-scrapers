@@ -56,4 +56,5 @@ class VTCommitteeScraper(CommitteeScraper):
 
                 comm.add_member(name, mtype)
 
-            self.save_committee(comm)
+            if comm['members']:
+                self.save_committee(comm)
