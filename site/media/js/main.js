@@ -119,6 +119,31 @@ var pjax_setup = function(){
     });
 };
 
+var make_vote_charts = function(width, height, radius) {
+    d3.selectAll('.vote-chart').each(function() {
+        var data = [];
+        d3.select(this).selectAll('table tbody tr').each(function() {
+            var vote = {};
+            vote.type = d3.select(this).select("td:first-child").text();
+            // get text then remove ratio from table
+            vote.count = d3.select(this).select("td:nth-child(3)").remove().text();
+            data.push(vote);
+        });
+        var arc = d3.svg.arc().outerRadius(radius);
+        var pie = d3.layout.pie().value(function(d) { return d.count; } );
+        var vis = d3.select(this).insert('svg:svg', ':first-child')
+            .data([data])
+            .attr('width', width).attr('height', height)
+            .attr('class', 'twoCol colLt')
+            .append('svg:g')
+            .attr('transform', 'translate(' + radius + ',' + radius + ')');
+        var arcs = vis.selectAll('g.slice').data(pie).enter().append('svg:g').attr('class', 'slice');
+        arcs.append('svg:path').attr('fill', function(d, i) {
+            return ['#a3b56d', '#b85233', '#dfdfd2'][i];
+        }).attr('d', arc);
+    });
+};
+
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie !== '') {
