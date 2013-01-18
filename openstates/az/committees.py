@@ -108,4 +108,5 @@ class AZCommitteeScraper(CommitteeScraper):
                           session=session, az_committee_id=c_id)
             c.add_source(url)
             self.scrape_com_info(session, session_id, c_id, c)
-            self.save_committee(c)
+            if c['members']:
+                self.save_committee(c)
