@@ -75,7 +75,8 @@ class NYCommitteeScraper(CommitteeScraper):
             name, role = parse_name(member)
             comm.add_member(name, role)
 
-        self.save_committee(comm)
+        if comm['members']:
+            self.save_committee(comm)
 
     def scrape_upper(self):
         committees = []
@@ -135,4 +136,5 @@ class NYCommitteeScraper(CommitteeScraper):
             name, role = parse_name(member)
             comm.add_member(name, role)
 
-        self.save_committee(comm)
+        if comm['members']:
+            self.save_committee(comm)
