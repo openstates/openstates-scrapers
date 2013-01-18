@@ -13,9 +13,16 @@ CTTY_BLACKLIST = [ # Invalid HTML causes us to snag these tags. Super annoying.
     "Colorado Legislature"
 ]
 
+
+def clean_committee(name):
+    committee_name = name.replace("&", " and ")
+    return re.sub("\s+", " ", committee_name).strip()
+
+
 def clean_input( line ):
     if line != None:
         return re.sub( " +", " ", re.sub( "(\n|\r)+", " ", line ))
+
 
 class COLegislatorScraper(LegislatorScraper):
     jurisdiction = 'co'
@@ -174,7 +181,7 @@ class COLegislatorScraper(LegislatorScraper):
                     p.add_role( 'committee member',
                         term=session,
                         chamber=chamber,
-                        committee=ctty,
+                        committee=clean_committee(ctty),
                         position="member"
                     )
             self.save_legislator( p )
