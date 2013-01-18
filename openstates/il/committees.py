@@ -46,4 +46,5 @@ class ILCommitteeScraper(CommitteeScraper):
             if not com['members']:
                 self.log('skipping empty committee on {0}'.format(com_url))
             else:
-                self.save_committee(com)
+                if com['members']:
+                    self.save_committee(com)
