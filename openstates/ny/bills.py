@@ -102,6 +102,8 @@ class NYBillScraper(BillScraper):
                 # Create the bill object.
                 bill = self.scrape_bill(session, chamber, *values)
                 if bill:
+                    if '1567' in bill['bill_id']:
+                        import ipdb;ipdb.set_trace()
                     self.save_bill(bill)
                     self.clear_url_cache()
 
