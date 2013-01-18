@@ -67,8 +67,8 @@
         <div class="module eightCol colLt">
             <div class="module byAddress">
             	<h3>{% trans "Enter your address:" %}</h3>
-            	 <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchAddressform">
-		            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'e.g. 1818 N Street NW Washington, DC 20036' %}">
+            	 <form action="/find_your_legislator/" method="get" id="searchAddressform">
+		            <input class="transparent search" type="search" name="q" id="id_q" placeholder="{% trans 'e.g. 1818 N Street NW Washington, DC 20036' %}">
 		            <button type="submit">
 		                <span>{% trans "Search" %}</span>
 		            </button>
