@@ -210,7 +210,6 @@ class CACommitteeScraper(CommitteeScraper):
         committee_names = doc.xpath('//div[@class="content"]/h3/text()')
         committee_names = filter(None, map(clean, committee_names))
         for _committee, _names in zip(committee_names, namelists):
-            print _committee
             if _committee:
                 cache[_committee] = _names
 

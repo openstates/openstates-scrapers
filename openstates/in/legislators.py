@@ -112,7 +112,6 @@ class INLegislatorScraper(LegislatorScraper):
 
             # Nothing is uniform on Indiana's website.
             if 'phone' not in office:
-                print line_data
                 for key_fail in ('Statehouse Telephone',
                                  'Statehouse Telephone Number'):
                     try:
