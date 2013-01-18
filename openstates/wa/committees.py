@@ -32,7 +32,8 @@ class WACommitteeScraper(CommitteeScraper):
                              office_phone=phone)
             self.scrape_members(comm, agency)
             comm.add_source(url)
-            self.save_committee(comm)
+            if comm['members']:
+                self.save_committee(comm)
 
     def scrape_members(self, comm, agency):
         # Can't get them to accept special characters (e.g. &) in URLs,
