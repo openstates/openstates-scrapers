@@ -1,4 +1,5 @@
 {% extends "billy/web/public/base.html" %}
+{% load static from staticfiles %}
 {% load url from future %}
 {% load humanize %}
 {% load i18n %}
@@ -15,6 +16,7 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
     <script>
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
@@ -222,69 +224,64 @@
         <div class="module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
 
+                {% if bill.votes_manager.count %}
+                <ul class="largerList voteChart">
+                    {% for vote in bill.votes_manager %}
+                    <li class="sixCol {% cycle "colLt" "colRt" %}">
+                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
+                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
+                        {% if vote.has_votes %}
+                        <div class="vote-chart">
+                            <table class="twoCol colRt">
+                                <tbody>
+                                    <tr><td>{% trans "Yes" %}</td>
+                                        <td>{{vote.yes_count}}</td><td>{{vote.yes_ratio}}</td></tr>
+                                    <tr><td>{% trans "No" %}</td>
+                                        <td>{{vote.no_count}}</td><td>{{vote.no_ratio}}</td></tr>
+                                    <tr><td>{% trans "Other" %}</td>
+                                        <td>{{vote.other_count}}</td><td>{{vote.other_ratio}}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                            {% trans "No vote counts available." %}
+                        {% endif %}
+                        {% if not vote.has_voters %}
+                        <span class="right"><b>{{vote_value|title}}</b></span>
+                            {% trans "No vote roll call available." %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
 
-            <div class="sixCol colLt  withDash">
-                {% if bill.votes_manager.count %}
-                <ul class="largerList voteChart">
-                    {% for vote in votes_col1 %}
-                    <li>
-                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
-                        {% if vote.has_votes %}
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                            </li>
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                            </li>
-                        </ul>
-                        {% else %}
-                            {% trans "No vote counts available." %}
-                        {% endif %}
-                        {% if not vote.has_voters %}
-                        <span class="right"><b>{{vote_value|title}}</b></span>
-                            {% trans "No vote roll call available." %}
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-            <div class="sixCol colRt">
-                {% if bill.votes_manager.count %}
-                <ul class="largerList voteChart">
-                    {% for vote in votes_col2 %}
-                    <li>
-                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
-                        {% if vote.has_votes %}
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                            </li>
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                            </li>
-                        </ul>
-                        {% else %}
-                            {% trans "No vote counts available." %}
-                        {% endif %}
-                        {% if not vote.has_voters %}
-                        <span class="right"><b>{{vote_value|title}}</b></span>
-                            {% trans "No vote roll call available." %}
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                {% trans "No vote data is available yet." %}
-                {% endif %}
-            </div>
+            <script>
+                var width = 180;
+                var height = 180;
+                var radius = 75;
+                d3.selectAll('.vote-chart').each(function() {
+                    var data = [];
+                    d3.select(this).selectAll('table tbody tr').each(function() {
+                        var vote = {};
+                        vote.type = d3.select(this).select("td:first-child").text();
+                        // get text then remove ratio from table
+                        vote.count = d3.select(this).select("td:nth-child(3)").remove().text();
+                        data.push(vote);
+                    });
+                    var arc = d3.svg.arc().outerRadius(radius);
+                    var pie = d3.layout.pie().value(function(d) { return d.count; } );
+                    var vis = d3.select(this).insert('svg:svg', ':first-child')
+                        .data([data])
+                        .attr('width', width).attr('height', height)
+                        .attr('class', 'threeCol colLt')
+                        .append('svg:g')
+                        .attr('transform', 'translate(' + radius + ',' + radius + ')');
+                    var arcs = vis.selectAll('g.slice').data(pie).enter().append('svg:g').attr('class', 'slice');
+                    arcs.append('svg:path').attr('fill', function(d, i) {
+                        return ['#a3b56d', '#b85233', '#dfdfd2'][i];
+                    }).attr('d', arc);
+                });
+            </script>
+        {% endif %}
        </div>
 
 
