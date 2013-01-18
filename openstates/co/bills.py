@@ -176,46 +176,27 @@ class COBillScraper(BillScraper):
         except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
             return []
 
-        trs = bill_versions_page.xpath('//form/table/tr')[3:]
+        url = re.findall("var url=\"(?P<url>.+)\"", versions_html)[0]
+
+        trs = bill_versions_page.xpath('//form//table//tr')[3:]
         cols = {
             "type": 0,
             "pdf": 1,
             "wpd": 2
         }
-        versions = []
-        for tr in trs:
-            if len(tr) == 3:  # jeezum crackers.
-                name = tr[cols["type"]].text_content()
-                if name[-1:] == ":":
-                    name = name[:-1]
 
-                wpd_link = tr[cols["wpd"]][0]
-                wpd_text = wpd_link.text_content().strip()
-                wpd_link = wpd_link.attrib["href"]
-
-                pdf_link = tr[cols["pdf"]][0]
-                pdf_text = pdf_link.text_content().strip()
-                pdf_link = pdf_link.attrib["href"]
-
-                if pdf_link.strip() != "" and pdf_text != "":
-                    link = CO_URL_BASE + pdf_link
-                    format = "application/pdf"
-                    versions.append({
-                        "name": name,
-                        "mimetype": format,
-                        "link": link
-                    })
-
-                if wpd_link.strip() != "" and wpd_text != "":
-                    link = CO_URL_BASE + wpd_link
-                    format = "application/vnd.wordperfect"
-                    versions.append({
-                        "name": name,
-                        "mimetype": format,
-                        "link": link
-                    })
-
-            return versions
+        pdfs = bill_versions_page.xpath("//a/font[contains(text(), 'pdf')]")
+        cur_version = bill_versions_page.xpath("//a//font[contains(text(), 'Current PDF')]")
+        return [{
+            "name": x.text,
+            "mimetype": "application/pdf",
+            "link": CO_URL_BASE + url + (
+                re.findall(
+                    "_doClick\('(?P<slug>.+)'",
+                    x.getparent().attrib['onclick']
+                )[0]
+            )
+        } for x in cur_version + pdfs]
 
     def parse_history(self, bill_history_url):
         """
@@ -350,6 +331,7 @@ class COBillScraper(BillScraper):
                 bill[index["version"]].xpath('font/a')[0].attrib["href"]
             versions_url = CO_URL_BASE + versions_url
             versions = self.parse_versions(versions_url)
+
             for version in versions:
                 b.add_version(version['name'], version['link'],
                     mimetype=version['mimetype'])
