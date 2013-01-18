@@ -55,6 +55,7 @@ $(document).ready(function() {
     <table id="main-table">
         <thead>
             <tr>
+                <th class="invisible">{% trans "Picture" %}</th>
                 <th>{% trans "Name" %}</th>
                 <th>{% trans "Role" %}</th>
                 <th>{% trans "District" %}</th>
@@ -64,6 +65,7 @@ $(document).ready(function() {
         <tbody>
             {% for obj, legislator in committee.members_objects %}
                 <tr class="{% cycle 'even' 'odd' %}">
+                    <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
                     {% if legislator %}
                         <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
                         {% else %}
