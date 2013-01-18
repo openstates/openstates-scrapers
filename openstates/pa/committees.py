@@ -31,7 +31,7 @@ class PACommitteeScraper(CommitteeScraper):
                 if not link.tail:
                     continue
 
-                committee_name = link.tail.strip()
+                committee_name = link.tail.strip().strip(',')
                 committee_name = re.sub(r"\s+", " ", committee_name)
                 subcommittee_name = None
                 role = 'member'
@@ -65,4 +65,6 @@ class PACommitteeScraper(CommitteeScraper):
                 committee.add_member(name, role)
 
         for committee in committees.values():
+            if not committee['members']:
+                continue
             self.save_committee(committee)
