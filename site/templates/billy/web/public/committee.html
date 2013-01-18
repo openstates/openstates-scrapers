@@ -22,6 +22,7 @@ $(document).ready(function() {
     clickable_rows("#main-table tbody tr");
     var doc = $(document);
     doc.bind("keydown", "alt+j", function(){window.location = '{{committee.get_admin_json_url}}'});
+    fix_images();
 });
 </script>
 {% endblock %}
