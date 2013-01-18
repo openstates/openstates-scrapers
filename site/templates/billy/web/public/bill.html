@@ -21,6 +21,7 @@
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
         make_vote_charts(150, 150, 70);
+        fix_images();
     });
     </script>
 {% endblock %}
@@ -120,7 +121,7 @@
 
  <!-- Legislator image goes here -->
                             <li>
-                                 <img class="legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
+                                 <img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
                             </li>
 
 
