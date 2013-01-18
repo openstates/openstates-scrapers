@@ -93,7 +93,8 @@ class CACommitteeScraper(CommitteeScraper):
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
 
-                self.save_committee(c)
+                if c['members']:
+                    self.save_committee(c)
 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
@@ -131,7 +132,8 @@ class CACommitteeScraper(CommitteeScraper):
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
 
-                self.save_committee(c)
+                if c['members']:
+                    self.save_committee(c)
 
     def scrape_membernames(self, committee, url, chamber, term):
         '''Scrape the member names from this page.
