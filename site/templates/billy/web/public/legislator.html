@@ -255,9 +255,9 @@
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
                 {% if role.type == 'committee member' %}
-                <li class="{% cycle 'one' 'two' 'three' %}">{{ role.type_display }}
+                <li class="{% cycle 'one' 'two' 'three' %} greyArrow"> {{ role.type_display }}
                 {% if 'committee_id' in role %}
-                <a href="{% url 'committee' abbr role.committee_id %}">{{ role.committee_name }}</a>
+                <a href="{% url 'committee' abbr role.committee_id %}"> {{ role.committee_name }}</a>
                 {% else %} {{ role.committee_name }}{% endif %}
                 {% if role.position and role.position|lower != "member" %} ({{role.position}}) {% endif %}
                 </li>

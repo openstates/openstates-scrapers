@@ -114,6 +114,15 @@
                     <ul class="clearfix" id="sponsorList">
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
+
+
+
+ <!-- Legislator image goes here -->
+                            <li>
+                                 <img class="legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
+                            </li>
+
+
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}

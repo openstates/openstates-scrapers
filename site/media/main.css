@@ -514,7 +514,8 @@ h2.withTimeline { margin-top: 30px;}
 .centeredText { text-align: center; }
 
 #sponsorList li { margin-bottom: 20px; }
-#sponsorList a, .sponsorName { font-size: 100%; display: block; }
+#sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
+.sponsor-type { display: inline; vertical-align: bottom; }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
 #CCC;
@@ -683,7 +684,7 @@ footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: u
 
 footer dt { text-transform: uppercase; }
 dd li { float: left; margin-right: 20px; display: block; margin-bottom: 10px;}
-dd li a:link, dd li a:visited, .sponsorName { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
+dd li a:link, dd li a:visited, { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
 footer dl { padding: 50px 0 0 35px;}
 
 
@@ -720,7 +721,7 @@ footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
     display: block;
 }
 
-.sponsor-type { display: inline; font-size: 75%; vertical-align: bottom; }
+
 
 /* find your legislator stuff */
 .find_your_legislator_errorbox {
@@ -1292,3 +1293,7 @@ div.notification-preference {
 .bigNumber:hover{
     color:#99AF33;
 }
+
+li.greyArrow:before {content:"»"}
+
+.bold { font-weight: bold;}
