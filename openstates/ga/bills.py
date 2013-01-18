@@ -45,6 +45,13 @@ class GABillScraper(BillScraper):
         for leg in legislation:
             lid = leg['Id']
             instrument = self.lservice.GetLegislationDetail(lid)
+            history = [x for x in instrument['StatusHistory'][0]]
+            actions = [{
+                "code": x['Code'],
+                "action": x['Description'],
+                "_guid": x['Id'],
+                "date": x['Date']
+            } for x in history]
 
             guid = instrument['Id']
 
@@ -73,6 +80,36 @@ class GABillScraper(BillScraper):
                 description=description,
                 _guid=guid
             )
+
+            types = {
+                "HH": ["other"],
+                "SH": ["other"],
+                "HPF": ["bill:introduced"],
+                "SPF": ["bill:introduced"],
+                "HSR": ["bill:reading:2"],
+                "SSR": ["bill:reading:2"],
+                "HFR": ["bill:reading:1"],
+                "SFR": ["bill:reading:1"],
+                "HRECM": ["bill:withdrawn", "committee:referred"],
+                "SRECM": ["bill:withdrawn", "committee:referred"],
+                "HRA": ["bill:passed"],
+                "SRA": ["bill:passed"],
+                "HPA": ["bill:passed"],
+                "SPA": ["bill:passed"],
+                "HCFR": ["committee:passed:favorable"],
+                "SCFR": ["committee:passed:favorable"],
+                "HRAR": ["committee:referred"],
+                "SRAR": ["committee:referred"],
+                #"": [],
+            }
+
+            for action in actions:
+                chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
+                print action
+                bill.add_action(chamber, action['action'], action['date'],
+                                types[action['code']],
+                                _code=action['code'],
+                                _code_id=action['_guid'])
 
             sponsors = instrument['Authors']['Sponsorship']
             if 'Sponsors' in instrument:
