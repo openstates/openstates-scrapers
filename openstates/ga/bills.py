@@ -100,6 +100,13 @@ class GABillScraper(BillScraper):
                 "SCFR": ["committee:passed:favorable"],
                 "HRAR": ["committee:referred"],
                 "SRAR": ["committee:referred"],
+                "STR": ["bill:reading:3"],
+                # STP \m/
+                "HTR": ["bill:reading:3"],
+                "S2R": ["bill:reading:2"],
+                "H2R": ["bill:reading:2"],
+                "SENG": ["bill:passed"],
+                "HENG": ["bill:passed"],
                 #"": [],
             }
 
