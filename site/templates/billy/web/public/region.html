@@ -99,15 +99,15 @@
     <div class="fullWidth module">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
     {% if chambers|length == 2 %}
-    {# bicameral bill view, stacked passed/introduced - side by side chambers #}
+    {# bicameral bill view, stacked chambers - side by side passed/introduced #}
         {% for chamber in chambers %}
-        <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
             <h4>{{ chamber.name }}</h4>
-            <div class="medModule">
+            <div class="sixCol colLt">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>
-            {% include "billy/web/public/_recently_introduced.html" %}
-        </div>
+            <div class="sixCol colRt">
+                {% include "billy/web/public/_recently_introduced.html" %}
+            </div>
         {% endfor %}
 
     {% elif chambers|length == 1 %}
