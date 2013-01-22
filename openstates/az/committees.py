@@ -43,6 +43,7 @@ class AZCommitteeScraper(CommitteeScraper):
 
         body = '//body[@Body="%s"]/committee' % {'upper': 'S',
                                                  'lower': 'H'}[chamber]
+
         for com in root.xpath(body):
             c_id, name, short_name, sub = com.values()
             # the really good thing about AZ xml api is that their committee element
@@ -75,6 +76,8 @@ class AZCommitteeScraper(CommitteeScraper):
                 pass
 
             if not c['members']:
+                msg = 'No members found: not saving {committee}.'
+                self.logger.warning(msg.format(**c))
                 continue
             self.save_committee(c)
 
@@ -110,3 +113,7 @@ class AZCommitteeScraper(CommitteeScraper):
             self.scrape_com_info(session, session_id, c_id, c)
             if c['members']:
                 self.save_committee(c)
+            else:
+                msg = 'No members found: not saving {committee}.'
+                self.logger.warning(msg.format(**c))
+
