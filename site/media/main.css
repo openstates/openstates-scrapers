@@ -441,6 +441,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 
 .voteChart a { margin-bottom: 5px; display: block;}
 
+.voteChart {
+    display: block;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px dashed #e2e2dd;
+    }
+
+.voteChart:last-child {
+    display: block;
+    margin-bottom: 20px;
+    padding-bottom: 0px;
+    border-bottom: none;
+    }
+
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
 .callOutBox { padding: 20px 0px 30px 0; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
@@ -1298,3 +1312,23 @@ li.greyArrow:before {content:"»"}
 
 .bold { font-weight: bold;}
 #sponsorList img, .withBorder li{ margin-right:10px}
+
+.yes {
+    background-color: #A3B669;
+    color: #A3B669;
+    margin-right: 10px;
+}
+.no {
+    background-color: #BB522E;
+    color: #BB522E;
+    margin-right: 10px;
+}
+
+.other {
+    background-color: #DFDFD1;
+    color: #DFDFD1;
+    margin-right: 10px;
+}
+ .grey {
+     color:#817C78;
+ }

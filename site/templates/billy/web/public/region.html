@@ -88,7 +88,7 @@
             {% endfor %}
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
-                <li class="three titleNumber withTip">{{ joint_committee_count }}<span>{% trans "Joint Committees" %}</span></li>
+                <li class="three titleNumber bigNumber withTip">{{ joint_committee_count }}<span>{% trans "Joint Committees" %}</span></li>
             </a>
             {% endif %}
         </ul>
@@ -96,13 +96,15 @@
     </div>
     {% endif %}
 
+
+<!-- BILLS -->
     <div class="fullWidth module">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked passed/introduced - side by side chambers #}
         {% for chamber in chambers %}
         <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
-            <h4>{{ chamber.name }}</h4>
+            <h3 class="grey">{{ chamber.name }}</h3>
             <div class="medModule">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>

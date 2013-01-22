@@ -277,19 +277,22 @@
 
 <!-- Bills -->
         <div class="fullWidth module clearfix">
-            <a name="bills"></a>
-            <h3 class="moduleTitle">{% trans "Sponsored Bills" %}</h3>
-            <a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
 
-            <div class="sixCol colLt withDash">
+           <div class="clearfix">
+                <a name="bills"></a>
+                <h3 class="moduleTitle colLt">{% trans "Sponsored Bills" %}</h3>
+                <a class="textReplace rssIcon colRt" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
+            </div>
+
+            <div class="sixCol colLt withDash clearfix">
                 <ul>
                 {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:":3" %}
-                        <li class="medModuleSm">
+                        <li class="medModuleSm voteChart">
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            <p class="clear">{{bill.title|smallcaps}}</p>
+                            <p class="clear h5">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
                 {% endif %}
@@ -302,11 +305,11 @@
                 <ul>
                 {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:"3:" %}
-                        <li class="medModuleSm">
+                        <li class="medModuleSm voteChart">
 	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
-                            <p class="clear">{{bill.title|smallcaps}}</p>
+                            <p class="clear h5">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
                 {% endif %}
@@ -326,8 +329,8 @@
         <a name="votes"></a>
         <div class="fullWidth module clearfix">
             <div class="fullWidth clearfix">
-                <h3 class="moduleTitle">{% trans "Votes" %}</h3>
-                <a class="textReplace rssIcon" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
+                <h3 class="moduleTitle colLt">{% trans "Votes" %}</h3>
+                <a class="textReplace rssIcon colRt" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
             </div>
 
             {% with votes=legislator_votes|slice:":3" %}
