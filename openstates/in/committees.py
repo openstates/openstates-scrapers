@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
