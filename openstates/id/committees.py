@@ -1,6 +1,7 @@
 from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
+
 _COMMITTEE_URL = 'http://legislature.idaho.gov/%s/committees.cfm' # house/senate
 _JOINT_URL = 'http://legislature.idaho.gov/about/jointcommittees.htm'
 
@@ -9,9 +10,11 @@ _REV_CHAMBERS = {'senate':'upper', 'house':'lower'}
 _TD_ONE = ('committee', 'description', 'office_hours', 'secretary', 'office_phone')
 _TD_TWO = ('committee', 'office_hours', 'secretary', 'office_phone')
 
+
 def clean_name(name):
     return name.replace(u'\xa0', ' ')
-    
+
+
 class IDCommitteeScraper(CommitteeScraper):
     """Currently only committees from the latest regular session are
     available through html. Membership for prior terms are available via the
@@ -70,8 +73,15 @@ class IDCommitteeScraper(CommitteeScraper):
         for row in table.xpath('tbody/tr'):
             senate, house = [ td.text.replace('\r\n', ' ').replace(u'\xa0', ' ') \
                               for td in row.xpath('td') ]
-            committee.add_member( *senate.strip('Sen.').strip().split(',') )
-            committee.add_member( *house.strip('Rep.').strip().split(',') )
+
+            sen_data = senate.strip('Sen.').strip().split(',')
+            hou_data = house.strip('Rep.').strip().split(',')
+
+            if len(sen_data) > 1 and sen_data[1].strip() != "":
+                committee.add_member(*sen_data)
+            if len(hou_data) > 1 and hou_data[1].strip() != "":
+                committee.add_member(*hou_data)
+
         committee.add_source(url)
         self.save_committee(committee)
 
