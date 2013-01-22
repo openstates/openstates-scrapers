@@ -72,6 +72,9 @@ class GABillScraper(BillScraper):
             title = instrument['Caption']
             description = instrument['Summary']
 
+            if title is None:
+                continue
+
             bill = Bill(
                 session,
                 chamber,
