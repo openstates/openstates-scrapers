@@ -355,7 +355,8 @@ class NMBillScraper(BillScraper):
             if action_code in actions_with_committee:
                 # turn A/B/C into Full Name & Full Name 2 & Full Name 3
                 locs = [com_location_map[l]
-                        for l in action['Referral'].split('/') if l]
+                        for l in action['Referral'].split('/') if l
+                        and l in com_location_map]
                 action_name = action_name % (' & '.join(locs))
 
             # Fix known quirks related to actor
@@ -497,23 +498,27 @@ class NMBillScraper(BillScraper):
                     continue
 
                 # pull votes out
-                matches = re.match(' ([A-Z,.]+)(\s+)X\s+([A-Z,.]+)(\s+)X', line).groups()
-                name1, spaces1, name2, spaces2 = matches
+                matches = re.match(
+                    ' ([A-Z,.]+)(\s+)X\s+([A-Z,.]+)(\s+)X', line)
 
-                # vote can be determined by # of spaces
-                if len(spaces1) == 1:
-                    vote.yes(name1)
-                elif len(spaces1) == 2:
-                    vote.no(name1)
-                else:
-                    vote.other(name1)
+                if matches is not None:
+                    matches = matches.groups()
+                    name1, spaces1, name2, spaces2 = matches
 
-                if len(spaces2) == 1:
-                    vote.yes(name2)
-                elif len(spaces2) == 2:
-                    vote.no(name2)
-                else:
-                    vote.other(name2)
+                    # vote can be determined by # of spaces
+                    if len(spaces1) == 1:
+                        vote.yes(name1)
+                    elif len(spaces1) == 2:
+                        vote.no(name1)
+                    else:
+                        vote.other(name1)
+
+                    if len(spaces2) == 1:
+                        vote.yes(name2)
+                    elif len(spaces2) == 2:
+                        vote.no(name2)
+                    else:
+                        vote.other(name2)
         return vote
 
     # house totals
