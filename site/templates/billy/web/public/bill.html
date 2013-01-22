@@ -1,4 +1,5 @@
 {% extends "billy/web/public/base.html" %}
+{% load static from staticfiles %}
 {% load url from future %}
 {% load humanize %}
 {% load i18n %}
@@ -15,9 +16,12 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
     <script>
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
+        make_vote_charts(150, 150, 70);
+        fix_images();
     });
     </script>
 {% endblock %}
@@ -112,7 +116,12 @@
                     <ul class="clearfix" id="sponsorList">
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
-                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+
+
+
+
+                            <li><img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
+                                <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
@@ -121,7 +130,7 @@
                                 {# Sponsor had no leg_id or was inactive. #}
                                 <li><span class="sponsorName">{{ sponsor.name }}</span>
                             {% endif %}
-                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endif %} <span class=" sponsor-type bold">{{ sponsor.type }}</span></li>
                     {% endfor %}
                     {% if show_all_sponsors %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
@@ -222,25 +231,14 @@
         <div class="module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
 
-
-            <div class="sixCol colLt  withDash">
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
-                    {% for vote in votes_col1 %}
-                    <li>
+                    {% for vote in bill.votes_manager %}
+                    <li class="sixCol {% cycle "colLt" "colRt" %}">
                         <time class="published">{{vote.date|date:"M j, Y"}}</time>
                         <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
                         {% if vote.has_votes %}
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                            </li>
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                            </li>
-                        </ul>
+                        {% include "billy/web/public/_vote_chart_table.html" %}
                         {% else %}
                             {% trans "No vote counts available." %}
                         {% endif %}
@@ -251,47 +249,14 @@
                     </li>
                     {% endfor %}
                 </ul>
-                {% endif %}
-            </div>
-            <div class="sixCol colRt">
-                {% if bill.votes_manager.count %}
-                <ul class="largerList voteChart">
-                    {% for vote in votes_col2 %}
-                    <li>
-                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
-                        {% if vote.has_votes %}
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                            </li>
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                            </li>
-                        </ul>
-                        {% else %}
-                            {% trans "No vote counts available." %}
-                        {% endif %}
-                        {% if not vote.has_voters %}
-                        <span class="right"><b>{{vote_value|title}}</b></span>
-                            {% trans "No vote roll call available." %}
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                {% trans "No vote data is available yet." %}
-                {% endif %}
-            </div>
+        {% endif %}
        </div>
 
 
-       <div class="module">
+       <div class="module fullWidth">
             <h3 class="moduleTitle">{% trans "Actions" %}</h3>
 
-            <div class="fullWidth colLt clearfix">
+            <div class="fullWidth clearfix">
                 <table class="normalTable" id="actions-table">
                     <thead>
                         <tr id="titles">

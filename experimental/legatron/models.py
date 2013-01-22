@@ -112,7 +112,7 @@ class Feed(object):
         '''
         spec = dict(url=self.url)
         update = {'$set': spec}
-        self.logger.info('feed._initial_save %r' % self.url)
+        self.logger.debug('feed._initial_save %r' % self.url)
         doc = feeds_db.feeds.find_and_modify(
             spec, update, upsert=True, new=True)
         self.mongo_id = doc['_id']
@@ -127,21 +127,27 @@ class Feed(object):
         except Exception:
             tb = traceback.format_exc()
             self._handle_fetch_exception(tb)
+            self._update_report_after_fetch()
         else:
             self.succeeded = True
 
             # XXX: This will fail if the text isn't a valid feed.
             data = feedparser.parse(text)
             self._data = data
-
-        self._update_report_after_fetch()
+            self._update_report_after_fetch()
+            return data
 
     @property
     def data(self):
         '''The parsed feed contents.
         '''
         data = getattr(self, '_data', None)
-        return data or self._get_feed()
+        return data or self._get_feed() or {}
+
+    def is_valid(self):
+        '''Does this hot garbage contain the keys we expect?
+        '''
+        return 'title' in self.data.get('feed', {})
 
     def _handle_fetch_exception(self, _traceback):
         '''If the fetch fails, log the exception and store the traceback for
@@ -182,11 +188,13 @@ class Feed(object):
         '''
 
     def save(self):
+        '''Update the feed record with the latest report.
         '''
-        '''
+        if not self.is_valid():
+            return
         spec = dict(url=self.url)
         update = {'$set': self.report}
-        self.logger.info('feed.finish_report %r' % self.url)
+        self.logger.debug('feed.finish_report %r' % self.url)
         feeds_db.feeds.find_and_modify(spec, update, upsert=True, new=True)
         self.logger.info('feed.save: %r' % self.url)
 
@@ -205,11 +213,21 @@ class Entry(object):
     def __init__(self, entry, feed):
         self.entry = entry
         self.feed = feed
-        self.report = {}
+        self.report = {
+            'entities': {
+                'count' : 0,
+                }
+            }
 
         # Whether a fetch of the full text was tried and succeeded.
         self.tried = False
         self.succeeded = None
+
+    def is_valid(self):
+        '''Does this hot garbage contain the keys we expect?
+        '''
+        valid = set(['summary', 'link', 'title'])
+        return valid < set(self.entry)
 
     @staticmethod
     def blast_cache(self):
@@ -221,6 +239,7 @@ class Entry(object):
         '''Get a unique mongo id based on this entry's url and title.
         '''
         s = self.entry['link'] + self.entry['title']
+        s = s.encode('ascii', 'ignore')
         return hashlib.md5(s).hexdigest()
 
     def is_new(self):
@@ -232,14 +251,15 @@ class Entry(object):
             is_new = True
         else:
             is_new = False
-        self.logger.info('is_new? %r --> %r' % (mongo_id, is_new))
+        self.logger.debug('is_new? %r --> %r' % (mongo_id, is_new))
+        return is_new
 
     def _get_full_text(self):
         '''Just for experimenting at this point. Fetch the full text,
         log any exception the occurs, and store the details regarding the
         outcome of the fetch on the object.
         '''
-        self.logger.info('entry GET %r' % self.entry.link)
+        self.logger.debug('entry GET %r' % self.entry.link)
         try:
             html = self.session.get(self.entry.link).text
         except Exception:
@@ -272,6 +292,7 @@ class Entry(object):
             'url': self.url,
             'entity_count': len(self['entity_ids'])
             }
+
         if self.tried:
             last_fetch = {
                 'succeeded': self.succeeded,
@@ -287,7 +308,8 @@ class Entry(object):
         json serialized.
         '''
         # Add the feed's id to make the entry and its feed joinable.
-        ret = dict(feed_id=self.feed.mongo_id)
+        ret = {}
+        ret['feed_id'] = self.feed.mongo_id
 
         # Convert unserializable timestructs into datetimes.
         for k, v in self.entry.items():
@@ -295,15 +317,20 @@ class Entry(object):
                 t = time.mktime(self.entry[k])
                 dt = datetime.datetime.fromtimestamp(t)
                 ret[k] = dt
+            elif '.' not in k:
+                ret[k] = v
+
         return ret
 
     def save_if_entities_found(self):
         '''If the entry is previously unseen and the extractor finds entities
         have been mentioned, save, otherwise do nothing.
         '''
-        if self.is_new() and self.entry['entity_ids']:
+        if self.is_valid() and self.is_new() and self.entry['entity_ids']:
             feeds_db.entries.save(self.serializable())
-            self.logger('entry.save_if_entities_found: %r' % self.entry.link)
+            msg = 'found %d entities: %r'
+            args = (len(self.entry['entity_ids']), self.entry.link)
+            self.logger.debug(msg % args)
 
     def finish_report(self, abbr):
         '''After attempting to extract entities, update the report and the
@@ -335,16 +362,11 @@ class Entry(object):
         report['entries']['count'] += 1
 
         # If this is a new entry...
-        if self.tried:
+        if self.is_new():
             report['entries']['new'] += 1
             if self.entry['entity_ids']:
                 report['entries']['relevant'] += 1
             report['entities']['count'] += len(self.entry['entity_ids'])
+            self.report['entities']['count'] += len(self.entry['entity_ids'])
         else:
             report['entries']['old'] += 1
-
-
-
-
-
-

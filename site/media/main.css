@@ -381,6 +381,10 @@ a.viewMore {
     color: #a3a730;
     }
 
+a.viewMore:hover {
+    color: #8C941F;
+    }
+
 a.missingInfo{ background-color: #fff; display: inline-block; border: 1px solid #e6e6da; -moz-border-radius: 10px; -webkit-border-radius: 10px; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; font-weight: bold; font-size: 100%; padding: 0px 6px; color: #a3a730; }
 
 span.qualityException { padding-top: 2em; display: block; }
@@ -436,6 +440,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .no .tagValue { background-color: #d1cac8;}
 
 .voteChart a { margin-bottom: 5px; display: block;}
+
+.voteChart {
+    display: block;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px dashed #e2e2dd;
+    }
+
+.voteChart:last-child {
+    display: block;
+    margin-bottom: 20px;
+    padding-bottom: 0px;
+    border-bottom: none;
+    }
 
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
@@ -496,15 +514,22 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .withTimeline { padding-top: 60px; max-width: 450px;}
 h2.withTimeline { margin-top: 30px;}
 
-.titleNumber { font-size: 600%; line-height: 50px; font-weight: bold; text-transform: uppercase; line-height: 70px; }
+.titleNumber {
+    font-size: 600%;
+    line-height: 50px;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 70px; }
+
 .titleNumber span { display: block; font-size: 20%; padding-top: 5px; font-weight: normal; line-height: 20px;}
 
 #totalLeg .titleNumber { font-size: 450%; line-height: 60px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; }
-#sponsorList a, .sponsorName { font-size: 100%; display: block; }
+#sponsorList li { margin-bottom: 20px; min-width: 250px;}
+#sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
+.sponsor-type { display: inline; vertical-align: bottom; }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
 #CCC;
@@ -673,7 +698,7 @@ footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: u
 
 footer dt { text-transform: uppercase; }
 dd li { float: left; margin-right: 20px; display: block; margin-bottom: 10px;}
-dd li a:link, dd li a:visited, .sponsorName { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
+dd li a:link, dd li a:visited, { font-size: 95%; border-bottom: 1px dotted #97948e; color: #97948e;}
 footer dl { padding: 50px 0 0 35px;}
 
 
@@ -710,7 +735,7 @@ footer .openTwit a, footer .openTwit a:active, footer .openTwit a:visited{
     display: block;
 }
 
-.sponsor-type { display: inline; font-size: 75%; vertical-align: bottom; }
+
 
 /* find your legislator stuff */
 .find_your_legislator_errorbox {
@@ -726,39 +751,47 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
 
 /* pulled in from external css */
 
+
 .label-bill-subject {
-    font-size: 10.998px;
+    font-size: 12px;
     font-weight: bold;
-    line-height: 14px;
-    color: #ffffff;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 16px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #999999;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    background-color:#FFF;
 }
 .label-bill-subject a {
-    color: white;
+    color: #C69600;
 }
+.label-bill-subject a:hover {
+   color: #A37700;
+}
+
 .label-bill-type {
-    font-size: 10.998px;
+    font-size: 12px;
     font-weight: bold;
-    line-height: 14px;
-    color: black;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 18px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #D6AC04;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    background-color: #D6AC04;
 }
 .label-bill-type a {
-    color: white;
+    color: #FFF;
+}
+.label-bill-type a:hover {
+    background-color: #AD7E00;
 }
 
 .selected { background-color: #E9E6DF; }
@@ -774,20 +807,25 @@ input[type="checkbox"] {
 .label {
     font-size: 10.998px;
     font-weight: bold;
-    line-height: 14px;
-    color: black;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    line-height: 26px;
+    color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
-    background-color: #999999;
     padding: 1px 4px 2px;
     -webkit-border-radius: 3px;
      -moz-border-radius: 3px;
           border-radius: 3px;
+    border: 1px solid #E9E6DF;
+    margin: 1px;
 }
 .label a {
-    color: white;
+    color: #C69600;
 }
+
+.label a:hover {
+    color: #AD7E00;
+}
+
 
 .pagesNum {
   height: 36px;
@@ -1151,7 +1189,9 @@ pre {
     width: 360px;
     margin-top: 2px;
     margin-bottom: 20px;
-    -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
     }
 
 #container #find_your_leg input{
@@ -1201,7 +1241,7 @@ div.notification-preference {
 
 }
 
-.favbutton{
+.favbutton {
     background-color:#FFF;
     display: inline-block;
     border: 1px solid #e6e6da;
@@ -1213,6 +1253,10 @@ div.notification-preference {
     font-size: 135%;
     padding:5px 10px;
     color:#E7B300;
+}
+
+.favbutton:hover{
+    color:#00FF00;
 }
 
 .star{
@@ -1256,3 +1300,35 @@ div.notification-preference {
     width: 218px;
 }
 
+
+.bigNumber{
+    color:#B9B4B1;
+}
+.bigNumber:hover{
+    color:#99AF33;
+}
+
+li.greyArrow:before {content:"»"}
+
+.bold { font-weight: bold;}
+#sponsorList img, .withBorder li{ margin-right:10px}
+
+.yes {
+    background-color: #A3B669;
+    color: #A3B669;
+    margin-right: 10px;
+}
+.no {
+    background-color: #BB522E;
+    color: #BB522E;
+    margin-right: 10px;
+}
+
+.other {
+    background-color: #DFDFD1;
+    color: #DFDFD1;
+    margin-right: 10px;
+}
+ .grey {
+     color:#817C78;
+ }
