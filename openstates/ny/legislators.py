@@ -22,7 +22,11 @@ class NYLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link in page.xpath('//a[contains(@href, "/senator/")]'):
+        xpath = (
+            '//div[contains(@class, "views-row")]/'
+            'div[contains(@class, "last-name")]/'
+            'span[contains(@class, "field-content")]/a')
+        for link in page.xpath(xpath):
             if link.text in (None, 'Contact', 'RSS'):
                 continue
             name = link.text.strip()
