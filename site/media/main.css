@@ -513,7 +513,7 @@ h2.withTimeline { margin-top: 30px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; }
+#sponsorList li { margin-bottom: 20px; min-width: 250px;}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
 .sponsor-type { display: inline; vertical-align: bottom; }
 
@@ -1297,3 +1297,4 @@ div.notification-preference {
 li.greyArrow:before {content:"»"}
 
 .bold { font-weight: bold;}
+#sponsorList img, .withBorder li{ margin-right:10px}

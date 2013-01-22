@@ -119,13 +119,9 @@
 
 
 
- <!-- Legislator image goes here -->
-                            <li>
-                                 <img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
-                            </li>
 
-
-                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                            <li><img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
+                                <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                 <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
                         {% else %}
                             {% if sponsor.committee_id %}
@@ -134,7 +130,7 @@
                                 {# Sponsor had no leg_id or was inactive. #}
                                 <li><span class="sponsorName">{{ sponsor.name }}</span>
                             {% endif %}
-                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endif %} <span class=" sponsor-type bold">{{ sponsor.type }}</span></li>
                     {% endfor %}
                     {% if show_all_sponsors %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
