@@ -35,10 +35,11 @@ class BogusEntry(Exception):
     '''Raised when an entry lacks a required attribute, like 'link'.'''
 
 
-def new_feed_id(entry, cache={}):
+def new_entry_id(entry, cache={}):
     '''Generate an entry id using the hash value of the title and link.
     '''
-    return hashlib.md5(entry['link'] + entry['title']).hexdigest()
+    s = (entry['link'] + entry['title']).encode('ascii', 'ignore')
+    return hashlib.md5(s).hexdigest()
 
 
 PATH = dirname(abspath(__file__))
@@ -275,7 +276,7 @@ class Extractor(object):
         entry['save_time'] = datetime.datetime.utcnow()
 
         try:
-            entry['_id'] = new_feed_id(entry)
+            entry['_id'] = new_entry_id(entry)
         except BogusEntry:
             # This entry appears to be malformed somehow. Skip.
             msg = 'Skipping malformed feed: %s'
@@ -285,7 +286,10 @@ class Extractor(object):
 
         entry['_type'] = 'feedentry'
 
-        entry['summary'] = clean_html(entry['summary'])
+        try:
+            entry['summary'] = clean_html(entry['summary'])
+        except KeyError:
+            return
         try:
             entry['summary_detail']['value'] = clean_html(
                 entry['summary_detail']['value'])
@@ -323,7 +327,10 @@ class Extractor(object):
 
         # Save
         msg = 'Found %d related entities in %r'
-        self.logger.info(msg % (len(ids), entry['title']))
+        if ids:
+            self.logger.info(msg % (len(ids), entry['title']))
+        else:
+            self.logger.debug(msg % (len(ids), entry['title']))
         return entry
         # feed_db.entries.save(entry)
 
