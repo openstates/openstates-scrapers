@@ -1,3 +1,5 @@
+import re
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
@@ -77,10 +79,14 @@ class NHLegislatorScraper(LegislatorScraper):
                 if code:
                     leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
 
+            romans = r'(?i)\s([IXV]+)(?:\s|$)'
             for com in (com1, com2, com3, com4, com5):
                 if com:
+                    com_name = com.title()
+                    com_name = re.sub(romans, lambda m: m.group().upper(),
+                                      com_name)
                     leg.add_role('committee member', term=term,
-                                  chamber=chamber, committee=com.title())
+                                  chamber=chamber, committee=com_name)
 
             if 'url' in leg:
                 leg['photo_url'] = self.get_photo(leg['url'], chamber)

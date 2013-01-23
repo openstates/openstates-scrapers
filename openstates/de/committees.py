@@ -41,7 +41,7 @@ class DECommitteeScraper(CommitteeScraper):
             for tr in page.xpath('//td[@width="96%"]/table/tr'):
                 role_section = tr.xpath('td/b/font')
                 if(len(role_section) > 0):
-                    role = re.sub(r's?:$','',role_section[0].text).lower()
+                    role = re.sub(r's?:$', '', role_section[0].text).lower()
                     for member in tr.xpath('td/font/a'):
                         name = re.sub('\s+', ' ', member.text)
                         committee.add_member(name, role)

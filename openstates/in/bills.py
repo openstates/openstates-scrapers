@@ -1,7 +1,8 @@
 import os
 import re
 import datetime
-from collections import defaultdict
+import itertools
+from collections import defaultdict, Counter
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -31,9 +32,12 @@ def insert_specific_votes(vote, specific_votes):
 
 
 def check_vote_counts(vote):
-    assert vote['yes_count'] == len(vote['yes_votes'])
-    assert vote['no_count'] == len(vote['no_votes'])
-    assert vote['other_count'] == len(vote['other_votes'])
+    try:
+        assert vote['yes_count'] == len(vote['yes_votes'])
+        assert vote['no_count'] == len(vote['no_votes'])
+        assert vote['other_count'] == len(vote['other_votes'])
+    except AssertionError:
+        pass
 
 
 class INBillScraper(BillScraper):
@@ -205,7 +209,6 @@ class INBillScraper(BillScraper):
             bill.add_sponsor('primary', sponsor)
 
         act_table = page.xpath("//table")[1]
-        read_yet = False
 
         for row in act_table.xpath("tr")[1:]:
             date = row.xpath("string(td[1])").strip()
@@ -265,6 +268,10 @@ class INBillScraper(BillScraper):
         votes = []
         yes_count, no_count, other_count = None, None, 0
         vtype = None
+
+        # The index pos where each block of whitespace ends.
+        ends = Counter()
+        name_lines = []
         for line in lines[14:]:
             line = line.strip()
             if not line:
@@ -283,18 +290,32 @@ class INBillScraper(BillScraper):
                 other_count += parse_vote_count(line.split(":")[1].strip())
                 vtype = 'other'
             else:
-                n1 = line[0:19].strip()
-                if n1:
-                    votes.append((n1, vtype))
-                n2 = line[19:40].strip()
-                if n2:
-                    votes.append((n2, vtype))
-                n3 = line[40:58].strip()
-                if n3:
-                    votes.append((n3, vtype))
-                n4 = line[58:].strip()
-                if n4:
-                    votes.append((n4, vtype))
+                for m in re.finditer('\s+', line):
+                    ends[m.end()] += 1
+                name_lines.append((vtype, line))
+
+        # Try to figure out the column boundaries.
+        most_common = []
+        for k, v in Counter(ends.values()).most_common():
+            if k > 5:
+                most_common.append(k)
+
+        boundaries = []
+        for k, v in ends.items():
+            if v in most_common:
+                boundaries.append(k)
+        boundaries.sort()
+        last_boundary = boundaries[-1]
+        boundaries = zip([0] + boundaries, boundaries)
+        boundaries = list(itertools.starmap(slice, boundaries))
+        # And get from the last boundary to the line ending.
+        boundaries.append(slice(last_boundary, None))
+
+        for vtype, line in name_lines:
+            for slice_ in boundaries:
+                name = line[slice_].strip()
+                if name:
+                    votes.append((name, vtype))
 
         result_types = {
             'FAILED': False,
