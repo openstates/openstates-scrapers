@@ -103,11 +103,11 @@
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked chambers - side by side passed/introduced #}
         {% for chamber in chambers %}
-            <h4>{{ chamber.name }}</h4>
-            <div class="sixCol colLt">
+            <h3 class="grey">{{ chamber.name }}</h3>
+            <div class="sixCol colLt voteChart">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>
-            <div class="sixCol colRt">
+            <div class="sixCol colRt voteChart">
                 {% include "billy/web/public/_recently_introduced.html" %}
             </div>
         {% endfor %}

@@ -7,7 +7,7 @@
 {% if chamber.passed_bills %}
     <ul>
     {% for bill in chamber.passed_bills %}
-        <li>
+        <li class="voteChart">
             <time class="published">
             {% if chamber.type == 'upper' %}
                 {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
@@ -23,7 +23,7 @@
                     {% endif %} {% endwith %}
                 </span>
             </span>
-            <p class="clear">{{ bill.title|truncatewords:50|smallcaps}}</p>
+            <h6 class="clear">{{ bill.title|truncatewords:50|smallcaps}}</h6>
         </li>
     {% endfor %}
     </ul>

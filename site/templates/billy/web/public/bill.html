@@ -113,34 +113,40 @@
                         {% endwith %}
                     </h6>
                 -->
+
+
+<!-- SPONSORS -->
                     <ul class="clearfix" id="sponsorList">
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
 
-
-
-
-                            <li><img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
-                                <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                            <li>
+                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
+                                <div>
+                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                                    <p class="sponsor-type bold">{{ sponsor.type }}</p>
+                                    <p class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) </p>
+                                    <p class="tip sponsor-type">{% trans "Dist." %} {{ sponsor.context_role.district }}</p>
+                                </div>
+                            </li>
                         {% else %}
                             {% if sponsor.committee_id %}
-                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a></li>
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. #}
-                                <li><span class="sponsorName">{{ sponsor.name }}</span>
+                                <li><span class="sponsorName">{{ sponsor.name }}</span></li>
                             {% endif %}
-                        {% endif %} <span class=" sponsor-type bold">{{ sponsor.type }}</span></li>
+                        {% endif %}
                     {% endfor %}
                     {% if show_all_sponsors %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
                             <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span></li>
                         {% else %}
                             {% if sponsor.committee_id %}
-                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a></li>
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. #}
                                 <li><span class="sponsorName">{{ sponsor.name }}</span>

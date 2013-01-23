@@ -527,9 +527,9 @@ h2.withTimeline { margin-top: 30px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; min-width: 250px;}
+#sponsorList li { margin-bottom: 20px; width: 250px;}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
-.sponsor-type { display: inline; vertical-align: bottom; }
+.sponsor-type {padding-bottom: 0; vertical-align: bottom; margin-bottom:0 }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
 #CCC;
