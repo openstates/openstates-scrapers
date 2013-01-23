@@ -62,7 +62,7 @@ def _get_td(doc, th_text):
     td = doc.xpath('//th[text()="%s"]/following-sibling::td' % th_text)
     if td:
         return td[0]
-    td = doc.xpath('//th/span[text()="Broad Subject(s):"]/../following-sibling::td')
+    td = doc.xpath('//th/span[text()="%s"]/../following-sibling::td' % th_text)
     if td:
         return td[0]
 
@@ -261,6 +261,55 @@ class MDBillScraper(BillScraper):
         self.save_bill(bill)
 
 
+    def scrape_vote(self, bill, action_text, url):
+        doc = lxml.html.fromstring(self.urlopen(url))
+
+        date = None
+        yes_count = no_count = other_count = None
+
+        # process action_text - might look like "Vote - Senate Floor - Third Reading Passed (46-0) - 01/16/12"
+        if action_text.startswith('Vote - Senate Floor - '):
+            action_text = action_text[22:]
+            chamber = 'upper'
+
+        motion, unused_date = action_text.split(' - ')
+        yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
+        if 'Passed' in motion:
+            motion = motion.split(' Passed')[0]
+            passed = True
+        else:
+            raise Exception('unknown motion')
+
+        vote = Vote(chamber=chamber, date=None, motion=motion,
+                    yes_count=int(yes_count), no_count=int(no_count),
+                    other_count=0, passed=passed)
+        vfunc = None
+
+        nobrs = doc.xpath('//nobr/text()')
+        for text in nobrs:
+            text = text.replace(u'\xa0', ' ')
+            if text.startswith('Calendar Date: '):
+                vote['date'] = datetime.datetime.strptime(text.split(': ', 1)[1], '%b %d, %Y %H:%M %p')
+            elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
+                self.debug(text)
+                yeas, nays, nv, exc, absent = re.match('(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused \(Absent\)\s+(\d+) Absent', text).groups()
+                vote['yes_count'] = int(yeas)
+                vote['no_count'] = int(nays)
+                vote['other_count'] = int(nv) + int(exc) + int(absent)
+            elif 'Voting Yea' in text:
+                vfunc = vote.yes
+            elif 'Voting Nay' in text:
+                vfunc = vote.no
+            elif 'Not Voting' in text or 'Excused' in text:
+                vfunc = vote.other
+            elif vfunc:
+                vfunc(text)
+
+        vote.validate()
+        vote.add_source(url)
+        bill.add_vote(vote)
+
+
     def scrape_bill(self, chamber, session, bill_id, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -292,15 +341,13 @@ class MDBillScraper(BillScraper):
             sponsor_type = 'cosponsor'
 
         # subjects
-        subjects = _get_td(doc, 'Narrow Subject(s):').text_content()
-        bill['subjects'] = [subjects.split(' -see also-')[0]]
+        subjects = _get_td(doc, 'Narrow Subject(s):').xpath('a/text()')
+        bill['subjects'] = [s.split(' -see also-')[0] for s in subjects if s]
 
         # documents
         self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
         # actions
         self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
-
-        # TODO: votes??
 
         self.save_bill(bill)
 
@@ -325,6 +372,8 @@ class MDBillScraper(BillScraper):
                 bill.add_document('Senate %s Committee Vote' %
                                   a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Vote - Senate Floor':
+                self.scrape_vote(bill, td.text_content(), a.get('href'))
             else:
                 raise ValueError('unknown document type: %s', a.text)
 

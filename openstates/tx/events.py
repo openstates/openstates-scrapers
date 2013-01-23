@@ -119,8 +119,11 @@ class TXEventScraper(EventScraper):
                 replace = {
                     "see below": "",
                     "See Below": "",
-                    "of the House and the Senate": "",
+                    "of the House": "",
+                    "of the Senate": "",
                     "or upon adjournment": "",
+                    "of the House and the Senate": "",
+                    "or 30 minutes upon adjournment": "",
                     "(or 15 minutes after adjournment of the .*)": "",
                 }
                 for rep in replace:
@@ -130,7 +133,6 @@ class TXEventScraper(EventScraper):
                 try:
                     datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
                 except ValueError:
-                    print datetime
                     datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y")
                 self.scrape_event_page(session, chamber, event.attrib['href'],
                                       datetime)
