@@ -404,23 +404,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
 #container .legMap #map { height: 300px; width: 100%;}
 #billState {
-    float: right;
-    margin-top:70px;
-    padding: 15px 25px 13px 25px;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-    background-color: #B0D1C9;
-    border: 1px solid #B9B4B1;
+    float: none;
     text-transform: uppercase;
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
     font-weight: 700;
     font-size: 120%;
     letter-spacing:1px;
     margin-bottom: 25px;
-    color: #FFF;
-
+    color:#504A45;
     }
+
+#billState span {
+    color: #72AFA5;
+}
+
 #voteMap { float: right;}
 .map-overlay{
     background-color:     #679ee8;
@@ -527,9 +524,9 @@ h2.withTimeline { margin-top: 30px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; min-width: 250px;}
+#sponsorList li { margin-bottom: 20px; width: 250px;}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
-.sponsor-type { display: inline; vertical-align: bottom; }
+.sponsor-type {padding-bottom: 0; vertical-align: bottom; margin-bottom:0 }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
 #CCC;

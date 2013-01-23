@@ -32,12 +32,13 @@
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div><!--  class="medModule"> -->
                 <h2 class="withTipbillState" style="padding-top: 30px;">
                     {{ vote.chamber_name }} {% trans "Vote on" %} <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
                 </h2>
+                <div id="billState" class="passed"><p>{% trans "Bill Status:" %} <span>{{vote.passed|yesno:"Passed,Failed,Unknown"}}</span></p></div>
+
                 <p class="tip">{{bill.title|smallcaps}}</p>
             </div>
             <div class="eightCol colLt clear">
@@ -45,6 +46,7 @@
                 <!-- <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
 
                 <h4>Vote Breakdown</h4> -->
+
                 {% if vote.has_votes %}
                     {% include "billy/web/public/_vote_chart_table.html" %}
                 {% else %}
