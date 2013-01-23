@@ -62,7 +62,7 @@ class PACommitteeScraper(CommitteeScraper):
 
                     committees[(chamber, committee_name,
                                 subcommittee_name)] = committee
-                committee.add_member(name, role)
+                committee.add_member(name.strip(), role)
 
         for committee in committees.values():
             if not committee['members']:
