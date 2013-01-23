@@ -213,7 +213,7 @@ h4, .h3 { margin-bottom: 25px; font-size: 140%; line-height: 29px; text-transfor
 h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: block;}
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
 .h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
-h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 800; font-size: 220%; line-height: 30px;}
+h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 500; font-size: 220%; line-height: 30px;}
 
 .sidebar h4{
 	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
@@ -1342,9 +1342,27 @@ li.greyArrow:before {content:"»"}
     margin-right: 10px;
 }
 
-#ie-chart-container table { display: none; }
+
+
+/* Document type "icons"  */
+.html {
+    color: #817C78;
+    font-size: 12px;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-style: normal;
+    font-weight: 500;
+    background-color: #DCD7D2;
+    padding: 2px 5px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+
+
+#ie-chart-container table { display: none;}
 .x-axis path, .x-axis line {
     fill: none;
     shape-rendering: crispEdges;
-    stroke: black;
+    stroke: rgb(80, 74, 69);
 }
