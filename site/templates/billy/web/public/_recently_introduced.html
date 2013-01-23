@@ -13,7 +13,7 @@
                 <div class="clear"></div>
                 <span class="tip sideNote">
                     {% with sponsor=bill.sponsors_manager.first %} {% if sponsor %}
-                        {% trans "Sponsored by: " %}<a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                        {% trans "Sponsored by:" %} <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name|default:sponsor.name }}</a>
                     {% endif %} {% endwith %}
                 </span>
             </span>
