@@ -77,7 +77,13 @@
      </div>
 
     <header id="mainHeader">
-
+        <div id="login" class="tip">
+            {% if request.user.is_authenticated %}
+              <a>Sign out</a> or <a>edit your favorites</a>
+            {% else %}
+              <p>Sign into your Sunlight Account</p>
+            {% endif %}
+        </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
             <label>Search for bills or legislators:</label>
             <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'search all states' %}">
@@ -88,11 +94,12 @@
         <h1><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns"></div>
 
+
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% region_select_form abbr %}
         {% block collection_nav %}
         {% if abbr and abbr != 'all' %}
-        <nav>
+        <nav class="clearfix">
             <ul>
                 <li {% if nav_active == "home" %}class="active"{% endif %}><a href="{% url region abbr %}">{% trans "Home" %}</a></li>
                 <li {% if nav_active == "legislators" %}class="active"{% endif %}><a href="{% url legislators abbr %}">{% trans "Legislators" %}</a></li>
@@ -102,7 +109,6 @@
                     <li {% if nav_active == "events" %}class="active"{% endif %}><a href="{% url events abbr %}">{% trans "Events" %}</a></li>
                 {% endif %}
             </ul>
-            <div class="clear"></div>
         </nav>
         {% endif %}
         {% endblock %}

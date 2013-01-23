@@ -239,7 +239,7 @@ a.tip:hover { color: #d6ac04; }
 
 
 /* header */
-#searchform { float: right; width: 265px; margin-top: 35px; }
+#searchform { float: right; width: 265px; margin-top: 30px; }
 
 #searchform label {
     color:#766d6d;
@@ -252,7 +252,7 @@ a.tip:hover { color: #d6ac04; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
-#mainHeader h1 { width: 414px; height: 46px; padding-top: 60px; margin-bottom: 34px; float: left;}
+#mainHeader h1 { width: 414px; height: 46px; padding-top: 56px; margin-bottom: 34px; float: left;}
 #mainHeader h1 a { background: url(images/logo.png) top left no-repeat; width: 414px; height: 46px; }
 
 #mainFilter { margin-bottom: 10px;}
@@ -274,7 +274,17 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
 	border: 3px solid #d8d5c8;
 }
 
-#shareBtns { float: right; clear: right; margin-top: 50px; height: 16px;}
+/*  LOGIN */
+
+#login {
+   float:right;
+   clear:right;
+   margin-bottom:0;
+   font-size:13px;
+   margin-left:690px;
+}
+
+#shareBtns { float: right; margin-top: 30px; height: 16px; clear:right}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
 #shareBtns li a { width: 16px; height: 16px; }
 #facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
@@ -363,7 +373,7 @@ img.firstHalfModule  { width: 100px;}
 .withBorderLine { float: left; margin-right: 10px; padding-right: 10px; border-right: 1px solid #cecac1; }
 .entryMetaData { line-height: 13px;}
 
-.scout-link { text-align: right; display: block; }
+.scout-link { text-align: right; display: none; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
 
 a.viewMore {
@@ -1309,7 +1319,11 @@ li.greyArrow:before {content:"»"}
 
 .bold { font-weight: bold;}
 #sponsorList img, .withBorder li{ margin-right:10px}
+.grey {
+    color:#817C78;
+}
 
+/* Vote Chart */
 .yes {
     background-color: #A3B669;
     color: #A3B669;
@@ -1326,6 +1340,4 @@ li.greyArrow:before {content:"»"}
     color: #DFDFD1;
     margin-right: 10px;
 }
- .grey {
-     color:#817C78;
- }
+
