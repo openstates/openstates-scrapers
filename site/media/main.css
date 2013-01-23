@@ -1332,3 +1332,10 @@ li.greyArrow:before {content:"»"}
  .grey {
      color:#817C78;
  }
+
+#ie-chart-container table { display: none; }
+.x-axis path, .x-axis line {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: black;
+}
