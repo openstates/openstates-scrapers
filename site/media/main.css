@@ -534,7 +534,8 @@ h2.withTimeline { margin-top: 30px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; width: 250px;}
+#sponsorList {margin-left: 0px}
+#sponsorList li { margin-bottom: 20px; width: 260px; margin-right:10px; margin-left:0; height:100px}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
 .sponsor-type {padding-bottom: 0; vertical-align: bottom; margin-bottom:0 }
 
@@ -1258,7 +1259,7 @@ div.notification-preference {
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
     font-size: 135%;
-    padding:5px 10px;
+    padding:3px 10px;
     color:#E7B300;
 }
 
@@ -1340,10 +1341,6 @@ li.greyArrow:before {content:"»"}
     color: #DFDFD1;
     margin-right: 10px;
 }
-
- .grey {
-     color:#817C78;
- }
 
 #ie-chart-container table { display: none; }
 .x-axis path, .x-axis line {

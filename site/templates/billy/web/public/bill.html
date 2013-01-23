@@ -57,7 +57,7 @@
             <div class="medModule">
                 <h2 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h2>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-                <p>{{ bill.title|capfirst|smallcaps }}</p>
+                <h5>{{ bill.title|capfirst|smallcaps }}</h5>
                 <div class="clearfix">
                     <div class="tip colLt">
                     {% if request.user.is_authenticated %}
