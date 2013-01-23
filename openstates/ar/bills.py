@@ -127,6 +127,8 @@ class ARBillScraper(BillScraper):
                 action_type.append('amendment:introduced')
                 action_type.append('amendment:passed')
 
+            if not action:
+                action = '[No text provided]'
             self.bills[bill_id].add_action(actor, action, date,
                                            type=action_type or ['other'])
 
