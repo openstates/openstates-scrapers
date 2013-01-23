@@ -69,10 +69,18 @@ class NYCommitteeScraper(CommitteeScraper):
         comm.add_source(url)
 
         for link in page.xpath("//div[@class='commlinks']//a[contains(@href, 'mem')]"):
+
             member = link.text.strip()
             member = re.sub(r'\s+', ' ', member)
 
             name, role = parse_name(member)
+
+            # Figure out if this person is the chair.
+            if 'Chair' in link.xpath('../../preceding-sibling::div[1]/text()'):
+                role = 'chair'
+            else:
+                role = 'member'
+
             comm.add_member(name, role)
 
         if comm['members']:
@@ -112,12 +120,21 @@ class NYCommitteeScraper(CommitteeScraper):
 
         member_div = page.xpath("//div[@class = 'committee-members']")[0]
 
+        xpath = '//label[contains(., "Chair:")]/following-sibling::a/text()'
+        chair = page.xpath(xpath)
+        if chair:
+            comm.add_member(chair.pop().strip(), 'chair')
+
         seen = set()
         for link in member_div.xpath(".//a"):
             if not link.text:
-                continue
-
-            member = link.text.strip()
+                try:
+                    # On one vice chair, the text was nested differently.
+                    member = link[0].tail.strip()
+                except (IndexError, AttributeError):
+                    continue
+            else:
+                member = link.text.strip()
 
             next_elem = link.getnext()
             if (next_elem is not None and
