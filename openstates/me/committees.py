@@ -42,11 +42,16 @@ class MECommitteeScraper(CommitteeScraper):
             path2 = '/html/body/ul[%s]/li/a' % (count)
 
             for el in root.xpath(path2):
-               rep = el.text
-               if rep.find('(') != -1:
+                rep = el.text
+                if rep.find('(') != -1:
                     mark = rep.find('(')
                     rep = rep[15: mark]
-               committee.add_member(rep)
+                if 'chair' in rep.lower():
+                    role = 'chair'
+                    rep = re.sub(r'(?i)[\s,]*chair\s*$', '', rep)
+                else:
+                    role = 'member'
+                committee.add_member(rep, role)
             committee.add_source(url)
 
             self.save_committee(committee)
@@ -70,8 +75,13 @@ class MECommitteeScraper(CommitteeScraper):
 
             # up two and get ul sibling
             for leg in item.xpath('../../following-sibling::ul[1]/li'):
+                lname = leg.text_content().strip()
+                if 'Chair' in lname:
+                    role = 'chair'
+                else:
+                    role = 'member'
                 lname = leg.text_content().strip().split(' of ')[0]
-                com.add_member(lname)
+                com.add_member(lname, role)
 
             self.save_committee(com)
 
