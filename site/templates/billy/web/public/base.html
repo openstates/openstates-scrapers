@@ -1,5 +1,5 @@
 {% load static from staticfiles %}
-{% load i18n %}
+{% load url from future %}
 {% load customtags %}
 {% load i18n %}
 <!doctype html>
@@ -79,9 +79,9 @@
     <header id="mainHeader">
         <div id="login" class="tip">
             {% if request.user.is_authenticated %}
-              <a>Sign out</a> or <a>edit your favorites</a>
+            <a href="{% url 'logout' %}">Sign out</a> or <a href="{% url 'user_favorites' %}">view your favorites</a>
             {% else %}
-              <a>Sign into your Sunlight Account</a>
+                <a href="/login/sunlight/">Sign into your Sunlight Account</a>
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
