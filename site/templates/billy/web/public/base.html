@@ -81,7 +81,7 @@
             {% if request.user.is_authenticated %}
               <a>Sign out</a> or <a>edit your favorites</a>
             {% else %}
-              <p>Sign into your Sunlight Account</p>
+              <a>Sign into your Sunlight Account</a>
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
