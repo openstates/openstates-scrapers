@@ -54,6 +54,13 @@ class WACommitteeScraper(CommitteeScraper):
         page = self.post(self._base_url, data=body, headers=headers)
         page = lxml.etree.fromstring(page.content)
 
-        for member in xpath(page, "//wa:Member"):
+        roles = ['chair', 'vice chair', 'ranking minority member',
+                 'assistant ranking minority member']
+
+        for i, member in enumerate(xpath(page, "//wa:Member")):
             name = xpath(member, "string(wa:Name)")
-            comm.add_member(name)
+            try:
+                role = roles[i]
+            except IndexError:
+                role = 'member'
+            comm.add_member(name, role)
