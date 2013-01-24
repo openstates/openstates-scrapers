@@ -266,9 +266,11 @@ nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: 
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
+#searchform button:hover { background: url(images/btn_search.png) bottom left no-repeat; width: 45px; height: 36px; float: left;}
 #searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 
 #searchAddressform button { border-width: 3px; background: url(images/btn_searchAddress.png) top left no-repeat; width: 45px; height: 46px; float: left;}
+#searchAddressform button:hover { border-width: 3px; background: url(images/btn_searchAddress.png) bottom left no-repeat; width: 45px; height: 46px; float: left;}
 #searchAddressform input { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 11px 5px 9px; float: left; margin-right: 15px; font-size: 105%; width: 510px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 #container #searchAddressform input{
 	border: 3px solid #d8d5c8;
@@ -496,6 +498,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .infoHeader { background: url(images/bg_question.png) center top no-repeat; padding-top: 70px;}
 
 #legSearch button { background: url(images/btn_go.png) top left no-repeat; width: 45px; height: 36px; }
+#legSearch button:hover { background: url(images/btn_go.png) bottom left no-repeat; width: 45px; height: 36px; }
 #legSearch input { float: left; margin-right: 10px; width: 108px; padding: 11px 5px 8px; }
 #legSearch { margin-top: 20px;}
 
@@ -945,6 +948,13 @@ pre {
     float: left;
 }
 
+#profile_form button:hover {
+    background: url(images/btn_submit.png) bottom left no-repeat;
+    width: 85px;
+    height: 33px;
+    float: left;
+}
+
 #mbtooltip-ca{
     height:20px;
     font-family: Georgia, 'Times New Roman', Times, serif;
@@ -1180,9 +1190,36 @@ pre {
 }
 
 /* Profile and Favorites Pages */
+
+
+#locate button {
+    border-width: 3px;
+    background: url(images/btn_locate.png) top left no-repeat;
+    width: 150px;
+    height: 46px;
+    float: left;
+    }
+
+#locate button:hover {
+    border-width: 3px;
+    background: url(images/btn_locate.png) bottom left no-repeat;
+    width: 150px;
+    height: 46px;
+    float: left;
+    }
+
+
 #find_your_leg button {
     border-width: 3px;
     background: url(images/btn_searchAddress.png) top left no-repeat;
+    width: 45px;
+    height: 46px;
+    float: left;
+    }
+
+#find_your_leg button:hover {
+    border-width: 3px;
+    background: url(images/btn_searchAddress.png) bottom left no-repeat;
     width: 45px;
     height: 46px;
     float: left;
