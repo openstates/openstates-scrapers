@@ -11,3 +11,6 @@ http://www.wwltv.com/news/index.rss2
 http://thehayride.com/feed/
 http://feeds2.feedburner.com/publiusforum/ytUW
 http://blog.nola.com/nola_river/atom.xml
+
+http://www.therepublic.com/feed/cat/2370
+http://www.pewstates.org/feeds/all.rss?states=328025

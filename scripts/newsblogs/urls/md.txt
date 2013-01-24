@@ -23,3 +23,6 @@ http://marylandreporter.com/category/state-roundup/feed/
 http://freestaterblog.blogspot.com/feeds/posts/default
 http://monoblogue.us/feed/
 http://www.somdnews.com/section/news?template=RSS&mime=xml&profile=1043
+
+http://www.therepublic.com/feed/cat/2390
+http://www.pewstates.org/feeds/all.rss?states=328027

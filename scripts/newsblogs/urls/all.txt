@@ -1,0 +1,9 @@
+http://www.therepublic.com/feed/subject/4984cd553956426b944a4c9a110d2de6
+http://rss.nytimes.com/services/xml/rss/nyt/Politics.xml
+http://www.huffingtonpost.com/feeds/verticals/politics/index.xml
+http://www.huffingtonpost.com/feeds/verticals/politics/blog.xml
+http://www.huffingtonpost.com/feeds/verticals/politics/news.xml
+
+http://www.politico.com/rss/charliemahtesian_full.xml
+http://www.npr.org/rss/rss.php?id=1014
+http://www.governing.com/news/state/index.rss
