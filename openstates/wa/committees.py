@@ -9,12 +9,11 @@ class WACommitteeScraper(CommitteeScraper):
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 
-
     def scrape(self, chamber, term):
         biennium = "%s-%s" % (term[0:4], term[7:9])
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
-        page =  self.urlopen(url)
+        page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
 
         for comm in xpath(page, "//wa:Committee"):
@@ -25,7 +24,7 @@ class WACommitteeScraper(CommitteeScraper):
 
             name = xpath(comm, "string(wa:Name)")
             comm_id = xpath(comm, "string(wa:Id)")
-            acronym = xpath(comm, "string(wa:Acronym)")
+            # acronym = xpath(comm, "string(wa:Acronym)")
             phone = xpath(comm, "string(wa:Phone)")
 
             comm = Committee(chamber, name, _code=comm_id,
