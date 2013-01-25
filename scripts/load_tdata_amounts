@@ -38,6 +38,9 @@ for person in people:
         try:
             total = ie.entities.metadata(tid)
             years = total['totals'].keys()
+            if not "-1" in years:
+                continue
+
             years.remove("-1")
             years = [int(x) for x in years]
             years.sort()
