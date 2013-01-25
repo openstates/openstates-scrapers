@@ -21,7 +21,6 @@
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
         make_vote_charts(150, 150, 60);
-        fix_images();
     });
     </script>
 {% endblock %}
@@ -119,7 +118,7 @@
                         {% if sponsor.leg_id %}
 
                             <li>
-                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
+                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" onerror="img_error(this);" />
                                 <div>
                                     <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                     <p class="sponsor-type bold">{{ sponsor.type }}</p>

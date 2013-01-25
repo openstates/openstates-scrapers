@@ -85,13 +85,13 @@
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
-            <label>Search for bills or legislators:</label>
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'search all states' %}">
+<!-- NEED TO MAKE THE SEARCH TEXT CHANGE WITH PAGES -->
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'Search Massachusetts for bills or legislators' %}">
             <button type="submit">
                 <span>{% trans "Search" %}</span>
             </button>
         </form>
-        <h1><a class="textReplace" href="/">Open States</a></h1>
+        <h1 class="clearfix"><a class="textReplace" href="/">Open States</a></h1>
         <div id="shareBtns"></div>
 
 

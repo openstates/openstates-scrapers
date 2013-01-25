@@ -239,23 +239,17 @@ a.tip:hover { color: #d6ac04; }
 
 
 /* header */
-#searchform { float: right; width: 265px; margin-top: 30px; }
-
-#searchform label {
-    color:#766d6d;
-    font-size: 15px;
-    font-weight: 300;
-    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
-}
+#searchform { float: right; width: 400px; margin-top: 30px;
+ }
 
 #searchAddressform { width: ; margin-top: 5px; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
-#mainHeader h1 { width: 414px; height: 46px; padding-top: 56px; margin-bottom: 34px; float: left;}
+#mainHeader h1 { width: 414px; height: 46px; padding-top: 27px; float: left; padding-right:100px; padding-bottom:64px}
 #mainHeader h1 a { background: url(images/logo.png) top left no-repeat; width: 414px; height: 46px; }
 
-#mainFilter { margin-bottom: 10px;}
+#mainFilter { margin-bottom: 10px; padding-right:200px; padding-top:40px}
 #mainFilter li { float: None; margin-right: 0px;}
 #mainFilter label { font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique;  margin-right: 10px; font-size: 115%; padding-top: 5px; display: block; float: left;}
 
@@ -265,13 +259,17 @@ nav li.active { background: url(images/bg_navActive.png) center 24px no-repeat; 
 nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: #635F5C; }
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
-#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
-#searchform button:hover { background: url(images/btn_search.png) bottom left no-repeat; width: 45px; height: 36px; float: left;}
-#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
+#searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
+#searchform button:hover { background: url(images/btn_search.png) bottom left no-repeat; width: 45px; height: 36px; float: right;}
+#searchform input { float: left; margin-right: 15px; font-size: 101%; width: 320px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield; font-family: Sans-Serif; -webkit-border-radius: 5px;
+-moz-border-radius: 5px;
+border-radius: 5px;}
 
 #searchAddressform button { border-width: 3px; background: url(images/btn_searchAddress.png) top left no-repeat; width: 45px; height: 46px; float: left;}
 #searchAddressform button:hover { border-width: 3px; background: url(images/btn_searchAddress.png) bottom left no-repeat; width: 45px; height: 46px; float: left;}
-#searchAddressform input { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 11px 5px 9px; float: left; margin-right: 15px; font-size: 105%; width: 510px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
+#searchAddressform input { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 11px 5px 9px; float: left; margin-right: 15px; font-size: 105%; width: 510px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield; -webkit-border-radius: 5px;
+-moz-border-radius: 5px;
+border-radius: 5px;}
 #container #searchAddressform input{
 	border: 3px solid #d8d5c8;
 }
@@ -286,7 +284,7 @@ nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; 
    margin-left:690px;
 }
 
-#shareBtns { float: right; margin-top: 30px; height: 16px; clear:right}
+#shareBtns { float: right; margin-top: 80px; height: 16px; margin-left:200px; width: 40px}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
 #shareBtns li a { width: 16px; height: 16px; }
 #facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
@@ -499,7 +497,9 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 
 #legSearch button { background: url(images/btn_go.png) top left no-repeat; width: 45px; height: 36px; }
 #legSearch button:hover { background: url(images/btn_go.png) bottom left no-repeat; width: 45px; height: 36px; }
-#legSearch input { float: left; margin-right: 10px; width: 108px; padding: 11px 5px 8px; }
+#legSearch input { float: left; margin-right: 10px; width: 108px; padding: 11px 5px 8px; -webkit-border-radius: 5px;
+-moz-border-radius: 5px;
+border-radius: 5px;}
 #legSearch { margin-top: 20px;}
 
 #filterTitle { background: url(images/bg_filterTitle.png) top left no-repeat; margin-left: -30px; height: 36px; width: 156px;}
@@ -1237,6 +1237,9 @@ pre {
     -moz-appearance: textfield;
     -webkit-appearance: textfield;
     appearance: textfield;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
     }
 
 #container #find_your_leg input{

@@ -256,7 +256,7 @@
     }
     map.on('click', function(e) {
         var url = '/find_your_legislator/?abbr={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
-        $("#results_table").load(url, fix_images);
+        $("#results_table").load(url);
 
         // create or move marker
         if (!marker) {

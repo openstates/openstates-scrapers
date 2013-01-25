@@ -115,7 +115,7 @@ $(document).ready(function() {
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %} textLt">
 
-                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></a></td>
+                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg" onerror="img_error(this);" /></a></td>
                         <td>{{obj.metadata.name}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>

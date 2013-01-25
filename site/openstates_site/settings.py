@@ -130,7 +130,7 @@ LOGGING = {
 }
 
 LOGIN_REDIRECT_URL = '/'
-LOGIN_URL = '/login'
+LOGIN_URL = '/login/sunlight/'
 
 LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
 

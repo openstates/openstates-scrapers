@@ -13,7 +13,7 @@
     var blue = '#75afa5';
     var green = '#a5b765';
     $(function() {
-        d3.xml("{% static 'images/frontpage-map.svg' %}", "image/svg+xml", function(xml) {
+        d3.xml("/map_svg/", "image/svg+xml", function(xml) {
             /* inject the map into page */
             var map = document.importNode(xml.documentElement, true);
             d3.select('#svgmap').node().appendChild(map);
