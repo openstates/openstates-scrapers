@@ -38,7 +38,10 @@ urlpatterns = patterns('',
     (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/api/districts.html'}),
 
+    # locksmith & sunlightauth
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
+    (r'', include('sunlightauth.urls')),
+
     (r'^api/', include('billy.web.api.urls')),
     (r'^admin/', include('billy.web.admin.urls')),
     (r'^djadmin/', include(admin.site.urls)),

@@ -20,16 +20,16 @@ $(document).ready(function() {
         chambers = { /* These colors will be used to fill and outline the
                         gmap for the districts. */
             "lower": {
-                "stroke": "#484a02",
-                "fill": "#eff508"
+                "stroke": "#817C78",
+                "fill": "#D4EAE8"
             },
             "upper": {
-                "stroke": "#1b261a",
-                "fill": "#94d28c"
+                "stroke": "#817C78",
+                "fill": "#DEE6BF"
             },
             "joint": {
-                "stroke": "#072026",
-                "fill": "#24aed1"
+                "stroke": "#817C78",
+                "fill": "#DBEBE1"
             }
         };
     map = new GMaps({
@@ -173,20 +173,31 @@ $(document).ready(function() {
 {% block content %}
     <input type="hidden" value="{{request}}" id="_request" />
     <div id="container">
-        <h2>{% trans "Find your legislator" %}</h2>
-        <div class="medModule" id="notify">
-            <form id="find_your_leg">
-                <input type="text" name="leg_search" id="leg_search"
-                    placeholder="{% trans 'Your address...' %}"
-                    value="{{ request }}"></input>
-                    <button type="submit" value="{% trans 'Submit' %}">
-                    <span>{% trans "Submit" %}</span>
-                </button>
-            </form>
-            <div class="clear"></div>
-            <div id="communicate"></div>
-        </div>
+        <div class="medModule clearfix">
+            <h2>{% trans "Find your legislator" %}</h2>
+            <div class="colLt sixCol">
+                <div id="notify">
+                    <form id="find_your_leg">
+                        <label class="h5">Enter your address:</label>
+                        <input type="text" name="leg_search" id="leg_search"
+                            placeholder="{% trans 'example: 1818 N St. NW Washington, DC' %}"
+                            value="{{ request }}"></input>
+                            <button type="submit" value="{% trans 'Submit' %}">
+                            <span>{% trans "Submit" %}</span>
+                        </button>
+                    </form>
+                    <div class="clear"></div>
+                    <div id="communicate"></div>
+                </div>
+            </div>
 
+            <div class="colRt sixCol" id="locate">
+                <p class="h5">Or use your geolocation:</p>
+                <button type="submit" value="{% trans 'Submit' %}">
+                <span>{% trans "Submit" %}</span>
+            </button>
+            </div>
+        </div>
         <div class="sixCol colLt withDash legMap">
             <div id="map"></div>
         </div>

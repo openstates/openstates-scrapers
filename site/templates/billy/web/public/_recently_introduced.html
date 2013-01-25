@@ -7,17 +7,17 @@
 {% if chamber.latest_bills %}
     <ul>
     {% for bill in chamber.latest_bills %}
-        <li>
+        <li class="voteChart">
             <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
             <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
                 <div class="clear"></div>
                 <span class="tip sideNote">
                     {% with sponsor=bill.sponsors_manager.first %} {% if sponsor %}
-                        {% trans "Sponsored by: " %}<a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                        {% trans "Sponsored by:" %} <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name|default:sponsor.name }}</a>
                     {% endif %} {% endwith %}
                 </span>
             </span>
-            <p class="clear">{{ bill.title|truncatewords:50|smallcaps}}</p>
+            <h6 class="clear">{{ bill.title|truncatewords:50|smallcaps}}</h6>
         </li>
     {% endfor %}
     </ul>

@@ -213,7 +213,7 @@ h4, .h3 { margin-bottom: 25px; font-size: 140%; line-height: 29px; text-transfor
 h5, .h4 { font-size: 135%; margin-bottom: 20px; line-height: 25px; display: block;}
 h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: bold; display: block;}
 .h6{ font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; color: #B4B1AB;display: block; font-weight: normal; margin-bottom: 10px}
-h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 800; font-size: 220%; line-height: 30px;}
+h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 500; font-size: 220%; line-height: 30px;}
 
 .sidebar h4{
 	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
@@ -239,7 +239,7 @@ a.tip:hover { color: #d6ac04; }
 
 
 /* header */
-#searchform { float: right; width: 265px; margin-top: 35px; }
+#searchform { float: right; width: 265px; margin-top: 30px; }
 
 #searchform label {
     color:#766d6d;
@@ -252,7 +252,7 @@ a.tip:hover { color: #d6ac04; }
 header#mainHeader { background: url(images/bg_header.jpg) top left no-repeat; min-height: 226px;}
 .home header#mainHeader { margin-bottom: 40px;}
 
-#mainHeader h1 { width: 414px; height: 46px; padding-top: 60px; margin-bottom: 34px; float: left;}
+#mainHeader h1 { width: 414px; height: 46px; padding-top: 56px; margin-bottom: 34px; float: left;}
 #mainHeader h1 a { background: url(images/logo.png) top left no-repeat; width: 414px; height: 46px; }
 
 #mainFilter { margin-bottom: 10px;}
@@ -266,15 +266,27 @@ nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: 
 nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: left;}
+#searchform button:hover { background: url(images/btn_search.png) bottom left no-repeat; width: 45px; height: 36px; float: left;}
 #searchform input { float: left; margin-right: 15px; font-size: 101%; width: 190px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 
 #searchAddressform button { border-width: 3px; background: url(images/btn_searchAddress.png) top left no-repeat; width: 45px; height: 46px; float: left;}
+#searchAddressform button:hover { border-width: 3px; background: url(images/btn_searchAddress.png) bottom left no-repeat; width: 45px; height: 46px; float: left;}
 #searchAddressform input { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; padding: 11px 5px 9px; float: left; margin-right: 15px; font-size: 105%; width: 510px; margin-top: 2px; -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield;}
 #container #searchAddressform input{
 	border: 3px solid #d8d5c8;
 }
 
-#shareBtns { float: right; clear: right; margin-top: 50px; height: 16px;}
+/*  LOGIN */
+
+#login {
+   float:right;
+   clear:right;
+   margin-bottom:0;
+   font-size:13px;
+   margin-left:690px;
+}
+
+#shareBtns { float: right; margin-top: 30px; height: 16px; clear:right}
 #shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
 #shareBtns li a { width: 16px; height: 16px; }
 #facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
@@ -363,7 +375,7 @@ img.firstHalfModule  { width: 100px;}
 .withBorderLine { float: left; margin-right: 10px; padding-right: 10px; border-right: 1px solid #cecac1; }
 .entryMetaData { line-height: 13px;}
 
-.scout-link { text-align: right; display: block; }
+.scout-link { text-align: right; display: none; }
 .mainModule { background: url(images/bg_mainBorder.png) bottom center no-repeat; padding-bottom: 80px; }
 
 a.viewMore {
@@ -404,23 +416,20 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
 #container .legMap #map { height: 300px; width: 100%;}
 #billState {
-    float: right;
-    margin-top:70px;
-    padding: 15px 25px 13px 25px;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-    background-color: #B0D1C9;
-    border: 1px solid #B9B4B1;
+    float: none;
     text-transform: uppercase;
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
     font-weight: 700;
     font-size: 120%;
     letter-spacing:1px;
     margin-bottom: 25px;
-    color: #FFF;
-
+    color:#504A45;
     }
+
+#billState span {
+    color: #72AFA5;
+}
+
 #voteMap { float: right;}
 .map-overlay{
     background-color:     #679ee8;
@@ -489,6 +498,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .infoHeader { background: url(images/bg_question.png) center top no-repeat; padding-top: 70px;}
 
 #legSearch button { background: url(images/btn_go.png) top left no-repeat; width: 45px; height: 36px; }
+#legSearch button:hover { background: url(images/btn_go.png) bottom left no-repeat; width: 45px; height: 36px; }
 #legSearch input { float: left; margin-right: 10px; width: 108px; padding: 11px 5px 8px; }
 #legSearch { margin-top: 20px;}
 
@@ -527,9 +537,10 @@ h2.withTimeline { margin-top: 30px;}
 
 .centeredText { text-align: center; }
 
-#sponsorList li { margin-bottom: 20px; min-width: 250px;}
+#sponsorList {margin-left: 0px}
+#sponsorList li { margin-bottom: 20px; width: 260px; margin-right:10px; margin-left:0; height:100px}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
-.sponsor-type { display: inline; vertical-align: bottom; }
+.sponsor-type {padding-bottom: 0; vertical-align: bottom; margin-bottom:0 }
 
 #toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
 #CCC;
@@ -937,6 +948,13 @@ pre {
     float: left;
 }
 
+#profile_form button:hover {
+    background: url(images/btn_submit.png) bottom left no-repeat;
+    width: 85px;
+    height: 33px;
+    float: left;
+}
+
 #mbtooltip-ca{
     height:20px;
     font-family: Georgia, 'Times New Roman', Times, serif;
@@ -1172,9 +1190,36 @@ pre {
 }
 
 /* Profile and Favorites Pages */
+
+
+#locate button {
+    border-width: 3px;
+    background: url(images/btn_locate.png) top left no-repeat;
+    width: 150px;
+    height: 46px;
+    float: left;
+    }
+
+#locate button:hover {
+    border-width: 3px;
+    background: url(images/btn_locate.png) bottom left no-repeat;
+    width: 150px;
+    height: 46px;
+    float: left;
+    }
+
+
 #find_your_leg button {
     border-width: 3px;
     background: url(images/btn_searchAddress.png) top left no-repeat;
+    width: 45px;
+    height: 46px;
+    float: left;
+    }
+
+#find_your_leg button:hover {
+    border-width: 3px;
+    background: url(images/btn_searchAddress.png) bottom left no-repeat;
     width: 45px;
     height: 46px;
     float: left;
@@ -1251,7 +1296,7 @@ div.notification-preference {
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
     font-size: 135%;
-    padding:5px 10px;
+    padding:3px 10px;
     color:#E7B300;
 }
 
@@ -1312,7 +1357,11 @@ li.greyArrow:before {content:"»"}
 
 .bold { font-weight: bold;}
 #sponsorList img, .withBorder li{ margin-right:10px}
+.grey {
+    color:#817C78;
+}
 
+/* Vote Chart */
 .yes {
     background-color: #A3B669;
     color: #A3B669;
@@ -1329,6 +1378,28 @@ li.greyArrow:before {content:"»"}
     color: #DFDFD1;
     margin-right: 10px;
 }
- .grey {
-     color:#817C78;
- }
+
+
+
+/* Document type "icons"  */
+.html {
+    color: #817C78;
+    font-size: 12px;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-style: normal;
+    font-weight: 500;
+    background-color: #DCD7D2;
+    padding: 2px 5px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+
+
+#ie-chart-container table { display: none;}
+.x-axis path, .x-axis line {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: rgb(80, 74, 69);
+}

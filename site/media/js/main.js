@@ -144,6 +144,52 @@ var make_vote_charts = function(width, height, radius) {
     });
 };
 
+var round_up = function(n) {
+    var denom = 1000;
+    while(Math.ceil(n/denom) > 10) {
+        denom *= 10;
+    }
+    return Math.ceil(n/denom)*denom;
+}
+
+var make_ie_chart = function() {
+    d3.select('#ie-chart-container').each(function() {
+        var data = [];
+        var width = 420;
+        d3.select(this).selectAll('table tbody tr').each(function() {
+            var d = {};
+            d.year = d3.select(this).select("td:first-child").text();
+            d.total = parseInt(d3.select(this).select("td:nth-child(2)").text().replace(/,/g, ''), 10);
+            data.push(d);
+        });
+        var height = 20 * data.length;
+        var chart = d3.select(this).append('svg')
+            .attr('class', 'ie-chart')
+            .attr('width', width + 40)
+            .attr('height', height + 30);
+        var max_x = round_up(d3.max(data, function(d) { return d.total; }));
+        var x = d3.scale.linear().domain([0, max_x]).range([0, width-40]);
+        var axis = d3.svg.axis().scale(x).ticks(4)
+            .tickValues([0, max_x*0.25, max_x*0.5, max_x*0.75, max_x]);
+        chart.selectAll('rect').data(data)
+            .enter().append('rect')
+            .attr('x', 40)
+            .attr('y', function(d, i) { return i * 20; })
+            .attr('width', function(d) { return x(d.total); })
+            .attr('height', 17)
+            .attr('fill', '#a9c86a');
+        chart.selectAll('text').data(data).enter().append('text')
+                .attr('x', 0)
+                .attr('y', function(d, i) { return i * 20 + 10; })
+                .attr('dy', '.25em')
+                .text(function(d) { return d.year; });
+        chart.append('svg:g')
+            .attr('class', 'x-axis')
+            .attr('transform', "translate(40," + 20*data.length + ')')
+            .call(axis);
+    });
+};
+
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie !== '') {
