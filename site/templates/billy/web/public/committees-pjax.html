@@ -1,6 +1,16 @@
 {% load i18n %}
+
+
         <div class="fullWidth" data-pjax>
-            <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {% trans "Committees" %}</h2>
+            <div class="fullWidth">
+                <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
+                    <h2 class="withTip">{{ metadata.name }} {{ chamber_name }} {% trans "Committees" %}</h2>
+                    <p>{# funfact metadata.abbr #}</p>
+                </div>
+            </div>
+
+           <!-- <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {% trans "Committees" %}</h2>
+           -->
             {% include chamber_select_template %}
             {% include committees_table_template %}
         </div>
