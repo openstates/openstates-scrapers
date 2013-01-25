@@ -226,15 +226,19 @@
                     <thead>
                         <tr id="titles">
                             <th style="min-width: 7em;">{% trans "Date" %}</th>
+                            {% if metadata.chambers|length > 1 %}
                             <th>{% trans "Chamber" %}</th>
-                            <th></th>
+                            {% endif %}
+                            <th>&nbsp;</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for action in bill.actions_manager %}
                         <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
+                        {% if metadata.chambers|length > 1 %}
                             <td>{{ action.actor_name }}</td>
+                        {% endif %}
                         {% if action.related_votes %}
                         <td>{{ action.action_display|safe|smallcaps }}
                             {% for vote in action.related_votes %}
