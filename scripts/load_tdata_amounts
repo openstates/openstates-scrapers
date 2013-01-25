@@ -43,6 +43,11 @@ for person in people:
             years.sort()
             start_year = years[0]
 
+            person['_yearly_contributions'] = {
+                str(x): total['totals'][str(x)]['recipient_amount']
+                    for x in years
+            }
+
             total = total['totals']['-1']['recipient_amount']
             total = int(total)
             person['_total_contributions'] = total
