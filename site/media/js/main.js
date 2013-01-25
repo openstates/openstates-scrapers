@@ -223,6 +223,27 @@ function getCookie(name) {
     return cookieValue;
 }
 
+var sort_func_asc = function(a,b) {
+    var DIGIT = /^\d+$/;
+    if(DIGIT.test(a) && DIGIT.test(b)) {
+        /* pure numbers */
+        return parseInt(a, 10) - parseInt(b, 10);
+    }
+
+    /* if both have leading digits and they differ */
+    var LDIGIT = /^\d+/;
+    var da = LDIGIT.exec(a);
+    var db = LDIGIT.exec(b);
+    if((da && db) && (da[0] != db[0])) {
+        return da[0] - db[0];
+    }
+
+    /* just compare as normal strings */
+    return ((a < b) ? -1 : ((a > b) ?  1 : 0));
+};
+
+var sort_func_desc = function(a,b) { return sort_func_asc(b, a); };
+
 
 // Favorites notificactions.
 function setup_notification_radios() {
