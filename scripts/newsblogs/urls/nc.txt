@@ -14,3 +14,6 @@ http://www.talkingaboutpolitics.com/DesktopModules/DnnForge%20-%20NewsArticles/R
 http://www.charlotteobserver.com/politics/index.rss
 http://blog.wataugawatch.net/feeds/posts/default
 http://www.ncga.state.nc.us/gascripts/News/NewsRSS.pl
+
+http://www.therepublic.com/feed/cat/2460
+http://www.pewstates.org/feeds/all.rss?states=328039

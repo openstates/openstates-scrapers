@@ -22,33 +22,33 @@ class MSCommitteeScraper(CommitteeScraper):
 
     def scrape_comm(self, chamber, term_name):
         url = 'http://billstatus.ls.state.ms.us/htms/%s_cmtememb.xml' % chamber
-        with self.urlopen(url) as comm_page:
-            root = lxml.etree.fromstring(comm_page.bytes)
-            if chamber == 'h':
-                chamber = "lower"
-            else:
-                chamber = "upper"
-            for mr in root.xpath('//COMMITTEE'):
-                name = mr.xpath('string(NAME)')
-                comm = Committee(chamber, name)
+        comm_page =  self.urlopen(url)
+        root = lxml.etree.fromstring(comm_page.bytes)
+        if chamber == 'h':
+            chamber = "lower"
+        else:
+            chamber = "upper"
+        for mr in root.xpath('//COMMITTEE'):
+            name = mr.xpath('string(NAME)')
+            comm = Committee(chamber, name)
 
-                chair = mr.xpath('string(CHAIR)')
-                chair = chair.replace(", Chairman", "")
-                role = "Chairman"
-                if len(chair) > 0:
-                    comm.add_member(chair, role=role)
-                vice_chair = mr.xpath('string(VICE_CHAIR)')
-                vice_chair = vice_chair.replace(", Vice-Chairman", "")
-                role = "Vice-Chairman"
-                if len(vice_chair) > 0:
-                    comm.add_member(vice_chair, role=role)
-                members = mr.xpath('string(MEMBERS)').split(";")
-                if "" in members:
-                    members.remove("")
+            chair = mr.xpath('string(CHAIR)')
+            chair = chair.replace(", Chairman", "")
+            role = "Chairman"
+            if len(chair) > 0:
+                comm.add_member(chair, role=role)
+            vice_chair = mr.xpath('string(VICE_CHAIR)')
+            vice_chair = vice_chair.replace(", Vice-Chairman", "")
+            role = "Vice-Chairman"
+            if len(vice_chair) > 0:
+                comm.add_member(vice_chair, role=role)
+            members = mr.xpath('string(MEMBERS)').split(";")
+            if "" in members:
+                members.remove("")
 
-                for leg in members:
-                    leg = leg.strip()
-                    comm.add_member(leg)
+            for leg in members:
+                leg = leg.strip()
+                comm.add_member(leg)
 
-                comm.add_source(url)
-                self.save_committee(comm)
+            comm.add_source(url)
+            self.save_committee(comm)

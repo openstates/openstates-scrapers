@@ -15,21 +15,21 @@ class NEBillScraper(BillScraper):
 
     def scrape_year(self, session, year):
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?SessionDay=%s' % year
-        with self.urlopen(main_url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(main_url)
+        page = lxml.html.fromstring(page)
 
-            for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
-                bill_abbr = docs.text
+        for docs in page.xpath('//div[@class="cal_content_full"]/table[@id="bill_results"]/tr/td[1]/a'):
+            bill_abbr = docs.text
 
-                #POST request for search form
-                post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
-                #headers = urllib.urlencode(post_dict)
-                bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
-                                         method="POST", body=post_dict)
-                bill_link = bill_page.response.url
+            #POST request for search form
+            post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
+            #headers = urllib.urlencode(post_dict)
+            bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
+                                     method="POST", body=post_dict)
+            bill_link = bill_page.response.url
 
-                #scrapes info from bill page
-                self.bill_info(bill_link, session, main_url, bill_page)
+            #scrapes info from bill page
+            self.bill_info(bill_link, session, main_url, bill_page)
 
     #Scrapes info from the bill page
     def bill_info(self, bill_link, session, main_url, bill_page):
@@ -46,6 +46,10 @@ class NEBillScraper(BillScraper):
         for x in range(2, len(long_title)):
             title += long_title[x] + ' '
         title = title[0:-1]
+
+        if not title:
+            self.error('no title, skipping %s', bill_id)
+            return
 
         #bill_type
         bill_type = 'resolution' if 'LR' in bill_id else 'bill'
@@ -77,11 +81,16 @@ class NEBillScraper(BillScraper):
                 action_type = self.action_types(action)
                 bill.add_action(actor, action, date, action_type)
 
+        # were in reverse chronological order
+        bill['actions'].reverse()
+
         #versions
         for versions in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td[2]/a'):
             version_url = versions.attrib['href']
             version_url = 'http://nebraskalegislature.gov/' + version_url[3:len(version_url)]
             version_name = versions.text
+            # replace Current w/ session number
+            version_url = version_url.replace('Current', session)
             bill.add_version(version_name, version_url,
                              mimetype='application/pdf')
 

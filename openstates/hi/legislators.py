@@ -21,10 +21,9 @@ class HILegislatorScraper(LegislatorScraper):
     jurisdiction = 'hi'
 
     def get_page( self, url ):
-        with self.urlopen(url) as html:
-            page = lxml.html.fromstring(html)
-            return ( page, html )
-        raise ScrapeError("Error getting the page. Sorry, man.")
+        html = self.urlopen(url)
+        page = lxml.html.fromstring(html)
+        return ( page, html )
 
     def scrape_homepage( self, url ):
         page, html = self.get_page( url )

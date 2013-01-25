@@ -7,3 +7,5 @@ http://montanagovinfo.blogspot.com/feeds/posts/default
 http://intelligentdiscontent.com/feed/
 http://www.treasurestatepolitics.com/category/montana-politics/feed/
 http://feeds2.feedburner.com/mtcapitolreport
+
+http://www.therepublic.com/feed/cat/2450

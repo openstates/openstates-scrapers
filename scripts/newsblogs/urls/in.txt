@@ -13,3 +13,5 @@ http://feeds.feedburner.com/hoosierpundit
 http://www.indystar.com/apps/pbcs.dll/section?Category=NEWS05&template=rss
 http://indiana.onpolitix.com/news/feeds/rss2/political-news
 http://thefrontrowseat.com/feed/
+
+http://www.therepublic.com/feed/cat/2100

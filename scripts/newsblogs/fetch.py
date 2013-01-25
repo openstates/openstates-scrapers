@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
             try:
                 text = resp.text
-            except socket.timeout as e:
+            except Exception as e:
                 logger.exception(e)
                 continue
 

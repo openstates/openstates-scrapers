@@ -17,6 +17,11 @@ class DCCommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(data)
 
             name = doc.xpath('//h1/text()')[0].replace('Committee on ', '')
+
+            # skip link to Committees page
+            if name == 'Committees':
+                continue
+
             com = Committee('upper', name)
 
             for chair in doc.xpath('//h3[text()="Committee Chair"]/following-sibling::p'):

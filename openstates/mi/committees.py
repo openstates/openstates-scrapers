@@ -17,50 +17,53 @@ class MICommitteeScraper(CommitteeScraper):
 
     def scrape_house_committees(self):
         base_url = 'http://house.mi.gov/MHRPublic/CommitteeInfo.aspx?comkey='
-        with self.urlopen('http://house.mi.gov/mhrpublic/committee.aspx') as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen('http://house.mi.gov/mhrpublic/committee.aspx')
+        doc = lxml.html.fromstring(html)
 
-            # get values out of drop down
-            for opt in doc.xpath('//option'):
-                name = opt.text
-                # skip invalid choice
-                if opt.text in ('Statutory Committees', 'Select One'):
-                    continue
-                com_url = base_url + opt.get('value')
-                with self.urlopen(com_url) as com_html:
-                    cdoc = lxml.html.fromstring(com_html)
-                    com = Committee(chamber='lower', committee=name)
-                    com.add_source(com_url)
+        # get values out of drop down
+        for opt in doc.xpath('//option'):
+            name = opt.text
+            # skip invalid choice
+            if opt.text in ('Statutory Committees', 'Select One'):
+                continue
+            if 'have not been created' in opt.text:
+                self.warning('no committees yet for the house')
+                return
+            com_url = base_url + opt.get('value')
+            com_html =  self.urlopen(com_url)
+            cdoc = lxml.html.fromstring(com_html)
+            com = Committee(chamber='lower', committee=name)
+            com.add_source(com_url)
 
-                    for a in doc.xpath('//a[starts-with(@id, "memberLink")]'):
-                        name = a.text.strip()
+            for a in doc.xpath('//a[starts-with(@id, "memberLink")]'):
+                name = a.text.strip()
 
-                    # all links to http:// pages in servicecolumn2 are legislators
-                    for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
-                        name = a.text.strip()
-                        text = a.xpath('following-sibling::span/text()')[0]
-                        if 'Committee Chair' in text:
-                            role = 'chair'
-                        elif 'Vice-Chair' in text:
-                            role = 'vice chair'
-                        else:
-                            role = 'member'
-                        com.add_member(name, role=role)
+            # all links to http:// pages in servicecolumn2 are legislators
+            for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
+                name = a.text.strip()
+                text = a.xpath('following-sibling::span/text()')[0]
+                if 'Committee Chair' in text:
+                    role = 'chair'
+                elif 'Vice-Chair' in text:
+                    role = 'vice chair'
+                else:
+                    role = 'member'
+                com.add_member(name, role=role)
 
-                    self.save_committee(com)
+            self.save_committee(com)
 
     def scrape_senate_committees(self):
         base_url = 'http://www.senate.michigan.gov/committee/'
         url = 'http://www.senate.michigan.gov/committee/committeeinfo.shtm'
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            for opt in doc.xpath('//option/@value'):
-                com_url = base_url + opt
-                if opt == 'appropssubcommittee.htm':
-                    self.scrape_approp_subcommittees(com_url)
-                elif opt != 'statutory.htm':
-                    self.scrape_senate_committee(com_url)
+        for opt in doc.xpath('//option/@value'):
+            com_url = base_url + opt
+            if opt == 'appropssubcommittee.htm':
+                self.scrape_approp_subcommittees(com_url)
+            elif opt != 'statutory.htm':
+                self.scrape_senate_committee(com_url)
 
 
     def scrape_senate_committee(self, url):

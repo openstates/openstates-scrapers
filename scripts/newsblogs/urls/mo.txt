@@ -33,3 +33,6 @@ http://www.senate.mo.gov/rssfeeds/District32.xml
 http://www.senate.mo.gov/rssfeeds/District33.xml
 http://www.senate.mo.gov/rssfeeds/District34.xml
 http://www.house.mo.gov/xml/newsfeed.xml
+
+http://www.therepublic.com/feed/cat/2430
+http://www.pewstates.org/feeds/all.rss?states=328057

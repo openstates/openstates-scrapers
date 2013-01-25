@@ -262,33 +262,33 @@ class TXVoteScraper(VoteScraper):
         else:
             journal_root = urlparse.urljoin(journal_root, "senate/", True)
 
-        with self.urlopen(journal_root) as listing:
-            for name in parse_ftp_listing(listing):
-                if not name.startswith(session):
-                    continue
-                url = urlparse.urljoin(journal_root, name)
-                self.scrape_journal(url, chamber, session)
+        listing = self.urlopen(journal_root)
+        for name in parse_ftp_listing(listing):
+            if not name.startswith(session):
+                continue
+            url = urlparse.urljoin(journal_root, name)
+            self.scrape_journal(url, chamber, session)
 
     def scrape_journal(self, url, chamber, session):
         year = metadata['session_details'][session]['start_date'].year
-        with self.urlopen(url) as page:
-            root = lxml.html.fromstring(page)
-            clean_journal(root)
+        page = self.urlopen(url)
+        root = lxml.html.fromstring(page)
+        clean_journal(root)
 
-            if chamber == 'lower':
-                div = root.xpath("//div[@class = 'textpara']")[0]
-                date_str = div.text.split('---')[1].strip()
-                date = datetime.datetime.strptime(
-                    date_str, "%A, %B %d, %Y").date()
-            else:
-                fname = os.path.split(urlparse.urlparse(url).path)[-1]
-                date_str = re.match(r'%sSJ(\d\d-\d\d).*\.htm' % session,
-                                fname).group(1) + " %s" % year
-                date = datetime.datetime.strptime(date_str,
-                                                  "%m-%d %Y").date()
+        if chamber == 'lower':
+            div = root.xpath("//div[@class = 'textpara']")[0]
+            date_str = div.text.split('---')[1].strip()
+            date = datetime.datetime.strptime(
+                date_str, "%A, %B %d, %Y").date()
+        else:
+            fname = os.path.split(urlparse.urlparse(url).path)[-1]
+            date_str = re.match(r'%sSJ(\d\d-\d\d).*\.htm' % session,
+                            fname).group(1) + " %s" % year
+            date = datetime.datetime.strptime(date_str,
+                                              "%m-%d %Y").date()
 
-            for vote in votes(root, session):
-                vote['date'] = date
-                vote['chamber'] = chamber
-                vote.add_source(url)
-                self.save_vote(vote)
+        for vote in votes(root, session):
+            vote['date'] = date
+            vote['chamber'] = chamber
+            vote.add_source(url)
+            self.save_vote(vote)

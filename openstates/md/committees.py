@@ -20,12 +20,12 @@ class MDCommitteeScraper(CommitteeScraper):
                 self.scrape_committee(chamber, a.text, url)
 
 
-    def scrape_committee(self, chamber, name, url):
+    def scrape_committee(self, chamber, com_name, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        com = Committee(chamber, name)
+        com = Committee(chamber, com_name)
         com.add_source(url)
 
         for table in doc.xpath('//table[@class="grid"]'):
@@ -34,7 +34,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
             # new table - subcommittee
             if sub_name != 'Full Committee':
-                com = Committee(chamber, name, subcommittee=sub_name)
+                com = Committee(chamber, com_name, subcommittee=sub_name)
                 com.add_source(url)
 
             for row in rows[1:]:

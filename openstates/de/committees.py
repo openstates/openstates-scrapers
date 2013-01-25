@@ -1,7 +1,7 @@
 import re
 import lxml.html
 
-from billy.scrape.committees import CommitteeScraper, Committee 
+from billy.scrape.committees import CommitteeScraper, Committee
 
 
 class DECommitteeScraper(CommitteeScraper):
@@ -10,7 +10,7 @@ class DECommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         urls = {
-            'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees', 
+            'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees',
             'lower': 'http://legis.delaware.gov/LIS/LIS%s.nsf/HCommittees'
         }
 
@@ -41,7 +41,7 @@ class DECommitteeScraper(CommitteeScraper):
             for tr in page.xpath('//td[@width="96%"]/table/tr'):
                 role_section = tr.xpath('td/b/font')
                 if(len(role_section) > 0):
-                    role = re.sub(r's?:$','',role_section[0].text).lower()
+                    role = re.sub(r's?:$', '', role_section[0].text).lower()
                     for member in tr.xpath('td/font/a'):
                         name = re.sub('\s+', ' ', member.text)
                         committee.add_member(name, role)

@@ -12,8 +12,13 @@ metadata = dict(
     },
     terms=[
         {'name': '2011-2012',
-         'sessions': ['2011 Regular Session', '2012 Regular Session'],
+         'sessions': ['2011 Regular Session',
+                      '2012 Regular Session',
+                      '2012 Special Session' ],
          'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014',
+         'sessions': ['2013 Regular Session'],
+         'start_year': 2013, 'end_year': 2014},
     ],
     session_details={
         '2011 Regular Session': {
@@ -25,7 +30,17 @@ metadata = dict(
             'display_name': '2012 Regular Session',
             '_scraped_name': '2012 Regular Session (February 1 - March 5)',
             'slug': '12reg',
-        }
+        },
+        '2012 Special Session' : {
+            'display_name': '2012 Speical Session',
+            '_scraped_name': '2012 Special Session (December 14)',
+            'slug': '12ss1',
+        },
+        '2013 Regular Session': {
+            'display_name': '2013 Regular Session',
+            '_scraped_name': '2013 Regular Session (Started January 14)',
+            'slug': '13reg',
+        },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['2010 Special Session (February 1 - February 25)',

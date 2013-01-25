@@ -14,8 +14,8 @@ class MIEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
@@ -62,6 +62,7 @@ class MIEventScraper(EventScraper):
         if flag in datetime:
             datetime = datetime[:datetime.find(flag)].strip()
 
+        datetime = datetime.replace('p.m.', 'pm')
         datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title

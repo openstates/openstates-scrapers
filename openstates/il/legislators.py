@@ -35,11 +35,22 @@ class ILLegislatorScraper(LegislatorScraper):
             leg_html = self.urlopen(leg_url)
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
-            photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
 
             leg = Legislator(term, chamber, district, name, party=party,
-                             url=leg_url, photo_url=photo_url)
+                             url=leg_url)
             leg.add_source(url)
+
+            hotgarbage = (
+                'Senate Biography Information for the 98th General '
+                'Assembly is not currently available.')
+            if hotgarbage in leg_html:
+                # The legislator's bio isn't available yet.
+                self.logger.warning('No legislator bio available for ' + name)
+                self.save_legislator(leg)
+                continue
+
+            photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
+            leg.update(photo_url=photo_url)
             leg.add_source(leg_url)
 
             # email

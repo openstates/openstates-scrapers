@@ -127,6 +127,8 @@ class ARBillScraper(BillScraper):
                 action_type.append('amendment:introduced')
                 action_type.append('amendment:passed')
 
+            if not action:
+                action = '[No text provided]'
             self.bills[bill_id].add_action(actor, action, date,
                                            type=action_type or ['other'])
 
@@ -214,5 +216,5 @@ class ARBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)

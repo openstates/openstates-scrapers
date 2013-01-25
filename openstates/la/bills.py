@@ -40,222 +40,222 @@ class LABillScraper(BillScraper):
                 bill_number += 1
 
     def scrape_bill(self, bill_url, chamber, session):
-        with self.urlopen(bill_url) as text:
-            if "Specified Bill could not be found" in text:
-                return False
-            page = lxml.html.fromstring(text)
-            page.make_links_absolute(bill_url)
+        text = self.urlopen(bill_url)
+        if "Specified Bill could not be found" in text:
+            return False
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(bill_url)
 
-            bill_id = page.xpath("string(//h2)").split()[0]
+        bill_id = page.xpath("string(//h2)").split()[0]
 
-            summary = page.xpath(
-                "string(//*[starts-with(text(), 'Summary: ')])")
-            summary = summary.replace('Summary: ', '')
+        summary = page.xpath(
+            "string(//*[starts-with(text(), 'Summary: ')])")
+        summary = summary.replace('Summary: ', '')
 
-            match = re.match(r"^([^:]+): "
-                             r"((\(Constitutional [aA]mendment\) )?[^(]+)",
-                             summary)
+        match = re.match(r"^([^:]+): "
+                         r"((\(Constitutional [aA]mendment\) )?[^(]+)",
+                         summary)
 
-            if match:
-                subjects = [match.group(1).strip()]
-                title = match.group(2).strip()
-            else:
-                raise ScrapeError("Bad title")
+        if match:
+            subjects = [match.group(1).strip()]
+            title = match.group(2).strip()
+        else:
+            raise ScrapeError("Bad title")
 
-            if bill_id.startswith('SB') or bill_id.startswith('HB'):
-                bill_type = ['bill']
-            elif bill_id.startswith('SR') or bill_id.startswith('HR'):
-                bill_type = ['resolution']
-            elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
-                bill_type = ['concurrent resolution']
-            else:
-                raise ScrapeError("Invalid bill ID format: %s" % bill_id)
+        if bill_id.startswith('SB') or bill_id.startswith('HB'):
+            bill_type = ['bill']
+        elif bill_id.startswith('SR') or bill_id.startswith('HR'):
+            bill_type = ['resolution']
+        elif bill_id.startswith('SCR') or bill_id.startswith('HCR'):
+            bill_type = ['concurrent resolution']
+        else:
+            raise ScrapeError("Invalid bill ID format: %s" % bill_id)
 
-            if title.startswith("(Constitutional Amendment)"):
-                bill_type.append('constitutional amendment')
-                title = title.replace('(Constitutional Amendment) ', '')
+        if title.startswith("(Constitutional Amendment)"):
+            bill_type.append('constitutional amendment')
+            title = title.replace('(Constitutional Amendment) ', '')
 
-            bill = Bill(session, chamber, bill_id, title,
-                        subjects=subjects, type=bill_type)
-            bill.add_source(bill_url)
+        bill = Bill(session, chamber, bill_id, title,
+                    subjects=subjects, type=bill_type)
+        bill.add_source(bill_url)
 
-            history_link = page.xpath("//a[text() = 'History']")[0]
-            history_url = history_link.attrib['href']
-            self.scrape_history(bill, history_url)
+        history_link = page.xpath("//a[text() = 'History']")[0]
+        history_url = history_link.attrib['href']
+        self.scrape_history(bill, history_url)
 
-            authors_link = page.xpath("//a[text() = 'Authors']")[0]
-            authors_url = authors_link.attrib['href']
-            self.scrape_authors(bill, authors_url)
+        authors_link = page.xpath("//a[text() = 'Authors']")[0]
+        authors_url = authors_link.attrib['href']
+        self.scrape_authors(bill, authors_url)
 
+        try:
+            versions_link = page.xpath(
+                "//a[text() = 'Text - All Versions']")[0]
+            versions_url = versions_link.attrib['href']
+            self.scrape_versions(bill, versions_url)
+            for doc in [ "Notes", "Digest", "Amendments", "Misc" ]:
+                doc_link = page.xpath(
+                    "//a[text() = '%s']" % doc )[0]
+                doc_url = doc_link.attrib['href']
+                self.scrape_documents(bill, doc_url)
+        except IndexError:
+            # Only current version
             try:
-                versions_link = page.xpath(
-                    "//a[text() = 'Text - All Versions']")[0]
-                versions_url = versions_link.attrib['href']
-                self.scrape_versions(bill, versions_url)
-                for doc in [ "Notes", "Digest", "Amendments", "Misc" ]:
-                    doc_link = page.xpath(
-                        "//a[text() = '%s']" % doc )[0]
-                    doc_url = doc_link.attrib['href']
-                    self.scrape_documents(bill, doc_url)
+                version_link = page.xpath(
+                    "//a[text() = 'Text - Current']")[0]
+                version_url = version_link.attrib['href']
+                bill.add_version("%s Current" % bill_id, version_url,
+                                 on_duplicate="use_old",
+                                 mimetype='application/pdf')
             except IndexError:
-                # Only current version
-                try:
-                    version_link = page.xpath(
-                        "//a[text() = 'Text - Current']")[0]
-                    version_url = version_link.attrib['href']
-                    bill.add_version("%s Current" % bill_id, version_url,
-                                     on_duplicate="use_old",
-                                     mimetype='application/pdf')
-                except IndexError:
-                    # Some bills don't have any versions :(
-                    pass
-
-            try:
-                votes_link = page.xpath("//a[text() = 'Votes']")[0]
-                self.scrape_votes(bill, votes_link.attrib['href'])
-            except IndexError:
-                # Some bills don't have any votes
+                # Some bills don't have any versions :(
                 pass
 
-            self.save_bill(bill)
+        try:
+            votes_link = page.xpath("//a[text() = 'Votes']")[0]
+            self.scrape_votes(bill, votes_link.attrib['href'])
+        except IndexError:
+            # Some bills don't have any votes
+            pass
 
-            return True
+        self.save_bill(bill)
+
+        return True
 
     def scrape_history(self, bill, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
-            bill.add_source(url)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        bill.add_source(url)
 
-            action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
+        action_table = page.xpath("//td/b[text() = 'Action']/../../..")[0]
 
-            chamber = ''
+        chamber = ''
 
-            for row in reversed(action_table.xpath('tr')[1:]):
-                cells = row.xpath('td')
-                date = cells[0].text.strip()
-                date = datetime.datetime.strptime(date, '%m/%d/%Y').date()
+        for row in reversed(action_table.xpath('tr')[1:]):
+            cells = row.xpath('td')
+            date = cells[0].text.strip()
+            date = datetime.datetime.strptime(date, '%m/%d/%Y').date()
 
-                chamber_abbr = (cells[1].text or '').strip()
-                if chamber_abbr == 'S':
-                    chamber = 'upper'
-                elif chamber_abbr == 'H':
-                    chamber = 'lower'
+            chamber_abbr = (cells[1].text or '').strip()
+            if chamber_abbr == 'S':
+                chamber = 'upper'
+            elif chamber_abbr == 'H':
+                chamber = 'lower'
 
-                action = cells[3].text.strip()
-                action_lower = action.lower()
+            action = cells[3].text.strip()
+            action_lower = action.lower()
 
-                atype = []
+            atype = []
 
-                if ("introduced in the" in action_lower or
-                    "read by title" in action_lower):
+            if ("introduced in the" in action_lower or
+                "read by title" in action_lower):
 
-                    atype.append("bill:introduced")
+                atype.append("bill:introduced")
 
-                if 'referred to the committee' in action_lower:
-                    atype.append('committee:referred')
+            if 'referred to the committee' in action_lower:
+                atype.append('committee:referred')
 
-                if action.startswith('Signed by the Governor.'):
-                    atype.append('governor:signed')
-                elif action.startswith('Sent to the Governor'):
-                    atype.append('governor:received')
-                elif action.startswith('Read third time'):
-                    atype.append('bill:reading:3')
+            if action.startswith('Signed by the Governor.'):
+                atype.append('governor:signed')
+            elif action.startswith('Sent to the Governor'):
+                atype.append('governor:received')
+            elif action.startswith('Read third time'):
+                atype.append('bill:reading:3')
 
-                if 'amendments proposed' in action_lower:
-                    atype.append('amendment:introduced')
+            if 'amendments proposed' in action_lower:
+                atype.append('amendment:introduced')
 
-                if 'finally passed' in action_lower:
-                    atype.append('bill:passed')
+            if 'finally passed' in action_lower:
+                atype.append('bill:passed')
 
-                if 'passed by a vote' in action_lower:
-                    atype.append('bill:passed')
+            if 'passed by a vote' in action_lower:
+                atype.append('bill:passed')
 
-                match = re.match(r'House conferees appointed: (.*)', action)
-                if match:
-                    names = match.group(1).split(', ')
-                    names[-1] = names[-1].strip('.').replace('and ', '')
-                    conf = bill.get('conference_committee', {})
-                    conf['lower'] = names
-                    bill['conference_committee'] = conf
+            match = re.match(r'House conferees appointed: (.*)', action)
+            if match:
+                names = match.group(1).split(', ')
+                names[-1] = names[-1].strip('.').replace('and ', '')
+                conf = bill.get('conference_committee', {})
+                conf['lower'] = names
+                bill['conference_committee'] = conf
 
-                match = re.match(
-                    r'Senate conference committee appointed: (.*)',
-                    action)
-                if match:
-                    names = match.group(1).split(', ')
-                    names[-1] = names[-1].strip('.').replace('and ', '')
-                    conf = bill.get('conference_committee', {})
-                    conf['upper'] = names
-                    bill['conference_committee'] = conf
+            match = re.match(
+                r'Senate conference committee appointed: (.*)',
+                action)
+            if match:
+                names = match.group(1).split(', ')
+                names[-1] = names[-1].strip('.').replace('and ', '')
+                conf = bill.get('conference_committee', {})
+                conf['upper'] = names
+                bill['conference_committee'] = conf
 
-                kwargs = {
-                    "type": atype
-                }
-                if "committee:referred" in atype:
-                    ctty = re.findall("referred to the (.*)",
-                                                   action)[0]
-                    if ctty[-1:] == ".":
-                        ctty = ctty[:-1]
-                    kwargs['committees'] = ctty
+            kwargs = {
+                "type": atype
+            }
+            if "committee:referred" in atype:
+                ctty = re.findall("referred to the (.*)",
+                                               action)[0]
+                if ctty[-1:] == ".":
+                    ctty = ctty[:-1]
+                kwargs['committees'] = ctty
 
-                bill.add_action(chamber, action, date, **kwargs)
+            bill.add_action(chamber, action, date, **kwargs)
 
     def scrape_authors(self, bill, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
-            bill.add_source(url)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        bill.add_source(url)
 
-            author_table = page.xpath(
-                "//td[contains(text(), 'Author)')]/../..")[0]
+        author_table = page.xpath(
+            "//td[contains(text(), 'Author)')]/../..")[0]
 
-            for row in author_table.xpath('tr')[1:]:
-                author = row.xpath('string()').strip()
+        for row in author_table.xpath('tr')[1:]:
+            author = row.xpath('string()').strip()
 
-                if "(Primary Author)" in author:
-                    type = 'primary'
-                    author = author.replace(" (Primary Author)", '')
-                else:
-                    type = 'cosponsor'
+            if "(Primary Author)" in author:
+                type = 'primary'
+                author = author.replace(" (Primary Author)", '')
+            else:
+                type = 'cosponsor'
 
-                if not author:
-                    continue
+            if not author:
+                continue
 
-                bill.add_sponsor(type, author)
+            bill.add_sponsor(type, author)
 
     def scrape_documents(self, bill, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
-            page.make_links_absolute(url)
-            bill.add_source(url)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(url)
+        bill.add_source(url)
 
-            for a in reversed(page.xpath(
-                    "//a[contains(@href, 'streamdocument.asp')]")):
-                version_url = a.attrib['href']
-                version = a.text.strip()
+        for a in reversed(page.xpath(
+                "//a[contains(@href, 'streamdocument.asp')]")):
+            version_url = a.attrib['href']
+            version = a.text.strip()
 
-                bill.add_document(version, version_url)
+            bill.add_document(version, version_url)
 
     def scrape_versions(self, bill, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
-            page.make_links_absolute(url)
-            bill.add_source(url)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(url)
+        bill.add_source(url)
 
-            for a in reversed(page.xpath(
-                    "//a[contains(@href, 'streamdocument.asp')]")):
-                version_url = a.attrib['href']
-                version = a.text.strip()
+        for a in reversed(page.xpath(
+                "//a[contains(@href, 'streamdocument.asp')]")):
+            version_url = a.attrib['href']
+            version = a.text.strip()
 
-                bill.add_version(version, version_url, on_duplicate='use_old',
-                                 mimetype='application/pdf')
+            bill.add_version(version, version_url, on_duplicate='use_old',
+                             mimetype='application/pdf')
 
     def scrape_votes(self, bill, url):
-        with self.urlopen(url) as text:
-            page = lxml.html.fromstring(text)
-            page.make_links_absolute(url)
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(url)
 
-            for a in page.xpath("//a[contains(@href, 'streamdocument.asp')]"):
-                self.scrape_vote(bill, a.text, a.attrib['href'])
+        for a in page.xpath("//a[contains(@href, 'streamdocument.asp')]"):
+            self.scrape_vote(bill, a.text, a.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
         match = re.match('^(Senate|House) Vote on [^,]*,(.*)$', name)

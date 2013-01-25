@@ -38,74 +38,82 @@ class AZCommitteeScraper(CommitteeScraper):
 
         url = base_url + 'xml/committees.asp?session=%s' % session_id
 
-        with self.urlopen(url) as page:
-            root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
+        page = self.urlopen(url)
+        root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
 
-            body = '//body[@Body="%s"]/committee' % {'upper': 'S',
-                                                     'lower': 'H'}[chamber]
-            for com in root.xpath(body):
-                c_id, name, short_name, sub = com.values()
-                # the really good thing about AZ xml api is that their committee element
-                # tells you whether this is a sub committee or not
-                if sub == '1':
-                    # bad thing is that the committee names are no longer consistant
-                    # so we can try to get the parent name:
-                    parent = name.split('Subcommittee')[0].strip()
-                    # and maybe the Sub Committee's name
-                    try:
-                        name = name[name.index('Subcommittee'):]
-                    except ValueError:
-                        # but if that doesn't work out then we will fix it manually
-                        # shouldnt be too hard since parent and subcommittee will be the same
-                        #self.log("I am my own grandpa: %s" % name)
-                        pass
+        body = '//body[@Body="%s"]/committee' % {'upper': 'S',
+                                                 'lower': 'H'}[chamber]
 
-                    c = Committee(chamber, parent, short_name=short_name,
-                              subcommittee=name, session=session,
-                              az_committee_id=c_id)
-                else:
-                    c = Committee(chamber, name, short_name=short_name,
-                                  session=session, az_committee_id=c_id)
-
-                c.add_source(url)
-                #for some reason they don't always have any info on the committees'
+        for com in root.xpath(body):
+            c_id, name, short_name, sub = com.values()
+            # the really good thing about AZ xml api is that their committee element
+            # tells you whether this is a sub committee or not
+            if sub == '1':
+                # bad thing is that the committee names are no longer consistant
+                # so we can try to get the parent name:
+                parent = name.split('Subcommittee')[0].strip()
+                # and maybe the Sub Committee's name
                 try:
-                    self.scrape_com_info(session, session_id, c_id, c)
-                except HTTPError:
+                    name = name[name.index('Subcommittee'):]
+                except ValueError:
+                    # but if that doesn't work out then we will fix it manually
+                    # shouldnt be too hard since parent and subcommittee will be the same
+                    #self.log("I am my own grandpa: %s" % name)
                     pass
 
-                if not c['members']:
-                    continue
-                self.save_committee(c)
+                c = Committee(chamber, parent, short_name=short_name,
+                          subcommittee=name, session=session,
+                          az_committee_id=c_id)
+            else:
+                c = Committee(chamber, name, short_name=short_name,
+                              session=session, az_committee_id=c_id)
+
+            c.add_source(url)
+            #for some reason they don't always have any info on the committees'
+            try:
+                self.scrape_com_info(session, session_id, c_id, c)
+            except HTTPError:
+                pass
+
+            if not c['members']:
+                msg = 'No members found: not saving {committee}.'
+                self.logger.warning(msg.format(**c))
+                continue
+            self.save_committee(c)
 
     def scrape_com_info(self, session, session_id, committee_id, committee):
         url = base_url + 'CommitteeInfo.asp?Committee_ID=%s&Session_ID=%s' % (committee_id,
                                                                     session_id)
 
-        with self.urlopen(url) as page:
-            committee.add_source(url)
-            root = html.fromstring(page)
-            p = '//table/tr/td[1]/a/ancestor::tr[1]'
-            rows = root.xpath(p)
-            #need to skip the first row cause its a link to the home page
-            for row in rows[1:]:
-                name = row[0].text_content().strip()
-                role = row[1].text_content().strip()
-                committee.add_member(name, role)
+        page = self.urlopen(url)
+        committee.add_source(url)
+        root = html.fromstring(page)
+        p = '//table/tr/td[1]/a/ancestor::tr[1]'
+        rows = root.xpath(p)
+        #need to skip the first row cause its a link to the home page
+        for row in rows[1:]:
+            name = row[0].text_content().strip()
+            role = row[1].text_content().strip()
+            committee.add_member(name, role)
 
     def scrape_index(self, chamber, session, session_id, committee_type):
         url = base_url + 'xml/committees.asp?session=%s&type=%s' % (session_id,
                                                                  committee_type)
-        with self.urlopen(url) as page:
-            root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
+        page = self.urlopen(url)
+        root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
 
-            body = '//body[@Body="%s"]/committee' % {'upper': 'S',
-                                                     'lower': 'H'}[chamber]
-            # TODO need to and make sure to add sub committees
-            for com in root.xpath(body):
-                c_id, name, short_name, sub = com.values()
-                c = Committee(chamber, name, short_name=short_name,
-                              session=session, az_committee_id=c_id)
-                c.add_source(url)
-                self.scrape_com_info(session, session_id, c_id, c)
+        body = '//body[@Body="%s"]/committee' % {'upper': 'S',
+                                                 'lower': 'H'}[chamber]
+        # TODO need to and make sure to add sub committees
+        for com in root.xpath(body):
+            c_id, name, short_name, sub = com.values()
+            c = Committee(chamber, name, short_name=short_name,
+                          session=session, az_committee_id=c_id)
+            c.add_source(url)
+            self.scrape_com_info(session, session_id, c_id, c)
+            if c['members']:
                 self.save_committee(c)
+            else:
+                msg = 'No members found: not saving {committee}.'
+                self.logger.warning(msg.format(**c))
+

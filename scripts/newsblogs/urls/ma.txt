@@ -8,3 +8,5 @@ http://pretiminahan.blogspot.com/feeds/posts/default
 http://massachusetts.onpolitix.com/news/feeds/rss2/political-news
 http://scalingbeaconhill.blogspot.com/feeds/posts/default
 http://www.thecapitolviewlive.com/feeds/posts/default
+
+http://www.therepublic.com/feed/cat/2380

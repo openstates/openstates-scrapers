@@ -3,9 +3,9 @@ import re
 import zipfile
 import datetime as dt
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import Bill, BillScraper
-from billy.scrape.votes import Vote, VoteScraper
+from billy.scrape.votes import Vote
+
 
 body_code = {'lower': 'H', 'upper': 'S'}
 bill_type_map = {'B': 'bill',
@@ -15,6 +15,7 @@ bill_type_map = {'B': 'bill',
                  'CO': 'concurrent order'
                 }
 action_classifiers = [
+    ('Ought to Pass', ['bill:passed']),
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
     ('.*Ought to Pass', ['committee:passed:favorable']),
     ('Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),

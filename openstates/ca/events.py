@@ -70,7 +70,7 @@ class CAEventScraper(EventScraper):
 
             desc = 'Committee Meeting: ' + committee_name
             event = Event(session, date, 'committee:meeting', desc,
-                          location=location)
+                          location=committee_name)
             for bill_id in bills:
                 if 'B' in bill_id:
                     type_ = 'bill'
@@ -87,7 +87,8 @@ class CAEventScraper(EventScraper):
 
 # A mapping of committee_nr numbers to committee names they
 # (probably) represent, based on direct correlation they bore
-# to hearing locations that resemble committee names.
+# to hearing locations that resemble committee names in
+# the location_code_tbl in the db dump.
 _committee_nr = {
     1L: u'Assembly Agriculture',
     2L: u'Assembly Accountability and Administrative Review',

@@ -51,15 +51,15 @@ class NCBillScraper(BillScraper):
 
         for letter in letters:
             url = 'http://www.ncga.state.nc.us/gascripts/Reports/keywords.pl?Letter=' + letter
-            with self.urlopen(url) as html:
-                doc = lxml.html.fromstring(html)
-                for td in doc.xpath('//td[@class="tableText"]'):
-                    if td.get('style') == 'font-weight: bold;':
-                        cur_subject = td.text_content()
-                    else:
-                        bill_link = td.xpath('a/text()')
-                        if bill_link:
-                            self.subject_map[bill_link[0]].append(cur_subject)
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
+            for td in doc.xpath('//td[@class="tableText"]'):
+                if td.get('style') == 'font-weight: bold;':
+                    cur_subject = td.text_content()
+                else:
+                    bill_link = td.xpath('a/text()')
+                    if bill_link:
+                        self.subject_map[bill_link[0]].append(cur_subject)
 
     def scrape_bill(self, chamber, session, bill_id):
         # there will be a space in bill_id if we're doing a one-off bill scrape
@@ -78,92 +78,92 @@ class NCBillScraper(BillScraper):
             session, bill_id)
 
         # parse the bill data page, finding the latest html text
-        with self.urlopen(bill_detail_url) as data:
-            doc = lxml.html.fromstring(data)
+        data = self.urlopen(bill_detail_url)
+        doc = lxml.html.fromstring(data)
 
-            title_div_txt = doc.xpath('//div[@id="title"]/text()')[0]
-            if 'Joint Resolution' in title_div_txt:
-                bill_type = 'joint resolution'
-                bill_id = bill_id[0] + 'JR ' + bill_id[1:]
-            elif 'Resolution' in title_div_txt:
-                bill_type = 'resolution'
-                bill_id = bill_id[0] + 'R ' + bill_id[1:]
-            elif 'Bill' in title_div_txt:
-                bill_type = 'bill'
-                bill_id = bill_id[0] + 'B ' + bill_id[1:]
+        title_div_txt = doc.xpath('//div[@id="title"]/text()')[0]
+        if 'Joint Resolution' in title_div_txt:
+            bill_type = 'joint resolution'
+            bill_id = bill_id[0] + 'JR ' + bill_id[1:]
+        elif 'Resolution' in title_div_txt:
+            bill_type = 'resolution'
+            bill_id = bill_id[0] + 'R ' + bill_id[1:]
+        elif 'Bill' in title_div_txt:
+            bill_type = 'bill'
+            bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-            title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
-            bill_title = doc.xpath(title_style_xpath)[0]
+        title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
+        bill_title = doc.xpath(title_style_xpath)[0]
 
-            bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
-            bill.add_source(bill_detail_url)
+        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
+        bill.add_source(bill_detail_url)
 
-            # skip first PDF link (duplicate link to cur version)
-            if chamber == 'lower':
-                link_xpath = '//a[contains(@href, "/Bills/House/PDF/")]'
+        # skip first PDF link (duplicate link to cur version)
+        if chamber == 'lower':
+            link_xpath = '//a[contains(@href, "/Bills/House/PDF/")]'
+        else:
+            link_xpath = '//a[contains(@href, "/Bills/Senate/PDF/")]'
+        for vlink in doc.xpath(link_xpath)[1:]:
+            # get the name from the PDF link...
+            version_name = vlink.text.replace(u'\xa0', ' ')
+            # but neighboring span with anchor inside has the HTML version
+            version_url = vlink.xpath('./following-sibling::span/a/@href')
+            version_url = 'http://www.ncga.state.nc.us' + version_url[0]
+            bill.add_version(version_name, version_url,
+                             mimetype='text/html')
+
+        # sponsors
+        pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
+        pri_text = pri_td[0].text_content().replace(u'\xa0', ' ').split('; ')
+        for leg in pri_text:
+            leg = leg.strip()
+            if leg:
+                if leg[-1] == ';':
+                    leg = leg[:-1]
+                bill.add_sponsor('primary', leg, chamber=chamber)
+
+        # cosponsors
+        co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
+        co_text = co_td[0].text_content().replace(u'\xa0', ' ').split('; ')
+        for leg in co_text:
+            leg = leg.strip()
+            if leg and leg != 'N/A':
+                if leg[-1] == ';':
+                    leg = leg[:-1]
+                bill.add_sponsor('cosponsor', leg, chamber=chamber)
+
+        # actions
+        action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
+        # skip two header rows
+        for row in doc.xpath(action_tr_xpath)[2:]:
+            tds = row.xpath('td')
+            act_date = tds[0].text
+            actor = tds[1].text or ''
+            # if text is blank, try diving in
+            action = tds[2].text.strip() or tds[2].text_content().strip()
+
+            act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
+
+            if actor == 'Senate':
+                actor = 'upper'
+            elif actor == 'House':
+                actor = 'lower'
             else:
-                link_xpath = '//a[contains(@href, "/Bills/Senate/PDF/")]'
-            for vlink in doc.xpath(link_xpath)[1:]:
-                # get the name from the PDF link...
-                version_name = vlink.text.replace(u'\xa0', ' ')
-                # but neighboring span with anchor inside has the HTML version
-                version_url = vlink.xpath('./following-sibling::span/a/@href')
-                version_url = 'http://www.ncga.state.nc.us' + version_url[0]
-                bill.add_version(version_name, version_url,
-                                 mimetype='text/html')
+                actor = 'executive'
 
-            # sponsors
-            pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
-            pri_text = pri_td[0].text_content().replace(u'\xa0', ' ').split('; ')
-            for leg in pri_text:
-                leg = leg.strip()
-                if leg:
-                    if leg[-1] == ';':
-                        leg = leg[:-1]
-                    bill.add_sponsor('primary', leg, chamber=chamber)
+            for pattern, atype in self._action_classifiers.iteritems():
+                if action.startswith(pattern):
+                    break
+            else:
+                atype = 'other'
 
-            # cosponsors
-            co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
-            co_text = co_td[0].text_content().replace(u'\xa0', ' ').split('; ')
-            for leg in co_text:
-                leg = leg.strip()
-                if leg and leg != 'N/A':
-                    if leg[-1] == ';':
-                        leg = leg[:-1]
-                    bill.add_sponsor('cosponsor', leg, chamber=chamber)
+            bill.add_action(actor, action, act_date, type=atype)
 
-            # actions
-            action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
-            # skip two header rows
-            for row in doc.xpath(action_tr_xpath)[2:]:
-                tds = row.xpath('td')
-                act_date = tds[0].text
-                actor = tds[1].text or ''
-                # if text is blank, try diving in
-                action = tds[2].text.strip() or tds[2].text_content().strip()
+        if hasattr(self, 'subject_map'):
+            subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
+            bill['subjects'] = self.subject_map[subj_key]
 
-                act_date = dt.datetime.strptime(act_date, '%m/%d/%Y')
-
-                if actor == 'Senate':
-                    actor = 'upper'
-                elif actor == 'House':
-                    actor = 'lower'
-                else:
-                    actor = 'executive'
-
-                for pattern, atype in self._action_classifiers.iteritems():
-                    if action.startswith(pattern):
-                        break
-                else:
-                    atype = 'other'
-
-                bill.add_action(actor, action, act_date, type=atype)
-
-            if hasattr(self, 'subject_map'):
-                subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
-                bill['subjects'] = self.subject_map[subj_key]
-
-            self.save_bill(bill)
+        self.save_bill(bill)
 
     def scrape(self, session, chambers):
         if self.is_latest_session(session):
@@ -177,8 +177,8 @@ class NCBillScraper(BillScraper):
             'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (
             session, chamber)
 
-        with self.urlopen(url) as data:
-            doc = lxml.html.fromstring(data)
-            for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
-                bill_id = row.xpath('td[1]/a/text()')[0]
-                self.scrape_bill(chamber, session, bill_id)
+        data = self.urlopen(url)
+        doc = lxml.html.fromstring(data)
+        for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
+            bill_id = row.xpath('td[1]/a/text()')[0]
+            self.scrape_bill(chamber, session, bill_id)

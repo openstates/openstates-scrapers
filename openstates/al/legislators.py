@@ -14,34 +14,34 @@ class ALLegislatorScraper(LegislatorScraper):
 
         url = urls[chamber]
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-            for row in doc.xpath('//strong[starts-with(text(), "MEMBERS")]/following-sibling::table/tr')[1:]:
-                name, party, district, office, phone = row.getchildren()
+        for row in doc.xpath('//strong[starts-with(text(), "MEMBERS")]/following-sibling::table/tr')[1:]:
+            name, party, district, office, phone = row.getchildren()
 
-                # if the name column contains a link it isn't vacant
-                link = name.xpath('a')
-                if link:
-                    name = name.text_content().strip()
+            # if the name column contains a link it isn't vacant
+            link = name.xpath('a')
+            if link:
+                name = name.text_content().strip()
 
-                    party = party_dict[party.text_content().strip()]
-                    district = district.text_content().strip()
-                    office = office.text_content().strip()
-                    phone = phone.text_content().strip()
-                    leg_url = link[0].get('href')
+                party = party_dict[party.text_content().strip()]
+                district = district.text_content().strip()
+                office = office.text_content().strip()
+                phone = phone.text_content().strip()
+                leg_url = link[0].get('href')
 
-                    office_address = 'Room %s\n11 S. Union Street\nMontgomery, AL 36130' % office
+                office_address = 'Room %s\n11 S. Union Street\nMontgomery, AL 36130' % office
 
-                    leg = Legislator(term, chamber, district, name,
-                                     party=party, url=leg_url)
-                    self.get_details(leg, term, leg_url)
-                    leg.add_office('capitol', 'Capitol Office',
-                                   address=office_address, phone=phone)
+                leg = Legislator(term, chamber, district, name,
+                                 party=party, url=leg_url)
+                self.get_details(leg, term, leg_url)
+                leg.add_office('capitol', 'Capitol Office',
+                               address=office_address, phone=phone)
 
-                    leg.add_source(url)
-                    self.save_legislator(leg)
+                leg.add_source(url)
+                self.save_legislator(leg)
 
     def get_details(self, leg, term, url):
         html = self.urlopen(url)
@@ -54,7 +54,14 @@ class ALLegislatorScraper(LegislatorScraper):
         email = doc.xpath('//a[starts-with(@href, "mailto")]/@href')
         if email:
             leg['email'] = email[0].strip('mailto:')
-        for com in doc.xpath('//ul/li'):
+
+        # find lis after the strong (or p) containing Committees
+        coms = doc.xpath('//strong[contains(text(), "Committees")]/following::li')
+        if not coms:
+            coms = doc.xpath('//p[contains(text(), "Committees")]/following::li')
+        if not coms:
+            self.warning('no committees?')
+        for com in coms:
             com = com.text_content()
             if '(' in com:
                 com, position = com.split('(')

@@ -64,46 +64,46 @@ class FLLegislatorScraper(LegislatorScraper):
 
     def scrape_senators(self, term):
         url = "http://www.flsenate.gov/Senators/"
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath("//a[contains(@href, 'Senators/s')]"):
-                name = link.text.strip()
-                name = re.sub(r'\s+', ' ', name)
-                leg_url = link.get('href')
+        for link in page.xpath("//a[contains(@href, 'Senators/s')]"):
+            name = link.text.strip()
+            name = re.sub(r'\s+', ' ', name)
+            leg_url = link.get('href')
 
-                if 'Vacant' in name:
-                    continue
+            if 'Vacant' in name:
+                continue
 
-                # Special case - name_tools gets confused
-                # by 'JD', thinking it is a suffix instead of a first name
-                if name == 'Alexander, JD':
-                    name = 'JD Alexander'
-                elif name == 'Vacant':
-                    name = 'Vacant Seat'
+            # Special case - name_tools gets confused
+            # by 'JD', thinking it is a suffix instead of a first name
+            if name == 'Alexander, JD':
+                name = 'JD Alexander'
+            elif name == 'Vacant':
+                name = 'Vacant Seat'
 
-                district = link.xpath("string(../../td[1])")
-                party = link.xpath("string(../../td[2])")
+            district = link.xpath("string(../../td[1])")
+            party = link.xpath("string(../../td[2])")
 
-                # for consistency
-                if party == 'Democrat':
-                    party = 'Democratic'
+            # for consistency
+            if party == 'Democrat':
+                party = 'Democratic'
 
-                if term != '2013-2014':
-                    raise ValueError('Please change the senate photo_url string.')
-                photo_url = ("http://www.flsenate.gov/userContent/"
-                             "Senators/2012-2014/photos/s%03d.jpg" % (
-                                 int(district)))
+            if term != '2013-2014':
+                raise ValueError('Please change the senate photo_url string.')
+            photo_url = ("http://www.flsenate.gov/userContent/"
+                         "Senators/2012-2014/photos/s%03d.jpg" % (
+                             int(district)))
 
-                leg = Legislator(term, 'upper', district, name,
-                                 party=party, photo_url=photo_url, url=leg_url)
-                leg.add_source(url)
-                leg.add_source(leg_url)
+            leg = Legislator(term, 'upper', district, name,
+                             party=party, photo_url=photo_url, url=leg_url)
+            leg.add_source(url)
+            leg.add_source(leg_url)
 
-                self.scrape_sen_offices(leg, leg_url)
+            self.scrape_sen_offices(leg, leg_url)
 
-                self.save_legislator(leg)
+            self.save_legislator(leg)
 
     def scrape_rep_office(self, leg, doc, name):
         pieces = [x.tail.strip() for x in

@@ -54,27 +54,30 @@ class CALegislatorScraper(LegislatorScraper):
             legislator.add_source(url)
             self.save_legislator(legislator)
 
-    def parse_legislator(self, tr, term, chamber,
-
-            strip=methodcaller('strip'),
-
-            xpath='td[contains(@class, "views-field-field-%s-%s")]%s',
-
-            xp={'url':      ('lname-value-1', '/a/@href'),
-                'district': ('district-value', '/text()'),
-                'party':    ('party-value', '/text()'),
-                'full_name':     ('feedbackurl-value', '/a/text()'),
-                'address':  ('feedbackurl-value', '/p/text()')},
-
-            titles={'upper': 'senator', 'lower': 'member'},
-
-            funcs={
-                'full_name': lambda s: s.replace('Contact Senator', '').strip(),
-                'address': parse_address,
-                }):
+    def parse_legislator(self, tr, term, chamber):
         '''
         Given a tr element, get specific data from it.
         '''
+
+        strip = methodcaller('strip')
+
+        xpath = 'td[contains(@class, "views-field-field-%s-%s")]%s'
+
+        xp = {
+            'url':      ('lname-value-1', '/a/@href'),
+            'district': ('district-value', '/text()'),
+            'party':    ('party-value', '/text()'),
+            'full_name':     ('feedbackurl-value', '/a/text()'),
+            'address':  ('feedbackurl-value', '/p/text()')
+            }
+
+        titles = {'upper': 'senator', 'lower': 'member'}
+
+        funcs = {
+            'full_name': lambda s: s.replace('Contact Senator', '').strip(),
+            'address': parse_address,
+            }
+
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
         res = {}

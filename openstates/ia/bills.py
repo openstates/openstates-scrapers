@@ -51,11 +51,14 @@ class IABillScraper(BillScraper):
         self._build_subject_map(session)
 
         session_id = self.metadata['session_details'][session]['number']
+        bill_offset = "697"  # Try both. We need a good bill page to scrape
+        bill_offset = "27"   # from. Check for "HF " + bill_offset
+
         url = ("http://coolice.legis.state.ia.us/Cool-ICE/default.asp?"
-               "category=billinfo&service=Billbook&frm=2&hbill=HF697%20"
+               "category=billinfo&service=Billbook&frm=2&hbill=HF%s%20"
                "%20%20%20&cham=House&amend=%20%20%20%20%20%20&am2nd=%20"
                "%20%20%20%20%20&am3rd=%20%20%20%20%20%20&version=red;"
-               "%20%20%20%20&menu=true&ga=") + session_id
+               "%20%20%20%20&menu=true&ga=" % (bill_offset)) + session_id
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 

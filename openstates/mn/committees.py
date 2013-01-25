@@ -33,67 +33,67 @@ class MNCommitteeScraper(CommitteeScraper):
             self.scrape_senate_committee(term, link)
 
     def scrape_senate_committee(self, term, link):
-        with self.urlopen(link) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(link)
+        doc = lxml.html.fromstring(html)
 
-            # strip first 30 and last 10
-            # Minnesota Senate Committees - __________ Committee
-            committee_name = doc.xpath('//title/text()')[0][30:-10]
+        # strip first 30 and last 10
+        # Minnesota Senate Committees - __________ Committee
+        committee_name = doc.xpath('//title/text()')[0][30:-10]
 
-            com = Committee('upper', committee_name)
+        com = Committee('upper', committee_name)
 
-            # first id=bio table is members
-            for row in doc.xpath('//table[@id="bio"]')[0].xpath('tr'):
-                row = fix_whitespace(row.text_content())
+        # first id=bio table is members
+        for row in doc.xpath('//table[@id="bio"]')[0].xpath('tr'):
+            row = fix_whitespace(row.text_content())
 
-                # switch role
-                if ':' in row:
-                    position, name = row.split(': ')
-                    role = position.lower().strip()
-                else:
-                    name = row
+            # switch role
+            if ':' in row:
+                position, name = row.split(': ')
+                role = position.lower().strip()
+            else:
+                name = row
 
-                # add the member
-                com.add_member(name.strip(), role)
+            # add the member
+            com.add_member(name.strip(), role)
 
-            com.add_source(link)
-            self.save_committee(com)
+        com.add_source(link)
+        self.save_committee(com)
 
     def scrape_house_committees(self, term):
         url = 'http://www.house.leg.state.mn.us/comm/commemlist.asp'
 
-        with self.urlopen(url) as html:
-            doc = lxml.html.fromstring(html)
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
 
-            for com in doc.xpath('//h2[@class="commhighlight"]'):
-                members_url = com.xpath('following-sibling::p[1]/a[text()="Members"]/@href')[0]
+        for com in doc.xpath('//h2[@class="commhighlight"]'):
+            members_url = com.xpath('following-sibling::p[1]/a[text()="Members"]/@href')[0]
 
-                com = Committee('lower', com.text)
-                com.add_source(members_url)
+            com = Committee('lower', com.text)
+            com.add_source(members_url)
 
-                with self.urlopen(members_url) as member_html:
-                    mdoc = lxml.html.fromstring(member_html)
+            member_html = self.urlopen(members_url)
+            mdoc = lxml.html.fromstring(member_html)
 
-                    # each legislator in their own table
-                    # first row, second column contains all the info
-                    for ltable in mdoc.xpath('//table/tr[1]/td[2]/p/b[1]'):
+            # each legislator in their own table
+            # first row, second column contains all the info
+            for ltable in mdoc.xpath('//table/tr[1]/td[2]/p/b[1]'):
 
-                        # name is tail string of last element
-                        name = ltable.text_content()
-                        text = ltable.text
-                        if text and name != text:
-                            name = name.replace(text, '')
+                # name is tail string of last element
+                name = ltable.text_content()
+                text = ltable.text
+                if text and name != text:
+                    name = name.replace(text, '')
 
-                        # role is inside a nested b tag
-                        role = ltable.xpath('b/*/text()')
-                        if role:
-                            # if there was a role, remove it from name
-                            role = role[0]
-                            name = name.replace(role, '')
-                        else:
-                            role = 'member'
-                        name = name.split(' (')[0]
-                        com.add_member(name, role)
+                # role is inside a nested b tag
+                role = ltable.xpath('b/*/text()')
+                if role:
+                    # if there was a role, remove it from name
+                    role = role[0]
+                    name = name.replace(role, '')
+                else:
+                    role = 'member'
+                name = name.split(' (')[0]
+                com.add_member(name, role)
 
-                # save
-                self.save_committee(com)
+            # save
+            self.save_committee(com)

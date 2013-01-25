@@ -12,3 +12,5 @@ http://centerrightnv.com/feed/
 http://feeds2.feedburner.com/npri-writeonnevada
 http://www.newsreview.com/reno/RSS.xml?oid=2571
 http://feeds2.feedburner.com/TransparentnevadasBlog
+
+http://www.therepublic.com/feed/cat/2520
