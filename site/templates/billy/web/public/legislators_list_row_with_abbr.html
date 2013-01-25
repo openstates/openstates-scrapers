@@ -1,6 +1,6 @@
 {% load i18n %}
                     <tr class="{% cycle 'even' 'odd' %}">
-                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg"/></td>
+                        <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg" onerror="img_error(this);" /></td>
                         <td>{{obj.metadata.abbr|upper}}</td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>

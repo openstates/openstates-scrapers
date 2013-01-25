@@ -52,7 +52,7 @@
             <!-- <div class="medModule"> -->
                 <div class="sixCol colLt">
 
-                    <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" />
+                    <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" onerror="img_error(this);" />
                     <div class="sixLg clearfix">
                         <h2 class="withTipSm">
                             {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}

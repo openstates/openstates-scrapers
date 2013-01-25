@@ -99,6 +99,12 @@ var fix_images = function() {
     });
 };
 
+var img_error = function(img) {
+    img.onerror = '';
+    img.src = 'http://static.openstates.org/assets/v2.2/images/placeholder.png';
+    return false;
+}
+
 var pjax_setup = function(){
 
     $('form#toggleBtns button').click(function(e){
