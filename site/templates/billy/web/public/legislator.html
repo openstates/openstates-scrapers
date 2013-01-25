@@ -334,6 +334,7 @@
                 <a class="textReplace rssIcon colRt" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>
             </div>
 
+            {% if legislator_votes %}
             {% with votes=legislator_votes|slice:":3" %}
                 <div class="sixCol colLt withDash">
                     {% include "billy/web/public/_legislator_vote_column.html" %}
@@ -345,11 +346,12 @@
                 </div>
             {% endwith %}
 
-            {% if legislator_votes %}
                 <a class="viewMore" href="{% url 'votes_list' abbr 'legislators' legislator.id %}">{% trans "View More Votes" %}</a>
+            {% else %}
+                {% trans "We currently do not have any votes for this legislator." %}
             {% endif %}
-
     </div>
+
 
     <div class="clearfix">
         {% sources legislator %}
