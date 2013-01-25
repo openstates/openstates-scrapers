@@ -209,11 +209,21 @@ class ORBillScraper(BillScraper):
         return action
 
     def parse_bill(self, session, chamber, line):
-        info = line.split(u"\ufffd")
-        if len(info) != 5:
-            info = line.split(u"\u05d4")
-            if len(info) != 5:
-                raise Exception(info)
+        found = False
+        found_thing = None
+        splits = [u"\xe4", u"\ufffd", u"\u05d4"]
+        for s in splits:
+            info = line.split(s)
+            info = filter(lambda x: x != "", info)
+            if len(info) == 5:
+                found = True
+                found_thing = info
+                break
+
+        if not found:
+            raise Exception(info)
+
+        info = found_thing
 
         (type, combined_id, number, title, relating_to) = info
         if ((type[0] == 'H' and chamber == 'lower') or
