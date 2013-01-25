@@ -30,7 +30,7 @@
         <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
         <p class="tip">{% trans "Click on a district to view corresponding legislators." %}</p>
 
-        <div class="sixCol colLtSm">
+        <div class="sixCol colLtSm" id="maptip">
             <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>

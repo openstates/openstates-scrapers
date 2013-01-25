@@ -257,7 +257,12 @@ nav li { float: left; margin-right: 45px; min-width: 59px; text-align: center; p
 nav li:hover { background: url(images/bg_nav.png) center 24px no-repeat; padding-bottom: 21px; }
 nav li.active { background: url(images/bg_navActive.png) center 24px no-repeat;  }
 nav li.active a:link, nav li.active a:visited, nav li.active a:active  { color: #635F5C; }
-nav { background: url(images/bg_secNav.png) center top no-repeat; width: 900px; padding: 13px 20px 0; font-family: Georgia, 'Times New Roman', Times, serif; }
+nav { background: url(images/bg_secNav.png) center top no-repeat;
+    width: 900px;
+    padding: 13px 20px 0;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-weight:500;
+    font-style: normal;}
 
 #searchform button { background: url(images/btn_search.png) top left no-repeat; width: 45px; height: 36px; float: right;}
 #searchform button:hover { background: url(images/btn_search.png) bottom left no-repeat; width: 45px; height: 36px; float: right;}
@@ -1353,7 +1358,7 @@ div.notification-preference {
     color:#B9B4B1;
 }
 .bigNumber:hover{
-    color:#99AF33;
+    color:#C69600;
 }
 
 li.greyArrow:before {content:"»"}
@@ -1405,4 +1410,8 @@ li.greyArrow:before {content:"»"}
     fill: none;
     shape-rendering: crispEdges;
     stroke: rgb(80, 74, 69);
+}
+
+#maptip {
+    height:420px;
 }
