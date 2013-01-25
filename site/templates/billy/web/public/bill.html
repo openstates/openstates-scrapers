@@ -21,7 +21,6 @@
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
         make_vote_charts(150, 150, 60);
-        fix_images();
     });
     </script>
 {% endblock %}
@@ -119,7 +118,7 @@
                         {% if sponsor.leg_id %}
 
                             <li>
-                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" />
+                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" onerror="img_error(this);" />
                                 <div>
                                     <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
                                     <p class="sponsor-type bold">{{ sponsor.type }}</p>
@@ -193,55 +192,6 @@
              <div class="clear"></div>
          </div>
 
-{% include "billy/web/public/developer_bill.html" %}
-
-         {% if bill.versions or bill.documents %}
-            <div class="module">
-                <div class="eightCol colLt">
-                    {% if bill.versions %}
-                    <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
-                        <ul class="inlineThirds">
-                        {% for version in bill.versions_preview %}
-                            <li class="{% cycle 'one' 'two' 'three' %}">
-                            <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
-                                {% if version.mimetype %}<span class="html">[{{ version.mimetype}}]</span>{% endif %}
-                            </li>
-                        {% endfor %}
-
-                        </ul>
-                        <div class="clear">
-                        {% with remainder=bill.versions_remainder %}
-                            {% if remainder %}
-                            <a class="viewMore" href="versions/">
-                                {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="fourCol colRt">
-                    {% if bill.documents %}
-                        <h4>{% trans "Documents" %}</h4>
-                            {% for document in bill.documents_preview %}
-                                <ul>
-                                    <li><a href="{{document.url}}">{{ document.name }}</a>
-                                    {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-                                    </li>
-                                </ul>
-                            {% endfor %}
-                            {% with remainder=bill.documents_remainder %}
-                                {% if remainder %}
-                                <a class="viewMore" href="documents/">
-                                    {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
-                                {% endif %}
-                            {% endwith %}
-                            <div class="clear"></div>
-                    {% endif %}
-                </div>
-                <div class="clear"></div>
-            </div>
-        {% endif %}
-
         <div class="module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
 
@@ -265,7 +215,6 @@
                 </ul>
         {% endif %}
        </div>
-
 
        <div class="module fullWidth">
             <h3 class="moduleTitle">{% trans "Actions" %}</h3>
@@ -301,6 +250,56 @@
 
             <div class="clear"></div>
         </div>
+
+
+ {% if bill.versions or bill.documents %}
+    <div class="module">
+        <div class="eightCol colLt">
+            {% if bill.versions %}
+            <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
+                <ul class="inlineThirds">
+                {% for version in bill.versions_preview %}
+                    <li class="{% cycle 'one' 'two' 'three' %}">
+                    <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
+                        {% if version.mimetype %}<span class="html">[{{ version.mimetype}}]</span>{% endif %}
+                    </li>
+                {% endfor %}
+
+                </ul>
+                <div class="clear">
+                {% with remainder=bill.versions_remainder %}
+                    {% if remainder %}
+                    <a class="viewMore" href="versions/">
+                        {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="fourCol colRt">
+            {% if bill.documents %}
+                <h4>{% trans "Documents" %}</h4>
+                    {% for document in bill.documents_preview %}
+                        <ul>
+                            <li><a href="{{document.url}}">{{ document.name }}</a>
+                            {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                            </li>
+                        </ul>
+                    {% endfor %}
+                    {% with remainder=bill.documents_remainder %}
+                        {% if remainder %}
+                        <a class="viewMore" href="documents/">
+                            {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="clear"></div>
+            {% endif %}
+        </div>
+        <div class="clear"></div>
+    </div>
+{% endif %}
+
+
 {% if events|length > 0 %}
         <div class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>

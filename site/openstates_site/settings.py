@@ -91,9 +91,19 @@ INSTALLED_APPS = (
     'billy.web.admin',
     'billy.web.public',
     'locksmith.mongoauth',
+    'social_auth',
     'markup_tags',
     'funfacts',
 )
+
+AUTHENTICATION_BACKENDS = (
+    'sunlightauth.backends.SunlightBackend',
+)
+
+SUNLIGHT_AUTH_BASE_URL = 'http://ec2-54-234-63-205.compute-1.amazonaws.com/'
+SUNLIGHT_AUTH_APP_ID = 'openstates'
+#SUNLIGHT_AUTH_SECRET = 'set in local settings'
+SUNLIGHT_AUTH_SCOPE = []
 
 LOGGING = {
     'version': 1,
@@ -120,7 +130,7 @@ LOGGING = {
 }
 
 LOGIN_REDIRECT_URL = '/'
-LOGIN_URL = '/login'
+LOGIN_URL = '/login/sunlight/'
 
 LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
 

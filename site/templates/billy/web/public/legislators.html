@@ -17,11 +17,6 @@ $(document).ready(function() {
         clickable_rows('#main-table tbody tr');
         }
 
-    $('img.legImgSmall').error(function() {
-            $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-                "title", "No Photo Available");
-    });
-
     var datatable_setup = function(){
 
         //Kill the html in the table headers.
@@ -58,9 +53,6 @@ $(document).ready(function() {
     // When the pjax operation is done, re-run pjax_setup to bind
     // the listeners to the replaced button elements.
     doc.bind('pjax:complete', {}, pjax_setup);
-
-    // Also fix the image placeholders.
-    doc.bind('pjax:complete', {}, fix_images);
 
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
