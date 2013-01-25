@@ -33,13 +33,24 @@
   {% endwith %}
 
 
-<p>
   {% if "_total_contributions" in legislator %}
-  {{legislator.title}} {{legislator.last_name}}
-  {% blocktrans with total=legislator|underscore_field:"total_contributions"|intcomma since=legislator|underscore_field:"contributions_start_year" %} has raised ${{total}} since {{since}}. {% endblocktrans %}
-{% endif %}
+    <div id="ie-chart-container">
+        <table>
+            <tbody>
+                <!-- FIXME: these numbers should come from db -->
+                <tr> <td>2006</td> <td>500,000</td> </tr>
+                <tr> <td>2008</td> <td>800,000</td> </tr>
+                <tr> <td>2010</td> <td>1,500,000</td> </tr>
+                <tr> <td>2012</td> <td>1,650,000</td> </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
 {% if legislator.transparencydata_id %}
+    <p>
     {% trans "For detailed campaign finance information visit " %}
     <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">Influence Explorer</a>.
+    </p>
 {% endif %}
-</p>
+

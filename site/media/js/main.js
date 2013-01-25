@@ -161,7 +161,8 @@ var round_up = function(n) {
 var make_ie_chart = function() {
     d3.select('#ie-chart-container').each(function() {
         var data = [];
-        var width = 420;
+        var width = 460;
+        var top_offset = 30;
         d3.select(this).selectAll('table tbody tr').each(function() {
             var d = {};
             d.year = d3.select(this).select("td:first-child").text();
@@ -171,27 +172,37 @@ var make_ie_chart = function() {
         var height = 20 * data.length;
         var chart = d3.select(this).append('svg')
             .attr('class', 'ie-chart')
-            .attr('width', width + 40)
-            .attr('height', height + 30);
+            .attr('width', width)
+            .attr('height', height + 2*top_offset);
         var max_x = round_up(d3.max(data, function(d) { return d.total; }));
-        var x = d3.scale.linear().domain([0, max_x]).range([0, width-40]);
+        var x = d3.scale.linear().domain([0, max_x]).range([0, width-80]);
+        var default_formatter = d3.format('n');
         var axis = d3.svg.axis().scale(x).ticks(4)
-            .tickValues([0, max_x*0.25, max_x*0.5, max_x*0.75, max_x]);
+            .tickValues([0, max_x*0.25, max_x*0.5, max_x*0.75, max_x])
+            .tickFormat(function(x) { return '$' + default_formatter(x); });
         chart.selectAll('rect').data(data)
             .enter().append('rect')
             .attr('x', 40)
-            .attr('y', function(d, i) { return i * 20; })
+            .attr('y', function(d, i) { return i * 20 + top_offset; })
             .attr('width', function(d) { return x(d.total); })
             .attr('height', 17)
             .attr('fill', '#a9c86a');
         chart.selectAll('text').data(data).enter().append('text')
                 .attr('x', 0)
-                .attr('y', function(d, i) { return i * 20 + 10; })
+                .attr('y', function(d, i) { return i * 20 + top_offset + 10; })
                 .attr('dy', '.25em')
+                .attr('fill', '#504a45')
                 .text(function(d) { return d.year; });
+        chart.append('text')
+            .attr('x', width/2)
+            .attr('y', 0)
+            .attr('dy', '1em')
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#504a45')
+            .text('Campaign Contributions by Cycle')
         chart.append('svg:g')
             .attr('class', 'x-axis')
-            .attr('transform', "translate(40," + 20*data.length + ')')
+            .attr('transform', "translate(40," + (20*data.length+top_offset) + ')')
             .call(axis);
     });
 };

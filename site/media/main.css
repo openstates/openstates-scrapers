@@ -1398,8 +1398,11 @@ li.greyArrow:before {content:"»"}
 
 
 #ie-chart-container table { display: none;}
-.x-axis path, .x-axis line {
+.x-axis line {
     fill: none;
     shape-rendering: crispEdges;
-    stroke: rgb(80, 74, 69);
+    stroke: #504a45;
 }
+.x-axis path { display: none; }
+.x-axis text { fill: #504a45; }
+
