@@ -5,3 +5,5 @@ http://www.deseretnews.com/utah/index.rss
 http://www.utahsenatedemocrats.org/feed
 http://feeds.feedburner.com/senatesite/feedme
 http://le.utah.gov/rss/utleg.xml
+
+http://www.therepublic.com/feed/cat/2630

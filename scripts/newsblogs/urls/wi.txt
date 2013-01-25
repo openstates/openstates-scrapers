@@ -16,3 +16,6 @@ http://badgerblogger.com/?feed=rss2
 http://govfreak.wordpress.com/feed/
 http://www.greenbaypressgazette.com/apps/pbcs.dll/section?Category=GPG0&template=rsscat
 http://www.aflcio.org/rss/feed/Blog
+
+http://www.therepublic.com/feed/cat/2670
+http://www.pewstates.org/feeds/all.rss?states=328055

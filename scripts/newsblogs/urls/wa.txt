@@ -157,3 +157,5 @@ http://www.housedemocrats.wa.gov/roster/rep-deb-eddy/feed/rss/
 http://www.housedemocrats.wa.gov/roster/rep-ross-hunter/feed/rss/
 http://www.housedemocrats.wa.gov/roster/rep-jim-moeller/feed/rss/
 http://www.housedemocrats.wa.gov/roster/rep-sharon-wylie/feed/rss/
+
+http://www.therepublic.com/feed/cat/2660

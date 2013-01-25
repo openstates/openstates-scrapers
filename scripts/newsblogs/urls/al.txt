@@ -8,3 +8,5 @@ http://blog.al.com/sweethome/atom.xml
 http://www.politicalparlor.net/feed/
 http://madvertiserblogs.com/southunionstreet/?feed=rss2
 http://blog.al.com/archiblog/atom.xml
+
+http://www.therepublic.com/feed/cat/2210

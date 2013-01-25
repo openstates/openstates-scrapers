@@ -185,3 +185,6 @@ http://www.housedems.ct.gov/FoxD/PR148.xml
 http://cthousegop.com/feed/?cat=57%2C58
 http://cthousegop.com/feed/?cat=61%2C62
 http://cthousegop.com/feed/?cat=43%2C44
+
+http://www.therepublic.com/feed/cat/2260
+http://www.pewstates.org/feeds/all.rss?states=328013
