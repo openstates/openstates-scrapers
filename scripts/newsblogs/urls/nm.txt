@@ -9,3 +9,6 @@ http://www.chorizoreport.com/?feed=rss2
 http://kunmgov.org/blog/feed/rss/
 http://greenchilechatter.blogspot.com/feeds/posts/default
 http://feeds.lcsun-news.com/mngi/rss/CustomRssServlet/557/200417.xml
+
+http://www.therepublic.com/feed/cat/2510
+http://www.pewstates.org/feeds/all.rss?states=328037

@@ -55,3 +55,6 @@ http://blogs.suntimes.com/backtalk/atom.xml
 http://www.championnews.net/feed/rss/
 http://politicalwire.com/headlines.xml
 http://www.pewstates.org/feeds/all.rss?states=328020
+
+http://www.therepublic.com/feed/cat/2340
+http://www.pewstates.org/feeds/all.rss?states=328020

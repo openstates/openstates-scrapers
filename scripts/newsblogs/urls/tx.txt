@@ -14,3 +14,6 @@ http://www.txdemocrats.org/feed/
 http://www.house.state.tx.us/rss/rss.php
 http://www.txhousedems.com/feed/
 http://governor.state.tx.us/rss/
+
+http://www.therepublic.com/feed/cat/2620
+http://www.pewstates.org/feeds/all.rss?states=328049

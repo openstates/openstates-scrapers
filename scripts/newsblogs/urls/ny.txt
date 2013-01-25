@@ -73,3 +73,5 @@ http://www.nysenate.gov/senator/pat-gallivan/content/feed
 http://www.nysenate.gov/senator/mark-grisanti/content/feed
 http://www.nysenate.gov/senator/michael-h-ranzenhofer/content/feed
 http://www.nysenate.gov/senator/george-d-maziarz/content/feed
+
+http://www.therepublic.com/feed/cat/2530

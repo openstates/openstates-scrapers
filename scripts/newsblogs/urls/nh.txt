@@ -11,3 +11,5 @@ http://solidgranite.blogspot.com/feeds/posts/default
 http://nhsenatedemocrats.org/feed/
 http://www.nhgop.org/feeds/rss/6
 http://nhhousedems.org/feed/
+
+http://www.therepublic.com/feed/cat/2490
