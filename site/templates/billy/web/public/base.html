@@ -85,8 +85,13 @@
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
-<!-- NEED TO MAKE THE SEARCH TEXT CHANGE WITH PAGES -->
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'Search Massachusetts for bills or legislators' %}">
+<input class="transparent search" type="search" name="search_text" id="id_q" placeholder="
+{% if abbr %}
+{% blocktrans with metadata.name as state_name %} Search {{state_name}} for bills or legislators {% endblocktrans %}
+{% else %}
+{% blocktrans with abbr|upper as state_name %} Search for bills or legislators across all states {% endblocktrans %}
+{% endif %}
+">
             <button type="submit">
                 <span>{% trans "Search" %}</span>
             </button>
