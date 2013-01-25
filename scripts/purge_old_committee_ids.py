@@ -23,20 +23,21 @@ def main():
         count = 0
         found = False
         for participant in event['participants']:
-            _id = participant.get('committee_id', None)
-            if _id and (_id not in committee_ids):
-                found = True
-                count += 1
-                old_ids.add(_id)
-                msg = 'Removing participant %r from event %r'
-                logger.debug(msg % (participant['committee_id'], event['_id']))
+            for id_key in 'committee_id', 'id':
+                _id = participant.get(id_key, None)
+                type_ = participant.get('participant_type')
+                if id_key == 'id' and type_ != 'committee':
+                    continue
+                if _id and (_id not in committee_ids):
+                    found = True
+                    msg = 'Removing participant %r from event %r'
+                    logger.info(msg % (participant[id_key], event['_id']))
+                    event['participants'].remove(participant)
 
-                # Leave the participant in but set their id to none.
-                # Text will still be displayed without a hyperlink.
-                participant['id'] = None
+                    # Leave the participant in but set their id to none.
+                    # Text will still be displayed without a hyperlink.
+                    participant[id_key] = None
 
-                # Also kill differently-keyed ids from earlier events imports.
-                participant['committee_id'] = None
         if found:
             msg = 'Removed %d old committee %r ids from %r'
             logger.info(msg % (count, old_ids, event['_id']))
