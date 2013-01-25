@@ -213,7 +213,9 @@
                     </li>
                     {% endfor %}
                 </ul>
-        {% endif %}
+                {% else %}
+                <p>{% trans "There are currently no roll call votes recorded for this bill." %}
+                {% endif %}
        </div>
 
        <div class="module fullWidth">
