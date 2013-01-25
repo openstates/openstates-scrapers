@@ -8,3 +8,5 @@ http://theiowarepublican.com/feed/rss/
 http://easterniowagovernment.com/feed/
 http://wcfcourier.com/app/rss/
 http://feeds.feedburner.com/iowacitynews?format=xml
+
+http://www.therepublic.com/feed/cat/2320

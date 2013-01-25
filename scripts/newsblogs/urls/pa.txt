@@ -215,3 +215,5 @@ http://www.pahouse.com/pr/xml/61.xml
 http://www.pahouse.com/pr/xml/84.xml
 http://www.pahouse.com/pr/xml/26.xml
 http://www.pahouse.com/pr/xml/489.xml
+
+http://www.therepublic.com/feed/cat/2570

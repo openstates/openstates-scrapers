@@ -8,3 +8,5 @@ http://vagopcaucus.blogspot.com/feeds/posts/default
 http://virginiafifthwatchdog.com/feed/
 http://www.bluevirginia.us/tag/Virginia%20Politics?feed=rss
 http://www.mydailyprogress.com/index.php/bobgibson/rss_2.0/
+
+http://www.therepublic.com/feed/cat/2650

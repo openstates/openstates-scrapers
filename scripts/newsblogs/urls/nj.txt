@@ -24,3 +24,6 @@ http://feeds2.feedburner.com/senatenj/allen
 http://feeds2.feedburner.com/senatenj/connors
 http://feeds2.feedburner.com/senatenj/addiego
 http://www.njassemblyrepublicans.com/index.php/feed/
+
+http://www.therepublic.com/feed/cat/2500
+http://www.pewstates.org/feeds/all.rss?states=328036

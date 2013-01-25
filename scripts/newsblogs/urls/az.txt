@@ -11,3 +11,6 @@ http://feeds.feedburner.com/EspressoPundit
 http://azstarnet.com/search/?f=rss&t=article&c=news/blogs/pueblo-politics&l=25&s=start_time&sd=desc
 http://azcapitoltimes.com/feed/
 htto://ninapsoncak.com
+
+http://www.therepublic.com/feed/cat/2230
+http://www.pewstates.org/feeds/all.rss?states=328009
