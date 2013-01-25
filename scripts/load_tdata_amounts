@@ -51,11 +51,6 @@ for person in people:
                     for x in years
             ]
 
-            total = total['totals']['-1']['recipient_amount']
-            total = int(total)
-            person['_total_contributions'] = total
-            person['_contributions_start_year'] = start_year
-
             ret = db.legislators.update({"_id": person['_id']},
                                   person,
                                   False,  # Upsert
