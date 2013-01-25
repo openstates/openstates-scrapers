@@ -22,14 +22,19 @@ def main():
     for event in db.events.find(spec):
         found = False
         for participant in event['participants']:
-            _id = participant.get('committee_id', None)
-            if _id and (_id not in committee_ids):
-                found = True
-                msg = 'Removing participant %r from event %r'
-                logger.info(msg % (participant['committee_id'], event['_id']))
-                event['participants'].remove(participant)
+            for id_key in 'committee_id', 'id':
+                _id = participant.get(id_key, None)
+                type_ = participant.get('participant_type')
+                if id_key == 'id' and type_ != 'committee':
+                    continue
+                if _id and (_id not in committee_ids):
+                    found = True
+                    msg = 'Removing participant %r from event %r'
+                    logger.info(msg % (participant['committee_id'], event['_id']))
+                    event['participants'].remove(participant)
         if found:
-            import ipdb;ipdb.set_trace()
+            pass
+            # import ipdb;ipdb.set_trace()
 
     # Bill actions.
     spec = {
