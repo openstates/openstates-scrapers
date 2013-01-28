@@ -8,7 +8,9 @@ from .utils import get_short_codes
 import lxml.html
 import pytz
 
+
 URL = "http://www.capitol.hawaii.gov/upcominghearings.aspx"
+
 
 class WIEventScraper(EventScraper):
     jurisdiction = 'hi'
