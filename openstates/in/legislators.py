@@ -18,35 +18,36 @@ class INLegislatorScraper(LegislatorScraper):
         url = ("http://www.in.gov/cgi-bin/legislative/listing/"
                "listing-2.pl?data=alpha&chamber=%s" % chamber_name)
 
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
 
-            for link in page.xpath("//div[@id='col2']/p/a"):
+        for link in page.xpath("//div[@id='col2']/p/a"):
 
-                name = link.text.strip()
-                href = link.get('href')
+            name = link.text.strip()
+            href = link.get('href')
 
-                details = link.getnext().text.strip()
+            details = link.getnext().text.strip()
 
-                party = details.split(',')[0]
-                if party == 'Democrat':
-                    party = 'Democratic'
+            party = details.split(',')[0]
+            if party == 'Democrat':
+                party = 'Democratic'
 
-                district = re.search(r'District (\d+)', details).group(1)
-                district = district.lstrip('0')
+            district = re.search(r'District (\d+)', details).group(1)
+            district = district.lstrip('0')
 
-                # Get the legislator's bio page.
+            # Get the legislator's bio page.
 
-                leg = Legislator(term, chamber, district, name, party=party,
-                                 url=href)
-                leg.add_source(url)
-                leg.add_source(href)
+            leg = Legislator(term, chamber, district, name, party=party,
+                             url=href)
+            leg.add_source(url)
+            leg.add_source(href)
 
-                details = self.scrape_details(chamber, term, href, page, party, leg)
-                if details:
-                    leg.update(details)
+            details = self.scrape_details(chamber, term, href, page, party, leg)
+            if details:
+                leg.update(details)
 
-                self.save_legislator(leg)
+            self.fix_hotgarbage(leg)
+            self.save_legislator(leg)
 
     def scrape_details(self, *args):
         chamber, term, href, page, party, leg = args
@@ -70,6 +71,12 @@ class INLegislatorScraper(LegislatorScraper):
 
         about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
         about = self.urlopen(about_url)
+        if about.strip() == "":
+            self.logger.info("WARNING: Blank page @ %s - skipping" % (
+                about_url
+            ))
+            return
+
         about = lxml.html.fromstring(about)
         about.make_links_absolute(about_url)
 
@@ -105,7 +112,6 @@ class INLegislatorScraper(LegislatorScraper):
 
             # Nothing is uniform on Indiana's website.
             if 'phone' not in office:
-                print line_data
                 for key_fail in ('Statehouse Telephone',
                                  'Statehouse Telephone Number'):
                     try:
@@ -280,6 +286,14 @@ class INLegislatorScraper(LegislatorScraper):
                 images[_district] = p.xpath('a/img/@src')[0]
         cache['images'] = images
         return images.get(district)
+
+
+    def fix_hotgarbage(self, leg):
+        '''In this heinous function, we manually fix any terribleness
+        we find.
+        '''
+        if leg['full_name'] == 'Peter. Miller':
+            leg['full_name'] = 'Peter Miller'
 
 
 def get_chunks(el, buff=None, offset=' '):

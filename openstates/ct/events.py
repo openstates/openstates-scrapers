@@ -29,9 +29,9 @@ class CTEventScraper(EventScraper):
     def scrape_committee_events(self, session, code, name):
         url = ("http://www.cga.ct.gov/asp/menu/"
                "CGACommCal.asp?comm_code=%s" % code)
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
         cal_table = page.xpath(
             "//table[contains(@summary, 'Calendar')]")[0]

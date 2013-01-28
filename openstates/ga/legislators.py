@@ -108,14 +108,15 @@ class GALegislatorScraper(LegislatorScraper):
             # if we have more than 2 chars (eg state)
             # or a phone/fax/email address record the info
             if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
-                legislator.add_office(
-                    'capitol',
-                    'Capitol Address',
-                    address=capital_address,
-                    phone=capital_contact_info[1],
-                    fax=capital_contact_info[2],
-                    email=capital_contact_info[0]
-                )
+                if capital_address.strip() != "":
+                    legislator.add_office(
+                        'capitol',
+                        'Capitol Address',
+                        address=capital_address,
+                        phone=capital_contact_info[1],
+                        fax=capital_contact_info[2],
+                        email=capital_contact_info[0]
+                    )
 
             district_address = self.clean_list([
                 member_info['DistrictAddress'][x] for x in [
@@ -140,14 +141,15 @@ class GALegislatorScraper(LegislatorScraper):
                 )).strip()
 
             if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
-                legislator.add_office(
-                    'district',
-                    'District Address',
-                    address=district_address,
-                    phone=district_contact_info[1],
-                    fax=district_contact_info[2],
-                    email=district_contact_info[0]
-                )
+                if district_address.strip() != "":
+                    legislator.add_office(
+                        'district',
+                        'District Address',
+                        address=district_address,
+                        phone=district_contact_info[1],
+                        fax=district_contact_info[2],
+                        email=district_contact_info[0]
+                    )
 
             legislator.add_source(self.ssource)
             self.save_legislator(legislator)

@@ -59,99 +59,99 @@ class MABillScraper(BillScraper):
             if skipped == 10:
                 break
 
-            with self.urlopen(bill_url) as html:
-                if 'Unable to find the Bill' in html:
+            html = self.urlopen(bill_url)
+            if 'Unable to find the Bill' in html:
+                self.warning('skipping %s' % bill_url)
+                skipped += 1
+                continue
+
+            # sometimes the site breaks, missing vital data
+            if 'billShortDesc' not in html:
+                self.warning('truncated page on %s' % bill_url)
+                time.sleep(1)
+                html = self.urlopen(bill_url)
+                if 'billShortDesc' not in html:
                     self.warning('skipping %s' % bill_url)
                     skipped += 1
                     continue
-
-                # sometimes the site breaks, missing vital data
-                if 'billShortDesc' not in html:
-                    self.warning('truncated page on %s' % bill_url)
-                    time.sleep(1)
-                    html = self.urlopen(bill_url)
-                    if 'billShortDesc' not in html:
-                        self.warning('skipping %s' % bill_url)
-                        skipped += 1
-                        continue
-                    else:
-                        skipped = 0
                 else:
                     skipped = 0
+            else:
+                skipped = 0
 
-                doc = lxml.html.fromstring(html)
-                doc.make_links_absolute('http://www.malegislature.gov/')
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute('http://www.malegislature.gov/')
 
-                title = doc.xpath('//h2/text()')[0]
-                desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
+            title = doc.xpath('//h2/text()')[0]
+            desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
 
-                # create bill
-                bill = Bill(session, chamber, bill_id, title, summary=desc)
-                bill.add_source(bill_url)
+            # create bill
+            bill = Bill(session, chamber, bill_id, title, summary=desc)
+            bill.add_source(bill_url)
 
-                # actions
-                for act_row in doc.xpath('//tbody[@class="bgwht"]/tr'):
-                    date = act_row.xpath('./td[@headers="bDate"]/text()')[0]
-                    date = datetime.strptime(date, "%m/%d/%Y")
-                    actor_txt = act_row.xpath('./td[@headers="bBranch"]')[0].text_content().strip()
-                    if actor_txt:
-                        actor = chamber_map[actor_txt]
-                    action = act_row.xpath('./td[@headers="bAction"]/text()')[0].strip()
-                    atype, whom = classify_action(action)
-                    kwargs = {}
-                    if not whom is None:
-                        kwargs['committees'] = [whom]
-                    bill.add_action(actor, action, date, type=atype, **kwargs)
+            # actions
+            for act_row in doc.xpath('//tbody[@class="bgwht"]/tr'):
+                date = act_row.xpath('./td[@headers="bDate"]/text()')[0]
+                date = datetime.strptime(date, "%m/%d/%Y")
+                actor_txt = act_row.xpath('./td[@headers="bBranch"]')[0].text_content().strip()
+                if actor_txt:
+                    actor = chamber_map[actor_txt]
+                action = act_row.xpath('./td[@headers="bAction"]/text()')[0].strip()
+                atype, whom = classify_action(action)
+                kwargs = {}
+                if not whom is None:
+                    kwargs['committees'] = [whom]
+                bill.add_action(actor, action, date, type=atype, **kwargs)
 
-                # I tried to, as I was finding the sponsors, detect whether a
-                # sponsor was already known. One has to do this because an author
-                # is listed in the "Sponsors:" section and then the same person
-                # will be listed with others in the "Petitioners:" section. We are
-                # guessing that "Sponsors" are authors and "Petitioners" are
-                # co-authors. Does this make sense?
+            # I tried to, as I was finding the sponsors, detect whether a
+            # sponsor was already known. One has to do this because an author
+            # is listed in the "Sponsors:" section and then the same person
+            # will be listed with others in the "Petitioners:" section. We are
+            # guessing that "Sponsors" are authors and "Petitioners" are
+            # co-authors. Does this make sense?
 
-                sponsors = dict((a.get('href'), a.text) for a in
-                                doc.xpath('//p[@class="billReferral"]/a'))
-                petitioners = dict((a.get('href'), a.text) for a in
-                                   doc.xpath('//div[@id="billSummary"]/p[1]/a'))
+            sponsors = dict((a.get('href'), a.text) for a in
+                            doc.xpath('//p[@class="billReferral"]/a'))
+            petitioners = dict((a.get('href'), a.text) for a in
+                               doc.xpath('//div[@id="billSummary"]/p[1]/a'))
 
-                if len(sponsors) == 0:
-                    spons = doc.xpath('//p[@class="billReferral"]')[0].text_content()
-                    spons = spons.strip()
-                    spons = spons.split("\n")
-                    cspons = []
-                    for s in spons:
-                        if s and s.strip() != "":
-                            cspons.append(s)
+            if len(sponsors) == 0:
+                spons = doc.xpath('//p[@class="billReferral"]')[0].text_content()
+                spons = spons.strip()
+                spons = spons.split("\n")
+                cspons = []
+                for s in spons:
+                    if s and s.strip() != "":
+                        cspons.append(s)
 
-                    sponsors = dict((s, s) for s in cspons)
+                sponsors = dict((s, s) for s in cspons)
 
 
-                # remove sponsors from petitioners
-                for k in sponsors:
-                    petitioners.pop(k, None)
+            # remove sponsors from petitioners
+            for k in sponsors:
+                petitioners.pop(k, None)
 
-                for sponsor in sponsors.values():
-                    if sponsor == 'NONE':
-                        continue
-                    bill.add_sponsor('primary', sponsor)
+            for sponsor in sponsors.values():
+                if sponsor == 'NONE':
+                    continue
+                bill.add_sponsor('primary', sponsor)
 
-                for petitioner in petitioners.values():
-                    if sponsor == 'NONE':
-                        continue
-                    bill.add_sponsor('cosponsor', petitioner)
+            for petitioner in petitioners.values():
+                if sponsor == 'NONE':
+                    continue
+                bill.add_sponsor('cosponsor', petitioner)
 
-                # sometimes html link is just missing
-                bill_text_url = (
-                    doc.xpath('//a[contains(@href, "BillHtml")]/@href') or
-                    doc.xpath('//a[contains(@href, "Bills/PDF")]/@href')
-                )
-                if bill_text_url:
-                    if 'PDF' in bill_text_url[0]:
-                        mimetype = 'application/pdf'
-                    else:
-                        mimetype = 'text/html'
-                    bill.add_version('Current Text', bill_text_url[0],
-                                     mimetype=mimetype)
+            # sometimes html link is just missing
+            bill_text_url = (
+                doc.xpath('//a[contains(@href, "BillHtml")]/@href') or
+                doc.xpath('//a[contains(@href, "Bills/PDF")]/@href')
+            )
+            if bill_text_url:
+                if 'PDF' in bill_text_url[0]:
+                    mimetype = 'application/pdf'
+                else:
+                    mimetype = 'text/html'
+                bill.add_version('Current Text', bill_text_url[0],
+                                 mimetype=mimetype)
 
-                self.save_bill(bill)
+            self.save_bill(bill)

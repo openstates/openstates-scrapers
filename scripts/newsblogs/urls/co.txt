@@ -11,3 +11,6 @@ http://www.coloradosenatenews.com/?q=rss.xml
 http://taxpayers.wordpress.com/feed/
 http://blogs.denverpost.com/thespot/feed/rss/
 http://feeds.denverpost.com/dp-headlines
+
+http://www.therepublic.com/feed/cat/2250
+http://www.pewstates.org/feeds/all.rss?states=328012

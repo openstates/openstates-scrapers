@@ -85,8 +85,13 @@
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
-<!-- NEED TO MAKE THE SEARCH TEXT CHANGE WITH PAGES -->
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% trans 'Search Massachusetts for bills or legislators' %}">
+<input class="transparent search" type="search" name="search_text" id="id_q" placeholder="
+{% if abbr %}
+{% blocktrans with metadata.name as state_name %} Search {{state_name}} for bills or legislators {% endblocktrans %}
+{% else %}
+{% blocktrans with abbr|upper as state_name %} Search for bills or legislators across all states {% endblocktrans %}
+{% endif %}
+">
             <button type="submit">
                 <span>{% trans "Search" %}</span>
             </button>
@@ -101,7 +106,7 @@
         {% if abbr and abbr != 'all' %}
         <nav class="clearfix">
             <ul>
-                <li {% if nav_active == "home" %}class="active"{% endif %}><a href="{% url 'region' abbr %}">{% trans "Home" %}</a></li>
+                <li {% if nav_active == "home" %}class="active"{% endif %}><a href="{% url 'region' abbr %}">{% trans "Overview" %}</a></li>
                 <li {% if nav_active == "legislators" %}class="active"{% endif %}><a href="{% url 'legislators' abbr %}">{% trans "Legislators" %}</a></li>
                 <li {% if nav_active == "bills" %}class="active"{% endif %}><a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a></li>
                 <li {% if nav_active == "committees" %}class="active"{% endif %}><a href="{% url 'committees' abbr %}">{% trans "Committees" %}</a></li>

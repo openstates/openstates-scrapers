@@ -141,59 +141,61 @@ class PRBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, bill_id, bill_type):
         url = '%s?r=%s' % (self.base_url, bill_id)
-        with self.urlopen(url) as html:
-            if "error '80020009'" in html:
-                self.warning('asp error on page, skipping %s', bill_id)
-                return
-            doc = lxml.html.fromstring(html)
-            # search for Titulo, accent over i messes up lxml, so use 'tulo'
-            title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')
-            if not title:
-                raise NoSuchBill()
-            bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
-            author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
-            for aname in author.split(','):
-                bill.add_sponsor('primary', self.clean_name(aname).strip())
-            co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
-            if len(co_authors) != 0:
-                for co_author in co_authors[1].split(','):
-                    bill.add_sponsor('cosponsor', self.clean_name(co_author).strip());
-            action_table = doc.xpath('//table')[-1]
-            for row in action_table[1:]:
-                tds = row.xpath('td')
-                # ignore row missing date
-                if len(tds) != 2:
-                    continue
-                date = datetime.datetime.strptime(tds[0].text_content(),
-                                                  "%m/%d/%Y")
-                action = tds[1].text_content().strip()
-                #parse the text to see if it's a new version or a unrelated document
-                #if has - let's *shrug* assume it's a vote document
+        html = self.urlopen(url)
+        if "error '80020009'" in html:
+            self.warning('asp error on page, skipping %s', bill_id)
+            return
+        doc = lxml.html.fromstring(html)
+        # search for Titulo, accent over i messes up lxml, so use 'tulo'
+        title = doc.xpath(u'//td/b[contains(text(),"tulo")]/../following-sibling::td/text()')
+        if not title:
+            raise NoSuchBill()
+        bill = Bill(session, chamber, bill_id, title[0], type=bill_type)
+        author = doc.xpath(u'//td/b[contains(text(),"Autor")]/../text()')[0]
+        for aname in author.split(','):
+            aname = self.clean_name(aname).strip()
+            if aname:
+                bill.add_sponsor('primary', aname)
+        co_authors = doc.xpath(u'//td/b[contains(text(),"Co-autor")]/../text()')
+        if len(co_authors) != 0:
+            for co_author in co_authors[1].split(','):
+                bill.add_sponsor('cosponsor', self.clean_name(co_author).strip());
+        action_table = doc.xpath('//table')[-1]
+        for row in action_table[1:]:
+            tds = row.xpath('td')
+            # ignore row missing date
+            if len(tds) != 2:
+                continue
+            date = datetime.datetime.strptime(tds[0].text_content(),
+                                              "%m/%d/%Y")
+            action = tds[1].text_content().strip()
+            #parse the text to see if it's a new version or a unrelated document
+            #if has - let's *shrug* assume it's a vote document
 
-                #get url of action
-                action_url = tds[1].xpath('a/@href')
-                atype,action = self.parse_action(chamber,bill,action,action_url,date)
-                if atype == 'bill:passed' and action_url:
-                    vote_chamber  = None
-                    for pattern, vote_chamber in _voteChambers:
-                       if re.match(pattern,action):
-                           break
+            #get url of action
+            action_url = tds[1].xpath('a/@href')
+            atype,action = self.parse_action(chamber,bill,action,action_url,date)
+            if atype == 'bill:passed' and action_url:
+                vote_chamber  = None
+                for pattern, vote_chamber in _voteChambers:
+                   if re.match(pattern,action):
+                       break
 
+                else:
+                   self.warning('coudnt find voteChamber pattern')
+
+                if vote_chamber == 'lower' and len(action_url) > 0:
+                    vote = self.scrape_votes(action_url[0], action,date,
+                                             vote_chamber)
+                    if not vote[0] == None:
+                        vote[0].add_source(action_url[0])
+                        bill.add_vote(vote[0])
                     else:
-                       self.warning('coudnt find voteChamber pattern')
+                        self.warning('Problem Reading vote: %s,%s' %
+                                     (vote[1], bill_id))
 
-                    if vote_chamber == 'lower' and len(action_url) > 0:
-                        vote = self.scrape_votes(action_url[0], action,date,
-                                                 vote_chamber)
-                        if not vote[0] == None:
-                            vote[0].add_source(action_url[0])
-                            bill.add_vote(vote[0])
-                        else:
-                            self.warning('Problem Reading vote: %s,%s' %
-                                         (vote[1], bill_id))
-
-            bill.add_source(url)
-            self.save_bill(bill)
+        bill.add_source(url)
+        self.save_bill(bill)
 
     def get_filename_parts_from_url(self,url):
         fullname = url.split('/')[-1].split('#')[0].split('?')[0]

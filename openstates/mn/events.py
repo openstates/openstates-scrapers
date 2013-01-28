@@ -12,8 +12,8 @@ class MNEventScraper(EventScraper):
     jurisdiction = 'mn'
     _tz = pytz.timezone('US/Eastern')
     def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 

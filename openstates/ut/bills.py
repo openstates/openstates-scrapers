@@ -38,28 +38,28 @@ class UTBillScraper(BillScraper):
         bill_list_url = "http://www.le.state.ut.us/~%s/bills.htm" % (
             session.replace(' ', ''))
 
-        with self.urlopen(bill_list_url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(bill_list_url)
+        page = self.urlopen(bill_list_url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(bill_list_url)
 
-            for link in page.xpath('//a'):
-                if "href" not in link.attrib:
-                    continue  # XXX: There are some funky <a> tags here.
+        for link in page.xpath('//a'):
+            if "href" not in link.attrib:
+                continue  # XXX: There are some funky <a> tags here.
 
-                if re.search(bill_list_re, link.attrib['href']):
-                    self.scrape_bill_list(chamber, session,
-                                          link.attrib['href'])
+            if re.search(bill_list_re, link.attrib['href']):
+                self.scrape_bill_list(chamber, session,
+                                      link.attrib['href'])
 
     def scrape_bill_list(self, chamber, session, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-            for link in page.xpath('//a[contains(@href, "billhtm")]'):
-                bill_id = link.xpath('string()').strip()
+        for link in page.xpath('//a[contains(@href, "billhtm")]'):
+            bill_id = link.xpath('string()').strip()
 
-                self.scrape_bill(chamber, session, bill_id,
-                                 link.attrib['href'])
+            self.scrape_bill(chamber, session, bill_id,
+                             link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
@@ -112,90 +112,90 @@ class UTBillScraper(BillScraper):
         self.save_bill(bill)
 
     def parse_status(self, bill, url):
-        with self.urlopen(url) as page:
-            bill.add_source(url)
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
-            uniqid = 0
+        page = self.urlopen(url)
+        bill.add_source(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        uniqid = 0
 
-            for row in page.xpath('//table/tr')[1:]:
-                uniqid += 1
-                date = row.xpath('string(td[1])')
-                date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
+        for row in page.xpath('//table/tr')[1:]:
+            uniqid += 1
+            date = row.xpath('string(td[1])')
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
-                action = row.xpath('string(td[2])')
-                actor = bill['chamber']
+            action = row.xpath('string(td[2])')
+            actor = bill['chamber']
 
-                if '/' in action:
-                    actor = action.split('/')[0].strip()
+            if '/' in action:
+                actor = action.split('/')[0].strip()
 
-                    if actor == 'House':
-                        actor = 'lower'
-                    elif actor == 'Senate':
-                        actor = 'upper'
-                    elif actor == 'LFA':
-                        actor = 'Office of the Legislative Fiscal Analyst'
+                if actor == 'House':
+                    actor = 'lower'
+                elif actor == 'Senate':
+                    actor = 'upper'
+                elif actor == 'LFA':
+                    actor = 'Office of the Legislative Fiscal Analyst'
 
-                    action = '/'.join(action.split('/')[1:]).strip()
+                action = '/'.join(action.split('/')[1:]).strip()
 
-                if action == 'Governor Signed':
-                    actor = 'executive'
-                    type = 'governor:signed'
-                elif action == 'Governor Vetoed':
-                    actor = 'executive'
-                    type = 'governor:vetoed'
-                elif action.startswith('1st reading'):
-                    type = ['bill:introduced', 'bill:reading:1']
-                elif action == 'to Governor':
-                    type = 'governor:received'
-                elif action == 'passed 3rd reading':
-                    type = 'bill:passed'
-                elif action.startswith('passed 2nd & 3rd readings'):
-                    type = 'bill:passed'
-                elif action == 'to standing committee':
-                    comm_link = row.xpath("td[3]/font/font/a")[0]
-                    comm = re.match(
-                        r"writetxt\('(.*)'\)",
-                        comm_link.attrib['onmouseover']).group(1)
-                    action = "to " + comm
-                    type = 'committee:referred'
-                elif action.startswith('2nd reading'):
-                    type = 'bill:reading:2'
-                elif action.startswith('3rd reading'):
-                    type = 'bill:reading:3'
-                elif action == 'failed':
-                    type = 'bill:failed'
-                elif action.startswith('2nd & 3rd readings'):
-                    type = ['bill:reading:2', 'bill:reading:3']
-                elif action == 'passed 2nd reading':
-                    type = 'bill:reading:2'
-                elif 'Comm - Favorable Recommendation' in action:
-                    type = 'committee:passed:favorable'
-                elif action == 'committee report favorable':
-                    type = 'committee:passed:favorable'
+            if action == 'Governor Signed':
+                actor = 'executive'
+                type = 'governor:signed'
+            elif action == 'Governor Vetoed':
+                actor = 'executive'
+                type = 'governor:vetoed'
+            elif action.startswith('1st reading'):
+                type = ['bill:introduced', 'bill:reading:1']
+            elif action == 'to Governor':
+                type = 'governor:received'
+            elif action == 'passed 3rd reading':
+                type = 'bill:passed'
+            elif action.startswith('passed 2nd & 3rd readings'):
+                type = 'bill:passed'
+            elif action == 'to standing committee':
+                comm_link = row.xpath("td[3]/font/font/a")[0]
+                comm = re.match(
+                    r"writetxt\('(.*)'\)",
+                    comm_link.attrib['onmouseover']).group(1)
+                action = "to " + comm
+                type = 'committee:referred'
+            elif action.startswith('2nd reading'):
+                type = 'bill:reading:2'
+            elif action.startswith('3rd reading'):
+                type = 'bill:reading:3'
+            elif action == 'failed':
+                type = 'bill:failed'
+            elif action.startswith('2nd & 3rd readings'):
+                type = ['bill:reading:2', 'bill:reading:3']
+            elif action == 'passed 2nd reading':
+                type = 'bill:reading:2'
+            elif 'Comm - Favorable Recommendation' in action:
+                type = 'committee:passed:favorable'
+            elif action == 'committee report favorable':
+                type = 'committee:passed:favorable'
+            else:
+                type = 'other'
+
+            bill.add_action(actor, action, date, type=type,
+                            _vote_id=uniqid)
+
+            # Check if this action is a vote
+            vote_links = row.xpath('./td[4]//a')
+            for vote_link in vote_links:
+                vote_url = vote_link.attrib['href']
+
+                # Committee votes are of a different format that
+                # we don't handle yet
+                if not vote_url.endswith('txt'):
+                    self.parse_html_vote(bill, actor, date, action,
+                                         vote_url, uniqid)
                 else:
-                    type = 'other'
-
-                bill.add_action(actor, action, date, type=type,
-                                _vote_id=uniqid)
-
-                # Check if this action is a vote
-                vote_links = row.xpath('./td[4]//a')
-                for vote_link in vote_links:
-                    vote_url = vote_link.attrib['href']
-
-                    # Committee votes are of a different format that
-                    # we don't handle yet
-                    if not vote_url.endswith('txt'):
-                        self.parse_html_vote(bill, actor, date, action,
-                                             vote_url, uniqid)
-                    else:
-                        self.parse_vote(bill, actor, date, action,
-                                        vote_url, uniqid)
+                    self.parse_vote(bill, actor, date, action,
+                                    vote_url, uniqid)
 
     def scrape_committee_vote(self, bill, actor, date, motion, url, uniqid):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         committee = page.xpath("//b")[0].text_content()
         votes = page.xpath("//table")[0]
@@ -258,8 +258,8 @@ class UTBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         descr = page.xpath("//b")[0].text_content()
 
@@ -324,48 +324,48 @@ class UTBillScraper(BillScraper):
 
 
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
-        with self.urlopen(url) as page:
-            bill.add_source(url)
-            vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
-                                 '(.*)ABSENT( OR NOT VOTING)? -?\s?'
-                                 '(\d+)(.*)',
-                                 re.MULTILINE | re.DOTALL)
-            match = vote_re.search(page)
-            yes_count = int(match.group(1))
-            no_count = int(match.group(3))
-            other_count = int(match.group(6))
+        page = self.urlopen(url)
+        bill.add_source(url)
+        vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
+                             '(.*)ABSENT( OR NOT VOTING)? -?\s?'
+                             '(\d+)(.*)',
+                             re.MULTILINE | re.DOTALL)
+        match = vote_re.search(page)
+        yes_count = int(match.group(1))
+        no_count = int(match.group(3))
+        other_count = int(match.group(6))
 
-            if yes_count > no_count:
-                passed = True
-            else:
-                passed = False
+        if yes_count > no_count:
+            passed = True
+        else:
+            passed = False
 
-            if actor == 'upper' or actor == 'lower':
-                vote_chamber = actor
-                vote_location = ''
-            else:
-                vote_chamber = ''
-                vote_location = actor
+        if actor == 'upper' or actor == 'lower':
+            vote_chamber = actor
+            vote_location = ''
+        else:
+            vote_chamber = ''
+            vote_location = actor
 
-            vote = Vote(vote_chamber, date,
-                        motion, passed, yes_count, no_count,
-                        other_count,
-                        location=vote_location,
-                        _vote_id=uniqid)
-            vote.add_source(url)
+        vote = Vote(vote_chamber, date,
+                    motion, passed, yes_count, no_count,
+                    other_count,
+                    location=vote_location,
+                    _vote_id=uniqid)
+        vote.add_source(url)
 
-            yes_votes = re.split('\s{2,}', match.group(2).strip())
-            no_votes = re.split('\s{2,}', match.group(4).strip())
-            other_votes = re.split('\s{2,}', match.group(7).strip())
+        yes_votes = re.split('\s{2,}', match.group(2).strip())
+        no_votes = re.split('\s{2,}', match.group(4).strip())
+        other_votes = re.split('\s{2,}', match.group(7).strip())
 
-            for yes in yes_votes:
-                if yes:
-                    vote.yes(yes)
-            for no in no_votes:
-                if no:
-                    vote.no(no)
-            for other in other_votes:
-                if other:
-                    vote.other(other)
+        for yes in yes_votes:
+            if yes:
+                vote.yes(yes)
+        for no in no_votes:
+            if no:
+                vote.no(no)
+        for other in other_votes:
+            if other:
+                vote.other(other)
 
-            bill.add_vote(vote)
+        bill.add_vote(vote)

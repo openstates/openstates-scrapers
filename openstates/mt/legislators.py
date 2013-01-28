@@ -9,8 +9,6 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
 
-from .committees import scrape_committees
-
 
 class MTLegislatorScraper(LegislatorScraper):
 
@@ -34,12 +32,6 @@ class MTLegislatorScraper(LegislatorScraper):
                 year = tdata['start_year']
                 session_number = tdata['session_number']
                 break
-
-        # Scrape committees. Also produce a name dictionary that can be
-        # used for fuzzy matching between the committee page names and the
-        # all-caps csv names.
-        # for name_dict, _ in scrape_committees(year, chamber):
-        #     pass
 
         # Fetch the csv.
         url = 'http://leg.mt.gov/content/sessions/%s/%d%sMembers.txt' % \
@@ -85,22 +77,6 @@ class MTLegislatorScraper(LegislatorScraper):
                                    entry['last_name'].capitalize())
 
             city_lower = entry['city'].lower()
-            # fullname = difflib.get_close_matches(
-            #                _fullname, name_dict[city_lower], cutoff=0.5)
-
-            # If there are no close matches with the committee page,
-            # use the title-capped first and last name.
-            # if len(fullname) < 1:
-            #     fullname = _fullname
-            #     # msg = 'No matches found for "%s" with "%s" from %r'
-            #     # self.debug(msg % (_fullname, fullname,
-            #     #                   name_dict[city_lower]))
-            # else:
-            #     fullname = fullname[0]
-            #     # if _fullname != fullname:
-            #     #     msg = 'matched "%s" with "%s" from %r'
-            #     #     self.debug(msg % (_fullname, fullname,
-            #     #                       name_dict[city_lower]))
 
             # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
@@ -117,7 +93,7 @@ class MTLegislatorScraper(LegislatorScraper):
                 address=address)
 
             deets = self._scrape_details(detail_url)
-            # import ipdb;ipdb.set_trace()
+
             # Add the details and delete junk.
             entry.update(deets)
             del entry['first_name'], entry['last_name']
@@ -132,16 +108,6 @@ class MTLegislatorScraper(LegislatorScraper):
             office['phone'] = deets.get('phone')
             office['fax'] = deets.get('fax')
             legislator.add_office(**office)
-
-            print legislator['url']
-            print legislator['photo_url']
-            x = re.search(r'(\d+)\.jpg', legislator['photo_url'])
-            if x:
-                y = x.group(1)
-                if y not in legislator['url']:
-                    import ipdb;ipdb.set_trace()
-            else:
-                import ipdb;ipdb.set_trace()
 
             self.save_legislator(legislator)
 

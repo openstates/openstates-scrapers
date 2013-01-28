@@ -31,7 +31,7 @@ class WVLegislatorScraper(LegislatorScraper):
             leg_url = urlescape(link.attrib['href'])
 
             if name in ['Members', 'Senate Members', 'House Members',
-                        'Vacancy', 'VACANT']:
+                        'Vacancy', 'VACANT', 'Vacant']:
                 continue
 
             self.scrape_legislator(chamber, term, name, leg_url)

@@ -15,7 +15,7 @@ $(document).ready(function() {
 
     var _clickable_rows = function(){
         clickable_rows('#main-table tbody tr');
-        }
+    }
 
     var datatable_setup = function(){
 
@@ -31,14 +31,16 @@ $(document).ready(function() {
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
-            "oLanguage": {
+            oLanguage: {
                 "sSearch": "Type in a name, district, party or chamber to filter table below: "
             },
-            "aoColumnDefs": [
+            aoColumnDefs: [
                     {"iDataSort": 1, "aTargets": [2]},
                     {"bVisible": false, "aTargets": [1]}
-                ]
+            ],
         });
+        jQuery.fn.dataTableExt.oSort['string-asc'] = sort_func_asc;
+        jQuery.fn.dataTableExt.oSort['string-desc'] = sort_func_desc;
 
         // Sort it.
         datatable.fnSort([[2, 'asc']]);

@@ -9,3 +9,6 @@ http://www.spokesman.com/feeds/blogs/boise/
 http://www.idahoptv.org/idreports/ir.xml
 http://lmtribune.com/search/?q=&t=article&l=25&d=&d1=&d2=&s=start_time&sd=desc&c[]=blogs/political_theater*&f=rss
 http://www.boiseweekly.com/boise/Rss.xml?section=920003
+
+http://www.therepublic.com/feed/cat/2330
+http://www.pewstates.org/feeds/all.rss?states=328019

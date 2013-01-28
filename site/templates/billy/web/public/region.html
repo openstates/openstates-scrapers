@@ -21,7 +21,7 @@
 {% block content %}
     <div class="fullWidth">
         <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
-            <h2 class="withTip">{{metadata.legislature_name}}</h2>
+            <h2 class="withTip">{{metadata.legislature_name}} {% trans "Overview" %}</h2>
             <p>{# funfact metadata.abbr #}</p>
         </div>
     </div>
@@ -30,7 +30,7 @@
         <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
         <p class="tip">{% trans "Click on a district to view corresponding legislators." %}</p>
 
-        <div class="sixCol colLtSm">
+        <div class="sixCol colLtSm" id="maptip">
             <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
             <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
         </div>
@@ -103,7 +103,7 @@
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked chambers - side by side passed/introduced #}
         {% for chamber in chambers %}
-            <h3 class="grey">{{ chamber.name }}</h3>
+            <h3 class="clear">{{ chamber.name }}</h3>
             <div class="sixCol colLt voteChart">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>

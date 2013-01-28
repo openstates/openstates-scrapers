@@ -13,8 +13,8 @@ class UTEventScraper(EventScraper):
     jurisdiction = 'ut'
     _tz = pytz.timezone('US/Mountain')
     def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
@@ -95,8 +95,8 @@ class UTEventScraper(EventScraper):
         if chamber != 'other':
             return
 
-        with self.urlopen(url) as page:
-            page = lxml.etree.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.etree.fromstring(page)
 
         for p in page.xpath("//link"):
             self.scrape_page(p.text, session, chamber)

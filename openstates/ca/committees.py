@@ -44,7 +44,15 @@ class CACommitteeScraper(CommitteeScraper):
             else:
                 _chamber = chamber
 
-            div = doc.xpath('//div[contains(@class, "view-view-%sCommittee")]' % type_)[0]
+            for xpath in [
+                '//div[contains(@class, "view-view-%sCommittee")]' % type_,
+                '//div[contains(@id, "block-views-view_StandingCommittee-block_1")]',
+                ]:
+                div = doc.xpath(xpath)
+                if div:
+                    break
+
+            div = div[0]
             committees = div.xpath('descendant::span[@class="field-content"]/a/text()')
             committees = map(strip, committees)
             urls = div.xpath('descendant::span[@class="field-content"]/a/@href')
@@ -85,7 +93,8 @@ class CACommitteeScraper(CommitteeScraper):
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
 
-                self.save_committee(c)
+                if c['members']:
+                    self.save_committee(c)
 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
@@ -123,7 +132,8 @@ class CACommitteeScraper(CommitteeScraper):
                     msg = '%r must have at least one member.'
                     raise ValueError(msg % cname)
 
-                self.save_committee(c)
+                if c['members']:
+                    self.save_committee(c)
 
     def scrape_membernames(self, committee, url, chamber, term):
         '''Scrape the member names from this page.
@@ -200,7 +210,6 @@ class CACommitteeScraper(CommitteeScraper):
         committee_names = doc.xpath('//div[@class="content"]/h3/text()')
         committee_names = filter(None, map(clean, committee_names))
         for _committee, _names in zip(committee_names, namelists):
-            print _committee
             if _committee:
                 cache[_committee] = _names
 
@@ -261,8 +270,11 @@ class Membernames(object):
             name = name.strip()
 
             if name:
-                if 'Sanator' in  name:
+                if 'Sanator' in name:
                     name = name.replace('Sanator', 'Senator')
+                if name.endswith(' (Chair'):
+                    role = 'chair'
+                    name = name.replace(' (Chair', '')
                 name.strip(',')
                 res.append((name, role, kw))
 

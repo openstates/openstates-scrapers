@@ -47,3 +47,6 @@ http://news.legislature.ne.gov/dist44/feed/
 http://news.legislature.ne.gov/dist47/feed/
 http://news.legislature.ne.gov/dist48/feed/
 http://news.legislature.ne.gov/dist49/feed/
+
+http://www.therepublic.com/feed/cat/2480
+http://www.pewstates.org/feeds/all.rss?states=328033

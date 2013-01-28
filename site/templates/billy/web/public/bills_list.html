@@ -82,11 +82,17 @@ $(document).ready(function(){
         {% if request.GET.search_text and request.user.is_authenticated %}
             {% favorite bill.id "search" %}
         {% endif %}
-
-        <h2 id="billSearchTitle">{{ description }}</h2>
+        <div class="fullWidth">
+            <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
+                <h2 class="withTip">{{ description }}</h2>
+                <p>{# funfact metadata.abbr #}</p>
+            </div>
+        </div>
         {% if long_description %}
         <ul id="billSearchLongDesc" class="clearfix">
-            {% for item in long_description %} <li class="tip">{{item}}{% if not forloop.last %}, {% endif %}</li> {% endfor %}
+            <li class="tip">Filtering to only show bills
+            {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </li> 
         </ul>
         {% endif %}
             <div class="fourCol colLtSm filterCol clear">

@@ -155,3 +155,5 @@ http://www.gophouse.com/rss_news.asp?District=107
 http://www.gophouse.com/rss_news.asp?District=108
 http://109.housedems.com/feed/all.rss
 http://www.gophouse.com/rss_news.asp?District=110
+
+http://www.therepublic.com/feed/cat/2410

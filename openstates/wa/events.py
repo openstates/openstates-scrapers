@@ -19,8 +19,8 @@ class WAEventScraper(EventScraper):
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
     def lxmlize(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 

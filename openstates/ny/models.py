@@ -5,6 +5,7 @@ import collections
 
 from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
+from billy.utils import term_for_session, metadata
 
 
 class AssemblyBillPage(object):
@@ -12,9 +13,17 @@ class AssemblyBillPage(object):
     and assembly floor votes from the assembly page.
     '''
 
+    metadata = metadata('ny')
+
     def __init__(self, scraper, session, chamber, url, doc, bill_type,
                  bill_id, title, bill_id_parts):
         self.scraper = scraper
+        self.session = session
+        self.term = term_for_session('ny', session)
+        for data in self.metadata['terms']:
+            if session in data['sessions']:
+                self.termdata = data
+            self.term_start_year = data['start_year']
         self.chamber = chamber
         self.url = url
         self.doc = doc
@@ -42,7 +51,8 @@ class AssemblyBillPage(object):
     def _get_chunks(self):
         if 'summary' not in self.data:
             url = ('http://assembly.state.ny.us/leg/?default_fld=&'
-                   'bn=%s&Summary=Y&Actions=Y') % self.bill_id
+                   'bn=%s&Summary=Y&Actions=Y&term=%s')
+            url = url % (self.bill_id, self.term_start_year)
             doc = self.url2lxml(url)
             summary, actions = doc.xpath('//pre/text()')
             self.data['summary'], self.data['actions'] = summary, actions
@@ -55,7 +65,8 @@ class AssemblyBillPage(object):
         return self.scraper.url2lxml(url)
 
     def get_version(self):
-        url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn=' + self.bill_id
+        url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn=%s&term=%s'
+        url = url % (self.bill_id, self.term_start_year)
         version = self.bill_id
         self.bill.add_version(version, url, mimetype='text/html')
 
@@ -75,7 +86,8 @@ class AssemblyBillPage(object):
     def get_sponsors_memo(self):
         if self.chamber == 'lower':
             url = ('http://assembly.state.ny.us/leg/?'
-                   'default_fld=&bn=%s&term=&Memo=Y') % self.bill_id
+                   'default_fld=&bn=%s&term=%s&Memo=Y')
+            url =  url % (self.bill_id, self.term_start_year)
             self.bill.add_document("Sponsor's Memorandum", url)
 
     def get_summary(self):
@@ -140,8 +152,9 @@ class AssemblyBillPage(object):
     def get_lower_votes(self):
 
         url = ('http://assembly.state.ny.us/leg/?'
-               'default_fld=&bn=%s&term=&Votes=Y')
-        doc = self.url2lxml(url % self.bill_id)
+               'default_fld=&bn=%s&term=%s&Votes=Y')
+        url = url % (self.bill_id, self.term_start_year)
+        doc = self.url2lxml(url)
         if doc is None:
             return
 

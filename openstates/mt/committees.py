@@ -18,19 +18,19 @@ from collections import defaultdict
 import lxml.html
 
 from billy.scrape.committees import CommitteeScraper, Committee
+from billy.scrape.utils import convert_pdf
 import scrapelib
 
 
 committee_urls = {
     'lower': {
         2011: 'http://leg.mt.gov/css/House/house-committees-2011.asp',
-        # As of this edit, the 2013 links arent' up yet.
-        # 2013: 'http://leg.mt.gov/css/House/house-committees-2011.asp',
+        2013: 'http://leg.mt.gov/content/Committees/Session/2013%20house%20committees%20-%20columns.pdf',
         },
 
     'upper': {
         2011: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
-        # 2013: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
+        2013: 'http://leg.mt.gov/content/Committees/Session/2013%20senate%20committees%20-%20columns.pdf',
         },
 
     'joint': {
@@ -45,25 +45,118 @@ class MTCommitteeScraper(CommitteeScraper):
     jurisdiction = 'mt'
 
     def scrape(self, chamber, term):
+        '''Since the legislator names aren't properly capitalized in the
+        csv file, scrape the committee page and use the names listed there
+        instead.
+        '''
         for tdata in self.metadata['terms']:
             if term == tdata['name']:
                 year = tdata['start_year']
                 break
 
-        for name_dict, c in scrape_committees(year, chamber):
-            self.save_committee(c)
+        url = committee_urls[chamber][year]
+        fn, response = self.urlretrieve(url)
+
+        if response.headers['content-type'] == 'application/pdf':
+            # The committee list is a pdf.
+            self.scrape_committees_pdf(year, chamber, fn, url)
+
+        else:
+            # Here it's html.
+            with open(fn) as f:
+                doc = lxml.html.fromstring(response.text)
+                for name_dict, c in scrape_committees_html(year, chamber, doc):
+                    if c['members']:
+                        self.save_committee(c)
+
+    def scrape_committees_pdf(self, year, chamber, filename, url):
+        text = convert_pdf(filename, type='text-nolayout')
+
+        # Hot garbage.
+        for hotgarbage, replacement in (
+            ('Judicial Branch, Law Enforcement,\s+and\s+Justice',
+             'Judicial Branch, Law Enforcement, and Justice'),
+
+            ('Natural Resources and\s+Transportation',
+             'Natural Resources and Transportation'),
+
+            ('Federal Relations, Energy,\sand\sTelecommunications',
+             'Federal Relations, Energy, and Telecommunications')
+            ):
+            text = re.sub(hotgarbage, replacement, text)
+
+        lines = iter(text.splitlines())
+
+        # Drop any lines before the ag committee.
+        lines = dropwhile(lambda s: 'Agriculture' not in s, lines)
+
+        def is_committee_name(line):
+            if '(cont.)' in line.lower():
+                return False
+            for s in (
+                'committee', ' and ', 'business', 'resources',
+                'legislative', 'administration', 'government',
+                'local', 'planning', 'judicial', 'natural',
+                'resources', 'general', 'health', 'human'):
+                if s in line.lower():
+                    return True
+            if line.istitle() and len(line.split()) == 1:
+                return True
+            return False
+
+        def is_legislator_name(line):
+            return re.search(r'\([RD]', line)
+
+        comm = None
+        in_senate_subcommittees = False
+        while 1:
+            try:
+                line = lines.next()
+            except StopIteration:
+                break
+
+            if 'Joint Appropriations/Finance &' in line:
+                # Toss the line continuation.
+                lines.next()
+
+                # Move on.
+                in_senate_subcommittees = True
+                chamber = 'joint'
+                continue
+
+            if is_committee_name(line):
+                subcommittee = None
+
+                if in_senate_subcommittees:
+                    committee = ('Joint Appropriations/Finance & Claims')
+                    subcommittee = line
+                else:
+                    committee = line
+
+                if comm and comm['members']:
+                    self.save_committee(comm)
+
+                comm = Committee(chamber, committee=committee,
+                                 subcommittee=subcommittee)
+                comm.add_source(url)
+
+            elif is_legislator_name(line):
+                name, party = line.rsplit('(', 1)
+                name = name.strip()
+                if re.search('[^V] Ch', party):
+                    role = 'chair'
+                elif 'V Ch' in party:
+                    role = 'vice chair'
+                else:
+                    role = 'member'
+                comm.add_member(name, role)
+
+        if comm['members']:
+            self.save_committee(comm)
 
 
-def scrape_committees(year, chamber):
-    '''Since the legislator names aren't properly capitalized in the
-    csv file, scrape the committee page and use the names listed there
-    instead.
-    '''
-    url = committee_urls[chamber][year]
-    html = scrapelib.urlopen(url)
-
+def scrape_committees_html(year, chamber, doc):
     name_dict = defaultdict(set)
-    doc = lxml.html.fromstring(html)
     tds = doc.xpath('//td[@valign="top"]')[3:]
 
     cache = []

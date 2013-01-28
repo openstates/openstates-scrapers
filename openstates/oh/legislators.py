@@ -25,8 +25,8 @@ class OHLegislatorScraper(LegislatorScraper):
         self.scrape_page(chamber, term, url)
 
     def scrape_homepage(self, leg, homepage, term):
-        with self.urlopen(homepage) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(homepage)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(homepage)
         bio = page.xpath(
             "//div[@class='biography']//div[@class='right']//p/text()")
@@ -43,8 +43,8 @@ class OHLegislatorScraper(LegislatorScraper):
                          committee=entry)
 
     def scrape_page(self, chamber, term, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for legislator in page.xpath("//div[contains(concat(' ', "

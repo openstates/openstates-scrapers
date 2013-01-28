@@ -47,7 +47,7 @@ metadata = dict(
         '83': {'start_year': 2013,
                'end_year': 2014,
                'type': 'primary',
-               'display_name': '83ed Legislature',
+               'display_name': '83rd Legislature',
                '_scraped_name': '83(R) - 2013',
               },
     },
