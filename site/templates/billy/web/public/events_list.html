@@ -12,9 +12,18 @@
           {% if event.host %}
             <dt>Host:</dt>
             <dd>
-              <a href="{{event.host.get_absolute_url}}">
-                {{event.host.display_name}}
-              </a>
+              {% if event.host.get_absolute_url %}
+                <a href="{{event.host.get_absolute_url}}">
+                  {{event.host.display_name}}
+                </a>
+              {% else %}
+                {% comment %}
+                  Here we don't have a committee id for the host, so
+                  we're just working with the string returned by the
+                  model method (to cover this scenario).
+                {% endcomment %}
+                {{event.host}}
+              {% endif %}
               {% if self.other_committees %}
                 {% for committee in self.other_committees %}
                   <a href="{{committee.get_absolute_url}}">
@@ -42,7 +51,7 @@
         {% endif %}
 
         <dt>When:</dt>
-        <dd>{{ event.when|date:"M j, Y"}}</dd>
+        <dd>{{ event|event_time }}</dd>
 
         <dt>Where:</dt>
         <dd>{{ event.location }}</dd>
