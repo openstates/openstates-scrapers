@@ -51,7 +51,7 @@
         {% endif %}
 
         <dt>When:</dt>
-        <dd>{{ event.when|date:"M j, Y"}} {% if event.has_time %} at {{ event.when|date:"g:i a"}}{% endif %}</dd>
+        <dd>{{ event|event_time }}</dd>
 
         <dt>Where:</dt>
         <dd>{{ event.location }}</dd>
