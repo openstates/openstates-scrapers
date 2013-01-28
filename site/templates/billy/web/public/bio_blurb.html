@@ -33,15 +33,14 @@
   {% endwith %}
 
 
-  {% if "_total_contributions" in legislator %}
+  {% if "_yearly_contributions" in legislator %}
     <div id="ie-chart-container">
         <table>
             <tbody>
                 <!-- FIXME: these numbers should come from db -->
-                <tr> <td>2006</td> <td>500,000</td> </tr>
-                <tr> <td>2008</td> <td>800,000</td> </tr>
-                <tr> <td>2010</td> <td>1,500,000</td> </tr>
-                <tr> <td>2012</td> <td>1,650,000</td> </tr>
+                {% for year, amount in legislator|underscore_field:"yearly_contributions" %}
+                    <tr> <td>{{year}}</td> <td>{{amount}}</td> </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
