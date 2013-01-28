@@ -6,87 +6,81 @@ from billy.scrape.events import Event, EventScraper
 import lxml.html
 import pytz
 
-calurl = "http://committeeschedule.legis.wisconsin.gov/Schedule.aspx"
+calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
 class WIEventScraper(EventScraper):
     jurisdiction = 'wi'
     _tz = pytz.timezone('US/Eastern')
+
     def lxmlize(self, url):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
-    def scrape_page(self, url, chamber, session):
-        page = self.lxmlize(url)
-        info_blocks = {
-            "canceled": "//div[@class='cancelled']",
-            "committee": "//div[@class='titlemeetingtype']",
-            "chamber": "//div[@class='titlehouse']",
-            "datetime": "//div[@class='datetimelocation']"
-        }
-        metainf = {}
-        for block in info_blocks:
-            info = page.xpath(info_blocks[block])
-            if info == []:
-                continue
-            metainf[block] = {
-                "obj": info[0],
-                "txt": info[0].text_content()
-            }
+    def scrape_participants(self, session, href):
+        page = self.lxmlize(href)
+        legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
+        role_map = {"participant": "participant",
+                    "Chair": "chair",
+                    "Vice-Chair": "participant"}
+        ret = []
+        for leg in legs:
+            name = leg
+            title = 'participant'
+            if "(" and ")" in leg:
+                name, title = leg.split("(", 1)
+                title = title.replace(")", " ").strip()
+                name = name.strip()
+            title = role_map[title]
+            ret.append({
+                "name": name,
+                "title": title
+            })
+        return ret
 
-        if 'committee' not in metainf:
-            return
-
-        if 'canceled' in metainf:
-            return
-
-        obj = metainf['datetime']['obj']
-        dates = obj.xpath("./*")
-        date_time = obj.text.strip()
-        for date in dates:
-            if date.tail is not None:
-                date_time += " %s" % (date.tail.strip())
-        # Wednesday, May 23, 2012 10:00 AM 417 North (GAR Hall) State Capitol
-        splits = [ 'AM', 'PM' ]
-        date_times = None
-        for split in splits:
-            if split in date_time:
-                date_times = [ x.strip() for x in date_time.split(split, 1) ]
-                date_times[0] += " " + split
-
-        time = date_times[0]
-        place = date_times[1]
-
-
-        committee = metainf['committee']['txt']
-
-        if not "chamber" in metainf:
-            return
-
-        chamber = metainf['chamber']['txt']
-
-        try:
-            chamber = {
-                "Senate": "upper",
-                "Assembly": "lower",
-                "Joint": "joint"
-            }[chamber]
-        except KeyError:
-            chamber = 'other'
-
-        # Wednesday, May 23, 2012 10:00 AM
-        datetime = dt.datetime.strptime(time, "%A, %B %d, %Y %I:%M %p")
-        event = Event(session, datetime, 'committee:meeting',
-                      committee, location=place)
-        event.add_participant('host', committee, 'committee', chamber=chamber)
-        event.add_source(url)
-        self.save_event(event)
-
-    def scrape(self, chamber, session):
-        if chamber != "other":
-            return
+    def scrape(self, session, chambers):
         page = self.lxmlize(calurl)
-        links = page.xpath("//a[@title]")
-        for link in links:
-            self.scrape_page(link.attrib['href'], chamber, session)
+        events = page.xpath("//table[@class='agenda-body']//tr")[1:]
+
+        for event in events:
+            comit_url = event.xpath(
+                ".//a[contains(@href, '/Pages/comm-info.aspx?c=')]")
+
+            if len(comit_url) != 1:
+                raise Exception
+
+            comit_url = comit_url[0]
+            who = self.scrape_participants(session, comit_url.attrib['href'])
+
+            tds = event.xpath("./*")
+            date = tds[0].text_content().strip()
+            cttie = tds[1].text_content().strip()
+            cttie_chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
+            info = tds[2]
+            name = info.xpath("./a[contains(@href, 'raw')]")[0]
+            notice = name.attrib['href']
+            name = name.text
+            time, where = info.xpath("./i/text()")
+            what = tds[3].text_content()
+            what = what.replace("Items: ", "")
+            if "(None)" in what:
+                continue
+            what = [x.strip() for x in what.split(";")]
+
+            when = ", ".join([date, str(dt.datetime.now().year), time])
+            when = dt.datetime.strptime(when, "%a %b %d, %Y, %I:%M %p")
+
+            event = Event(session, when, 'committee:meeting', name,
+                          location=where, link=notice)
+
+            event.add_source(calurl)
+            event.add_participant('host', cttie, 'committee',
+                                  chamber=cttie_chamber)
+            event.add_document("notice", notice, mimetype='application/pdf')
+
+            for thing in who:
+                event.add_participant(thing['title'], thing['name'],
+                                      'legislator', chamber=cttie_chamber)
+
+            self.save_event(event)
