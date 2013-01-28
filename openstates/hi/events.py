@@ -21,6 +21,23 @@ class WIEventScraper(EventScraper):
         page.make_links_absolute(url)
         return page
 
+    def get_related_bills(self, href):
+        ret = []
+        page = self.lxmlize(href)
+        bills = page.xpath(".//a[contains(@href, 'Bills')]")
+        for bill in bills:
+            try:
+                row = bill.iterancestors(tag='tr').next()
+            except StopIteration:
+                continue
+            tds = row.xpath("./td")
+            descr = tds[1].text_content()
+            ret.append({"bill_id": bill.text_content(),
+                        "type": "consideration",
+                        "descr": descr})
+
+        return ret
+
     def scrape(self, session, chambers):
         get_short_codes(self)
 
@@ -65,5 +82,12 @@ class WIEventScraper(EventScraper):
             event.add_document(notice_name,
                                notice_href,
                                mimetype='text/html')
+
+            for bill in self.get_related_bills(notice_href):
+                event.add_related_bill(
+                    bill['bill_id'],
+                    description=bill['descr'],
+                    type=bill['type']
+                )
 
             self.save_event(event)
