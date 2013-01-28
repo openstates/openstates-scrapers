@@ -81,11 +81,16 @@
                         {% for subject in bill.subjects %}
                         <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
                         {% endfor %}
-                        {% endif %}
+                </dd>
+                {% endif %}
+                {% if bill.type|length > 1 %}
+                <dt class="clear contentBottom">{% trans "Additional Bill Types:" %}</dt>
+                <dd>
                         {% for type in bill.type|slice:"1:" %}
                         <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
-                </dd>
                 {% endfor %}
+                </dd>
+                {% endif %}
 
                 <dt class="clear contentBottom">{% trans "Session:" %}</dt>
                 <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
