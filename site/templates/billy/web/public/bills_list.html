@@ -90,7 +90,9 @@ $(document).ready(function(){
         </div>
         {% if long_description %}
         <ul id="billSearchLongDesc" class="clearfix">
-            {% for item in long_description %} <li class="tip">{{item}}{% if not forloop.last %}, {% endif %}</li> {% endfor %}
+            <li class="tip">Filtering to only show bills
+            {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </li> 
         </ul>
         {% endif %}
             <div class="fourCol colLtSm filterCol clear">
