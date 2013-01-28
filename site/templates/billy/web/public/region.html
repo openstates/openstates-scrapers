@@ -21,7 +21,7 @@
 {% block content %}
     <div class="fullWidth">
         <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
-            <h2 class="withTip">{{metadata.legislature_name}} {% trans "Overview" %}</h2>
+            <h2 class="withTip">{{metadata.legislature_name}}</h2>
             <p>{# funfact metadata.abbr #}</p>
         </div>
     </div>
@@ -97,13 +97,12 @@
     {% endif %}
 
 
-<!-- BILLS -->
+<!-- bills -->
     <div class="fullWidth module">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
-    {% if chambers|length == 2 %}
-    {# bicameral bill view, stacked chambers - side by side passed/introduced #}
         {% for chamber in chambers %}
-            <h3 class="clear">{{ chamber.name }}</h3>
+            {# only show chamber if we have multiple chambers #}
+            {% if chambers|length > 1 %} <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
             <div class="sixCol colLt voteChart">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>
@@ -111,16 +110,6 @@
                 {% include "billy/web/public/_recently_introduced.html" %}
             </div>
         {% endfor %}
-
-    {% elif chambers|length == 1 %}
-    {# unicameral bill module, side by side passed/introduced #}
-        <div class="sixCol colLt">
-            {% include "billy/web/public/_recently_passed.html" with chamber=chambers.0 %}
-        </div>
-        <div class="sixCol colRt">
-            {% include "billy/web/public/_recently_introduced.html" with chamber=chambers.0 %}
-        </div>
-    {% endif %}   {# end unicameral bill module #}
 
         <div class="clear"></div>
     </div>
