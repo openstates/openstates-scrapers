@@ -1,5 +1,6 @@
 import re
 import datetime
+import time
 
 from billy.scrape.events import EventScraper, Event
 
@@ -18,25 +19,29 @@ class OKEventScraper(EventScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'Meeting_Notice')]"):
-            comm = link.text.strip()
-            comm = re.sub(r'\s+', ' ', comm)
+        text = page.text_content()
+        _, text = text.split('MEETING NOTICES')
+        re_date = r'[A-Z][a-z]+,\s+[A-Z][a-z]+ \d+, \d{4}'
+        chunks = zip(re.finditer(re_date, text), re.split(re_date, text)[1:])
 
-            if link.getnext().text == 'Cancelled':
-                continue
+        for match, data in chunks:
+            when = match.group()
+            when = datetime.datetime.strptime(when, "%A, %B %d, %Y")
 
-            date_path = "../../preceding-sibling::p[@class='MsoNormal']"
-            date = link.xpath(date_path)[-1].xpath("string()")
+            lines = filter(None, [x.strip() for x in data.splitlines()])
 
-            time_loc = link.xpath("../br")[0].tail.strip()
-            time = re.match("\d+:\d+ (am|pm)", time_loc).group(0)
-            location = time_loc.split(', ')[1].strip()
+            time_ = re.search(r'^\s*TIME:\s+(.+?)\s+\x96', data, re.M).group(1)
+            time_ = time_.replace('a.m.', 'AM').replace('p.m.', 'PM')
+            time_ = time.strptime(time_, '%I:%M %p')
+            when += datetime.timedelta(hours=time_.tm_hour, minutes=time_.tm_min)
 
-            dt = "%s %s" % (date, time)
-            dt = datetime.datetime.strptime(dt, "%A, %B %d, %Y %I:%M %p")
+            title = lines[0]
 
-            event = Event(session, dt, 'committee:meeting',
-                          "%s Committee Meeting" % comm,
-                          location)
+            where = re.search(r'^\s*PLACE:\s+(.+)', data, re.M).group(1)
+            where = where.strip()
+
+            event = Event(session, when, 'committee:meeting', title,
+                          location=where)
             event.add_source(url)
+
             self.save_event(event)
