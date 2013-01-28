@@ -54,15 +54,6 @@ class AZEventScraper(EventScraper):
         # could use &ShowAll=ON doesn't seem to work though
         url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % \
                                           self._chamber_short[chamber]
-<<<<<<< Updated upstream
-        agendas = self.urlopen(url)
-        root = html.fromstring(agendas)
-        if chamber == 'upper':
-            event_table = root.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-                                     '/td/table/tr/td/table')[0]
-        else:
-            event_table = root.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-=======
         html_ = self.urlopen(url)
         doc = html.fromstring(html_)
         if chamber == 'upper':
@@ -70,18 +61,13 @@ class AZEventScraper(EventScraper):
                                      '/td/table/tr/td/table')[0]
         else:
             event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
->>>>>>> Stashed changes
                                      '/td/table/tr/td/table/tr/td/table')[0]
         for row in event_table.xpath('tr')[2:]:
             # Agenda Date, Committee, Revised, Addendum, Cancelled, Time, Room,
             # HTML Document, PDF Document for house
             # Agenda Date, Committee, Revised, Cancelled, Time, Room,
             # HTML Document, PDF Document for senate
-<<<<<<< Updated upstream
-            text = [ x.text_content().strip() for x in row.xpath('td') ]
-=======
             text = [x.text_content().strip() for x in row.xpath('td')]
->>>>>>> Stashed changes
             when, committee = text[0:2]
             if chamber == 'upper':
                 time, room = text[4:6]
@@ -99,11 +85,6 @@ class AZEventScraper(EventScraper):
                 when = text[0]
                 when = datetime.datetime.strptime(when, '%m/%d/%Y')
 
-<<<<<<< Updated upstream
-            when = self._tz.localize(when)
-
-=======
->>>>>>> Stashed changes
             title = "Committee Meeting:\n%s %s %s\n" % (
                                               self._chamber_long[chamber],
                                               committee, room)
@@ -111,35 +92,6 @@ class AZEventScraper(EventScraper):
 
             description = agenda_info['description']
             member_list = agenda_info['member_list']
-<<<<<<< Updated upstream
-            for member in member_list:
-                member.update(participant_type='legislator',
-                              type='participant')
-            meeting_type = agenda_info['meeting_type']
-            agenda_items = agenda_info['agenda_items']
-            related_bills= agenda_info['related_bills']
-            other = agenda_info['other']
-
-            event = Event(session, when, 'committee:meeting', title,
-                          location=room, link=link, details=description) #,
-                          #agenda=agenda_items)
-
-            event.add_participant('host', committee, 'committee',
-                                  chamber=chamber)
-
-            for i in range(0, len(related_bills)):
-                bill = related_bills[i]
-                desc = description[i]
-                event.add_related_bill(
-                    bill,
-                    description=desc,
-                    type="consideration"
-                )
-
-            event['participants'].extend(member_list)
-            event.add_source(url)
-            event.add_source(link)
-=======
             related_bills = agenda_info['related_bills']
 
             event = Event(session, when, 'committee:meeting', title,
@@ -153,7 +105,6 @@ class AZEventScraper(EventScraper):
             event.add_source(link)
             # print event['when'].timetuple()
             # import ipdb;ipdb.set_trace()
->>>>>>> Stashed changes
             self.save_event(event)
 
     def parse_agenda(self, chamber, url):
@@ -162,35 +113,6 @@ class AZEventScraper(EventScraper):
         any other useful info
         self.parse_agenda(url)--> (desc='', who=[], meeting_type='', other={})
         """
-<<<<<<< Updated upstream
-        agenda_detail = self.urlopen(url)
-        root = html.fromstring(agenda_detail)
-        div = root.xpath('//div[@class="Section1"]')[0]
-        # probably committee + meeting_type?
-        meeting_type = div.xpath('string(//p'
-                                 '[contains(a/@name, "Joint_Meeting")])')
-        members = root.xpath('//p[contains(a/@name, "Members")]')
-        if members:
-            members = members[0]
-        else:
-            members = root.xpath('//p[contains(span/a/@name, "Members")]')[0]
-        if chamber == 'lower':
-            name_role = re.compile(r'(\w+.\s\w+\s?[a-zA-z]*(?!<.))'
-                                    ',?\s?(\w+-?\w+)?')
-        else:
-            name_role = re.compile(r'(\w+),?\s*(\w+-?\w+)?')
-        other = {}
-        member_list = []
-        while members.tag == 'p':
-            text = members.text_content().strip()
-            if text == '': break
-            found = name_role.findall(text)
-            if found:
-                for name, role in found:
-                    if name == 'SENATORS' or name == 'Members': continue
-                    person = {"type": role or "member",
-                              "participant": name,
-=======
         html_ = self.urlopen(url)
         doc = html.fromstring(html_)
 
@@ -241,7 +163,6 @@ class AZEventScraper(EventScraper):
                     person = {"type": role,
                               "participant": name,
                               "participant_type": 'legislator',
->>>>>>> Stashed changes
                               "chamber": chamber}
                     member_list.append(person)
             members = members.getnext()
@@ -269,27 +190,6 @@ class AZEventScraper(EventScraper):
             bill_list = ",\n".join(bill_list)
             description = description + bill_list
 
-<<<<<<< Updated upstream
-        bills_for_consideration = []
-
-        related_bills = root.xpath("//table[@class='MsoNormalTable']//tr")
-        for tr in related_bills:
-            bill_id = tr.xpath("./td")[1].text_content().strip()
-            if bill_id == "" or bill_id.lower() == "bills":
-                continue
-            if bill_id[0] != "H" and bill_id[0] != "S":
-                continue
-
-            bills_for_consideration.append(bill_id)
-
-        return {
-            "description" : description,
-            "member_list" : member_list,
-            "meeting_type": meeting_type,
-            "agenda_items": agenda_items,
-            "related_bills": bills_for_consideration,
-            "other" : other
-=======
         return {
             "description": description,
             "member_list": member_list,
@@ -297,7 +197,6 @@ class AZEventScraper(EventScraper):
             "agenda_items": agenda_items,
             "related_bills": related_bills,
             "other": other
->>>>>>> Stashed changes
         }
 
     def scrape_interim_events(self, chamber, session):
@@ -310,15 +209,9 @@ class AZEventScraper(EventScraper):
         agendas_path = '//table[contains(' \
                        'tr/td/div[@class="ContentPageTitle"]/text(), "%s")]'
 
-<<<<<<< Updated upstream
-        event_page = self.urlopen(url)
-        root = html.fromstring(event_page)
-        table = root.xpath(agendas_path % "Interim Committee Agendas")
-=======
         html_ = self.urlopen(url)
         doc = html.fromstring(html_)
         table = doc.xpath(agendas_path % "Interim Committee Agendas")
->>>>>>> Stashed changes
         if table:
             rows = table[0].xpath('tr')
             for row in rows[2:]:
