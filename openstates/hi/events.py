@@ -64,6 +64,6 @@ class WIEventScraper(EventScraper):
             event.add_source(URL)
             event.add_document(notice_name,
                                notice_href,
-                               mimetype='application/pdf')
+                               mimetype='text/html')
 
             self.save_event(event)
