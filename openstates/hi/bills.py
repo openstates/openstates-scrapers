@@ -2,6 +2,7 @@ import datetime as dt
 import lxml.html
 import re
 
+from .utils import get_short_codes
 from urlparse import urlparse
 
 from billy.scrape.bills import BillScraper, Bill
@@ -64,32 +65,6 @@ def split_specific_votes(voters):
 class HIBillScraper(BillScraper):
 
     jurisdiction = 'hi'
-
-    def get_short_codes(self):
-        list_html = self.urlopen(SHORT_CODES)
-        list_page = lxml.html.fromstring(list_html)
-        rows = list_page.xpath(
-            "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
-        self.short_ids = {}
-
-        for row in rows:
-            tds = row.xpath("./td")
-            short = tds[0]
-            clong = tds[1]
-            chamber = clong.xpath("./span")[0].text_content()
-            clong = clong.xpath("./a")[0]
-            short_id = short.text_content().strip()
-            ctty_name = clong.text_content().strip()
-            chamber = "joint"
-            if "house" in chamber.lower():
-                chamber = 'lower'
-            elif "senate" in chamber.lower():
-                chamber = 'upper'
-
-            self.short_ids[short_id] = {
-                "chamber": chamber,
-                "name": ctty_name
-            }
 
     def parse_bill_metainf_table( self, metainf_table ):
         def _sponsor_interceptor(line):
@@ -245,7 +220,7 @@ class HIBillScraper(BillScraper):
 
 
     def scrape(self, session, chamber):
-        self.get_short_codes()
+        get_short_codes(self)
         bill_types = ["bill", "cr", "r"]
         for typ in bill_types:
             self.scrape_type(session, chamber, typ)
