@@ -280,6 +280,7 @@ class CABillScraper(BillScraper):
 
         bill_types = {
             'lower': {
+                'AB': 'bill',
                 'ACA': 'constitutional amendment',
                 'ACR': 'concurrent resolution',
                 'AJR': 'joint resolution',
