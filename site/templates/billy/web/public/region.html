@@ -21,7 +21,7 @@
 {% block content %}
     <div class="fullWidth">
         <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
-            <h2 class="withTip">{{metadata.legislature_name}}</h2>
+            <h2 class="withTip">{{metadata.legislature_name}} {% trans "Overview" %}</h2>
             <p>{# funfact metadata.abbr #}</p>
         </div>
     </div>
@@ -103,7 +103,7 @@
     {% if chambers|length == 2 %}
     {# bicameral bill view, stacked chambers - side by side passed/introduced #}
         {% for chamber in chambers %}
-            <h3 class="grey">{{ chamber.name }}</h3>
+            <h3 class="clear">{{ chamber.name }}</h3>
             <div class="sixCol colLt voteChart">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>

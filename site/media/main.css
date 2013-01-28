@@ -219,7 +219,7 @@ h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Time
 	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
 }
 
-.moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px;}
+.moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px; color: #5F9D8E;}
 .inlineTitle { float: left; margin-right: 15px;}
 
 a.colorRollover:link, a.colorRollover:active, a.colorRollover:visited { color: #55524f; border-bottom: 1px dotted #d2cdc4;}
@@ -547,18 +547,29 @@ h2.withTimeline { margin-top: 30px;}
 #sponsorList a, .sponsorName { font-size: 100%; display: block; font-weight: bold; }
 .sponsor-type {padding-bottom: 0; vertical-align: bottom; margin-bottom:0 }
 
-#toggleBtns button { float: left; text-indent: 0; display: inline-block; padding: 8px 15px; color: #333; text-align: center; text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75); vertical-align: middle; font-size: 105%; background-color: #fff; border: 1px solid
-#CCC;
-border-color:
-rgba(0, 0, 0, 0.1)
-rgba(0, 0, 0, 0.1)
-rgba(0, 0, 0, 0.25);
-border-color:
-#E6E6E6
-#E6E6E6
-#BFBFBF;
-border-bottom-color:
-#B3B3B3;margin-left: -1px; }
+#toggleBtns button {
+    float: left;
+    text-indent: 0;
+    display: inline-block;
+    padding: 8px 15px;
+    color: #333;
+    text-align: center;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+    vertical-align: middle;
+    font-size: 105%;
+    background-color: #fff;
+    border: 1px solid #CCC;
+    border-color:
+    rgba(0, 0, 0, 0.1)
+    rgba(0, 0, 0, 0.1)
+    rgba(0, 0, 0, 0.25);
+    border-color:
+    #E6E6E6
+    #E6E6E6
+    #BFBFBF;
+    border-bottom-color:
+    #B3B3B3;margin-left: -1px;
+    }
 
 #toggleBtns button.last {
 -moz-border-radius-topleft: 0px;
@@ -576,7 +587,19 @@ border-bottom-color:
 -webkit-border-top-right-radius: 0px;
 -webkit-border-bottom-left-radius: 4px;}
 
-#toggleBtns button.active, #toggleBtns button:hover { background-color: #eceaea; -moz-box-shadow: inset 0 0 2px #b9b9b9; -webkit-box-shadow: inset 0 0 2px #b9b9b9; box-shadow: inset 0 0 2px #b9b9b9;}
+#toggleBtns button.active{
+    background-color: #DEE6BD;
+    -moz-box-shadow: inset 0 0 2px #b9b9b9;
+    -webkit-box-shadow: inset 0 0 2px #b9b9b9;
+    box-shadow: inset 0 0 2px #b9b9b9;
+    }
+
+#toggleBtns button:hover {
+    background-color: #E9ECD3;
+    -moz-box-shadow: inset 0 0 2px #b9b9b9;
+    -webkit-box-shadow: inset 0 0 2px #b9b9b9;
+    box-shadow: inset 0 0 2px #b9b9b9;
+    }
 
 /*  tables  */
 
@@ -810,7 +833,7 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
     background-color: #AD7E00;
 }
 
-.selected { background-color: #E9E6DF; }
+.selected { background-color: #E9ECD3; }
 
 input[type="checkbox"] {
     width: 1em;
@@ -875,14 +898,13 @@ input[type="checkbox"] {
   border-left-width: 0;
 }
 
-.pagesNum a:hover,
-.pagesNum .active a {
-  background-color: #FFFFD6;
+.pagesNum a:hover {
+  background-color: #E9ECD3;
 }
 
-.pagesNum .active a {
-  color: #999999;
+.pagesNum .selected {
   cursor: default;
+  background-color: #DEE6BD;
 }
 
 .pagesNum li:first-child a {

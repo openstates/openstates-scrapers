@@ -43,7 +43,7 @@
             </li>
         </ul>
 
-        <div class="fullWidth mainModule">
+        <div class="fullWidth mainModule clearfix">
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
                 <li {% if date %}class="active"{% endif %}>
@@ -67,7 +67,7 @@
 
                     {% with latest_version=bill.versions_preview|last %}
                     {% if latest_version %}
-                    <a class="viewMore" href="{% url 'document' bill.state bill.session bill.bill_id latest_version.doc_id %}">View latest bill text.</a>
+                    <a class="viewMore" href="{% url 'document' bill.state bill.session bill.bill_id latest_version.doc_id %}">View latest bill text</a>
                     {% endif %}
                     {% endwith %}
                     </div>
@@ -171,7 +171,7 @@
                     </ul>
 
                 {% if bill.quality_exceptions %}
-                <dt class="clear contentBottom">
+                <dt class="clearfix contentBottom">
                 <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
                 {% trans "Notes:" %}
                 </dt>
@@ -189,7 +189,6 @@
                 {% endif %}
                 </dd>
              </dl>
-             <div class="clear"></div>
          </div>
 
         <div class="module clearfix">
@@ -198,9 +197,9 @@
                 {% if bill.votes_manager.count %}
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
-                    <li class="sixCol {% cycle "colLt" "colRt" %}">
+                    <li class="sixCol {% cycle "colLt" "colRt" %} voteChart">
                         <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
+                        <h6><a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a></h6>
                         {% if vote.has_votes %}
                         {% include "billy/web/public/_vote_chart_table.html" %}
                         {% else %}
