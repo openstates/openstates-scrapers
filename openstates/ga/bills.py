@@ -106,6 +106,7 @@ class GABillScraper(BillScraper):
                 "HRAR": ["committee:referred"],
                 "SRAR": ["committee:referred"],
                 "STR": ["bill:reading:3"],
+                "SE": ["bill:passed"],
                 # STP \m/
                 "HTR": ["bill:reading:3"],
                 "S2R": ["bill:reading:2"],
@@ -117,6 +118,7 @@ class GABillScraper(BillScraper):
 
             for action in actions:
                 chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
+                print action
                 bill.add_action(chamber, action['action'], action['date'],
                                 types[action['code']],
                                 _code=action['code'],
