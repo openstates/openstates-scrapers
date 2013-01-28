@@ -81,6 +81,9 @@ class NEBillScraper(BillScraper):
                 action_type = self.action_types(action)
                 bill.add_action(actor, action, date, action_type)
 
+        # were in reverse chronological order
+        bill['actions'].reverse()
+
         #versions
         for versions in bill_page.xpath('//div[@id="content_text"]/div[2]/table/tr[2]/td[2]/a'):
             version_url = versions.attrib['href']

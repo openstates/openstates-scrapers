@@ -188,4 +188,17 @@ class KYBillScraper(BillScraper):
             # No votes
             pass
 
+        # Ugly Hack Alert!
+        # find actions before introduction date and subtract 1 from the year
+        # if the date is after introduction
+        intro_date = None
+        for action in bill['actions']:
+            if 'bill:introduced' in action['type']:
+                intro_date = action['date']
+                break
+        for action in bill['actions']:
+            if action['date'] > intro_date:
+                action['date'].replace(year=action['date'].year-1)
+                self.debug('corrected year for %s', action['action'])
+
         self.save_bill(bill)

@@ -286,6 +286,7 @@ class NMBillScraper(BillScraper):
             '7650': ('not printed %s', 'other'),
             '7652': ('not printed, not referred to committee, tabled', 'other'),
             '7654': ('referred to %s', 'committee:referred'),
+            '7656': ('referred to Finance committee', 'committee:referred'),
             '7660': ('passed House', 'bill:passed'),
             '7661': ('passed Senate', 'bill:passed'),
             '7663': ('House report adopted', 'other'),
