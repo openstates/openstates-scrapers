@@ -186,7 +186,7 @@ var make_ie_chart = function() {
             .attr('y', function(d, i) { return i * 20 + top_offset; })
             .attr('width', function(d) { return x(d.total); })
             .attr('height', 17)
-            .attr('fill', '#a9c86a');
+            .attr('fill', '#a3b669');
         chart.selectAll('text').data(data).enter().append('text')
                 .attr('x', 0)
                 .attr('y', function(d, i) { return i * 20 + top_offset + 10; })
@@ -194,10 +194,9 @@ var make_ie_chart = function() {
                 .attr('fill', '#504a45')
                 .text(function(d) { return d.year; });
         chart.append('text')
-            .attr('x', width/2)
+            .attr('x', 0)
             .attr('y', 0)
             .attr('dy', '1em')
-            .attr('text-anchor', 'middle')
             .attr('fill', '#504a45')
             .text('Campaign Contributions by Cycle')
         chart.append('svg:g')

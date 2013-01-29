@@ -4,18 +4,18 @@
 {% blocktrans with name=legislator.display_name chamber=legislator.chamber_name|title district=legislator.district state=legislator.metadata.name chamber_name=legislator.chamber_name|title com_count=legislator.committees.count|apnumber count counter=legislator.committees.count %}
    {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committee,
 {% plural %}
-   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committees,
+   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of <em>{{com_count}} committees</em>,
 {% endblocktrans %}
 {% with count=legislator.primary_sponsored_bills.count %}
 {% trans "and" %}
   {% if count %}
 
-  {% trans "is the primary sponsor of" %} {{count|apnumber}}
+  {% trans "is the primary sponsor of" %}<em> {{count|apnumber}}
     {% with count=legislator.secondary_sponsored_bills.count %}
       {% if count %}
-      {% trans "bills, and is the secondary sponsor of" %} {{count|apnumber}} {% trans "bills" %}
+      {% trans "bills,"%}</em> {% trans "and is the secondary sponsor of"%}  <em>{{count|apnumber}} {% trans "bills" %}
       {% else %}
-      {% trans "bills" %}.
+      {% trans "bills" %}</em>.
       {% endif %}
     {% endwith %}
 
@@ -33,15 +33,14 @@
   {% endwith %}
 
 
-  {% if "_total_contributions" in legislator %}
+  {% if "_yearly_contributions" in legislator %}
     <div id="ie-chart-container">
         <table>
             <tbody>
                 <!-- FIXME: these numbers should come from db -->
-                <tr> <td>2006</td> <td>500,000</td> </tr>
-                <tr> <td>2008</td> <td>800,000</td> </tr>
-                <tr> <td>2010</td> <td>1,500,000</td> </tr>
-                <tr> <td>2012</td> <td>1,650,000</td> </tr>
+                {% for year, amount in legislator|underscore_field:"yearly_contributions" %}
+                    <tr> <td>{{year}}</td> <td>{{amount}}</td> </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

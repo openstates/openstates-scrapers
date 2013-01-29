@@ -76,27 +76,27 @@
 
             <dl class="inlineList">
                 {% if bill.subjects %}
-                <dt class="clear contentBottom">{% trans "Bill Subjects:" %}</dt>
-                <dd>
+                <dt class="h6 clear contentBottom">{% trans "Bill Subjects:" %}</dt>
+                <dd class="clear">
                         {% for subject in bill.subjects %}
                         <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
                         {% endfor %}
                 </dd>
                 {% endif %}
                 {% if bill.type|length > 1 %}
-                <dt class="clear contentBottom">{% trans "Additional Bill Types:" %}</dt>
-                <dd>
+                <dt class="h6 clear contentBottom">{% trans "Additional Bill Types:" %}</dt>
+                <dd class="clear">
                         {% for type in bill.type|slice:"1:" %}
                         <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
                 {% endfor %}
                 </dd>
                 {% endif %}
 
-                <dt class="clear contentBottom">{% trans "Session:" %}</dt>
-                <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
+                <dt class="h6 clear contentBottom">{% trans "Session:" %}</dt>
+                <dd class="clear bold"><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
 
-                <dt class="clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
-                <dd class="columnThirds">
+                <dt class="h6 clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
+                <dd class="columnThirds clear">
                     <!-- <h6 class="h6 ulTitle">
                         {% with sponsor=bill.sponsors_manager.first_primary %}
                             {% if sponsor.leg_id %}
