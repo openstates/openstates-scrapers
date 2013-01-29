@@ -1158,6 +1158,12 @@ pre {
 	background: url(images/btn_calendar_prevNext.png) bottom right no-repeat;
 }
 
+/* This class just wraps the event detail page calendar to change
+the cursor from pointer to normal. */
+.event_detail_calendar #calendar td {
+  cursor: auto;
+}
+
 
 
 
