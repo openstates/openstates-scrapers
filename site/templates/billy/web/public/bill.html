@@ -203,7 +203,7 @@
                 <ul class="largerList voteChart">
                     {% for vote in bill.votes_manager %}
                     <li class="sixCol {% cycle "colLt" "colRt" %} voteChart">
-                        <time class="published" datetime="{{vote.date|date:"Y-m-d">{{vote.date|date:"M j, Y"}}</time>
+                        <time class="published" datetime="{{vote.date|date:"Y-m-d"}}">{{vote.date|date:"M j, Y"}}</time>
                         <h6><a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a></h6>
                         {% if vote.has_votes %}
                         {% include "billy/web/public/_vote_chart_table.html" %}
