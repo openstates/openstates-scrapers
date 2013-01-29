@@ -4,12 +4,14 @@
 {% load customtags %}
 {% load static from staticfiles %}
 
-{% block title %}{{state.name}} {% trans "events" %}{% endblock %}
+{% block title %}
+    {{event.description }} - {{metadata.legislature_name}}
+{% endblock %}
 
 {% block headblock %}
 
 <script src="{% static 'js/datatables.js' %}"></script>
-<script src="{% static 'js/jquery.pjax.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
 
 <script>
 $(document).ready(function() {
@@ -32,8 +34,10 @@ $(document).ready(function() {
 <h2>{{ event.description }}</h2>
 </div>
 <div class="calendar fourCol colLt">
-  <div id="calendar">
-    <p>Please enable Javascript to view this calendar.</p>
+  <div class="event_detail_calendar">
+    <div id="calendar">
+      <p>Please enable Javascript to view this calendar.</p>
+    </div>
   </div>
 </div>
 <div id="events" class="eightCol colRt">
