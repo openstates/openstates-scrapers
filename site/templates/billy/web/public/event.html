@@ -1,85 +1,44 @@
 {% extends "billy/web/public/base.html" %}
-{% load url from future %}
-{% load humanize %}
 {% load i18n %}
+{% load url from future %}
 {% load customtags %}
+{% load static from staticfiles %}
 
-{% block title %}{{event.description|trunc}}{% endblock %}
+{% block title %}{{state.name}} {% trans "events" %}{% endblock %}
+
+{% block headblock %}
+
+<script src="{% static 'js/datatables.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+  $.pjax.defaults.scrollTo = false;
+
+  // Initialize the calendar.
+  $("#calendar").calendarWidget({month: {{event.when.month}},
+                                 year: {{event.when.year}}});
+  // Set the event day as the selected day.
+  $("td.day" + {{event.when.day}}).attr('id', 'selected-day')
+  // Set the current day.
+  $('#calendar .day' + (new Date()).getUTCDate()).attr('id', 'today');
+});
+</script>
+{% endblock %}
 
 {% block content %}
-<div class="colFour">
-    <div class="medModule">
-        <h2>{{event.description|trunc}}</h2>
-        <dl class="inlineList">
-            <dt>{% trans "When" %}:</dt>
-            <dd>
-                {{event.when|date:"M j, Y"}}
-                <a href="http://www.google.com/calendar/event?{{gcal_string}}"
-                    >gcal</a>
-                <a href="{% url "event_ical" abbr event|underscore_field:"id" %}"
-                    >ical</a>
+<div class="fullWidth module clear">
 
-            </dd>
-            <dt>{% trans "Where" %}:</dt>
-            <dd>{{ event.location }}</dd>
-        </dl>
-        <div class="clear"></div>
-    </div>
-    <div class="fullWidth module">
-        <h3 class="moduleTitle">{% trans "Participants" %}</h3>
-        <table class="fullTable">
-            <tr>
-                <th>{% trans "Who" %}</th>
-                <th>{% trans "Role" %}</th>
-            </tr>
-{% for participant in event.participants %}
-            <tr class="{% cycle odd,even %}">
-                {% if participant.id %}
-                    {% if participant.participant_type == 'committee' %}
-                        <td><a href="{% url 'committee' abbr participant.id %}"
-                                >{{participant.participant}}</a></td>
-                    {% endif %}
-                    {% if participant.participant_type == 'legislator' %}
-                        <td><a href="{% url 'legislator_noslug' abbr participant.id %}"
-                                >{{participant.participant}}</a></td>
-                    {% endif %}
-                {% else %}
-                    <td>{{participant.participant}}</td>
-                {% endif %}
-                <td>{{participant.type|title}}</td>
-            </tr>
-{% endfor %}
-        </table>
-    </div>
-
-{% with bills=event.related_bills %}
-    {% if bills.count %}
-    <div class="eightCol colLt">
-        <h3>{% trans "Bills" %}</h3>
-        <ul>
-    {% for bill in bills %}
-        {% if "_scraped_bill_id" in bill %}
-            <li><a href="/{{abbr}}/bill/{{bill.bill_id}}">{{bill|underscore_field:"scraped_bill_id"}} -- {{bill.description|trunc}}</a></li>
-        {% else %}
-            <li>{{bill.bill_id}} -- {{bill.description|trunc}}</li>
-        {% endif %}
-    {% endfor %}
-    {% endif %}
-{% endwith %}
-        </ul>
-    </div>
-    {% if event.documents %}
-    <div class="fullWidth mainModule">
-        <h3>{% trans "Documents" %}</h3>
-        <ul>{% for document in event.documents %}
-            <li>{{ document.name }}
-            {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-            {{document.url|urlize}}</li>
-        {% endfor %}</ul>
-    </div>
-    {% endif %}
-    {% sources event %}
-    <div class="clear"></div>
+<h2>{{ event.description }}</h2>
 </div>
+<div class="calendar fourCol colLt">
+  <div id="calendar">
+    <p>Please enable Javascript to view this calendar.</p>
+  </div>
+</div>
+<div id="events" class="eightCol colRt">
+  {% include events_list_template %}
+</div>
+<div class="clear"></div>
 
 {% endblock %}

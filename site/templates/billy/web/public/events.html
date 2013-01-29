@@ -9,7 +9,7 @@
 {% block headblock %}
 
 <script src="{% static 'js/datatables.js' %}"></script>
-<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.js' %}"></script>
 
 <script>
 $(document).ready(function() {
@@ -19,29 +19,6 @@ $(document).ready(function() {
     window.display_year = {{display_date.year}};
 
     var doc = $(this);
-
-    // var update_events_list = function(year, month){
-    //   /* Get rendered events html for this month.
-    //   */
-    //   // var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
-
-    //   // $.ajax({
-    //   //   url: url,
-    //   //   success:function(html){
-    //   //     var events = $("#events");
-    //   //     if($(html).children().length == 0){
-    //   //       events.html('<div>No events were found for this month.</div>')
-    //   //     } else {
-
-    //   //       // Remove all the previous month's events.
-    //   //       events.empty();
-
-    //   //       // Put the new ones in the document.
-    //   //       events.append(html);
-    //   //     }
-    //   //   }
-    //   // });
-    // }
 
     var update_calendar = function(year, month){
       /* Advance the calelndar to month and year; fetch that month's
@@ -87,6 +64,9 @@ $(document).ready(function() {
 
               // Note that this day has a click handler.
               day.data('has_click_handler', true);
+
+              $('#selected-day').removeAttr('id')
+              day.attr('id', 'selected-day')
             }
           });
         // This number is the event_index number added onto each event
@@ -101,6 +81,7 @@ $(document).ready(function() {
       // Select today's date on the calendar..
       var today = new Date();
       if (month == today.getMonth()){
+        $('#today').removeAttr('id');
         $('#calendar .day' + today.getDate()).attr('id', 'today');
       }
 
