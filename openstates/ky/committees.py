@@ -38,7 +38,7 @@ class KYCommitteeScraper(CommitteeScraper):
             links = links + linkz
 
         for link in links:
-            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip()
+            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
             comm = Committee(chamber, name)
             comm_url = link.attrib['href'].replace(
                 'home.htm', 'members.htm')
