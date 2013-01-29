@@ -467,6 +467,13 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
     border-bottom: none;
     }
 
+dt.h6 {
+    margin-top:40px;
+    padding-top:0;
+    margin-bottom:10px;
+    padding-bottom:0;
+}
+
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
 .callOutBox { padding: 20px 0px 30px 0; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
@@ -791,10 +798,10 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
 /* pulled in from external css */
 
 
-.label-bill-subject {
+.label-bill-subject, .label-bill-type {
     font-size: 12px;
     font-weight: bold;
-    line-height: 16px;
+    line-height: 25px;
     color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
@@ -805,17 +812,18 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
     border: 1px solid #E9E6DF;
     background-color:#FFF;
 }
-.label-bill-subject a {
+
+.label-bill-subject a, .label-bill-type a {
     color: #C69600;
 }
-.label-bill-subject a:hover {
+.label-bill-subject a:hover, .label-bill-type a:hover {
    color: #A37700;
 }
-
+/**
 .label-bill-type {
     font-size: 12px;
     font-weight: bold;
-    line-height: 18px;
+    line-height: 25px;
     color: #504A45;
     white-space: nowrap;
     vertical-align: baseline;
@@ -832,6 +840,8 @@ p.find_your_legislator_errorbox, p.find_your_legislator_infobox{
 .label-bill-type a:hover {
     background-color: #AD7E00;
 }
+**/
+
 
 .selected { background-color: #E9ECD3; }
 
@@ -844,6 +854,7 @@ input[type="checkbox"] {
     licensed under Apache 2 license
 */
 .label {
+    background-color:#FFF;
     font-size: 10.998px;
     font-weight: bold;
     line-height: 26px;
@@ -1206,6 +1217,7 @@ pre {
 
 .iframeborder {
     border: 1px solid #e5e5e5;
+    background-color:#FFF;
 }
 
 .bottomPad{
@@ -1430,6 +1442,7 @@ li.greyArrow:before {content:"»"}
 }
 
 #ie-chart-container table { display: none;}
+
 .x-axis line {
     fill: none;
     shape-rendering: crispEdges;

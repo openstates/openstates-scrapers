@@ -9,8 +9,8 @@
 {% block headblock %}
 
 <script src="{% static 'js/datatables.js' %}"></script>
-<!-- <script src="{% static 'js/davis.min.js' %}"></script> -->
-<script src="{% static 'js/sammy.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
+
 <script>
 $(document).ready(function() {
 
@@ -20,28 +20,28 @@ $(document).ready(function() {
 
     var doc = $(this);
 
-    var update_events_list = function(year, month){
-      /* Get rendered events html for this month.
-      */
-      var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
+    // var update_events_list = function(year, month){
+    //   /* Get rendered events html for this month.
+    //   */
+    //   // var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
 
-      $.ajax({
-        url: url,
-        success:function(html){
-          var events = $("#events");
-          if($(html).children().length == 0){
-            events.html('<div>No events were found for this month.</div>')
-          } else {
+    //   // $.ajax({
+    //   //   url: url,
+    //   //   success:function(html){
+    //   //     var events = $("#events");
+    //   //     if($(html).children().length == 0){
+    //   //       events.html('<div>No events were found for this month.</div>')
+    //   //     } else {
 
-            // Remove all the previous month's events.
-            events.empty();
+    //   //       // Remove all the previous month's events.
+    //   //       events.empty();
 
-            // Put the new ones in the document.
-            events.append(html);
-          }
-        }
-      });
-    }
+    //   //       // Put the new ones in the document.
+    //   //       events.append(html);
+    //   //     }
+    //   //   }
+    //   // });
+    // }
 
     var update_calendar = function(year, month){
       /* Advance the calelndar to month and year; fetch that month's
@@ -87,7 +87,6 @@ $(document).ready(function() {
 
               // Note that this day has a click handler.
               day.data('has_click_handler', true);
-              return false;
             }
           });
         // This number is the event_index number added onto each event
@@ -109,17 +108,16 @@ $(document).ready(function() {
     }
 
     // Load events for the current year on page load.
-    update_events_list({{display_date.year}}, {{display_date.month}} - 1);
+    // update_events_list({{display_date.year}}, {{display_date.month}} - 1);
     update_calendar({{display_date.year}}, {{display_date.month}} - 1);
 
     // The calendar has been rendered; now we can bind functions to the it.
     // Update the calendar on pressing the month nav links on the calendar.
     function bind_nav_prev(){
       /* Trigger a redraw of the calendar on forward nav click. */
-      $('#calendar .nav-prev').click(function(){
-        var prev_month, prev_year;
-
-        // Zero-based months fun: iIf current month is January...
+      $('#calendar .nav-prev').click(function(event){
+        var prev_month, prev_year, node;
+        // Zero-based months fun: if current month is January...
         if (window.display_month == 0) {
           prev_month = 11;
           prev_year = window.display_year - 1;
@@ -127,9 +125,13 @@ $(document).ready(function() {
           prev_month = window.display_month - 1;
           prev_year = window.display_year;
         }
-        update_events_list(prev_year, prev_month)
+        // update_events_list(prev_year, prev_month)
         update_calendar(prev_year, prev_month)
-        });
+
+        node = $($(this).find("a")[0]);
+        $.pjax({url: node.attr("href"), container: "#events-list"});
+        return false;
+      });
     }
 
     function bind_nav_next() {
@@ -146,9 +148,12 @@ $(document).ready(function() {
           next_year = window.display_year;
         }
 
-        update_events_list(next_year, next_month)
+        // update_events_list(next_year, next_month)
         update_calendar(next_year, next_month)
-        });
+        node = $($(this).find("a")[0]);
+        $.pjax({url: node.attr("href"), container: "#events-list"});
+        return false;
+      });
     }
 
     // Bind the calendar nav listers to calendar redraw.
@@ -157,19 +162,9 @@ $(document).ready(function() {
 
     doc.trigger('calendar:redraw');
 
-    window.update_calendar = update_calendar;
-    window.update_events_list = update_events_list;
+    // window.update_calendar = update_calendar;
+    // window.update_events_list = update_events_list;
 
-    // Start an app to monitor the urls.
-    var app = Sammy(function () {
-      this.get('/{{abbr}}/events/:year/:month/', function (req) {
-        var month = parseInt(req.params['month']),
-            year = parseInt(req.params['year']);
-        update_calendar(year, month - 1);
-        update_events_list(year, month - 1);
-      })
-    })
-    app.run();
 });
 </script>
 {% endblock %}
@@ -184,6 +179,7 @@ $(document).ready(function() {
   </div>
 </div>
 <div id="events" class="eightCol colRt">
+  {% include events_list_template %}
 </div>
 <div class="clear"></div>
 

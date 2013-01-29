@@ -38,16 +38,14 @@
     </ul>
 
     <div class="fullWidth mainModule">
-        <span class="tip scout-link"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
-        </span>
         <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
         <div class="medModule">
             <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
             <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-            <p>{{ bill.title|capfirst }}</p>
+            <h5>{{ bill.title|capfirst }}</h5>
         </div>
 
-        <h3 class="tenCol colLt">{{version.name}}</h3>
+        <!-- <h3 class="tenCol colLt">{{version.name}}</h3> -->
 
         <div class="tenCol colLtSm bottomPad">
             <a class="fourCol colLt" href="{{version.url}}">Original Document</a>
