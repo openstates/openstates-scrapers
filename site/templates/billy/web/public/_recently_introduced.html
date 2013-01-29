@@ -8,7 +8,7 @@
     <ul>
     {% for bill in chamber.latest_bills %}
         <li class="voteChart">
-            <time class="published">{{ bill.action_dates.first|date:"F d, Y"}}</time>
+            <time class="published" datetime="{{bill.action_dates.first|date:"Y-m-d"}}">{{ bill.action_dates.first|date:"F d, Y"}}</time>
             <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
                 <div class="clear"></div>
                 <span class="tip sideNote">

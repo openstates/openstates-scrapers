@@ -3,7 +3,7 @@
                     <header>
                         <h5 class="withTip"><a href="{{obj.link}}">{{ obj.title }}</a></h1>
                         <div class="objMetaData">
-                            <time class="published withBorderLine">{{obj.published|date:"F d, Y"}}</time>
+                            <time class="published withBorderLine" datetime="{{obj.published|date:"Y-m-d"}}">{{obj.published|date:"F d, Y"}}</time>
                             {% if obj.author %}<address class="author">{{obj.author|striptags}}{% endif %}
                             <a rel="author" class="colorRollover" href="http://{{obj.host|striptags}}">{{obj.host|striptags}}</a></address>
                         </div>

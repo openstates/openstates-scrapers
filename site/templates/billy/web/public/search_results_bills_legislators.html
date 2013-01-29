@@ -60,7 +60,7 @@ $(document).ready(function() {
 
         {% if not found_by_id %}
         <div class="fullWidth">
-            {% with count=legislators_list.count %}
+            {% with count=legislators_list|length %}
             <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} {% trans "legislator name" %}{{count|pluralize}} {% trans "contained" %} <em>"{{search_text}}"</em></h2>
             {% if count %}
             <table id="main-table" class="withFilter">
@@ -81,9 +81,6 @@ $(document).ready(function() {
                 </tbody>
             </table>
         </div>
-        {% if more_legislators_available %}
-            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">{% trans "Show more search results." %}</a>
-        {% endif %}
         <div class="clear"></div>
         {% endif %}
         {% endwith %}

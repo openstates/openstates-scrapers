@@ -1,6 +1,7 @@
 {% load humanize %}
 {% load i18n %}
 {% load customtags %}
+<p>
 {% blocktrans with name=legislator.display_name chamber=legislator.chamber_name|title district=legislator.district state=legislator.metadata.name chamber_name=legislator.chamber_name|title com_count=legislator.committees.count|apnumber count counter=legislator.committees.count %}
    {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committee,
 {% plural %}
@@ -32,7 +33,7 @@
   {% endif %}
   {% endwith %}
 
-
+  </p>
   {% if "_yearly_contributions" in legislator %}
     <div id="ie-chart-container">
         <table>

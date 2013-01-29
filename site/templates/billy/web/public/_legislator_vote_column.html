@@ -2,10 +2,10 @@
 
         {% for vote_value, vote in votes %}
         <div class="voteChart clearfix">
-                <time class="published clear">{{vote.date|date:"M j, Y"}}</time>
+            <time class="published clear" datetime="{{vote.date|date:"Y-m-d"}}">{{vote.date|date:"M j, Y"}}</time>
                 <a href="{{ vote.get_absolute_url }}" class="h4 withTip">{{vote.bill.bill_id|upper}}</a>
                 <p class="h5">{{vote.motion|truncatewords:30}}</p>
-                <p>{% trans "Legislator Vote" %}: <span class="bold">{{vote_value|title}}</span></p>
+                <p>{% trans "Legislator Vote" %}: <span class="bold legvote_{{vote_value}}">{{vote_value|title}}</span></p>
 
                 {% include "billy/web/public/_vote_chart_table.html" %}
         </div>
