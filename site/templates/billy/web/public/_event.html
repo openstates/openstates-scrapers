@@ -1,0 +1,68 @@
+{% load url from future %}
+{% load humanize %}
+{% load i18n %}
+{% load customtags %}
+        <h3 class="">
+            <a href="{{event.get_absolute_url}}">{{ event.description|trunc }}</a>
+            <a href="{% url 'event_ical' abbr event.id %}">Add to iCal</a> |
+        <a href="https://www.google.com/calendar/render?{{event.gcal_string}}">Add to Google Calendar</a>
+        </h3>
+        <dl>
+          {% if event.host %}
+            <dt>Host:</dt>
+            <dd>
+              {% if event.host.get_absolute_url %}
+                <a href="{{event.host.get_absolute_url}}">
+                  {{event.host.display_name}}
+                </a>
+              {% else %}
+                {% comment %}
+                  Here we don't have a committee id for the host, so
+                  we're just working with the string returned by the
+                  model method (to cover this scenario).
+                {% endcomment %}
+                {{event.host}}
+              {% endif %}
+              {% if self.other_committees %}
+                {% for committee in self.other_committees %}
+                  <a href="{{committee.get_absolute_url}}">
+                    {{committee.display_name}}
+                  </a>
+                  {% if not forloop.last %},{% endif %}
+                {% endfor %}
+              {% endif %}
+            </dd>
+          {% endif %}
+
+        {% if events.host_chairs %}
+        <dt>Chair:</dt>
+        <dd>
+          {% for member, full_member in event.host_chairs %}
+            <a href="{{full_member.get_absolute_url}}">
+              {{full_member.display_name}}
+            </a>
+            {% if event.host_has_multiple_chairs %}
+              ({{member.role}})
+            {% endif %}
+            {% if not forloop.last %},{% endif %}
+          {% endfor %}
+        </dd>
+        {% endif %}
+
+        <dt>When:</dt>
+        <dd>{{ event|event_time }}</dd>
+
+        <dt>Where:</dt>
+        <dd>{{ event.location }}</dd>
+
+        {% if event.related_bills %}
+          <dt>Bills:</dt>
+          <dd>
+            {% for bill in event.bill_objects %}
+              <a href="{% url 'bill_noslug' abbr bill.id %}">
+                {{bill.bill_id}}</a>{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          </dd>
+        {% endif %}
+      </dl>
+    {% sources event %}
