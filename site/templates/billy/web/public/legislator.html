@@ -53,7 +53,7 @@
             <!-- <div class="medModule"> -->
                 <div class="sixCol colLt">
 
-                    <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" onerror="img_error(this);" />
+                    <img class="firstHalfModule legImgSmall" src="http://static.openstates.org/photos/small/{{legislator.leg_id}}.jpg" onerror="img_error(this);" alt="legislator photo" />
                     <div class="sixLg clearfix">
                         <h2 class="withTipSm">
                             {{legislator.full_name}}{% if not legislator.active %} ({% trans "Inactive" %}){% endif %}
@@ -106,9 +106,7 @@
                 {% endcomment %}
                 {% if legislator.active and 'chamber' in legislator %}
                 <div class="sixCol colLt withDash clear">
-                    <p>
-                        {% include "billy/web/public/bio_blurb.html" %}
-                    </p>
+                    {% include "billy/web/public/bio_blurb.html" %}
                 </div>
                 <div class="sixCol colRt">
                     <ul>
@@ -117,7 +115,7 @@
                             <h4 class="h5 withTip">{{office.name}}:</h4>
                             <address class="vcard">
                                 <span class="adr">
-                                    <span class="street-address">{{office.address|linebreaks}}</span>
+                                    <span class="street-address">{{office.address|linebreaksbr}}</span>
                                 </span>
                                 {% if office.phone %}
                                 <div class="tel">
@@ -257,8 +255,7 @@
             </div>
             {% endif %}
 
-        <div class="fullWidth module clear"></a>
-            <a name="committees">
+        <div id="committees" class="fullWidth module clear">
             <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             <ul class="inlineThirds">
                 {% for role in legislator.roles_manager %}
@@ -278,58 +275,50 @@
 
 
 <!-- Bills -->
-        <div class="fullWidth module clearfix">
+        <div id="bills" class="fullWidth module clearfix">
 
            <div class="clearfix">
-                <a name="bills"></a>
                 <h3 class="moduleTitle colLt">{% trans "Sponsored Bills" %}</h3>
                 <a class="textReplace rssIcon colRt" href="{% url 'bills_feed' abbr %}?sponsor__leg_id={{legislator.id}}">rss</a>
             </div>
 
+            {% if sponsored_bills|length%}
             <div class="sixCol colLt withDash clearfix">
                 <ul>
-                {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:":3" %}
                         <li class="medModuleSm voteChart">
-	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <time class="published tipSm" datetime="{{bill.most_recent_action.date|date:"Y-m-d"}}">
+                            {{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                             <p class="clear h5">{{bill.title|smallcaps}}</p>
                         </li>
-                    {% endfor %}
-                {% endif %}
+                        {% endfor %}
                 </ul>
                 <a class="viewMore" href="{% url 'bills' abbr %}?sponsor__leg_id={{legislator.id}}">{% trans "View More Bills" %}</a>
-
-
             </div>
             <div class="sixCol colRt">
                 <ul>
-                {% if sponsored_bills %}
                     {% for bill in sponsored_bills|slice:"3:" %}
                         <li class="medModuleSm voteChart">
-	                        <time class="published tipSm">{{bill.most_recent_action.date|date:"F d, Y"}}</time>
+                            <time class="published tipSm" datetime="{{bill.most_recent_action.date|date:"Y-m-d"}}">
+                            {{bill.most_recent_action.date|date:"F d, Y"}}</time>
                             <a class="h4 inlineTitle withTip" href="{{ bill.get_absolute_url }}">{{bill.bill_id}}</a> <span class="sideNote">{% for primary in bill.sponsors_manager.primary_list %}
                                 {{ primary.name}}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                             <p class="clear h5">{{bill.title|smallcaps}}</p>
                         </li>
                     {% endfor %}
-                {% endif %}
                 </ul>
             </div>
-
-
-            {% if sponsored_bills %}
-
             {% else %}
-                <li>{% trans "No sponsored bills to display." %}</li>
-            </ul>
+                <div class="sixCol colLt clearfix">
+                    <p class="note">{% trans 'No sponsored bills available yet.' %}</p>
+                </div>
             {% endif %}
         </div>
 
 <!-- Votes -->
-        <a name="votes"></a>
-        <div class="fullWidth module clearfix">
+        <div id="votes" class="fullWidth module clearfix">
             <div class="fullWidth clearfix">
                 <h3 class="moduleTitle colLt">{% trans "Votes" %}</h3>
                 <a class="textReplace rssIcon colRt" href="{% url 'votes_list' abbr 'legislators' legislator.id %}rss/">rss</a>

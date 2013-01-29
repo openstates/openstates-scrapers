@@ -8,13 +8,15 @@
     <ul>
     {% for bill in chamber.passed_bills %}
         <li class="voteChart">
-            <time class="published">
             {% if chamber.type == 'upper' %}
+                <time class="published" datetime="{{bill.action_dates.passed_upper.date|date:"Y-m-d"}}">
                 {{ bill.action_dates.passed_upper.date|date:"F d, Y" }}
+                </time>
             {% else %}
+                <time class="published" datetime="{{bill.action_dates.passed_lower.date|date:"Y-m-d"}}">
                 {{ bill.action_dates.passed_lower.date|date:"F d, Y" }}
+                </time>
             {% endif %}
-            </time>
             <span class="inlineTitle h4 withTip"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                 <div class="clear"></div>
                 <span class="tip sideNote">
