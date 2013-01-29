@@ -4,7 +4,7 @@
 {% load customtags %}
 {% load static from staticfiles %}
 
-{% block title %}{{state.name}} {% trans "events" %}{% endblock %}
+{% block title %}{% trans "Events" %} - {{metadata.legislature_name}} {% endblock %}
 
 {% block headblock %}
 
