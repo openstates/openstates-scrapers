@@ -20,28 +20,31 @@ $(document).ready(function() {
 
     var doc = $(this);
 
-    var update_events_list = function(year, month){
-      /* Get rendered events html for this month.
-      */
-      // var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
+    $(document).pjax('#calendar .nav-prev > a', "#events-list");
+    $(document).pjax('#calendar .nav-next > a', "#events-list");
 
-      // $.ajax({
-      //   url: url,
-      //   success:function(html){
-      //     var events = $("#events");
-      //     if($(html).children().length == 0){
-      //       events.html('<div>No events were found for this month.</div>')
-      //     } else {
+    // var update_events_list = function(year, month){
+    //   /* Get rendered events html for this month.
+    //   */
+    //   // var url = '/{{abbr}}/events/html_for_date/' + year + '/' + month + '/';
 
-      //       // Remove all the previous month's events.
-      //       events.empty();
+    //   // $.ajax({
+    //   //   url: url,
+    //   //   success:function(html){
+    //   //     var events = $("#events");
+    //   //     if($(html).children().length == 0){
+    //   //       events.html('<div>No events were found for this month.</div>')
+    //   //     } else {
 
-      //       // Put the new ones in the document.
-      //       events.append(html);
-      //     }
-      //   }
-      // });
-    }
+    //   //       // Remove all the previous month's events.
+    //   //       events.empty();
+
+    //   //       // Put the new ones in the document.
+    //   //       events.append(html);
+    //   //     }
+    //   //   }
+    //   // });
+    // }
 
     var update_calendar = function(year, month){
       /* Advance the calelndar to month and year; fetch that month's
@@ -87,7 +90,6 @@ $(document).ready(function() {
 
               // Note that this day has a click handler.
               day.data('has_click_handler', true);
-              return false;
             }
           });
         // This number is the event_index number added onto each event
@@ -127,7 +129,7 @@ $(document).ready(function() {
           prev_month = window.display_month - 1;
           prev_year = window.display_year;
         }
-        update_events_list(prev_year, prev_month)
+        // update_events_list(prev_year, prev_month)
         update_calendar(prev_year, prev_month)
         });
     }
@@ -146,7 +148,7 @@ $(document).ready(function() {
           next_year = window.display_year;
         }
 
-        update_events_list(next_year, next_month)
+        // update_events_list(next_year, next_month)
         update_calendar(next_year, next_month)
         });
     }
