@@ -20,9 +20,6 @@ $(document).ready(function() {
 
     var doc = $(this);
 
-    $(document).pjax('#calendar .nav-prev > a', "#events-list");
-    $(document).pjax('#calendar .nav-next > a', "#events-list");
-
     // var update_events_list = function(year, month){
     //   /* Get rendered events html for this month.
     //   */
@@ -118,9 +115,8 @@ $(document).ready(function() {
     // Update the calendar on pressing the month nav links on the calendar.
     function bind_nav_prev(){
       /* Trigger a redraw of the calendar on forward nav click. */
-      $('#calendar .nav-prev').click(function(){
-        var prev_month, prev_year;
-
+      $('#calendar .nav-prev').click(function(event){
+        var prev_month, prev_year, node;
         // Zero-based months fun: if current month is January...
         if (window.display_month == 0) {
           prev_month = 11;
@@ -131,7 +127,11 @@ $(document).ready(function() {
         }
         // update_events_list(prev_year, prev_month)
         update_calendar(prev_year, prev_month)
-        });
+
+        node = $($(this).find("a")[0]);
+        $.pjax({url: node.attr("href"), container: "#events-list"});
+        return false;
+      });
     }
 
     function bind_nav_next() {
@@ -150,7 +150,10 @@ $(document).ready(function() {
 
         // update_events_list(next_year, next_month)
         update_calendar(next_year, next_month)
-        });
+        node = $($(this).find("a")[0]);
+        $.pjax({url: node.attr("href"), container: "#events-list"});
+        return false;
+      });
     }
 
     // Bind the calendar nav listers to calendar redraw.
