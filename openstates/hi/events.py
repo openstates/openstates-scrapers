@@ -64,7 +64,8 @@ class WIEventScraper(EventScraper):
                           location=where)
 
             blacklist = ["INFO-CPC-TOU-LAB",
-                         "INFO-CPN-ENE"]
+                         "INFO-CPN-ENE",
+                         "INFO-WAM-HRE"]
             if committee in blacklist:
                 continue
 
