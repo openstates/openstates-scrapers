@@ -34,7 +34,15 @@
         </li>
     {% endfor %}
     </ul>
-    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">{% trans "View More Passed Bills" %}</a>
+    <a class="viewMore" href="{% url 'bills' abbr %}?status=passed_{{chamber.type}}">
+        {% if chambers|length > 1 %}
+            {% blocktrans with chamber.name as chamber_name %}
+            View More Passed {{chamber_name}} Bills
+            {% endblocktrans %}
+        {% else %}
+            {% trans "View More Passed Bills" %}
+        {% endif %}
+    </a>
 {% else %}
     {% trans "No passed bills to display." %}
 {% endif %}
