@@ -9,10 +9,12 @@
 {% block headblock %}
 
 <script src="{% static 'js/datatables.js' %}"></script>
-<script src="{% static 'js/jquery.pjax.js' %}"></script>
+<script src="{% static 'js/jquery.pjax.min.js' %}"></script>
 
 <script>
 $(document).ready(function() {
+
+    $.pjax.defaults.scrollTo = false;
 
     // Where 'display_date' refers to the current state of the calendar widget.
     window.display_month = {{display_date.month}};
