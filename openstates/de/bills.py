@@ -360,7 +360,10 @@ class DEBillScraper(BillScraper):
         for source, id_ in zip(doc.xpath(xpath + '/@href'),
                                doc.xpath(xpath + '/text()')):
 
-            short_id = re_amendment.match(id_).group(1)
+            match = re_amendment.match(id_)
+            if match is None:
+                match = re.search('/?([A-Z]A \\d{1,3}) to', id_)
+            short_id = match.group(1)
 
             documents = self.scrape_documents(
                 source=source,
@@ -484,7 +487,6 @@ class DEBillScraper(BillScraper):
         else:
             totals = re_digit.findall(totals)
 
-
         try:
             yes_count, no_count, abstentions, absent = map(int, totals)
 
@@ -520,7 +522,7 @@ class DEBillScraper(BillScraper):
 
         # Handle the rare case where not all names have corresponding
         # text indicating vote value. See e.g. session 146 HB10.
-        data_len = len(data)/2
+        data_len = len(data) / 2
         tally = sum(v for (k, v) in vote.items() if '_count' in k)
 
         if (0 < data_len) and ((data_len) != tally):
@@ -557,7 +559,6 @@ class DEBillScraper(BillScraper):
                 break
 
         return vote
-
 
     def scrape_documents(self, source, docname, filename, tmp, session_num,
                          re_docnum=re.compile(r'var F?docnum="(.+?)"'),
