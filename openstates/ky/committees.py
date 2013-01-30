@@ -38,7 +38,7 @@ class KYCommitteeScraper(CommitteeScraper):
             links = links + linkz
 
         for link in links:
-            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip()
+            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
             comm = Committee(chamber, name)
             comm_url = link.attrib['href'].replace(
                 'home.htm', 'members.htm')
@@ -54,4 +54,14 @@ class KYCommitteeScraper(CommitteeScraper):
 
         for link in page.xpath("//a[contains(@href, 'Legislator')]"):
             name = re.sub(r'^(Rep\.|Sen\.) ', '', link.text).strip()
-            comm.add_member(name)
+            if not link.tail or not link.tail.strip():
+                role = 'member'
+            elif link.tail.strip() == '[Chair]':
+                role = 'chair'
+            elif link.tail.strip() == '[Co-Chair]':
+                role = 'co-chair'
+            elif link.tail.strip() == '[Vice Chair]':
+                role = 'vice chair'
+            else:
+                raise Exception("unexpected position: %s" % link.tail)
+            comm.add_member(name, role=role)

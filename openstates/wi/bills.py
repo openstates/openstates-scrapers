@@ -209,8 +209,9 @@ class WIBillScraper(BillScraper):
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
-                vote_url = action_td.xpath('a/@href')[0]
-                self.add_vote(bill, actor, date, action, vote_url)
+                vote_url = action_td.xpath('a/@href')
+                if vote_url:
+                    self.add_vote(bill, actor, date, action, vote_url[0])
 
         bill.add_source(url)
         self.save_bill(bill)

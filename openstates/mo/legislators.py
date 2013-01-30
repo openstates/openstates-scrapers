@@ -134,7 +134,7 @@ class MOLegislatorScraper(LegislatorScraper):
             if last_name == 'Vacant':
                 leg = Legislator(term, chamber, district, full_name=full_name,
                             first_name=first_name, last_name=last_name,
-                            party=party, _code=leg_code, url=url)
+                            party=party, url=url)
 
                 leg.add_office('capitol', "Capitol Office",
                                address=address,
@@ -145,7 +145,7 @@ class MOLegislatorScraper(LegislatorScraper):
             else:
                 leg = Legislator(term, chamber, district, full_name=full_name,
                           first_name=first_name, last_name=last_name,
-                          party=party, _code=leg_code, url=url)
+                          party=party, url=url)
 
                 leg.add_office('capitol', 'Capitol Office',
                                address=address,

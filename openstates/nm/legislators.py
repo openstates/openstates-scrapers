@@ -98,6 +98,7 @@ class NMLegislatorScraper(LegislatorScraper):
         for row in doc.xpath('//table[@id="ctl00_mainCopy_MembershipGrid"]/tr')[1:]:
             role, committee, note = [x.text_content()
                                      for x in row.xpath('td')]
+            committee = committee.title()
             if 'Interim' in note:
                 role = 'interim ' + role.lower()
             else:

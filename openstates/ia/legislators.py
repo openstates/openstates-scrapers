@@ -11,6 +11,7 @@ class IALegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
+        session_id = self.metadata['session_details'][term]['number']
 
         if chamber == 'upper':
             chamber_name = 'senate'
@@ -33,7 +34,7 @@ class IALegislatorScraper(LegislatorScraper):
 
             pid = re.search("PID=(\d+)", link.attrib['href']).group(1)
             photo_url = ("http://www.legis.iowa.gov/getPhotoPeople.aspx"
-                         "?GA=84&PID=%s" % pid)
+                         "?GA=%s&PID=%s" % (session_id, pid))
 
             leg = Legislator(term, chamber, district, name, party=party,
                              email=email, photo_url=photo_url, url=url)

@@ -372,6 +372,10 @@ class MDBillScraper(BillScraper):
                 bill.add_document('Senate %s Committee Vote' %
                                   a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Vote - House - Committee':
+                bill.add_document('House %s Committee Vote' %
+                                  a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate Floor':
                 self.scrape_vote(bill, td.text_content(), a.get('href'))
             else:
