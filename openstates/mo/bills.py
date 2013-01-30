@@ -202,6 +202,10 @@ class MOBillScraper(BillScraper):
             "Third Read"       : "bill:reading:3",
             "Referred"         : "committee:referred",
             "Withdrawn"        : "bill:withdrawn",
+            "S adopted"        : "bill:passed",
+
+            "Truly Agreed To and Finally Passed": "bill:passed",
+            "Third Read and Passed": "bill:passed",
 
             "Approved by Governor" : "governor:signed",
         }
