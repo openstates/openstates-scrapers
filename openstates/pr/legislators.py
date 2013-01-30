@@ -21,7 +21,7 @@ class PRLegislatorScraper(LegislatorScraper):
 
     def scrape_senate(self, term):
         urls = (
-         'http://www.senadopr.us/senadores/Pages/Senadores%20Acumulacion.aspx',
+         'http://www.senadopr.us/Pages/SenadoresporAcumulacion.aspx',
          'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
          'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
          'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
@@ -35,7 +35,7 @@ class PRLegislatorScraper(LegislatorScraper):
             leg_page_html = self.urlopen(url)
             doc = lxml.html.fromstring(leg_page_html)
             doc.make_links_absolute(url)
-            table = doc.xpath('//table[@summary="Listado de Senadores"]')[0]
+            table = doc.xpath('//table[@summary="Senadores 2013-2016"]')[0]
 
             # skip first row
             for row in table.xpath('tr')[1:]:
