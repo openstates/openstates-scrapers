@@ -141,11 +141,6 @@ $(document).ready(function() {
     });
     GMaps.geolocate({
         success: function(position) {
-            $("#communicate").append("<p class = 'find_your_legislator_infobox' >" +
-                "Or let us find your legislators based on your " +
-                "<a id = 'do_geo_locate' href = '#' >" +
-                "current location</a>." +
-                "</p>");
             $("#do_geo_locate").click(function() {
                 do_geo_locate(position.coords.latitude,
                     position.coords.longitude);
@@ -190,8 +185,9 @@ $(document).ready(function() {
             </div>
 
             <div class="colRt sixCol" id="locate">
-                <p class="h5">Or use your geolocation:</p>
-                <button type="submit" value="{% trans 'Submit' %}">
+                <p class="h5">Use your current location</p>
+                <button id="do_geo_locate"
+                    type="submit" value="{% trans 'Submit' %}">
                 <span>{% trans "Submit" %}</span>
             </button>
             </div>

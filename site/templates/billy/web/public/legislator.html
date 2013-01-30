@@ -346,7 +346,12 @@
     </div>
 {% if legislator.district %}
 <script>
+    {# these states don't have lower chamber maps #}
+    {% if legislator.state == "az" or legislator.state == "id" or legislator.state == "md" or legislator.state == "nd" or legislator.state == "nj" or legislator.state == "sd" or legislator.state == "wa" %}
+    var map_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{legislator.state}}upper.jsonp';
+    {% else %}
     var map_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{legislator.state}}{{legislator.chamber}}.jsonp';
+    {% endif %}
     var map = new L.Map('mapbox-{{metadata.abbr}}',
       { attributionControl:true, dragging:false, touchZoom: false,
         scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
