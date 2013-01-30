@@ -91,10 +91,12 @@ class SDLegislatorScraper(LegislatorScraper):
         for link in page.xpath("//a[contains(@href, 'CommitteeMem')]"):
             comm = link.text.strip()
 
+            role = link.xpath('../following-sibling::td')[0].text_content().lower()
+
             if comm.startswith('Joint'):
                 chamber = 'joint'
             else:
                 chamber = leg['roles'][0]['chamber']
 
             leg.add_role('committee member', term=term, chamber=chamber,
-                         committee=comm)
+                         committee=comm, position=role)
