@@ -98,6 +98,7 @@ INSTALLED_APPS = (
 
 AUTHENTICATION_BACKENDS = (
     'sunlightauth.backends.SunlightBackend',
+    #'django.contrib.auth.backends.ModelBackend',
 )
 
 SUNLIGHT_AUTH_BASE_URL = 'http://ec2-54-234-63-205.compute-1.amazonaws.com/'
