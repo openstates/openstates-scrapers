@@ -20,10 +20,17 @@ $(document).ready(function() {
   // Initialize the calendar.
   $("#calendar").calendarWidget({month: {{event.when.month}},
                                  year: {{event.when.year}}});
+
+  // Kill the unused nav buttons.
+  $("div.nav-next").remove();
+  $("div.nav-prev").remove();
+
   // Set the event day as the selected day.
   $("td.day" + {{event.when.day}}).attr('id', 'selected-day')
+
   // Set the current day.
   $('#calendar .day' + (new Date()).getUTCDate()).attr('id', 'today');
+
 });
 </script>
 {% endblock %}
