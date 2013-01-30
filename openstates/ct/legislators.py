@@ -11,9 +11,9 @@ class CTLegislatorScraper(LegislatorScraper):
 
     _committee_names = {}
 
-    def __init__(self, *args, **kwargs):
-        super(CTLegislatorScraper, self).__init__(*args, **kwargs)
-        self._scrape_committee_names()
+    #def __init__(self, *args, **kwargs):
+        #super(CTLegislatorScraper, self).__init__(*args, **kwargs)
+        #self._scrape_committee_names()
 
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
@@ -57,12 +57,17 @@ class CTLegislatorScraper(LegislatorScraper):
             # skipping home address for now
             leg.add_source(leg_url)
 
-            for comm_code in row['committee codes'].split(';'):
-                if comm_code:
-                    comm_name = self._committee_names[comm_code]
+            for comm in row['committee member1'].split(';'):
+                if comm:
+                    if ' (' in comm:
+                        comm, role = comm.split(' (')
+                        role = role.strip(')').lower()
+                    else:
+                        role = 'member'
                     leg.add_role('committee member', term,
                                  chamber='joint',
-                                 committee=comm_name)
+                                 committee=comm,
+                                 position=role)
 
             self.save_legislator(leg)
 
