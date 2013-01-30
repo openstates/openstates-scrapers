@@ -1,12 +1,12 @@
-import lxml.html
-
-from billy.scrape import ScrapeError
-from billy.scrape.bills import BillScraper, Bill
-
+import re
+import time
 import itertools
 from datetime import datetime
-import time
-import re
+
+import lxml.html
+
+from billy.scrape.bills import BillScraper, Bill
+
 
 _classifiers = (
     ('Bill Filed', 'bill:filed'),
@@ -21,6 +21,7 @@ _classifiers = (
     ('Amendment.* (R|r)ejected', 'amendment:failed'),
 )
 
+
 def classify_action(action):
     whom = None
     for pattern, type in _classifiers:
@@ -29,6 +30,7 @@ def classify_action(action):
                 whom = re.sub("Referred to the committee on the ", "", action)
             return (type, whom)
     return ('other', whom)
+
 
 class MABillScraper(BillScraper):
     jurisdiction = 'ma'
@@ -41,7 +43,7 @@ class MABillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         # for the chamber of the action
-        chamber_map = {'House': 'lower', 'Senate':'upper', 'Joint': 'joint',
+        chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint',
                        'Governor': 'executive'}
 
         session_slug = session[:-2]
@@ -125,7 +127,6 @@ class MABillScraper(BillScraper):
                         cspons.append(s)
 
                 sponsors = dict((s, s) for s in cspons)
-
 
             # remove sponsors from petitioners
             for k in sponsors:
