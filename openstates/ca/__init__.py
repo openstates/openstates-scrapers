@@ -34,7 +34,7 @@ metadata = dict(
          'start_date': datetime.date(2010, 12, 6),
          },
          {'name': '20132014',
-         'sessions': ['20132014'],
+         'sessions': ['20132014', '20132014 Special Session 1'],
          'start_year': 2013, 'end_year': 2014,
          # 'start_date': datetime.date(2013, ??, ?),
          },
@@ -90,6 +90,11 @@ metadata = dict(
             # 'start_date': datetime.date(2013, ?, ?),
             'display_name': '2013-2014 Regular Session',
             'type': 'primary'
+        },
+        '20132014 Special Session 1': {
+            # 'start_date': datetime.date(2013, ?, ?),
+            'display_name': '2013-2014, 1st Special Session',
+            'type': 'special'
         },
     },
     feature_flags=['subjects', 'influenceexplorer'],
