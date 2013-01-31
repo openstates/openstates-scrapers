@@ -146,6 +146,8 @@ class FLBillScraper(BillScraper):
                     atype.append('bill:reading:3')
                 elif action.startswith('Adopted'):
                     atype.append('bill:passed')
+                elif action.startswith('CS passed'):
+                    atype.append('bill:passed')
 
                 bill.add_action(actor, action, date, type=atype)
 
