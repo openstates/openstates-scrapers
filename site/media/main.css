@@ -1161,14 +1161,16 @@ pre {
 /* This class just wraps the event detail page calendar to change
 the cursor from pointer to normal. */
 .event_detail_calendar #calendar td {
-  cursor: auto;
+    cursor: auto;
 }
 
 /* Also turn off hover on the event detail calendar.*/
 .event_detail_calendar #calendar .current-month:hover{
-    background: #ffffff;
+    background-color: #fafaf5;
 }
-
+.event_detail_calendar #calendar .other-month:hover{
+    background-color: #fafaf5;
+}
 
 
 /* Bills Filter styles */
