@@ -107,5 +107,6 @@ class AKEventScraper(EventScraper):
             event.add_source(url)
             event.add_participant('host',
                                   comm,
-                                  participant_type='committee')
+                                  participant_type='committee',
+                                  chamber=chamber)
             self.save_event(event)
