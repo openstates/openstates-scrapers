@@ -103,6 +103,8 @@ class FLBillScraper(BillScraper):
             bill_type = 'concurrent resolution'
         elif re.findall('[SH]M', bill_type_h1):
             bill_type = 'memorial'
+        elif re.findall('\s+Senate \d+', bill_type_h1):
+            bill_type = 'bill'
 
         bill['type'] = [bill_type]
 
