@@ -173,8 +173,14 @@ class NMBillScraper(BillScraper):
                                                data['Title'], type=bill_type)
 
             # fake a source
-            bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
-                data['Chamber'], data['LegType'], data['LegNo'], session_year))
+            data['SessionYear'] = session_year
+            data.update({x: data[x].strip() for x in ["Chamber", "LegType",
+                                                      "LegNo", "SessionYear"]})
+
+            bill.add_source(
+                'http://www.nmlegis.gov/lcs/_session.aspx?Chamber='
+                "{Chamber}&LegType={LegType}&LegNo={LegNo}"
+                "&year={SessionYear}".format(**data))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
             if data['SponsorCode2'] not in ('NONE', 'X', ''):
