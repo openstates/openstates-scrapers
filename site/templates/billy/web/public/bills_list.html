@@ -92,7 +92,7 @@ $(document).ready(function(){
         <ul id="billSearchLongDesc" class="clearfix">
             <li class="tip">Filtering to only show bills
             {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
-            </li> 
+            </li>
         </ul>
         {% endif %}
             <div class="fourCol colLtSm filterCol clear">
@@ -154,7 +154,7 @@ $(document).ready(function(){
                         <h6 class="withTipSm"><label for="id_type">Type:</label></h6>
                         <select name="type" id="id_type">
                           {% for value, name in form.fields.type.widget.choices %}
-                            <option value='{{value}}' {% if value in form.data.type %}selected{% endif %}>{{name}}</option>
+                            <option value='{{value}}' {% if value == form.data.type %}selected{% endif %}>{{name}}</option>
                           {% endfor %}
                         </select>
                       </li>
