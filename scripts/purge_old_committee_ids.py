@@ -6,7 +6,7 @@ from billy.core import logging
 def main():
 
     import sys
-    abbrs = sys.argv[1:] or [x['state'] for x in db.metadata.find()]
+    abbrs = sys.argv[1:] or [x['abbreviation'] for x in db.metadata.find()]
     logger = logging.getLogger('purge_committee_ids')
     logger.setLevel(logging.DEBUG)
 
@@ -123,6 +123,28 @@ def main():
                 logger.info(msg % (count, old_ids, entry['_id']))
                 feeds_db.entries.save(entry)
 
+        # Nuke any committee sponsors of bills.
+        spec = {
+            settings.LEVEL_FIELD: abbr,
+            'sponsors.committee_id': {'$nin': committee_ids}
+            }
+        for bill in db.bills.find(spec):
+            count = 0
+            found = False
+            old_ids = set()
+            for sponsor in bill.get('sponsors', []):
+                if 'committee_id' in sponsor:
+                    _id = sponsor['committee_id']
+                    old_ids.add(_id)
+                    found = True
+                    count += 1
+
+                    del sponsor['committee_id']
+
+            if found:
+                msg = 'Removed %d old committee ids %r from %r'
+                logger.info(msg % (count, old_ids, bill['_id']))
+                db.bills.save(bill)
 
 if __name__ == '__main__':
     main()
