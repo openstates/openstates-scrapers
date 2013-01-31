@@ -1164,6 +1164,10 @@ the cursor from pointer to normal. */
   cursor: auto;
 }
 
+/* Also turn off hover on the event detail calendar.*/
+.event_detail_calendar #calendar .current-month:hover{
+    background: #ffffff;
+}
 
 
 
