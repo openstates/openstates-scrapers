@@ -11,7 +11,7 @@ class NDCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         members =page.xpath("//div[@class='view-content']"
-                            "//a[contains(@href, 'members')]/text()")
+                            "//a[contains(@href, 'members')]")
 
         if '/joint/' in href:
             chamber = 'joint'
@@ -25,8 +25,13 @@ class NDCommitteeScraper(CommitteeScraper):
 
         cttie = Committee(chamber, name)
 
-        for member in members:
-            cttie.add_member(member)  # XXX: Role isn't exactly right.
+        for a in members:
+            member = a.text
+            role = a.xpath("ancestor::div/h2[@class='pane-title']/text()")[0]
+            role = {"Legislative Members": "member",
+                    "Chairman": "chair",
+                    "Vice Chairman": "member"}[role]
+            cttie.add_member(member, role=role)
 
         cttie.add_source(href)
         self.save_committee(cttie)
