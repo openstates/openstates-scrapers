@@ -6,7 +6,7 @@ from billy.core import logging
 def main():
 
     import sys
-    abbrs = sys.argv[1:] or [x['state'] for x in db.metadata.find()]
+    abbrs = sys.argv[1:] or [x['abbreviation'] for x in db.metadata.find()]
     logger = logging.getLogger('purge_committee_ids')
     logger.setLevel(logging.DEBUG)
 
