@@ -67,7 +67,7 @@ ENABLE_DOCUMENT_VIEW = {
     'ok': True,
     'or': True,
     'pa': False,    # revisit
-    'pr'; True,
+    'pr': True,
     'ri': False,    # revisit
     'sc': True,
     'sd': False,
