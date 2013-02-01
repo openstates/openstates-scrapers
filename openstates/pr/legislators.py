@@ -20,18 +20,19 @@ class PRLegislatorScraper(LegislatorScraper):
             self.scrape_house(term)
 
     def scrape_senate(self, term):
-        urls = (
-         'http://www.senadopr.us/Pages/SenadoresporAcumulacion.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20IV.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20V.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20VI.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20VII.aspx',
-         'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx')
+        urls = { 
+            'At-Large': 'http://www.senadopr.us/Pages/SenadoresporAcumulacion.aspx',
+            'I': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
+            'II': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
+            'III': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20III.aspx',
+            'IV': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20IV.aspx',
+            'V': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20V.aspx',
+            'VI': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VI.aspx',
+            'VII': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VII.aspx',
+            'VIII': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx'
+        }
 
-        for counter, url in enumerate(urls):
+        for district, url in urls.iteritems():
             leg_page_html = self.urlopen(url)
             doc = lxml.html.fromstring(leg_page_html)
             doc.make_links_absolute(url)
@@ -45,11 +46,6 @@ class PRLegislatorScraper(LegislatorScraper):
                 party = tds[1].text_content()
                 phone = tds[2].text_content()
                 email = tds[3].text_content()
-                #shapefiles denote 0 as At-Large Districts
-                if counter == 0:
-                    district = 'At-Large'
-                else:
-                    district = str(counter)
 
                 #Code to guess the picture
                 namefixed = unicode(name.replace(".",". "))  #Those middle names abbreviations are sometimes weird.

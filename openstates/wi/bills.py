@@ -288,6 +288,8 @@ class WIBillScraper(BillScraper):
             elif 'sv' in url:
                 self.add_senate_votes(v, url)
 
+        # other count is brute forced
+        v['other_count'] = len(v['other_votes'])
         v.validate()
         bill.add_vote(v)
 

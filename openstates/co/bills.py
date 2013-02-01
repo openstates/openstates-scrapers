@@ -407,12 +407,16 @@ class COBillScraper(BillScraper):
                     ))
                     other = local_other
 
+                passed = (result['FINAL_ACTION'] == "PASS")
+                if "without objection" in passage['MOTION'].lower():
+                    passed = True
+
                 v = Vote(actor, pydate, passage['MOTION'],
-                    (result['FINAL_ACTION'] == "PASS"),
-                    int(result['YES']), int(result['NO']),
-                    other,
-                    moved=passage['MOVED'],
-                    seconded=passage['SECONDED'])
+                         passed,
+                         int(result['YES']), int(result['NO']),
+                         other,
+                         moved=passage['MOVED'],
+                         seconded=passage['SECONDED'])
 
                 v.add_source(vote['meta']['url'])
                 # v.add_source( bill_vote_href )
