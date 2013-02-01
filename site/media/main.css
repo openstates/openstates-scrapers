@@ -372,7 +372,17 @@ ul li { margin-bottom: 20px; }
 .firstHalfModule { margin-right: 20px; float: left;}
 img.firstHalfModule  { width: 100px;}
 
-#legLinks { margin-top: 25px; margin-bottom: 0; }
+#legLinks { margin-top: 0px; margin-bottom: 45px; }
+#legLinks li {
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-weight: 300;
+    font-style: normal;
+}
+
+#legLinks li a{
+    padding-right: 10px;
+}
+
 
 .module header { margin-bottom: 15px; }
 .withBorderLine { float: left; margin-right: 10px; padding-right: 10px; border-right: 1px solid #cecac1; }
@@ -1466,7 +1476,7 @@ li.greyArrow:before {content:"»"}
     white-space: nowrap;
     vertical-align:baseline;
 }
-.mimetype.html { background-color: #EFF1E6; }
+.mimetype.html { background-color: #EDF1E1; }
 .mimetype.doc { background-color: #E0E4EE; }
 .mimetype.pdf { background-color: #F0EBEA; }
 
