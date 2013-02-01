@@ -1432,6 +1432,21 @@ li.greyArrow:before {content:"»"}
     color: #DFDFD1;
     margin-right: 10px;
 }
+.legvote_yes {
+    color: #A3B669;
+}
+
+.legvote_no {
+    color: #BB522E;
+}
+
+.legvote_other, .legvote_no, .legvote_yes {
+    font-size: 19px;
+    font-weight: normal;
+    font-style:normal;
+    font-family:sans-serif;
+
+}
 
 
 
