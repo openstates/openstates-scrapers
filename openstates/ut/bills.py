@@ -10,6 +10,21 @@ import logging
 
 logger = logging.getLogger('openstates')
 
+
+SUB_BLACKLIST = [
+    "Second Substitute",
+    "Third Substitute",
+    "Fourth Substitute",
+    "Fifth Substitute",
+    "Sixth Substitute",
+    "Seventh Substitute",
+    "Eighth Substitute",
+    "Ninth Substitute",
+    "Substitute",
+]  # Pages are the same, we'll strip this from bills we catch.
+
+
+
 class UTBillScraper(BillScraper):
     jurisdiction = 'ut'
 
@@ -81,6 +96,11 @@ class UTBillScraper(BillScraper):
             bill_type = ['concurrent resolution']
         elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
             bill_type = ['joint resolution']
+
+        for flag in SUB_BLACKLIST:
+            if flag in bill_id:
+                bill_id = bill_id.replace(flag, " ")
+        bill_id = re.sub("\s+", " ", bill_id).strip()
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_sponsor('primary', primary_sponsor)
