@@ -184,7 +184,8 @@ class MTBillScraper(BillScraper):
             bill_id = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
         try:
-            title = status_page.xpath("//form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+            xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
+            title = status_page.xpath(xp).pop()
         except IndexError:
             title = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
@@ -350,7 +351,7 @@ class MTBillScraper(BillScraper):
         base_url += '/'
         status_page.make_links_absolute(base_url)
 
-        for tr in status_page.xpath('//table')[4].xpath('tr')[2:]:
+        for tr in status_page.xpath('//table')[3].xpath('tr')[2:]:
             tds = list(tr)
 
             if tds:
