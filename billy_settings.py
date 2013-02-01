@@ -27,6 +27,60 @@ PARTY_DETAILS = {
 
 ENABLE_ELASTICSEARCH = True
 BOUNDARY_SERVICE_SETS = 'sldl,sldu'
+ENABLE_DOCUMENT_VIEW = {
+    'ak': True,
+    'al': True,
+    'ar': False,    # revisit
+    'az': True,
+    'ca': False,
+    'co': False,    # revisit
+    'ct': True,
+    'dc': True,
+    'de': True,
+    'fl': True,
+    'ga': False,
+    'hi': True,
+    'ia': True,
+    'id': True,
+    'il': True,
+    'in': True,
+    'ks': True,
+    'ky': True,
+    'la': False,    # revisit
+    'ma': False,
+    'md': True,
+    'me': True,
+    'mi': True,
+    'mn': False,
+    'mo': True,
+    'ms': True,
+    'mt': True,
+    'nc': True,
+    'nd': True,
+    'ne': True,
+    'nh': True,
+    'nj': True,
+    'nm': True,
+    'nv': True,
+    'ny': False,
+    'oh': True,
+    'ok': True,
+    'or': True,
+    'pa': False,    # revisit
+    'pr'; True,
+    'ri': False,    # revisit
+    'sc': True,
+    'sd': False,
+    'tn': True,
+    'tx': False,    # revisit
+    'ut': True,
+    'va': False,
+    'vt': True,
+    'wa': False,    # revisit
+    'wi': True,
+    'wv': False,
+    'wv': True
+}
 
 try:
     from billy_local import *
