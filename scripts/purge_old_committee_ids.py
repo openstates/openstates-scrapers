@@ -33,7 +33,6 @@ def main():
                         found = True
                         msg = 'Removing participant %r from event %r'
                         logger.info(msg % (participant[id_key], event['_id']))
-                        event['participants'].remove(participant)
 
                         # Leave the participant in but set their id to none.
                         # Text will still be displayed without a hyperlink.
@@ -42,7 +41,7 @@ def main():
             if found:
                 msg = 'Removed %d old committee %r ids from %r'
                 logger.info(msg % (count, old_ids, event['_id']))
-                db.events.save(event)
+                db.events.save(event, safe=True)
 
         # Related committees in bill actions.
         spec = {
@@ -69,7 +68,7 @@ def main():
             if found:
                 msg = 'Removed %d old committee %r ids from %r'
                 logger.info(msg % (count, old_ids, bill['_id']))
-                db.bills.save(bill)
+                db.bills.save(bill, safe=True)
 
         # Legislator old roles.
         spec = {
@@ -94,7 +93,7 @@ def main():
             if found:
                 msg = 'Removed %d old committee %r ids from %r'
                 logger.info(msg % (count, old_ids, leg['_id']))
-                db.legislators.save(leg)
+                db.legislators.save(leg, safe=True)
 
         # Related entities in feeds.
         spec = {
@@ -121,7 +120,7 @@ def main():
             if found:
                 msg = 'Removed %d old committee ids %r from %r'
                 logger.info(msg % (count, old_ids, entry['_id']))
-                feeds_db.entries.save(entry)
+                feeds_db.entries.save(entry, safe=True)
 
 
 if __name__ == '__main__':
