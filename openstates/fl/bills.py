@@ -221,6 +221,7 @@ class FLBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_vote(self, bill, chamber, date, url):
+
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
         os.remove(path)
@@ -243,7 +244,7 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
-        y,n,o = 0,0,0
+        y, n, o = 0, 0, 0
         break_outter = False
 
         for line in text.split('\n')[9:]:
@@ -265,16 +266,17 @@ class FLBillScraper(BillScraper):
                 match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
 
                 if match:
-                    if match.group(2) == "PAIR":
+                    name = match.group(2)
+                    if match.group(1) == 'Y':
+                        vote.yes(name)
+                    elif match.group(1) == 'N':
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+                else:
+                    if "PAIR" in line:
                         break_outter = True
                         break
-                    if match.group(1) == 'Y':
-                        vote.yes(match.group(2))
-                    elif match.group(1) == 'N':
-                        vote.no(match.group(2))
-                    else:
-                        vote.other(match.group(2))
-                else:
                     vote.other(col.strip())
 
         vote.validate()
