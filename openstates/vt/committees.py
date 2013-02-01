@@ -1,11 +1,11 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 
 from .utils import DOUBLED_NAMES
+
 
 class VTCommitteeScraper(CommitteeScraper):
     jurisdiction = 'vt'
@@ -15,10 +15,10 @@ class VTCommitteeScraper(CommitteeScraper):
 
         chamber_abbr = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        url = ('http://www.leg.state.vt.us/lms/legdir/comms.asp?Body=%s' %
+        url = ('http://www.leg.state.vt.us/legdir/comms.cfm?Body=%s&Session=2014' %
                chamber_abbr)
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
+        html = self.urlopen(url)
+        page = lxml.html.fromstring(html)
 
         for li in page.xpath("//li"):
             # Strip the room number from the committee name
