@@ -1452,21 +1452,23 @@ li.greyArrow:before {content:"»"}
 
 /* Document type "icons"  */
 .mimetype {
-    color: #817C78;
+    color: #A4A09D;
     font-size: 12px;
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
     font-style: normal;
     font-weight: 500;
-    background-color: #DCD7D2;
+    background-color: #E9E7DB;
     padding: 2px 5px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
+    display: inline;
+    white-space: nowrap;
+    vertical-align:baseline;
 }
-/* differentiation of types by color - FIX ME */
-.mimetype.html { background-color: #DCD7D2; }
-.mimetype.doc { background-color: #DCD7D2; }
-.mimetype.pdf { background-color: #DCD7D2; }
+.mimetype.html { background-color: #EFF1E6; }
+.mimetype.doc { background-color: #E0E4EE; }
+.mimetype.pdf { background-color: #F0EBEA; }
 
 #maptip {
     height:420px;
