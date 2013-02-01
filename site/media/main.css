@@ -1451,7 +1451,7 @@ li.greyArrow:before {content:"»"}
 
 
 /* Document type "icons"  */
-.html {
+.mimetype {
     color: #817C78;
     font-size: 12px;
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
@@ -1463,6 +1463,10 @@ li.greyArrow:before {content:"»"}
     -moz-border-radius: 3px;
     border-radius: 3px;
 }
+/* differentiation of types by color - FIX ME */
+.mimetype.html { background-color: #DCD7D2; }
+.mimetype.doc { background-color: #DCD7D2; }
+.mimetype.pdf { background-color: #DCD7D2; }
 
 #maptip {
     height:420px;

@@ -271,7 +271,9 @@
                 {% for version in bill.versions_preview %}
                     <li class="{% cycle 'one' 'two' 'three' %}">
                     <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
-                        {% if version.mimetype %}<span class="html">[{{ version.mimetype}}]</span>{% endif %}
+                        {% with mimetype=version.mimetype %}
+                        {% include "billy/web/public/_mimetype_tag.html" %}
+                        {% endwith %}
                     </li>
                 {% endfor %}
 

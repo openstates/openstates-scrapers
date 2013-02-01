@@ -1,0 +1,10 @@
+{% if mimetype %}
+{% if mimetype == "application/pdf" %} <span class="mimetype pdf"> PDF
+    {% elif mimetype == "text/html" %} <span class="mimetype html"> HTML
+    {% elif mimetype == "application/msword" %} <span class="mimetype doc"> DOC
+    {% elif mimetype == "application/vnd.wordperfect" %} <span class="mimetype wpd"> WPD
+    {% elif mimetype == "application/rtf" %} <span class="mimetype rtf"> RTF
+    {% else %} <span class="mimetype other"> {{version.mimetype}}
+    {% endif %}
+</span>
+{% endif %}
