@@ -101,7 +101,7 @@ class MTBillScraper(BillScraper):
     def parse_bill(self, bill_url, session, chamber):
 
         # Temporarily skip the differently-formatted house budget bill.
-        if '/2011/billhtml/hb0002.htm' in bill_url.lower():
+        if 'billhtml/hb0002.htm' in bill_url.lower():
             return
 
         bill = None
