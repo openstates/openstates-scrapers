@@ -27,6 +27,14 @@
 
 
 {% block content %}
+<div class="fullWidth tip clearfix">
+      <ul class="inlineList tip noSpace" id="billLinks">
+          <li><a href="#votes">{% trans "Votes" %}</a> |</li>
+          <li><a href="#actions">{% trans "Actions" %}</a> |</li>
+          <li><a href="#billtext">{% trans "Bill Text" %}</a> |</li>
+          <li><a href="#events">{% trans "Events" %}</a></li>
+      </ul>
+</div>
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
@@ -196,7 +204,7 @@
              </dl>
          </div>
 
-        <div class="module clearfix">
+        <div id="votes" class="module clearfix">
             <h3 class="moduleTitle">{% trans "Votes" %}</h3>
 
                 {% if bill.votes_manager.count %}
@@ -222,7 +230,7 @@
                 {% endif %}
        </div>
 
-       <div class="module fullWidth">
+       <div id="actions" class="module fullWidth">
             <h3 class="moduleTitle">{% trans "Actions" %}</h3>
 
             <div class="fullWidth clearfix">
@@ -263,7 +271,7 @@
 
 
  {% if bill.versions or bill.documents %}
-    <div class="module">
+    <div id="billtext" class="module">
         <div class="eightCol colLt">
             {% if bill.versions %}
             <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
@@ -271,7 +279,9 @@
                 {% for version in bill.versions_preview %}
                     <li class="{% cycle 'one' 'two' 'three' %}">
                     <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
-                        {% if version.mimetype %}<span class="html">[{{ version.mimetype}}]</span>{% endif %}
+                        {% with mimetype=version.mimetype %}
+                        {% include "billy/web/public/_mimetype_tag.html" %}
+                        {% endwith %}
                     </li>
                 {% endfor %}
 
@@ -311,7 +321,7 @@
 
 
 {% if events|length > 0 %}
-        <div class="fullWidth module">
+        <div id="events" class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>
             <table>
                 <thead>
