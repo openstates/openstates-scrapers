@@ -35,10 +35,6 @@ metadata = {
                                   '2005', '2004', '2003', '2002', '2001',
                                   '2000', '1999', '1998', '1997', '1996',
                                   '1995', '1994', '1993',
-
-                                  # XXX: Temporarily ignoring 2013.
-                                  '2013',
-
                                   ]
 
 }
@@ -49,7 +45,7 @@ def session_list():
                      '//select[@name="year"]/option/text()')
 
 def extract_text(doc, data):
-    if (doc['mimetype'] == 'text/html' or 'bills_text.cfm' in doc['url']):
+    if (doc.get('mimetype') == 'text/html' or 'bills_text.cfm' in doc['url']):
         doc = lxml.html.fromstring(data)
         return '\n'.join(p.text_content() for p in
                          doc.xpath('//div[@id="bhistcontent"]/p'))
