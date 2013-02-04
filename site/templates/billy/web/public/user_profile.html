@@ -72,7 +72,7 @@ $(document).ready(function() {
 
 
         <div class="moduleNoBorder clearfix fiveCol colLt">
-            <form action="/profile" method="POST" id="profile_form">
+            <form action="/profile/" method="POST" id="profile_form">
                 {% csrf_token %}
 
                     <h5>{% trans "API Key" %}</h5>
@@ -91,7 +91,7 @@ $(document).ready(function() {
               </form>
            </div>
            <div class="clearfix container tenCol">
-               <form action="/profile" method="POST" id="profile_form">
+               <form action="/profile/" method="POST" id="profile_form">
                    {% csrf_token %}
                <button type="submit" value="{% trans 'Save information' %}">
                    <span>{% trans "Save information" %}</span>
