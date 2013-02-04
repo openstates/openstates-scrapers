@@ -1028,7 +1028,7 @@ pre {
     font-height: 10px;
 
 }
-.event>h3{
+.titlebox{
 	background: #f4f4f0; /* Old browsers */
 	background: -moz-linear-gradient(top, #f4f4f0 0%, #eae8e2 100%); /* FF3.6+ */
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f4f4f0), color-stop(100%,#eae8e2)); /* Chrome,Safari4+ */
@@ -1042,9 +1042,12 @@ pre {
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-se;
 	font-size: 100%;
 	font-weight: bold;
+	margin-bottom: 10px;
 }
-.event>h3 a {
-	font-weight: normal;
+.event h5 {
+	font-weight: bold;
+	font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
+	margin-bottom: 10px;
 }
 .event dl{
 	margin-left: 20px;

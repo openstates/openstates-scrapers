@@ -2,11 +2,14 @@
 {% load humanize %}
 {% load i18n %}
 {% load customtags %}
-        <h3 class="">
+        <div class="titlebox">
+            <h5>
             <a href="{{event.get_absolute_url}}">{{ event.description|trunc }}</a>
-            <a href="{% url 'event_ical' abbr event.id %}">Add to iCal</a> |
+            </h5>
+        <a href="{% url 'event_ical' abbr event.id %}">Add to iCal</a> |
         <a href="https://www.google.com/calendar/render?{{event.gcal_string}}">Add to Google Calendar</a>
-        </h3>
+        </div>
+
         <dl>
           {% if event.host %}
             <dt>Host:</dt>
