@@ -517,10 +517,8 @@ class PDFCommitteeVote(object):
         self.text = '\n'.join(filter(None, text.splitlines()))
 
     def chamber(self):
-        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper'}
+        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
         chamber, _, _ = self.text.lstrip().partition(' ')
-        if chamber not in chamber_dict:
-            return ''
         return chamber_dict[chamber]
 
     def date(self):
