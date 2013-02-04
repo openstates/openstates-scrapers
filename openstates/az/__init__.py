@@ -1,5 +1,6 @@
 import datetime
 import lxml.html
+from billy.utils.fulltext import text_after_line_numbers, pdfdata_to_text
 
 metadata = dict(
     name='Arizona',
@@ -545,6 +546,9 @@ def session_list():
 
 
 def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = doc.xpath('//div[@class="Section2"]')[0].text_content()
-    return text
+    if doc['mimetype'] == 'text/html':
+        doc = lxml.html.fromstring(data)
+        text = doc.xpath('//div[@class="Section2"]')[0].text_content()
+        return text
+    else:
+        return text_after_line_numbers(pdfdata_to_text(data))
