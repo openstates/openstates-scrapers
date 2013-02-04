@@ -153,9 +153,14 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-<div class="fullWidth module clear">
-<h2>{% trans "Past &amp; Future events" %}</h2>
+
+<div class="fullWidth">
+    <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
+        <h2 class="withTip">{{ metadata.name }} {% trans "past &amp; future events" %}</h2>
+        <p>{# funfact metadata.abbr #}</p>
+    </div>
 </div>
+
 <div class="calendar fourCol colLt">
   <div id="calendar">
     <p>Please enable Javascript to view this calendar.</p>
