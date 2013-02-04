@@ -107,7 +107,7 @@ class MALegislatorScraper(LegislatorScraper):
                     elif text.startswith('Fax:'):
                         fax = text.strip('Fax: ') or None
                     elif text.startswith('Email:'):
-                        email = text.strip('Email: ') or None
+                        pass
                     else:
                         address.append(text)
             # all pieces collected
@@ -115,7 +115,12 @@ class MALegislatorScraper(LegislatorScraper):
                 otype = 'district'
             else:
                 otype = 'capitol'
-            leg.add_office(otype, office_name, phone=phone, fax=fax,
-                           address='\n'.join(address), email=email)
+
+            address = filter(
+                None, [re.sub(r'\s+', ' ', s).strip() for s in address])
+
+            if address:
+                leg.add_office(otype, office_name, phone=phone, fax=fax,
+                               address='\n'.join(address), email=None)
 
         self.save_legislator(leg)
