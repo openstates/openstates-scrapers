@@ -365,4 +365,11 @@ disabled look for already selected choices in the results dropdown
   padding: 0;
 }
 
+#mainFilter .select2-choice {
+    border: 2px solid #C2C4AC;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
 /* end multiselect */
