@@ -54,8 +54,11 @@ class AssemblyBillPage(object):
                    'bn=%s&Summary=Y&Actions=Y&term=%s')
             url = url % (self.bill_id, self.term_start_year)
             doc = self.url2lxml(url)
-            summary, actions = doc.xpath('//pre/text()')
-            self.data['summary'], self.data['actions'] = summary, actions
+            summary, actions = doc.xpath('//pre')[:2]
+            summary = summary.text_content()
+            actions = actions.text_content()
+            self.data['summary'] = summary
+            self.data['actions'] = actions
             return summary, actions
         else:
             return self.data['summary'], self.data['actions']
@@ -87,7 +90,7 @@ class AssemblyBillPage(object):
         if self.chamber == 'lower':
             url = ('http://assembly.state.ny.us/leg/?'
                    'default_fld=&bn=%s&term=%s&Memo=Y')
-            url =  url % (self.bill_id, self.term_start_year)
+            url = url % (self.bill_id, self.term_start_year)
             self.bill.add_document("Sponsor's Memorandum", url)
 
     def get_summary(self):
