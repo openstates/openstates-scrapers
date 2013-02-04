@@ -372,14 +372,31 @@ ul li { margin-bottom: 20px; }
 .firstHalfModule { margin-right: 20px; float: left;}
 img.firstHalfModule  { width: 100px;}
 
-#legLinks { margin-top: 0px; margin-bottom: 45px; }
-#legLinks li {
+#legLinks, #billLinks {
+    margin-top: 0px;
+    margin-bottom: 45px;
+    padding-left:20px;
+    border-bottom: 1px solid #E2E2DD;
+    padding-bottom:10px;
+    }
+
+#billLinks {
+    margin-right: 490px;
+    margin-left:130px;
+}
+#legLinks {
+    margin-right: 390px;
+    margin-left:20px;
+}
+
+#legLinks li, #billLinks li {
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
     font-weight: 300;
     font-style: normal;
+    color: #E2E2DD;
 }
 
-#legLinks li a{
+#legLinks li a, #billLinks li a{
     padding-right: 10px;
 }
 
@@ -1365,7 +1382,7 @@ div.notification-preference {
 }
 
 .favbutton:hover{
-    color:#00FF00;
+    color:#C69600;
 }
 
 .star{
