@@ -122,6 +122,28 @@ def main():
                 logger.info(msg % (count, old_ids, entry['_id']))
                 feeds_db.entries.save(entry, safe=True)
 
+        # Nuke any committee sponsors of bills.
+        spec = {
+            settings.LEVEL_FIELD: abbr,
+            'sponsors.committee_id': {'$nin': committee_ids}
+            }
+        for bill in db.bills.find(spec):
+            count = 0
+            found = False
+            old_ids = set()
+            for sponsor in bill.get('sponsors', []):
+                if 'committee_id' in sponsor:
+                    _id = sponsor['committee_id']
+                    old_ids.add(_id)
+                    found = True
+                    count += 1
+
+                    del sponsor['committee_id']
+
+            if found:
+                msg = 'Removed %d old committee ids %r from %r'
+                logger.info(msg % (count, old_ids, bill['_id']))
+                db.bills.save(bill)
 
 if __name__ == '__main__':
     main()
