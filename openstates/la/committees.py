@@ -89,6 +89,10 @@ class LACommitteeScraper(CommitteeScraper):
                 elif comm_name.endswith(', Ex Officio'):
                     mtype = 'ex officio'
                     comm_name = comm_name.replace(', Ex Officio', '')
+                elif comm_name.endswith(", Interim Member"):
+                    mtype = 'interim'
+                    comm_name = comm_name.replace(", Interim Member", "")
+
 
                 if comm_name.startswith('Joint'):
                     chamber = 'joint'

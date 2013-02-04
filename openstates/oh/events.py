@@ -103,8 +103,13 @@ class OHEventScraper(EventScraper):
                     datetime = datetime.encode("ascii", "ignore")
 
                     # DAY_OF_WEEK MONTH/DAY/YY %I:%M %p"
-                    datetime = dt.datetime.strptime(datetime,
-                                                    "%A %m/%d/%y %I:%M %p")
+                    try:
+                        datetime = dt.datetime.strptime(datetime,
+                                                        "%A %m/%d/%y %I:%M %p")
+                    except ValueError as e:
+                        self.warning("Bad datestring: %s / %s" % (datetime,
+                                                                  e))
+                        continue
                     event = Event(session,
                                   datetime,
                                   'committee:meeting',

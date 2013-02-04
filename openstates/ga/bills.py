@@ -113,12 +113,12 @@ class GABillScraper(BillScraper):
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
+                "HTS": ["other"],  # House transmitted to senate
                 #"": [],
             }
 
             for action in actions:
                 chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
-                print action
                 bill.add_action(chamber, action['action'], action['date'],
                                 types[action['code']],
                                 _code=action['code'],
