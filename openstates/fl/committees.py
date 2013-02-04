@@ -47,6 +47,7 @@ class FLCommitteeScraper(CommitteeScraper):
         comm.add_source(url)
 
         path = "//a[contains(@href, 'Senators')]/name"
+        seen = set()
         for name in page.xpath(path):
             dt = name.xpath("../../preceding-sibling::dt")
             if dt:
@@ -55,7 +56,9 @@ class FLCommitteeScraper(CommitteeScraper):
                 mtype = 'member'
 
             member = re.sub(r'\s+', ' ', name.text.strip())
-            comm.add_member(member, mtype)
+            if (member, mtype) not in seen:
+                comm.add_member(member, mtype)
+                seen.add((member, mtype))
 
     def scrape_lower_committees(self):
         url = ("http://www.myfloridahouse.gov/Sections/Committees/"
@@ -81,7 +84,6 @@ class FLCommitteeScraper(CommitteeScraper):
         for link in page.xpath('//a[contains(@href, "committees/joint")]/@href'):
             self.scrape_joint_committee(link)
 
-
     def scrape_joint_committee(self, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -95,13 +97,18 @@ class FLCommitteeScraper(CommitteeScraper):
         members = chain(doc.xpath('//a[contains(@href, "MemberId")]'),
                         doc.xpath('//a[contains(@href, "Senators")]'))
 
+        seen = set()
         for a in members:
             parent_content = a.getparent().text_content()
             if ':' in parent_content:
                 title = parent_content.split(':')[0].strip()
             else:
                 title = 'member'
-            comm.add_member(a.text.split(' (')[0].strip(), title)
+
+            name = a.text.split(' (')[0].strip()
+            if (name, title) not in seen:
+                comm.add_member(name, title)
+                seen.add((name, title))
 
         if comm['members']:
             self.save_committee(comm)
