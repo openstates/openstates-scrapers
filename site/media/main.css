@@ -965,9 +965,28 @@ input[type="checkbox"] {
     padding-top: 25px;
 }
 
-#main-table_filter label {  display: inline-block; font-family: Georgia, "Times New Roman", Times, serif;
-font-style: oblique; }
-#main-table_filter input { margin-top: -5px; margin-left: 15px; }
+#main-table_filter input {
+    margin-top: 0px;
+    float:left;
+    margin-right:10px;
+    width: 330px;
+    }
+
+#main-table_filter button{
+    background: url(images/btn_submit.png) top left no-repeat;
+    width: 85px;
+    height: 33px;
+    float: left;
+    }
+
+#main-table_filter  button:hover {
+    background: url(images/btn_submit.png) bottom left no-repeat;
+    width: 85px;
+    height: 33px;
+    float: left;
+    }
+
+
 
 .old-roles-indented {
     padding-left: 20px;
