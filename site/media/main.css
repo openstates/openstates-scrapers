@@ -764,7 +764,7 @@ footer a, footer a:active, footer a:visited { color: #8d8781; text-decoration: u
 #recources { background: url(images/bg_resources.png) top left no-repeat; height: 166px; width: 633px; margin-left: -35px; margin-top: -5px; margin-bottom: 30px;}
 #recources h4 { background: url(images/bg_resourcesTitle.png) top left no-repeat; margin-top: -15px; width: 190px; height: 32px; position: absolute; padding: 13px 0 0 50px; margin-left: 10px;}
 
-#footerLt { width: 280px; margin-right: 30px; padding-right: 30px; float: left; background: url(images/bg_borderFooter.jpg) top right repeat-y; padding-top: 50px; margin-bottom: 20px;}
+#footerLt { width: 280px; margin-right: 30px; padding-right: 30px; float: left; /*  background: url(images/bg_borderFooter.jpg) top right repeat-y; */ padding-top: 50px; margin-bottom: 20px;}
 #footerLt p { font-size: 85%; line-height: 18px; color: #8d8781;}
 
 #footerRt { float: left;}
@@ -1232,7 +1232,7 @@ the cursor from pointer to normal. */
 
 .checkboxlabel{
     padding-left:9px;
-    font-size: 13px;
+    font-size: 14px;
     vertical-align: baseline;
     margin:0;
 }
@@ -1513,4 +1513,42 @@ li.greyArrow:before {content:"»"}
 }
 .x-axis path { display: none; }
 .x-axis text { fill: #504a45; }
+
+/* BILLS SIDEBAR SEARCH */
+
+#sidebarSearch button {
+    float:left;
+    text-indent: 0;
+    color: #635F5C;
+    border: 2px solid #E8EADD;
+    margin-right: 19px;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-size: 15px;
+    padding: 5px 10px;
+    width: 121px;
+    -webkit-border-radius: 7px;
+    -moz-border-radius: 7px;
+    border-radius: 7px;
+
+    background: rgb(240,241,229); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(240,241,229,1) 12%, rgba(249,249,239,1) 50%, rgba(240,241,229,1) 56%, rgba(238,239,224,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(12%,rgba(240,241,229,1)), color-stop(50%,rgba(249,249,239,1)), color-stop(56%,rgba(240,241,229,1)), color-stop(100%,rgba(238,239,224,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(240,241,229,1) 12%,rgba(249,249,239,1) 50%,rgba(240,241,229,1) 56%,rgba(238,239,224,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(240,241,229,1) 12%,rgba(249,249,239,1) 50%,rgba(240,241,229,1) 56%,rgba(238,239,224,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(240,241,229,1) 12%,rgba(249,249,239,1) 50%,rgba(240,241,229,1) 56%,rgba(238,239,224,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(240,241,229,1) 12%,rgba(249,249,239,1) 50%,rgba(240,241,229,1) 56%,rgba(238,239,224,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f0f1e5', endColorstr='#eeefe0',GradientType=0 ); /* IE6-9 */
+
+}
+#sidebarSearch button:hover {
+    background: rgb(229,229,220); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(229,229,220,1) 1%, rgba(239,239,234,1) 44%, rgba(239,239,230,1) 51%, rgba(229,229,220,1) 89%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,rgba(229,229,220,1)), color-stop(44%,rgba(239,239,234,1)), color-stop(51%,rgba(239,239,230,1)), color-stop(89%,rgba(229,229,220,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(229,229,220,1) 1%,rgba(239,239,234,1) 44%,rgba(239,239,230,1) 51%,rgba(229,229,220,1) 89%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(229,229,220,1) 1%,rgba(239,239,234,1) 44%,rgba(239,239,230,1) 51%,rgba(229,229,220,1) 89%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(229,229,220,1) 1%,rgba(239,239,234,1) 44%,rgba(239,239,230,1) 51%,rgba(229,229,220,1) 89%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(229,229,220,1) 1%,rgba(239,239,234,1) 44%,rgba(239,239,230,1) 51%,rgba(229,229,220,1) 89%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e5e5dc', endColorstr='#e5e5dc',GradientType=0 ); /* IE6-9 */
+
+}
 

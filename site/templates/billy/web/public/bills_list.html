@@ -63,7 +63,7 @@ $(document).ready(function(){
         $('[id^="id_chamber"]').attr('checked', '')
     });
 
-    $("#submit").after(reset);
+        // $("#submit").after(reset);
 
     // make rows clickable
     clickable_rows('tbody tr');
@@ -100,9 +100,6 @@ $(document).ready(function(){
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                    <ul>
 
-                      <li>
-                        <input id="submit" type="submit"/>
-                      </li>
 
                       <li>
                         <h6 class="withTipSm"><label for="id_search_text">Search text:</label></h6>
@@ -166,6 +163,13 @@ $(document).ready(function(){
                             <option value='{{value}}' {% if value in form.data.subjects %}selected{% endif %}>{{name}}</option>
                           {% endfor %}
                         </select>
+                      </li>
+
+                      <li>
+                        <button id="submit" type="submit"/><span>{% trans "Submit" %}</span></button>
+                      </li>
+                      <li>
+                        <button id="reset" type="reset"/><span>{% trans "Reset" %}</span></button>
                       </li>
 
                     </ul>

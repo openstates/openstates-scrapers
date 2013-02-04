@@ -126,7 +126,8 @@ $(document).ready(function() {
                 <td>{% for bill in event.related_bills %}
                         {% if bill.bill_id %}
                         <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
-                            >{{bill.bill_id}}</a>
+                            >{{bill.bill_id}}</a>{% if not forloop.last %}{% ifequal forloop.revcounter 2 %} and {% else %}, {% endifequal %}
+                            {% endif %}
                         {% else %}
 {{bill|underscore_field:"scraped_bill_id"}}
                         {% endif %}
