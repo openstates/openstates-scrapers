@@ -43,7 +43,7 @@ $(document).ready(function(){
         allowClear: true
     });
 
-    var reset = $('<input id="clear" type="submit" value="Reset">');
+    var reset = $('<button id="reset" type="reset">{% trans "Reset" %}</button>');
     reset.click(function(event){
 
         // Don't actually submit the page.
@@ -60,10 +60,10 @@ $(document).ready(function(){
         $('#id_search_text').val('');
 
         // Clear the checkboxes.
-        $('[id^="id_chamber"]').attr('checked', '')
+        $('[id^="id_chamber"]').removeAttr('checked');
     });
 
-        // $("#submit").after(reset);
+    $("#reset-li").html(reset);
 
     // make rows clickable
     clickable_rows('tbody tr');
@@ -166,10 +166,9 @@ $(document).ready(function(){
                       </li>
 
                       <li>
-                        <button id="submit" type="submit"/><span>{% trans "Submit" %}</span></button>
+                        <button id="submit" type="submit">{% trans "Submit" %}</button>
                       </li>
-                      <li>
-                        <button id="reset" type="reset"/><span>{% trans "Reset" %}</span></button>
+                      <li id="reset-li">
                       </li>
 
                     </ul>
