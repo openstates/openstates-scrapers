@@ -279,5 +279,7 @@ class FLBillScraper(BillScraper):
                         break
                     vote.other(col.strip())
 
-        vote.validate()
+        # vote.validate()
+        if not vote['motion']:
+            vote['motion'] = '[No motion given.]'
         bill.add_vote(vote)
