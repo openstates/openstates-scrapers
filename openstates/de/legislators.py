@@ -60,28 +60,6 @@ class DELegislatorScraper(LegislatorScraper):
         if photo_url:
             leg['photo_url'] = photo_url[0]
 
-        roles = defaultdict(lambda: {})
-
-        position = 'member'
-        for text in doc.xpath('//td[@width="584"]/descendant::font/text()'):
-            text = text.strip()
-            if text == 'Committee Chair:':
-                position = 'chair'
-            elif text == 'Committee Co-chair:':
-                position = 'co-chair'
-            else:
-                for committee in text.splitlines():
-                    roles[committee].update(
-                        role='committee member',
-                        term=term,
-                        chamber=chamber,
-                        committee=committee,
-                        party=party,
-                        position=position)
-
-        for role in roles.values():
-            leg.add_role(**role)
-
         contact_info = self.scrape_contact_info(doc)
         leg.update(contact_info)
 
