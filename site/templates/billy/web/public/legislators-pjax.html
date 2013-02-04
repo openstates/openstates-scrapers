@@ -1,12 +1,11 @@
 {% load i18n %}
-<div class="fullWidth">
-    <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
-        <h2 class="withTip">{{ metadata.name }} {{ chamber_name }} {{chamber_title}}</h2>
-        <p>{# funfact metadata.abbr #}</p>
-    </div>
-</div>
         <div class="fullWidth" data-pjax="#main">
-           <!-- <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {{chamber_title}}</h2> -->
+            <div class="fullWidth">
+                <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
+                    <h2 class="withTip">{{ metadata.name }} {{ chamber_name }} {{chamber_title}}</h2>
+                    <p>{# funfact metadata.abbr #}</p>
+                </div>
+            </div>
             <div class="nineCol colLt">
                 {% include chamber_select_template %}
                 {% include 'billy/web/public/legislator_table.html' %}
