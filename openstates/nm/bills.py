@@ -321,6 +321,7 @@ class NMBillScraper(BillScraper):
             '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
             '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
             '7814': ('Veto Override Failed Senate', 'bill:veto_override:failed'),
+            '7799': ('Dead', 'other'),
             'SENT': ('Sent to %s', ['bill:introduced', 'committee:referred']),
         }
 
