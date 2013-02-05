@@ -66,7 +66,7 @@ class CTLegislatorScraper(LegislatorScraper):
                         role = 'member'
                     leg.add_role('committee member', term,
                                  chamber='joint',
-                                 committee=comm,
+                                 committee=comm.strip(),
                                  position=role)
 
             self.save_legislator(leg)

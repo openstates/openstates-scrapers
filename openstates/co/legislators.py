@@ -181,16 +181,4 @@ class COLegislatorScraper(LegislatorScraper):
                             )
 
             p.add_source( p_url )
-
-            if 'ctty' in metainf:
-                for ctty in metainf['ctty']:
-                    ctty = clean_committee(ctty)
-                    c_chamber = "joint" if "joint" in ctty.lower() else chamber
-
-                    p.add_role('committee member',
-                        term=session,
-                        chamber=c_chamber,
-                        committee=ctty,
-                        position="member"
-                    )
             self.save_legislator( p )

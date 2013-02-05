@@ -155,7 +155,7 @@ class MNBillScraper(BillScraper):
             other_chamber = 'upper'
         else:
             chamber = 'upper'
-            chamber = 'lower'
+            other_chamber = 'lower'
 
         bill_html = self.urlopen(bill_detail_url)
         doc = lxml.html.fromstring(bill_html)

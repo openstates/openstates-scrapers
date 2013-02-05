@@ -406,6 +406,10 @@ class NMBillScraper(BillScraper):
                 continue
 
             match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            if match is None:
+                self.warning("No match, skipping")
+                continue
+
             bill_type, bill_num, suffix = match.groups()
 
             # adapt to bill_id format

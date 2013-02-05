@@ -6,6 +6,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import clean_committee_name
 
 import scrapelib
+import os.path
+
 
 CAP_ADDRESS = """P. O. Box 1018
 Jackson, MS 39215"""
@@ -60,10 +62,12 @@ class MSLegislatorScraper(LegislatorScraper):
             raise Exception("leg_link is null. something went wrong")
         try:
             url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
+            url_root = os.path.dirname(url)
             details_page = self.urlopen(url)
             root = lxml.etree.fromstring(details_page.bytes)
             party = root.xpath('string(//PARTY)')
             district = root.xpath('string(//DISTRICT)')
+            photo = "%s/%s" % (url_root, root.xpath('string(//IMG_NAME)'))
 
             home_phone = root.xpath('string(//H_PHONE)')
             bis_phone = root.xpath('string(//B_PHONE)')
@@ -93,6 +97,7 @@ class MSLegislatorScraper(LegislatorScraper):
                              role=role,
                              org_info=org_info,
                              url=url,
+                             photo_url=photo,
                              **kwargs)
             leg.add_source(url)
 
