@@ -66,11 +66,12 @@ $(document).ready(function() {
                 <tr class="{% cycle 'even' 'odd' %}">
                     <td><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg" onerror="img_error(this);" /></td>
                     {% if legislator %}
-                        <td><a href="{{ legislator.get_absolute_url }}">{{ legislator.display_name }}</a></td>
+                        <td><a href="{{ legislator.get_absolute_url }}">
+                                {% if committee.chamber == "joint" %}{{legislator.title}}{% endif %}
+                                {{ legislator.display_name }}</a></td>
                         {% else %}
-                        <td>{{ obj.name }}</td>
+                            <td>{{ obj.name }}</td>
                     {% endif %}
-                    <!--<td><img src={{ obj.photo_url }}/></td>-->
                     <td>{{ obj.role|title }}</td>
                     {% if legislator %}
                           <td>{{ legislator.district }}</td>

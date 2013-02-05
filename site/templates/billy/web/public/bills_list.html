@@ -73,13 +73,6 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-  <!--   {#   <span class="tip scout-link withTipSm">
-            {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">{% trans 'Receive alerts about' %} "{{request.GET.search_text}}"</a> {% trans 'with Scout.' %}
-            {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states.' %}</a></span>{% endif %}
-            {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a> {% trans 'with Scout.'%}
-        {% endif %}
-        </span>
-#} -->
         {% if request.GET.search_text and request.user.is_authenticated %}
             {% favorite bill.id "search" %}
         {% endif %}
@@ -101,7 +94,6 @@ $(document).ready(function(){
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                    <ul>
 
-
                       <li>
                         <h6 class="withTipSm"><label for="id_search_text">Search text:</label></h6>
                         <input type="text" name="search_text" id="id_search_text" value="{{form.data.search_text}}"/>
@@ -118,6 +110,7 @@ $(document).ready(function(){
                         </ul>
                       </li>
 
+                    {% if abbr != "all" %}
                       <li>
                         <h6 class="withTipSm"><label for="id_session">Session:</label></h6>
                         <select name="session" id="id_session">
@@ -126,6 +119,7 @@ $(document).ready(function(){
                           {% endfor %}
                         </select>
                       </li>
+                    {% endif %}
 
                       {% if form.fields.chamber.widget.choices|length %}
                       <li>
@@ -141,6 +135,7 @@ $(document).ready(function(){
                       </li>
                       {% endif %}
 
+                    {% if abbr != "all" %}
                       <li>
                         <h6 class="withTipSm"><label for="id_sponsor__leg_id">Sponsor name:</label></h6>
                         <select name="sponsor__leg_id" id="id_sponsor__leg_id">
@@ -167,6 +162,7 @@ $(document).ready(function(){
                           {% endfor %}
                         </select>
                       </li>
+                    {% endif %}
 
                       <li>
                         <button id="submit" type="submit">{% trans "Submit" %}</button>
@@ -186,7 +182,13 @@ $(document).ready(function(){
                 <table class="withFilter">
                     <thead>
                         <tr id="titles">
+                            {% if abbr == "all" %}
+                                <td><h6 class="withTipSm">{% trans "State" %}</h6></td>
+                            {% endif %}
                             <td><h6 class="withTipSm">{% trans "Title" %}</h6></td>
+                            {% if abbr == "all" %}
+                                <td><h6 class="withTipSm">{% trans "Session" %}</h6></td>
+                            {% endif %}
                             <td><h6 class="withTipSm">{% trans "Introduced" %}</h6></td>
                             <td><h6 class="withTipSm">{% trans "Recent Action" %}</h6></td>
                         </tr>
@@ -196,7 +198,11 @@ $(document).ready(function(){
 
                     {% for obj in object_list %}
                         <tr class="{% cycle 'even' 'odd' %}">
-                            {% include rowtemplate_name %}
+                            {% if abbr == "all" %}
+                                {% include "billy/web/public/bills_list_row_with_abbr_and_session.html" %}
+                            {% else %}
+                                {% include "billy/web/public/bills_list_row.html" %}
+                            {% endif %}
                         </tr>
                     {% endfor %}
 
