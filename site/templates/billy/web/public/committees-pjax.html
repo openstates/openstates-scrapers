@@ -9,6 +9,12 @@
                 </div>
             </div>
 
+            <form id="main-table_filter">
+                <input name="search_text" type="search" placeholder="Filter by name, district, party or chamber">
+                <button type="submit">
+                    <span>{% trans "Go" %}</span>
+                </button>
+            </form>
            <!-- <h2><a href="{{metadata.get_absolute_url}}">{{ metadata.name }}</a> {{ chamber_name }} {% trans "Committees" %}</h2>
            -->
             {% include chamber_select_template %}
