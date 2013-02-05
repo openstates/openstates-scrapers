@@ -954,6 +954,11 @@ input[type="checkbox"] {
 }
 /* end bootstrap */
 
+/* The datatable */
+#main-table {
+    clear: both;
+}
+
 /* The datatables filter box. */
 #main-table_filter {
     margin-bottom: 50px;
