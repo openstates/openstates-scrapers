@@ -1456,7 +1456,18 @@ div.notification-preference {
     color:#C69600;
 }
 
-li.greyArrow:before {content:"»"}
+li.greyArrow:before {
+    content:"»";
+    margin-left:-12px;
+    font-size: 20px;
+    font-weight:normal;}
+
+#committees li{
+    font-size:15px;
+    line-height:22px;
+    font-weight:bold;
+    padding-left:12px;
+}
 
 .bold { font-weight: bold;}
 #sponsorList img, .withBorder li{ margin-right:10px}
@@ -1532,6 +1543,8 @@ li.greyArrow:before {content:"»"}
 }
 .x-axis path { display: none; }
 .x-axis text { fill: #504a45; }
+
+
 
 /* BILLS SIDEBAR SEARCH */
 
