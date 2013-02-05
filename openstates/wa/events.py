@@ -30,7 +30,10 @@ class WAEventScraper(EventScraper):
         ret = []
         # ok. game on.
         for ol in ols:
-            ol = ol[0]
+            try:
+                ol = ol[0]
+            except IndexError:
+                continue
             lis = ol.xpath(".//li")
             regex = r'(S|H)J?(R|B|M) \d{4}'
             for li in lis:
@@ -39,8 +42,8 @@ class WAEventScraper(EventScraper):
                 if bill is not None:
                     start, end = bill.regs[0]
                     ret.append({
-                        "bill" : agenda_item[start:end],
-                        "descr" : agenda_item
+                        "bill": agenda_item[start:end],
+                        "descr": agenda_item
                     })
         return ret
 
