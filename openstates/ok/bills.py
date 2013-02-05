@@ -198,16 +198,17 @@ class OKBillScraper(BillScraper):
                             continue
                         votes[vtype].append(name.strip())
 
-            assert len(votes['yes']) == counts['yes']
-            assert len(votes['no']) == counts['no']
-            assert len(votes['other']) == counts['other']
-
             if passed is None:
                 passed = counts['yes'] > (counts['no'] + counts['other'])
+
+            if not motion:
+                motion = 'Senate Vote' if chamber == 'upper' else 'House Vote'
 
             vote = Vote(chamber, date, motion, passed,
                         counts['yes'], counts['no'], counts['other'],
                         rcs_num=rcs)
+            vote.validate()
+
             vote.add_source(url)
 
             for name in votes['yes']:
