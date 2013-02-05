@@ -365,6 +365,9 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Bond Bill Fact Sheet':
+                bill.add_document('Bond Bill Fact Sheet', a.get('href'),
+                                  mimetype='application/pdf')
             elif a.text == 'Amendments':
                 bill.add_document('Amendments - ' + a.tail.strip(),
                                   a.get('href'), mimetype='application/pdf')
