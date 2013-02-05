@@ -81,7 +81,7 @@ class NCBillScraper(BillScraper):
         data = self.urlopen(bill_detail_url)
         doc = lxml.html.fromstring(data)
 
-        title_div_txt = doc.xpath('//div[@id="title"]/text()')[0]
+        title_div_txt = doc.xpath('//td[@style="text-align: center; width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
         if 'Joint Resolution' in title_div_txt:
             bill_type = 'joint resolution'
             bill_id = bill_id[0] + 'JR ' + bill_id[1:]
@@ -93,7 +93,7 @@ class NCBillScraper(BillScraper):
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
         title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
-        bill_title = doc.xpath(title_style_xpath)[0]
+        bill_title = doc.xpath('//div[@id="title"]/a/text()')[0]
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
         bill.add_source(bill_detail_url)
@@ -113,24 +113,11 @@ class NCBillScraper(BillScraper):
                              mimetype='text/html')
 
         # sponsors
-        pri_td = doc.xpath('//th[text()="Primary:"]/following-sibling::td')
-        pri_text = pri_td[0].text_content().replace(u'\xa0', ' ').split('; ')
-        for leg in pri_text:
-            leg = leg.strip()
-            if leg:
-                if leg[-1] == ';':
-                    leg = leg[:-1]
-                bill.add_sponsor('primary', leg, chamber=chamber)
-
-        # cosponsors
-        co_td = doc.xpath('//th[text()="Co:"]/following-sibling::td')
-        co_text = co_td[0].text_content().replace(u'\xa0', ' ').split('; ')
-        for leg in co_text:
-            leg = leg.strip()
-            if leg and leg != 'N/A':
-                if leg[-1] == ';':
-                    leg = leg[:-1]
-                bill.add_sponsor('cosponsor', leg, chamber=chamber)
+        spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
+        for leg in spon_td.xpath('a'):
+            type = 'primary' if 'Primary' in leg.tail else 'cosponsor'
+            name = leg.text_content().replace(u'\xa0', ' ')
+            bill.add_sponsor('primary', name, chamber=chamber)
 
         # actions
         action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
