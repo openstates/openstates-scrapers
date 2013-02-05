@@ -103,6 +103,12 @@ class TNEventScraper(EventScraper):
                     self.log("Skipping cancelled event.")
                     continue
                 else:
+                    if ' Immediately follows' in datetime_string:
+                        datetime_string, _ = datetime_string.split(
+                            'Immediately follows')
+                        datetime_string = datetime_string.strip()
+                        dtfmt = "%A, %B %d, %Y"
+
                     when = dt.datetime.strptime(datetime_string, dtfmt)
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
