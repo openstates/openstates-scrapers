@@ -127,17 +127,19 @@ $(document).ready(function(){
                         </select>
                       </li>
 
+                      {% if form.fields.chamber.widget.choices|length %}
                       <li>
                         <h6 class="withTipSm"><label for="id_chamber_0">Chamber:</label></h6>
                         <ul class="basline">
                         {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
                           <li>
                             <label for="id_chamber_{{forloop.counter0}}">
-                              <input type="checkbox" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber in form.chamber.data %}checked{% endif %}/><span class="checkboxlabel">{{chamber_name}}</span></label>
+                              <input type="radio" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber == form.chamber.data %}checked{% endif %}/><span class="checkboxlabel">{{chamber_name}}</span></label>
                           </li>
                         {% endfor %}
                         </ul>
                       </li>
+                      {% endif %}
 
                       <li>
                         <h6 class="withTipSm"><label for="id_sponsor__leg_id">Sponsor name:</label></h6>
