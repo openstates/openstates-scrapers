@@ -289,17 +289,12 @@ border-radius: 5px;}
    margin-left:690px;
 }
 
-#shareBtns { float: right; margin-top: 80px; height: 16px; margin-left:200px; width: 40px}
-#shareBtns li { width: 16px; height: 16px; float: right; margin-left: 10px;}
-#shareBtns li a { width: 16px; height: 16px; }
-#facebook a { background: url(images/social_sprites.png) left -188px no-repeat;}
-#facebook a:hover { background: url(images/social_sprites.png) left -52px no-repeat;}
-#twitter a { background: url(images/social_sprites.png) left -103px no-repeat;}
-#twitter a:hover { background: url(images/social_sprites.png) left -1px no-repeat;}
-#twitter a { background: url(images/social_sprites.png) left -103px no-repeat;}
-#twitter a:hover { background: url(images/social_sprites.png) left -1px no-repeat;}
-#youTube a { background: url(images/social_sprites.png) left -137px no-repeat;}
-#youTube a:hover { background: url(images/social_sprites.png) left -86px no-repeat;}
+#shareBtns { float: right; margin-top: 70px; height: 16px; margin-left:10px; width: 300px}
+#shareBtns li { height: 16px; float: right; margin-left: 10px;}
+#shareBtns li a { height: 16px; }
+
+.pluginCountButton {display:none; color:#00FF00}
+
 
 .rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
 .rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
