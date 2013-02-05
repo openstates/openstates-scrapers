@@ -68,8 +68,9 @@ class ALLegislatorScraper(LegislatorScraper):
                 position = position.replace(')', '').lower().strip()
             else:
                 position = 'member'
-            com = com.strip()
+            com = com.replace('Committee', '')
             com = com.replace(" No.","")
+            com = com.strip()
             leg.add_role('committee member', term=leg['roles'][0]['term'],
                          chamber=leg['roles'][0]['chamber'], committee=com,
                          position=position)
