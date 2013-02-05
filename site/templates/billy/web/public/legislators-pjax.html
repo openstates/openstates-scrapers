@@ -6,12 +6,6 @@
                     <p>{# funfact metadata.abbr #}</p>
                 </div>
             </div>
-            <form id="main-table_filter">
-                <input name="search_text" type="search" placeholder="Filter by name, district, party or chamber">
-                <button type="submit">
-                    <span>{% trans "Go" %}</span>
-                </button>
-            </form>
             <div class="nineCol colLt">
                 {% include chamber_select_template %}
                 {% include 'billy/web/public/legislator_table.html' %}

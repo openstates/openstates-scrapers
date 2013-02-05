@@ -429,24 +429,35 @@ function user_profile_form_submit(){
     profile_form.append(lng_input);
 }
 
+function datatables_filterbox_shim(placeholder){
+    /* Could there be a better name for this function and
+    the hackery it inflicts? */
 
-// // Events calendar.
-// var events_pjax_setup = function(){
+    // Select the existing filter box.
+    var filter_box = $("#main-table_filter label input");
+    filter_box = $(filter_box[0]);
 
-//     $('form#toggleBtns button').click(function(e){
+    // Add some attributes.
+    filter_box.attr('placeholder', placeholder);
+    filter_box.attr('name', 'search_text');
 
-//         // Prevent the normal form submission.
-//         e.preventDefault();
+    // Get its parent, then detach it.
+    var filter_parent = filter_box.parent();
+    filter_box.detach();
 
-//         // Derive the form url.
-//         var form_url = $('form#toggleBtns').attr('action');
-//         var value = $(this).attr('value');
-//         form_url = form_url + '?chamber=' + encodeURIComponent(value);
+    // Wrap it in a form.
+    var form = $('<form id="main-table_filter" class="colRt"></form>');
+    form.prepend(filter_box);
 
-//         // Use pjax to retrieve and insert the new content.
-//         $.pjax({
-//               url: form_url,
-//               container: 'div[data-pjax]'
-//         });
-//     });
-// };
+    // Attach it again.
+    var toggle_buttons = $("#toggleBtns");
+    // toggle_buttons.addClass('sixCol');
+    toggle_buttons.addClass('colLt');
+    toggle_buttons.css('margin-right', '0px');
+    form.insertAfter(toggle_buttons);
+
+    // Nuke the data tables filter div.
+    $('.dataTables_filter').remove();
+
+
+}

@@ -31,9 +31,7 @@ $(document).ready(function() {
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
-            oLanguage: {
-                "sSearch": "Type in a name, district, party or chamber to filter table below: "
-            },
+            oLanguage: {"sSearch": ""},
             aoColumnDefs: [
                     {"iDataSort": 1, "aTargets": [2]},
                     {"bVisible": false, "aTargets": [1]}
@@ -61,6 +59,13 @@ $(document).ready(function() {
 
     // And re-run clackable_rows.
     doc.bind('pjax:complete', {}, _clickable_rows);
+
+    // And the filter box shim.
+    doc.bind('pjax:complete', {}, function(){
+        datatables_filterbox_shim('Filter by name, district, party, or chamber'
+        );
+        $("input[name='search_text']").css('width', '275px');
+        });
 
     var initialize_page = 'pjax:complete'
     doc.trigger(initialize_page);

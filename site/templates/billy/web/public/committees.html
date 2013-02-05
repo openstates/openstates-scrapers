@@ -52,7 +52,7 @@ $(document).ready(function(){
             bDestroy: true,
             aoColumns: aoColumns,
             "oLanguage": {
-                "sSearch": "Type in a committee or sponsor name to filter the table below: "
+                "sSearch": ""
             }
         });
     }
@@ -69,6 +69,11 @@ $(document).ready(function(){
 
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
+
+    // And the filter box shim.
+    doc.bind('pjax:complete', {}, function(){
+        datatables_filterbox_shim('Filter by chamber, committee name, or member name')
+    });
 
     var initialize_page = 'pjax:complete'
     doc.trigger(initialize_page);
