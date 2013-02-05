@@ -14,21 +14,6 @@ $(document).ready( function() {
     doc.bind("keydown", "alt+c", function(){window.location = '/{{abbr}}/committees/'});
     doc.bind("keydown", "esc", function(){$('#id_q').focus()});
 
-    // add gigya
-    var ua = new gigya.socialize.UserAction();
-    ua.setTitle($('title').text());
-    var params = {
-        containerID: 'shareBtns',
-        iconsOnly: true,
-        layout: 'horizontal',
-        noButtonBorders: true,
-        shareButtons: 'facebook,twitter',
-        shortURLs: 'never',
-        showCounts: 'none',
-        userAction: ua
-    };
-    gigya.socialize.showShareBarUI(params);
-
     // Favorite buttons.
     $(".favorite-button").click(function(event){
         var favorite_div = $(this).parent(),

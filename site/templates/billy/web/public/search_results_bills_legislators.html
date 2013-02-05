@@ -20,7 +20,7 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-        <h2>{{bill_results.count|apnumber|capfirst}}
+        <h2>{{bill_result_count|apnumber|capfirst}}
             <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
             {% trans "bills" %} {{scope_name|default:''}}
             {% if found_by_id %} {% trans "found with ids like" %}
