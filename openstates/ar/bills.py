@@ -2,9 +2,7 @@ import re
 import csv
 import StringIO
 import datetime
-import collections
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
@@ -65,7 +63,11 @@ class ARBillScraper(BillScraper):
 
             bill = Bill(session, chamber, bill_id, row[3], type=bill_type)
             bill.add_source(url)
-            bill.add_sponsor('primary', row[11])
+
+            primary = row[11]
+            if not primary:
+                primary = row[12]
+            bill.add_sponsor('primary', primary)
 
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
                            "%s/Public/%s.pdf" % (
