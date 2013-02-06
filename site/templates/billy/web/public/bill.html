@@ -29,10 +29,14 @@
 {% block content %}
 <div class="fullWidth tip clearfix">
       <ul class="inlineList tip noSpace" id="billLinks">
-          <li><a href="#votes">{% trans "Votes" %}</a> |</li>
-          <li><a href="#actions">{% trans "Actions" %}</a> |</li>
-          <li><a href="#billtext">{% trans "Bill Text" %}</a> |</li>
-          <li><a href="#events">{% trans "Events" %}</a></li>
+          <li><a href="#votes">{% trans "Votes" %}</a></li>
+          <li>|<a href="#actions">{% trans "Actions" %}</a></li>
+          {% if bill.versions or bill.documents %}
+              <li>|<a href="#billtext">{% trans "Bill Text" %}</a></li>
+          {% endif %}
+          {% if events|length > 0 %}
+              <li>|<a href="#events">{% trans "Events" %}</a></li>
+          {% endif %}
       </ul>
 </div>
         <ul class="breadcrumb floatedList clearfix">
