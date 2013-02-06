@@ -296,7 +296,7 @@ border-radius: 5px;}
 .pluginCountButton {display:none; color:#00FF00}
 
 
-.rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
+.rssIcon { background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
 .rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
 
 
@@ -650,7 +650,7 @@ legend { font-size: 115%; font-weight: bold; padding-bottom: 15px; display: bloc
 fieldset li { margin-bottom: 5px; }
 table .right { text-align: right;}
 
-input[type="radio"] { float: left; margin-right: 5px; margin-top: 3px;}
+input[type="radio"] {margin-right: 5px; margin-top: 3px;}
 
 .pagination-links .pagesNum { float: right; }
 .pagination-links span { float: left; margin-top: 27px}
