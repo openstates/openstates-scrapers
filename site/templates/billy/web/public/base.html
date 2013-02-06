@@ -10,9 +10,6 @@
     <script>var _sf_startpt=(new Date()).getTime()</script>
     <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'select2-2.0/select2.css' %}"/>
-    <!--[if IE 8]>
-    	<link rel="stylesheet" type="text/css" href="{% static 'ie8.css' %}"/>
-    <![endif]-->
 
     <script src="{% static 'js/jquery-1.9.0.min.js' %}"></script>
     <script src="{% static 'js/jquery.hotkeys.min.js' %}"></script>
@@ -21,8 +18,10 @@
     <script type="text/javascript" src="//use.typekit.net/xau7dem.js"></script>
     <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
     <script src="{% static 'js/jquery.calendar-widget.js' %}"></script>
+    <script src="https://s3.amazonaws.com/assets.sunlightfoundation.com/social/scripts/simple-socialite-pack.min.js"></script>
 
-    <!--[if lt IE 9]>
+    <!--[if IE 8]>
+    <link rel="stylesheet" type="text/css" href="{% static 'ie8.css' %}"/>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <script src="{% static 'js/jquery-placehold.min.js' %}"></script>
     <script>
@@ -90,24 +89,7 @@
         </form>
         <h1 class="clearfix"><a class="textReplace" href="/">Open States</a></h1>
 
-        <div id="shareBtns">
-            <ul>
-                <li><a href="https://twitter.com/share" class="twitter-share-button">Tweet</a></li>
-
-                <li><div class="fb-like" data-send="false" data-layout="button_count" data-width="450" data-show-faces="false"></div>
-            <div id="fb-root"></div>
-                </li>
-            <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-            <script>(function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) return;
-              js = d.createElement(s); js.id = id;
-              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));</script>
-            </ul>
-        </div>
-
+        <div class="share-buttons" data-socialite="auto" data-services="twitter,facebook"> </div>
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% region_select_form abbr %}
