@@ -1,4 +1,5 @@
 import re
+import collections
 from operator import methodcaller
 
 import lxml.html
@@ -19,10 +20,15 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     res = []
     while True:
         try:
-            res.append((fields.pop(), vals.pop()))
+            _field = fields.pop()
+            _value = vals.pop()
         except IndexError:
             break
-    res.append(('street', ', '.join(vals)))
+        else:
+            if _value.strip():
+                res.append((_field, _value))
+    if vals:
+        res.append(('street', ', '.join(vals)))
     return res
 
 
@@ -64,11 +70,12 @@ class CALegislatorScraper(LegislatorScraper):
         xpath = 'td[contains(@class, "views-field-field-%s-%s")]%s'
 
         xp = {
-            'url':      ('lname-value-1', '/a/@href'),
-            'district': ('district-value', '/text()'),
-            'party':    ('party-value', '/text()'),
-            'full_name':     ('feedbackurl-value', '/a/text()'),
-            'address':  ('feedbackurl-value', '/p/text()')
+            'url':       [('lname-value-1', '/a/@href')],
+            'district':  [('district-value', '/text()')],
+            'party':     [('party-value', '/text()')],
+            'full_name': [('feedbackurl-value', '/a/text()')],
+            'address':   [('feedbackurl-value', '/p/text()'),
+                          ('feedbackurl-value', '/p/font/text()')]
             }
 
         titles = {'upper': 'senator', 'lower': 'member'}
@@ -80,17 +87,14 @@ class CALegislatorScraper(LegislatorScraper):
 
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
-        res = {}
-        for k, v in xp.items():
+        res = collections.defaultdict(list)
+        for k, xpath_info in xp.items():
+            for vals in xpath_info:
+                f = funcs.get(k, rubberstamp)
+                vals = (titles[chamber],) + vals
+                vals = map(f, map(strip, tr_xpath(xpath % vals)))
 
-            f = funcs.get(k, rubberstamp)
-            v = (titles[chamber],) + v
-            v = map(f, map(strip, tr_xpath(xpath % v)))
-
-            if len(v) == 1:
-                res[k] = v[0]
-            else:
-                res[k] = v
+                res[k].extend(vals)
 
         # Photo.
         try:
@@ -107,12 +111,12 @@ class CALegislatorScraper(LegislatorScraper):
             # case this awful hack is helpful.
             addresses = map(dict, filter(None, [addresses]))
 
-        for x in addresses:
-            try:
-                x['zip'] = x['zip'].replace('CA ', '')
-            except KeyError:
-                # No zip? Toss.
-                addresses.remove(x)
+        for address in addresses[:]:
+
+            # Toss results that don't have required keys.
+            if not set(['street', 'city', 'zip']) < set(address):
+                if address in addresses:
+                    addresses.remove(address)
 
         # Re-key the addresses
         addresses[0].update(type='capitol', name='Capitol Office')
@@ -135,14 +139,22 @@ class CALegislatorScraper(LegislatorScraper):
 
         # Remove junk from assembly member names.
         junk = 'Contact Assembly Member '
-        res['full_name'] = res['full_name'].replace(junk, '')
+        res['full_name'] = res['full_name'].pop().replace(junk, '')
 
-        # convert party
-        if res['party'] == 'Democrat':
-            res['party'] = 'Democratic'
+        # Normalize party.
+        for party in res['party'][:]:
+            if party:
+                if party == 'Democrat':
+                    party = 'Democratic'
+                res['party'] = party
+                break
+            else:
+                res['party'] = None
+
+        res['url'] = res['url'].pop()
+
         # strip leading zero
-        res['district'] = str(int(res['district']))
-
+        res['district'] = str(int(res['district'].pop()))
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
         leg.update(**res)
