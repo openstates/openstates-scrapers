@@ -990,6 +990,7 @@ input[type="checkbox"] {
 
 .old-roles-indented {
     padding-left: 20px;
+    clear: both;
 }
 
 /* <pre> codeness */
@@ -1031,6 +1032,7 @@ pre {
     height: 33px;
     float: left;
 }
+<<<<<<< Updated upstream
 
 #profile_form button:hover {
     background: url(images/btn_submit.png) bottom left no-repeat;
