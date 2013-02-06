@@ -58,7 +58,9 @@ $(document).ready(function(){
 
     // Tell pjax not to jump to the top of the
     // page after loading.
-    $.pjax.defaults.scrollTo = false;
+    if ($.pjax.defaults != undefined){
+        $.pjax.defaults.scrollTo = false;
+    }
 
     var doc = $(this);
 
