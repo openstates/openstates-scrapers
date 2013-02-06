@@ -22,7 +22,7 @@
       {% else %}
         <ul class="inlineList noSpace">
         {% for member, legislator_object in committee.members_objects %}
-          {% if member.leg_id %}
+          {% if legislator_object %}
             <li>
                 <a class="tip withTip" href="{{legislator_object.get_absolute_url}}">{{legislator_object.display_name}}{% if not forloop.last %},{% else %}{% endif %}</a>
             </li>

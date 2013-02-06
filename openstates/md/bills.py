@@ -277,8 +277,11 @@ class MDBillScraper(BillScraper):
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
             passed = True
+        elif 'Rejected' in motion:
+            motion = motion.split(' Rejected')[0]
+            passed = False
         else:
-            raise Exception('unknown motion')
+            raise Exception('unknown motion: %s' % motion)
 
         vote = Vote(chamber=chamber, date=None, motion=motion,
                     yes_count=int(yes_count), no_count=int(no_count),

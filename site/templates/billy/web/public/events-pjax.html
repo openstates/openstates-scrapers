@@ -1,0 +1,9 @@
+{% load url from future %}
+{% load customtags %}
+    <ul id="events-list">
+    {% for event in events %}
+    <li class="event">
+      {% include event_template %}
+    </li>
+    {% endfor %}
+    </ul>

@@ -3,10 +3,18 @@ import sys
 from os.path import dirname, abspath, join
 import shutil
 
+from billy.core import logging
+
 from models import Feed
 from entities import Extractor
 
 if __name__ == '__main__':
+
+    level = logging.DEBUG
+
+    logging.getLogger('billy.feed-model').setLevel(level)
+    logging.getLogger('billy.entry-model').setLevel(level)
+    logging.getLogger('billu.extractor').setLevel(level)
 
     # The path where the news/blogs code and urls files are located.
     PATH = dirname(abspath(__file__))
@@ -44,14 +52,13 @@ if __name__ == '__main__':
         extractor = Extractor(abbr)
         for url in urls:
             feed = Feed(url, jurisdiction=abbr)
-            import ipdb;ipdb.set_trace()
-            et = list(feed.entries())
-            if not et:
-                import ipdb;ipdb.set_trace()
+            if not feed.is_valid():
+                continue
+
             for entry in feed.entries():
-                extractor.process_entry(entry.entry)
-                entry.finish_report(abbr)
-                entry.save_if_entities_found()
+                if entry.is_valid():
+                    extractor.process_entry(entry.entry)
+                    entry.finish_report(abbr)
+                    entry.save_if_entities_found()
             feed.finish_report()
             feed.save()
-

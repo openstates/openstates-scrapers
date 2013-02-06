@@ -38,25 +38,34 @@
     </ul>
 
     <div class="fullWidth mainModule">
-        <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
-        </span>
         <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
         <div class="medModule">
             <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
             <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-            <p>{{ bill.title|capfirst }}</p>
+            <h5>{{ bill.title|capfirst }}</h5>
         </div>
 
-        <h3>{{version.name}}</h3>
-        <a href="{{version.url}}">Original Document</a>
+        <!-- <h3 class="tenCol colLt">{{version.name}}</h3> -->
 
-        <iframe src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+        <div class="tenCol colLtSm bottomPad">
+            <a class="fourCol colLt" href="{{version.url}}">Original Document</a>
 
-        <h4>Other Versions</h4>
-        <ul>
-            <li><a href="#">Introduced Version</a></li>
-            <li><a href="#">Amended Version</a></li>
-        </ul>
+            <p class="twoCol colLtSm author">Other Versions:</p>
+            <ul>
+                    {% for ver in bill.versions %}
+                    {% if ver.doc_id != version.doc_id %}
+                    <li class="twoCol colLtSm"><a href="{% url 'document' bill.state bill.session bill.bill_id ver.doc_id %}">{{ ver.name }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+        </div>
+
+        {% if version.mimetype == "text/html" %}
+        <iframe class="iframeborder" src="http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+        {% else %}
+        <iframe class="iframeborder" src="http://docs.google.com/viewer?embedded=True&url=http://static.openstates.org/documents/{{abbr}}/{{version.doc_id}}" width="90%" height="800px" longdesc="this is the text for the bill"></iframe>
+
+        {% endif %}
     </div>
 
     {% sources bill %}

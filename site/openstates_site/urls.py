@@ -21,6 +21,8 @@ urlpatterns = patterns('',
      {'template':'flat/categorization.html'}),
     (r'^csv_downloads/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/csv_downloads.html'}),
+    (r'^map_svg/$', 'django.views.generic.simple.direct_to_template',
+     {'template':'flat/openstatesmap.svg'}),
 
     # api docs
     (r'^api/$', 'django.views.generic.simple.direct_to_template',
@@ -38,7 +40,10 @@ urlpatterns = patterns('',
     (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
      {'template':'flat/api/districts.html'}),
 
+    # locksmith & sunlightauth
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
+    (r'', include('sunlightauth.urls')),
+
     (r'^api/', include('billy.web.api.urls')),
     (r'^admin/', include('billy.web.admin.urls')),
     (r'^djadmin/', include(admin.site.urls)),

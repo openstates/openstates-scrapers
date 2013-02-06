@@ -1,4 +1,5 @@
 {% extends "billy/web/public/base.html" %}
+{% load static from staticfiles %}
 {% load url from future %}
 {% load humanize %}
 {% load i18n %}
@@ -15,15 +16,29 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{bill.get_absolute_url}}">
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
     <script>
     $(document).ready(function(){
         $(document).bind("keydown", "alt+j", function(){window.location = '{{bill.get_admin_json_url}}'});
+        make_vote_charts(150, 150, 60);
     });
     </script>
 {% endblock %}
 
 
 {% block content %}
+<div class="fullWidth tip clearfix">
+      <ul class="inlineList tip noSpace" id="billLinks">
+          <li><a href="#votes">{% trans "Votes" %}</a></li>
+          <li>|<a href="#actions">{% trans "Actions" %}</a></li>
+          {% if bill.versions or bill.documents %}
+              <li>|<a href="#billtext">{% trans "Bill Text" %}</a></li>
+          {% endif %}
+          {% if events|length > 0 %}
+              <li>|<a href="#events">{% trans "Events" %}</a></li>
+          {% endif %}
+      </ul>
+</div>
         <ul class="breadcrumb floatedList clearfix">
             <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
             <li>
@@ -40,9 +55,7 @@
             </li>
         </ul>
 
-        <div class="fullWidth mainModule">
-            <span class="tip sources"><a href="https://scout.sunlightfoundation.com/item/state_bill/{{ bill.id }}">{% trans "Receive alerts about" %} {{ bill.bill_id }}</a> {% trans "with Scout." %}
-            </span>
+        <div class="fullWidth mainModule clearfix">
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
                 <li {% if date %}class="active"{% endif %}>
@@ -53,34 +66,49 @@
             </ol>
             <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
             <div class="medModule">
-
-                {% if request.user.is_authenticated %}
-                    {% favorite bill.id "bill" %}
-                {% endif %}
-
-                <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
+                <h2 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h2>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
-                <p>{{ bill.title|capfirst|smallcaps }}</p>
+                <h5>{{ bill.title|capfirst|smallcaps }}</h5>
+                <div class="clearfix">
+                    <div class="tip colLt">
+                    {% if request.user.is_authenticated %}
+                        {% favorite bill.id "bill" %}
+                    {% endif %}
+                    </div>
+                    <div class="colRt">
+
+                    {% with latest_version=bill.versions_preview|last %}
+                    {% if latest_version %}
+                    <a class="viewMore" href="{% url 'document' bill.state bill.session bill.bill_id latest_version.doc_id %}">View latest bill text</a>
+                    {% endif %}
+                    {% endwith %}
+                    </div>
+                </div>
             </div>
 
             <dl class="inlineList">
                 {% if bill.subjects %}
-                <dt class="clear contentBottom">{% trans "Bill Subjects:" %}</dt>
-                <dd>
+                <dt class="h6 clear contentBottom">{% trans "Bill Subjects:" %}</dt>
+                <dd class="clear">
                         {% for subject in bill.subjects %}
                         <span class="label-bill-subject"><a href="{% url 'bills' abbr %}?subjects={{subject}}">{{subject}}</a></span>
                         {% endfor %}
-                        {% endif %}
+                </dd>
+                {% endif %}
+                {% if bill.type|length > 1 %}
+                <dt class="h6 clear contentBottom">{% trans "Additional Bill Types:" %}</dt>
+                <dd class="clear">
                         {% for type in bill.type|slice:"1:" %}
                         <span class="label-bill-type"><a href="{% url 'bills' abbr %}?type={{type}}">{{type|title}}</a></span>
-                </dd>
                 {% endfor %}
+                </dd>
+                {% endif %}
 
-                <dt class="clear contentBottom">{% trans "Session:" %}</dt>
-                <dd><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
+                <dt class="h6 clear contentBottom">{% trans "Session:" %}</dt>
+                <dd class="clear bold"><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
 
-                <dt class="clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
-                <dd class="columnThirds">
+                <dt class="h6 clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
+                <dd class="columnThirds clear">
                     <!-- <h6 class="h6 ulTitle">
                         {% with sponsor=bill.sponsors_manager.first_primary %}
                             {% if sponsor.leg_id %}
@@ -99,47 +127,68 @@
                         {% endwith %}
                     </h6>
                 -->
+
+
+<!-- SPONSORS -->
                     <ul class="clearfix" id="sponsorList">
                     {% for sponsor in bill.sponsors_manager.first_fifteen %}
                         {% if sponsor.leg_id %}
-                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+
+                            <li>
+                                <img src="http://static.openstates.org/photos/xsmall/{{sponsor.leg_id}}.jpg" onerror="img_error(this);" />
+                                <div>
+                                    <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                                    <p class="sponsor-type bold">{{ sponsor.type }}</p>
+                                    <p class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) </p>
+                                    <p class="tip sponsor-type">{% trans "District" %} {{ sponsor.context_role.district }}</p>
+                                </div>
+                            </li>
                         {% else %}
                             {% if sponsor.committee_id %}
-                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a></li>
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. #}
-                                <li><span class="sponsorName">{{ sponsor.name }}</span>
+                                <li><span class="sponsorName">{{ sponsor.name }}</span></li>
                             {% endif %}
-                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endif %}
                     {% endfor %}
                     {% if show_all_sponsors %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% for sponsor in remainder %}
                         {% if sponsor.leg_id %}
-                            <li><a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
-                                <span class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }}) {% trans "Dist." %} {{ sponsor.context_role.district }}</span>
+                            <li>
+                                <a href="{{ sponsor.get_absolute_url }}">{{ sponsor.display_name }}</a>
+                                <p class="tip sponsor-type">({{ sponsor.context_role.party|party_noun }})</p>
+                                 <p class="tip sponsor-type">{% trans "District" %} {{ sponsor.context_role.district }}</p>
+                            </li>
                         {% else %}
                             {% if sponsor.committee_id %}
-                                <li><a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                <li>
+                                    <a href="{% url 'committee' abbr sponsor.committee_id %}">{{ sponsor.name }}</a>
+                                </li>
                             {% else %}
                                 {# Sponsor had no leg_id or was inactive. #}
-                                <li><span class="sponsorName">{{ sponsor.name }}</span>
+                                <li>
+                                    <p class="sponsorName">{{ sponsor.name }}</p>
                             {% endif %}
-                        {% endif %} <span class="tip sponsor-type">{{ sponsor.type }}</span></li>
+                        {% endif %}
+                                    <p class="tip sponsor-type">{{ sponsor.type }}</p>
+                                </li>
                         {% endfor %}
                         {% endwith %}
                     {% else %}
                         {% with remainder=bill.sponsors_manager.first_fifteen_remainder %}
                         {% if remainder|length %}
-                        <li><a class="viewMore" href="?show_all_sponsors=True">{% blocktrans with count=remainder|length|apnumber %} View {{ count}} other{% endblocktrans %}{{ remainder|length|pluralize}}</a></li>
+                        <li>
+                            <a class="viewMore" href="?show_all_sponsors=True">{% blocktrans with count=remainder|length|apnumber %} View {{ count}} other{% endblocktrans %}{{ remainder|length|pluralize}}</a>
+                        </li>
                         {% endif %}
                         {% endwith %}
                     {% endif %}
                     </ul>
 
                 {% if bill.quality_exceptions %}
-                <dt class="clear contentBottom">
+                <dt class="clearfix contentBottom">
                 <a class="missingInfo" title="{% trans 'Our Methodology' %}" href="/methodology/">?</a>
                 {% trans "Notes:" %}
                 </dt>
@@ -157,75 +206,55 @@
                 {% endif %}
                 </dd>
              </dl>
-             <div class="clear"></div>
          </div>
 
-{% include "billy/web/public/developer_bill.html" %}
+        <div id="votes" class="module clearfix">
+            <h3 class="moduleTitle">{% trans "Votes" %}</h3>
 
-         {% if bill.versions or bill.documents %}
-            <div class="module">
-                <div class="eightCol colLt">
-                    {% if bill.versions %}
-                    <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
-                        <ul class="inlineThirds">
-                        {% for version in bill.versions_preview %}
-                            <li class="{% cycle 'one' 'two' 'three' %}">
-                                <a href="{{version.url}}">{{ version.name }}</a>
-                                {% if version.mimetype %}[{{ version.mimetype}}]{% endif %}
-                            </li>
-                        {% endfor %}
+                {% if bill.votes_manager.count %}
+                <ul class="largerList voteChart">
+                    {% for vote in bill.votes_manager %}
+                    <li class="sixCol {% cycle "colLt" "colRt" %} voteChart">
+                        <time class="published" datetime="{{vote.date|date:"Y-m-d"}}">{{vote.date|date:"M j, Y"}}</time>
+                        <h6><a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a></h6>
+                        {% if vote.has_votes %}
+                        {% include "billy/web/public/_vote_chart_table.html" %}
+                        {% else %}
+                            {% trans "No vote counts available." %}
+                        {% endif %}
+                        {% if not vote.has_voters %}
+                        <span class="right"><b>{{vote_value|title}}</b></span>
+                            {% trans "No vote roll call available." %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>{% trans "There are currently no roll call votes recorded for this bill." %}
+                {% endif %}
+       </div>
 
-                        </ul>
-                        <div class="clear">
-                        {% with remainder=bill.versions_remainder %}
-                            {% if remainder %}
-                            <a class="viewMore" href="versions/">
-                                {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="fourCol colRt">
-                    {% if bill.documents %}
-                        <h4>{% trans "Documents" %}</h4>
-                            {% for document in bill.documents_preview %}
-                                <ul>
-                                    <li><a href="{{document.url}}">{{ document.name }}</a>
-                                    {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
-                                    </li>
-                                </ul>
-                            {% endfor %}
-                            {% with remainder=bill.documents_remainder %}
-                                {% if remainder %}
-                                <a class="viewMore" href="documents/">
-                                    {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
-                                {% endif %}
-                            {% endwith %}
-                            <div class="clear"></div>
-                    {% endif %}
-                </div>
-                <div class="clear"></div>
-            </div>
-        {% endif %}
+       <div id="actions" class="module fullWidth">
+            <h3 class="moduleTitle">{% trans "Actions" %}</h3>
 
-        <div class="module">
-            <h3 class="moduleTitle">{% trans "Activity" %}</h3>
-            <div class="eightCol colLt">
-                <h4>{% trans "Actions" %}</h4>
+            <div class="fullWidth clearfix">
                 <table class="normalTable" id="actions-table">
                     <thead>
                         <tr id="titles">
-                            <th style="min-width: 6em;">{% trans "Date" %}</th>
+                            <th style="min-width: 7em;">{% trans "Date" %}</th>
+                            {% if metadata.chambers|length > 1 %}
                             <th>{% trans "Chamber" %}</th>
-                            <th></th>
+                            {% endif %}
+                            <th>&nbsp;</th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for action in bill.actions_manager %}
                         <tr class="action {% cycle 'even' 'odd' %}" {% if 'other' in action.type %}data-actiontype="other"{% endif %}>
                             <td class="tip withTipSm">{{ action.date|date:"M j, Y"}}</td>
+                        {% if metadata.chambers|length > 1 %}
                             <td>{{ action.actor_name }}</td>
+                        {% endif %}
                         {% if action.related_votes %}
                         <td>{{ action.action_display|safe|smallcaps }}
                             {% for vote in action.related_votes %}
@@ -240,43 +269,63 @@
                     </tbody>
                 </table>
             </div>
-            <div class="fourCol colRt">
-                <h4>{% trans "Votes" %}</h4>
-                {% if bill.votes_manager.count %}
-                <ul class="largerList voteChart">
-                    {% for vote in bill.votes_manager %}
-                    <li>
-                        <time class="published">{{vote.date|date:"M j, Y"}}</time>
-                        <a href="{{ vote.get_absolute_url }}">({{vote.chamber_name}}) {{vote.motion|truncatewords:30}}</a>
-                        {% if vote.has_votes %}
-                        <ul class="barChart">
-                            <li class="yes">
-                                <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                            </li>
-                            <li class="no clear">
-                                <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                                <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                            </li>
-                        </ul>
-                        {% else %}
-                            {% trans "No vote counts available." %}
-                        {% endif %}
-                        {% if not vote.has_voters %}
-                        <span class="right"><b>{{vote_value|title}}</b></span>
-                            {% trans "No vote roll call available." %}
-                        {% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                {% trans "No vote data is available yet." %}
-                {% endif %}
-            </div>
+
             <div class="clear"></div>
         </div>
+
+
+ {% if bill.versions or bill.documents %}
+    <div id="billtext" class="module">
+        <div class="eightCol colLt">
+            {% if bill.versions %}
+            <h3 class="moduleTitle">{% trans "Bill Text" %}</h3>
+                <ul class="inlineThirds">
+                {% for version in bill.versions_preview %}
+                    <li class="{% cycle 'one' 'two' 'three' %}">
+                    <a href="{% url 'document' bill.state bill.session bill.bill_id version.doc_id %}">{{ version.name }}</a>
+                        {% with mimetype=version.mimetype %}
+                        {% include "billy/web/public/_mimetype_tag.html" %}
+                        {% endwith %}
+                    </li>
+                {% endfor %}
+
+                </ul>
+                <div class="clear">
+                {% with remainder=bill.versions_remainder %}
+                    {% if remainder %}
+                    <a class="viewMore" href="versions/">
+                        {% blocktrans with count=remainder|length|apnumber %} View {{ count }} other{% endblocktrans %}{{remainder|length|pluralize}} </a></li>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="fourCol colRt">
+            {% if bill.documents %}
+                <h4>{% trans "Documents" %}</h4>
+                    {% for document in bill.documents_preview %}
+                        <ul>
+                            <li><a href="{{document.url}}">{{ document.name }}</a>
+                            {% if "+mimetype" in document %}[{{ document|plusfield:"mimetype"}}]{% endif %}
+                            </li>
+                        </ul>
+                    {% endfor %}
+                    {% with remainder=bill.documents_remainder %}
+                        {% if remainder %}
+                        <a class="viewMore" href="documents/">
+                            {% blocktrans with count=remainder|length|apnumber %}View {{ count }} other{% endblocktrans %}{{ remainder|length|pluralize}} </a></li>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="clear"></div>
+            {% endif %}
+        </div>
+        <div class="clear"></div>
+    </div>
+{% endif %}
+
+
 {% if events|length > 0 %}
-        <div class="fullWidth module">
+        <div id="events" class="fullWidth module">
             <h3 class="moduleTitle">{% trans "Events" %}</h3>
             <table>
                 <thead>

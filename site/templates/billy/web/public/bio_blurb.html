@@ -1,21 +1,22 @@
 {% load humanize %}
 {% load i18n %}
 {% load customtags %}
+<p>
 {% blocktrans with name=legislator.display_name chamber=legislator.chamber_name|title district=legislator.district state=legislator.metadata.name chamber_name=legislator.chamber_name|title com_count=legislator.committees.count|apnumber count counter=legislator.committees.count %}
    {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committee,
 {% plural %}
-   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of {{com_count}} committees,
+   {{name}} represents {{chamber}} District {{district}} in the {{state}} {{chamber_name}}, is a member of <em>{{com_count}} committees</em>,
 {% endblocktrans %}
 {% with count=legislator.primary_sponsored_bills.count %}
 {% trans "and" %}
   {% if count %}
 
-  {% trans "is the primary sponsor of" %} {{count|apnumber}}
+  {% trans "is the primary sponsor of" %}<em> {{count|apnumber}}
     {% with count=legislator.secondary_sponsored_bills.count %}
       {% if count %}
-      {% trans "bills, and is the secondary sponsor of" %} {{count|apnumber}} {% trans "bills" %}
+      {% trans "bills,"%}</em> {% trans "and is the secondary sponsor of"%}  <em>{{count|apnumber}} {% trans "bills" %}
       {% else %}
-      {% trans "bills" %}.
+      {% trans "bills" %}</em>.
       {% endif %}
     {% endwith %}
 
@@ -32,14 +33,24 @@
   {% endif %}
   {% endwith %}
 
+  </p>
+  {% if "_yearly_contributions" in legislator %}
+    <div id="ie-chart-container">
+        <table>
+            <tbody>
+                <!-- FIXME: these numbers should come from db -->
+                {% for year, amount in legislator|underscore_field:"yearly_contributions" %}
+                    <tr> <td>{{year}}</td> <td>{{amount}}</td> </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-<p>
-  {% if "_total_contributions" in legislator %}
-  {{legislator.title}} {{legislator.last_name}}
-  {% blocktrans with total=legislator|underscore_field:"total_contributions"|intcomma since=legislator|underscore_field:"contributions_start_year" %} has raised ${{total}} since {{since}}. {% endblocktrans %}
-{% endif %}
+    {% endif %}
 {% if legislator.transparencydata_id %}
+    <p>
     {% trans "For detailed campaign finance information visit " %}
     <a href="http://influenceexplorer.com/politician/id/{{legislator.transparencydata_id}}?cycle=-1">Influence Explorer</a>.
+    </p>
 {% endif %}
-</p>
+

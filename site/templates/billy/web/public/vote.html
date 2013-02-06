@@ -1,5 +1,6 @@
 {% extends "billy/web/public/base.html" %}
 {% load url from future %}
+{% load static from staticfiles %}
 {% load customtags %}
 {% load markup_tags %}
 {% load i18n %}
@@ -9,8 +10,7 @@
   {{vote.date|date:"M d, Y"}} {% trans "vote" %} -
   {{vote.bill.bill_id }} -
   {{vote.bill.session_details.display_name}} -
-  {{metadata.legislature_name}} -
-  Open States
+  {{metadata.legislature_name}}
 {% endblock %}
 
 {% block description %}
@@ -19,22 +19,25 @@
 
 {% block headblock %}
     <link rel="canonical" href="{{vote.get_absolute_url}}">
+    <script src="{% static 'js/d3.v3.min.js' %}"></script>
     <script>
     $(document).ready(function(){
         var doc = $(document);
         doc.bind("keydown", "alt+j", function(){window.location = '{{vote.get_admin_json_url}}'});
+        make_vote_charts(200, 150, 60);
         });
     </script>
 {% endblock %}
 
 {% block content %}
         <div class="fullWidth mainModule">
-            <div id="billState" class="passed">{{vote.passed|yesno:"Passed,Failed,Unknown"}}</div>
             <div><!--  class="medModule"> -->
-                <h1 class="withTip" style="padding-top: 30px;">
+                <h2 class="withTipbillState" style="padding-top: 30px;">
                     {{ vote.chamber_name }} {% trans "Vote on" %} <a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a>
                     ({{ vote.date|date:"M j, Y"}})
-                </h1>
+                </h2>
+                <div id="billState" class="passed"><p>{% trans "Bill Status:" %} <span>{{vote.passed|yesno:"Passed,Failed,Unknown"}}</span></p></div>
+
                 <p class="tip">{{bill.title|smallcaps}}</p>
             </div>
             <div class="eightCol colLt clear">
@@ -42,21 +45,9 @@
                 <!-- <time datetime="" class="published" pubdate>{{ vote.date|date:"M j, Y"}}</time>
 
                 <h4>Vote Breakdown</h4> -->
+
                 {% if vote.has_votes %}
-                <ul class="barChart">
-                    <li class="yes">
-                        <span class="tagValue" style="width:{{vote.yes_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.yes_count}} {% trans "Yes" %}</span>
-                    </li>
-                    <li class="no">
-                        <span class="tagValue" style="width:{{vote.no_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.no_count}} {% trans "No" %}</span>
-                    </li>
-                    <li class="no clear">
-                        <span class="tagValue" style="width:{{vote.other_ratio}}%;"></span>
-                        <span class="tagNumber">{{vote.other_count}} {% trans "Other" %}</span>
-                    </li>
-                </ul>
+                    {% include "billy/web/public/_vote_chart_table.html" %}
                 {% else %}
                     {% if vote.is_probably_a_voice_vote %}
                     <p>{% blocktrans %} <strong>No vote counts were available for this motion.</strong> This vote appears to be a

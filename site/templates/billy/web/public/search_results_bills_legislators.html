@@ -15,13 +15,12 @@
 <script>
 $(document).ready(function() {
     clickable_rows("#main-table tbody tr");
-    fix_images();
 });
 </script>
 {% endblock %}
 
 {% block content %}
-        <h2>{{bill_results.count|apnumber|capfirst}}
+        <h2>{{bill_result_count|apnumber|capfirst}}
             <a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a>
             {% trans "bills" %} {{scope_name|default:''}}
             {% if found_by_id %} {% trans "found with ids like" %}
@@ -61,7 +60,7 @@ $(document).ready(function() {
 
         {% if not found_by_id %}
         <div class="fullWidth">
-            {% with count=legislators_list.count %}
+            {% with count=legislators_list|length %}
             <h2>{{count|apnumber|capfirst}} {{scope_name|default:''}} {% trans "legislator name" %}{{count|pluralize}} {% trans "contained" %} <em>"{{search_text}}"</em></h2>
             {% if count %}
             <table id="main-table" class="withFilter">
@@ -82,9 +81,6 @@ $(document).ready(function() {
                 </tbody>
             </table>
         </div>
-        {% if more_legislators_available %}
-            <a class="viewMore" href="{% url 'show_more_legislators' abbr %}?{{request.GET.urlencode}}">{% trans "Show more search results." %}</a>
-        {% endif %}
         <div class="clear"></div>
         {% endif %}
         {% endwith %}

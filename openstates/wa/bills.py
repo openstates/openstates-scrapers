@@ -82,6 +82,7 @@ class WABillScraper(BillScraper):
         for bill_id in list(set(bill_id_list)):
             bill = self.scrape_bill(chamber, session, bill_id)
             bill['subjects'] = self._subjects[bill_id]
+            self.fix_prefiled_action_dates(bill)
             self.save_bill(bill)
 
     def scrape_bill(self, chamber, session, bill_id):
@@ -216,6 +217,22 @@ class WABillScraper(BillScraper):
                 attrs = dict(actor=curchamber, date=date, action=action)
                 attrs.update(self.categorizer.categorize(action))
                 bill.add_action(**attrs)
+
+    def fix_prefiled_action_dates(self, bill):
+        '''Fix date of 'prefiled' actions.
+        '''
+        now = datetime.datetime.now()
+        for action in bill['actions']:
+            date = action['date']
+            if now < date:
+                if 'prefiled' in action['action'].lower():
+                    # Reduce the date by one year for prefiled dated in the
+                    # future.
+                    action['date'] = datetime.datetime(
+                        year=date.year - 1, month=date.month, day=date.day)
+                else:
+                    msg = 'Found an action date that was in the future.'
+                    raise Exception(msg)
 
     def scrape_votes(self, bill):
         session = bill['session']

@@ -15,12 +15,7 @@ $(document).ready(function() {
 
     var _clickable_rows = function(){
         clickable_rows('#main-table tbody tr');
-        }
-
-    $('img.legImgSmall').error(function() {
-            $(this).attr("src", "{% static "images/placeholder.png" %}").attr(
-                "title", "No Photo Available");
-    });
+    }
 
     var datatable_setup = function(){
 
@@ -36,14 +31,14 @@ $(document).ready(function() {
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
-            "oLanguage": {
-                "sSearch": "Type in a name, district, party or chamber to filter table below: "
-            },
-            "aoColumnDefs": [
+            oLanguage: {"sSearch": ""},
+            aoColumnDefs: [
                     {"iDataSort": 1, "aTargets": [2]},
                     {"bVisible": false, "aTargets": [1]}
-                ]
+            ],
         });
+        jQuery.fn.dataTableExt.oSort['string-asc'] = sort_func_asc;
+        jQuery.fn.dataTableExt.oSort['string-desc'] = sort_func_desc;
 
         // Sort it.
         datatable.fnSort([[2, 'asc']]);
@@ -51,7 +46,9 @@ $(document).ready(function() {
 
     // Tell pjax not to jump to the top of the
     // page after loading.
-    $.pjax.defaults.scrollTo = false;
+    if ($.pjax.defaults != undefined){
+        $.pjax.defaults.scrollTo = false;
+    }
 
     var doc = $(this);
 
@@ -59,14 +56,18 @@ $(document).ready(function() {
     // the listeners to the replaced button elements.
     doc.bind('pjax:complete', {}, pjax_setup);
 
-    // Also fix the image placeholders.
-    doc.bind('pjax:complete', {}, fix_images);
-
     // Reinitialize the datatable too.
     doc.bind('pjax:complete', {}, datatable_setup);
 
     // And re-run clackable_rows.
     doc.bind('pjax:complete', {}, _clickable_rows);
+
+    // And the filter box shim.
+    doc.bind('pjax:complete', {}, function(){
+        datatables_filterbox_shim('Filter by name, district, party, or chamber'
+        );
+        $("input[name='search_text']").css('width', '275px');
+        });
 
     var initialize_page = 'pjax:complete'
     doc.trigger(initialize_page);

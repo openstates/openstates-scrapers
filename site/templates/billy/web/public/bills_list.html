@@ -43,7 +43,7 @@ $(document).ready(function(){
         allowClear: true
     });
 
-    var reset = $('<input id="clear" type="submit" value="Reset">');
+    var reset = $('<button id="reset" type="reset">{% trans "Reset" %}</button>');
     reset.click(function(event){
 
         // Don't actually submit the page.
@@ -60,10 +60,11 @@ $(document).ready(function(){
         $('#id_search_text').val('');
 
         // Clear the checkboxes.
-        $('[id^="id_chamber"]').attr('checked', '')
+        $('[id^="id_chamber"]').removeAttr('checked');
+        $('[id^="id_status"]').removeAttr('checked');
     });
 
-    $("#submit").after(reset);
+    $("#reset-li").html(reset);
 
     // make rows clickable
     clickable_rows('tbody tr');
@@ -72,35 +73,107 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        <span class="tip sources withTipSm">
-            {% if request.GET.search_text %}<a href="https://scout.sunlightfoundation.com/search/state_bills/{{request.GET.search_text|urlencode}}?state_bills[state]={{abbr|upper}}">{% trans 'Receive alerts about' %} "{{request.GET.search_text}}"</a> {% trans 'with Scout.' %}
-            {% if abbr != 'all' %}<span class="tip">{% trans 'Search for bills about' %} "{{request.GET.search_text}}" {% trans 'across' %} <a href="/all/search?search_text={{request.GET.search_text|urlencode}}">{% trans 'all states.' %}</a></span>{% endif %}
-            {% else %} <a href="https://scout.sunlightfoundation.com/">{% trans 'Receive bill alerts' %}</a> {% trans 'with Scout.'%}
-        {% endif %}
-        </span>
-
         {% if request.GET.search_text and request.user.is_authenticated %}
             {% favorite bill.id "search" %}
         {% endif %}
-
-        <h2 id="billSearchTitle">{{ description }}</h2>
+        <div class="fullWidth">
+            <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
+                <h2 class="withTip">{{ description }}</h2>
+                <p>{# funfact metadata.abbr #}</p>
+            </div>
+        </div>
         {% if long_description %}
         <ul id="billSearchLongDesc" class="clearfix">
-            {% for item in long_description %} <li class="tip">{{item}}{% if not forloop.last %}, {% endif %}</li> {% endfor %}
+            <li class="tip">Filtering to only show bills
+            {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </li>
         </ul>
         {% endif %}
-            <div class="twoCol colLtSm filterCol clear">
+            <div class="fourCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
-                    <ul>
-                        <li>
-                            <input id="submit" type="submit"/>
-                        </li>
-                        {{ form.as_ul }}
+                   <ul>
+
+                      <li>
+                        <h6 class="withTipSm"><label for="id_search_text">Search text:</label></h6>
+                        <input type="text" name="search_text" id="id_search_text" value="{{form.data.search_text}}"/>
+                      </li>
+
+                      <li>
+                          <h6 class="withTipSm"><label for="id_status">Status:</label></h6>
+                        <ul class="basline">
+                        {% for value, status in form.fields.status.widget.choices %}
+                          <li>
+                            <label for="id_status_{{forloop.counter0}}">
+                              <input type="checkbox" name="status" value="{{value}}" id="id_status_{{forloop.counter0}}" {% if value in form.status.data %}checked{% endif %}/><span class="checkboxlabel">{{status}}</span></label>
+                        {% endfor %}
+                        </ul>
+                      </li>
+
+                    {% if abbr != "all" %}
+                      <li>
+                        <h6 class="withTipSm"><label for="id_session">Session:</label></h6>
+                        <select name="session" id="id_session">
+                          {% for value, session in form.fields.session.widget.choices %}
+                            <option value="{{value}}" {% if value in form.data.session %}selected{% endif %}>{{session}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+                    {% endif %}
+
+                      {% if form.fields.chamber.widget.choices|length %}
+                      <li>
+                        <h6 class="withTipSm"><label for="id_chamber_0">Chamber:</label></h6>
+                        <ul class="basline">
+                        {% for chamber, chamber_name in form.fields.chamber.widget.choices %}
+                          <li>
+                            <label for="id_chamber_{{forloop.counter0}}">
+                              <input type="radio" name="chamber" value="{{chamber}}" id="id_chamber_{{forloop.counter0}}" {% if chamber == form.chamber.data %}checked{% endif %}/><span class="checkboxlabel">{{chamber_name}}</span></label>
+                          </li>
+                        {% endfor %}
+                        </ul>
+                      </li>
+                      {% endif %}
+
+                    {% if abbr != "all" %}
+                      <li>
+                        <h6 class="withTipSm"><label for="id_sponsor__leg_id">Sponsor name:</label></h6>
+                        <select name="sponsor__leg_id" id="id_sponsor__leg_id">
+                          {% for value, name in form.fields.sponsor__leg_id.widget.choices %}
+                              <option value="{{value}}" {% if value in form.data.sponsor__leg_id %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <h6 class="withTipSm"><label for="id_type">Type:</label></h6>
+                        <select name="type" id="id_type">
+                          {% for value, name in form.fields.type.widget.choices %}
+                            <option value='{{value}}' {% if value == form.data.type %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+
+                      <li>
+                        <h6 class="withTipSm"><label for="id_subjects">Subjects:</label></h6>
+                        <select multiple="multiple" name="subjects" id="id_subjects">
+                          {% for value, name in form.fields.subjects.widget.choices %}
+                            <option value='{{value}}' {% if value in form.data.subjects %}selected{% endif %}>{{name}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+                    {% endif %}
+
+                      <li>
+                        <button id="submit" type="submit">{% trans "Submit" %}</button>
+                      </li>
+                      <li id="reset-li">
+                      </li>
+
                     </ul>
                 </form>
             </div>
-            <div class="tenCol colRt">
+            <div class="eightCol colRt">
                 {% if not object_list.count %}
                     {% trans "No bills found matching those criteria. Try widening your criteria." %}
                 {% else %}
@@ -109,9 +182,15 @@ $(document).ready(function(){
                 <table class="withFilter">
                     <thead>
                         <tr id="titles">
-                            <td>{% trans "Title" %}</td>
-                            <td>{% trans "Introduced" %}</td>
-                            <td>{% trans "Recent Action" %}</td>
+                            {% if abbr == "all" %}
+                                <td><h6 class="withTipSm">{% trans "State" %}</h6></td>
+                            {% endif %}
+                            <td><h6 class="withTipSm">{% trans "Title" %}</h6></td>
+                            {% if abbr == "all" %}
+                                <td><h6 class="withTipSm">{% trans "Session" %}</h6></td>
+                            {% endif %}
+                            <td><h6 class="withTipSm">{% trans "Introduced" %}</h6></td>
+                            <td><h6 class="withTipSm">{% trans "Recent Action" %}</h6></td>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,7 +198,11 @@ $(document).ready(function(){
 
                     {% for obj in object_list %}
                         <tr class="{% cycle 'even' 'odd' %}">
-                            {% include rowtemplate_name %}
+                            {% if abbr == "all" %}
+                                {% include "billy/web/public/bills_list_row_with_abbr_and_session.html" %}
+                            {% else %}
+                                {% include "billy/web/public/bills_list_row.html" %}
+                            {% endif %}
                         </tr>
                     {% endfor %}
 

@@ -28,12 +28,19 @@
 
     <div class="fullWidth module clear">
         <h3 class="moduleTitle">{% trans "Legislators" %}</h3>
-        <div class="twoCol colLt withDash centeredText" id="totalLeg">
-            <ul>
+        <p class="tip">{% trans "Click on a district to view corresponding legislators." %}</p>
+
+        <div class="sixCol colLtSm" id="maptip">
+            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
+            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
+        </div>
+
+        <div class="sixCol colLtSm centeredText bottomDash" id="totalLeg">
+            <ul class="inlineHalves">
                 {% for chamber in chambers %}
-                 <li class="medModule">
+                 <li class="withDash">
                     <a href="{% url 'legislators' metadata.abbr %}?chamber={{chamber.type}}">
-                        <h4 class="titleNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
+                        <h4 class="titleNumber bigNumber withTip">{{ chamber.legislators.count }}<span>{{ chamber.title }}s</span></h4>
                     </a>
                     <ul class="tip noSpace">
                         {% for party, count in chamber.legislators.party_counts.items %}
@@ -45,20 +52,16 @@
 
                  {# if unicameral, put the committee listing here too #}
                  {% if chambers|length == 1 %}
-                 <li class="medModule">
+                 <li class="noDash">
                     <a href="{% url 'committees' metadata.abbr %}">
-                        <h4 class="titleNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
+                        <h4 class="titleNumber bigNumber withTip">{{chambers.0.committees_count}}<span>{% trans "Committees" %}</span></h4>
                     </a>
                 </li>
                 {% endif %}
             </ul>
         </div>
-        <div class="fourCol colLtSm">
-            <div class="mapbox" id="mapbox-{{abbr}}" style="width: 100%; height: 400px"></div>
-            <span id="mbtooltip-{{abbr}}{{chamber.type}}"></span>
-        </div>
+
         <div class="sixCol colRt">
-            <p class="tip centeredText">{% trans "Click on a district to view corresponding legislators." %}</p>
             <div id="results_table"> </div>
         </div>
         <div class="clear"></div>
@@ -79,13 +82,13 @@
 
             {% for chamber in chambers %}
                 <a href="{% url 'committees' abbr %}?chamber={{chamber.type}}">
-                <li class="{% cycle 'one' 'two' %} titleNumber withTip">
+                <li class="{% cycle 'one' 'two' %} titleNumber bigNumber withTip">
                 {{ chamber.committees_count }}<span>{{ chamber.name }} {% trans "Committees" %}</span></li>
                 </a>
             {% endfor %}
             {% if  joint_committee_count %}
             <a href="{% url 'committees' abbr %}?chamber=joint">
-                <li class="three titleNumber withTip">{{ joint_committee_count }}<span>{% trans "Joint Committees" %}</span></li>
+                <li class="three titleNumber bigNumber withTip">{{ joint_committee_count }}<span>{% trans "Joint Committees" %}</span></li>
             </a>
             {% endif %}
         </ul>
@@ -93,29 +96,20 @@
     </div>
     {% endif %}
 
+
+<!-- bills -->
     <div class="fullWidth module">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
-    {% if chambers|length == 2 %}
-    {# bicameral bill view, stacked passed/introduced - side by side chambers #}
         {% for chamber in chambers %}
-        <div class="sixCol {% if forloop.first %} colLt {% else %} colRt {% endif %}">
-            <h4>{{ chamber.name }}</h4>
-            <div class="medModule">
+            {# only show chamber if we have multiple chambers #}
+            {% if chambers|length > 1 %} <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
+            <div class="sixCol colLt voteChart">
                 {% include "billy/web/public/_recently_passed.html" %}
             </div>
-            {% include "billy/web/public/_recently_introduced.html" %}
-        </div>
+            <div class="sixCol colRt voteChart">
+                {% include "billy/web/public/_recently_introduced.html" %}
+            </div>
         {% endfor %}
-
-    {% elif chambers|length == 1 %}
-    {# unicameral bill module, side by side passed/introduced #}
-        <div class="sixCol colLt">
-            {% include "billy/web/public/_recently_passed.html" with chamber=chambers.0 %}
-        </div>
-        <div class="sixCol colRt">
-            {% include "billy/web/public/_recently_introduced.html" with chamber=chambers.0 %}
-        </div>
-    {% endif %}   {# end unicameral bill module #}
 
         <div class="clear"></div>
     </div>
@@ -138,45 +132,61 @@
 
 <!-- mapbox interaction script -->
 <script>
-    var lower_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox,sunlight.{{metadata.abbr}}lower.jsonp';
-    var upper_url = 'http://a.tiles.mapbox.com/v3/mapbox.mapbox,sunlight.{{metadata.abbr}}upper.jsonp';
+    var lower_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{metadata.abbr}}lower.jsonp';
+    var upper_url = 'http://a.tiles.mapbox.com/v3/sunlight.map-1c9njt8o,sunlight.{{metadata.abbr}}upper.jsonp';
     var minMaxZooms = {
-        'wi': [5, 12],
-        'ca': [5, 12],
-        'il': [6, 12],
-        'md': [6, 12],
-        'ut': [6, 12],
-        'hi': [6, 12],
-        'nh': [7, 12],
-        'nc': [5, 12],
-        'nj': [7, 12],
-        'dc': [10, 17],
-        'id': [5, 12],
-        'az': [6, 12],
-        'oh': [6, 12],
-        'mn': [5, 12],
-        'la': [6, 12],
-        'tx': [5, 12],
         'ak': [3, 11],
+        'al': [6, 14],
+        'ar': [6, 14],
+        'az': [6, 13],
+        'ca': [5, 13],
+        'co': [6, 13],
+        'ct': [8, 15],
+        'dc': [11, 17],
         'de': [8, 15],
-        'fl': [5, 13],
-        'mt': [5, 12],
-        'ar': [6, 12],
-        'co': [5, 12],
-        'in': [6, 12],
-        'ia': [5, 12],
-        'ky': [5, 12],
-        'ma': [6, 14],
-        'ms': [6, 12],
-        'ne': [5, 12],
-        'nm': [6, 12],
-        'or': [5, 12],
-        'pa': [6, 13],
-        'pr': [7, 12],
-        'ri': [8, 14],
-        'tn': [5, 12],
+        'fl': [6, 13],
+        'ga': [6, 14],
+        'hi': [6, 12],
+        'ia': [6, 14],
+        'id': [5, 12],
+        'il': [6, 14],
+        'in': [6, 14],
+        'ks': [6, 14],
+        'ky': [6, 13],
+        'la': [6, 14],
+        'ma': [7, 15],
+        'md': [7, 14],
+        'me': [6, 13],
+        'mi': [6, 13],
+        'mn': [6, 13],
+        'mo': [6, 13],
+        'ms': [6, 14],
+        'mt': [5, 13],
+        'nc': [6, 14],
+        'nd': [6, 13],
+        'ne': [6, 13],
+        'nh': [7, 15],
+        'nj': [7, 15],
+        'nm': [6, 13],
+        'nv': [6, 13],
+        'ny': [6, 13],
+        'oh': [6, 14],
+        'ok': [6, 13],
+        'or': [6, 13],
+        'pa': [6, 14],
+        'pr': [7, 15],
+        'ri': [8, 15],
+        'sc': [7, 14],
+        'sd': [6, 13],
+        'tn': [6, 14],
+        'tx': [5, 12],
+        'ut': [6, 13],
+        'va': [6, 14],
         'vt': [7, 14],
-        'va': [5, 12],
+        'wa': [6, 13],
+        'wi': [6, 13],
+        'wv': [6, 14],
+        'wy': [6, 13],
     };
     var mmzoom = minMaxZooms['{{metadata.abbr}}'];
     if(!mmzoom) {
@@ -188,7 +198,7 @@
     var marker;
 
     // check if state is in oneMapStates
-    var oneMap = ['nj', 'dc', 'ne', 'az', 'id'].indexOf('{{metadata.abbr}}') !== -1;
+    var oneMap = ['nj', 'dc', 'ne', 'az', 'id', 'wa'].indexOf('{{metadata.abbr}}') !== -1;
 
     map.attributionControl.setPrefix('');
 
@@ -235,7 +245,7 @@
     }
     map.on('click', function(e) {
         var url = '/find_your_legislator/?abbr={{metadata.abbr}}&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng;
-        $("#results_table").load(url, fix_images);
+        $("#results_table").load(url);
 
         // create or move marker
         if (!marker) {
