@@ -296,7 +296,7 @@ border-radius: 5px;}
 .pluginCountButton {display:none; color:#00FF00}
 
 
-.rssIcon { float: right; background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
+.rssIcon { background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
 .rssIcon:hover { background: url(images/social_sprites.png) left -205px no-repeat; }
 
 
