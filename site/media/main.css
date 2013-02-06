@@ -1544,6 +1544,8 @@ li.greyArrow:before {
 .x-axis path { display: none; }
 .x-axis text { fill: #504a45; }
 
+.chromeframe { margin: 0.2em 0; background: #ccc; color: black; padding: 0.2em 0; max-width: 100%; font-size: 110%; }
+.chromeframe a { color: #0000ff; text-decoration: underline; }
 
 
 /* BILLS SIDEBAR SEARCH */
