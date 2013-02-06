@@ -289,11 +289,11 @@ border-radius: 5px;}
    margin-left:690px;
 }
 
-#shareBtns { float: right; margin-top: 70px; height: 16px; margin-left:10px; width: 300px}
-#shareBtns li { height: 16px; float: right; margin-left: 10px;}
-#shareBtns li a { height: 16px; }
 
-.pluginCountButton {display:none; color:#00FF00}
+.share-buttons { float: right; margin-top: 70px; height: 16px; margin-left:10px; width:400px; }
+.share-buttons table { width: 40px; float: right; }
+.share-buttons table td { width: 16px; padding: 5px 5px 5px }
+.share-buttons table img { width: 16px; }
 
 
 .rssIcon { background: url(images/social_sprites.png) left -222px no-repeat; width: 16px; height: 16px; }
