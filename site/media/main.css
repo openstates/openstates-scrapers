@@ -1492,6 +1492,7 @@ li.greyArrow:before {
     line-height:22px;
     font-weight:bold;
     padding-left:12px;
+    font-style:normal;
 }
 
 .bold { font-weight: bold;}
