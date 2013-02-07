@@ -292,7 +292,7 @@ border-radius: 5px;}
 
 .share-buttons { float: right; margin-top: 70px; height: 16px; margin-left:10px; width:400px; }
 .share-buttons table { width: 40px; float: right; }
-.share-buttons table td { width: 16px; padding: 5px 5px 5px }
+.share-buttons table td { width: 16px; padding: 5px 0px 5px 6px }
 .share-buttons table img { width: 16px; }
 
 
@@ -369,31 +369,53 @@ img.firstHalfModule  { width: 100px;}
 
 #legLinks, #billLinks {
     margin-top: 0px;
-    margin-bottom: 45px;
+    margin-bottom: 65px;
     padding-left:20px;
-    border-bottom: 1px solid #E2E2DD;
-    padding-bottom:10px;
+    margin-left:0;
+    margin-right:0;
     }
 
-#billLinks {
-    margin-right: 480px;
-    margin-left:130px;
-}
-#legLinks {
-    margin-right: 380px;
-    margin-left:20px;
-}
+#legLinks ul,  #billLinks ul{
+    margin-bottom: 45px;
+    margin-left:auto;
+    margin-right:auto;
+    border-bottom: 1px solid #E0DEDB;
+    padding-bottom:10px;
+    padding-left:0;
+    padding-right:0;
+    display:inline;
+    }
 
 #legLinks li, #billLinks li {
     font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
     font-weight: 300;
     font-style: normal;
     color: #E2E2DD;
+    padding-left:10px;
 }
 
-#legLinks li a, #billLinks li a{
-    padding-right: 10px;
+
+#legLinks li:after, #billLinks li:after {
+        content:"|";
+        font-weight:normal;
+        padding-left:17px;
+        }
+
+#legLinks li:last-child:after, #billLinks li:last-child:after {
+        content:"";
+        padding-right:0px;
+        font-weight:normal;
+                }
+
+#billLinks {
+    margin-left:130px;
 }
+#legLinks {
+    margin-left:20px;
+}
+
+
+
 
 
 .module header { margin-bottom: 15px; }
@@ -1462,7 +1484,8 @@ li.greyArrow:before {
     content:"»";
     margin-left:-12px;
     font-size: 20px;
-    font-weight:normal;}
+    font-weight:normal;
+    }
 
 #committees li{
     font-size:15px;
