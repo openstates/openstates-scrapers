@@ -33,13 +33,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="fullWidth tip clearfix">
-      <ul class="inlineList tip noSpace" id="legLinks">
+<div class="fullWidth tip clearfix" id="legLinks">
+      <ul class="inlineList noSpace" >
         {% if has_feed_entries %}
-            <li><a href="#media">{% trans "Media" %}</a>|</li>
+            <li><a href="#media">{% trans "Media" %}</a></li>
         {% endif %}
-          <li><a href="#committees">{% trans "Committee Membership" %}</a>|</li>
-          <li><a href="#bills">{% trans "Sponsored Bills" %}</a>|</li>
+          <li><a href="#committees">{% trans "Committee Membership" %}</a></li>
+          <li><a href="#bills">{% trans "Sponsored Bills" %}</a></li>
           <li><a href="#votes">{% trans "Recent Votes" %}</a></li>
       </ul>
 </div>
