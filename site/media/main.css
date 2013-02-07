@@ -131,7 +131,6 @@ body { background: #fafaf6 url(images/bg.jpg) top center repeat-x;}
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efefe8', endColorstr='#f7f7f1',GradientType=1 ); /* IE6-9 */
 	border-left: 1px dashed #e2e2dd;
 	padding-top: 30px;
-	width: 310px;
 }
 
 .container {
