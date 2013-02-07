@@ -520,7 +520,26 @@ dt.h6 {
 
 .horizontalFilter { padding: 12px 10px 10px; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #fff; margin-bottom: 40px;}
 .infoBox { background: #f5f4e8 url(images/bg_colHeader.jpg) top left repeat-x; padding: 35px 10px; border: 1px solid #eceadd;}
-.callOutBox { padding: 20px 0px 30px 0; border: 1px solid #e6e6da; -moz-border-radius: 5px; -webkit-border-radius: 5px; background-color: #f4f4ee; width: 425px; margin-right: 45px;}
+.callOutBox {
+    padding: 20px 0px 30px 0;
+    border: 1px solid #e6e6da;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    background-color: #f4f4ee;
+    width: 425px;
+    margin-right: 45px;
+    }
+.callOutBox a{
+    font-weight: 300;
+	color: #474644;
+}
+
+.callOutBox a:hover{
+    font-weight: 300;
+	color: #474644;
+	text-decoration: none;
+}
+
 .callOutBox.tagline{ border: 0; -moz-border-radius: 0; -webkit-border-radius: 0; margin-right: 0;text-align: center; width: 100%; background: url('images/bg_tagline.jpg') center top repeat-x; height: 149px; margin-top: -70px; font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; }
 .callOutBox.tagline ul{
 	padding-left: 15px;
