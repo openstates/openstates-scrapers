@@ -31,6 +31,7 @@ metadata = {
     ],
     'name': 'Massachusetts',
     'abbreviation': 'ma',
+    'legislature_url': "http://www.malegislature.gov/",
     'session_details': {
         '186th': {
             'type': 'primary',

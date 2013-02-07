@@ -9,6 +9,7 @@ metadata = dict(
     abbreviation='ia',
     capitol_timezone='America/Chicago',
     legislature_name='Iowa General Assembly',
+    legislature_url='https://www.legis.iowa.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

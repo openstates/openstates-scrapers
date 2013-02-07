@@ -11,6 +11,7 @@ metadata = dict(
     abbreviation='tn',
     capitol_timezone='America/Chicago',
     legislature_name='Tennessee General Assembly',
+    legislature_url='http://www.legislature.state.tn.us/',
     chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

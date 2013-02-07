@@ -6,6 +6,7 @@ metadata = dict(
     abbreviation='in',
     capitol_timezone='America/Indiana/Indianapolis',
     legislature_name='Indiana General Assembly',
+    legislature_url='http://www.in.gov/legislative/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

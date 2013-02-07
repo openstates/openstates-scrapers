@@ -8,6 +8,7 @@ metadata = dict(
     abbreviation='sc',
     capitol_timezone='America/New_York',
     legislature_name='South Carolina Legislature',
+    legislature_url='http://www.scstatehouse.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

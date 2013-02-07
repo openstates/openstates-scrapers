@@ -5,6 +5,7 @@ metadata = dict(
     capitol_timezone='America/New_York',
     abbreviation='me',
     legislature_name='Maine Legislature',
+    legislature_url='http://www.maine.gov/legis/',
     chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

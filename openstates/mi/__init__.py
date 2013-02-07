@@ -8,6 +8,7 @@ metadata = {
     'abbreviation': 'mi',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'Michigan Legislature',
+    'legislature_url': 'http://www.legislature.mi.gov',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

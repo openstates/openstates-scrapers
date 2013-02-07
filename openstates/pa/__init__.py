@@ -8,6 +8,7 @@ metadata = dict(
     abbreviation='pa',
     capitol_timezone='America/New_York',
     legislature_name='Pennsylvania General Assembly',
+    legislature_url='http://www.legis.state.pa.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

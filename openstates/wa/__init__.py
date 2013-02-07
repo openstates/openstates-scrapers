@@ -8,6 +8,7 @@ metadata = dict(
     abbreviation='wa',
     capitol_timezone='America/Los_Angeles',
     legislature_name='Washington State Legislature',
+    legislature_url='http://www.leg.wa.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

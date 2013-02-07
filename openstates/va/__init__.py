@@ -9,6 +9,7 @@ metadata = {
     'abbreviation': 'va',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'Virginia General Assembly',
+    'legislature_url': 'http://virginiageneralassembly.gov/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Delegate'},

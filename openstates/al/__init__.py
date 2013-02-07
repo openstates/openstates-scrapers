@@ -6,6 +6,7 @@ metadata =  {
     'capitol_timezone': 'America/Chicago',
     'abbreviation': 'al',
     'legislature_name': 'Alabama Legislature',
+    'legislature_url': 'http://www.legislature.state.al.us/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

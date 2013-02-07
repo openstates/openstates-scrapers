@@ -5,6 +5,7 @@ metadata = dict(
     name='Texas',
     abbreviation='tx',
     legislature_name='Texas Legislature',
+    legislature_url='http://www.capitol.state.tx.us/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

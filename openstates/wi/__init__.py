@@ -6,6 +6,7 @@ metadata = {
     'name': 'Wisconsin',
     'capitol_timezone': 'America/Chicago',
     'legislature_name': 'Wisconsin State Legislature',
+    'legislature_url': 'http://legis.wisconsin.gov/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Representative'},

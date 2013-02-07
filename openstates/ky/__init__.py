@@ -5,6 +5,7 @@ metadata = dict(
     abbreviation='ky',
     capitol_timezone='America/New_York',
     legislature_name='Kentucky General Assembly',
+    legislature_url='http://www.lrc.ky.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

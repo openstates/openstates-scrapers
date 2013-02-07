@@ -7,6 +7,7 @@ metadata = dict(
     capitol_timezone='America/New_York',
     abbreviation='ct',
     legislature_name='Connecticut General Assembly',
+    legislature_url='http://www.cga.ct.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

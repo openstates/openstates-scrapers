@@ -5,6 +5,7 @@ metadata = dict(
     name='Idaho',
     abbreviation='id',
     legislature_name='Idaho State Legislature',
+    legislature_url='http://www.legislature.idaho.gov/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

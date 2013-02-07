@@ -7,6 +7,7 @@ metadata = dict(
     abbreviation='oh',
     capitol_timezone='America/New_York',
     legislature_name='Ohio General Assembly',
+    legislature_url='http://www.legislature.state.oh.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

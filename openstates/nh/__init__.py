@@ -5,6 +5,7 @@ metadata = {
     'name': 'New Hampshire',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'New Hampshire General Court',
+    'legislature_url': 'http://www.gencourt.state.nh.us/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

@@ -5,6 +5,7 @@ metadata = dict(
     name='Arkansas',
     abbreviation='ar',
     legislature_name='Arkansas General Assembly',
+    legislature_url='http://www.arkleg.state.ar.us/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

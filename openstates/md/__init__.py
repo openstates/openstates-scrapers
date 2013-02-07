@@ -6,6 +6,7 @@ metadata = dict(
     abbreviation='md',
     capitol_timezone='America/New_York',
     legislature_name='Maryland General Assembly',
+    legislature_url='http://mgaleg.maryland.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Delegate'},

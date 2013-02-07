@@ -7,6 +7,7 @@ metadata = {
     'abbreviation': 'ga',
     'capitol_timezone': 'America/New_York',
     'legislature_name': 'Georgia General Assembly',
+    'legislature_url': 'http://www.legis.ga.gov/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

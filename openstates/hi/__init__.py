@@ -7,6 +7,7 @@ metadata = dict(
     abbreviation='hi',
     capitol_timezone='Pacific/Honolulu',
     legislature_name='Hawaii State Legislature',
+    legislature_url='http://www.capitol.hawaii.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

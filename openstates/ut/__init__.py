@@ -5,6 +5,7 @@ metadata = dict(
     name='Utah',
     abbreviation='ut',
     legislature_name='Utah State Legislature',
+    legislature_url='http://le.utah.gov/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

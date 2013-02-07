@@ -5,6 +5,7 @@ metadata = dict(
     name='Colorado',
     abbreviation='co',
     legislature_name='Colorado General Assembly',
+    legislature_url='http://www.leg.state.co.us/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

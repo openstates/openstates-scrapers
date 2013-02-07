@@ -4,6 +4,7 @@ metadata = dict(
     name='Nevada',
     abbreviation='nv',
     legislature_name='Nevada Legislature',
+    legislature_url='http://www.leg.state.nv.us/',
     capitol_timezone='America/Los_Angeles',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

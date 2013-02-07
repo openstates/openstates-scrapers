@@ -9,6 +9,7 @@ metadata = dict(
     name='Kansas',
     abbreviation='ks',
     legislature_name='Kansas State Legislature',
+    legislature_url='http://www.kslegislature.org/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

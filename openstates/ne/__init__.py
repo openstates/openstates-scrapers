@@ -6,9 +6,10 @@ metadata = dict(
     name='Nebraska',
     abbreviation='ne',
     legislature_name='Nebraska Legislature',
+    legislature_url='http://nebraskalegislature.gov/',
     capitol_timezone='America/Chicago',
     chambers = {
-        'upper': {'name': 'The Unicameral', 'title': 'Senator'},
+        'upper': {'name': 'Unicameral', 'title': 'Senator'},
     },
     terms=[
         {'name': '2011-2012', 'sessions': ['102', '102S1'],

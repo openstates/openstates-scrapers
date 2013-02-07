@@ -8,6 +8,7 @@ metadata = dict(
     capitol_timezone='America/Anchorage',
     abbreviation='ak',
     legislature_name='Alaska State Legislature',
+    legislature_url='http://w3.legis.state.ak.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

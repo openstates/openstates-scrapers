@@ -8,6 +8,7 @@ metadata = dict(
     abbreviation='ca',
     capitol_timezone='America/Los_Angeles',
     legislature_name='California State Legislature',
+    legislature_url='http://www.legislature.ca.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assemblymember'},

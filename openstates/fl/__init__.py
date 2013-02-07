@@ -7,6 +7,7 @@ metadata = dict(
     abbreviation='fl',
     capitol_timezone='America/New_York',
     legislature_name='Florida Legislature',
+    legislature_url='http://www.leg.state.fl.us/',
     chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

@@ -4,6 +4,7 @@ metadata = {
     'abbreviation': 'nm',
     'name': 'New Mexico',
     'legislature_name': 'New Mexico Legislature',
+    'legislature_url': 'http://www.nmlegis.gov/',
     'capitol_timezone': 'America/Denver',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},

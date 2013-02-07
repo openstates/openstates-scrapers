@@ -6,6 +6,7 @@ metadata = dict(
     name='Arizona',
     abbreviation='az',
     legislature_name='Arizona State Legislature',
+    legislature_url='http://www.azleg.gov/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

@@ -11,6 +11,7 @@ metadata = dict(
     abbreviation='nj',
     capitol_timezone='America/New_York',
     legislature_name='New Jersey Legislature',
+    legislature_url='http://www.njleg.state.nj.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assembly Member'},

@@ -10,6 +10,7 @@ metadata = dict(
     name='South Dakota',
     abbreviation='sd',
     legislature_name='South Dakota State Legislature',
+    legislature_url='http://legis.state.sd.us/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

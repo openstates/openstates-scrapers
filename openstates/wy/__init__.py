@@ -6,6 +6,7 @@ metadata = dict(
     name='Wyoming',
     abbreviation='wy',
     legislature_name='Wyoming State Legislature',
+    legislature_url='http://legisweb.state.wy.us/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

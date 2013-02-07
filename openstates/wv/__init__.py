@@ -5,6 +5,7 @@ metadata = {
     'capitol_timezone': 'America/New_York',
     'name': 'West Virginia',
     'legislature_name': 'West Virginia Legislature',
+    'legislature_url': 'http://www.legis.state.wv.us/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Delegate'},

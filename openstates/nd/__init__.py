@@ -5,6 +5,7 @@ metadata = dict(
     name = 'North Dakota',
     abbreviation = 'nd',
     legislature_name = 'North Dakota Legislative Assembly',
+    legislature_url='http://www.legis.nd.gov/',
     capitol_timezone='America/North_Dakota/Center',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

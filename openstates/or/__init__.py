@@ -6,6 +6,7 @@ metadata = dict(
     abbreviation='or',
     capitol_timezone='America/Los_Angeles',
     legislature_name='Oregon Legislative Assembly',
+    legislature_url='http://www.leg.state.or.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

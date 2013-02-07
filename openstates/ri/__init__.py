@@ -8,6 +8,7 @@ metadata = dict(
     abbreviation='ri',
     capitol_timezone='America/New_York',
     legislature_name='Rhode Island General Assembly',
+    legislature_url='http://www.rilin.state.ri.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

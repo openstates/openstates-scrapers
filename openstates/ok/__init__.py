@@ -6,6 +6,7 @@ metadata = dict(
     name='Oklahoma',
     abbreviation='ok',
     legislature_name='Oklahoma Legislature',
+    legislature_url='http://www.oklegislature.gov/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

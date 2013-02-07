@@ -5,6 +5,7 @@ metadata = {
     'abbreviation': 'il',
     'name': 'Illinois',
     'legislature_name': 'The Illinois General Assembly',
+    'legislature_url': 'http://www.ilga.gov/',
     'capitol_timezone': 'America/Chicago',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},

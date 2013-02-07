@@ -4,6 +4,7 @@ metadata = dict(
     name='Mississippi',
     abbreviation='ms',
     legislature_name='Mississippi Legislature',
+    legislature_url='http://www.legislature.ms.gov/',
     capitol_timezone='America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

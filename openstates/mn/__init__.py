@@ -5,6 +5,7 @@ metadata = dict(
     abbreviation='mn',
     capitol_timezone='America/Chicago',
     legislature_name='Minnesota State Legislature',
+    legislature_url='http://www.leg.state.mn.us/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

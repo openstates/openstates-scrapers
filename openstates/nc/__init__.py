@@ -7,6 +7,7 @@ metadata = dict(
     abbreviation='nc',
     capitol_timezone='America/New_York',
     legislature_name='North Carolina General Assembly',
+    legislature_url='http://www.ncleg.net/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

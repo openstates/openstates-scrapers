@@ -7,6 +7,7 @@ metadata = dict(
     abbreviation='pr',
     capitol_timezone='America/Puerto_Rico',
     legislature_name='Legislative Assembly of Puerto Rico',
+    legislature_url='http://www.oslpr.org/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

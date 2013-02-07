@@ -6,6 +6,7 @@ metadata = dict(
     abbreviation='de',
     capitol_timezone='America/New_York',
     legislature_name='Delaware General Assembly',
+    legislature_url='http://legis.delaware.gov/',
     chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

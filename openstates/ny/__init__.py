@@ -9,6 +9,7 @@ metadata = dict(
     abbreviation='ny',
     capitol_timezone='America/New_York',
     legislature_name='New York Legislature',
+    legislature_url='http://public.leginfo.state.ny.us/',   # unfortunate - there isn't a decent combined site
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assembly Member'},

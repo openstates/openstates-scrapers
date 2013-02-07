@@ -26,6 +26,7 @@ metadata = {
         }
     ],
     "name": "Louisiana",
+    "legislature_url": "http://www.legis.la.gov/",
     "abbreviation": "la",
     "session_details": {
         "2009": {

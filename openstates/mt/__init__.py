@@ -4,6 +4,7 @@ metadata = {
     'name': 'Montana',
     'abbreviation': 'mt',
     'legislature_name': 'Montana Legislature',
+    'legislature_url': 'http://leg.mt.gov/',
     'capitol_timezone': 'America/Denver',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
