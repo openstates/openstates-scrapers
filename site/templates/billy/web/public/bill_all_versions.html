@@ -14,25 +14,6 @@
 {% endblock %}
 
 {% block content %}
-        <ul class="breadcrumb floatedList clearfix">
-            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
-            <li>
-                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
-            </li>
-            <li>
-                » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
-            </li>
-            <li>
-                » <a href="{% url 'bills' abbr %}?session={{bill.session}}&chamber={{bill.chamber}}">{{ bill.chamber_name }}</a>
-            </li>
-            <li>
-                » <a href="{{bill.get_absolute_url}}">{{bill.bill_id}}</a>
-            </li>
-            <li>
-            » {% trans "All Versions" %}
-            </li>
-        </ul>
-
         <div class="fullWith mainModule">
             <h1 class="withTimeline withTip" style="padding-top: 30px;">
                 {% trans "All Versions for" %}

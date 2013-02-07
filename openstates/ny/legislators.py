@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import re
 import itertools
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
+
 
 
 class NYLegislatorScraper(LegislatorScraper):
@@ -134,6 +135,7 @@ class NYLegislatorScraper(LegislatorScraper):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+        # full_names = []
 
         def _split_list_on_tag(lis, tag):
             data = []
@@ -181,8 +183,8 @@ class NYLegislatorScraper(LegislatorScraper):
             district = district.rstrip('rthnds')
 
             leg_url = link.get('href')
-            legislator = Legislator(term, 'lower', district,
-                                    name, party="Unknown",
+            legislator = Legislator(term, 'lower', district, name,
+                                    party=party_dict[name],
                                     url=leg_url)
             legislator.add_source(url)
 
@@ -260,3 +262,161 @@ class NYLegislatorScraper(LegislatorScraper):
                     address=''.join(address).strip())
 
                 legislator.add_office(**office)
+
+
+# Map ID's to party affiliation. Has to be an id-to-party mapping, because
+# full_name gets normalized on import and may be different at scrape time
+# than at the time get_parties_dict.py is run (which uses post-import data).
+party_dict = {
+
+    'Abinanti, Thomas': 'Democratic',        'Skoufis, James': 'Democratic',
+
+    'Magnarelli, William': 'Democratic',     'McDonough, David': 'Republican',
+
+    'Hevesi, Andrew': 'Democratic',          'Hooper, Earlene': 'Democratic',
+
+    'Blankenbush, Ken': 'Republican',        'Kellner, Micah': 'Democratic',
+
+    'Camara, Karim': 'Democratic',           'Gottfried, Richard': 'Democratic',
+
+    u'Rivera, Jos\xe9': 'Democratic',        'Otis, Steven': 'Democratic',
+
+    'Graf, Al': 'Republican',                'Stirpe, Al': 'Democratic',
+
+    'Crespo, Marcos': 'Democratic',          'Rodriguez, Robert': 'Democratic',
+
+    'Raia, Andrew': 'Republican',            'Thiele, Jr., Fred': 'Democratic',
+
+    'Moya, Francisco': 'Democratic',         'Titone, Matthew': 'Democratic',
+
+    'McDonald, III, John': 'Democratic',     'Saladino, Joseph': 'Republican',
+
+    'Crouch, Clifford': 'Republican',        'Rabbitt, Annie': 'Republican',
+
+    'Steck, Phil': 'Democratic',             'Stevenson, Eric': 'Democratic',
+
+    'Cusick, Michael': 'Democratic',         'Rosa, Gabriela': 'Democratic',
+
+    'Roberts, Samuel': 'Democratic',         'Aubry, Jeffrion': 'Democratic',
+
+    'Brindisi, Anthony': 'Democratic',       'Galef, Sandy': 'Democratic',
+
+    'Lentol, Joseph': 'Democratic',          'Curran, Brian': 'Republican',
+
+    'Perry, N. Nick': 'Democratic',          'Tedisco, James': 'Republican',
+
+    'Lifton, Barbara': 'Democratic',         'Ramos, Phil': 'Democratic',
+
+    'Oaks, Bob': 'Republican',               'Lupinacci, Chad': 'Republican',
+
+    'Pretlow, J. Gary': 'Democratic',        'Miller, Michael': 'Democratic',
+
+    'Rozic, Nily': 'Democratic',             'Walter, Raymond': 'Republican',
+
+    'Brennan, James': 'Democratic',          'Skartados, Frank': 'Democratic',
+
+    'Espinal, Jr., Rafael': 'Democratic',    'Gibson, Vanessa': 'Democratic',
+
+    'Butler, Marc': 'Republican',            'Farrell, Jr., Herman': 'Democratic',
+
+    'Mayer, Shelley': 'Democratic',          'Lupardo, Donna': 'Democratic',
+
+    'Sepulveda, Luis': 'Democratic',         'Titus, Michele': 'Democratic',
+
+    'Garbarino, Andrew': 'Republican',       'Finch, Gary': 'Republican',
+
+    'Borelli, Joseph': 'Republican',         'Millman, Joan': 'Democratic',
+
+    'Barron, Inez': 'Democratic',            'Malliotakis, Nicole': 'Republican',
+
+    'Kolb, Brian M.': 'Republican',          'Wright, Keith L.T.': 'Democratic',
+
+    'Weinstein, Helene': 'Democratic',       'Tenney, Claudia': 'Republican',
+
+    'Englebright, Steve': 'Democratic',      'Fahy, Patricia': 'Democratic',
+
+    'Maisel, Alan': 'Democratic',            'Kavanagh, Brian': 'Democratic',
+
+    'Peoples-Stokes, Crystal': 'Democratic', 'Goldfeder, Phillip': 'Democratic',
+
+    'Solages, Michaelle': 'Democratic',      'Braunstein, Edward': 'Democratic',
+
+    'Simanowitz, Michael': 'Democratic',     'Rosenthal, Linda': 'Democratic',
+
+    'Glick, Deborah': 'Democratic',          'Lavine, Charles': 'Democratic',
+
+    'Giglio, Joseph': 'Republican',          'Buchwald, David': 'Democratic',
+
+    'Magee, William': 'Democratic',          'Jordan, Tony': 'Republican',
+
+    'Duprey, Janet': 'Republican',           'Schimminger, Robin': 'Democratic',
+
+    'Friend, Christopher': 'Republican',     'Reilich, Bill': 'Republican',
+
+    'Stec, Dan': 'Republican',               'Barrett, Didi': 'Democratic',
+
+    'Gjonaj, Mark': 'Democratic',            'Ceretto, John': 'Republican',
+
+    u'Ortiz, F\xe9lix': 'Democratic',        'Morelle, Joseph': 'Democratic',
+
+    'Nojay, Bill': 'Republican',             'Heastie, Carl': 'Democratic',
+
+    'Arroyo, Carmen': 'Democratic',          'Cook, Vivian': 'Democratic',
+
+    'Cahill, Kevin': 'Democratic',           'Zebrowski, Kenneth': 'Democratic',
+
+    'DiPietro, David': 'Republican',         'Quart, Dan': 'Democratic',
+
+    'Hikind, Dov': 'Democratic',             'Hennessey, Edward': 'Democratic',
+
+    'Johns, Mark': 'Republican',             'Kim, Ron': 'Democratic',
+
+    'McLaughlin, Steven': 'Republican',      'Montesano, Michael': 'Republican',
+
+    'Losquadro, Dan': 'Republican',          'Sweeney, Robert': 'Democratic',
+
+    'Robinson, Annette': 'Democratic',       'Bronson, Harry': 'Democratic',
+
+    'Cymbrowitz, Steven': 'Democratic',      'Palmesano, Philip': 'Republican',
+
+    'Corwin, Jane': 'Republican',            'Markey, Margaret': 'Democratic',
+
+    'Dinowitz, Jeffrey': 'Democratic',       'Gunther, Aileen': 'Democratic',
+
+    'Castro, Nelson': 'Democratic',          'Scarborough, William': 'Democratic',
+
+    'Lopez, Vito': 'Democratic',             'Goodell, Andy': 'Republican',
+
+    'Russell, Addie': 'Democratic',          'Mosley, Walter': 'Democratic',
+
+    'Ra, Edward': 'Republican',              'Weisenberg, Harvey': 'Democratic',
+
+    'Gantt, David': 'Democratic',            'Jaffee, Ellen': 'Democratic',
+
+    'Santabarbara, Angelo': 'Democratic',    'Brook-Krasny, Alec': 'Democratic',
+
+    'Katz, Steve': 'Republican',             'Barclay, William': 'Republican',
+
+    'Weprin, David': 'Democratic',           'Gabryszak, Dennis': 'Democratic',
+
+    'Silver, Sheldon': 'Democratic',         'Lalor, Kieran Michael': 'Republican',
+
+    "O'Donnell, Daniel": 'Democratic',       'Colton, William': 'Democratic',
+
+    'Abbate, Jr., Peter': 'Democratic',      'Simotas, Aravella': 'Democratic',
+
+    'Boyland, Jr., William': 'Democratic',   'Jacobs, Rhoda': 'Democratic',
+
+    'Fitzpatrick, Michael': 'Republican',    'DenDekker, Michael': 'Democratic',
+
+    'Paulin, Amy': 'Democratic',             'Schimel, Michelle': 'Democratic',
+
+    'Benedetto, Michael': 'Democratic',      'Ryan, Sean': 'Democratic',
+
+    'Kearns, Michael': 'Democratic',         'Hawley, Stephen': 'Republican',
+
+    'McKevitt, Tom': 'Republican',           'Lopez, Peter': 'Republican',
+
+    'Clark, Barbara': 'Democratic',          'Nolan, Catherine': 'Democratic',
+    }
+

@@ -26,18 +26,6 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-<ul class="breadcrumb floatedList clearfix">
-    <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
-    <li>
-    » <a href="{% url 'committees' abbr %}">{% trans "Committees" %}</a>
-    </li>
-    <li>
-        » <a href="{% url 'committees' abbr %}?chamber={{committee.chamber}}">{{committee.chamber_name}}</a>
-    </li>
-    <li>
-        » {{committee.display_name}}
-    </li>
-</ul>
 <div class="clearfix">
     <h2 class="colLt">{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 

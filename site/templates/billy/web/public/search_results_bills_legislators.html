@@ -50,11 +50,9 @@ $(document).ready(function() {
                 </tbody>
             </table>
         </div>
-        {% if more_bills_available %}
-            {% with scope=metadata.abbreviation|default:'all' %}
-            <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">{% trans "Show more search results." %}</a>
-            {% endwith %}
-        {% endif %}
+        {% with scope=metadata.abbreviation|default:'all' %}
+        <a class="viewMore" href="{% url 'bills' scope %}?{{ request.GET.urlencode }}">{% trans "View all bill results." %}</a>
+        {% endwith %}
         <div class="clear"></div>
         {% endif %}
 
