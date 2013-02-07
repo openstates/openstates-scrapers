@@ -4,6 +4,7 @@ import os
 import operator
 import functools
 import collections
+import htmlentitydefs
 import urlparse
 import itertools
 import contextlib
@@ -40,6 +41,32 @@ class _CachedAttr(object):
         result = self.method(inst)
         setattr(inst, self.name, result)
         return result
+
+
+def unescape(text):
+    '''Removes HTML or XML character references and entities from a text string.
+    @param text The HTML (or XML) source text.
+    @return The plain text, as a Unicode string, if necessary.
+    '''
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text  # leave as is
+    return re.sub("&#?\w+;", fixup, text)
 
 
 class Trie(dict):
@@ -514,12 +541,14 @@ class Extractor(object):
 
             entry['_type'] = 'feedentry'
 
-            entry['summary'] = clean_html(entry['summary'])
+            entry['summary'] = unescape(clean_html(entry['summary']))
             try:
-                entry['summary_detail']['value'] = clean_html(
-                    entry['summary_detail']['value'])
+                entry['summary_detail']['value'] = unescape(clean_html(
+                    entry['summary_detail']['value']))
             except KeyError:
                 pass
+
+            entry['title'] = unescape(entry['title'])
 
             # Kill any keys that contain dots.
             entry = dict((k, v) for (k, v) in entry.items() if '.' not in k)
