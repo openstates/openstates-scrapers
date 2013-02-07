@@ -106,12 +106,14 @@ class GABillScraper(BillScraper):
                 "HRAR": ["committee:referred"],
                 "SRAR": ["committee:referred"],
                 "STR": ["bill:reading:3"],
+                "SE": ["bill:passed"],
                 # STP \m/
                 "HTR": ["bill:reading:3"],
                 "S2R": ["bill:reading:2"],
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
+                "HTS": ["other"],  # House transmitted to senate
                 #"": [],
             }
 

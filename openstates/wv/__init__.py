@@ -12,7 +12,7 @@ metadata = {
     'terms': [
         {'name': '2011-2012',
          'start_year': 2011, 'end_year': 2012,
-         'sessions': ['2011','2012'],
+         'sessions': ['2011', '2012'],
          },
         {'name': '2013-2014',
          'start_year': 2013, 'end_year': 2014,

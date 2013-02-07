@@ -103,6 +103,8 @@ class FLBillScraper(BillScraper):
             bill_type = 'concurrent resolution'
         elif re.findall('[SH]M', bill_type_h1):
             bill_type = 'memorial'
+        elif re.findall('\s+Senate \d+', bill_type_h1):
+            bill_type = 'bill'
 
         bill['type'] = [bill_type]
 
@@ -145,6 +147,8 @@ class FLBillScraper(BillScraper):
                 elif action.startswith('Read 3rd time'):
                     atype.append('bill:reading:3')
                 elif action.startswith('Adopted'):
+                    atype.append('bill:passed')
+                elif action.startswith('CS passed'):
                     atype.append('bill:passed')
 
                 bill.add_action(actor, action, date, type=atype)
@@ -217,6 +221,7 @@ class FLBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_vote(self, bill, chamber, date, url):
+
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
         os.remove(path)
@@ -239,7 +244,7 @@ class FLBillScraper(BillScraper):
                     other_count)
         vote.add_source(url)
 
-        y,n,o = 0,0,0
+        y, n, o = 0, 0, 0
         break_outter = False
 
         for line in text.split('\n')[9:]:
@@ -261,17 +266,20 @@ class FLBillScraper(BillScraper):
                 match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
 
                 if match:
-                    if match.group(2) == "PAIR":
+                    name = match.group(2)
+                    if match.group(1) == 'Y':
+                        vote.yes(name)
+                    elif match.group(1) == 'N':
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+                else:
+                    if "PAIR" in line:
                         break_outter = True
                         break
-                    if match.group(1) == 'Y':
-                        vote.yes(match.group(2))
-                    elif match.group(1) == 'N':
-                        vote.no(match.group(2))
-                    else:
-                        vote.other(match.group(2))
-                else:
                     vote.other(col.strip())
 
-        vote.validate()
+        # vote.validate()
+        if not vote['motion']:
+            vote['motion'] = '[No motion given.]'
         bill.add_vote(vote)

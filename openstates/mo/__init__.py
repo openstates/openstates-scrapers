@@ -12,7 +12,7 @@ metadata = dict(
     },
     terms=[
         {'name': '2011-2012',
-         'sessions': ['2011', '2012'],
+         'sessions': ['2012'],
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014',
          'sessions': ['2013'],
@@ -21,8 +21,6 @@ metadata = dict(
     session_details={
         '2012': {'start_date': datetime.date(2012,1,26), 'type': 'primary',
                  'display_name': '2012 Regular Session'},
-        '2011': {'start_date': datetime.date(2011,1,26), 'type': 'primary',
-                 'display_name': '2011 Regular Session'},
         '2013': {'start_date': datetime.date(2012,1,26), 'type': 'primary',
                  'display_name': '2013 Regular Session'},
     },

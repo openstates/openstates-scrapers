@@ -101,7 +101,7 @@ class MTBillScraper(BillScraper):
     def parse_bill(self, bill_url, session, chamber):
 
         # Temporarily skip the differently-formatted house budget bill.
-        if '/2011/billhtml/hb0002.htm' in bill_url.lower():
+        if 'billhtml/hb0002.htm' in bill_url.lower():
             return
 
         bill = None
@@ -184,7 +184,8 @@ class MTBillScraper(BillScraper):
             bill_id = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
         try:
-            title = status_page.xpath("//form[1]/table[2]/tr[3]/td[2]")[0].text_content()
+            xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
+            title = status_page.xpath(xp).pop()
         except IndexError:
             title = status_page.xpath('//tr[1]/td[2]')[0].text_content()
 
@@ -350,7 +351,7 @@ class MTBillScraper(BillScraper):
         base_url += '/'
         status_page.make_links_absolute(base_url)
 
-        for tr in status_page.xpath('//table')[4].xpath('tr')[2:]:
+        for tr in status_page.xpath('//table')[3].xpath('tr')[2:]:
             tds = list(tr)
 
             if tds:
@@ -516,10 +517,8 @@ class PDFCommitteeVote(object):
         self.text = '\n'.join(filter(None, text.splitlines()))
 
     def chamber(self):
-        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper'}
+        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
         chamber, _, _ = self.text.lstrip().partition(' ')
-        if chamber not in chamber_dict:
-            return ''
         return chamber_dict[chamber]
 
     def date(self):

@@ -8,6 +8,7 @@ import lxml.html
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 from utils import (clean_text, house_get_actor_from_action,
                    senate_get_actor_from_action,find_nodes_with_matching_text)
@@ -202,6 +203,10 @@ class MOBillScraper(BillScraper):
             "Third Read"       : "bill:reading:3",
             "Referred"         : "committee:referred",
             "Withdrawn"        : "bill:withdrawn",
+            "S adopted"        : "bill:passed",
+
+            "Truly Agreed To and Finally Passed": "bill:passed",
+            "Third Read and Passed": "bill:passed",
 
             "Approved by Governor" : "governor:signed",
         }
@@ -212,6 +217,20 @@ class MOBillScraper(BillScraper):
         if len(ret) == 0:
             ret.append("other")
         return ret
+
+    def get_votes(self, date, actor, action):
+        ret = []
+        vre = r"(?P<leader>.*)YEAS:\s+(?P<yeas>\d+)\s+NAYS:\s+(?P<nays>\d+).*"
+        if "YEAS" in action.upper():
+            match = re.match(vre, action)
+            if match:
+                v = match.groupdict()
+                yes, no = int(v['yeas']), int(v['nays'])
+                vote = Vote(actor, date, v['leader'],
+                            (yes > no), yes, no, 0)
+                ret.append(vote)
+        return ret
+
 
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
@@ -456,4 +475,9 @@ class MOBillScraper(BillScraper):
                     action = action.rstrip()
                 actor = house_get_actor_from_action(action)
                 type_class = self.get_action(actor, action)
+
+                votes = self.get_votes(date, actor, action)
+                for vote in votes:
+                    bill.add_vote(vote)
+
                 bill.add_action(actor, action, date, type=type_class)

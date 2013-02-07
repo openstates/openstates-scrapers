@@ -96,6 +96,13 @@ class OKCommitteeScraper(CommitteeScraper):
             member = re.sub(r'\s+', ' ', member)
             if not member:
                 continue
-            comm.add_member(member)
+            role = link.tail
+            if not role:
+                role = 'member'
+            elif 'Vice Chair' in role:
+                role = 'vice chair'
+            elif 'Chair' in role:
+                role = 'chair'
+            comm.add_member(member, role=role)
 
         self.save_committee(comm)

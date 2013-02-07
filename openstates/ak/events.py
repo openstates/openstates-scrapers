@@ -102,10 +102,25 @@ class AKEventScraper(EventScraper):
                 agenda_link = links[0]
                 event['link'] = agenda_link.attrib['href']
 
+            cur_node = font.getparent().getparent()
+            bills = []
+            while cur_node is not None and cur_node.xpath(".//hr") == []:
+                bills += cur_node.xpath(
+                    ".//a[contains(@href, 'get_complete_bill')]/text()")
+                cur_node = cur_node.getnext()
+
+
             event = Event(session, when, 'committee:meeting',
                           description, location=where)
+
             event.add_source(url)
+            for bill in bills:
+                event.add_related_bill(bill,
+                                       description='Related Bill',
+                                       type='consideration')
+
             event.add_participant('host',
                                   comm,
-                                  participant_type='committee')
+                                  participant_type='committee',
+                                  chamber=chamber)
             self.save_event(event)

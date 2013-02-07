@@ -24,7 +24,7 @@ class OHLegislatorScraper(LegislatorScraper):
             "http://www.ohiohouse.gov/members/member-directory")
         self.scrape_page(chamber, term, url)
 
-    def scrape_homepage(self, leg, homepage, term):
+    def scrape_homepage(self, leg, chamber, homepage, term):
         page = self.urlopen(homepage)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(homepage)
@@ -36,7 +36,7 @@ class OHLegislatorScraper(LegislatorScraper):
 
         ctties = page.xpath("//div[@class='committeeList']//a")
         for entry in [x.text_content() for x in ctties]:
-            chmbr = "joint" if "joint" in entry.lower() else "upper"
+            chmbr = "joint" if "joint" in entry.lower() else chamber
             leg.add_role('committee member',
                          term=term,
                          chamber=chmbr,
@@ -81,7 +81,7 @@ class OHLegislatorScraper(LegislatorScraper):
                            address=office,
                            phone=phone)
 
-            self.scrape_homepage(leg, homepage, term)
+            self.scrape_homepage(leg, chamber, homepage, term)
 
             leg.add_source(url)
             self.save_legislator(leg)

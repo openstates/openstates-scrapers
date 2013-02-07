@@ -124,7 +124,7 @@ class WVBillScraper(BillScraper):
                 bill.add_sponsor('cosponsor', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
-            self.scrape_vote(bill, link.attrib['href'])
+            self.scrape_house_vote(bill, link.attrib['href'])
 
         actor = chamber
         for tr in reversed(page.xpath("//table[@class='tabborder']/descendant::tr")[1:]):
@@ -137,6 +137,9 @@ class WVBillScraper(BillScraper):
             date = datetime.datetime.strptime(date, "%m/%d/%y").date()
 
             action = tds[1].text_content().strip()
+            if action.lower().startswith('passed senate'):
+                for href in tds[1].xpath('a/@href'):
+                    self.scrape_senate_vote(bill, href, date)
 
             attrs = dict(actor=actor, action=action, date=date)
             attrs.update(self.categorizer.categorize(action))
@@ -144,7 +147,7 @@ class WVBillScraper(BillScraper):
 
         self.save_bill(bill)
 
-    def scrape_vote(self, bill, url):
+    def scrape_house_vote(self, bill, url):
         try:
             filename, resp = self.urlretrieve(url)
         except scrapelib.HTTPError:
@@ -171,7 +174,7 @@ class WVBillScraper(BillScraper):
             if match:
                 motion = lines[idx - 2].strip()
                 yes_count, no_count, other_count = [
-                    int(g) for g  in match.groups()]
+                    int(g) for g in match.groups()]
 
                 exc_match = re.search(r'EXCUSED: (\d+)', line)
                 if exc_match:
@@ -226,6 +229,44 @@ class WVBillScraper(BillScraper):
         assert len(vote['no_votes']) == no_count
         assert len(vote['other_votes']) == other_count
 
+        bill.add_vote(vote)
+
+    def scrape_senate_vote(self, bill, url, date):
+        try:
+            filename, resp = self.urlretrieve(url)
+        except scrapelib.HTTPError:
+            self.warning("missing vote file %s" % url)
+            return
+
+        vote = Vote('upper', date, 'Passage', passed=None,
+                    yes_count=0, no_count=0, other_count=0)
+        vote.add_source(url)
+
+        text = convert_pdf(filename, 'text')
+        os.remove(filename)
+
+        data = re.split(r'(Yeas|Nays|Absent):', text)[::-1]
+        data = filter(None, data)
+        keymap = dict(yeas='yes', nays='no')
+        actual_vote = collections.defaultdict(int)
+        while True:
+            if not data:
+                break
+            vote_val = data.pop()
+            key = keymap.get(vote_val.lower(), 'other')
+            values = data.pop()
+            for name in re.split(r'(?:[\s,]+and\s|[\s,]{2,})', values):
+                if name.lower().strip() == 'none.':
+                    continue
+                name = name.replace('..', '').strip('-1234567890 \n')
+                if not name:
+                    continue
+                getattr(vote, key)(name)
+                actual_vote[vote_val] += 1
+                vote[key + '_count'] += 1
+
+        vote['actual_vote'] = actual_vote
+        vote['passed'] = vote['no_count'] < vote['yes_count']
         bill.add_vote(vote)
 
     def _get_version_filenames(self, session, chamber):

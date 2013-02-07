@@ -277,8 +277,11 @@ class MDBillScraper(BillScraper):
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
             passed = True
+        elif 'Rejected' in motion:
+            motion = motion.split(' Rejected')[0]
+            passed = False
         else:
-            raise Exception('unknown motion')
+            raise Exception('unknown motion: %s' % motion)
 
         vote = Vote(chamber=chamber, date=None, motion=motion,
                     yes_count=int(yes_count), no_count=int(no_count),
@@ -365,11 +368,18 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Bond Bill Fact Sheet':
+                bill.add_document('Bond Bill Fact Sheet', a.get('href'),
+                                  mimetype='application/pdf')
             elif a.text == 'Amendments':
                 bill.add_document('Amendments - ' + a.tail.strip(),
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate - Committee':
                 bill.add_document('Senate %s Committee Vote' %
+                                  a.tail.replace(' - ', ' ').strip(),
+                                  a.get('href'), mimetype='application/pdf')
+            elif a.text == 'Vote - House - Committee':
+                bill.add_document('House %s Committee Vote' %
                                   a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate Floor':

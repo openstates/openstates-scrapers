@@ -78,20 +78,22 @@ class TXBillScraper(BillScraper):
             url = urljoin(text_group_url, version_file)
             bill_num = int(re.search(r'\d+', version_file).group(0))
             version_urls.setdefault(bill_num, []).append(url)
-        version_urls = version_urls[billno] #  Sorry :(
-        # We need to get the versions from inside here because some bills
-        # have XML saying just "no such bill", so we hit an ftp error
-        # because there are no bill versions where we expect them.
-        #
-        # It's a good idea to somehow cache this list, but we need to make
-        # sure it exists first. FIXME(nice-to-have)
 
-        for version_url in version_urls:
-            bill.add_source(version_url)
-            version_name = version_url.split('/')[-1]
-            version_name = os.path.splitext(version_name)[0]  # omit '.htm'
-            bill.add_version(version_name, version_url,
-                             mimetype='text/html')
+        if billno in version_urls:
+            version_urls = version_urls[billno] #  Sorry :(
+            # We need to get the versions from inside here because some bills
+            # have XML saying just "no such bill", so we hit an ftp error
+            # because there are no bill versions where we expect them.
+            #
+            # It's a good idea to somehow cache this list, but we need to make
+            # sure it exists first. FIXME(nice-to-have)
+
+            for version_url in version_urls:
+                bill.add_source(version_url)
+                version_name = version_url.split('/')[-1]
+                version_name = os.path.splitext(version_name)[0]  # omit '.htm'
+                bill.add_version(version_name, version_url,
+                                 mimetype='text/html')
 
         self.save_bill(bill)
 

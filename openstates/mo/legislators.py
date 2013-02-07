@@ -63,30 +63,6 @@ class MOLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(details_page)
             photo_url = page.xpath('//div[2]/div/img')
             photo_url = photo_url[0].attrib['src']
-            committees = page.xpath('//html/body/div[2]//span[@class="style3"]/a')
-            for c in committees:
-                if c.attrib.get('href').find('info/comm/') == -1:
-                    continue
-                parts = c.text_content().split('\n')
-                #print "committee = '%s'" % parts[0].strip()
-                subcommittee = None
-                if len(parts) > 1:
-                    subcommittee = parts[1].strip(
-                                   ).replace('- ',''
-                                   ).replace(', Vice-Chairman',''
-                                   ).replace(', Chairman','')
-                committee = parts[0].strip().replace(
-                    ', Vice-Chairman',''
-                    ).replace(', Chairman','')
-                if subcommittee:
-                    leg.add_role('committee member',
-                                 term,
-                                 committee=committee,
-                                 subcommittee=subcommittee,
-                                 chamber=chamber)
-                else:
-                    leg.add_role('committee member', term,
-                                 committee=committee, chamber=chamber)
 
             url = self.senator_address_url % (
                 session[2:],int(senator_key[1:]))
@@ -134,7 +110,7 @@ class MOLegislatorScraper(LegislatorScraper):
             if last_name == 'Vacant':
                 leg = Legislator(term, chamber, district, full_name=full_name,
                             first_name=first_name, last_name=last_name,
-                            party=party, _code=leg_code, url=url)
+                            party=party, url=url)
 
                 leg.add_office('capitol', "Capitol Office",
                                address=address,
@@ -145,7 +121,7 @@ class MOLegislatorScraper(LegislatorScraper):
             else:
                 leg = Legislator(term, chamber, district, full_name=full_name,
                           first_name=first_name, last_name=last_name,
-                          party=party, _code=leg_code, url=url)
+                          party=party, url=url)
 
                 leg.add_office('capitol', 'Capitol Office',
                                address=address,
@@ -159,8 +135,6 @@ class MOLegislatorScraper(LegislatorScraper):
                 email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')
                 terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
                 committees = page.xpath('//*[@id="ContentPlaceHolder1_lblCommittees"]/li/a')
-                for c in committees:
-                    leg.add_role('committee member', term, committee=c.text_content().strip(), chamber=chamber)
                 # TODO home address?
                 if len(email) > 0 and email[0] != 'mailto:':
                     #print "Found email : %s" % email[0]

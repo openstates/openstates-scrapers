@@ -176,7 +176,7 @@
                     <b>{{term}}</b>
                     {% if chamber_roles.upper %}
                     <div class="old-roles-indented">
-                        <b>{{legislator.metadata.upper_chamber_name}}</b>
+                        <b>{{legislator.metadata.chambers.upper.name}}</b>
                         <ul class="old-roles-indented">
                             {% for role in chamber_roles.upper.member %}
                                 <li>{% include 'billy/web/public/legislator_old_role_member.html' %}</li>
@@ -185,13 +185,15 @@
                             {% if chamber_roles.upper.committee_member %}
                             <li>{% trans "Committee Membership" %}</li>
                             <li>
-                                <ul class="inlineThirds">
-                                {% for role in chamber_roles.upper.committee_member %}
-                                    <li class="{% cycle 'one' 'two' 'three' %}">
-                                        {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
-                                    </li>
-                                {% endfor %}
-                                </ul>
+                                <div class="old-roles-indented">
+                                    <ul class="inlineThirds">
+                                    {% for role in chamber_roles.upper.committee_member %}
+                                        <li class="{% cycle 'one' 'two' 'three' %}">
+                                            {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                </div>
                             </li>
                             {% endif %}
                         </ul>
@@ -200,7 +202,7 @@
 
                     {% if chamber_roles.lower %}
                     <div class="old-roles-indented">
-                        <b>{{legislator.metadata.lower_chamber_name}}</b>
+                        <b>{{legislator.metadata.chambers.lower.name}}</b>
                         <ul class="old-roles-indented">
                         {% for role in chamber_roles.lower.member %}
                             <li>{% include 'billy/web/public/legislator_old_role_member.html' %}</li>
@@ -210,16 +212,16 @@
                         <li>{% trans "Committee Membership" %}</li>
                         <li>
                             <ul class="inlineThirds">
-                            {% for role in chamber_roles.lower.committee_member %}
-                                <li class="{% cycle 'one' 'two' 'three' %}">
-                                {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
-                                </li>
-                            {% endfor %}
-                            </ul>
+                                <div class="old-roles-indented">
+                                    {% for role in chamber_roles.lower.committee_member %}
+                                        <li class="{% cycle 'one' 'two' 'three' %}">
+                                        {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
                         </li>
                         {% endif %}
                     </ul></div>
-                    <div class="clear"></div>
                     {% endif %}
 
                     {% if chamber_roles.joint %}
@@ -228,21 +230,21 @@
                         <ul class="old-roles-indented">
                         <li>{% trans "Committee Membership" %}</li>
                         <li>
-                            <ul class="inlineThirds">
-                            {% for role in chamber_roles.joint.committee_member %}
-                                <li class="{% cycle 'one' 'two' 'three' %}">
-                                {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
-                                </li>
-                            {% endfor %}
-                            <ul>
+                            <div class="old-roles-indented">
+                                <ul class="inlineThirds">
+                                {% for role in chamber_roles.joint.committee_member %}
+                                    <li class="{% cycle 'one' 'two' 'three' %}">
+                                    {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
+                                    </li>
+                                {% endfor %}
+                                <ul>
+                            </div>
                         </li>
                     </ul></div>
                     {% endif %}
 
                 {% endfor %}
                 </div>
-
-                <div class="clear"></div>
             </div>
             {% endif %}
 

@@ -173,8 +173,14 @@ class NMBillScraper(BillScraper):
                                                data['Title'], type=bill_type)
 
             # fake a source
-            bill.add_source('http://www.nmlegis.gov/lcs/_session.aspx?Chamber=%s&LegType=%s&LegNo=%s&year=%s' % (
-                data['Chamber'], data['LegType'], data['LegNo'], session_year))
+            data['SessionYear'] = session_year
+            data.update({x: data[x].strip() for x in ["Chamber", "LegType",
+                                                      "LegNo", "SessionYear"]})
+
+            bill.add_source(
+                'http://www.nmlegis.gov/lcs/_session.aspx?Chamber='
+                "{Chamber}&LegType={LegType}&LegNo={LegNo}"
+                "&year={SessionYear}".format(**data))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
             if data['SponsorCode2'] not in ('NONE', 'X', ''):
@@ -286,6 +292,7 @@ class NMBillScraper(BillScraper):
             '7650': ('not printed %s', 'other'),
             '7652': ('not printed, not referred to committee, tabled', 'other'),
             '7654': ('referred to %s', 'committee:referred'),
+            '7656': ('referred to Finance committee', 'committee:referred'),
             '7660': ('passed House', 'bill:passed'),
             '7661': ('passed Senate', 'bill:passed'),
             '7663': ('House report adopted', 'other'),
@@ -314,6 +321,7 @@ class NMBillScraper(BillScraper):
             '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
             '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
             '7814': ('Veto Override Failed Senate', 'bill:veto_override:failed'),
+            '7799': ('Dead', 'other'),
             'SENT': ('Sent to %s', ['bill:introduced', 'committee:referred']),
         }
 
@@ -398,6 +406,10 @@ class NMBillScraper(BillScraper):
                 continue
 
             match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            if match is None:
+                self.warning("No match, skipping")
+                continue
+
             bill_type, bill_num, suffix = match.groups()
 
             # adapt to bill_id format
