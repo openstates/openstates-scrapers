@@ -93,7 +93,8 @@
         </form>
         <h1 class="clearfix"><a class="textReplace" href="/">Open States</a></h1>
 
-        <div class="share-buttons" data-socialite="auto" data-services="twitter,facebook"> </div>
+        <div class="share-buttons" data-socialite="auto" {% block share_options %} {% endblock %}
+            data-services="twitter,facebook"> </div>
 
         {# Some pages are state-agnostic and will need to omit this block (like the homepage). #}
         {% region_select_form abbr %}
