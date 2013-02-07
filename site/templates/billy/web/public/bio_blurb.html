@@ -11,12 +11,12 @@
 {% trans "and" %}
   {% if count %}
 
-  {% trans "is the primary sponsor of" %}<em> {{count|apnumber}}
+  {% trans "is the primary sponsor of" %}<em> {{count|apnumber}}</em>
     {% with count=legislator.secondary_sponsored_bills.count %}
       {% if count %}
-      {% trans "bills,"%}</em> {% trans "and is the secondary sponsor of"%}  <em>{{count|apnumber}} {% trans "bills" %}
+      {% trans "bills,"%} {% trans "and is the secondary sponsor of"%}  <em>{{count|apnumber}}</em> {% trans "bills" %}
       {% else %}
-      {% trans "bills" %}</em>.
+      {% trans "bills" %}.
       {% endif %}
     {% endwith %}
 
