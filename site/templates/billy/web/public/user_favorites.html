@@ -198,7 +198,7 @@ $(document).ready(function() {
 
                             <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td>{{obj.scope|safe}}</td>
-                            <td class="followBox">{% favorite_short obj.id 'search' obj.metadata.abbr 'is_favorite' obj.search_params %}</td>
+                            <td class="followBox">{% favorite_short obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
