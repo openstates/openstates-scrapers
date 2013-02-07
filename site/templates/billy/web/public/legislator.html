@@ -218,6 +218,7 @@
                                         {% include 'billy/web/public/legislator_old_role_committee_member.html' %}
                                         </li>
                                     {% endfor %}
+
                                 </ul>
                         </li>
                         {% endif %}
@@ -247,12 +248,14 @@
                 </div>
             </div>
             {% endif %}
-
+<!-- MEDIA -->
         {% if legislator.active %}
             {% if has_feed_entries %}
             <div  id="media" class="fullWidth module clear">
-                <h3 class="moduleTitle">{% trans "Media" %}</h3>
-                <a class="textReplace rssIcon" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
+                <div class="clearfix">
+                    <h3 class="moduleTitle colLt">{% trans "Media" %}</h3>
+                    <a class="textReplace rssIcon colRt" href="{% url 'news_list_rss' abbr 'legislators' legislator.id legislator.slug %}">rss</a>
+                </div>
                 <h4>{% trans "News and Blog Coverage" %}</h4>
 
                 {% for obj in feed_entries %}
@@ -268,6 +271,7 @@
             </div>
             {% endif %}
 
+<!-- COMMITTEES -->
         <div id="committees" class="fullWidth module clear">
             <h3 class="moduleTitle">{% trans "Committee Membership" %}</h3>
             <ul class="inlineThirds">
@@ -287,7 +291,7 @@
         {% endif %}
 
 
-<!-- Bills -->
+<!-- BILLS -->
         <div id="bills" class="fullWidth module clearfix">
 
            <div class="clearfix">
