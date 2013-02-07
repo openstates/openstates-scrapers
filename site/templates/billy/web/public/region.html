@@ -98,16 +98,19 @@
 
 
 <!-- bills -->
-    <div class="fullWidth module">
+    <div class="fullWidth moduleNoBorder">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
         {% for chamber in chambers %}
             {# only show chamber if we have multiple chambers #}
-            {% if chambers|length > 1 %} <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
-            <div class="sixCol colLt voteChart">
-                {% include "billy/web/public/_recently_passed.html" %}
-            </div>
-            <div class="sixCol colRt voteChart">
-                {% include "billy/web/public/_recently_introduced.html" %}
+            {% if chambers|length > 1 %}
+            <div class="module clearfix">
+                <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
+                <div class="fiveCol colLt">
+                    {% include "billy/web/public/_recently_passed.html" %}
+                </div>
+                <div class="fiveCol colRt">
+                    {% include "billy/web/public/_recently_introduced.html" %}
+                </div>
             </div>
         {% endfor %}
 
@@ -129,6 +132,8 @@
                 {% endfor %}
         </table>
     </div>
+
+
 
 <!-- mapbox interaction script -->
 <script>
