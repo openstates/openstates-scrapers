@@ -39,22 +39,6 @@
           {% endif %}
       </ul>
 </div>
-        <ul class="breadcrumb floatedList clearfix">
-            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
-            <li>
-                » <a href="{% url 'bills' abbr %}">{% trans "Bills" %}</a>
-            </li>
-            <li>
-                » <a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a>
-            </li>
-            <li>
-                » <a href="{% url 'bills' abbr %}?session={{bill.session}}&chamber={{bill.chamber}}">{{ bill.chamber_name }}</a>
-            </li>
-            <li>
-                » {{bill.bill_id}}
-            </li>
-        </ul>
-
         <div class="fullWidth mainModule clearfix">
             <ol id="billAction">
                 {% for stage, text, date in bill.progress_data %}
@@ -64,7 +48,6 @@
                 </li>
                 {% endfor %}
             </ol>
-            <!-- <h5 style="margin-bottom: 0px;">{{ bill.session_details.display_name }}</h5> -->
             <div class="medModule">
                 <h2 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h2>
                 <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>

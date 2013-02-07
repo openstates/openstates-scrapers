@@ -43,22 +43,6 @@
           <li><a href="#votes">{% trans "Recent Votes" %}</a></li>
       </ul>
 </div>
-
-        <ul class="breadcrumb floatedList clearfix">
-            <li><a href="{{metadata.get_absolute_url}}">{{metadata.name}}</a></li>
-            <li>
-                » <a href="{% url 'legislators' abbr %}">{% trans "Legislators" %}</a>
-            </li>
-            {% if 'chamber' in legislator %}
-            <li>
-                » <a href="{% url 'legislators' abbr %}?chamber={{legislator.chamber}}">{{legislator.chamber_name}}</a>
-            </li>
-            {% endif %}
-            <li>
-                » {{legislator.display_name}}
-            </li>
-        </ul>
-
         <div class="fullWidth mainModule legislator clearfix">
             <!-- <div class="medModule"> -->
                 <div class="sixCol colLt">
