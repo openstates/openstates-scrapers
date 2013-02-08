@@ -271,6 +271,9 @@ class MDBillScraper(BillScraper):
         if action_text.startswith('Vote - Senate Floor - '):
             action_text = action_text[22:]
             chamber = 'upper'
+        elif action_text.startswith('Vote - House Floor - '):
+            action_text = action_text[21:]
+            chamber = 'lower'
 
         motion, unused_date = action_text.split(' - ')
         yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
@@ -283,6 +286,8 @@ class MDBillScraper(BillScraper):
         elif 'Rejected' in motion:
             motion = motion.split(' Rejected')[0]
             passed = False
+        elif 'Floor Amendment' in motion:
+            passed = int(yes_count) > int(no_count)
         else:
             raise Exception('unknown motion: %s' % motion)
 
@@ -386,6 +391,8 @@ class MDBillScraper(BillScraper):
                                   a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate Floor':
+                self.scrape_vote(bill, td.text_content(), a.get('href'))
+            elif a.text == 'Vote - House Floor':
                 self.scrape_vote(bill, td.text_content(), a.get('href'))
             else:
                 raise ValueError('unknown document type: %s', a.text)
