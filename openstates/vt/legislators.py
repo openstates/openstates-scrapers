@@ -30,6 +30,8 @@ class VTLegislatorScraper(LegislatorScraper):
 
             district = tr.xpath("string(td[7])")
             district = district.replace('District', '').strip()
+            if not district:
+                continue
 
             first_name = tr.xpath("string(td[8])")
             middle_name = tr.xpath("string(td[9])")
