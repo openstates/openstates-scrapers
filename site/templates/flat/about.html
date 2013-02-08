@@ -1,12 +1,10 @@
-{% extends "flat/flatpage.html" %}
-{% load markup_tags %}
+{% extends "billy/web/public/base.html" %}
 
 {% block title %}Open States: About the Project{% endblock %}
 
-{% block flatpage %}
+{% block content %}
 <div class="module fullWidth">
 <h2>About</h2>
-{% markdown %}
 
 <p>Open States is a collection of tools that make it possible for citizens to
 track what is happening in their state's capitol by aggregating information
@@ -84,5 +82,4 @@ and the authors and maintainers of all of the libraries that we depend upon.
     </ul>
 </div>
 
-{% endmarkdown %}
 {% endblock %}
