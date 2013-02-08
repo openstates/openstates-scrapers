@@ -80,9 +80,9 @@
     <header id="mainHeader">
         <div id="login" class="tip">
             {% if request.user.is_authenticated %}
-            <a href="{% url 'logout' %}">Sign out</a> or <a href="{% url 'user_favorites' %}">view your favorites</a>
+            {{request.user.first_name|default:request.user}} | <a href="{% url 'user_favorites' %}">View your favorites</a> or <a href="{% url 'logout' %}">sign out</a>
             {% else %}
-                <a href="/login/sunlight/">Login</a> or <a href="/login/sunlight/">Sign up</a>
+                <a href="/login/sunlight/?next={{request.get_full_path}}">Login or Sign up</a>
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
