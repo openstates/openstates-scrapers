@@ -277,6 +277,9 @@ class MDBillScraper(BillScraper):
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
             passed = True
+        elif 'Adopted' in motion:
+            motion = motion.split(' Adopted')[0]
+            passed = True
         elif 'Rejected' in motion:
             motion = motion.split(' Rejected')[0]
             passed = False
