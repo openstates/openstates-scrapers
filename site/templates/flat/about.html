@@ -8,75 +8,81 @@
 <h2>About</h2>
 {% markdown %}
 
-Open States is a collection of tools that make it possible for citizens to
+<p>Open States is a collection of tools that make it possible for citizens to
 track what is happening in their state's capitol by aggregating information
-from all 50 states, Washington, D.C., and Puerto Rico.
+from all 50 states, Washington, D.C., and Puerto Rico.</p>
 
-Using the site is simple: enter a U.S. address or select a state to start to research bills, review voting records, contact elected officials and more. Check out [this Sunlight Academy tutorial](http://training.sunlightfoundation.com/module/exploring-state-legislative-data/) to see how Open States can help citizens, journalists and activists learn more about their state government.
+<p>Using the site is simple: enter a U.S. address or select a state to start to research bills, review voting records, contact elected officials and more. Check out <a href="http://training.sunlightfoundation.com/module/exploring-state-legislative-data/">this Sunlight Academy tutorial</a> to see how Open States can help citizens, journalists and activists learn more about their state government.</p>
 
-Open States is a project of the [Sunlight Foundation](http://sunlightfoundation.com).
-Thank you to the [Rita Allen Foundation](http://www.ritaallenfoundation.org/),
- [Minnesota Historical Society](http://mnhs.org) and [Open Society Foundations](http://www.soros.org/) for their generous support.
+<p>Open States is a project of the <a href="http://sunlightfoundation.com">Sunlight Foundation</a>.
+Thank you to the <a href="http://www.ritaallenfoundation.org/">Rita Allen Foundation</a>,
+ <a href="http://mnhs.org">Minnesota Historical Society</a> and <a href="http://www.soros.org">Open Society Foundations</a> for their generous support.</p>
 
 Additionally, collecting this data would not be possible without the support
 of a community much larger than the team here at Sunlight.  A special thanks to
-all of our volunteer [contributors](https://github.com/sunlightlabs/openstates/graphs/contributors)
+all of our volunteer <a href="https://github.com/sunlightlabs/openstates/graphs/contributors">contributors</a>
 and the authors and maintainers of all of the libraries that we depend upon.
 
 <iframe width="640" height="360" src="http://www.youtube.com/embed/lHKbMg1tPsg?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
 
 </div>
 
-<h3 class="moduleTitle">Data</h3>
+<div class="module fullWidth">
+    <h3 class="moduleTitle">Data</h3>
 
-Bill, legislator, committee and event data is collected from official sources,
-linked at the bottom of each legislator, bill, vote, committee or event page.
-For more details, visit our [methodology](/methodology/) page.
+    <p>Bill, legislator, committee and event data is collected from official sources,
+    linked at the bottom of each legislator, bill, vote, committee or event page.
+    For more details, visit our <a href="/methodology">methodology</a> page.</p>
 
-All Open States data is available via this website, [our API](/api/), [bulk downloads](/downloads/) and the [Open States iOS application](http://itunes.apple.com/app/open-states/id500672932?mt=8).
+    <p>All Open States data is available via this website, <a href="/api/">our API</a>, <a href="/downloads/">bulk downloads</a> and the <a href="http://itunes.apple.com/app/open-states/id500672932?mt=8">Open States iOS application</a>.</p>
 
-Notable users of Open States data include:
+    <h6>Notable users of Open States data include:</h6>
 
-* [National Public Radio's StateImpact](http://stateimpact.npr.org/teamblog/)
-* [The Chicago Tribune](http://blog.apps.chicagotribune.com/2011/12/19/analyzing-illinois-pension-codes-using-the-open-states-project/)
-* [MinnPost.com](http://www.minnpost.com/data/2012/05/how-we-built-legislative-bill-explorer)
-
-
-If you're using our data and want to tell us about it, please
-[contact us](mailto:openstates@sunlightfoundation.com).
-
+    <ul>
+        <li><a href="http://stateimpact.npr.org/teamblog/" title="StateImpact Blog | Issues That Matter. Close to Home.">National Public Radio's StateImpact</a></li>
+        <li><a href="http://blog.apps.chicagotribune.com/2011/12/19/analyzing-illinois-pension-codes-using-the-open-states-project/" title="Analyzing Illinois Pension Codes using the Open States Project &laquo;  News Apps Blog">The Chicago Tribune</a></li>
+        <li><a href="http://www.minnpost.com/data/2012/05/how-we-built-legislative-bill-explorer" title="How we built the legislative bill explorer | MinnPost">MinnPost.com</a></li>
+    </ul>
 
 
-<h3 class="moduleTitle">Code</h3>
+    <p>If you're using our data and want to tell us about it, please
+<a href="mailto:openstates@sunlightfoundation.com;">contact us</a>.</p>
+</div>
 
+<div class="module fullWidth">
+    <h3 class="moduleTitle">Code</h3>
+    <p>All told, the website and scrapers together comprise approximately 40,000 lines of <a href="http://python.org/" title="Python Programming Language &ndash; Official Website">Python</a>,
+    all of it open source.</p>
 
-All told, the website and scrapers together comprise approximately 40,000 lines of [Python](http://python.org/),
-all of it open source.
+    <h6>The primary projects behind Open States:</h6>
 
-The primary projects behind Open States:
+    <ul>
+        <li><a href="https://github.com/sunlightlabs/billy/">billy</a> - powering the backend of Open States from scraping to this very site.</li>
+        <li><a href="https://github.com/sunlightlabs/openstates/">openstates</a> - source for all of our scrapers and openstates.org templates.</li>
+        <li><a href="https://github.com/sunlightlabs/validictory/">validictory</a> - helping us keep our data in check.</li>
+        <li><a href="https://github.com/sunlightlabs/scrapelib/">scrapelib</a> - easy, powerful, error-resistant HTTP library built on <a href="https://github.com/kennethreitz/requests/">requests</a>.</li>
+    </ul>
+</div>
 
-* [billy](https://github.com/sunlightlabs/billy/) - powering the backend of Open States from scraping to this very site.
-* [openstates](https://github.com/sunlightlabs/openstates/) - source for all of our scrapers and openstates.org templates.
-* [validictory](https://github.com/sunlightlabs/validictory/) - helping us keep our data in check.
-* [scrapelib](https://github.com/sunlightlabs/scrapelib/) - easy, powerful, error-resistant HTTP library built on [requests](https://github.com/kennethreitz/requests/).
+<div class="module fullWidth">
+    <h3 class="moduleTitle">Third Party Libraries</h3>
 
-Third Party Libraries
-=====================
+    <p>We'd like to make special mention of a few projects that have made our life that much easier.
+    This is far from a comprehensive list of the more than 40 projects that we rely upon throughout the project.</p>
 
-We'd like to make special mention of a few projects that have made our life that much easier.
-This is far from a comprehensive list of the more than 40 projects that we rely upon throughout the project.
+        <ul>
+            <li><a href="https://www.djangoproject.com/">Django</a> -  powering this website and API</li>
+            <li><a href="http://lxml.de" title="lxml - Processing XML and HTML with Python">lxml</a> - the workhorse of our scraping backend</li>
+            <li><a href="http://mongodb.org" title="MongoDB">MongoDB</a> - for all of our data storage</li>
+        </ul>
+</div>
 
-* [Django](https://www.djangoproject.com/) -  powering this website and API
-* [lxml](http://lxml.de) - the workhorse of our scraping backend
-* [MongoDB](http://mongodb.org) - for all of our data storage
-
-Other Licenses
-==============
-
-* Base HTML template based on the fantastic HTML5 Boilerplate by Paul Irish and Divya Manian.
-* Social media icons by [Paul Robert Lloyd](http://paulrobertlloyd.com/).
-  Licenced under a [Attribution-Share Alike 2.0 UK: England & Wales Licence](http://creativecommons.org/licenses/by-sa/2.0/uk/).
-
+<div class="module fullWidth">
+    <h3 class="moduleTitle">Other Licenses</h3>
+    <ul>
+        <li>Base HTML template based on the fantastic HTML5 Boilerplate by Paul Irish and Divya Manian.</li>
+    </ul>
+</div>
 
 {% endmarkdown %}
 {% endblock %}
