@@ -63,22 +63,22 @@ class WVLegislatorScraper(LegislatorScraper):
                          photo_url=photo_url, email=email, url=url)
         leg.add_source(url)
 
-        for link in page.xpath("//a[contains(@href, 'committee.cfm')]"):
-            comm = link.xpath("string()").strip()
+        # for link in page.xpath("//a[contains(@href, 'committee.cfm')]"):
+        #     comm = link.xpath("string()").strip()
 
-            committee_chamber = chamber
-            if 'interims' in link.attrib['href']:
-                committee_chamber = 'joint'
+        #     committee_chamber = chamber
+        #     if 'interims' in link.attrib['href']:
+        #         committee_chamber = 'joint'
 
-            sub_index = comm.find('Subcommittee')
-            if sub_index > 0:
-                sub = comm[sub_index:].strip()
-                comm = comm[:sub_index].strip()
-                leg.add_role('committee member', term, committee=comm,
-                             subcommittee=sub, chamber=committee_chamber)
-            else:
-                leg.add_role('committee member', term, committee=comm,
-                             chamber=committee_chamber)
+        #     sub_index = comm.find('Subcommittee')
+        #     if sub_index > 0:
+        #         sub = comm[sub_index:].strip()
+        #         comm = comm[:sub_index].strip()
+        #         leg.add_role('committee member', term, committee=comm,
+        #                      subcommittee=sub, chamber=committee_chamber)
+        #     else:
+        #         leg.add_role('committee member', term, committee=comm,
+        #                      chamber=committee_chamber)
 
         self.scrape_offices(leg, page)
         self.save_legislator(leg)
