@@ -73,7 +73,7 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        {% if request.GET.search_text and request.user.is_authenticated %}
+        {% if request.GET.search_text %}
             {% favorite bill.id "search" metadata.abbr %}
         {% endif %}
         <div class="fullWidth">

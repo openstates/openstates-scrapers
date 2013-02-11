@@ -1424,11 +1424,9 @@ div.notification-preference {
     vertical-align:top;
 }
 
-.favorite-button {
+.fake-favorite-button, .favorite-button {
     background-color:transparent;
     margin-top:15px;
-
-
 }
 
 .favbutton {

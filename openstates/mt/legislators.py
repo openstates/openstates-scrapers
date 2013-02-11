@@ -180,19 +180,16 @@ class MTLegislatorScraper(LegislatorScraper):
         and waaay too much contanct info, including personal email, phone.
         '''
         doc = self.url_xpath(url)
-
-        xpath = '//img[contains(@src, "legislator")]/@src'
-        photo_url = doc.xpath(xpath).pop()
-        details = {
-            'photo_url': photo_url
-            }
-
         # Get base url.
         parts = urlparse.urlparse(url)
         parts._replace(path='')
         baseurl = parts.geturl()
 
         doc.make_links_absolute(baseurl)
+
+        xpath = '//img[contains(@src, "legislator")]/@src'
+        photo_url = doc.xpath(xpath).pop()
+        details = { 'photo_url': photo_url }
 
         # # Parse address.
         elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])

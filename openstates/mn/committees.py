@@ -24,39 +24,45 @@ class MNCommitteeScraper(CommitteeScraper):
                 biennium = t['biennium']
                 break
 
-        url = 'http://www.senate.leg.state.mn.us/committees/committee_list.php?ls=%s' % biennium
+        url = 'http://www.senate.mn/committees/index.php?ls=%s' % biennium
 
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-        for link in doc.xpath('//b/a/@href'):
+        for link in doc.xpath('//a[contains(@href, "committee_bio")]/@href'):
             self.scrape_senate_committee(term, link)
 
-    def scrape_senate_committee(self, term, link):
-        html = self.urlopen(link)
+    def scrape_senate_committee(self, term, url):
+        html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
-        # strip first 30 and last 10
-        # Minnesota Senate Committees - __________ Committee
-        committee_name = doc.xpath('//title/text()')[0][30:-10]
+        com_name = doc.xpath('//a[contains(@href, "committee_bio")]/text()')[0]
+        parent = doc.xpath('//h4//a[contains(@href, "committee_bio")]/text()')
+        if parent:
+            self.log('%s is subcommittee of %s', com_name, parent[0])
+            com = Committee('upper', parent[0], subcommittee=com_name)
+        else:
+            com = Committee('upper', com_name)
 
-        com = Committee('upper', committee_name)
+        for link in doc.xpath('//div[@id="members"]//a[contains(@href, "member_bio")]'):
+            name = link.text_content().strip()
+            if name:
+                position = link.xpath('.//preceding-sibling::b/text()')
+                if not position:
+                    position = 'member'
+                elif position[0] == 'Chair:':
+                    position = 'chair'
+                elif position[0] == 'Vice Chair:':
+                    position = 'vice chair'
+                elif position[0] == 'Ranking Minority Member:':
+                    position = 'ranking minority member'
+                else:
+                    raise ValueError('unknown position: %s' % position[0])
 
-        # first id=bio table is members
-        for row in doc.xpath('//table[@id="bio"]')[0].xpath('tr'):
-            row = fix_whitespace(row.text_content())
+                name = name.split(' (')[0]
+                com.add_member(name, position)
 
-            # switch role
-            if ':' in row:
-                position, name = row.split(': ')
-                role = position.lower().strip()
-            else:
-                name = row
-
-            # add the member
-            com.add_member(name.strip(), role)
-
-        com.add_source(link)
+        com.add_source(url)
         self.save_committee(com)
 
     def scrape_house_committees(self, term):

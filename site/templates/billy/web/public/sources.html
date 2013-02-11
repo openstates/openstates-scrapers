@@ -3,6 +3,15 @@
 
 <div class="sources fullWidth module">
     <h4 class="withTip">{% trans "Sources" %}</h4>
+    <p class="tip sourceTip">
+    Data on Open States is automatically collected nightly from
+    {% if metadata.legislature_url %}
+    the official website of <a href="{{metadata.legislature_url}}">{{metadata.legislature_name}}</a>.
+    {% else %}
+    each state.
+    {% endif %}
+    If you notice any errors, feel free to <a href="/contact/">contact us</a> or verify that the data matches the official sources below.
+    </p>
     <ul>
         {% for source in sources %}
             <li class="tip tipSm">{{ source.url|sources_urlize|safe }}</li>

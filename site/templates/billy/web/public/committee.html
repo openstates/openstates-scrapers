@@ -30,9 +30,7 @@ $(document).ready(function() {
     <h2 class="colLt">{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 
     <div class="tip tipBig colLt">
-    {% if request.user.is_authenticated %}
         {% favorite committee.id "committee" %}
-    {% endif %}
     </div>
 </div>
 
