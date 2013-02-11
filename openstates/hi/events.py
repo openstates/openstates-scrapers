@@ -67,7 +67,9 @@ class WIEventScraper(EventScraper):
                          "INFO-CPN-ENE",
                          "INFO-WAM-HRE",
                          "INFO-UFL",
-                         "INFO-EDN-EDU"]
+                         "INFO-EDN-EDU",
+                         "INFO-HSG",
+                         "INFO-AGR"]
             if committee in blacklist:
                 continue
 

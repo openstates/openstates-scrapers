@@ -30,9 +30,7 @@ $(document).ready(function() {
     <h2 class="colLt">{{ committee.display_name }} ({{committee.chamber_name}})</h2>
 
     <div class="tip tipBig colLt">
-    {% if request.user.is_authenticated %}
         {% favorite committee.id "committee" %}
-    {% endif %}
     </div>
 </div>
 
@@ -113,7 +111,7 @@ $(document).ready(function() {
                 <td>{{event.location}}</td>
                 <td>{% for bill in event.related_bills %}
                         {% if bill.bill_id %}
-                        <a href="{% url 'bill_noslug' abbr bill.bill_id %}"
+                        <a href="{% url 'bill_noslug' abbr bill.id %}"
                             >{{bill.bill_id}}</a>{% if not forloop.last %}{% ifequal forloop.revcounter 2 %} and {% else %}, {% endifequal %}
                             {% endif %}
                         {% else %}

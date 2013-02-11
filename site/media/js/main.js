@@ -444,5 +444,4 @@ function datatables_filterbox_shim(placeholder){
     // Nuke the data tables filter div.
     $('.dataTables_filter').remove();
 
-
 }

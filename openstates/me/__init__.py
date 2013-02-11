@@ -28,7 +28,7 @@ metadata = dict(
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=['121st Legislature', '122nd Legislature',
-                               '123rd Legislature']
+                               '123rd Legislature', '124th Legislature']
 
 )
 

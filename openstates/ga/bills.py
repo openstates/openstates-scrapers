@@ -113,16 +113,22 @@ class GABillScraper(BillScraper):
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
+                "HPOST": ["other"],
+                "STH": ["other"],
                 "HTS": ["other"],  # House transmitted to senate
                 #"": [],
             }
 
             for action in actions:
                 chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
-                bill.add_action(chamber, action['action'], action['date'],
-                                types[action['code']],
-                                _code=action['code'],
-                                _code_id=action['_guid'])
+                try:
+                    bill.add_action(chamber, action['action'], action['date'],
+                                    types[action['code']],
+                                    _code=action['code'],
+                                    _code_id=action['_guid'])
+                except KeyError:
+                    self.debug(action)
+                    raise
 
             sponsors = instrument['Authors']['Sponsorship']
             if 'Sponsors' in instrument:

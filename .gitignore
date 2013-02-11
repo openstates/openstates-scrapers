@@ -20,3 +20,4 @@ site/collected_static
 site/openstates
 +*.sublime*
 openstates.sqlite3
+dump/

@@ -54,9 +54,7 @@
                 <h5>{{ bill.title|capfirst|smallcaps }}</h5>
                 <div class="clearfix">
                     <div class="tip colLt">
-                    {% if request.user.is_authenticated %}
                         {% favorite bill.id "bill" %}
-                    {% endif %}
                     </div>
                     <div class="colRt">
 

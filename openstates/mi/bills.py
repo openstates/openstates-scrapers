@@ -166,7 +166,11 @@ class MIBillScraper(BillScraper):
         # first anchor in the row is HTML if present, otherwise PDF
         a = row.xpath('.//a')
         if a:
-            name = row.xpath('.//b/text()')[0]
+            name = row.xpath('.//b/text()')
+            if name:
+                name = name[0]
+            else:
+                name = row.text_content().strip()
             url = BASE_URL + a[0].get('href').replace('../', '/')
             return name, url
 

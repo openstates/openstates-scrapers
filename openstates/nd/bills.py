@@ -30,6 +30,7 @@ class NDBillScraper(BillScraper):
         if len(table) > 1:  # Pre-2013 pages.
             ttable, table = table
             ttrows = ttable.xpath(".//tr")
+            descr = ttrows[-1]
         else:
             table = table[0]
             curnode = page.xpath("//div[@id='fastpath']")[0].getnext()
@@ -38,8 +39,8 @@ class NDBillScraper(BillScraper):
                 curnode = curnode.getnext()
                 ret.append(curnode)
             ttrows = ret
+            descr = page.xpath("//div[@class='section']//p")[-2]
 
-        descr = ttrows[-1]
         title = re.sub("\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
 
@@ -98,7 +99,7 @@ class NDBillScraper(BillScraper):
                 chamber = "other"
 
             if date != '':
-                dt = datetime.strptime(date, "%m/%d")
+                dt = datetime.strptime("%s %s" % (date, self.year), "%m/%d %Y")
 
             kwargs = self.categorizer.categorize(action)
 
@@ -142,6 +143,7 @@ class NDBillScraper(BillScraper):
         for t in self.metadata['terms']:
             if t['name'] == term:
                 start_year = t['start_year']
+                self.year = start_year
                 break
 
         url = base_url % (term, start_year)
