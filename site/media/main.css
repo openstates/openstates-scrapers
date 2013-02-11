@@ -197,6 +197,7 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 	margin-right: 0;
 }
 
+
 .filterCol { background-color: #f5f4e8; padding: 20px 15px 40px; border-top: 1px solid #e1e1d9; border-right: 1px solid #ECEADD; border-left: 1px solid #ECEADD; border-bottom: 1px solid #ECEADD;}
 .filterCol select { width: 120px;}
 .filterCol input { width: 108px;}
@@ -1442,9 +1443,10 @@ div.notification-preference {
     border-radius: 5px;
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
-    font-size: 135%;
+    font-size: 16px;
     padding:3px 10px;
     color:#E7B300;
+    max-width:170px;
 }
 
 .favbutton:hover{
@@ -1455,6 +1457,7 @@ div.notification-preference {
     font-size:25px;
     vertical-align: center;
     padding-right:10px;
+    font-style:normal;
 }
 .starOn{
     text-shadow: -1px -1px white, 1px 1px #666;
@@ -1631,4 +1634,6 @@ li.greyArrow:before {
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e5e5dc', endColorstr='#e5e5dc',GradientType=0 ); /* IE6-9 */
 
 }
-
+.maxWidth {
+    max-width:100%;
+}
