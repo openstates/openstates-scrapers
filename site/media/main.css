@@ -711,6 +711,10 @@ div.flatpage div.note { border: 1px double #aaaaaa; padding: 0px 1em; margin: 10
 div.flatpage div.note p.admonition-title { font-weight: bold; font-size: 110%; }
 div.flatpage table#download_list { width: auto; }
 
+#about ul { list-style: circle; margin: 0 0 20px 1.8em; }
+#about li { line-height: 1.6; display: list-item; margin-bottom: 0; clear: both; float: none; }
+#about li ul { margin-bottom: 0; list-style: disc; }
+
 /* new additions  */
 
 #errorTitle { background: url(images/img_404.jpg) top left no-repeat; height: 369px; margin-top: -10px;}
