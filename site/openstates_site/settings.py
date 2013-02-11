@@ -135,6 +135,8 @@ LOGIN_URL = '/login/sunlight/'
 
 LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
 
+SUNLIGHT_AUTH_SECRET = 'fd53166ae78bad2155548b767489fa'
+
 try:
     from .local_settings import *
 except ImportError:
