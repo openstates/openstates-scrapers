@@ -37,6 +37,9 @@ class OHLegislatorScraper(LegislatorScraper):
         ctties = page.xpath("//div[@class='committeeList']//a")
         for entry in [x.text_content() for x in ctties]:
             chmbr = "joint" if "joint" in entry.lower() else chamber
+            if entry in JOINT_COMMITTEE_OVERRIDE:
+                chmbr = "joint"
+
             leg.add_role('committee member',
                          term=term,
                          chamber=chmbr,
