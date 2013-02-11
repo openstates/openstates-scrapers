@@ -88,7 +88,7 @@
             {% endif %}
         </div>
         <form action="/{{abbr|default:'all'}}/search/" method="get" id="searchform">
-            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% if abbr %} {% blocktrans with metadata.name as state_name %} Search {{state_name}} for bills or legislators {% endblocktrans %} {% else %} {% blocktrans with abbr|upper as state_name %} Search for bills or legislators across all states {% endblocktrans %} {% endif %}">
+            <input class="transparent search" type="search" name="search_text" id="id_q" placeholder="{% if abbr and abbr != 'all' %} {% blocktrans with metadata.name as state_name %} Search {{state_name}} for bills or legislators {% endblocktrans %} {% else %} {% blocktrans with abbr|upper as state_name %} Search for bills or legislators across all states {% endblocktrans %} {% endif %}">
             <button type="submit">
                 <span>{% trans "Search" %}</span>
             </button>
