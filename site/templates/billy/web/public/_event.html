@@ -67,5 +67,8 @@
             {% endfor %}
           </dd>
         {% endif %}
-      </dl>
-    {% sources event %}
+    </dl>
+
+    {% with sources=event.sources supress_tip='true' %}
+        {% include "billy/web/public/sources.html" %}
+    {% endwith %}

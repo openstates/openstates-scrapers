@@ -205,9 +205,13 @@
         {% endif %}
 
         {% if vote.sources %}
-            {% sources vote %}
+            {% with sources=vote.sources %}
+                {% include "billy/web/public/sources.html" %}
+            {% endwith %}
         {% else %}
-            {% sources vote.bill %}
+            {% with sources=vote.bill.sources %}
+                {% include "billy/web/public/sources.html" %}
+            {% endwith %}
         {% endif %}
     </div>
 </div>
