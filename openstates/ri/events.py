@@ -45,7 +45,11 @@ class RIEventScraper(EventScraper):
     def scrape_agenda(self, url, session):
         page = self.lxmlize(url)
         # Get the date/time info:
-        date_time = page.xpath("//table[@class='time_place']")[0]
+        date_time = page.xpath("//table[@class='time_place']")
+        if date_time == []:
+            return
+
+        date_time = date_time[0]
         lines = date_time.xpath("./tr")
         metainf = {}
         for line in lines:
