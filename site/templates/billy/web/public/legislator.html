@@ -343,8 +343,9 @@
 
 
     <div class="clearfix">
-        {% sources legislator %}
-
+        {% with sources=legislator.sources %}
+            {% include "billy/web/public/sources.html" %}
+        {% endwith %}
     </div>
 {% if legislator.district %}
 <script>
