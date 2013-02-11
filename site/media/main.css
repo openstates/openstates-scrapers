@@ -197,6 +197,7 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 	margin-right: 0;
 }
 
+
 .filterCol { background-color: #f5f4e8; padding: 20px 15px 40px; border-top: 1px solid #e1e1d9; border-right: 1px solid #ECEADD; border-left: 1px solid #ECEADD; border-bottom: 1px solid #ECEADD;}
 .filterCol select { width: 120px;}
 .filterCol input { width: 108px;}
@@ -1410,7 +1411,11 @@ div.notification-preference {
 .favHead {
     text-align:left;
     background-color: #E9E6DF;
+}
 
+.favHead .invisible {
+    visibility: visible;
+    color: #E9E6DF;
 }
 
 .favHead th{
@@ -1418,9 +1423,11 @@ div.notification-preference {
     padding-top:5px;
 }
 
+
 .followBox  {
-    width:50px;
-    height: 50px;
+    width:170px;
+    min-height: 120px;
+    vertical-align: center;
 }
 
 .topAlign td{
@@ -1633,4 +1640,6 @@ li.greyArrow:before {
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e5e5dc', endColorstr='#e5e5dc',GradientType=0 ); /* IE6-9 */
 
 }
-
+.maxWidth {
+    max-width:100%;
+}
