@@ -119,6 +119,7 @@ class TXEventScraper(EventScraper):
                 replace = {
                     "see below": "",
                     "See Below": "",
+                    "See below": "",
                     "of the House": "",
                     "of the Senate": "",
                     "or upon adjournment": "",
