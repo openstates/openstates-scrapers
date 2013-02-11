@@ -5,8 +5,8 @@
     <h4 class="withTip">{% trans "Sources" %}</h4>
     <p class="tip sourceTip">
     Data on Open States is automatically collected nightly from
-    {% if metadata.legislature_url %}
-    the official website of <a href="{{metadata.legislature_url}}">{{metadata.legislature_name}}</a>.
+    {% if meta.legislature_url %}
+    the official website of <a href="{{meta.legislature_url}}">{{metadata.legislature_name}}</a>.
     {% else %}
     each state.
     {% endif %}
