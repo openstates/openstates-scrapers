@@ -48,7 +48,9 @@
         {% endif %}
     </div>
 
-    {% sources bill %}
+    {% with sources=bill.sources %}
+        {% include "billy/web/public/sources.html" %}
+    {% endwith %}
     <div class="clear"></div>
 {% endblock %}
 

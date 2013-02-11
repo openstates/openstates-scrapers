@@ -33,6 +33,8 @@
             <div class="clear"></div>
         </div>
         <div class="fullWidth">
-            {% sources bill %}
+        {% with sources=bill.sources %}
+            {% include "billy/web/public/sources.html" %}
+        {% endwith %}
         </div>
 {% endblock %}
