@@ -15,7 +15,7 @@ $(document).ready(function() {
 </script>
 {% endblock %}
 
-{% block bodyclass %}home{% endblock %}
+{% block body_id %}favorites{% endblock %}
 
 
 {% block content %}
@@ -59,7 +59,7 @@ $(document).ready(function() {
                         <th>{% trans "Title" %}</th>
                         <th>{% trans "Session" %}</th>
                         <th>{% trans "Recent Action" %}</th>
-                        <th class="invisible">Favorite</th>
+                        <th class="invisible favHead favWidth">Favorite</th>
                     </tr>
                 </thead>
                 <tbody>

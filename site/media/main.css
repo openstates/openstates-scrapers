@@ -1411,7 +1411,11 @@ div.notification-preference {
 .favHead {
     text-align:left;
     background-color: #E9E6DF;
+}
 
+.favHead .invisible {
+    visibility: visible;
+    color: #E9E6DF;
 }
 
 .favHead th{
@@ -1419,9 +1423,11 @@ div.notification-preference {
     padding-top:5px;
 }
 
+
 .followBox  {
-    width:50px;
-    height: 50px;
+    width:170px;
+    min-height: 120px;
+    vertical-align: center;
 }
 
 .topAlign td{
