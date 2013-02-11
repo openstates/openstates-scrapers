@@ -12,6 +12,22 @@ JOINT_COMMITTEE_OVERRIDE = [  # without Joint" in the name.
     "Correctional Institution Inspection Committee"
 ]
 
+SUBCOMMITTEES = {
+    "Education Finance Subcommittee": "Education",
+    "Medicaid Finance Subcommittee": "Medicaid, Health And Human Services",
+    "General Government Finance Subcommittee":
+            "State Government Oversight And Reform",
+    "Shared Services and Government Efficiency Subcommittee":
+            "Public Safety, Local Government And Veterans Affairs",
+    "Higher Education Subcommittee": "Education",
+    "Health and Human Services Subcommittee":
+            "Medicaid, Health And Human Services",
+    "Transportation Subcommittee": "Transportation",
+    "Agriculture and Development Subcommittee":
+            "Agriculture And Natural Resources",
+    "Primary and Secondary Education Subcommittee": "Education",
+}
+
 
 class OHLegislatorScraper(LegislatorScraper):
     jurisdiction = 'oh'
@@ -40,10 +56,20 @@ class OHLegislatorScraper(LegislatorScraper):
             if entry in JOINT_COMMITTEE_OVERRIDE:
                 chmbr = "joint"
 
+            kwargs = {}
+            if "subcommittee" in entry.lower():
+                if entry in SUBCOMMITTEES:
+                    kwargs['subcommittee'] = entry
+                    entry = SUBCOMMITTEES[entry]
+                else:
+                    self.warning("No subcommittee known - %s" % (entry))
+                    raise Exception
+
             leg.add_role('committee member',
                          term=term,
                          chamber=chmbr,
-                         committee=entry)
+                         committee=entry,
+                         **kwargs)
 
     def scrape_page(self, chamber, term, url):
         page = self.urlopen(url)
