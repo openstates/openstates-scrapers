@@ -287,6 +287,8 @@ class NMBillScraper(BillScraper):
             '7642': ('floor substitute adopted (1 amendment)', 'other'),
             '7643': ('floor substitute adopted (2 amendment)', 'other'),
             '7644': ('floor substitute adopted (3 amendment)', 'other'),
+            '7655': ('Referred to the House Appropriations & Finance',
+                     'committee:referred'),
             '7645': ('motion to reconsider adopted', 'other'),
             '7649': ('printed', 'other'),
             '7650': ('not printed %s', 'other'),
