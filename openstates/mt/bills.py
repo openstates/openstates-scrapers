@@ -518,8 +518,8 @@ class PDFCommitteeVote(object):
 
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
-        chamber, _, _ = self.text.lstrip().partition(' ')
-        return chamber_dict[chamber]
+        chamber = re.search(r'(HOUSE|SENATE|JOINT)', self.text)
+        return chamber_dict[chamber.group(1)]
 
     def date(self):
 
