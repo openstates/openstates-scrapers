@@ -68,7 +68,7 @@ class TNLegislatorScraper(LegislatorScraper):
             else:
                 full_name = name[8:len(name)]
 
-            leg = Legislator(term, chamber, district, full_name,
+            leg = Legislator(term, chamber, district, full_name.strip(),
                              party=party, email=email, url=member_url,
                              photo_url=member_photo_url)
             leg.add_source(chamber_url)
