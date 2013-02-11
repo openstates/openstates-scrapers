@@ -1442,9 +1442,10 @@ div.notification-preference {
     border-radius: 5px;
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
-    font-size: 135%;
+    font-size: 16px;
     padding:3px 10px;
     color:#E7B300;
+    max-width:170px;
 }
 
 .favbutton:hover{
@@ -1455,6 +1456,7 @@ div.notification-preference {
     font-size:25px;
     vertical-align: center;
     padding-right:10px;
+    font-style:normal;
 }
 .starOn{
     text-shadow: -1px -1px white, 1px 1px #666;
