@@ -33,7 +33,11 @@ class AKCommitteeScraper(CommitteeScraper):
         if page.xpath("//h3[. = 'Joint Committee']"):
             chamber = 'joint'
 
-        comm = Committee(chamber, name)
+        subcommittee = page.xpath("//h3[@align='center']/text()")[0]
+        if not "Subcommittee" in subcommittee:
+            subcommittee = None
+
+        comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
         for link in page.xpath("//a[contains(@href, 'member=')]"):

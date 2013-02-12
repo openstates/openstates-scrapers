@@ -83,7 +83,8 @@ class NDLegislatorScraper(LegislatorScraper):
         }[metainf['chamber']]
 
         kwargs = {
-            "party": metainf['party']
+            "party": {"Democrat": "Democratic",
+                      "Republican": "Republican"}[metainf['party']]
         }
         if photo:
             kwargs['photo_url'] = photo

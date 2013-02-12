@@ -18,6 +18,10 @@
 <script>
 $(document).ready(function(){
 
+    $('#id_formabbr').select2({
+        placeholder: '---',
+        allowClear: true
+    });
     $('#id_type').select2({
         placeholder: '---',
         allowClear: true
@@ -50,6 +54,7 @@ $(document).ready(function(){
         event.preventDefault();
 
         // Clear the select widgets.
+        $('#id_formabbr').select2("val", '');
         $('#id_session').select2("val", '');
         $("#id_subjects").select2("val", []);
         $("#id_status").select2("val", '');
@@ -92,7 +97,18 @@ $(document).ready(function(){
             <div class="fourCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
-                   <ul>
+                    <ul>
+
+                    {% if abbr == "all" %}
+                      <li>
+                        <h6 class="withTipSm"><label for="id_formabbr">State:</label></h6>
+                        <select name="abbr" id="id_formabbr">
+                          {% for value, abbr in form.fields.abbr.widget.choices %}
+                            <option value="{{value}}" {% if value in form.data.abbr %}selected{% endif %}>{{abbr}}</option>
+                          {% endfor %}
+                        </select>
+                      </li>
+                    {% endif %}
 
                       <li>
                         <h6 class="withTipSm"><label for="id_search_text">Search text:</label></h6>

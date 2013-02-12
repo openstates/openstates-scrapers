@@ -95,9 +95,8 @@ $(document).ready(function() {
             <table>
                 <thead>
                     <tr class="favHead">
-
-                        <th class="invisible">{% trans "Picture" %}</th>
                         <th>{% trans "State" %}</th>
+                        <th class="invisible">{% trans "Picture" %}</th>
                         <th>{% trans "Name" %}</th>
                         <th>{% trans "District" %}</th>
                         <th>{% trans "Party" %}</th>
@@ -108,9 +107,8 @@ $(document).ready(function() {
                 <tbody>
                     {% for obj in legislators %}
                     <tr class="{% cycle 'even' 'odd' %} textLt">
-
-                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg" onerror="img_error(this);" /></a></td>
                         <td>{{obj.metadata.name}}</td>
+                        <td><a href="{{ obj.get_absolute_url }}"><img class="legImgSmall" src="http://static.openstates.org/photos/xsmall/{{ obj.leg_id }}.jpg" onerror="img_error(this);" /></a></td>
                         <td><a href="{{ obj.get_absolute_url }}">{{ obj.full_name }}</a></td>
                         <td>{{ obj.district }}</td>
                         <td>{{ obj.party }}</td>
@@ -185,16 +183,14 @@ $(document).ready(function() {
             <table>
                 <thead>
                     <tr class="favHead">
-
+                        <th>State</th>
                         <th>Search term</th>
-                        <th>Scope</th>
                         <th class="invisible">Favorite</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for obj in favorites.search %}
                         <tr class="{% cycle odd,even %} textLt">
-
                             <td>
                                 <a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">{% if obj.text %}
                                     "{{obj.text}}"
@@ -204,6 +200,7 @@ $(document).ready(function() {
                                 </a>
                             </td>
                             <td>{{obj.scope|safe}}</td>
+                            <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
                             <td class="followBox">{% favorite_short obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
                         </tr>
                     {% endfor %}

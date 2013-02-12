@@ -30,6 +30,8 @@
             {% endfor %}
         </div>
         <div class="module">
-            {% sources bill %}
+        {% with sources=bill.sources %}
+            {% include "billy/web/public/sources.html" %}
+        {% endwith %}
         </div>
 {% endblock %}

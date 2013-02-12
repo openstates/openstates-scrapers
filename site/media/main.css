@@ -495,7 +495,7 @@ input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #
 .yes .tagValue { background-color: #e8e0dc;}
 .no .tagValue { background-color: #d1cac8;}
 
-.voteChart a { margin-bottom: 5px; display: block;}
+.voteChart a { margin-bottom: 5px; display: inline;}
 
 .voteChart {
     display: block;

@@ -132,7 +132,9 @@ $(document).ready(function() {
 </div>
 {% endif %}
 
-{% sources committee %}
+{% with sources=committee.sources %}
+    {% include "billy/web/public/sources.html" %}
+{% endwith %}
 
 {% endblock %}
 

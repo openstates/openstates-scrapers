@@ -71,7 +71,7 @@
 
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
-    <div class="fullWidth module clear">
+    <div class="fullWidth module clearfix">
         <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             {% if  joint_committee_count %}
                 <ul class="inlineThirds centeredText">
@@ -92,19 +92,19 @@
             </a>
             {% endif %}
         </ul>
-        <div class="clear"></div>
     </div>
     {% endif %}
 
 
 <!-- bills -->
-    <div class="fullWidth moduleNoBorder">
+    <div class="fullWidth moduleNoBorder clearfix">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
         {% for chamber in chambers %}
             {# only show chamber if we have multiple chambers #}
-            {% if chambers|length > 1 %}
             <div class="module clearfix">
-                <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
+                {% if chambers|length > 1 %}
+                    <h3 class="clear">{{ chamber.name }}</h3>
+                {% endif %}
                 <div class="fiveCol colLt">
                     {% include "billy/web/public/_recently_passed.html" %}
                 </div>
@@ -113,8 +113,6 @@
                 </div>
             </div>
         {% endfor %}
-
-        <div class="clear"></div>
     </div>
 
     <div class="fullWidth module">
@@ -133,6 +131,7 @@
         </table>
     </div>
 
+    {% include "billy/web/public/sources.html" %}
 
 
 <!-- mapbox interaction script -->
