@@ -73,8 +73,8 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        {% if request.GET.search_text %}
-            {% favorite bill.id "search" metadata.abbr %}
+        {% if request.GET %}
+            {% favorite "" "search" metadata.abbr %}
         {% endif %}
         <div class="fullWidth">
             <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
