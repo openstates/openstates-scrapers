@@ -102,9 +102,10 @@
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
         {% for chamber in chambers %}
             {# only show chamber if we have multiple chambers #}
-            {% if chambers|length > 1 %}
             <div class="module clearfix">
-                <h3 class="clear">{{ chamber.name }}</h3> {% endif %}
+                {% if chambers|length > 1 %}
+                    <h3 class="clear">{{ chamber.name }}</h3>
+                {% endif %}
                 <div class="fiveCol colLt">
                     {% include "billy/web/public/_recently_passed.html" %}
                 </div>
