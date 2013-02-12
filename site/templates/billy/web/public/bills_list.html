@@ -108,6 +108,12 @@ $(document).ready(function(){
                           {% endfor %}
                         </select>
                       </li>
+                        {% if form.data.abbr %}
+                        <li> <a href="/{{form.data.abbr}}/bills/?search_text={{form.data.search_text}}">
+                            For more filtering results for {{form.data.abbr|upper}} click here.</a>
+                        </li>
+                        {% endif %}
+                      </li>
                     {% endif %}
 
                       <li>
