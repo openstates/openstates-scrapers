@@ -29,6 +29,15 @@ class OHEventScraper(EventScraper):
         header = rows[0]
         rows = rows[1:]
 
+        week_of = page.xpath("//h3[@align='center']/b/text()")[0]
+        match = re.match(
+            "(?i)Week of (?P<month>.*) (?P<day>\d+), (?P<year>\d{4})",
+            week_of)
+        day_info = match.groupdict()
+        monday_dom = int(day_info['day'])
+        days = ["monday", "tuesday", "wednesday", "thursday",
+                "friday", "saturday", "sunday"]
+
         dates = {}
         dIdex = 0
         for row in header.xpath(".//td")[1:]:
@@ -47,6 +56,7 @@ class OHEventScraper(EventScraper):
 
             hour = re.sub("\(.*\)", "", blocks[1])
             bills = blocks[2]
+            bills = bills.encode('ascii', errors='ignore')
 
             if "after" in hour or "after" in bills:
                 return None, None, []
@@ -63,7 +73,7 @@ class OHEventScraper(EventScraper):
             hour = [ x.strip() for x in hour.split('and') ]
 
             # We'll pass over this twice.
-            single_bill = re.search("(H|S)(B|R) \d{3}", bills)
+            single_bill = re.search("(H|S)(C?)(B|R) \d+", bills)
             if single_bill is not None:
                 start, end = single_bill.regs[0]
                 description = bills
@@ -73,19 +83,29 @@ class OHEventScraper(EventScraper):
                     "description": description
                 }]
             else:
-                multi_bills = re.search("(H|S)(B|R|M)s (\d{3}(; )?)+", bills)
+                multi_bills = re.search("(H|S)(B|R|M)s (\d+((;,) )?)+",
+                                        bills)
                 if multi_bills is not None:
                     # parse away.
                     bill_array = bills.split()
                     type = bill_array[0]
                     bill_array = bill_array[1:]
-                    bill_array = [ x.replace(";", "").strip() for
-                                   x in bill_array ]
+
+                    def _c(f):
+                        for thing in [";", ",", "&", "*"]:
+                            f = f.replace(thing, "")
+                        return re.sub("\s+", " ", f).strip()
+
+                    bill_array = [_c(x) for x in bill_array]
                     type = type.replace("s", "")
                     bill_array = [
                         { "bill_id": "%s %s" % ( type, x ),
                           "description": bills } for x in bill_array ]
                     bills = bill_array
+
+                else:
+                    self.warning("Unknwon bill thing: %s" % (bills))
+                    bills = []
 
             return hour, room, bills
 
@@ -103,26 +123,51 @@ class OHEventScraper(EventScraper):
                     datetime = datetime.encode("ascii", "ignore")
 
                     # DAY_OF_WEEK MONTH/DAY/YY %I:%M %p"
-                    try:
-                        datetime = dt.datetime.strptime(datetime,
-                                                        "%A %m/%d/%y %I:%M %p")
-                    except ValueError as e:
-                        self.warning("Bad datestring: %s / %s" % (datetime,
-                                                                  e))
-                        continue
+                    dow, time = datetime.split()
+                    month = day_info['month']
+                    year = day_info['year']
+                    day = monday_dom + days.index(dow.lower())
+
+                    datetime = "%s %s %s, %s %s" % (
+                        dow, month, day, year, time
+                    )
+
+                    formats = [
+                        "%A %B %d, %Y %I:%M %p",
+                        "%A %B %d, %Y %I:%M%p",
+                        "%A %B %d, %Y %I %p",
+                        "%A %B %d, %Y %I%p",
+                    ]
+
+                    dtobj = None
+                    for fmt in formats:
+                        try:
+                            dtobj = dt.datetime.strptime(datetime, fmt)
+                        except ValueError as e:
+                            continue
+
+                    if dtobj is None:
+                        self.warning("Unknown guy: %s" % (datetime))
+                        raise Exception
+
+                    datetime = dtobj
+
                     event = Event(session,
                                   datetime,
                                   'committee:meeting',
                                   'Meeting Notice',
                                   "Room %s" % (room))
                     event.add_source(url)
+
                     for bill in bills:
                         event.add_related_bill(
                             bill['bill_id'],
                             description=bill['description'],
                             type='consideration'
                         )
-                    event.add_participant("host", ctty, 'committee', chamber=chamber)
+
+                    event.add_participant("host",
+                                          ctty, 'committee', chamber=chamber)
                     self.save_event(event)
 
     def scrape(self, chamber, session):
