@@ -195,7 +195,14 @@ $(document).ready(function() {
                     {% for obj in favorites.search %}
                         <tr class="{% cycle odd,even %} textLt">
 
-                            <td><a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">"{{obj.text}}"</a></td>
+                            <td>
+                                <a href="/{{obj.search_abbr}}/bills?{{obj.search_params}}">{% if obj.text %}
+                                    "{{obj.text}}"
+                                {% else %}
+                                    [None]
+                                {% endif %}
+                                </a>
+                            </td>
                             <td>{{obj.scope|safe}}</td>
                             <td class="followBox">{% favorite_short obj.id 'search' obj.search_abbr 'is_favorite' obj.search_params %}</td>
                         </tr>
