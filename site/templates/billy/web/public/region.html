@@ -71,7 +71,7 @@
 
     {# hide committees module if unicameral #}
     {% if chambers|length > 1 %}
-    <div class="fullWidth module clear">
+    <div class="fullWidth module clearfix">
         <h3 class="moduleTitle">{% trans "Committees" %}</h3>
             {% if  joint_committee_count %}
                 <ul class="inlineThirds centeredText">
@@ -92,13 +92,12 @@
             </a>
             {% endif %}
         </ul>
-        <div class="clear"></div>
     </div>
     {% endif %}
 
 
 <!-- bills -->
-    <div class="fullWidth moduleNoBorder">
+    <div class="fullWidth moduleNoBorder clearfix">
         <h3 class="moduleTitle">{% trans "Bills" %}</h3>
         {% for chamber in chambers %}
             {# only show chamber if we have multiple chambers #}
@@ -114,8 +113,6 @@
                 </div>
             </div>
         {% endfor %}
-
-        <div class="clear"></div>
     </div>
 
     <div class="fullWidth module">
