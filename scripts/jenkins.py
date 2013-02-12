@@ -81,7 +81,7 @@ urls = {'data': ('http://jenkins.openstates.org/job/'
                  '{state}/ws/cache/*zip*/cache.zip')}
 
 # Logging config
-logger = logging.getLogger('janky-import')
+logger = logging.getLogger('billy.janky-import')
 logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to debug
