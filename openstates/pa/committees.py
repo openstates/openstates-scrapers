@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -31,11 +30,13 @@ class PACommitteeScraper(CommitteeScraper):
                 if not link.tail:
                     continue
 
+                # Get committee names.
                 committee_name = link.tail.strip().strip(',')
                 committee_name = re.sub(r"\s+", " ", committee_name)
                 subcommittee_name = None
-                role = 'member'
 
+                # Get person's role, if present.
+                role = 'member'
                 rest = link.getnext().text
                 if rest:
                     match = re.match(r',\s+(Subcommittee on .*)\s+-',
@@ -50,6 +51,7 @@ class PACommitteeScraper(CommitteeScraper):
                     if role == 'chairman':
                         role = 'chair'
 
+                # Get the committee.
                 try:
                     committee = committees[(chamber, committee_name,
                                             subcommittee_name)]
@@ -62,9 +64,13 @@ class PACommitteeScraper(CommitteeScraper):
 
                     committees[(chamber, committee_name,
                                 subcommittee_name)] = committee
+
+                # Add the committee member.
                 committee.add_member(name.strip(), role)
 
         for committee in committees.values():
             if not committee['members']:
                 continue
+            # if committee['committee'].lower() == 'urban affairs':
+            #     import pdb; pdb.set_trace()
             self.save_committee(committee)

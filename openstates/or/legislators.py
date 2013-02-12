@@ -68,6 +68,9 @@ class ORLegislatorScraper(LegislatorScraper):
                          party=party,
                          email=member.get('e-mail'),
                          url=member.get('website'),
+                         photo_url="%s/member_photo.jpg" % (
+                             member.get('website')
+                         ),
                          oregon_member_id=member.get('leg-member-id'))
 
         # add offices

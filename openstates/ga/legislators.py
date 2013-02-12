@@ -1,6 +1,17 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
 
+import lxml
+
+
+HOMEPAGE_URLS = {
+    "lower": ("http://www.house.ga.gov/Representatives/en-US/"
+             "member.aspx?Member={code}&Session={sid}"),
+    "upper": ("http://www.senate.ga.gov/SENATORS/en-US/"
+              "member.aspx?Member={code}&Session={sid}")
+}
+
+
 class GALegislatorScraper(LegislatorScraper):
     jurisdiction = 'ga'
     sservice = get_client("Members").service
@@ -15,15 +26,29 @@ class GALegislatorScraper(LegislatorScraper):
                 new_list.append(x.strip())
         return new_list
 
+    def lxmlize(self, url):
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        return page
+
+    def scrape_homepage(self, url, kwargs):
+        url = url.format(**kwargs)
+        page = self.lxmlize(url)
+        images = page.xpath("//img[contains(@src, 'SiteCollectionImages')]")
+
+        if len(images) != 1:
+            raise Exception
+
+        return url, images[0].attrib['src']
+
     def scrape_session(self, term, chambers, session):
         session = self.metadata['session_details'][session]
         sid = session['_guid']
         members = self.sservice.GetMembersBySession(sid)['MemberListing']
 
         for member in members:
-
             guid = member['Id']
-
             member_info = self.sservice.GetMember(guid)
 
             nick_name, first_name, middle_name, last_name = (
@@ -63,6 +88,10 @@ class GALegislatorScraper(LegislatorScraper):
                     "House": 'lower',
                     "Senate": 'upper'
                 }[chamber]
+
+                url, photo = self.scrape_homepage(HOMEPAGE_URLS[chamber],
+                                                  {"code": guid, "sid": sid})
+
             else:
                 raise Exception("Something very bad is going on with the "
                                 "Legislative service")
@@ -76,6 +105,8 @@ class GALegislatorScraper(LegislatorScraper):
                 party=party,
                 last_name=last_name,
                 first_name=first_name,
+                url=url,
+                photo_url=photo,
                 _guid=guid
             )
 
