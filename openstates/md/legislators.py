@@ -47,6 +47,7 @@ class MDLegislatorScraper(LegislatorScraper):
             email = ldoc.xpath('//a[contains(@href, "mailto:")]/@href')
             if email:
                 email = email[0].strip('mailto:')
+                email = email.split('?')[0]
             else:
                 email = ''
 
