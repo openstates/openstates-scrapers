@@ -105,6 +105,8 @@ class GALegislatorScraper(LegislatorScraper):
                 party=party,
                 last_name=last_name,
                 first_name=first_name,
+                url=url,
+                photo_url=photo,
                 _guid=guid
             )
 
