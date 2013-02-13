@@ -20,11 +20,11 @@ metadata = dict(
     ],
     session_details={
         '62' : {'start_date' : datetime.date(2011, 1, 4),
-                'display_name' : '62nd Legislative Assembly',
+                'display_name' : '62nd Legislative Assembly (2011-2012)',
                 '_scraped_name': '62nd Legislative Assembly (2011-12)',
                },
         '63' : {'start_date': datetime.date(2013, 1, 8),
-                'display_name' : '63rd Legislative Assembly',
+                'display_name' : '63rd Legislative Assembly (2013-2014)',
                 '_scraped_name': '63rd Legislative Assembly (2013-14)',
                }
     },

@@ -22,9 +22,9 @@ metadata = dict(
          'start_year': 2013, 'end_year': 2014},
         ],
     session_details={
-        '19': {'display_name': '19th Council Period',
+        '19': {'display_name': '19th Council Period (2011-2012)',
                '_scraped_name': '19' },
-        '20': {'display_name': '20th Council Period',
+        '20': {'display_name': '20th Council Period (2013-2014)',
                '_scraped_name': '20' },
     },
     feature_flags=[],
