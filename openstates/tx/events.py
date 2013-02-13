@@ -125,6 +125,7 @@ class TXEventScraper(EventScraper):
                     "or upon adjournment": "",
                     "of the House and the Senate": "",
                     "or 30 minutes upon adjournment": "",
+                    "or the Senate Finance Committee": "",
                     "(or 15 minutes after adjournment of the .*)": "",
                     "or during reading and referral of bills": "",
                 }
