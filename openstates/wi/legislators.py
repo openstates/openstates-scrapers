@@ -68,25 +68,6 @@ class WILegislatorScraper(LegislatorScraper):
                 leg.add_office('capitol', 'Madison Office', address=address,
                                phone=phone, fax=fax)
 
-                com_url = rep_doc.xpath('//a[text()="Committees"]/@href')[0]
-
-                # get committees
-                self.add_committees(leg, com_url, term, chamber)
-
                 # save legislator
                 leg.add_source(rep_url)
-                leg.add_source(com_url)
                 self.save_legislator(leg)
-
-
-    def add_committees(self, legislator, rep_url, term, chamber):
-        doc = lxml.html.fromstring(self.urlopen(rep_url))
-        doc.make_links_absolute(rep_url)
-
-        for c in doc.xpath('//ul[@class="LegisIndCommList"]/li/a/text()'):
-            if 'Joint' in c or 'Special' in c:
-                c_chamber = 'joint'
-            else:
-                c_chamber = chamber
-            legislator.add_role('committee member', term, committee=c,
-                                chamber=c_chamber)
