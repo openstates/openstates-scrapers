@@ -69,15 +69,7 @@ class WIEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting', descr,
                           location=where)
 
-            blacklist = ["INFO-CPC-TOU-LAB",
-                         "INFO-CPN-ENE",
-                         "INFO-WAM-HRE",
-                         "INFO-UFL",
-                         "INFO-EDN-EDU",
-                         "INFO-HSG",
-                         "INFO-WAL-OMH'",
-                         "INFO-AGR"]
-            if committee in blacklist:
+            if "INFO" in committee:
                 continue
 
             if "/" in committee:
