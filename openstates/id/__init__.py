@@ -153,19 +153,19 @@ metadata = dict(
         #    'end_date': datetime.date(2010, 3, 29)},
         '2011':
             {'type': 'primary',
-            'display_name': '61st Legislature, 1st Regular Session',
+            'display_name': '61st Legislature, 1st Regular Session (2011)',
             'start_date': datetime.date(2011, 1, 10),
             'end_date': datetime.date(2011, 4, 7),
             '_scraped_name': '2011 Session Information',
             },
         '2012':
             {'type': 'primary',
-            'display_name': '61st Legislature, 2nd Regular Session',
+            'display_name': '61st Legislature, 2nd Regular Session (2012)',
             '_scraped_name': '2012 Session Information',
             },
         '2013':
             {'type': 'primary',
-            'display_name': '62ed Legislature, 1st Regular Session',
+            'display_name': '62nd Legislature, 1st Regular Session (2013)',
             '_scraped_name': '2013 Session Information',
             },
     },

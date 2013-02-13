@@ -21,9 +21,9 @@ metadata = dict(
     session_details={
         # '124': {'display_name':  '124th Legislature',
         #         '_scraped_name': '124th Legislature'},
-        '125': {'display_name':  '125th Legislature',
+        '125': {'display_name':  '125th Legislature (2011-2012)',
                 '_scraped_name': '125th Legislature'},
-        '126': {'display_name':  '126th Legislature',
+        '126': {'display_name':  '126th Legislature (2013-2014)',
                 '_scraped_name': '126th Legislature'},
     },
     feature_flags=['subjects', 'influenceexplorer'],

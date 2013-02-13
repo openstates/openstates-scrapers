@@ -21,11 +21,11 @@ metadata = dict(
         '102': {
             'start_date': datetime.date(2011, 1, 5),
             'end_date': datetime.date(2012, 4, 18),
-            'display_name': '102nd Legislature',
+            'display_name': '102nd Legislature (2011-2012)',
             '_scraped_name': '102nd Legislature 1st and 2nd Sessions',
                },
         '102S1': {
-            'display_name': '102nd Legislature, 1st Special Session',
+            'display_name': '102nd Legislature, 1st Special Session (2011)',
             '_scraped_name': '102nd Legislature 1st Special Session',
             'start_date': datetime.date(2011, 11, 1),
             'end_date': datetime.date(2011, 11, 22)
@@ -33,7 +33,7 @@ metadata = dict(
         '103': {
             'start_date': datetime.date(2013, 1, 8),
             'end_date': datetime.date(2014, 5, 30),
-            'display_name': '103rd Legislature',
+            'display_name': '103rd Legislature (2013-2014)',
             '_scraped_name': '103rd Legislature 1st and 2nd Sessions',
                },
         },

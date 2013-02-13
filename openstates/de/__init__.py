@@ -21,10 +21,10 @@ metadata = dict(
          'start_year': 2013, 'end_year': 2014},
     ],
     session_details={
-        '146': {'display_name': '146th General Assembly',
+        '146': {'display_name': '146th General Assembly (2011-2012)',
                 '_scraped_name': 'GA 146',
                },
-        '147': {'display_name': '147th General Assembly',
+        '147': {'display_name': '147th General Assembly (2013-2014)',
                 '_scraped_name': 'GA 147',
                },
     },
