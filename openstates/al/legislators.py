@@ -69,7 +69,14 @@ class ALLegislatorScraper(LegislatorScraper):
             else:
                 position = 'member'
             com = com.replace('Committee', '')
+            # fix their nonsense
             com = com.replace(" No.","")
+            com = com.replace("Veterans Affairs", "Veterans' Affairs")
+            com = com.replace("Boards, Agencies, And", "Boards, Agencies And")
+            com = com.replace("Means / Education", "Means Education")
+            com = com.replace("Ethics, And Elections", "Ethics And Elections")
+            com = com.replace("Taxation, ", "Taxation ")
+            com = com.replace("Municiple ", "Municipal ")
             com = com.strip()
             leg.add_role('committee member', term=leg['roles'][0]['term'],
                          chamber=leg['roles'][0]['chamber'], committee=com,
