@@ -1454,15 +1454,15 @@ div.notification-preference {
     font-size: 16px;
     color:#E7B300;
     max-width:170px;
-    padding: 5px 10px 5px 10px;
+    padding: 3px 10px 3px 10px;
 }
 
 
-div.fullWidth .favorite .favbutton{
+div.noPad .favorite .favbutton{
     max-width: 300px;
 }
 
-div.fullWidth .favorite {
+div.noPad .favorite {
     margin-top:0px;
     margin-bottom:30px;
 

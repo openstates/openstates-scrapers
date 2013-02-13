@@ -98,7 +98,7 @@ $(document).ready(function(){
             {% endif %}
         </div>
 
-        <div class="fullWidth clearfix">
+        <div class="fullWidth clearfix noPad">
             {% if request.GET.search_text %}
             {% favorite "" "search" metadata.abbr %}
         {% endif %}
@@ -107,7 +107,7 @@ $(document).ready(function(){
 
 
             <div class="fourCol colLtSm filterCol clear">
-                <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
+               <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">
                     <ul>
 
