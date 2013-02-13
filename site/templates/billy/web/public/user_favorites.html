@@ -92,7 +92,7 @@ $(document).ready(function() {
         <div class="module">
             <h3 class="moduleTitle colLt">{% trans "Legislators" %}</h3>
             {% notification_preference 'legislator' profile %}
-            <table>
+            <table class="withFilter">
                 <thead>
                     <tr class="favHead">
                         <th>{% trans "State" %}</th>
@@ -131,7 +131,7 @@ $(document).ready(function() {
         <div class="module">
             <h3 class="moduleTitle colLt">{% trans "Committees" %}</h3>
             {% notification_preference 'committee' profile %}
-           <table>
+           <table class="withFilter">
               <thead>
                 <tr class="favHead">
 
@@ -180,7 +180,7 @@ $(document).ready(function() {
         <div class="module">
             <h3 class="moduleTitle colLt">{% trans "Searches" %}</h3>
             {% notification_preference 'search' profile %}
-            <table>
+            <table class="withFilter">
                 <thead>
                     <tr class="favHead">
                         <th>State</th>
