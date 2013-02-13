@@ -78,7 +78,7 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        {% if request.GET %}
+        {% if request.GET.search_text %}
             {% favorite "" "search" metadata.abbr %}
         {% endif %}
         <div class="fullWidth">
