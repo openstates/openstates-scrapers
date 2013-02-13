@@ -80,22 +80,31 @@ $(document).ready(function(){
 {% endblock %}
 
 {% block content %}
-        {% if request.GET.search_text %}
-            {% favorite "" "search" metadata.abbr %}
-        {% endif %}
-        <div class="fullWidth">
+
+        <div class="fullWidth clearfix">
             <div id="stateimg-{{metadata.abbr}}" class="stateTitle">
                 <h2 class="withTip">{{ description }}</h2>
-                <p>{# funfact metadata.abbr #}</p>
             </div>
         </div>
-        {% if long_description %}
-        <ul id="billSearchLongDesc" class="clearfix">
-            <li class="tip">Filtering to only show bills
-            {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
-            </li>
-        </ul>
-        {% endif %}
+
+
+        <div>
+            {% if long_description %}
+            <ul id="billSearchLongDesc">
+                <li><h5>Filtering to only show bills
+                {% for item in long_description %} {{item}}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </h5></li>
+            </ul>
+            {% endif %}
+
+            <div class="colRt">
+                {% if request.GET.search_text %}
+                {% favorite "" "search" metadata.abbr %}
+            {% endif %}
+            </div>
+        </div>
+
+
             <div class="fourCol colLtSm filterCol clear">
                 <h3 id="filterTitle" class="textReplace">{% trans "Filter Bills" %}</h3>
                 <form action="{% url 'bills' abbr %}" id="sidebarSearch">

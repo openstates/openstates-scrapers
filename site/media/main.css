@@ -1457,6 +1457,15 @@ div.notification-preference {
     padding: 5px 10px 5px 10px;
 }
 
+
+div.colRt .favorite .favbutton{
+    max-width: 300px;
+}
+
+div.colRt .favorite {
+    margin-top:0px;
+}
+
 .favbutton:hover{
     color:#C69600;
 }
