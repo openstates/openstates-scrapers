@@ -51,6 +51,10 @@ class ARLegislatorScraper(LegislatorScraper):
             party = 'Republican'
         elif party == '(D)':
             party = 'Democratic'
+        elif party == '(G)':
+            party = 'Green'
+        else:
+            raise Exception('unknown party: %s' % party)
 
         img = root.xpath('//img[@class="SitePhotos"]')[0]
         photo_url = img.attrib['src']

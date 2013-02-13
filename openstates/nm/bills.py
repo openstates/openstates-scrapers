@@ -281,6 +281,7 @@ class NMBillScraper(BillScraper):
             '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
             '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
             # floor actions
+            '7631': ('Withdrawn on the Speakers table by rule from the daily calendar', 'other'),
             '7639': ('tabled in House', 'other'),
             '7640': ('tabled in Senate', 'other'),
             '7641': ('floor substitute adopted', 'other'),

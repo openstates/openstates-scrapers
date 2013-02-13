@@ -4,6 +4,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
 
 from .utils import get_short_codes
+from requests import HTTPError
 
 import lxml.html
 import pytz
@@ -23,7 +24,12 @@ class WIEventScraper(EventScraper):
 
     def get_related_bills(self, href):
         ret = []
-        page = self.lxmlize(href)
+
+        try:
+            page = self.lxmlize(href)
+        except HTTPError:
+            return ret
+
         bills = page.xpath(".//a[contains(@href, 'Bills')]")
         for bill in bills:
             try:
@@ -69,6 +75,7 @@ class WIEventScraper(EventScraper):
                          "INFO-UFL",
                          "INFO-EDN-EDU",
                          "INFO-HSG",
+                         "INFO-WAL-OMH'",
                          "INFO-AGR"]
             if committee in blacklist:
                 continue

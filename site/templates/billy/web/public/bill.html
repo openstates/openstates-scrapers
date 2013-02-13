@@ -68,6 +68,10 @@
             </div>
 
             <dl class="inlineList">
+
+                <dt class="h6 contentBottom">{% trans "Session:" %}</dt>
+                <dd class="sessionNumber"><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
+
                 {% if bill.subjects %}
                 <dt class="h6 clear contentBottom">{% trans "Bill Subjects:" %}</dt>
                 <dd class="clear">
@@ -84,9 +88,6 @@
                 {% endfor %}
                 </dd>
                 {% endif %}
-
-                <dt class="h6 clear contentBottom">{% trans "Session:" %}</dt>
-                <dd class="clear bold"><a href="{% url 'bills' abbr %}?session={{bill.session}}">{{ bill.session_details.display_name }}</a></dd>
 
                 <dt class="h6 clear contentBottom">{% trans "Sponsors" %} ({{ bill.sponsors|length }}):</dt>
                 <dd class="columnThirds clear">

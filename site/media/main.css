@@ -1643,3 +1643,9 @@ li.greyArrow:before {
 .maxWidth {
     max-width:100%;
 }
+
+dd.sessionNumber {
+    margin-top:38px;
+    font-weight:bold;
+    display:inline;
+}
