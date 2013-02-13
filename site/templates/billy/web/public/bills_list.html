@@ -88,7 +88,7 @@ $(document).ready(function(){
         </div>
 
 
-        <div>
+        <div class="fullWidth clearfix">
             {% if long_description %}
             <ul id="billSearchLongDesc">
                 <li><h5>Filtering to only show bills
@@ -96,13 +96,14 @@ $(document).ready(function(){
                 </h5></li>
             </ul>
             {% endif %}
-
-            <div class="colRt">
-                {% if request.GET.search_text %}
-                {% favorite "" "search" metadata.abbr %}
-            {% endif %}
-            </div>
         </div>
+
+        <div class="fullWidth clearfix">
+            {% if request.GET.search_text %}
+            {% favorite "" "search" metadata.abbr %}
+        {% endif %}
+        </div>
+
 
 
             <div class="fourCol colLtSm filterCol clear">

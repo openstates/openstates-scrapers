@@ -1458,12 +1458,14 @@ div.notification-preference {
 }
 
 
-div.colRt .favorite .favbutton{
+div.fullWidth .favorite .favbutton{
     max-width: 300px;
 }
 
-div.colRt .favorite {
+div.fullWidth .favorite {
     margin-top:0px;
+    margin-bottom:30px;
+
 }
 
 .favbutton:hover{
