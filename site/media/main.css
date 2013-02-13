@@ -1437,9 +1437,11 @@ div.notification-preference {
 
 .fake-favorite-button, .favorite-button {
     background-color:transparent;
-    margin-top:15px;
 }
-
+.favorite {
+    margin-top: 20px;
+    line-height: 15px;
+}
 .favbutton {
     background-color:#FFF;
     display: inline-block;
@@ -1450,9 +1452,9 @@ div.notification-preference {
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
     font-size: 16px;
-    padding:3px 10px;
     color:#E7B300;
-    max-width:190px;
+    max-width:170px;
+    padding: 5px 10px 5px 10px;
 }
 
 .favbutton:hover{
@@ -1464,6 +1466,7 @@ div.notification-preference {
     vertical-align: center;
     padding-right:10px;
     font-style:normal;
+    line-height: 2px;
 }
 .starOn{
     text-shadow: -1px -1px white, 1px 1px #666;
@@ -1473,6 +1476,10 @@ div.notification-preference {
 .starOff{
     text-shadow: 1px 1px white, -1px -1px #666;
     color:#DCD7D2;
+}
+
+table.withFilter{
+    clear:both;
 }
 
 /* Sunlight Hat */
