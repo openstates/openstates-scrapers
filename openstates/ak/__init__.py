@@ -24,9 +24,9 @@ metadata = dict(
     session_details={
         #'26': {'display_name': '26th Legislature',
         #       '_scraped_name': 'The 26th Legislature (2009-2010)'},
-        '27': {'display_name': '27th Legislature',
+        '27': {'display_name': '27th Legislature (2011-2012)',
                '_scraped_name': 'The 27th Legislature (2011-2012)'},
-        '28': {'display_name': '28th Legislature',
+        '28': {'display_name': '28th Legislature (2013-2014)',
                '_scraped_name': 'The 28th Legislature (2013-2014)'},
     },
     _ignored_scraped_sessions=['The 26th Legislature (2009-2010)',

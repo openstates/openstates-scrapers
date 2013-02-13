@@ -35,17 +35,17 @@ metadata = {
     'session_details': {
         '186th': {
             'type': 'primary',
-            'display_name': '186th Legislature',
+            'display_name': '186th Legislature (2009-2010)',
             '_scraped_name': '186th',
         },
         '187th': {
             'type': 'primary',
-            'display_name': '187th Legislature',
+            'display_name': '187th Legislature (2011-2012)',
             '_scraped_name': '187th',
         },
         '188th': {
             'type': 'primary',
-            'display_name': '188th Legislature',
+            'display_name': '188th Legislature (2013-2014)',
             '_scraped_name': '188th',
         }
     },
