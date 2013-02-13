@@ -72,9 +72,9 @@ class ALLegislatorScraper(LegislatorScraper):
             # fix their nonsense
             com = com.replace(" No.","")
             com = com.replace("Veterans Affairs", "Veterans' Affairs")
-            com = com.replace("Boards, Agencies, And", "Boards, Agencies And")
+            com = com.replace("Boards, Agencies, and", "Boards, Agencies and")
             com = com.replace("Means / Education", "Means Education")
-            com = com.replace("Ethics, And Elections", "Ethics And Elections")
+            com = com.replace("Ethics, and Elections", "Ethics and Elections")
             com = com.replace("Taxation, ", "Taxation ")
             com = com.replace("Municiple ", "Municipal ")
             com = com.strip()
