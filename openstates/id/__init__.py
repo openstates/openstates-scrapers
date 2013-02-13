@@ -165,7 +165,7 @@ metadata = dict(
             },
         '2013':
             {'type': 'primary',
-            'display_name': '62ed Legislature, 1st Regular Session',
+            'display_name': '62nd Legislature, 1st Regular Session',
             '_scraped_name': '2013 Session Information',
             },
     },
