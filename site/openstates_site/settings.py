@@ -135,7 +135,11 @@ LOGIN_URL = '/login/sunlight/'
 
 LOCKSMITH_REGISTRATION_URL = 'http://services.sunlightlabs.com/accounts/register/'
 
+# try local_settings in same dir, then on global path
 try:
     from .local_settings import *
 except ImportError:
-    pass
+    try:
+        from local_settings import *
+    except ImportError:
+        pass
