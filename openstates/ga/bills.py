@@ -118,13 +118,19 @@ class GABillScraper(BillScraper):
                 "Signed Gov": ["governor:signed"],
                 "HDSG": ["governor:signed"],
                 "HSG": ["governor:received"],
+                "EFF": ["other"],
                 "STH": ["other"],
                 "HTS": ["other"],  # House transmitted to senate
                 #"": [],
             }
 
             for action in actions:
-                chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
+                chamber = {
+                    "H": "lower",
+                    "S": "upper",
+                    "E": "other",  # Effective Date
+                }[action['code'][0]]
+
                 try:
                     bill.add_action(chamber, action['action'], action['date'],
                                     types[action['code']],
