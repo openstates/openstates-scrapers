@@ -114,6 +114,7 @@ class GABillScraper(BillScraper):
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
                 "HPOST": ["other"],
+                "SDSG": ["governor:signed"],
                 "SSG": ["governor:received"],
                 "Signed Gov": ["governor:signed"],
                 "HDSG": ["governor:signed"],
