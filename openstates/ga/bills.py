@@ -115,6 +115,8 @@ class GABillScraper(BillScraper):
                 "HENG": ["bill:passed"],
                 "HPOST": ["other"],
                 "SSG": ["governor:received"],
+                "Signed Gov": ["governor:signed"],
+                "HDSG": ["governor:signed"],
                 "HSG": ["governor:received"],
                 "STH": ["other"],
                 "HTS": ["other"],  # House transmitted to senate
