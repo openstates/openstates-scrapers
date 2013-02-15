@@ -203,6 +203,13 @@ class WABillScraper(BillScraper):
                     }[chamber[0]]
             else:
                 _, day, action = [x.text_content().strip() for x in rows]
+
+                junk = ['(View Original Bill)',
+                        '(Committee Materials)']
+
+                for string in junk:
+                    action = action.replace(string, '').strip()
+
                 if day != "":
                     curday = day
                 if curday is None or curyear is None:
