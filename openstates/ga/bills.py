@@ -106,6 +106,7 @@ class GABillScraper(BillScraper):
                 "HRAR": ["committee:referred"],
                 "SRAR": ["committee:referred"],
                 "STR": ["bill:reading:3"],
+                "SAHAS": ["other"],
                 "SE": ["bill:passed"],
                 # STP \m/
                 "HTR": ["bill:reading:3"],
