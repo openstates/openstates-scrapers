@@ -53,7 +53,7 @@ class MABillScraper(BillScraper):
         skipped = 0
 
         for n in itertools.count(1):
-            bill_id = '%s%05d' % (chamber_slug[0], n)
+            bill_id = '%s%d' % (chamber_slug[0], n)
             bill_url = 'http://www.malegislature.gov/Bills/%s/%s/%s' % (
                 session_slug, chamber_slug, bill_id)
 
