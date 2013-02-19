@@ -123,7 +123,8 @@ class OKBillScraper(BillScraper):
             bill.add_version(name, version_url, mimetype='application/pdf')
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
-            self.scrape_votes(bill, urlescape(link.attrib['href']))
+            if 'HT_' not in link.attrib['href']:
+                self.scrape_votes(bill, urlescape(link.attrib['href']))
 
         # # If the bill has no actions and no versions, it's a bogus bill on
         # # their website, which appears to happen occasionally. Skip.
