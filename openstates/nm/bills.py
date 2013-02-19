@@ -316,6 +316,7 @@ class NMBillScraper(BillScraper):
             '7704': ('tabled indefinitely', 'other'),
             '7708': ('action postponed indefinitely', 'other'),
             '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
+            '7712': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7798': ('Succeeding entries', 'other'),
             '7805': ('Signed', 'governor:signed'),
             '7806': ('Vetoed', 'governor:vetoed'),
@@ -445,7 +446,8 @@ class NMBillScraper(BillScraper):
             # votes
             elif 'SVOTE' in suffix:
                 vote = self.parse_senate_vote(doc_path + fname)
-                bill.add_vote(vote)
+                if vote:
+                    bill.add_vote(vote)
             elif 'HVOTE' in suffix:
                 vote = self.parse_house_vote(doc_path + fname)
                 if vote:
@@ -534,6 +536,10 @@ class NMBillScraper(BillScraper):
                         vote.no(name2)
                     else:
                         vote.other(name2)
+
+        if not isinstance(vote['date'], datetime):
+            return None
+
         return vote
 
     # house totals
