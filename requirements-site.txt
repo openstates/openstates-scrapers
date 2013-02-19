@@ -5,3 +5,4 @@ django-storages
 markdown
 docutils
 django-pjax
+psycopg2

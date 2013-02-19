@@ -106,6 +106,7 @@ class GABillScraper(BillScraper):
                 "HRAR": ["committee:referred"],
                 "SRAR": ["committee:referred"],
                 "STR": ["bill:reading:3"],
+                "SAHAS": ["other"],
                 "SE": ["bill:passed"],
                 # STP \m/
                 "HTR": ["bill:reading:3"],
@@ -114,14 +115,24 @@ class GABillScraper(BillScraper):
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
                 "HPOST": ["other"],
+                "SDSG": ["governor:signed"],
                 "SSG": ["governor:received"],
+                "Signed Gov": ["governor:signed"],
+                "HDSG": ["governor:signed"],
+                "HSG": ["governor:received"],
+                "EFF": ["other"],
                 "STH": ["other"],
                 "HTS": ["other"],  # House transmitted to senate
                 #"": [],
             }
 
             for action in actions:
-                chamber = {"H": "lower", "S": "upper"}[action['code'][0]]
+                chamber = {
+                    "H": "lower",
+                    "S": "upper",
+                    "E": "other",  # Effective Date
+                }[action['code'][0]]
+
                 try:
                     bill.add_action(chamber, action['action'], action['date'],
                                     types[action['code']],

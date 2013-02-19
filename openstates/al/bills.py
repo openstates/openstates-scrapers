@@ -81,7 +81,17 @@ class ALBillScraper(BillScraper):
 
             # first <tr> has img, button, sponsor, topic, current house
             #   current status, committee, committee2, last action
-            _, button, sponsor, subject, _, _, com1, com2, _ = details.xpath('td')
+            tds = details.xpath('td')
+            if len(tds) == 9:
+                # middle _, _ is chamber, last action
+                _, button, sponsor, subject, _, _, com1, com2, _ = tds
+            elif len(tds) == 8:
+                # middle _ is last action
+                _, button, sponsor, subject, _, com1, com2, _ = tds
+            else:
+                self.warning('invalid row: (tds=%s) %s', len(tds),
+                             details.text_content())
+                continue
 
             # contains script tag that has a document.write that writes the
             # bill_id, we have to pull that out (gross, but only way)
