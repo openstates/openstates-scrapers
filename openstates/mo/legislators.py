@@ -76,9 +76,15 @@ class MOLegislatorScraper(LegislatorScraper):
             # then there is only a webform. So...no email?
             # TODO a lot of these have fax numbers. Include?
 
+            kwargs = {
+                "address": "%s%s" % (address[0],address[1])
+            }
+
+            if phone.strip() != "":
+                kwargs['phone'] = phone
+
             leg.add_office("capitol", "Capitol Office",
-                           address="%s%s" % (address[0],address[1]),
-                           phone=phone)
+                           **kwargs)
 
             leg['photo_url'] = photo_url
             if email and len(email) > 0 and email[0] != 'mailto:':
@@ -107,14 +113,20 @@ class MOLegislatorScraper(LegislatorScraper):
             phone = tds[4].text_content().strip()
             room = tds[5].text_content().strip()
             address = self.assumed_address_fmt % (room if room else '')
+
+            kwargs = {
+                "address": address
+            }
+            if phone.strip() != "":
+                kwargs['phone'] = phone
+
             if last_name == 'Vacant':
                 leg = Legislator(term, chamber, district, full_name=full_name,
                             first_name=first_name, last_name=last_name,
                             party=party, url=url)
 
                 leg.add_office('capitol', "Capitol Office",
-                               address=address,
-                               phone=phone)
+                               **kwargs)
 
                 leg.add_source(url)
                 self.save_vacant_legislator(leg)
@@ -124,8 +136,7 @@ class MOLegislatorScraper(LegislatorScraper):
                           party=party, url=url)
 
                 leg.add_office('capitol', 'Capitol Office',
-                               address=address,
-                               phone=phone)
+                               **kwargs)
 
                 url = (self.rep_details_url % (session,district))
                 leg.add_source(url)
