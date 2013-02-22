@@ -21,6 +21,7 @@ from .util import get_client, get_url
 
 
 member_cache = {}
+SOURCE_URL = "http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}"
 
 
 class GABillScraper(BillScraper):
@@ -178,4 +179,8 @@ class GABillScraper(BillScraper):
 
             bill.add_source(self.msource)
             bill.add_source(self.lsource)
+            bill.add_source(SOURCE_URL.format(**{
+                "session": session,
+                "bid": guid,
+            }))
             self.save_bill(bill)
