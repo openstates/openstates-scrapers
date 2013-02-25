@@ -133,7 +133,7 @@ class NEBillScraper(BillScraper):
             action_type = 'bill:filed'
         elif 'Placed on Final Reading' in action:
             action_type = 'bill:reading:3'
-        elif 'Passed' in action:
+        elif 'Passed' in action or 'President/Speaker signed' in action:
             action_type = 'bill:passed'
         elif 'Presented to Governor' in action:
             action_type = 'governor:received'
