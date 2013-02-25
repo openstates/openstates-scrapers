@@ -86,9 +86,12 @@ class GABillScraper(BillScraper):
             )
 
             types = {
+                "HI": ["other"],
+                "SI": ["other"],
                 "HH": ["other"],
                 "SH": ["other"],
                 "HPF": ["bill:introduced"],
+                "HDSAS": ["other"],
                 "SPF": ["bill:introduced"],
                 "HSR": ["bill:reading:2"],
                 "SSR": ["bill:reading:2"],
