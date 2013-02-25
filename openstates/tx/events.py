@@ -129,6 +129,7 @@ class TXEventScraper(EventScraper):
                     "or the Senate Finance Committee": "",
                     "(or 15 minutes after adjournment of the .*)": "",
                     "or during reading and referral of bills": "",
+                    "Upon final adjourn./recess": "",
                 }
                 for rep in replace:
                     datetime = re.sub(rep, replace[rep], datetime)

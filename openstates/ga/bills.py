@@ -21,6 +21,7 @@ from .util import get_client, get_url
 
 
 member_cache = {}
+SOURCE_URL = "http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}"
 
 
 class GABillScraper(BillScraper):
@@ -85,9 +86,12 @@ class GABillScraper(BillScraper):
             )
 
             types = {
+                "HI": ["other"],
+                "SI": ["other"],
                 "HH": ["other"],
                 "SH": ["other"],
                 "HPF": ["bill:introduced"],
+                "HDSAS": ["other"],
                 "SPF": ["bill:introduced"],
                 "HSR": ["bill:reading:2"],
                 "SSR": ["bill:reading:2"],
@@ -108,13 +112,17 @@ class GABillScraper(BillScraper):
                 "STR": ["bill:reading:3"],
                 "SAHAS": ["other"],
                 "SE": ["bill:passed"],
+                "SR": ["bill:passed"],
                 # STP \m/
                 "HTR": ["bill:reading:3"],
+                "HASAS": ["other"],
+                "SAPPT": ["other"],
                 "S2R": ["bill:reading:2"],
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
                 "HENG": ["bill:passed"],
                 "HPOST": ["other"],
+                "HCAP": ["other"],
                 "SDSG": ["governor:signed"],
                 "SSG": ["governor:received"],
                 "Signed Gov": ["governor:signed"],
@@ -176,4 +184,8 @@ class GABillScraper(BillScraper):
 
             bill.add_source(self.msource)
             bill.add_source(self.lsource)
+            bill.add_source(SOURCE_URL.format(**{
+                "session": session,
+                "bid": guid,
+            }))
             self.save_bill(bill)

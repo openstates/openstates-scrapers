@@ -58,11 +58,14 @@ class RIEventScraper(EventScraper):
         date = metainf['DATE:']
         time = metainf['TIME:']
         where = metainf['PLACE:']
-        fmt = "%A, %B %d, %Y"
+        fmts = [
+            "%A, %B %d, %Y",
+            "%A, %B %d, %Y %I:%M %p",
+        ]
+
         if time in all_day:
             datetime = date
         else:
-            fmt += " %I:%M %p"
             datetime = "%s %s" % ( date, time )
         if "CANCELLED" in datetime:
             # XXX: Do something more advanced.
@@ -70,12 +73,20 @@ class RIEventScraper(EventScraper):
 
         transtable = {
             "P.M." : "PM",
-            "A.M." : "AM"
+            "A.M." : "AM",
+            "RESCHEDULED": "",
         }
         for trans in transtable:
             datetime = datetime.replace(trans, transtable[trans])
 
-        datetime = dt.datetime.strptime(datetime, fmt)
+        datetime = datetime.strip()
+
+        for fmt in fmts:
+            try:
+                datetime = dt.datetime.strptime(datetime, fmt)
+                break
+            except ValueError:
+                continue
 
         event = Event(session, datetime, 'committee:meeting',
                       'Meeting Notice', location=where)
