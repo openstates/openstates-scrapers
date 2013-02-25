@@ -12,13 +12,12 @@ class WVCommitteeScraper(CommitteeScraper):
         getattr(self, 'scrape_' + chamber)()
 
     def scrape_lower(self):
-
         url = 'http://www.legis.state.wv.us/committees/house/main.cfm'
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        xpath = '//*[@id="hcom"]/a[contains(@href, "HouseCommittee")]'
+        xpath = '//a[contains(@href, "HouseCommittee")]'
         for link in doc.xpath(xpath):
             text = link.text_content().strip()
             if text == '-':
@@ -50,7 +49,7 @@ class WVCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        xpath = '//*[@id="scom"]/a[contains(@href, "SenateCommittee")]'
+        xpath = '//a[contains(@href, "SenateCommittee")]'
         for link in doc.xpath(xpath):
             text = link.text_content().strip()
             if text == '-':

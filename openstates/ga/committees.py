@@ -2,6 +2,10 @@ from billy.scrape.committees import CommitteeScraper, Committee
 from .util import get_client, get_url
 
 
+CTTIE_URL = ("http://www.house.ga.gov/COMMITTEES/en-US/committee.aspx?"
+             "Committee={cttie}&Session={sid}")
+
+
 class GACommitteeScraper(CommitteeScraper):
     jurisdiction = 'ga'
     latest_only = True
@@ -59,6 +63,10 @@ class GACommitteeScraper(CommitteeScraper):
                 ctty.add_member(name, role, _guid=member['Member']['Id'])
 
             ctty.add_source(self.csource)
+            ctty.add_source(CTTIE_URL.format(**{
+                "sid": sid,
+                "cttie": guid,
+            }))
             self.save_committee(ctty)
 
     def scrape(self, term, chambers):

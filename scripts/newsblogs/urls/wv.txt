@@ -5,3 +5,4 @@ http://www.wv.gov/_layouts/feed.aspx?xsl=1&web=/news&page=fa057236-2db7-4147-b6d
 http://www.legis.state.wv.us/RSS/lric_rss.cfm
 
 http://www.therepublic.com/feed/cat/2680
+http://www.legis.state.wv.us/daily_sum/today.cfm

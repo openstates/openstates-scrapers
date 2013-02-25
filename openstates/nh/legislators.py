@@ -27,7 +27,7 @@ class NHLegislatorScraper(LegislatorScraper):
         return ''
 
     def scrape(self, term, chambers):
-        url = 'http://gencourt.state.nh.us/downloads/Members(Asterisk%20Delimited).txt'
+        url = 'http://gencourt.state.nh.us/downloads/Members.txt'
 
         option_map = {}
         html = self.urlopen('http://www.gencourt.state.nh.us/house/members/memberlookup.aspx')

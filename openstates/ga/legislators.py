@@ -183,6 +183,9 @@ class GALegislatorScraper(LegislatorScraper):
                     )
 
             legislator.add_source(self.ssource)
+            legislator.add_source(HOMEPAGE_URLS[chamber].format(
+                **{"code": guid, "sid": sid}))
+
             self.save_legislator(legislator)
 
     def scrape(self, term, chambers):

@@ -435,7 +435,7 @@ a.viewMore {
     border-radius: 5px;
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-style: oblique;
-    font-size: 115%;
+    font-size: 16px;
     padding: 3px 15px 3px 32px;
     color: #a3a730;
     }
@@ -1455,6 +1455,7 @@ div.notification-preference {
     color:#E7B300;
     max-width:170px;
     padding: 3px 10px 3px 10px;
+    line-height:19px;
 }
 
 

@@ -124,7 +124,7 @@ class INLegislatorScraper(LegislatorScraper):
         # If the phone field contains multiple numbers, take the final
         # and least impersonal one (the first number is a general 800).
         for office in offices:
-            if ' ' in office['phone']:
+            if 'phone' in office and ' ' in office['phone']:
                 office['phone'] = re.findall('[\d\-]+', office['phone']).pop()
 
             leg.add_office(**office)
