@@ -113,6 +113,7 @@ class GABillScraper(BillScraper):
                 # STP \m/
                 "HTR": ["bill:reading:3"],
                 "HASAS": ["other"],
+                "SAPPT": ["other"],
                 "S2R": ["bill:reading:2"],
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
