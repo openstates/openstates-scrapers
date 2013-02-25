@@ -26,6 +26,7 @@ class NCBillScraper(BillScraper):
                                      'bill:reading:3'],
         'Failed 3rd Reading': ['bill:failed', 'bill:reading:3'],
         'Filed': 'bill:introduced',
+        'Adopted': 'bill:passed',       # resolutions
         'Concurred In': 'amendment:passed',
         'Com Amend Adopted': 'amendment:passed',
         'Became Law w/o Signature': 'other',
