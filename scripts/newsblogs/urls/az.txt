@@ -14,3 +14,4 @@ htto://ninapsoncak.com
 
 http://www.therepublic.com/feed/cat/2230
 http://www.pewstates.org/feeds/all.rss?states=328009
+http://www.azhouserepublicans.com/?feed=rss2
