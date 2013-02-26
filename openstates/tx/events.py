@@ -122,6 +122,7 @@ class TXEventScraper(EventScraper):
                     "See below": "",
                     "of the House": "",
                     "of the Senate": "",
+                    "Finance Committee": "",
                     "or upon adjournment": "",
                     "of the House and the Senate": "",
                     "or upon final adjourn./recess": "",
