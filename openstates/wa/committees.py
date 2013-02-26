@@ -51,13 +51,16 @@ class WACommitteeScraper(CommitteeScraper):
 
         body = template % (agency, comm['committee'].replace('&', '&amp;'))
         headers = {'Content-Type': 'application/soap+xml; charset=utf-8'}
-        page = self.post(self._base_url, data=body, headers=headers)
-        page = lxml.etree.fromstring(page.content)
+        resp = self.post(self._base_url, data=body, headers=headers)
+        doc = lxml.etree.fromstring(resp.content)
 
-        roles = ['chair', 'vice chair', 'ranking minority member',
-                 'assistant ranking minority member']
+        if 'subcommittee' in comm['committee'].lower():
+            roles = ['chair', 'ranking minority member']
+        else:
+            roles = ['chair', 'vice chair', 'ranking minority member',
+                     'assistant ranking minority member']
 
-        for i, member in enumerate(xpath(page, "//wa:Member")):
+        for i, member in enumerate(xpath(doc, "//wa:Member")):
             name = xpath(member, "string(wa:Name)")
             try:
                 role = roles[i]
