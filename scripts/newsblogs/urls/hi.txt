@@ -74,6 +74,6 @@ http://www.capitol.hawaii.gov/memberfiles/senate/rss/ito.xml
 http://www.capitol.hawaii.gov/memberfiles/senate/rss/chong.xml
 http://www.capitol.hawaii.gov/memberfiles/senate/rss/thielen.xml
 http://www.capitol.hawaii.gov/memberfiles/senate/rss/clee.xml
-
+http://www.capitol.hawaii.gov/committees/committees.aspx?chamber=all
 http://www.therepublic.com/feed/cat/2310
 http://www.pewstates.org/feeds/all.rss?states=328018

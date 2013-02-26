@@ -12,5 +12,5 @@ http://politicalpulse.sunjournal.com/rss
 http://www.pressherald.com/capitolticker.rss
 http://www.pressherald.com/openseason.rss
 http://maineprogressiveswarehouse.wordpress.com/feed/
-
+http://www.maine.gov/legis/house_gop/_news/mhr_rss.xml
 http://www.therepublic.com/feed/cat/2400

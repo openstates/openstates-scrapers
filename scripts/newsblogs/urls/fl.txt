@@ -26,5 +26,5 @@ http://feeds.feedburner.com/TheStateOfSunshine
 http://feeds.feedburner.com/FortReportHeadlines
 http://miamidadedems.wordpress.com/feed/
 http://www.flsenate.gov/media/PressReleaseRSS.cfm?format=rss
-
+http://www.flsenate.gov/tracker/rss.cfm
 http://www.therepublic.com/feed/cat/2290
