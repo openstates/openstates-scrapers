@@ -52,3 +52,4 @@ http://bertstedman.com/new/?feed=rss2
 http://www.therepublic.com/feed/cat/2200
 
 http://www.pewstates.org/feeds/all.rss?states=328008
+http://akdemocrats.org/feed/
