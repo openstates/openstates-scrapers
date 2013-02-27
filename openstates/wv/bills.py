@@ -118,9 +118,9 @@ class WVBillScraper(BillScraper):
 
         # Add cosponsors.
         sponsors = strip_sponsors('', values['SPONSORS:'])
-        sponsors = re.split('\s{3,}', sponsors)
+        sponsors = re.split(', (?![A-Z]\.)', sponsors)
         for name in sponsors:
-            name = name.strip(', ')
+            name = name.strip(', \n\r')
             if name:
                 bill.add_sponsor('cosponsor', name)
 
