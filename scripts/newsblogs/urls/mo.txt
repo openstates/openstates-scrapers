@@ -36,3 +36,4 @@ http://www.house.mo.gov/xml/newsfeed.xml
 
 http://www.therepublic.com/feed/cat/2430
 http://www.pewstates.org/feeds/all.rss?states=328057
+http://www.house.mo.gov/xml/newsfeed.xml
