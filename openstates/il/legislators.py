@@ -77,8 +77,9 @@ class ILLegislatorScraper(LegislatorScraper):
                     # everything else is an address
                     else:
                         addr += (row + '\n')
-                leg.add_office(office_type, office_name, address=addr.strip(),
-                               phone=phone, fax=fax)
+                if addr.strip() != ',':
+                    leg.add_office(office_type, office_name,
+                                   address=addr.strip(), phone=phone, fax=fax)
 
             # extract both offices from tables
             table = leg_doc.xpath('//table[contains(string(), "Springfield Office")]')
