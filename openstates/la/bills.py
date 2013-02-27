@@ -55,5 +55,20 @@ class LABillScraper(BillScraper):
             for bill_page in self.bill_pages(bill_type):
                 for bill in bill_page.xpath(
                         "//a[contains(@href, 'BillInfo.aspx')]"):
-                    print bill.attrib['href']
+                    self.scrape_bill_page(chamber, bill.attrib['href'])
 
+
+    def get_one_xpath(self, page, xpath):
+        ret = page.xpath(xpath)
+        if len(ret) != 1:
+            raise Exception
+        return ret[0]
+
+
+    def scrape_bill_page(self, chamber, bill_url):
+        page = self.lxmlize(bill_url)
+        author = self.get_one_xpath(
+            page,
+            "//a[@id='ctl00_PageBody_LinkAuthor']/text()"
+        )
+        print author
