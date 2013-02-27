@@ -172,7 +172,7 @@ class PABillScraper(BillScraper):
             elif caption == 'House':
                 chamber = 'lower'
             else:
-                committee = re.findall(r'\t(.+)', caption).pop()
+                committee = re.findall(r'\t?(.+)', caption).pop()
                 self.parse_committee_votes(committee,
                     chamber, bill, td.xpath('a')[0].attrib['href'])
 

@@ -25,7 +25,8 @@ _categorizer_rules = (
     Rule(r'^Presented to the Governor', 'governor:received'),
 
     # Passage.
-    Rule(r'^Final passage', 'bill:passed'),
+    Rule([r'^Final passage', '^Third consideration and final passage'],
+         'bill:passed'),
     Rule(r'adopted', 'bill:passed'),
     Rule(r'^First consideration', 'bill:reading:1'),
     Rule(r'Second consideration', 'bill:reading:2'),
