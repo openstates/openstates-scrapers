@@ -61,8 +61,9 @@ class AKLegislatorScraper(LegislatorScraper):
         if phone:
             kwargs['phone'] = phone
 
-        leg.add_office(addr_type, addr_name, address=address.strip(),
-                       **kwargs)
+        if address.strip() != ',':
+            leg.add_office(addr_type, addr_name, address=address.strip(),
+                           **kwargs)
 
 
     def scrape_legislator(self, chamber, term, name, url):
