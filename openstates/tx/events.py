@@ -128,6 +128,7 @@ class TXEventScraper(EventScraper):
                     "or upon final adjourn./recess": "",
                     "or 30 minutes upon adjournment": "",
                     "or the Senate Finance Committee": "",
+                    "During reading and referral of bills": "",
                     "(or 15 minutes after adjournment of the .*)": "",
                     "or during reading and referral of bills": "",
                     "Upon final adjourn./recess": "",
