@@ -182,9 +182,15 @@ class NYLegislatorScraper(LegislatorScraper):
                                   "div[@class = 'email2'][1])")
             district = district.rstrip('rthnds')
 
+            # unicodedata.normalize didn't help here.
+            if name == u'Sep\xfalveda, Luis':
+                party_name = party_dict['Sepulveda, Luis']
+            else:
+                party_name = party_dict[name]
+
             leg_url = link.get('href')
             legislator = Legislator(term, 'lower', district, name,
-                                    party=party_dict[name],
+                                    party=party_name,
                                     url=leg_url)
             legislator.add_source(url)
 
