@@ -246,7 +246,10 @@ class WVBillScraper(BillScraper):
         text = convert_pdf(filename, 'text')
         os.remove(filename)
 
-        data = re.split(r'(Yeas|Nays|Absent):', text)[::-1]
+        if re.search('Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
+            return self.scrape_senate_vote_3col(bill, vote, text, url, date)
+
+        data = re.split(r'(Yea|Nay|Absent)s?:', text)[::-1]
         data = filter(None, data)
         keymap = dict(yeas='yes', nays='no')
         actual_vote = collections.defaultdict(int)
@@ -268,6 +271,36 @@ class WVBillScraper(BillScraper):
 
         vote['actual_vote'] = actual_vote
         vote['passed'] = vote['no_count'] < vote['yes_count']
+        bill.add_vote(vote)
+
+    def scrape_senate_vote_3col(self, bill, vote, text, url, date):
+        '''Scrape senate votes like this one:
+        http://www.legis.state.wv.us/legisdocs/2013/RS/votes/senate/02-26-0001.pdf
+        '''
+        counts = dict(re.findall(r'(Yea|Nay|Absent): (\d+)', text))
+        text = text.split('\n\n\n')[-2]
+        lines = filter(None, text.splitlines())
+        actual_vote = collections.defaultdict(int)
+        for line in lines:
+            toks = re.split('\s{2,}', line.strip())
+            vals = zip(toks[::2], toks[1::2])
+            for vote_val, name in vals:
+                if vote_val == 'Y':
+                    vote.yes(name)
+                    vote['yes_count'] += 1
+                elif vote_val == 'N':
+                    vote.no(name)
+                    vote['no_count'] += 1
+                else:
+                    vote.other(name)
+                    vote['other_count'] += 1
+                actual_vote[vote_val] += 1
+
+        vote['passed'] = vote['no_count'] < vote['yes_count']
+
+        assert vote['yes_count'] == int(counts['Yea'])
+        assert vote['no_count'] == int(counts['Nay'])
+        assert vote['other_count'] == int(counts['Absent'])
         bill.add_vote(vote)
 
     def _get_version_filenames(self, session, chamber):
