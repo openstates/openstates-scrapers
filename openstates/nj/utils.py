@@ -1,6 +1,8 @@
 import os
 import re
-from dbfpy import dbf
+import csv
+import zipfile
+import subprocess
 
 def clean_committee_name(comm_name):
     comm_name = comm_name.strip()
@@ -24,18 +26,21 @@ def chamber_name(chamber):
     else:
         return 'assembly'
 
-class DBFMixin(object):
+class MDBMixin(object):
 
-    dbfcache = {}
+    def _init_mdb(self, year):
+        self.mdbfile = 'DB%s.mdb' % year
+        url = 'ftp://www.njleg.state.nj.us/ag/%sdata/DB%s.zip' % (year, year)
+        fname, resp = self.urlretrieve(url)
+        zf = zipfile.ZipFile(fname)
+        zf.extract(self.mdbfile)
+        os.remove(fname)
 
-    def get_dbf(self, year, name):
-        url = 'ftp://www.njleg.state.nj.us/ag/%sdata/%s.DBF' % (year, name)
-
-        if url in self.dbfcache:
-            return url, self.dbfcache[url]
-
-        dbf_file, resp = self.urlretrieve(url)
-        db = dbf.Dbf(dbf_file, ignoreErrors=True)
-        self.dbfcache[url] = db
-        os.remove(dbf_file)
-        return url, db
+    # stolen from nm/bills.py
+    def access_to_csv(self, table):
+        """ using mdbtools, read access tables as CSV """
+        commands = ['mdb-export', self.mdbfile, table]
+        pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
+                                                        close_fds=True).stdout
+        csvfile = csv.DictReader(pipe)
+        return csvfile

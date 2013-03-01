@@ -2,30 +2,28 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from .utils import clean_committee_name, DBFMixin
+from .utils import clean_committee_name, MDBMixin
 
-import lxml.etree
-from dbfpy import dbf
-import scrapelib
 
-class NJCommitteeScraper(CommitteeScraper, DBFMixin):
+class NJCommitteeScraper(CommitteeScraper, MDBMixin):
     jurisdiction = 'nj'
 
     def scrape(self, term, chambers):
         year_abr = term[0:4]
 
-        members_url, members_db = self.get_dbf(year_abr, 'COMEMB')
-        comm_info_url, info_db = self.get_dbf(year_abr, 'COMMITT')
+        self._init_mdb(year_abr)
+        members_csv = self.access_to_csv('COMember')
+        info_csv = self.access_to_csv('Committee')
 
         comm_dictionary = {}
 
         #Committe Info Database
-        for name_rec in info_db:
-            abrv = name_rec["code"]
-            comm_name = name_rec["descriptio"]
-            comm_type = name_rec["type"]
-            aide = name_rec["aide"]
-            contact_info = name_rec["phone"]
+        for rec in info_csv:
+            abrv = rec["Code"]
+            comm_name = rec["Description"]
+            comm_type = rec["Type"]
+            aide = rec["Aide"]
+            contact_info = rec["Phone"]
 
             if abrv[0] == "A":
                 chamber = "lower"
@@ -34,18 +32,23 @@ class NJCommitteeScraper(CommitteeScraper, DBFMixin):
 
             comm = Committee(chamber, comm_name, comm_type = comm_type,
                              aide = aide, contact_info = contact_info)
-            comm.add_source(members_url)
-            comm.add_source(comm_info_url)
+            comm.add_source('www.njleg.state.nj.us/downloads.asp')
             comm_dictionary[abrv] = comm
 
         #Committee Member Database
-        for member_rec in members_db:
+        POSITIONS = {
+            'C': 'chair',
+            'V': 'vice-chair',
+            '': 'member'
+        }
+        for member_rec in members_csv:
             # assignment=P means they are active, assignment=R means removed
-            if member_rec['assignment'] == 'P':
-                abr = member_rec["code"]
+            if member_rec['Assignment_to_Committee'] == 'P':
+                abr = member_rec["Code"]
                 comm_name = comm_dictionary[abr]
 
-                leg = member_rec["member"]
-                comm_name.add_member(leg)
+                leg = member_rec["Member"]
+                role = POSITIONS[member_rec["Position_on_Committee"]]
+                comm_name.add_member(leg, role=role)
 
                 self.save_committee(comm_name)
