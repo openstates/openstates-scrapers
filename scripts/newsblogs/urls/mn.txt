@@ -432,6 +432,6 @@ http://www.senate.leg.state.mn.us/RSS/rss_creator.php?parm_mem_id=1067&type=RSS&
 http://www.house.leg.state.mn.us/rss/press.asp?memid=15271
 http://www.senate.leg.state.mn.us/RSS/rss_creator.php?parm_mem_id=1186&type=RSS&cat=press&ls=87
 http://www.house.leg.state.mn.us/rss/press.asp?memid=15371
-
+http://www.leg.state.mn.us/lrl/rss/rss_just.aspx
 http://www.therepublic.com/feed/cat/2420
 http://www.pewstates.org/feeds/all.rss?states=328030

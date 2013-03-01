@@ -1,5 +1,5 @@
 from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee 
+from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
 import re
@@ -15,14 +15,14 @@ class WYCommitteeScraper(CommitteeScraper):
 
     def scrape(self, chamber, term):
         if chamber == 'lower':
-            # Committee members from both houses are listed 
+            # Committee members from both houses are listed
             # together. So, we'll only scrape once.
             return None
 
         year = None
 
-        # Even thought each term spans two years, committee 
-        # memberships don't appear to change. So we only 
+        # Even thought each term spans two years, committee
+        # memberships don't appear to change. So we only
         # need to scrape the first year of the term.
         for t in self.metadata["terms"]:
             if term == t["name"]:
@@ -38,7 +38,7 @@ class WYCommitteeScraper(CommitteeScraper):
         page = self.urlopen(list_url)
         page = lxml.html.fromstring(page)
         for el in page.xpath(".//a[contains(@href, 'CommitteeMembers')]"):
-            committees[el.text] = el.get("href")
+            committees[el.text.strip()] = el.get("href")
 
         for c in committees:
             self.log(c)
