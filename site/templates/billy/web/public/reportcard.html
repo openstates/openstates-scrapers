@@ -27,15 +27,12 @@ $(document).ready(function() {
             bPaginate: false,
             bInfo: false,
             bDestroy: true,
-            oLanguage: {"sSearch": ""},
-            aoColumnDefs: [
-                    {"iDataSort": 1, "aTargets": [2]},
-                    {"bVisible": false, "aTargets": [1]}
-            ],
+            oLanguage: {},
+            aoColumnDefs: [],
         });
 
-        jQuery.fn.dataTableExt.oSort['string-asc'] = sort_func_asc;
-        jQuery.fn.dataTableExt.oSort['string-desc'] = sort_func_desc;
+        jQuery.fn.dataTableExt.oSort['natural-asc'] = sort_func_asc;
+        jQuery.fn.dataTableExt.oSort['natural-desc'] = sort_func_desc;
 
         // Sort it.
         datatable.fnSort([[0, 'asc']]);
@@ -69,614 +66,614 @@ $(document).ready(function() {
     <tbody>
         <tr> 
             <td class="bold">Connecticut</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">Georgia</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr>
             <td class="bold">Kansas</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-good" > 1 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-good" >1</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">New Hampshire</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td>
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">North Carolina</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">Texas</td>
-            <td class="score-bad" > -1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-good" > 1 </td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-good" >1</td> 
             <td class="score-great" > 2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">Washington</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" > A </td> 
+            <td class="grade-a" >A</td> 
         </tr>
 
         <tr> 
             <td class="bold">Alaska</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Arkansas</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Maryland</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Mississippi</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Nevada</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">New Jersey </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
             <td class="score-great" > 2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">New York</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Ohio</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Utah </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Vermont</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">West Virginia</td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" > B </td> 
+            <td class="grade-b" >B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Arizona </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Delaware </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">District of Columbia </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Florida </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Hawaii </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Idaho </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr>
             <td class="bold">Illinois </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Iowa </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Michigan </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Minnesota </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Missouri </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Montana </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">New Mexico </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">North Dakota </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td>
-            <td class="grade-c" > C </td> 
+            <td >1</td>
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Oregon </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Pennsylvania </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">South Carolina </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">South Dakota </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Tennessee </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > 1 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >1</td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Virginia </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Wyoming </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" > C </td> 
+            <td class="grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">California </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > 0 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >0</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Indiana </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > -1 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >-1</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Louisiana </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > -1 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >-1</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Maine </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > 0 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >0</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Oklahoma </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > 0 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >0</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Wisconsin </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td > 0 </td> 
-            <td class="grade-d" > D </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td >0</td> 
+            <td class="grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Alabama </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
             <td > -3 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Colorado </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td > -2 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-abysmal" >-2</td> 
+            <td >-2</td> 
+            <td class="grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Kentucky </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td>
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td>
             <td > -3 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Massachusetts </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-good" > 1 </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-abysmal" > -2 </td> 
-            <td class="score-neutral" > 0 </td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-good" >1</td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-abysmal" >-2</td> 
+            <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > -3 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Nebraska </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td>
-            <td class="score-bad" > -1 </td>
-            <td > -2 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" >-1</td>
+            <td >-2</td> 
+            <td class="grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Rhode Island </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-neutral" > 0 </td> 
-            <td class="score-bad" > -1 </td> 
-            <td > -2 </td> 
-            <td class="grade-f" > F </td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" >0</td> 
+            <td class="score-bad" >-1</td> 
+            <td >-2</td> 
+            <td class="grade-f" >F</td> 
         </tr>
     </tbody>
 </table>
