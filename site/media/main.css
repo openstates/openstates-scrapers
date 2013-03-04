@@ -1672,50 +1672,81 @@ dd.sessionNumber {
 
 /* REPORT CARD STYLES */
 
-.score-abysmal {
-	background-color:#00FF99;
-	text-align: center;
+.reportCard tr{
+	border-top: 1px solid #FFF;
 }
 
-.score-bad{
-	background-color:#FF0099;
-	text-align: center;
+.score-abysmal {
+	color:#A03A00;
+	text-align: right;
+	padding-right: 50px;
+	font-weight: bold;
+}
+
+.score-bad {
+	color:#C06900;
+	text-align: right;
+	padding-right: 50px;
+	font-weight: bold;
+
 
 }
 
 .score-neutral {
-	background-color:#9900FF;
-	text-align: center;
+	color:#D2A700;
+	text-align: right;
+	padding-right: 50px;
+	font-weight: bold;
 
 }
 
 .score-good {
-	background-color:#0099FF;
-	text-align: center;
-	
+	color:#878E37;
+	text-align: right;
+	padding-right: 50px;
+	font-weight: bold;
+
 }
 
 .score-great {
-	background-color:#99FF00;
-	text-align: center;
+	color:#78AAA2;
+	text-align: right;
+	padding-right: 50px;
+	font-weight: bold;
+
 }
 
 .grade-a {
-
+	background-color:#78AAA2;
+	text-align: center;
+	font-weight: bold;
+	color: #FFF;
 }
 
 .grade-b {
-
+	background-color:#878E37;
+	text-align: center;
+	font-weight: bold;
+	color: #FFF;
 }
 
 .grade-c {
-
+	background-color:#D2A700;
+	text-align: center;
+	font-weight: bold;
+	color: #FFF;
 }
 
 .grade-d {
-
+	background-color:#C06900;
+	text-align: center;
+	font-weight: bold;
+	color: #FFF;
 }
 
 .grade-f {
-
+	background-color:#A03A00;
+	text-align: center;
+	font-weight: bold;
+	color: #FFF;
 }
