@@ -1668,3 +1668,54 @@ dd.sessionNumber {
     font-weight:bold;
     display:inline;
 }
+
+
+/* REPORT CARD STYLES */
+
+.score-abysmal {
+	background-color:#00FF99;
+	text-align: center;
+}
+
+.score-bad{
+	background-color:#FF0099;
+	text-align: center;
+
+}
+
+.score-neutral {
+	background-color:#9900FF;
+	text-align: center;
+
+}
+
+.score-good {
+	background-color:#0099FF;
+	text-align: center;
+	
+}
+
+.score-great {
+	background-color:#99FF00;
+	text-align: center;
+}
+
+.grade-a {
+
+}
+
+.grade-b {
+
+}
+
+.grade-c {
+
+}
+
+.grade-d {
+
+}
+
+.grade-f {
+
+}
