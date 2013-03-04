@@ -7,13 +7,67 @@
     Reportcard!
 {% endblock %}
 
+{% block headblock %}
+<script src="http://static.openstates.org/assets/v3.0/js/datatables.js"></script>
+
+<script type="text/javascript" >
+$(document).ready(function() {
+
+    var datatable_setup = function(){
+
+        //Kill the html in the table headers.
+        var table = $('#main-table');
+        table.find('th').each(function(){
+            var th = $(this);
+            th.html(th.text());
+        });
+
+        // Convert the table to dataTable.
+        var datatable = table.dataTable({
+            bPaginate: false,
+            bInfo: false,
+            bDestroy: true,
+            oLanguage: {"sSearch": ""},
+            aoColumnDefs: [
+                    {"iDataSort": 1, "aTargets": [2]},
+                    {"bVisible": false, "aTargets": [1]}
+            ],
+        });
+
+        jQuery.fn.dataTableExt.oSort['string-asc'] = sort_func_asc;
+        jQuery.fn.dataTableExt.oSort['string-desc'] = sort_func_desc;
+
+        // Sort it.
+        datatable.fnSort([[0, 'asc']]);
+    }
+
+    datatable_setup();
+
+})
+</script>
+{% endblock %}
+
 {% block description %}
     Reportcard data on all 50 states + DC.
 {% endblock %}
 
 {% block content %}
-<table>
-<tr><th>state</th><th>Completeness</th><th>Timeliness</th><th>Ease of Access</th><th>Machine Readibility</th><th>Open Standards</th><th>Permanence</th><th>Score Average</th><th>Score</th></tr> <tr> <td > Connecticut </td> <td class="score-neutral" > 0 </td> <td class="score-good" > 1 </td> <td class="score-neutral" > 0 </td> <td class="score-good" > 1 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td > 4 </td> <td class="grade-a" > A </td> </tr>
+<table id="main-table">
+<thead>
+    <tr>
+        <th class="sort" >state</th>
+        <th class="sort" >Completeness</th>
+        <th class="sort" >Timeliness</th>
+        <th class="sort" >Ease of Access</th>
+        <th class="sort" >Machine Readibility</th>
+        <th class="sort" >Open Standards</th>
+        <th class="sort" >Permanence</th>
+        <th class="sort" >Score Average</th>
+        <th class="sort" >Score</th>
+    </tr>
+</thead>
+<tbody>
+    <tr> <td > Connecticut </td> <td class="score-neutral" > 0 </td> <td class="score-good" > 1 </td> <td class="score-neutral" > 0 </td> <td class="score-good" > 1 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td > 4 </td> <td class="grade-a" > A </td> </tr>
 <tr> <td > Georgia </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td > 4 </td> <td class="grade-a" > A </td> </tr>
 <tr> <td > Kansas </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-good" > 1 </td> <td class="score-good" > 1 </td> <td class="score-good" > 1 </td> <td class="score-great" > 2 </td> <td > 5 </td> <td class="grade-a" > A </td> </tr>
 <tr> <td > New Hampshire </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td > 4 </td> <td class="grade-a" > A </td> </tr>
@@ -64,6 +118,7 @@
 <tr> <td > Massachusetts </td> <td class="score-abysmal" > -2 </td> <td class="score-good" > 1 </td> <td class="score-abysmal" > -2 </td> <td class="score-abysmal" > -2 </td> <td class="score-neutral" > 0 </td> <td class="score-great" > 2 </td> <td > -3 </td> <td class="grade-f" > F </td> </tr>
 <tr> <td > Nebraska </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-bad" > -1 </td> <td class="score-neutral" > 0 </td> <td class="score-bad" > -1 </td> <td > -2 </td> <td class="grade-f" > F </td> </tr>
 <tr> <td > Rhode Island </td> <td class="score-neutral" > 0 </td> <td class="score-bad" > -1 </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-neutral" > 0 </td> <td class="score-bad" > -1 </td> <td > -2 </td> <td class="grade-f" > F </td> </tr>
+</tbody>
 </table>
 
 
