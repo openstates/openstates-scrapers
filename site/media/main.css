@@ -1672,6 +1672,26 @@ dd.sessionNumber {
 
 /* REPORT CARD STYLES */
 
+.reportCard thead tr{
+	border-top: 1px solid #FFF;
+	background: #E9EBDC;
+}
+
+.reportCard thead tr th {
+		vertical-align: bottom;
+		padding-top: 20px;
+
+}
+
+.reportCard thead tr th.sort {
+	background: url("images/sortArrows.png") no-repeat scroll 10px 44px transparent;
+	padding-left: 25px;
+	padding-right: 5px;
+
+
+
+}
+
 .reportCard tr{
 	border-top: 1px solid #FFF;
 }
