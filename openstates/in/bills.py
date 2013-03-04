@@ -214,6 +214,11 @@ class INBillScraper(BillScraper):
             date = row.xpath("string(td[1])").strip()
             date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
 
+            # Handle idiot typo of year 1320 instead of 2013.
+            if date.year == 1320:
+                date = datetime.datetime(
+                    year=2013, month=date.month, day=date.day)
+
             chamber = row.xpath("string(td[2])").strip()
             if chamber == 'S':
                 chamber = 'upper'
