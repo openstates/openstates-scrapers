@@ -1,20 +1,19 @@
 import datetime as dt
-from dbfpy import dbf
 import pytz
 import re
-from .utils import DBFMixin
+from .utils import MDBMixin
 
 from billy.scrape.events import EventScraper, Event
 
 
-class NJEventScraper(EventScraper, DBFMixin):
+class NJEventScraper(EventScraper, MDBMixin):
     jurisdiction = 'nj'
     _tz = pytz.timezone('US/Eastern')
 
     def initialize_committees(self, year_abr):
         chamber = {'A':'Assembly', 'S': 'Senate', '':''}
 
-        com_url, com_db = self.get_dbf(year_abr, 'COMMITT')
+        com_csv = self.access_to_csv('Committee')
 
         self._committees = {}
         # There are some IDs that are missing. I'm going to add them
@@ -39,21 +38,21 @@ class NJEventScraper(EventScraper, DBFMixin):
         }
         self._committees = overlay
 
-        for com in com_db:
+        for com in com_csv:
             # map XYZ -> "Assembly/Senate _________ Committee"
-            self._committees[com['CODE']] = ' '.join((chamber[com['HOUSE']],
-                                                      com['DESCRIPTIO'],
+            self._committees[com['Code']] = ' '.join((chamber[com['House']],
+                                                      com['Description'],
                                                       'Committee'))
 
     def scrape(self, chamber, session):
         year_abr = ((int(session) - 209) * 2) + 2000
+        self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
-        url, db = self.get_dbf(year_abr, "AGENDAS")
-        records = [ x.asDict() for x in db ]
+        records = self.access_to_csv("Agendas")
         for record in records:
-            if record['STATUS'] != "Scheduled":
+            if record['Status'] != "Scheduled":
                 continue
-            description = record['COMMENTS']
+            description = record['Comments']
             related_bills = []
 
             for bill in re.findall("(A|S)(-)?(\d{4})", description):
@@ -62,19 +61,16 @@ class NJEventScraper(EventScraper, DBFMixin):
                     "descr": description
                 })
 
-            date_time = "%s %s" % (
-                record['DATE'],
-                record['TIME']
-            )
+            date_time = "%s %s" % (record['Date'], record['Time'])
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
-            hr_name = self._committees[record['COMMHOUSE']]
+            hr_name = self._committees[record['CommHouse']]
 
             event = Event(
                 session,
                 date_time,
                 'committee:meeting',
                 "Meeting of the %s" % ( hr_name ),
-                location=record['LOCATION'] or "Statehouse",
+                location=record['Location'] or "Statehouse",
             )
             for bill in related_bills:
                 event.add_related_bill(bill['bill_id'],
@@ -85,14 +81,14 @@ class NJEventScraper(EventScraper, DBFMixin):
                     "a" : "lower",
                     "s" : "upper",
                     "j" : "joint"
-                }[record['COMMHOUSE'][0].lower()]
+                }[record['CommHouse'][0].lower()]
             except KeyError:
                 chamber = "joint"
 
             event.add_participant("host",
                                   hr_name,
                                   'committee',
-                                  committee_code=record['COMMHOUSE'],
+                                  committee_code=record['CommHouse'],
                                   chamber=chamber)
-            event.add_source(url)
+            event.add_source('www.njleg.state.nj.us/downloads.asp')
             self.save_event(event)
