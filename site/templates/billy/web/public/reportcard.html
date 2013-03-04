@@ -1,6 +1,7 @@
 {% extends "billy/web/public/base.html" %}
 {% load i18n %}
 {% load humanize %}
+{% load staticfiles %}
 
 
 {% block title %}
@@ -9,6 +10,56 @@
 
 {% block headblock %}
 <script src="http://static.openstates.org/assets/v3.0/js/datatables.js"></script>
+<script src="{% static "js/jquery-ui-1.10.1.tooltip.min.js" %}"></script>
+
+<style>
+.ui-tooltip, .arrow:after {
+    background: black;
+    border: 2px solid white;
+}
+.ui-tooltip {
+    padding: 10px 20px;
+    color: white;
+    border-radius: 20px;
+    font: bold 14px "Helvetica Neue", Sans-Serif;
+    text-transform: uppercase;
+    box-shadow: 0 0 7px black;
+}
+.arrow {
+    width: 70px;
+    height: 16px;
+    overflow: hidden;
+    position: absolute;
+    left: 50%;
+    margin-left: -35px;
+    bottom: -16px;
+}
+.arrow.top {
+    top: -16px;
+    bottom: auto;
+}
+.arrow.left {
+    left: 20%;
+}
+.arrow:after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    top: -20px;
+    width: 25px;
+    height: 25px;
+    box-shadow: 6px 5px 9px -9px black;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    tranform: rotate(45deg);
+}
+.arrow.top:after {
+    bottom: -20px;
+    top: auto;
+}
+</style>
 
 <script type="text/javascript" >
 $(document).ready(function() {
@@ -35,6 +86,21 @@ $(document).ready(function() {
 
         // Sort it.
         datatable.fnSort([[0, 'asc']]);
+
+        $(".grade").tooltip({
+            position: {
+                my: "center bottom-20",
+                at: "center top",
+                using: function( position, feedback ) {
+                    $( this ).css( position );
+                    $( "<div>" )
+                        .addClass( "arrow" )
+                        .addClass( feedback.vertical )
+                        .addClass( feedback.horizontal )
+                        .appendTo( this );
+                }
+            }
+        });
     }
 
     datatable_setup();
@@ -74,7 +140,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" title="Because I said so" >A</td> 
         </tr>
 
         <tr> 
@@ -86,7 +152,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr>
@@ -98,7 +164,7 @@ $(document).ready(function() {
             <td class="score-good" >1</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr> 
@@ -110,7 +176,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td>
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr> 
@@ -122,7 +188,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr> 
@@ -134,7 +200,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr> 
@@ -146,7 +212,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 5 </td> 
-            <td class="grade-a" >A</td> 
+            <td class="grade grade-a" >A</td> 
         </tr>
 
         <tr> 
@@ -158,7 +224,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -170,7 +236,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 4 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -182,7 +248,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -194,7 +260,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -206,7 +272,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -218,7 +284,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -230,7 +296,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -242,7 +308,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -254,7 +320,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -266,7 +332,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -278,7 +344,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 3 </td> 
-            <td class="grade-b" >B</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -290,7 +356,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -302,7 +368,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -314,7 +380,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -326,7 +392,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -338,7 +404,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -350,7 +416,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr>
@@ -362,7 +428,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -374,7 +440,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -386,7 +452,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -398,7 +464,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -410,7 +476,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -422,7 +488,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -434,7 +500,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -446,7 +512,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td>
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -458,7 +524,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -470,7 +536,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -482,7 +548,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -494,7 +560,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -506,7 +572,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >1</td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -518,7 +584,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -530,7 +596,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > 2 </td> 
-            <td class="grade-c" >C</td> 
+            <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
@@ -542,7 +608,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >0</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -554,7 +620,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >-1</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -566,7 +632,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >-1</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -578,7 +644,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >0</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -590,7 +656,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >0</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -602,7 +668,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >0</td> 
-            <td class="grade-d" >D</td> 
+            <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
@@ -614,7 +680,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-bad" >-1</td> 
             <td > -3 </td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
@@ -626,7 +692,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-abysmal" >-2</td> 
             <td >-2</td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
@@ -638,7 +704,7 @@ $(document).ready(function() {
             <td class="score-bad" >-1</td> 
             <td class="score-neutral" >0</td>
             <td > -3 </td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
@@ -650,7 +716,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" > 2 </td> 
             <td > -3 </td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
@@ -662,7 +728,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td>
             <td class="score-bad" >-1</td>
             <td >-2</td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
@@ -674,7 +740,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-bad" >-1</td> 
             <td >-2</td> 
-            <td class="grade-f" >F</td> 
+            <td class="grade grade-f" >F</td> 
         </tr>
     </tbody>
 </table>
