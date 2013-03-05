@@ -17,29 +17,29 @@ menu, nav, section, summary, time, mark, audio, video {
 article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
 ul, ol { list-style: none; }
 blockquote, q {
-	background:url('images/quotes.png') 12px top no-repeat ;
-	quotes: '»' '«' ;
-	margin-left:30px;
+    background:url('images/quotes.png') 12px top no-repeat ;
+    quotes: '»' '«' ;
+    margin-left:30px;
     padding-left:35px;
     border-left: 1px solid #E5E4DB;
-	color: #726B68;
-	margin-bottom: 1em;
-	}
+    color: #726B68;
+    margin-bottom: 1em;
+    }
 
 .pull_left, .pull_right {
-	background:url('images/quotes_lg.png') 12px 12px no-repeat ;
-	margin: 25px 65px 25px 30px;
-	padding: 15px 0 15px 35px;
-	color: #494442;
-	font-family: Georgia, "Times New Roman", Times, serif;
-	font-style: oblique;
-	font-size: 220%;
-	display: block;
-	line-height: 38px;
-	text-align: center;
-	border-top: 1px solid #E5E4DB;
-	border-bottom: 1px solid #E5E4DB;
-	}
+    background:url('images/quotes_lg.png') 12px 12px no-repeat ;
+    margin: 25px 65px 25px 30px;
+    padding: 15px 0 15px 35px;
+    color: #494442;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-style: oblique;
+    font-size: 220%;
+    display: block;
+    line-height: 38px;
+    text-align: center;
+    border-top: 1px solid #E5E4DB;
+    border-bottom: 1px solid #E5E4DB;
+    }
 
 /* No for real, we actually need a pull_right class that pulls
 things to the right... */
@@ -121,22 +121,22 @@ button, .buttonLink { width: auto; text-indent: -9999em; display: block; border:
 body { background: #fafaf6 url(images/bg.jpg) top center repeat-x;}
 .home #container { min-height: 450px;}
 .home .sidebar{
-	background: #efefe8; /* Old browsers */
-	background: -moz-linear-gradient(left,  #efefe8 0%, #f7f7f1 12%, #f7f7f1 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, right top, color-stop(0%,#efefe8), color-stop(12%,#f7f7f1), color-stop(100%,#f7f7f1)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Opera 11.10+ */
-	background: -ms-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* IE10+ */
-	background: linear-gradient(to right,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* W3C */
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efefe8', endColorstr='#f7f7f1',GradientType=1 ); /* IE6-9 */
-	border-left: 1px dashed #e2e2dd;
-	padding-top: 30px;
+    background: #efefe8; /* Old browsers */
+    background: -moz-linear-gradient(left,  #efefe8 0%, #f7f7f1 12%, #f7f7f1 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%,#efefe8), color-stop(12%,#f7f7f1), color-stop(100%,#f7f7f1)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(left,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* IE10+ */
+    background: linear-gradient(to right,  #efefe8 0%,#f7f7f1 12%,#f7f7f1 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efefe8', endColorstr='#f7f7f1',GradientType=1 ); /* IE6-9 */
+    border-left: 1px dashed #e2e2dd;
+    padding-top: 30px;
 }
 
 .container {
-	width: 940px;
-	margin: 0 auto;
-	padding: 0 10px;
+    width: 940px;
+    margin: 0 auto;
+    padding: 0 10px;
 }
 
 button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; border-bottom: none; }
@@ -150,24 +150,24 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .ulTitle{ padding-left: 30px}
 
 .home .module h3{
-	text-align: left;
-	font-weight: 300;
+    text-align: left;
+    font-weight: 300;
 }
 .fancyOr{
-	text-align: center;
-	font-family: "Georgia","Times New Roman","Times",serif;
-	font-size: 250%;
-	color: #d8d5c8;
-	text-shadow: rgba(160, 164, 162, 0.5) -1px 0, rgba(160, 164, 162, 0.3) 0 -1px, rgba(255, 255, 255, 0.5) 0 1px, rgba(160, 164, 162, 0.3) -1px -2px;
-	font-style: italic;
-	font-weight: 200;
-	padding-top: 30px;
+    text-align: center;
+    font-family: "Georgia","Times New Roman","Times",serif;
+    font-size: 250%;
+    color: #d8d5c8;
+    text-shadow: rgba(160, 164, 162, 0.5) -1px 0, rgba(160, 164, 162, 0.3) 0 -1px, rgba(255, 255, 255, 0.5) 0 1px, rgba(160, 164, 162, 0.3) -1px -2px;
+    font-style: italic;
+    font-weight: 200;
+    padding-top: 30px;
 }
 .byState{
-	margin-top: 30px;
+    margin-top: 30px;
 }
 .byState img{
-	margin-top: 20px;
+    margin-top: 20px;
 }
 
 
@@ -194,7 +194,7 @@ button, .textReplace, #shareBtns li a { text-indent: -9999em; display: block; bo
 .colLt { margin-right: 30px; padding-right: 29px; }
 .colLtSm { margin-right: 20px; padding-right: 0;}
 .home .colLt{
-	margin-right: 0;
+    margin-right: 0;
 }
 
 
@@ -216,7 +216,7 @@ h6, .h5 { margin-bottom: 20px; font-size: 110%; line-height: 22px; font-weight: 
 h1 {font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; font-style: normal; font-weight: 500; font-size: 220%; line-height: 30px;}
 
 .sidebar h4{
-	font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
+    font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif;
 }
 
 .moduleTitle { background: url(images/bg_moduleTitle.jpg) left 6px no-repeat; margin-left: -30px; padding-left: 30px; color: #5F9D8E;}
@@ -276,7 +276,7 @@ border-radius: 5px;}
 -moz-border-radius: 5px;
 border-radius: 5px;}
 #container #searchAddressform input{
-	border: 3px solid #d8d5c8;
+    border: 3px solid #d8d5c8;
 }
 
 /*  LOGIN */
@@ -456,8 +456,8 @@ address { font-style: normal; }
 input { -moz-border-radius: 5px; -webkit-border-radius: 5px; border: 2px solid #cfd2bd; font-family: Georgia, 'Times New Roman', Times, serif; font-style: oblique; padding: 8px 5px 5px;}
 #container img, .withBorder { padding: 5px; border: 1px solid #e0e0d7; float: left; }
 #container img.noBorder {
-	border: none;
-	padding: 0;
+    border: none;
+    padding: 0;
 }
 #container #map { float: right; width: 98%; height: 150px; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; }
 .mapBorder{padding: 5px; border: 1px solid #E0E0D7; box-sizing: border-box; -webkit-box-sizing: border-box; -mozbox-sizing: border-box; height: 162px; margin-top: 20px; }
@@ -531,30 +531,30 @@ dt.h6 {
     }
 .callOutBox a{
     font-weight: 300;
-	color: #474644;
+    color: #474644;
 }
 
 .callOutBox a:hover{
     font-weight: 300;
-	color: #474644;
-	text-decoration: none;
+    color: #474644;
+    text-decoration: none;
 }
 
 .callOutBox.tagline{ border: 0; -moz-border-radius: 0; -webkit-border-radius: 0; margin-right: 0;text-align: center; width: 100%; background: url('images/bg_tagline.jpg') center top repeat-x; height: 149px; margin-top: -70px; font-family: "museo-slab-1","museo-slab-2","Georgia","Times New Roman","Times",serif; }
 .callOutBox.tagline ul{
-	padding-left: 15px;
-	margin-top: 25px;
+    padding-left: 15px;
+    margin-top: 25px;
 }
 .callOutBox.tagline ul li{
-	display: inline;
-	font-size: 128%;
-	background: url('images/bg_tagline_star.png') right top no-repeat;
-	padding: 0 30px 0 10px;
-	font-weight: 300;
-	color: #474644;
+    display: inline;
+    font-size: 128%;
+    background: url('images/bg_tagline_star.png') right top no-repeat;
+    padding: 0 30px 0 10px;
+    font-weight: 300;
+    color: #474644;
 }
 .callOutBox.tagline ul li:last-child{
-	background: none;
+    background: none;
 }
 .callOut { max-width: 100%; font-weight: 300;font-size: 357%; text-transform: uppercase;line-height: 42px; margin-bottom: 20px; color: #fffffe; text-shadow: rgba(160, 164, 162,0.5) -1px 0, rgba(160, 164, 162,0.3) 0 -1px, rgba(255,255,255,0.5) 0 1px, rgba(160, 164, 162,0.3) -1px -2px;}
 #notify input { font-size: 102%; margin-right: 10px; float: left}
@@ -790,7 +790,7 @@ ul#billSearchLongDesc li { margin-right: 1em; float: left;  }
 
 /* footer */
 .home #footerWrapper {
-	padding-top: 0;
+    padding-top: 0;
 }
 #footerWrapper { background: url(images/bg_footer.jpg) bottom center repeat-x; height: 370px; padding-top: 120px;}
 #sunlight { background: url(images/bg_sunlightLogo.png) top left no-repeat; width: 193px; height: 57px; margin-bottom: 50px;}
@@ -1095,163 +1095,163 @@ pre {
 
 }
 .titlebox{
-	background: #f4f4f0; /* Old browsers */
-	background: -moz-linear-gradient(top, #f4f4f0 0%, #eae8e2 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f4f4f0), color-stop(100%,#eae8e2)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* Opera 11.10+ */
-	background: -ms-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* IE10+ */
-	background: linear-gradient(to bottom, #f4f4f0 0%,#eae8e2 100%); /* W3C */
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f4f4f0', endColorstr='#eae8e2',GradientType=0 ); /* IE6-9 */
-	padding: 10px 20px;
-	border: 1px solid #dcdfe2;
-	font-family: "Helvetica Neue", Helvetica, Arial, sans-se;
-	font-size: 100%;
-	font-weight: bold;
-	margin-bottom: 10px;
+    background: #f4f4f0; /* Old browsers */
+    background: -moz-linear-gradient(top, #f4f4f0 0%, #eae8e2 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f4f4f0), color-stop(100%,#eae8e2)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #f4f4f0 0%,#eae8e2 100%); /* IE10+ */
+    background: linear-gradient(to bottom, #f4f4f0 0%,#eae8e2 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f4f4f0', endColorstr='#eae8e2',GradientType=0 ); /* IE6-9 */
+    padding: 10px 20px;
+    border: 1px solid #dcdfe2;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-se;
+    font-size: 100%;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 .event h5 {
-	font-weight: bold;
-	font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
-	margin-bottom: 10px;
+    font-weight: bold;
+    font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
+    margin-bottom: 10px;
 }
 .event dl{
-	margin-left: 20px;
+    margin-left: 20px;
 }
 .event dt, .event dd{
-	margin-bottom: 13px;
+    margin-bottom: 13px;
 }
 .event dt{
-	display: block;
-	float: left;
-	clear: left;
-	width: 70px;
-	text-transform: uppercase;
+    display: block;
+    float: left;
+    clear: left;
+    width: 70px;
+    text-transform: uppercase;
 }
 .event dd{
-	display: block;
-	margin-left: 60px;
+    display: block;
+    margin-left: 60px;
 }
 .event .sources{
-	font-size: 80%;
-	padding-left: 90px;
-	padding-bottom: 40px;
-	background: none;
+    font-size: 80%;
+    padding-left: 90px;
+    padding-bottom: 40px;
+    background: none;
 }
 .event .sources h4{
-	font-size: 80%;
-	display: inline;
-	color: #989898;
-	text-transform: capitalize;
+    font-size: 80%;
+    display: inline;
+    color: #989898;
+    text-transform: capitalize;
 }
 .event .sources ul, .event .sources li{
-	display: inline;
+    display: inline;
 }
 
 
 #calendar {
-	border: 1px solid #e4e4dc;
-	text-align: center;
+    border: 1px solid #e4e4dc;
+    text-align: center;
 }
 #calendar #current-month{
-	font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
-	color: #ffffff;
-	font-size: 130%;
-	background: #88bcb4; /* Old browsers */
-	background: -moz-linear-gradient(top,  #88bcb4 0%, #60a195 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#88bcb4), color-stop(100%,#60a195)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Opera 11.10+ */
-	background: -ms-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* IE10+ */
-	background: linear-gradient(to bottom,  #88bcb4 0%,#60a195 100%); /* W3C */
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#88bcb4', endColorstr='#60a195',GradientType=0 ); /* IE6-9 */
-	font-weight: 300;
-	border-bottom: 1px solid #f0f4f8;
-	margin-bottom: 0;
-	padding: 6px 0;
+    font-family: "museo-slab-2", "museo-slab-1", georgia, times, serif;
+    color: #ffffff;
+    font-size: 130%;
+    background: #88bcb4; /* Old browsers */
+    background: -moz-linear-gradient(top,  #88bcb4 0%, #60a195 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#88bcb4), color-stop(100%,#60a195)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #88bcb4 0%,#60a195 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #88bcb4 0%,#60a195 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#88bcb4', endColorstr='#60a195',GradientType=0 ); /* IE6-9 */
+    font-weight: 300;
+    border-bottom: 1px solid #f0f4f8;
+    margin-bottom: 0;
+    padding: 6px 0;
 
 }
 #calendar th{
-	background: #bcc980; /* Old browsers */
-	background: -moz-linear-gradient(top,  #bcc980 0%, #9db167 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bcc980), color-stop(100%,#9db167)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Opera 11.10+ */
-	background: -ms-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* IE10+ */
-	background: linear-gradient(to bottom,  #bcc980 0%,#9db167 100%); /* W3C */
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bcc980', endColorstr='#9db167',GradientType=0 ); /* IE6-9 */
-	color: #ffffff;
-	font-size: 80%;
-	font-weight: normal;
-	text-transform: uppercase;
-	text-align: center;
-	padding: 5px 0 1px 0;
+    background: #bcc980; /* Old browsers */
+    background: -moz-linear-gradient(top,  #bcc980 0%, #9db167 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bcc980), color-stop(100%,#9db167)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #bcc980 0%,#9db167 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #bcc980 0%,#9db167 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bcc980', endColorstr='#9db167',GradientType=0 ); /* IE6-9 */
+    color: #ffffff;
+    font-size: 80%;
+    font-weight: normal;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 5px 0 1px 0;
 }
 #calendar td{
-	padding: 4px 0 4px 0;
-	border: 1px solid #dedede;
-	font-size: 110%;
-	width: 26px;
-	height: 29px;
-	background-color: #fafaf5;
-	cursor: pointer;
+    padding: 4px 0 4px 0;
+    border: 1px solid #dedede;
+    font-size: 110%;
+    width: 26px;
+    height: 29px;
+    background-color: #fafaf5;
+    cursor: pointer;
 }
 #calendar .current-month#today {
-	background: #ffffff;
+    background: #ffffff;
 }
 #calendar .current-month#selected-day {
-	background: #d57129;
-	color: #ffffff;
+    background: #d57129;
+    color: #ffffff;
 }
 #calendar .current-month#selected-day .events{
-	background-color: #ffffff;
-	-webkit-box-shadow: inset -1px 1px 1px 0 #fafaf5;
-	box-shadow: inset -1px 1px 1px 0 #fafaf5;
+    background-color: #ffffff;
+    -webkit-box-shadow: inset -1px 1px 1px 0 #fafaf5;
+    box-shadow: inset -1px 1px 1px 0 #fafaf5;
 }
 #calendar .events{
-	display: block;
-	border-radius: 3px;
-	-webkit-border-radius: 3px;
-	-moz-border-radius: 3px;
-	background-color: #d57129;
-	height: 6px;
-	width: 6px;
-	text-indent: -9999em;
-	margin: 2px auto 0 auto;
-	-webkit-box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
-	box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
+    display: block;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    background-color: #d57129;
+    height: 6px;
+    width: 6px;
+    text-indent: -9999em;
+    margin: 2px auto 0 auto;
+    -webkit-box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
+    box-shadow: inset -1px 1px 1px 0 rgba(130, 56, 7, .75);
 }
 #calendar .current-month:hover{
-	background: #ffffff;
+    background: #ffffff;
 }
 #calendar .other-month{
-	color: #cecfcd;
+    color: #cecfcd;
 }
 #calendar .other-month:hover{
-	background: #ffffff;
+    background: #ffffff;
 }
 #calendar .nav-prev, #calendar .nav-next{
-	display: block;
-	width: 10px;
-	height: 14px;
-	text-indent: -9999em;
-	margin-top: -30px;
+    display: block;
+    width: 10px;
+    height: 14px;
+    text-indent: -9999em;
+    margin-top: -30px;
 }
 #calendar .nav-prev{
-	float: left;
-	background: url(images/btn_calendar_prevNext.png) top left no-repeat;
-	margin-left: 30px;
+    float: left;
+    background: url(images/btn_calendar_prevNext.png) top left no-repeat;
+    margin-left: 30px;
 }
 #calendar .nav-prev:hover{
-	background: url(images/btn_calendar_prevNext.png) bottom left no-repeat;
+    background: url(images/btn_calendar_prevNext.png) bottom left no-repeat;
 }
 #calendar .nav-next{
-	float: right;
-	background: url(images/btn_calendar_prevNext.png) top right no-repeat;
-	margin-right: 30px;
+    float: right;
+    background: url(images/btn_calendar_prevNext.png) top right no-repeat;
+    margin-right: 30px;
 }
 #calendar .nav-next:hover{
-	background: url(images/btn_calendar_prevNext.png) bottom right no-repeat;
+    background: url(images/btn_calendar_prevNext.png) bottom right no-repeat;
 }
 
 /* This class just wraps the event detail page calendar to change
@@ -1390,7 +1390,7 @@ the cursor from pointer to normal. */
     }
 
 #container #find_your_leg input{
-	border: 3px solid #d8d5c8;
+    border: 3px solid #d8d5c8;
 }
 
 .textLt{
@@ -1673,102 +1673,102 @@ dd.sessionNumber {
 /* REPORT CARD STYLES */
 
 .reportCard thead tr{
-	border-top: 1px solid #FFF;
-	background: #E9EBDC;
+    border-top: 1px solid #FFF;
+    background: #E9EBDC;
 }
 
 .reportCard thead tr th {
-		vertical-align: bottom;
-		padding-top: 20px;
+        vertical-align: bottom;
+        padding-top: 20px;
 
 }
 
 .reportCard thead tr th.sort {
-	background: url("images/sortArrows.png") no-repeat scroll 10px 44px transparent;
-	padding-left: 25px;
-	padding-right: 5px;
+    background: url("images/sortArrows.png") no-repeat scroll 10px 44px transparent;
+    padding-left: 25px;
+    padding-right: 5px;
 
 
 
 }
 
 .reportCard tr{
-	border-top: 1px solid #FFF;
+    border-top: 1px solid #FFF;
 }
 
 .score-abysmal {
-	color:#A03A00;
-	text-align: right;
-	padding-right: 50px;
-	font-weight: bold;
+    color:#A03A00;
+    text-align: right;
+    padding-right: 50px;
+    font-weight: bold;
 }
 
 .score-bad {
-	color:#C06900;
-	text-align: right;
-	padding-right: 50px;
-	font-weight: bold;
+    color:#C06900;
+    text-align: right;
+    padding-right: 50px;
+    font-weight: bold;
 
 
 }
 
 .score-neutral {
-	color:#D2A700;
-	text-align: right;
-	padding-right: 50px;
-	font-weight: bold;
+    color:#D2A700;
+    text-align: right;
+    padding-right: 50px;
+    font-weight: bold;
 
 }
 
 .score-good {
-	color:#878E37;
-	text-align: right;
-	padding-right: 50px;
-	font-weight: bold;
+    color:#878E37;
+    text-align: right;
+    padding-right: 50px;
+    font-weight: bold;
 
 }
 
 .score-great {
-	color:#78AAA2;
-	text-align: right;
-	padding-right: 50px;
-	font-weight: bold;
+    color:#78AAA2;
+    text-align: right;
+    padding-right: 50px;
+    font-weight: bold;
 
 }
 
 .grade-a {
-	background-color:#78AAA2;
-	text-align: center;
-	font-weight: bold;
-	color: #FFF;
+    background-color:#78AAA2;
+    text-align: center;
+    font-weight: bold;
+    color: #FFF;
 }
 
 .grade-b {
-	background-color:#878E37;
-	text-align: center;
-	font-weight: bold;
-	color: #FFF;
+    background-color:#878E37;
+    text-align: center;
+    font-weight: bold;
+    color: #FFF;
 }
 
 .grade-c {
-	background-color:#D2A700;
-	text-align: center;
-	font-weight: bold;
-	color: #FFF;
+    background-color:#D2A700;
+    text-align: center;
+    font-weight: bold;
+    color: #FFF;
 }
 
 .grade-d {
-	background-color:#C06900;
-	text-align: center;
-	font-weight: bold;
-	color: #FFF;
+    background-color:#C06900;
+    text-align: center;
+    font-weight: bold;
+    color: #FFF;
 }
 
 .grade-f {
-	background-color:#A03A00;
-	text-align: center;
-	font-weight: bold;
-	color: #FFF;
+    background-color:#A03A00;
+    text-align: center;
+    font-weight: bold;
+    color: #FFF;
 }
 
 /******** Report Card Tooltip *******/
