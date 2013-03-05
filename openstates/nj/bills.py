@@ -1,15 +1,14 @@
 from datetime import datetime
-from .utils import chamber_name, DBFMixin
+from .utils import chamber_name, MDBMixin
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
-import lxml.etree
 import scrapelib
 import zipfile
 import csv
 import os
 
-class NJBillScraper(BillScraper, DBFMixin):
+class NJBillScraper(BillScraper, MDBMixin):
     jurisdiction = 'nj'
 
     _bill_types = {
@@ -128,14 +127,14 @@ class NJBillScraper(BillScraper, DBFMixin):
     def initialize_committees(self, year_abr):
         chamber = {'A':'Assembly', 'S': 'Senate', '':''}
 
-        com_url, com_db = self.get_dbf(year_abr, 'COMMITT')
+        com_csv = self.access_to_csv('Committee')
 
         self._committees = {}
 
-        for com in com_db:
+        for com in com_csv:
             # map XYZ -> "Assembly/Senate _________ Committee"
-            self._committees[com['CODE']] = ' '.join((chamber[com['HOUSE']],
-                                                      com['DESCRIPTIO'],
+            self._committees[com['Code']] = ' '.join((chamber[com['House']],
+                                                      com['Description'],
                                                       'Committee'))
 
     def categorize_action(self, act_str, bill_id):
@@ -156,24 +155,22 @@ class NJBillScraper(BillScraper, DBFMixin):
 
     def scrape(self, session, chambers):
         year_abr = ((int(session) - 209) * 2) + 2000
+        self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
-        self.scrape_bill_pages(session, year_abr)
+        self.scrape_bills(session, year_abr)
 
-    def scrape_bill_pages(self, session, year_abr):
-        """ assemble information on a bill from a number of DBF files
-        """
-
+    def scrape_bills(self, session, year_abr):
         #Main Bill information
-        main_bill_url, main_bill_db = self.get_dbf(year_abr, 'MAINBILL')
+        main_bill_csv = self.access_to_csv('MainBill')
 
         # keep a dictionary of bills (mapping bill_id to Bill obj)
         bill_dict = {}
 
-        for rec in main_bill_db:
-            bill_type = rec["billtype"]
-            bill_number = int(rec["billnumber"])
+        for rec in main_bill_csv:
+            bill_type = rec["BillType"].strip()
+            bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
-            title = rec["synopsis"]
+            title = rec["Synopsis"]
             if bill_type[0] == 'A':
                 chamber = "lower"
             else:
@@ -185,22 +182,21 @@ class NJBillScraper(BillScraper, DBFMixin):
 
             bill = Bill(str(session), chamber, bill_id, title,
                         type=self._bill_types[bill_type[1:]])
-            if rec['identicalb']:
-                bill.add_companion(rec['identicalb'].split()[0])
+            if rec['IdenticalBillNumber']:
+                bill.add_companion(rec['IdenticalBillNumber'].split()[0])
             # TODO: last session info is in there too
-            bill.add_source(main_bill_url)
             bill_dict[bill_id] = bill
 
         #Sponsors
-        bill_sponsors_url, bill_sponsors_db = self.get_dbf(year_abr, 'BILLSPON')
+        bill_sponsors_csv = self.access_to_csv('BillSpon')
 
-        for rec in bill_sponsors_db:
-            bill_type = rec["billtype"]
-            bill_number = int(rec["billnumber"])
+        for rec in bill_sponsors_csv:
+            bill_type = rec["BillType"].strip()
+            bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
             bill = bill_dict[bill_id]
-            name = rec["sponsor"]
-            sponsor_type = rec["type"]
+            name = rec["Sponsor"]
+            sponsor_type = rec["Type"]
             if sponsor_type == 'P':
                 sponsor_type = "primary"
             else:
@@ -209,18 +205,17 @@ class NJBillScraper(BillScraper, DBFMixin):
 
 
         #Documents
-        bill_document_url, bill_document_db = self.get_dbf(year_abr, 'BILLWP')
+        bill_document_csv = self.access_to_csv('BillWP')
 
-        #print bill_document_db[2]
-        for rec in bill_document_db:
-            bill_type = rec["billtype"]
-            bill_number = int(rec["billnumber"])
+        for rec in bill_document_csv:
+            bill_type = rec["BillType"].strip()
+            bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
             if bill_id not in bill_dict:
                 self.warning('unknown bill %s in document database' % bill_id)
                 continue
             bill = bill_dict[bill_id]
-            document = rec["document"]
+            document = rec["Document"]
             document = document.split('\\')
             document = document[-2] + "/" + document[-1]
             year = str(year_abr) + str((year_abr + 1))
@@ -231,14 +226,14 @@ class NJBillScraper(BillScraper, DBFMixin):
 
             # name document based _doctype
             try:
-                doc_name = self._doctypes[rec['doctype']]
+                doc_name = self._doctypes[rec['DocType']]
             except KeyError:
                 raise Exception('unknown doctype %s on %s' %
-                                (rec['doctype'], bill_id))
-            if rec['comment']:
-                doc_name += ' ' + rec['comment']
+                                (rec['DocType'], bill_id))
+            if rec['Comment']:
+                doc_name += ' ' + rec['Comment']
 
-            if rec['doctype'] in self._version_types:
+            if rec['DocType'] in self._version_types:
                 if htm_url.endswith('HTM'):
                     mimetype = 'text/html'
                 elif htm_url.endswith('wpd'):
@@ -337,46 +332,44 @@ class NJBillScraper(BillScraper, DBFMixin):
                 bill.add_vote(vote)
 
         #Actions
-        bill_action_url, bill_action_db = self.get_dbf(year_abr, 'BILLHIST')
+        bill_action_csv = self.access_to_csv('BillHist')
         actor_map = {'A': 'lower', 'G': 'executive', 'S': 'upper'}
 
-        for rec in bill_action_db:
-            bill_type = rec["billtype"]
-            bill_number = int(rec["billnumber"])
+        for rec in bill_action_csv:
+            bill_type = rec["BillType"].strip()
+            bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
             bill = bill_dict[bill_id]
-            action = rec["action"]
-            date = rec["dateaction"]
-            actor = actor_map[rec["house"]]
-            comment = rec["comment"]
+            action = rec["Action"]
+            date = rec["DateAction"]
+            date = datetime.strptime(date, "%m/%d/%y %H:%M:%S")
+            actor = actor_map[rec["House"]]
+            comment = rec["Comment"]
             action, atype = self.categorize_action(action, bill_id)
             if comment:
                 action += (' ' + comment)
             bill.add_action(actor, action, date, type=atype)
 
         # Subjects
-        subject_url, subject_db = self.get_dbf(year_abr, 'BILLSUBJ')
-        for rec in subject_db:
-            bill_id = rec['billtype'] + str(int(rec['billnumber']))
+        subject_csv = self.access_to_csv('BillSubj')
+        for rec in subject_csv:
+            bill_id = rec['BillType'].strip() + str(int(rec['BillNumber']))
             bill = bill_dict.get(bill_id)
             if bill:
-                bill.setdefault('subjects', []).append(rec['subjectkey'])
+                bill.setdefault('subjects', []).append(rec['SubjectKey'])
             else:
-                self.warning('invalid bill id in BILLSUBJ.DBF: %s' % bill_id)
+                self.warning('invalid bill id in BillSubj: %s' % bill_id)
 
         phony_bill_count = 0
         # save all bills at the end
         for bill in bill_dict.itervalues():
             # add sources
-            bill.add_source(bill_sponsors_url)
-            bill.add_source(bill_document_url)
-            bill.add_source(bill_action_url)
-            bill.add_source(subject_url)
             if not bill['actions'] and not bill['versions']:
                 self.warning('probable phony bill detected %s',
                              bill['bill_id'])
                 phony_bill_count += 1
             else:
+                bill.add_source('www.njleg.state.nj.us/downloads.asp')
                 self.save_bill(bill)
 
         if phony_bill_count:

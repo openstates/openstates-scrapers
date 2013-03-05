@@ -222,9 +222,9 @@ class MNBillScraper(BillScraper):
 
         self.get_bill_topics(chamber, session)
 
-        # MN bill search page returns a maximum of 999 search results
+        # MN bill search page returns a maximum 500 search results
         total_rows = list() # used to concatenate search results
-        stride = 900
+        stride = 500
         start = 0
 
         # get total list of rows

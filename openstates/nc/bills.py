@@ -94,7 +94,7 @@ class NCBillScraper(BillScraper):
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
         title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
-        bill_title = doc.xpath('//div[@id="title"]/a/text()')[0]
+        bill_title = doc.xpath('//div[@id="title"]')[0].text_content()
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
         bill.add_source(bill_detail_url)
