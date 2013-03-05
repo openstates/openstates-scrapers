@@ -72,9 +72,6 @@ class IABillScraper(BillScraper):
             if bill_id == 'Pick One':
                 continue
 
-            if 'HSB' in bill_id or 'SSB' in bill_id:
-                continue
-
             bill_url = option.attrib['value'].strip() + '&frm=2'
 
             self.scrape_bill(chamber, session, bill_id, bill_url)
@@ -149,7 +146,7 @@ class IABillScraper(BillScraper):
             bill.add_sponsor('primary', sponsor)
 
         for tr in page.xpath("//table[3]/tr"):
-            date = tr.xpath("string(td[1])").strip()
+            date = tr.xpath("string(td[contains(text(), ', 20')])").strip()
             if date.startswith("***"):
                 continue
             elif "No history is recorded at this time." in date:
@@ -176,6 +173,8 @@ class IABillScraper(BillScraper):
                 actor = 'upper'
             elif 'H.J.' in action or 'HCS' in action:
                 actor = 'lower'
+            else:
+                actor = "other"
 
             action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action).strip()
 
