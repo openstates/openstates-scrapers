@@ -94,6 +94,9 @@ class IABillScraper(BillScraper):
             self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
             return
 
+        if title.lower().startswith("in"):
+            title = page.xpath("string(//table[2]/tr[3])").strip()
+
         if 'HR' in bill_id or 'SR' in bill_id:
             bill_type = ['resolution']
         elif 'HJR' in bill_id or 'SJR' in bill_id:
