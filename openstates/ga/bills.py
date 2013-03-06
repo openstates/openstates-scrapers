@@ -105,6 +105,7 @@ class GABillScraper(BillScraper):
                 "SRA": ["bill:passed"],
                 "HPA": ["bill:passed"],
                 "SPA": ["bill:passed"],
+                "HTABL": ["other"],  # "House Tabled" - what is this?
                 "HCFR": ["committee:passed:favorable"],
                 "SCFR": ["committee:passed:favorable"],
                 "HRAR": ["committee:referred"],
