@@ -58,7 +58,10 @@ class LABillScraper(BillScraper):
             for bill_page in self.bill_pages(bill_type):
                 for bill in bill_page.xpath(
                         "//a[contains(@href, 'BillInfo.aspx')]"):
-                    self.scrape_bill_page(chamber, bill.attrib['href'])
+                    self.scrape_bill_page(chamber,
+                                          session,
+                                          bill.attrib['href'],
+                                          bill_type)
 
 
     def get_one_xpath(self, page, xpath):
@@ -68,7 +71,7 @@ class LABillScraper(BillScraper):
         return ret[0]
 
 
-    def scrape_bill_page(self, chamber, bill_url):
+    def scrape_bill_page(self, chamber, session, bill_url, bill_type):
         page = self.lxmlize(bill_url)
         author = self.get_one_xpath(
             page,
@@ -87,4 +90,31 @@ class LABillScraper(BillScraper):
         actions = page.xpath(
             "//div[@id='ctl00_PageBody_PanelBillInfo']/"
             "/table[@style='font-size:small']/tr")
-        print actions
+
+        bill_id = page.xpath(
+            "//span[@id='ctl00_PageBody_LabelBillID']/text()")[0]
+
+        bill_type = {"B": "bill", "CR": "concurrent resolution"}[bill_type[1:]]
+        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill.add_source(bill_url)
+
+        authors.remove(author)
+        bill.add_sponsor('primary', author)
+        for author in authors:
+            bill.add_sponsor('cosponsor', author)
+
+        for digest in digests:
+            bill.add_document(digest.text,
+                              digest.attrib['href'],
+                              mimetype="application/pdf")
+
+        for version in versions:
+            bill.add_version(version.text,
+                             version.attrib['href'],
+                             mimetype="application/pdf")
+
+        for action in actions:
+            date, chamber, page, text = [x.text for x in action.xpath(".//td")]
+            print text
+
+        self.save_bill(bill)
