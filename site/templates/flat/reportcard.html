@@ -700,7 +700,8 @@ $(document).ready(function() {
 <p>The specific criteria for each category are as follows:</p>
 
 <h3 id="completeness">Completeness</h3>
-<p>It would be easy to spend weeks focusing on completeness since the availability of state information varies so widely.  For simplicity we settled on evaluating if a state made available what we consider the "bare minimum" of information we collect: bills, legislators, votes, and events.  There was little variance in the availability of these, but several states were penalized for only having votes available via their journal or  not available at all.</p>
+<p>We evaluated each state on the data collected by Open States: bills, legislators, committees, votes and events. We also took note if a state went above and beyond to provide this information and other relevant contextual information such as supporting documents, legislative journals and schedules. Points were deducted for missing data, often roll call votes.
+</p>
 <dl>
     <dt>0</dt><dd>State provides full breadth of legislative artifacts Open States collects: bills, legislators, votes, and committees.</dd>
     <dt>-1</dt><dd>State does not provide stand-alone roll call votes.</dd>
@@ -708,9 +709,7 @@ $(document).ready(function() {
 
 
 <h3 id="timeliness">Timeliness</h3>
-<p>For many purposes legislative information is most relevant as it happens.
-We reached out to each state to determine how frequently its legislative data
-was updated: typically daily, hourly, or realtime.</p>
+<p>Legislative information is most relevant when it happens, and many states are publishing information in real time. Unfortunately, there are also states where updates are more infrequent and showing up days after a legislative action took place. States were dinged if data took more than 48 hours to go online.</a>
 <dl>
     <dt>1</dt><dd>Multiple updates throughout the day, real time or as close to it as systems will allow.</dd>
     <dt>0</dt><dd>Site updates once or twice daily, typically at the end of the legislative day.</dd>
@@ -718,8 +717,7 @@ was updated: typically daily, hourly, or realtime.</p>
 </dl>
 
 <h3 id="ease-of-access">Ease of Access</h3>
-<p>The related open data principle mentions that barriers to automatic access such as Flash or Javascript can cause problems for many users, and they also make our job of collecting this information quite a bit more difficult.  We found that the majority of sites work fairly well without Javascript, but some are extremely difficult to navigate, impossible to bookmark bills, and in extreme cases, completely unusable.  Sites that were noted during our evaluation as particularly good or bad were also given points accordingly.
-</p>
+<p>Common web technologies such as Flash or JavaScript can cause problems when reviewing legislative data. We found that the majority of sites work fairly well without JavaScript, but some received lower scores due to being extremely difficult to navigate, impossible to bookmark bills, and in extreme cases, completely unusable.  </p>
 <dl>
     <dt>1</dt><dd>Site was considered exceptionally well layed out by multiple evaluators, no issues with Javascript.</dd>
     <dt>0</dt><dd>Site was deemed average by those that evaluated it and/or had minor Javascript dependencies.</dd>
@@ -729,7 +727,7 @@ was updated: typically daily, hourly, or realtime.</p>
 
 
 <h3 id="machine-readability">Machine Readability</h3>
-<p>In the majority of states Open States resorts to screen scraping, a term for collecting information from the HTML pages that you might visit in your browser.  Screen scraping can be a slow, tedious, and error prone process and is considered a last resort.  On the other hand some states make some or all of their data available in a machine-readable format such as XML, JSON, CSV, or direct downloads of database files.  In those cases we’re able to collect data faster and more reliably.</p>
+<p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code — a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible.  </p>
 <dl>
     <dt>2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
     <dt>1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
