@@ -113,11 +113,11 @@ class GABillScraper(BillScraper):
                 "SAHAS": ["other"],
                 "SE": ["bill:passed"],
                 "SR": ["bill:passed"],
-                # STP \m/
                 "HTR": ["bill:reading:3"],
                 "HASAS": ["other"],
                 "SAPPT": ["other"],
                 "HCA": ["other"],
+                "SCRA": ["other"],
                 "S2R": ["bill:reading:2"],
                 "H2R": ["bill:reading:2"],
                 "SENG": ["bill:passed"],
@@ -131,8 +131,7 @@ class GABillScraper(BillScraper):
                 "HSG": ["governor:received"],
                 "EFF": ["other"],
                 "STH": ["other"],
-                "HTS": ["other"],  # House transmitted to senate
-                #"": [],
+                "HTS": ["other"],
             }
 
             for action in actions:
