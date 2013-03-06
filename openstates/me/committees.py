@@ -45,10 +45,10 @@ class MECommitteeScraper(CommitteeScraper):
                 rep = el.text
                 if rep.find('(') != -1:
                     mark = rep.find('(')
-                    rep = rep[15: mark]
+                    rep = rep[15: mark].strip()
                 if 'chair' in rep.lower():
                     role = 'chair'
-                    rep = re.sub(r'(?i)[\s,]*chair\s*$', '', rep)
+                    rep = re.sub(r'(?i)[\s,]*chair\s*$', '', rep).strip()
                 else:
                     role = 'member'
                 committee.add_member(rep, role)
@@ -80,7 +80,7 @@ class MECommitteeScraper(CommitteeScraper):
                     role = 'chair'
                 else:
                     role = 'member'
-                lname = leg.text_content().strip().split(' of ')[0]
+                lname = leg.text_content().strip().split(' of ')[0].strip()
                 com.add_member(lname, role)
 
             self.save_committee(com)
@@ -120,6 +120,7 @@ class MECommitteeScraper(CommitteeScraper):
             if suffix:
                 name += ', ' + suffix
 
+            name = name.strip()
             committee.add_member(name, role)
 
         for _, committee in committees.items():
