@@ -49,6 +49,9 @@ class LABillScraper(BillScraper):
             )
             yield page
 
+    def scrape_bare_page(self, url):
+        page = self.lxmlize(url)
+        return page.xpath("//a")
 
     def scrape(self, chamber, session):
         for bill_type in bill_types[chamber]:
@@ -71,4 +74,17 @@ class LABillScraper(BillScraper):
             page,
             "//a[@id='ctl00_PageBody_LinkAuthor']/text()"
         )
-        print author
+
+        sbp = lambda x: self.scrape_bare_page(page.xpath(
+            "//a[contains(text(), '%s')]" % (x))[0].attrib['href'])
+
+        authors = [x.text for x in sbp("Authors")]
+        digests = sbp("Digests")
+        versions = sbp("Text")
+
+        title = page.xpath(
+            "//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
+        actions = page.xpath(
+            "//div[@id='ctl00_PageBody_PanelBillInfo']/"
+            "/table[@style='font-size:small']/tr")
+        print actions

@@ -67,7 +67,7 @@ class MOCommitteeScraper(CommitteeScraper):
         url = '{base}ActiveCommittees.aspx'.format(base=self.reps_url_base)
         page_string = self.urlopen(url)
         page = lxml.html.fromstring(page_string)
-        table = page.xpath('id("contentdata")/table[1]')[0]
+        table = page.xpath('//div[@class="lightened"]/table[1]')[0]
         # Last tr has the date
         trs = table.xpath('tr')[:-1]
         for tr in trs:
