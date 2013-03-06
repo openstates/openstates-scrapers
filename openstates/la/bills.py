@@ -1,6 +1,7 @@
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
+import datetime as dt
 import lxml.html
 
 
@@ -113,8 +114,25 @@ class LABillScraper(BillScraper):
                              version.attrib['href'],
                              mimetype="application/pdf")
 
+        flags = {
+            "prefiled": ["bill:filed"],
+            "referred to the committee": ["committee:referred"],
+        }
+
         for action in actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
-            print text
+            date += "/%s" % (session)  # Session is April --> June. Prefiles
+            # look like they're in January at earliest.
+            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            chamber = {"S": "upper", "H": "lower", "J": 'joint'}[chamber]
+
+            cat = []
+            for flag in flags:
+                if flag in text.lower():
+                    cat += flags[flag]
+
+            if cat == []:
+                cat = ["other"]
+            bill.add_action(chamber, text, date, cat)
 
         self.save_bill(bill)
