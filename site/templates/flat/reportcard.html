@@ -4,17 +4,9 @@
 {% load staticfiles %}
 
 
-{% block title %}
-    Reportcard!
-{% endblock %}
-
 {% block headblock %}
-<script src="http://static.openstates.org/assets/v3.0/js/datatables.js"></script>
+<script src="{% static "js/datatables.js" %}"></script>
 <script src="{% static "js/jquery-ui-1.10.1.tooltip.min.js" %}"></script>
-
-<style>
-
-</style>
 
 <script type="text/javascript" >
 $(document).ready(function() {
@@ -42,7 +34,7 @@ $(document).ready(function() {
         // Sort it.
         datatable.fnSort([[0, 'asc']]);
 
-        $(".grade").tooltip({
+        $("td").tooltip({
             show: false,
             hide: false,
             position: {
@@ -66,13 +58,12 @@ $(document).ready(function() {
 </script>
 {% endblock %}
 
-{% block description %}
-    Reportcard data on all 50 states + DC.
-{% endblock %}
+{% block title %} Legislative Data Report Card  {% endblock %}
+{% block description %} Comparing all 50 states on how legislative data is made available. {% endblock %}
 
 {% block content %}
 
-<h2>State by State Report Card </h2>
+<h2> Open Legislative Data Report Card </h2>
 <table id="main-table" class="dataTable reportCard">
     <thead>
         <tr>
@@ -83,8 +74,8 @@ $(document).ready(function() {
             <th class="sort sorting_asc" role="columnheader">Machine Readibility</th>
             <th class="sort sorting_asc" role="columnheader">Open Standards</th>
             <th class="sort sorting_asc" role="columnheader">Permanence</th>
-            <th class="sort sorting_asc" role="columnheader">Score Average</th>
-            <th class="sort sorting_asc" role="columnheader">Score</th>
+            <th class="sort sorting_asc" role="columnheader">Total Score</th>
+            <th class="sort sorting_asc" role="columnheader">Grade</th>
         </tr> 
     </thead>
     <tbody>
@@ -93,11 +84,11 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Provides lots of data in CSV but some HTML scraping is still required.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 4 </td> 
-            <td class="grade grade-a" title="CT Grade." >A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
@@ -105,23 +96,23 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="Nearly all data available via an API.">2</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 4 </td> 
-            <td class="grade grade-a" title="GA Grade." >A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr>
             <td class="bold">Kansas</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
+            <td class="score-good" title="Some data available via JSON API but vote data requires extraction from text documents.">1</td> 
+            <td class="score-good" title="State went above and beyond to offer (open standards based) ODT files in addition to more common formats.">1</td> 
             <td class="score-great" >2</td> 
             <td > 5 </td> 
-            <td class="grade grade-a" title="KS Grade.">A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
@@ -129,35 +120,35 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="All data available in CSV format.">2</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 4 </td>
-            <td class="grade grade-a" title="NH Grade.">A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
             <td class="bold">North Carolina</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good">1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Some useful machine-readable data, but lots of data only on website.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 4 </td> 
-            <td class="grade grade-a" title="NC Grade.">A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
             <td class="bold">Texas</td>
-            <td class="score-bad" >-1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-bad" title="Roll call votes not published, but extractable from journal.">-1</td> 
+            <td class="score-good">1</td> 
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
+            <td class="score-great" title="XML for all bill information.">2</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 5 </td> 
-            <td class="grade grade-a" title="TX Grade.">A</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
@@ -165,11 +156,11 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="Most information available via an API.">2</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 5 </td> 
-            <td class="grade grade-a" title="WA Grade." >A</td> 
+            <td class="grade grade-a"." >A</td> 
         </tr>
 
         <tr> 
@@ -189,11 +180,11 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="CSV for some data, but HTML for the majority.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 4 </td> 
-            <td class="grade grade-b" title="AR Grade." >B</td> 
+            <td class="grade grade-a">A</td> 
         </tr>
 
         <tr> 
@@ -201,23 +192,23 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Nice new attempt at machine-readable data as of 2013, but is incomplete compared to site.">1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Recent site redesign broke all links with no redirects; but going forward site is well structured.">1</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="MD Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Mississippi</td> 
             <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Site makes great use of XML beneath bill data.  Would have been a +2 if it weren't for PDF-only votes." >1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="MI Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
@@ -227,21 +218,21 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="Great use of session prefixed URLs.">2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="NV Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">New Jersey </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-bad" title="Form submissions are done via POST, making bills non-bookmarkable/linkable.  Javascript required for most of site.">-1</td> 
+            <td class="score-great" title="Full database available for download.  Great service provided by the state.">2</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="All data appears to be permanent (if hard to link to); also public data exists for permanence even if site changes.">2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="NJ Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
@@ -249,35 +240,35 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Some data available via an API, but we have had to rely on scraping as well.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="NY Grade.">B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Ohio</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td> 
+            <td class="score-good" title="Some machine readable data (XLS); lots of data still has to be scraped.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="OH Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Utah </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="UT Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
@@ -289,55 +280,55 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="VT Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">West Virginia</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.  Notably also provided abundant links to artifacts like state code.">1</td> 
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td > 3 </td> 
-            <td class="grade grade-b" title="WV Grade." >B</td> 
+            <td class="grade grade-b">B</td> 
         </tr>
 
         <tr> 
             <td class="bold">Arizona </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-bad" title="Site navigation required Javascript and was considered somewhat more difficult than average to use.">-1</td> 
+            <td class="score-neutral" title="No points given for incomplete XML offerings, we had to rely on HTML for complete data.">0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >1</td> 
-            <td class="grade grade-c" title="AZ Grade." >C</td> 
+            <td class="grade grade-c">C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Delaware </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Site was noted as quite a bit more difficult to navigate than average.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
-            <td class="grade grade-c" title="DE Grade." >C</td> 
+            <td class="grade grade-c">C</td> 
         </tr>
 
         <tr> 
             <td class="bold">District of Columbia </td> 
             <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Inpermanent legislator pages.">1</td> 
             <td >1</td> 
-            <td class="grade grade-c" title="DC Grade." >C</td> 
+            <td class="grade grade-c">C</td> 
         </tr>
 
         <tr> 
@@ -345,23 +336,23 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
-            <td class="grade grade-c" title="FL Grade." >C</td> 
+            <td class="grade grade-c">C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Hawaii </td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes do not include 'Yes' votes which makes them unreliable.  Difficult/impossible to know which legislators voted.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Links broken without JS but there were lots of data export options and site was easy to navigate.">0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >1</td> 
-            <td class="grade grade-c" title="HI Grade." >C</td> 
+            <td class="grade grade-c">C</td> 
         </tr>
 
         <tr> 
@@ -371,7 +362,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="Inpermanent legislator pages.">1</td> 
             <td >1</td> 
             <td class="grade grade-c" >C</td> 
         </tr>
@@ -381,7 +372,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
@@ -393,7 +384,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
@@ -405,22 +396,22 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-good" title="State was kind enough to alert us to an unlisted XML offering of bill status data during this evaluation.">1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
             <td >2</td> 
             <td class="grade grade-c" >C</td> 
         </tr>
 
         <tr> 
             <td class="bold">Minnesota </td> 
-            <td class="score-abysmal" >-2</td> 
+            <td class="score-bad" title="Senate votes are not made available.">-1</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
-            <td >1</td> 
+            <td >2</td> 
             <td class="grade grade-c" >C</td> 
         </tr>
 
@@ -429,9 +420,9 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="Great use of permanent, session-prefixed URLs.">2</td> 
             <td >1</td> 
             <td class="grade grade-c" >C</td> 
         </tr>
@@ -441,7 +432,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
@@ -453,7 +444,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >1</td> 
@@ -465,9 +456,9 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes are only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
+            <td class="score-great" title="Great use of session-prefixed URLs.">2</td> 
             <td >1</td>
             <td class="grade grade-c" >C</td> 
         </tr>
@@ -475,7 +466,7 @@ $(document).ready(function() {
         <tr> 
             <td class="bold">Oregon </td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
@@ -512,7 +503,7 @@ $(document).ready(function() {
             <td class="bold">South Dakota </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Site was rated as more difficult to use than average; specifically many links did not go where people expected.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
@@ -527,7 +518,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
             <td >1</td> 
             <td class="grade grade-c" >C</td> 
         </tr>
@@ -537,11 +528,11 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-good" title="Private access to an FTP server with CSV available upon request & with justification.">1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-great" >2</td> 
             <td >2</td> 
-            <td class="grade grade-c" >C</td> 
+            <td class="grade grade-b" >B</td> 
         </tr>
 
         <tr> 
@@ -560,22 +551,22 @@ $(document).ready(function() {
             <td class="bold">California </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td> 
+            <td class="score-good" title="Machine readable bill data (MySQL dumps); legislator information requires scraping.">1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Legislator URLs based on district and non-permanent.">0</td> 
             <td >0</td> 
             <td class="grade grade-d" >D</td> 
         </tr>
 
         <tr> 
             <td class="bold">Indiana </td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-good" >1</td> 
+            <td class="score-bad" title="Senate votes must be collected from journal, not provided as roll calls.">-1</td> 
+            <td class="score-good" title="Updated every 2 hours.">1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Vote data only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Legislator URLs are based on district and therefore unreliable.">0</td> 
             <td >-1</td> 
             <td class="grade grade-d" >D</td> 
         </tr>
@@ -584,8 +575,8 @@ $(document).ready(function() {
             <td class="bold">Louisiana </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td> 
+            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td >-1</td> 
@@ -596,10 +587,10 @@ $(document).ready(function() {
             <td class="bold">Maine </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="Legislator URLs are non-permanent & reused when a new legislator takes office.">0</td> 
             <td >0</td> 
             <td class="grade grade-d" >D</td> 
         </tr>
@@ -608,10 +599,10 @@ $(document).ready(function() {
             <td class="bold">Oklahoma </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Site is completely non-functional without Javascript enabled.">-1</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
             <td >0</td> 
             <td class="grade grade-d" >D</td> 
         </tr>
@@ -623,7 +614,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
             <td >0</td> 
             <td class="grade grade-d" >D</td> 
         </tr>
@@ -632,10 +623,10 @@ $(document).ready(function() {
             <td class="bold">Alabama </td> 
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-abysmal" >-2</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-abysmal" title="Site was universally commented upon by volunteers and staff as difficult to use.  Site won't work at all without Javascript.  Pages within ALISON are not bookmarkable and require an arcane pattern of clicks to discover in some cases.">-2</td> 
+            <td class="score-bad" title="Scraping site requires emulation of Javascript to get information; far worse than average HTML-based site.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Legislator data is inpermanent.  Linking to information is difficult/impossible in some cases due to nested frame design.">-1</td> 
             <td > -3 </td> 
             <td class="grade grade-f" >F</td> 
         </tr>
@@ -645,9 +636,9 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-good" >1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes are only available via PDF; document links require some basic Javascript emulation to recover.">-1</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-abysmal" >-2</td> 
+            <td class="score-abysmal" title="Bill version links have been removed/changed, even during a session.  This was the only state seen to exhibit this behavior.">-2</td> 
             <td >-2</td> 
             <td class="grade grade-f" >F</td> 
         </tr>
@@ -657,22 +648,22 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-abysmal" >-2</td> 
-            <td class="score-bad" >-1</td> 
-            <td class="score-neutral" >0</td>
+            <td class="score-abysmal" title="Many votes only available via non-machine readable PDF.">-2</td> 
+            <td class="score-bad" title="Votes only available in proprietary .doc format; only state to not provide bills in PDF or HTML.">-1</td> 
+            <td class="score-neutral" title="Legislator and committee URLs are non-permanent, reused each session.">0</td>
             <td > -3 </td> 
             <td class="grade grade-f" >F</td> 
         </tr>
 
         <tr> 
             <td class="bold">Massachusetts </td> 
-            <td class="score-abysmal" >-2</td> 
+            <td class="score-bad" title="Roll call votes not published on site in meaningful way.">0</td> 
             <td class="score-good" >1</td> 
-            <td class="score-abysmal" >-2</td> 
-            <td class="score-abysmal" >-2</td> 
+            <td class="score-abysmal" title="Site is frequently broken with no notice to users; bill information impossible to access without Javascript.">-2</td> 
+            <td class="score-abysmal" title="Vote data isn't available; locked up in non-machine readable PDF.">-2</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td > -3 </td> 
+            <td class="score-bad" title="A dearth of historical information, all information prior to 2009 removed.">-1</td> 
+            <td > -4 </td> 
             <td class="grade grade-f" >F</td> 
         </tr>
 
@@ -681,9 +672,9 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="Votes only available via extraction from journal PDFs.">-1</td> 
             <td class="score-neutral" >0</td>
-            <td class="score-bad" >-1</td>
+            <td class="score-bad" title="URLs for legislators and committees are reused each session, no permanent information for these. All information prior to 2007 appears to have been removed from site.">-1</td>
             <td >-2</td> 
             <td class="grade grade-f" >F</td> 
         </tr>
@@ -691,11 +682,11 @@ $(document).ready(function() {
         <tr> 
             <td class="bold">Rhode Island </td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td> 
             <td class="score-neutral" >0</td> 
+            <td class="score-neutral" title="XLS available for legislators; but all other data HTML.">0</td> 
             <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" >-1</td> 
+            <td class="score-bad" title="No ability to permalink to bills (just http://status.rilin.state.ri.us/) and severe dearth of historical data.">-1</td> 
             <td >-2</td> 
             <td class="grade grade-f" >F</td> 
         </tr>
