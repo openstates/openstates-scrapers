@@ -282,11 +282,11 @@ border-radius: 5px;}
 /*  LOGIN */
 
 #login {
-   float:right;
-   clear:right;
-   margin-bottom:0;
-   font-size:13px;
-   margin-left:690px;
+    float:right;
+    clear:right;
+    margin-bottom:0;
+    font-size:13px;
+    margin-left:690px;
 }
 
 
@@ -1672,6 +1672,38 @@ dd.sessionNumber {
 
 /* REPORT CARD STYLES */
 
+.intro {
+    font-size: 1.4em;
+    line-height: 1.7em;
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+   font-weight: 300;
+   max-width:100%;
+
+}
+
+#criteria h2 {
+    padding-top:60px;
+}
+
+#criteria h4 {
+    padding-top:40px;
+    margin-bottom: 20px;
+}
+
+#criteria dt{
+    float: left;
+    clear: left;
+    padding-right:20px;
+    padding-bottom: 10px;
+}
+
+#criteria dd{
+    float: left;
+    clear: right;
+    padding-bottom: 10px;
+}
+
+
 .reportCard thead tr{
     border-top: 1px solid #FFF;
     background: #E9EBDC;
@@ -1680,16 +1712,13 @@ dd.sessionNumber {
 .reportCard thead tr th {
         vertical-align: bottom;
         padding-top: 20px;
-
 }
 
 .reportCard thead tr th.sort {
     background: url("images/sortArrows.png") no-repeat scroll 10px 44px transparent;
     padding-left: 25px;
     padding-right: 5px;
-
-
-
+    width:110px;
 }
 
 .reportCard tr{
@@ -1708,8 +1737,6 @@ dd.sessionNumber {
     text-align: right;
     padding-right: 50px;
     font-weight: bold;
-
-
 }
 
 .score-neutral {
@@ -1717,7 +1744,6 @@ dd.sessionNumber {
     text-align: right;
     padding-right: 50px;
     font-weight: bold;
-
 }
 
 .score-good {
@@ -1725,7 +1751,6 @@ dd.sessionNumber {
     text-align: right;
     padding-right: 50px;
     font-weight: bold;
-
 }
 
 .score-great {
@@ -1733,9 +1758,28 @@ dd.sessionNumber {
     text-align: right;
     padding-right: 50px;
     font-weight: bold;
-
 }
 
+
+.abysmal {
+    color:#A03A00;
+}
+
+.bad {
+    color:#C06900;
+}
+
+.neutral {
+    color:#D2A700;
+}
+
+.good {
+    color:#878E37;
+}
+
+.great {
+    color:#78AAA2;
+}
 .grade-a {
     background-color:#78AAA2;
     text-align: center;
@@ -1782,7 +1826,7 @@ dd.sessionNumber {
     color: white;
     border-radius: 5px;
     font: bold 14px "Helvetica Neue", Sans-Serif;
-    width: 15%;
+    width: 18%;
 }
 .arrow {
     width: 70px;

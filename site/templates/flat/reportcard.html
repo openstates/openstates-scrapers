@@ -58,12 +58,13 @@ $(document).ready(function() {
 </script>
 {% endblock %}
 
-{% block title %} Legislative Data Report Card  {% endblock %}
+{% block title %} Legislative Data Report Card {% endblock %}
 {% block description %} Comparing all 50 states on how legislative data is made available. {% endblock %}
 
 {% block content %}
 
 <h2> Open Legislative Data Report Card </h2>
+<p class="intro">Comparing all 50 states on how legislative data is made available. <br>For more information see our <a href="#criteria">methodology.</a></p>
 <table id="main-table" class="dataTable reportCard">
     <thead>
         <tr>
@@ -75,632 +76,632 @@ $(document).ready(function() {
             <th class="sort sorting_asc" role="columnheader">Standards</th>
             <th class="sort sorting_asc" role="columnheader">Permanence</th>
             <th class="sort sorting_asc" role="columnheader">Grade</th>
-        </tr> 
+        </tr>
     </thead>
     <tbody>
-        <tr> 
-            <td class="bold">Connecticut</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Provides lots of data in CSV but some HTML scraping is still required.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Georgia</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="Nearly all data available via an API.">2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
+        <tr>
+            <td class="bold">Connecticut</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Provides lots of data in CSV but some HTML scraping is still required.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
         <tr>
-            <td class="bold">Kansas</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
-            <td class="score-good" title="Some data available via JSON API but vote data requires extraction from text documents.">1</td> 
-            <td class="score-good" title="State went above and beyond to offer (open standards based) ODT files in addition to more common formats.">1</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
+            <td class="bold">Georgia</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="Nearly all data available via an API.">2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
-        <tr> 
-            <td class="bold">New Hampshire</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="All data available in CSV format.">2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
+        <tr>
+            <td class="bold">Kansas</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td>
+            <td class="score-good" title="Some data available via JSON API but vote data requires extraction from text documents.">1</td>
+            <td class="score-good" title="State went above and beyond to offer (open standards based) ODT files in addition to more common formats.">1</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
-        <tr> 
-            <td class="bold">North Carolina</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Some useful machine-readable data, but lots of data only on website.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
+        <tr>
+            <td class="bold">New Hampshire</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="All data available in CSV format.">2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
-        <tr> 
+        <tr>
+            <td class="bold">North Carolina</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Some useful machine-readable data, but lots of data only on website.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
+        </tr>
+
+        <tr>
             <td class="bold">Texas</td>
-            <td class="score-bad" title="Roll call votes not published, but extractable from journal.">-1</td> 
-            <td class="score-good">1</td> 
-            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
-            <td class="score-great" title="XML for all bill information.">2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Washington</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="Most information available via an API.">2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a" >A</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Alaska</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b" title="AK Grade." >B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Arkansas</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="CSV for some data, but HTML for the majority.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-a">A</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Maryland</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Nice new attempt at machine-readable data as of 2013, but is incomplete compared to site.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Recent site redesign broke all links with no redirects; but going forward site is well structured.">1</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Mississippi</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Site makes great use of XML beneath bill data.  Would have been a +2 if it weren't for PDF-only votes." >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Nevada</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="Great use of session prefixed URLs.">2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">New Jersey </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Form submissions are done via POST, making bills non-bookmarkable/linkable.  Javascript required for most of site.">-1</td> 
-            <td class="score-great" title="Full database available for download.  Great service provided by the state.">2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="All data appears to be permanent (if hard to link to); also public data exists for permanence even if site changes.">2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">New York</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Some data available via an API, but we have had to rely on scraping as well.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Ohio</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td> 
-            <td class="score-good" title="Some machine readable data (XLS); lots of data still has to be scraped.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Utah </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Vermont</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">West Virginia</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.  Notably also provided abundant links to artifacts like state code.">1</td> 
-            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b">B</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Arizona </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Site navigation required Javascript and was considered somewhat more difficult than average to use.">-1</td> 
-            <td class="score-neutral" title="No points given for incomplete XML offerings, we had to rely on HTML for complete data.">0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c">C</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Delaware </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site was noted as quite a bit more difficult to navigate than average.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c">C</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">District of Columbia </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Inpermanent legislator pages.">1</td> 
-            <td class="grade grade-c">C</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Florida </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c">C</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Hawaii </td> 
-            <td class="score-bad" title="Votes do not include 'Yes' votes which makes them unreliable.  Difficult/impossible to know which legislators voted.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Links broken without JS but there were lots of data export options and site was easy to navigate.">0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c">C</td> 
-        </tr>
-
-        <tr> 
-            <td class="bold">Idaho </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Inpermanent legislator pages.">1</td> 
-            <td class="grade grade-c" >C</td> 
+            <td class="score-bad" title="Roll call votes not published, but extractable from journal.">-1</td>
+            <td class="score-good">1</td>
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td>
+            <td class="score-great" title="XML for all bill information.">2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
         <tr>
-            <td class="bold">Illinois </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+            <td class="bold">Washington</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="Most information available via an API.">2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a" >A</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Iowa </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Alaska</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b" title="AK Grade." >B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Michigan </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="State was kind enough to alert us to an unlisted XML offering of bill status data during this evaluation.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Arkansas</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="CSV for some data, but HTML for the majority.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-a">A</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Minnesota </td> 
-            <td class="score-bad" title="Senate votes are not made available.">-1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Maryland</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Nice new attempt at machine-readable data as of 2013, but is incomplete compared to site.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Recent site redesign broke all links with no redirects; but going forward site is well structured.">1</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Missouri </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="Great use of permanent, session-prefixed URLs.">2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Mississippi</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Site makes great use of XML beneath bill data.  Would have been a +2 if it weren't for PDF-only votes." >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Montana </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Vote data is only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Nevada</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="Great use of session prefixed URLs.">2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">New Mexico </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">New Jersey </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Form submissions are done via POST, making bills non-bookmarkable/linkable.  Javascript required for most of site.">-1</td>
+            <td class="score-great" title="Full database available for download.  Great service provided by the state.">2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="All data appears to be permanent (if hard to link to); also public data exists for permanence even if site changes.">2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">North Dakota </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Votes are only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" title="Great use of session-prefixed URLs.">2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">New York</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Some data available via an API, but we have had to rely on scraping as well.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Oregon </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Ohio</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td>
+            <td class="score-good" title="Some machine readable data (XLS); lots of data still has to be scraped.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Pennsylvania </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Utah </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">South Carolina </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Vermont</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">South Dakota </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site was rated as more difficult to use than average; specifically many links did not go where people expected.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">West Virginia</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-good" title="Site was easy to use, and found to be above average in ease of navigation.  Notably also provided abundant links to artifacts like state code.">1</td>
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Tennessee </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">Arizona </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Site navigation required Javascript and was considered somewhat more difficult than average to use.">-1</td>
+            <td class="score-neutral" title="No points given for incomplete XML offerings, we had to rely on HTML for complete data.">0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c">C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Virginia </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" title="Private access to an FTP server with CSV available upon request & with justification.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-b" >B</td> 
+        <tr>
+            <td class="bold">Delaware </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site was noted as quite a bit more difficult to navigate than average.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c">C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Wyoming </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-great" >2</td> 
-            <td class="grade grade-c" >C</td> 
+        <tr>
+            <td class="bold">District of Columbia </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Multiple calls were not returned; data appears to be updated daily.">0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Inpermanent legislator pages.">1</td>
+            <td class="grade grade-c">C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">California </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td> 
-            <td class="score-good" title="Machine readable bill data (MySQL dumps); legislator information requires scraping.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Legislator URLs based on district and non-permanent.">0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Florida </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c">C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Indiana </td> 
-            <td class="score-bad" title="Senate votes must be collected from journal, not provided as roll calls.">-1</td> 
-            <td class="score-good" title="Updated every 2 hours.">1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Vote data only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Legislator URLs are based on district and therefore unreliable.">0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Hawaii </td>
+            <td class="score-bad" title="Votes do not include 'Yes' votes which makes them unreliable.  Difficult/impossible to know which legislators voted.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Links broken without JS but there were lots of data export options and site was easy to navigate.">0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c">C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Louisiana </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td> 
-            <td class="score-bad" title="Votes only available via PDF.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Idaho </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Inpermanent legislator pages.">1</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Maine </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="Legislator URLs are non-permanent & reused when a new legislator takes office.">0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Illinois </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Oklahoma </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-bad" title="Site is completely non-functional without Javascript enabled.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Iowa </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Wisconsin </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td> 
-            <td class="grade grade-d" >D</td> 
+        <tr>
+            <td class="bold">Michigan </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="State was kind enough to alert us to an unlisted XML offering of bill status data during this evaluation.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Alabama </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-abysmal" title="Site was universally commented upon by volunteers and staff as difficult to use.  Site won't work at all without Javascript.  Pages within ALISON are not bookmarkable and require an arcane pattern of clicks to discover in some cases.">-2</td> 
-            <td class="score-bad" title="Scraping site requires emulation of Javascript to get information; far worse than average HTML-based site.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Legislator data is inpermanent.  Linking to information is difficult/impossible in some cases due to nested frame design.">-1</td> 
-            <td class="grade grade-f" >F</td> 
+        <tr>
+            <td class="bold">Minnesota </td>
+            <td class="score-bad" title="Senate votes are not made available.">-1</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Colorado </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Votes are only available via PDF; document links require some basic Javascript emulation to recover.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-abysmal" title="Bill version links have been removed/changed, even during a session.  This was the only state seen to exhibit this behavior.">-2</td> 
-            <td class="grade grade-f" >F</td> 
+        <tr>
+            <td class="bold">Missouri </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Votes only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="Great use of permanent, session-prefixed URLs.">2</td>
+            <td class="grade grade-c" >C</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Kentucky </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-abysmal" title="Many votes only available via non-machine readable PDF.">-2</td> 
-            <td class="score-bad" title="Votes only available in proprietary .doc format; only state to not provide bills in PDF or HTML.">-1</td> 
+        <tr>
+            <td class="bold">Montana </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Vote data is only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">New Mexico </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Votes only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">North Dakota </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Votes are only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" title="Great use of session-prefixed URLs.">2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Oregon </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Pennsylvania </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">South Carolina </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">South Dakota </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site was rated as more difficult to use than average; specifically many links did not go where people expected.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Tennessee </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Virginia </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" title="Private access to an FTP server with CSV available upon request & with justification.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-b" >B</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Wyoming </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-great" >2</td>
+            <td class="grade grade-c" >C</td>
+        </tr>
+
+        <tr>
+            <td class="bold">California </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Site is rendered entirely inoperable without Javascript.  Site was considered slightly more difficult than average to use.">-1</td>
+            <td class="score-good" title="Machine readable bill data (MySQL dumps); legislator information requires scraping.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Legislator URLs based on district and non-permanent.">0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Indiana </td>
+            <td class="score-bad" title="Senate votes must be collected from journal, not provided as roll calls.">-1</td>
+            <td class="score-good" title="Updated every 2 hours.">1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Vote data only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Legislator URLs are based on district and therefore unreliable.">0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Louisiana </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td>
+            <td class="score-bad" title="Votes only available via PDF.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Maine </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site was noted as more difficult to use than average.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="Legislator URLs are non-permanent & reused when a new legislator takes office.">0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Oklahoma </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-bad" title="Site is completely non-functional without Javascript enabled.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Wisconsin </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="URLs for legislators and committees are reused and leave no trace of permanent information.">0</td>
+            <td class="grade grade-d" >D</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Alabama </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-abysmal" title="Site was universally commented upon by volunteers and staff as difficult to use.  Site won't work at all without Javascript.  Pages within ALISON are not bookmarkable and require an arcane pattern of clicks to discover in some cases.">-2</td>
+            <td class="score-bad" title="Scraping site requires emulation of Javascript to get information; far worse than average HTML-based site.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Legislator data is inpermanent.  Linking to information is difficult/impossible in some cases due to nested frame design.">-1</td>
+            <td class="grade grade-f" >F</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Colorado </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-good" >1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Votes are only available via PDF; document links require some basic Javascript emulation to recover.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-abysmal" title="Bill version links have been removed/changed, even during a session.  This was the only state seen to exhibit this behavior.">-2</td>
+            <td class="grade grade-f" >F</td>
+        </tr>
+
+        <tr>
+            <td class="bold">Kentucky </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-abysmal" title="Many votes only available via non-machine readable PDF.">-2</td>
+            <td class="score-bad" title="Votes only available in proprietary .doc format; only state to not provide bills in PDF or HTML.">-1</td>
             <td class="score-neutral" title="Legislator and committee URLs are non-permanent, reused each session.">0</td>
-            <td class="grade grade-f" >F</td> 
+            <td class="grade grade-f" >F</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Massachusetts </td> 
-            <td class="score-bad" title="Roll call votes not published on site in meaningful way.">-1</td> 
-            <td class="score-good" >1</td> 
-            <td class="score-abysmal" title="Site is frequently broken with no notice to users; bill information impossible to access without Javascript.">-2</td> 
-            <td class="score-abysmal" title="Vote data isn't available; locked up in non-machine readable PDF.">-2</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="A dearth of historical information, all information prior to 2009 removed.">-1</td> 
-            <td class="grade grade-f" >F</td> 
+        <tr>
+            <td class="bold">Massachusetts </td>
+            <td class="score-bad" title="Roll call votes not published on site in meaningful way.">-1</td>
+            <td class="score-good" >1</td>
+            <td class="score-abysmal" title="Site is frequently broken with no notice to users; bill information impossible to access without Javascript.">-2</td>
+            <td class="score-abysmal" title="Vote data isn't available; locked up in non-machine readable PDF.">-2</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="A dearth of historical information, all information prior to 2009 removed.">-1</td>
+            <td class="grade grade-f" >F</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Nebraska </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="Votes only available via extraction from journal PDFs.">-1</td> 
+        <tr>
+            <td class="bold">Nebraska </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="Votes only available via extraction from journal PDFs.">-1</td>
             <td class="score-neutral" >0</td>
             <td class="score-bad" title="URLs for legislators and committees are reused each session, no permanent information for these. All information prior to 2007 appears to have been removed from site.">-1</td>
-            <td class="grade grade-f" >F</td> 
+            <td class="grade grade-f" >F</td>
         </tr>
 
-        <tr> 
-            <td class="bold">Rhode Island </td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-neutral" title="XLS available for legislators; but all other data HTML.">0</td> 
-            <td class="score-neutral" >0</td> 
-            <td class="score-bad" title="No ability to permalink to bills (just http://status.rilin.state.ri.us/) and severe dearth of historical data.">-1</td> 
-            <td class="grade grade-f" >F</td> 
+        <tr>
+            <td class="bold">Rhode Island </td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-neutral" title="XLS available for legislators; but all other data HTML.">0</td>
+            <td class="score-neutral" >0</td>
+            <td class="score-bad" title="No ability to permalink to bills (just http://status.rilin.state.ri.us/) and severe dearth of historical data.">-1</td>
+            <td class="grade grade-f" >F</td>
         </tr>
     </tbody>
 </table>
 
 <div id="criteria">
-<h2> Methodology </h2>
-<p>Each state was evaluated in six categories based largely on the <a href="http://sunlightfoundation.com/policy/documents/ten-open-data-principles/">Ten Principles For Opening Up Government Information</a>.  Each score is based on at least two members of staff and a volunteer during our <a href="http://sunlightfoundation.com/blog/2012/02/17/help-open-states-rate-state-websites/">state survey</a>.  Additionally, state legislatures were contacted (unless noted in their score) to ensure that our information on bulk data availability and timeliness was as accurate as possible.  </p>
+    <h2> Methodology </h2>
+    <p class="intro">Each state was evaluated in six categories based largely on the <a href="http://sunlightfoundation.com/policy/documents/ten-open-data-principles/">Ten Principles For Opening Up Government Information</a>.  Each score is based on at least two members of staff and a volunteer during our <a href="http://sunlightfoundation.com/blog/2012/02/17/help-open-states-rate-state-websites/">state survey</a>.  Additionally, state legislatures were contacted (unless noted in their score) to ensure that our information on bulk data availability and timeliness was as accurate as possible.  </p>
 
-<p>The specific criteria for each category are as follows:</p>
+    <p class="intro">The specific criteria for each category are as follows:</p>
 
-<h3 id="completeness">Completeness</h3>
-<p>We evaluated each state on the data collected by Open States: bills, legislators, committees, votes and events. We also took note if a state went above and beyond to provide this information and other relevant contextual information such as supporting documents, legislative journals and schedules. Points were deducted for missing data, often roll call votes.
-</p>
-<dl>
-    <dt>0</dt><dd>State provides full breadth of legislative artifacts Open States collects: bills, legislators, votes, and committees.</dd>
-    <dt>-1</dt><dd>State does not provide stand-alone roll call votes.</dd>
-</dl>
-
-
-<h3 id="timeliness">Timeliness</h3>
-<p>Legislative information is most relevant when it happens, and many states are publishing information in real time. Unfortunately, there are also states where updates are more infrequent and showing up days after a legislative action took place. States were dinged if data took more than 48 hours to go online.</a>
-<dl>
-    <dt>1</dt><dd>Multiple updates throughout the day, real time or as close to it as systems will allow.</dd>
-    <dt>0</dt><dd>Site updates once or twice daily, typically at the end of the legislative day.</dd>
-    <dt>-1</dt><dd>Updates take longer than 24 hours to appear on the site, often up to a week.</dd>
-</dl>
-
-<h3 id="ease-of-access">Ease of Access</h3>
-<p>Common web technologies such as Flash or JavaScript can cause problems when reviewing legislative data. We found that the majority of sites work fairly well without JavaScript, but some received lower scores due to being extremely difficult to navigate, impossible to bookmark bills, and in extreme cases, completely unusable.  </p>
-<dl>
-    <dt>1</dt><dd>Site was considered exceptionally well layed out by multiple evaluators, no issues with Javascript.</dd>
-    <dt>0</dt><dd>Site was deemed average by those that evaluated it and/or had minor Javascript dependencies.</dd>
-    <dt>-1</dt><dd>Site was considered more difficult than average to use by members of staff or volunteers or had more severe Javascript dependencies.</dd>
-    <dt>-2</dt><dd>Site was considered extremely difficult to use with a heavy reliance on irregular browser behavior and Javascript.</a>
-</dl>
+    <h4 id="completeness">Completeness</h4>
+    <p>We evaluated each state on the data collected by Open States: bills, legislators, committees, votes and events. We also took note if a state went above and beyond to provide this information and other relevant contextual information such as supporting documents, legislative journals and schedules. Points were deducted for missing data, often roll call votes.
+    </p>
+    <dl class="clearfix">
+        <dt class="neutral">&nbsp;0</dt><dd>State provides full breadth of legislative artifacts Open States collects: bills, legislators, votes, and committees.</dd>
+        <dt class="bad">-1</dt><dd>State does not provide stand-alone roll call votes.</dd>
+    </dl>
 
 
-<h3 id="machine-readability">Machine Readability</h3>
-<p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code — a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible.  </p>
-<dl>
-    <dt>2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
-    <dt>1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
-    <dt>0</dt><dd>No machine readable data but standard screen scraping techniques applied.</dd>
-    <dt>-1</dt><dd>Site had information that was much more difficult than average to collect.  (Data only accessible via PDF or that required screen scraper to emulate Javascript.)</dd>
-    <dt>-2</dt><dd>Site had information that was unaccessible to Open States due to use of scanned PDFs.</a>
-</dl>
+    <h4 id="timeliness">Timeliness</h4>
+    <p>Legislative information is most relevant when it happens, and many states are publishing information in real time. Unfortunately, there are also states where updates are more infrequent and showing up days after a legislative action took place. States were dinged if data took more than 48 hours to go online.</a>
+    <dl class="clearfix">
+        <dt class="good">&nbsp;1</dt><dd>Multiple updates throughout the day, real time or as close to it as systems will allow.</dd>
+        <dt class="neutral">&nbsp;0</dt><dd>Site updates once or twice daily, typically at the end of the legislative day.</dd>
+        <dt class="bad">-1</dt><dd>Updates take longer than 24 hours to appear on the site, often up to a week.</dd>
+    </dl>
 
-<h3 id="standards">Use of Commonly Owned Standards</h3>
-<p>Because our ability to assess most of a state’s data is represented by the above “Machine Readability” metric, we decided to use this provision to measure how a state made their bill text available.  Making text available in HTML or PDF is the norm, and was considered an acceptable commonly owned standard (PDFs are a commonly owned standard, but it would be certainly nice to see alternative options where bill text is only available via PDF).  States that only make documents available in Microsoft Word or Wordperfect formats require an individual to purchase expensive software or rely on free alternatives that may not preserve the correct formatting. It is worth  noting, all states except for two met the common criteria of providing HTML and/or PDF only, one state (Kansas) went above and beyond and another (Kentucky) did not even meet this threshold.</p>
-<dl>
-    <dt>1</dt><dd>State made an effort to go above and beyond.</dd>
-    <dt>0</dt><dd>State provided bills in PDF and/or HTML format and nothing better (plaintext, ODT, etc.).</dd>
-    <dt>-1</dt><dd>State only provided bills in a proprietary format.</dd>
-</dl>
+    <h4 id="ease-of-access">Ease of Access</h4>
+    <p>Common web technologies such as Flash or JavaScript can cause problems when reviewing legislative data. We found that the majority of sites work fairly well without JavaScript, but some received lower scores due to being extremely difficult to navigate, impossible to bookmark bills, and in extreme cases, completely unusable.</p>
+    <dl class="clearfix">
+        <dt class="good">&nbsp;1</dt><dd>Site was considered exceptionally well layed out by multiple evaluators, no issues with Javascript.</dd>
+        <dt class="neutral">&nbsp;0</dt><dd>Site was deemed average by those that evaluated it and/or had minor Javascript dependencies.</dd>
+        <dt class="bad">-1</dt><dd>Site was considered more difficult than average to use by members of staff or volunteers or had more severe Javascript dependencies.</dd>
+        <dt class="abysmal">-2</dt><dd>Site was considered extremely difficult to use with a heavy reliance on irregular browser behavior and Javascript.</a>
+    </dl>
 
-<h3 id="permanence">Permanence</h3>
-<p>Many states move or remove information when a new session starts, much to the dismay of citizens seeking information on old proposals and researchers that may have cited a link (e.g. http://somelegislature.gov/HB1 vs http://somelegislature.gov/2011/HB1) only to see it point to a different bill in the following session.  Tim Berners-Lee, inventor of the World Wide Web, wrote an article declaring <a href="http://www.w3.org/Provider/Style/URI.html">Cool URIs Don’t Change</a> and we agree.  <br /> This poses a particular challenge to us since every page on OpenStates.org points to the page we collected data from, but if a state changes their site then users lose the ability to check us against the original source.  Most (but not all) states are good about at least preserving bill information, but few were equally as good about preserving information about out-of-office legislators and historical committees, equally important parts of the legislative process.  </p>
-<dl>
-    <dt>2</dt><dd>All information is avaialble in a permanent location and data goes back a reasonable amount of time (a decade or so).</dd>
-    <dt>1</dt><dd>Almost all information has a permanent location but a single data set doesn't.  (Or a recent change to the site has wiped out historical links but information appears to be preservable going forward.)</dd>
-    <dt>0</dt><dd>Legislator &amp; committee information lacks a permanent location (such as committees and legislators) but most is acceptable.</dd>
-    <dt>-1</dt><dd>Ability to link to old information is badly damaged and and/or there is less than a decade of historical information.</dd>
-    <dt>-2</dt><dd>Vital information like bills or versions lack a permanent location.</dd>
-</dl>
+
+    <h4 id="machine-readability">Machine Readability</h4>
+    <p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code — a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible.  </p>
+    <dl class="clearfix">
+        <dt class="great">&nbsp;2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
+        <dt class="good">&nbsp;1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
+        <dt class="neutral">&nbsp;0</dt><dd>No machine readable data but standard screen scraping techniques applied.</dd>
+        <dt class="bad">-1</dt><dd>Site had information that was much more difficult than average to collect. <br>(Data only accessible via PDF or that required screen scraper to emulate Javascript.)</dd>
+        <dt class="abysmal">-2</dt><dd>Site had information that was unaccessible to Open States due to use of scanned PDFs.</a>
+    </dl>
+
+    <h4 id="standards">Use of Commonly Owned Standards</h4>
+    <p>Because our ability to assess most of a state’s data is represented by the above “Machine Readability” metric, we decided to use this provision to measure how a state made their bill text available.  Making text available in HTML or PDF is the norm, and was considered an acceptable commonly owned standard (PDFs are a commonly owned standard, but it would be certainly nice to see alternative options where bill text is only available via PDF).  States that only make documents available in Microsoft Word or Wordperfect formats require an individual to purchase expensive software or rely on free alternatives that may not preserve the correct formatting. It is worth  noting, all states except for two met the common criteria of providing HTML and/or PDF only, one state (Kansas) went above and beyond and another (Kentucky) did not even meet this threshold.</p>
+    <dl class="clearfix">
+        <dt class="good">&nbsp;1</dt><dd>State made an effort to go above and beyond.</dd>
+        <dt class="neutral">&nbsp;0</dt><dd>State provided bills in PDF and/or HTML format and nothing better (plaintext, ODT, etc.).</dd>
+        <dt class="bad">-1</dt><dd>State only provided bills in a proprietary format.</dd>
+    </dl>
+
+    <h4 id="permanence">Permanence</h4>
+    <p>Many states move or remove information when a new session starts, much to the dismay of citizens seeking information on old proposals and researchers that may have cited a link (e.g. http://somelegislature.gov/HB1 vs http://somelegislature.gov/2011/HB1) only to see it point to a different bill in the following session.  Tim Berners-Lee, inventor of the World Wide Web, wrote an article declaring <a href="http://www.w3.org/Provider/Style/URI.html">Cool URIs Don’t Change</a> and we agree.  <br /> This poses a particular challenge to us since every page on OpenStates.org points to the page we collected data from, but if a state changes their site then users lose the ability to check us against the original source.  Most (but not all) states are good about at least preserving bill information, but few were equally as good about preserving information about out-of-office legislators and historical committees, equally important parts of the legislative process.  </p>
+    <dl class="clearfix">
+        <dt class="great">&nbsp;2</dt><dd>All information is avaialble in a permanent location and data goes back a reasonable amount of time (a decade or so).</dd>
+        <dt class="good">&nbsp;1</dt><dd>Almost all information has a permanent location but a single data set doesn't. <br>(Or a recent change to the site has wiped out historical links but information appears to be preservable going forward.)</dd>
+        <dt class="neutral">&nbsp;0</dt><dd>Legislator &amp; committee information lacks a permanent location (such as committees and legislators) but most is acceptable.</dd>
+        <dt class="bad">-1</dt><dd>Ability to link to old information is badly damaged and and/or there is less than a decade of historical information.</dd>
+        <dt class="abysmal">-2</dt><dd>Vital information like bills or versions lack a permanent location.</dd>
+    </dl>
 
 </div>
 
