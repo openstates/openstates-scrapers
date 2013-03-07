@@ -1729,9 +1729,12 @@ dd.sessionNumber {
     border-top: 1px solid #FFF;
 }
 
+.reportCard td{
+    padding-bottom: 15px;
+}
 
 td[title] {
-    font-weight: bold;
+    text-decoration: underline;
 }
 
 td[title]:hover {
@@ -1742,7 +1745,7 @@ td[title]:hover {
 .score-abysmal, .score-bad, .score-neutral, .score-good, .score-great {
     text-align: right;
     padding-right: 50px;
-    font-weight: normal;
+    font-weight: bold;
     font-size: 17px;
 }
 
@@ -1769,7 +1772,7 @@ td[title]:hover {
 
 .grade-a, .grade-b, .grade-c, .grade-d, .grade-f {
     text-align: center;
-    font-weight: normal;
+    font-weight: bold;
     color: #FFF;
         font-size: 17px;
 
