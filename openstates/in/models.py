@@ -119,8 +119,6 @@ class PDFHouseVote(object):
             vote[vote_val + '_count'] = count
             for name in filter(None, PlaintextColumns(text)):
                 actual_vote_dict[actual_vote].append(name)
-                if len(name) < 2:
-                    import pdb; pdb.set_trace()
                 getattr(vote, vote_val)(name)
 
         vote.add_source(self.url)
