@@ -1703,6 +1703,10 @@ dd.sessionNumber {
     padding-bottom: 10px;
 }
 
+.statehead{
+    min-width: 140px
+}
+
 
 .reportCard thead tr{
     border-top: 1px solid #FFF;
@@ -1725,94 +1729,67 @@ dd.sessionNumber {
     border-top: 1px solid #FFF;
 }
 
-.score-abysmal {
-    color:#A03A00;
+
+td[title] {
+    text-decoration: underline;
+}
+
+td[title]:hover {
+    background: rgba(220, 222, 207, 0.2);
+}
+
+
+.score-abysmal, .score-bad, .score-neutral, .score-good, .score-great {
     text-align: right;
     padding-right: 50px;
     font-weight: bold;
+}
+
+
+.score-abysmal {
+    color:#A03A00;
 }
 
 .score-bad {
     color:#C06900;
-    text-align: right;
-    padding-right: 50px;
-    font-weight: bold;
 }
 
 .score-neutral {
     color:#D2A700;
-    text-align: right;
-    padding-right: 50px;
-    font-weight: bold;
 }
 
 .score-good {
     color:#878E37;
-    text-align: right;
-    padding-right: 50px;
-    font-weight: bold;
 }
 
 .score-great {
     color:#78AAA2;
-    text-align: right;
-    padding-right: 50px;
-    font-weight: bold;
 }
 
-
-.abysmal {
-    color:#A03A00;
-}
-
-.bad {
-    color:#C06900;
-}
-
-.neutral {
-    color:#D2A700;
-}
-
-.good {
-    color:#878E37;
-}
-
-.great {
-    color:#78AAA2;
-}
-.grade-a {
-    background-color:#78AAA2;
+.grade-a, .grade-b, .grade-c, .grade-d, .grade-f {
     text-align: center;
     font-weight: bold;
     color: #FFF;
+}
+
+.grade-a {
+    background-color:#78AAA2;
 }
 
 .grade-b {
     background-color:#878E37;
-    text-align: center;
-    font-weight: bold;
-    color: #FFF;
 }
 
 .grade-c {
     background-color:#D2A700;
-    text-align: center;
-    font-weight: bold;
-    color: #FFF;
 }
 
 .grade-d {
     background-color:#C06900;
-    text-align: center;
-    font-weight: bold;
-    color: #FFF;
 }
 
 .grade-f {
     background-color:#A03A00;
-    text-align: center;
-    font-weight: bold;
-    color: #FFF;
 }
 
 /******** Report Card Tooltip *******/

@@ -68,7 +68,7 @@ $(document).ready(function() {
 <table id="main-table" class="dataTable reportCard">
     <thead>
         <tr>
-            <th class="sort sorting_asc" role="columnheader">State</th>
+            <th class="sort sorting_asc statehead" role="columnheader" >State</th>
             <th class="sort sorting_asc" role="columnheader">Completeness</th>
             <th class="sort sorting_asc" role="columnheader">Timeliness</th>
             <th class="sort sorting_asc" role="columnheader">Ease of Access</th>
@@ -84,7 +84,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td>
             <td class="score-good" >1</td>
             <td class="score-neutral" >0</td>
-            <td class="score-good" title="Provides lots of data in CSV but some HTML scraping is still required.">1</td>
+            <td class="score-good" title="Provides lots of data in CSV but some HTML scraping is still required."><a>1</a></td>
             <td class="score-neutral" >0</td>
             <td class="score-great" >2</td>
             <td class="grade grade-a">A</td>
@@ -164,7 +164,7 @@ $(document).ready(function() {
             <td class="score-neutral" >0</td>
             <td class="score-neutral" >0</td>
             <td class="score-great" >2</td>
-            <td class="grade grade-b" title="AK Grade." >B</td>
+            <td class="grade grade-b">B</td>
         </tr>
 
         <tr>
@@ -652,55 +652,55 @@ $(document).ready(function() {
     <p>We evaluated each state on the data collected by Open States: bills, legislators, committees, votes and events. We also took note if a state went above and beyond to provide this information and other relevant contextual information such as supporting documents, legislative journals and schedules. Points were deducted for missing data, often roll call votes.
     </p>
     <dl class="clearfix">
-        <dt class="neutral">&nbsp;0</dt><dd>State provides full breadth of legislative artifacts Open States collects: bills, legislators, votes, and committees.</dd>
-        <dt class="bad">-1</dt><dd>State does not provide stand-alone roll call votes.</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>State provides full breadth of legislative artifacts Open States collects: bills, legislators, votes, and committees.</dd>
+        <dt class="score-bad">-1</dt><dd>State does not provide stand-alone roll call votes.</dd>
     </dl>
 
 
     <h4 id="timeliness">Timeliness</h4>
     <p>Legislative information is most relevant when it happens, and many states are publishing information in real time. Unfortunately, there are also states where updates are more infrequent and showing up days after a legislative action took place. States were dinged if data took more than 48 hours to go online.</a>
     <dl class="clearfix">
-        <dt class="good">&nbsp;1</dt><dd>Multiple updates throughout the day, real time or as close to it as systems will allow.</dd>
-        <dt class="neutral">&nbsp;0</dt><dd>Site updates once or twice daily, typically at the end of the legislative day.</dd>
-        <dt class="bad">-1</dt><dd>Updates take longer than 24 hours to appear on the site, often up to a week.</dd>
+        <dt class="score-good">&nbsp;1</dt><dd>Multiple updates throughout the day, real time or as close to it as systems will allow.</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>Site updates once or twice daily, typically at the end of the legislative day.</dd>
+        <dt class="score-bad">-1</dt><dd>Updates take longer than 24 hours to appear on the site, often up to a week.</dd>
     </dl>
 
     <h4 id="ease-of-access">Ease of Access</h4>
     <p>Common web technologies such as Flash or JavaScript can cause problems when reviewing legislative data. We found that the majority of sites work fairly well without JavaScript, but some received lower scores due to being extremely difficult to navigate, impossible to bookmark bills, and in extreme cases, completely unusable.</p>
     <dl class="clearfix">
-        <dt class="good">&nbsp;1</dt><dd>Site was considered exceptionally well layed out by multiple evaluators, no issues with Javascript.</dd>
-        <dt class="neutral">&nbsp;0</dt><dd>Site was deemed average by those that evaluated it and/or had minor Javascript dependencies.</dd>
-        <dt class="bad">-1</dt><dd>Site was considered more difficult than average to use by members of staff or volunteers or had more severe Javascript dependencies.</dd>
-        <dt class="abysmal">-2</dt><dd>Site was considered extremely difficult to use with a heavy reliance on irregular browser behavior and Javascript.</a>
+        <dt class="score-good">&nbsp;1</dt><dd>Site was considered exceptionally well layed out by multiple evaluators, no issues with Javascript.</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>Site was deemed average by those that evaluated it and/or had minor Javascript dependencies.</dd>
+        <dt class="score-bad">-1</dt><dd>Site was considered more difficult than average to use by members of staff or volunteers or had more severe Javascript dependencies.</dd>
+        <dt class="score-abysmal">-2</dt><dd>Site was considered extremely difficult to use with a heavy reliance on irregular browser behavior and Javascript.</a>
     </dl>
 
 
     <h4 id="machine-readability">Machine Readability</h4>
     <p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code — a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible.  </p>
     <dl class="clearfix">
-        <dt class="great">&nbsp;2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
-        <dt class="good">&nbsp;1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
-        <dt class="neutral">&nbsp;0</dt><dd>No machine readable data but standard screen scraping techniques applied.</dd>
-        <dt class="bad">-1</dt><dd>Site had information that was much more difficult than average to collect. <br>(Data only accessible via PDF or that required screen scraper to emulate Javascript.)</dd>
-        <dt class="abysmal">-2</dt><dd>Site had information that was unaccessible to Open States due to use of scanned PDFs.</a>
+        <dt class="score-great">&nbsp;2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
+        <dt class="score-good">&nbsp;1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>No machine readable data but standard screen scraping techniques applied.</dd>
+        <dt class="score-bad">-1</dt><dd>Site had information that was much more difficult than average to collect. <br>(Data only accessible via PDF or that required screen scraper to emulate Javascript.)</dd>
+        <dt class="score-abysmal">-2</dt><dd>Site had information that was unaccessible to Open States due to use of scanned PDFs.</a>
     </dl>
 
     <h4 id="standards">Use of Commonly Owned Standards</h4>
     <p>Because our ability to assess most of a state’s data is represented by the above “Machine Readability” metric, we decided to use this provision to measure how a state made their bill text available.  Making text available in HTML or PDF is the norm, and was considered an acceptable commonly owned standard (PDFs are a commonly owned standard, but it would be certainly nice to see alternative options where bill text is only available via PDF).  States that only make documents available in Microsoft Word or Wordperfect formats require an individual to purchase expensive software or rely on free alternatives that may not preserve the correct formatting. It is worth  noting, all states except for two met the common criteria of providing HTML and/or PDF only, one state (Kansas) went above and beyond and another (Kentucky) did not even meet this threshold.</p>
     <dl class="clearfix">
-        <dt class="good">&nbsp;1</dt><dd>State made an effort to go above and beyond.</dd>
-        <dt class="neutral">&nbsp;0</dt><dd>State provided bills in PDF and/or HTML format and nothing better (plaintext, ODT, etc.).</dd>
-        <dt class="bad">-1</dt><dd>State only provided bills in a proprietary format.</dd>
+        <dt class="score-good">&nbsp;1</dt><dd>State made an effort to go above and beyond.</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>State provided bills in PDF and/or HTML format and nothing better (plaintext, ODT, etc.).</dd>
+        <dt class="score-bad">-1</dt><dd>State only provided bills in a proprietary format.</dd>
     </dl>
 
     <h4 id="permanence">Permanence</h4>
     <p>Many states move or remove information when a new session starts, much to the dismay of citizens seeking information on old proposals and researchers that may have cited a link (e.g. http://somelegislature.gov/HB1 vs http://somelegislature.gov/2011/HB1) only to see it point to a different bill in the following session.  Tim Berners-Lee, inventor of the World Wide Web, wrote an article declaring <a href="http://www.w3.org/Provider/Style/URI.html">Cool URIs Don’t Change</a> and we agree.  <br /> This poses a particular challenge to us since every page on OpenStates.org points to the page we collected data from, but if a state changes their site then users lose the ability to check us against the original source.  Most (but not all) states are good about at least preserving bill information, but few were equally as good about preserving information about out-of-office legislators and historical committees, equally important parts of the legislative process.  </p>
     <dl class="clearfix">
-        <dt class="great">&nbsp;2</dt><dd>All information is avaialble in a permanent location and data goes back a reasonable amount of time (a decade or so).</dd>
-        <dt class="good">&nbsp;1</dt><dd>Almost all information has a permanent location but a single data set doesn't. <br>(Or a recent change to the site has wiped out historical links but information appears to be preservable going forward.)</dd>
-        <dt class="neutral">&nbsp;0</dt><dd>Legislator &amp; committee information lacks a permanent location (such as committees and legislators) but most is acceptable.</dd>
-        <dt class="bad">-1</dt><dd>Ability to link to old information is badly damaged and and/or there is less than a decade of historical information.</dd>
-        <dt class="abysmal">-2</dt><dd>Vital information like bills or versions lack a permanent location.</dd>
+        <dt class="score-great">&nbsp;2</dt><dd>All information is avaialble in a permanent location and data goes back a reasonable amount of time (a decade or so).</dd>
+        <dt class="score-good">&nbsp;1</dt><dd>Almost all information has a permanent location but a single data set doesn't. <br>(Or a recent change to the site has wiped out historical links but information appears to be preservable going forward.)</dd>
+        <dt class="score-neutral">&nbsp;0</dt><dd>Legislator &amp; committee information lacks a permanent location (such as committees and legislators) but most is acceptable.</dd>
+        <dt class="score-bad">-1</dt><dd>Ability to link to old information is badly damaged and and/or there is less than a decade of historical information.</dd>
+        <dt class="score-abysmal">-2</dt><dd>Vital information like bills or versions lack a permanent location.</dd>
     </dl>
 
 </div>
