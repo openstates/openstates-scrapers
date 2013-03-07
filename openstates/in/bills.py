@@ -257,7 +257,11 @@ class INBillScraper(BillScraper):
             self.subjects[link.text.strip()].append(subject)
 
     def scrape_house_vote(self, bill, url):
-        bill.add_vote(PDFHouseVote(url, self).vote())
+        try:
+            bill.add_vote(PDFHouseVote(url, self).vote())
+        except PDFHouseVote.VoteParseError:
+            # It was a scanned, hand-written document, most likely.
+            return
 
     def scrape_senate_vote(self, bill, url):
         (path, resp) = self.urlretrieve(url)

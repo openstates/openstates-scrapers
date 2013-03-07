@@ -32,7 +32,7 @@ class PDFHouseVote(object):
             date = re.search(r'\d\d-\d\d-\d\d', self.text).group(0)
         except AttributeError:
             msg = "Couldn't find date on %s" % self.url
-            self.scraper.logger.error(msg)
+            self.scraper.logger.warning(msg)
             raise self.VoteParseError(msg)
         return datetime.datetime.strptime(date, "%m-%d-%y")
 
@@ -89,7 +89,7 @@ class PDFHouseVote(object):
         motion = re.split(r'\s{2,}', lines[motion_line].strip())[0].strip()
         if not motion:
             msg = "Couldn't find motion for %s" % self.url
-            self.scraper.logger.error(msg)
+            self.scraper.logger.warning(msg)
             raise self.VoteParseError(msg)
         return motion
 
@@ -117,9 +117,12 @@ class PDFHouseVote(object):
 
         for (vote_val, count), (actual_vote, _), text in self._parse():
             vote[vote_val + '_count'] = count
-            for name in PlaintextColumns(text):
+            for name in filter(None, PlaintextColumns(text)):
                 actual_vote_dict[actual_vote].append(name)
+                if len(name) < 2:
+                    import pdb; pdb.set_trace()
                 getattr(vote, vote_val)(name)
 
+        vote.add_source(self.url)
         return vote
 
