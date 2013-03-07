@@ -1731,7 +1731,7 @@ dd.sessionNumber {
 
 
 td[title] {
-    text-decoration: underline;
+    font-weight: bold;
 }
 
 td[title]:hover {
@@ -1742,7 +1742,8 @@ td[title]:hover {
 .score-abysmal, .score-bad, .score-neutral, .score-good, .score-great {
     text-align: right;
     padding-right: 50px;
-    font-weight: bold;
+    font-weight: normal;
+    font-size: 17px;
 }
 
 
@@ -1759,25 +1760,29 @@ td[title]:hover {
 }
 
 .score-good {
-    color:#878E37;
+    color:#7F9500;
 }
 
 .score-great {
-    color:#78AAA2;
+    color:#648E6A;
 }
 
 .grade-a, .grade-b, .grade-c, .grade-d, .grade-f {
     text-align: center;
-    font-weight: bold;
+    font-weight: normal;
     color: #FFF;
+        font-size: 17px;
+
 }
 
 .grade-a {
-    background-color:#78AAA2;
+    background-color:#648E6A ;
+    #78AAA2
 }
 
 .grade-b {
-    background-color:#878E37;
+    background-color: #7F9500;
+    #878E37
 }
 
 .grade-c {
