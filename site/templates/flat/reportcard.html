@@ -64,7 +64,7 @@ $(document).ready(function() {
 {% block content %}
 
 <h2> Open Legislative Data Report Card </h2>
-<p class="intro">Comparing all 50 states on how legislative data is made available. <br>For more information see our <a href="#criteria">methodology.</a></p>
+<p class="intro">Comparing how state legislatures make their data publicly available. <br>For more context, <a href="http://sunlightfoundation.com/press/releases/2013/03/11/editorial-memo-how-improve-state-legislatures-tran/">read this post</a> and see our <a href="#criteria">methodology.</a></p>
 <table id="main-table" class="dataTable reportCard">
     <thead>
         <tr>
@@ -644,7 +644,7 @@ $(document).ready(function() {
 
 <div id="criteria">
     <h2> Methodology </h2>
-    <p class="intro">Each state was evaluated in six categories based largely on the <a href="http://sunlightfoundation.com/policy/documents/ten-open-data-principles/">Ten Principles For Opening Up Government Information</a>.  Each score is based on at least two members of staff and a volunteer during our <a href="http://sunlightfoundation.com/blog/2012/02/17/help-open-states-rate-state-websites/">state survey</a>.  Additionally, state legislatures were contacted (unless noted in their score) to ensure that our information on bulk data availability and timeliness was as accurate as possible.  </p>
+    <p class="intro">Each state was evaluated in six categories based largely on the <a href="http://sunlightfoundation.com/policy/documents/ten-open-data-principles/">Ten Principles For Opening Up Government Information</a>. Each score is based on at least two members of staff and a volunteer during our <a href="http://sunlightfoundation.com/blog/2012/02/17/help-open-states-rate-state-websites/">state survey</a>. Additionally, state legislatures were contacted (unless noted in their score) to ensure that our information on bulk data availability and timeliness was as accurate as possible. </p>
 
     <p class="intro">The specific criteria for each category are as follows:</p>
 
@@ -676,7 +676,7 @@ $(document).ready(function() {
 
 
     <h4 id="machine-readability">Machine Readability</h4>
-    <p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code — a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible.  </p>
+    <p> For many sites, the Open States team wrote scrapers to collect legislative information from the website code&mdash;a slow, tedious and error prone process. We collected data faster and more reliably when data was provided in a machine-readable format such as XML, JSON, CSV or via bulk downloads. If a state posted PDF image files or scanned documents, it received the lowest score possible. </p>
     <dl class="clearfix">
         <dt class="score-great">&nbsp;2</dt><dd>Essentially all data can be found in machine-readable formats.</dd>
         <dt class="score-good">&nbsp;1</dt><dd>Lots of data in machine readable format but substantial portions that still required scraping HTML.</dd>
@@ -686,7 +686,7 @@ $(document).ready(function() {
     </dl>
 
     <h4 id="standards">Use of Commonly Owned Standards</h4>
-    <p>Because our ability to assess most of a state’s data is represented by the above “Machine Readability” metric, we decided to use this provision to measure how a state made their bill text available.  Making text available in HTML or PDF is the norm, and was considered an acceptable commonly owned standard (PDFs are a commonly owned standard, but it would be certainly nice to see alternative options where bill text is only available via PDF).  States that only make documents available in Microsoft Word or Wordperfect formats require an individual to purchase expensive software or rely on free alternatives that may not preserve the correct formatting. It is worth  noting, all states except for two met the common criteria of providing HTML and/or PDF only, one state (Kansas) went above and beyond and another (Kentucky) did not even meet this threshold.</p>
+    <p>Because our ability to assess most of a state’s data is represented by the above “Machine Readability” metric, we decided to use this provision to measure how a state made their bill text available. Making text available in HTML or PDF is the norm, and was considered an acceptable commonly owned standard (PDFs are a commonly owned standard, but it would be certainly nice to see alternative options where bill text is only available via PDF). States that only make documents available in Microsoft Word or Wordperfect formats require an individual to purchase expensive software or rely on free alternatives that may not preserve the correct formatting. It is worth noting, all states except for two met the common criteria of providing HTML and/or PDF only, one state (Kansas) went above and beyond and another (Kentucky) did not even meet this threshold.</p>
     <dl class="clearfix">
         <dt class="score-good">&nbsp;1</dt><dd>State made an effort to go above and beyond.</dd>
         <dt class="score-neutral">&nbsp;0</dt><dd>State provided bills in PDF and/or HTML format and nothing better (plaintext, ODT, etc.).</dd>
@@ -694,7 +694,9 @@ $(document).ready(function() {
     </dl>
 
     <h4 id="permanence">Permanence</h4>
-    <p>Many states move or remove information when a new session starts, much to the dismay of citizens seeking information on old proposals and researchers that may have cited a link (e.g. http://somelegislature.gov/HB1 vs http://somelegislature.gov/2011/HB1) only to see it point to a different bill in the following session.  Tim Berners-Lee, inventor of the World Wide Web, wrote an article declaring <a href="http://www.w3.org/Provider/Style/URI.html">Cool URIs Don’t Change</a> and we agree.  <br /> This poses a particular challenge to us since every page on OpenStates.org points to the page we collected data from, but if a state changes their site then users lose the ability to check us against the original source.  Most (but not all) states are good about at least preserving bill information, but few were equally as good about preserving information about out-of-office legislators and historical committees, equally important parts of the legislative process.  </p>
+    <p>Many states move or remove information when a new session starts, much to the dismay of citizens seeking information on old proposals and researchers that may have cited a link (e.g. http://somelegislature.gov/HB1 vs http://somelegislature.gov/2011/HB1) only to see it point to a different bill in the following session.  Tim Berners-Lee, inventor of the World Wide Web, wrote an article declaring <a href="http://www.w3.org/Provider/Style/URI.html">Cool URIs Don’t Change</a> and we agree.</p>
+
+    <p>This poses a particular challenge to us since every page on OpenStates.org points to the page we collected data from, but if a state changes their site then users lose the ability to check us against the original source.  Most (but not all) states are good about at least preserving bill information, but few were equally as good about preserving information about out-of-office legislators and historical committees, equally important parts of the legislative process.</p>
     <dl class="clearfix">
         <dt class="score-great">&nbsp;2</dt><dd>All information is avaialble in a permanent location and data goes back a reasonable amount of time (a decade or so).</dd>
         <dt class="score-good">&nbsp;1</dt><dd>Almost all information has a permanent location but a single data set doesn't. <br>(Or a recent change to the site has wiped out historical links but information appears to be preservable going forward.)</dd>
