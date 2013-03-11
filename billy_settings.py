@@ -61,7 +61,6 @@ PARTY_DETAILS = {
 # }
 
 
-ENABLE_ELASTICSEARCH = True
 BOUNDARY_SERVICE_SETS = 'sldl,sldu'
 ENABLE_DOCUMENT_VIEW = {
     'ak': True,
