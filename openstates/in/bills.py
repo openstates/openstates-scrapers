@@ -3,6 +3,7 @@ import re
 import datetime
 from collections import defaultdict
 
+import scrapelib
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
@@ -82,7 +83,11 @@ class INBillScraper(BillScraper):
 
     def scrape_bill(self, session, chamber, bill_id, short_title, url):
 
-        page = self.urlopen(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            self.logger.warning('500 error at: %r' % url)
+            return
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
