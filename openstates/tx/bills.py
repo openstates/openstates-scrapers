@@ -65,6 +65,9 @@ class TXBillScraper(BillScraper):
             return
 
         bill = self.parse_bill_xml(chamber, session, history_xml)
+        if bill is None:
+            return
+
         bill.add_source(history_url)
 
         text_group_url = history_group_url.replace(
@@ -101,6 +104,8 @@ class TXBillScraper(BillScraper):
         root = lxml.etree.fromstring(txt.bytes)
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
+        if bill_title is None:
+            return None
 
         if session[2] == 'R':
             session = session[0:2]
