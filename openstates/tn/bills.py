@@ -52,7 +52,7 @@ _categorizer_rules = (
     Rule(r'^Failed In S\.(?P<committees>.+?Comm\.)', 'committee:failed'),
     Rule(r'^Failed In s/c (?P<committees>.+)', 'committee:failed'),
     Rule(r'Rcvd\. from H., ref\. to S\. (?P<committees>.+)',
-        'committee:referred', actor='upper'),
+         'committee:referred', actor='upper'),
     Rule(r'Placed on cal\. (?P<committees>.+?) for', stop=False),
     Rule(r'Taken off notice for cal in s/c (?P<committees>.+)'),
     Rule(r'to be heard in (?P<committees>.+?Comm\.)'),
@@ -74,9 +74,9 @@ _categorizer_rules = (
     Rule('^Am\. withdrawn\.\(Amendment \d+ \- (?P<version>\S+)',
          'amendment:withdrawn'),
     Rule(r'^Am\. reconsidered(, withdrawn)?\.\(Amendment \d \- (?P<version>.+?\))',
-        'amendment:withdrawn'),
+         'amendment:withdrawn'),
     Rule(r'adopted am\.\(Amendment \d+ of \d+ - (?P<version>\S+)\)',
-        'amendment:passed'),
+         'amendment:passed'),
     Rule(r'refused to concur.+?in.+?am', 'amendment:failed'),
 
     # Bill passage
@@ -245,6 +245,10 @@ class TNBillScraper(BillScraper):
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
 
         title = page.xpath("//span[@id='lblAbstract']")[0].text
+        if title is None:
+            msg = '%s detail page was missing title info.'
+            self.logger.warning(msg % bill_id)
+            return
 
         # bill subject
         subject_pos = title.find('-')

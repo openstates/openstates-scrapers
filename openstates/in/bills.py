@@ -1,8 +1,7 @@
 import os
 import re
 import datetime
-import itertools
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -13,6 +12,7 @@ import pytz
 import lxml.html
 
 from .actions import Categorizer
+from .models import PDFHouseVote
 
 
 def parse_vote_count(s):
@@ -257,100 +257,11 @@ class INBillScraper(BillScraper):
             self.subjects[link.text.strip()].append(subject)
 
     def scrape_house_vote(self, bill, url):
-        (path, resp) = self.urlretrieve(url)
-        text = convert_pdf(path, 'text')
-        os.remove(path)
-
-        lines = text.split('\n')
-
         try:
-            date = re.search(r'\d\d-\d\d-\d\d', text).group(0)
-        except AttributeError:
-            self.log("Couldn't find date on %s" % url)
+            bill.add_vote(PDFHouseVote(url, self).vote())
+        except PDFHouseVote.VoteParseError:
+            # It was a scanned, hand-written document, most likely.
             return
-        date = datetime.datetime.strptime(date, "%m-%d-%y")
-
-        votes = []
-        yes_count, no_count, other_count = None, None, 0
-        vtype = None
-
-        # The index pos where each block of whitespace ends.
-        ends = Counter()
-        name_lines = []
-        for line in lines[14:]:
-            line = line.strip()
-            if not line:
-                continue
-
-            if line.startswith('VOTING YEA'):
-                yes_count = parse_vote_count(line.split(":")[1].strip())
-                vtype = 'yes'
-            elif line.startswith('VOTING NAY'):
-                no_count = parse_vote_count(line.split(":")[1].strip())
-                vtype = 'no'
-            elif line.startswith('EXCUSED'):
-                other_count += parse_vote_count(line.split(":")[1].strip())
-                vtype = 'other'
-            elif line.startswith('NOT VOTING'):
-                other_count += parse_vote_count(line.split(":")[1].strip())
-                vtype = 'other'
-            else:
-                for m in re.finditer('\s+', line):
-                    ends[m.end()] += 1
-                name_lines.append((vtype, line))
-
-        # Try to figure out the column boundaries.
-        most_common = []
-        for k, v in Counter(ends.values()).most_common():
-            if k > 5:
-                most_common.append(k)
-
-        boundaries = []
-        for k, v in ends.items():
-            if v in most_common:
-                boundaries.append(k)
-        boundaries.sort()
-        last_boundary = boundaries[-1]
-        boundaries = zip([0] + boundaries, boundaries)
-        boundaries = list(itertools.starmap(slice, boundaries))
-        # And get from the last boundary to the line ending.
-        boundaries.append(slice(last_boundary, None))
-
-        for vtype, line in name_lines:
-            for slice_ in boundaries:
-                name = line[slice_].strip()
-                if name:
-                    votes.append((name, vtype))
-
-        result_types = {
-            'FAILED': False,
-            'DEFEATED': False,
-            'PREVAILED': True,
-            'PASSED': True,
-            'SUSTAINED': True
-        }
-        passed = re.search(
-            r'Roll\s+Call\s+\d+:\s+(%s)' % '|'.join(result_types.keys()),
-            text).group(1)
-        passed = result_types[passed]
-
-        motion_line = None
-        for i, line in enumerate(lines):
-            if line.startswith('MEETING DAY'):
-                motion_line = i + 7
-        motion = re.split(r'\s{2,}', lines[motion_line].strip())[0].strip()
-        if not motion:
-            self.log("Couldn't find motion for %s" % url)
-            return
-
-        vote = Vote('lower', date, motion, passed, yes_count, no_count,
-                    other_count)
-        vote.add_source(url)
-
-        insert_specific_votes(vote, votes)
-        check_vote_counts(vote)
-
-        bill.add_vote(vote)
 
     def scrape_senate_vote(self, bill, url):
         (path, resp) = self.urlretrieve(url)
@@ -366,7 +277,7 @@ class INBillScraper(BillScraper):
 
         time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
         date = "%s %s %s" % (date_match.group(1), time_match.group(1),
-                           time_match.group(2))
+                             time_match.group(2))
         date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
         date = self._tz.localize(date)
 

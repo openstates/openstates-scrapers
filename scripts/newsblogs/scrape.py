@@ -305,36 +305,36 @@ DATA = settings.BILLY_DATA_DIR
 
 class Extractor(object):
 
+    full_name = [u' {legislator[first_name]} {legislator[last_name]}']
     trie_terms = {
-        'legislators': cartcat(
+        'legislators': {
+            'upper': cartcat(
+                [u'Senator', u'Senate member', u'Senate Member', u'Sen.',
+                 u'Council member', u'Councilman', u'Councilwoman',
+                 u'Councilperson'],
+                [u' {legislator[last_name]}', u' {legislator[full_name]}']
+                ) + full_name,
 
-            [u'Senator',
-             u'Senate member',
-             u'Senate Member',
-             u'Assemblymember',
-             u'Assembly Member',
-             u'Assembly member',
-             u'Assemblyman',
-             u'Assemblywoman',
-             u'Assembly person',
-             u'Assemblymember',
-             u'Assembly Member',
-             u'Assembly member',
-             u'Assemblyman',
-             u'Assemblywoman',
-             u'Assembly person',
-             u'Representative',
-             u'Rep.',
-             u'Sen.',
-             u'Council member',
-             u'Councilman',
-             u'Councilwoman',
-             u'Councilperson'],
-
-            [u' {legislator[last_name]}',
-             u' {legislator[full_name]}'])
-
-            + [u' {legislator[first_name]} {legislator[last_name]}'],
+            'lower': cartcat([
+                u'Assemblymember',
+                u'Assembly Member',
+                u'Assembly member',
+                u'Assemblyman',
+                u'Assemblywoman',
+                u'Assembly person',
+                u'Assemblymember',
+                u'Assembly Member',
+                u'Assembly member',
+                u'Assemblyman',
+                u'Assemblywoman',
+                u'Assembly person',
+                u'Representative',
+                u'Rep.',
+                u'Council member', u'Councilman',
+                u'Councilwoman', u'Councilperson'],
+                [u' {legislator[last_name]}', u' {legislator[full_name]}']
+                ) + full_name,
+                },
 
         'bills': [
             ('bill_id', lambda s: s.upper().replace('.', ''))
@@ -436,6 +436,18 @@ class Extractor(object):
         except AttributeError:
             return self.build_trie()
 
+    def format_trie_term(self, term, vals, collection_name, record):
+        if isinstance(term, basestring):
+            trie_add_args = (term.format(**vals),
+                             [collection_name, record['_id']])
+            return trie_add_args
+
+        elif isinstance(term, tuple):
+            k, func = term
+            trie_add_args = (func(record[k]),
+                             [collection_name, record['_id']])
+            return trie_add_args
+
     def build_trie(self):
         '''Interpolate values from this state's mongo records
         into the trie_terms strings. Create a new list of formatted
@@ -446,9 +458,12 @@ class Extractor(object):
         abbr = self.abbr
 
         for collection_name in trie_terms:
+            spec = {'state': abbr}
             trie_data = []
             collection = getattr(db, collection_name)
-            cursor = collection.find({'state': abbr})
+            if collection_name == 'legislators':
+                spec['active'] = True
+            cursor = collection.find(spec)
             self.logger.info('compiling %d %r trie term values' % (
                 cursor.count(), collection_name))
 
@@ -456,21 +471,16 @@ class Extractor(object):
                 k = collection_name.rstrip('s')
                 vals = {k: record}
 
-                for term in trie_terms[collection_name]:
+                terms = trie_terms[collection_name]
+                if collection_name == 'legislators':
+                    terms = terms[record['chamber']]
 
-                    if isinstance(term, basestring):
-                        trie_add_args = (term.format(**vals),
-                                         [collection_name, record['_id']])
-                        trie_data.append(trie_add_args)
+                for term in terms:
+                    args = term, vals, collection_name, record
+                    trie_data.append(self.format_trie_term(*args))
 
-                    elif isinstance(term, tuple):
-                        k, func = term
-                        trie_add_args = (func(record[k]),
-                                         [collection_name, record['_id']])
-                        trie_data.append(trie_add_args)
-
-            self.logger.info('adding %d %s terms to the trie' % \
-                (len(trie_data), collection_name))
+            self.logger.info('adding %d %s terms to the trie' %
+                             (len(trie_data), collection_name))
 
             trie = trie_add(trie, trie_data)
 
@@ -481,15 +491,15 @@ class Extractor(object):
             records = db.committees.find({'state': abbr},
                                          {'committee': 1, 'subcommittee': 1,
                                           'chamber': 1})
-            self.logger.info('Computing name variations for %d records' % \
-                                                            records.count())
+            self.logger.info('Computing name variations for %d records' %
+                             records.count())
             for c in records:
                 for variation in committee_variations(c):
                     trie_add_args = (variation, ['committees', c['_id']])
                     trie_data.append(trie_add_args)
 
-        self.logger.info('adding %d \'committees\' terms to the trie' % \
-                                                            len(trie_data))
+        self.logger.info('adding %d \'committees\' terms to the trie' %
+                         len(trie_data))
 
         trie = trie_add(trie, trie_data)
         self._trie = trie
