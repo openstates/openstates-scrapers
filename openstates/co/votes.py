@@ -135,7 +135,7 @@ class COVoteScraper(VoteScraper):
                             "J": "joint"
                         }[cur_bill_id[0].upper()]
 
-                        vote = Vote('upper',
+                        vote = Vote('lower',
                                     known_date,
                                     cur_question,
                                     (yes > no),
