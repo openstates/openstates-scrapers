@@ -124,13 +124,15 @@ class TXEventScraper(EventScraper):
                     "of the Senate": "",
                     "Finance Committee": "",
                     "or upon adjournment": "",
+                    "or upon the adjournment": "",
                     "of the House and the Senate": "",
                     "or upon final adjourn./recess": "",
                     "or 30 minutes upon adjournment": "",
                     "or the Senate Finance Committee": "",
                     "During reading and referral of bills": "",
-                    "(or 15 minutes after adjournment of the .*)": "",
+                    "and House Chambers, whichever is later.": "",
                     "or during reading and referral of bills": "",
+                    "(or 15 minutes after adjournment of the .*)": "",
                     "Upon final adjourn./recess": "",
                 }
                 for rep in replace:
