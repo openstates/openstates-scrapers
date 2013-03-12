@@ -104,8 +104,7 @@ class COVoteScraper(VoteScraper):
 
                 if in_vote:
                     if line == "":
-                        in_vote = False
-                        continue
+                        likely_garbage = True
 
                     likely_garbage = False
                     if "co-sponsor" in line.lower():
@@ -113,7 +112,6 @@ class COVoteScraper(VoteScraper):
 
                     if 'the speaker' in line.lower():
                         likely_garbage = True
-                        votes = []
 
                     votes = re.findall(votes_re, line)
                     if likely_garbage:
@@ -122,7 +120,12 @@ class COVoteScraper(VoteScraper):
                     for person, _, v in votes:
                         cur_vote[person] = v
 
-                    if votes == []:
+                    last_line = False
+                    for who, _, vote in votes:
+                        if who.lower() == "speaker":
+                            last_line = True
+
+                    if votes == [] or last_line:
                         in_vote = False
                         # save vote
                         yes, no, other = cur_vote_count
@@ -135,7 +138,7 @@ class COVoteScraper(VoteScraper):
                             "J": "joint"
                         }[cur_bill_id[0].upper()]
 
-                        vote = Vote('upper',
+                        vote = Vote('lower',
                                     known_date,
                                     cur_question,
                                     (yes > no),
