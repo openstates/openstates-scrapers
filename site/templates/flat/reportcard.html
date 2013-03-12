@@ -65,6 +65,9 @@ $(document).ready(function() {
 
 <h2> Open Legislative Data Report Card </h2>
 <p class="intro">Comparing how state legislatures make their data publicly available. <br>For more context, <a href="http://sunlightfoundation.com/blog/2013/03/11/openstates-report-card/">read this post</a> and see our <a href="#criteria">methodology.</a></p>
+<p><em>(Note: Since the publication of this report card several states have come to us with additional information or made changes that would affect their score.  <a href="#changelog">Details are available below.</a>)</em></p>
+
+
 <table id="main-table" class="dataTable reportCard">
     <thead>
         <tr>
@@ -224,13 +227,13 @@ $(document).ready(function() {
 
         <tr>
             <td class="bold">New York</td>
-            <td class="score-neutral" >0</td>
+            <td class="score-good" title="(changed March 12th 2013, see below)">1</td>
             <td class="score-neutral" >0</td>
             <td class="score-neutral" >0</td>
             <td class="score-good" title="Some data available via an API, but we have had to rely on scraping as well.">1</td>
             <td class="score-neutral" >0</td>
             <td class="score-great" >2</td>
-            <td class="grade grade-b">B</td>
+            <td class="grade grade-a" title="(changed March 12th 2013, see below)">A</td>
         </tr>
 
         <tr>
@@ -632,12 +635,12 @@ $(document).ready(function() {
         <tr>
             <td class="bold">Rhode Island </td>
             <td class="score-neutral" >0</td>
-            <td class="score-bad" title="State informed us that they updated data weekly.">-1</td>
+            <td class="score-great" title="(changed March 12th 2013, see below)">1</td>
             <td class="score-neutral" >0</td>
             <td class="score-neutral" title="XLS available for legislators; but all other data HTML.">0</td>
             <td class="score-neutral" >0</td>
             <td class="score-bad" title="No ability to permalink to bills (just http://status.rilin.state.ri.us/) and severe dearth of historical data.">-1</td>
-            <td class="grade grade-f" >F</td>
+            <td class="grade grade-d" title="(changed March 12th 2013, see below)">D</td>
         </tr>
     </tbody>
 </table>
@@ -704,6 +707,12 @@ $(document).ready(function() {
         <dt class="score-bad">-1</dt><dd>Ability to link to old information is badly damaged and and/or there is less than a decade of historical information.</dd>
         <dt class="score-abysmal">-2</dt><dd>Vital information like bills or versions lack a permanent location.</dd>
     </dl>
+
+    <h4 id="changelog">Changelog</h4>
+    <p>Since the initial publication of this report card on March 11th, 2013 some states have provided us with additional information or made changes in response that have affected their score.  These changes are reflected below and noted on the report card itself.</p>
+
+    <p>Rhode Island - On March 12th, 2013 we confirmed with Rhode Island IT staff that data is updated in real-time, not weekly as we had initially been told.  This information raised their score by 2 points, bringing them into the 'D' class.</p>
+    <p>New York - On March 12th, 2013 New York Senate staff reached out and clarified their update policy, raising their score by a point and putting them into the 'A' class.  A better API was also pointed out to us, which may affect their machine readability score in the future.</p>
 
 </div>
 
