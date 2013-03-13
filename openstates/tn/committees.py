@@ -147,7 +147,7 @@ class TNCommitteeScraper(CommitteeScraper):
 
     #Scrapes the individual joint committee - most of it is special case
     def scrape_joint_committee(self, committee_name, url):
-        com = Committee('joint', committee_name)
+        com = Committee('joint', 'Joint ' + committee_name)
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
@@ -161,6 +161,7 @@ class TNCommitteeScraper(CommitteeScraper):
                 else:
                     member_name = member_name[17: len(member_name)]
                 com.add_member(member_name, 'member')
+
         elif 'gov-opps' in url:
             links = ['senate', 'house']
             for link in links:
