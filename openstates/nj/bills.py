@@ -369,7 +369,7 @@ class NJBillScraper(BillScraper, MDBMixin):
                              bill['bill_id'])
                 phony_bill_count += 1
             else:
-                bill.add_source('www.njleg.state.nj.us/downloads.asp')
+                bill.add_source('http://www.njleg.state.nj.us/downloads.asp')
                 self.save_bill(bill)
 
         if phony_bill_count:
