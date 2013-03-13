@@ -408,6 +408,7 @@ class CABillScraper(BillScraper):
                                        author.name,
                                        official_type=author.contribution)
 
+            seen_actions = set()
             for action in bill.actions:
                 if not action.action:
                     # NULL action text seems to be an error on CA's part,
@@ -491,8 +492,11 @@ class CABillScraper(BillScraper):
                 if legislators:
                     kwargs['legislators'] = legislators
 
-                fsbill.add_action(actor, act_str, action.action_date.date(),
-                                  **kwargs)
+                date = action.action_date.date()
+                if (actor, act_str, date) in seen_actions:
+                    continue
+                fsbill.add_action(actor, act_str, date, **kwargs)
+                seen_actions.add((actor, act_str, date))
 
             for vote in bill.votes:
                 if vote.vote_result == '(PASS)':
