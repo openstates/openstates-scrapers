@@ -129,7 +129,7 @@ class COVoteScraper(VoteScraper):
                         in_vote = False
                         # save vote
                         yes, no, other = cur_vote_count
-                        if cur_bill_id is None:
+                        if cur_bill_id is None or cur_question is None:
                             continue
 
                         bc = {

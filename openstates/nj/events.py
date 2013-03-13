@@ -91,5 +91,5 @@ class NJEventScraper(EventScraper, MDBMixin):
                                   'committee',
                                   committee_code=record['CommHouse'],
                                   chamber=chamber)
-            event.add_source('www.njleg.state.nj.us/downloads.asp')
+            event.add_source('http://www.njleg.state.nj.us/downloads.asp')
             self.save_event(event)
