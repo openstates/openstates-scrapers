@@ -104,6 +104,7 @@ class GABillScraper(BillScraper):
                 "HRA": ["bill:passed"],
                 "SRA": ["bill:passed"],
                 "HPA": ["bill:passed"],
+                "HRECO": ["other"],
                 "SPA": ["bill:passed"],
                 "HTABL": ["other"],  # "House Tabled" - what is this?
                 "SDHAS": ["other"],
