@@ -62,7 +62,7 @@ class MICommitteeScraper(CommitteeScraper):
             com_url = base_url + opt
             if opt == 'appropssubcommittee.htm':
                 self.scrape_approp_subcommittees(com_url)
-            elif opt != 'statutory.htm':
+            elif opt != 'statutory.htm' and opt != '#':
                 self.scrape_senate_committee(com_url)
 
 
