@@ -306,6 +306,7 @@ class NMBillScraper(BillScraper):
             '7668': ('Senate failed to concur in House amendments', 'other'),
             '7669': ('this procedure could follow if the Senate refuses to recede from its amendments', 'other'),
             '7670': ('this procedure could follow if the House refuses to recede from its amendments', 'other'),
+            '7671': ('this procedure could follow if the House refuses to recede from its amendments', 'other'),
             '7678': ('tabled in Senate', 'other'),
             '7681': ('failed passage in House', 'bill:failed'),
             '7682': ('failed passage in Senate', 'bill:failed'),
