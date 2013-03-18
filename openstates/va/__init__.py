@@ -19,7 +19,8 @@ metadata = {
     'terms': [
         {'name': '2009-2011', 'sessions': ['2010', '2011', '2011specialI'],
          'start_year': 2010, 'end_year': 2011},
-        {'name': '2012-2013', 'sessions': ['2012', '2012specialI', '2013'],
+        {'name': '2012-2013', 'sessions': ['2012', '2012specialI', '2013',
+                                           '2013specialI', ],
          'start_year': 2012, 'end_year': 2013},
     ],
     'session_details': {
@@ -47,6 +48,9 @@ metadata = {
                  'display_name': '2013 Regular Session',
                  '_scraped_name': '2013 Session',
                 },
+        '2013specialI': {'site_id': '132',
+                         'display_name': '2013, 1st Special Session',
+                         '_scraped_name': '2013 Special Session I', },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2009 Session',

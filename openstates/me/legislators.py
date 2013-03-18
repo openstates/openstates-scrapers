@@ -115,7 +115,7 @@ class MELegislatorScraper(LegislatorScraper):
             # This beast has no email address.
             email = None
 
-        address = ''.join(address[::-1])
+        address = ''.join(address)
         office = dict(
             name='District Office', type='district',
             phone=home_phone,

@@ -32,7 +32,7 @@ class NJCommitteeScraper(CommitteeScraper, MDBMixin):
 
             comm = Committee(chamber, comm_name, comm_type = comm_type,
                              aide = aide, contact_info = contact_info)
-            comm.add_source('www.njleg.state.nj.us/downloads.asp')
+            comm.add_source('http://www.njleg.state.nj.us/downloads.asp')
             comm_dictionary[abrv] = comm
 
         #Committee Member Database

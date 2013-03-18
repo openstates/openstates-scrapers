@@ -34,7 +34,8 @@ class NJEventScraper(EventScraper, MDBMixin):
             'SBAB': 'Senate Budget and Appropriations Committee',
             'JLSU': 'Space Leasing and Space Utilization Committee',
             'SUTC': 'Sales and Use Tax Review Commission',
-            'SPLS': 'Special Session'
+            'SPLS': 'Special Session',
+            'JCES': 'Joint Committee on Ethical Standards',
         }
         self._committees = overlay
 
@@ -90,5 +91,5 @@ class NJEventScraper(EventScraper, MDBMixin):
                                   'committee',
                                   committee_code=record['CommHouse'],
                                   chamber=chamber)
-            event.add_source('www.njleg.state.nj.us/downloads.asp')
+            event.add_source('http://www.njleg.state.nj.us/downloads.asp')
             self.save_event(event)

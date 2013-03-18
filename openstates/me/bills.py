@@ -1,5 +1,6 @@
-import datetime
 import re
+import socket
+import datetime
 from operator import methodcaller
 import htmlentitydefs
 
@@ -42,6 +43,10 @@ def unescape(text):
                 pass
         return text  # leave as is
     return re.sub("&#?\w+;", fixup, text)
+
+
+class BillNotFound(Exception):
+    'Raised if bill is not found on their site.'
 
 
 class MEBillScraper(BillScraper):
@@ -95,14 +100,18 @@ class MEBillScraper(BillScraper):
                              ' Providers')
 
             if (title.lower().startswith('joint order') or
-                title.lower().startswith('joint resolution')):
+                    title.lower().startswith('joint resolution')):
                 bill_type = 'joint resolution'
             else:
                 bill_type = 'bill'
 
             bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            self.scrape_bill(bill, link.attrib['href'])
-            self.save_bill(bill)
+            try:
+                self.scrape_bill(bill, link.attrib['href'])
+            except BillNotFound:
+                continue
+            else:
+                self.save_bill(bill)
 
     def scrape_bill(self, bill, url):
         session_id = (int(bill['session']) - 124) + 8
@@ -114,7 +123,7 @@ class MEBillScraper(BillScraper):
 
         if 'Bill not found.' in html:
             self.warning('%s returned "Bill not found." page' % url)
-            return
+            raise BillNotFound
 
         bill.add_source(url)
 
@@ -175,14 +184,18 @@ class MEBillScraper(BillScraper):
 
         ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
         ver_url = ver_link.get('href')
-        ver_html = self.urlopen(ver_url, retry_on_404=True)
-        vdoc = lxml.html.fromstring(ver_html)
-        vdoc.make_links_absolute(ver_url)
-        # various versions: billtexts, billdocs, billpdfs
-        vurl = vdoc.xpath('//a[contains(@href, "billtexts/")]/@href')
-        if vurl:
-            bill.add_version('Initial Version', vurl[0],
-                             mimetype='text/html')
+        try:
+            ver_html = self.urlopen(ver_url, retry_on_404=True)
+        except socket.timeout:
+            pass
+        else:
+            vdoc = lxml.html.fromstring(ver_html)
+            vdoc.make_links_absolute(ver_url)
+            # various versions: billtexts, billdocs, billpdfs
+            vurl = vdoc.xpath('//a[contains(@href, "billtexts/")]/@href')
+            if vurl:
+                bill.add_version('Initial Version', vurl[0],
+                                 mimetype='text/html')
 
     def scrape_votes(self, bill, url):
         page = self.urlopen(url, retry_on_404=True)

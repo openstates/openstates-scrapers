@@ -1,7 +1,6 @@
 import re
 
 from billy.utils import urlescape
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -48,24 +47,94 @@ class ARCommitteeScraper(CommitteeScraper):
                 comm_url = urlescape(a.attrib['href'])
                 if chamber == 'task_force':
                     chamber = 'joint'
+
                 self.scrape_committee(chamber, name, comm_url)
 
-    def scrape_committee(self, chamber, name, url, subcommittee=None):
-        if subcommittee:
-            split_sub = subcommittee.split('-')
-            if len(split_sub) > 1:
-                subcommittee = '-'.join(split_sub[1:])
-            subcommittee = re.sub(r'^(HOUSE|SENATE)\s+', '', subcommittee.strip())
+    def _fix_committee_case(self, subcommittee):
+        '''Properly capitalize the committee name.
+        '''
+        subcommittee = re.sub(
+            r'^(HOUSE|SENATE|JOINT)\s+', '', subcommittee.strip().title())
 
+        # Fix roman numeral capping.
+        replacer = lambda m: m.group().upper()
+        subcommittee = re.sub(
+            r'\b(VII|VII|III|IIV|IV|II|VI|IX|V|X)\b', replacer, subcommittee,
+            flags=re.I)
+        return subcommittee
+
+    def _fix_committee_name(self, committee, parent=None, subcommittee=False):
+        '''Remove committee acronyms from committee names. We want to
+        remove them from the beginning of names, and at the end:
+
+        ARKANSAS LEGISLATIVE COUNCIL (ALC)
+        ALC/EXECUTIVE SUBCOMMITTEE
+        ALC-ADMINISTRATIVE RULES & REGULATIONS
+
+        Also strip the main committee name from the committee.
+        '''
+        junk = ['ALC', 'ALC-JBC', 'JBC', 'JPR']
+
+        if subcommittee:
+            junk += [
+                'AGING\s+&\s+LEGISLATIVE\s+AFFAIRS\s*-',
+                'AGRICULTURE\s*-',
+                'CITY, COUNTY & LOCAL AFFAIRS\s*-',
+                'EDUCATION\s*-',
+                'JUDICIARY\s*-',
+                'PUBLIC HEALTH\s*-',
+                'STATE AGENCIES & GOV. AFFAIRS\s*-',
+                'TRANSPORTATION\s*-',
+                ]
+
+        if parent:
+            junk += [parent]
+
+        committee = committee.strip()
+        for rgx in sorted(junk, key=len, reverse=True):
+            match = re.match(rgx, committee, flags=re.I)
+            if match:
+                committee = committee.replace(match.group(), '', 1).strip()
+                break
+
+        # Kill "(ALC)" in "Blah Blah (ALC)"
+        rgx = '\(?(%s)\)?' % '|'.join(sorted(junk, key=len, reverse=True))
+        committee = re.sub(rgx, '', committee, flags=re.I)
+        committee = committee.strip(' \/-\n\r\t')
+
+        # Fix commas with no space.
+        def replacer(matchobj):
+            return matchobj.group(1) + ', ' + matchobj.group(2)
+        rgx = r'(?i)([a-z]),([a-z])'
+        committee = re.sub(rgx, replacer, committee)
+
+        # Fix subcom.
+        committee = committee.replace('Subcom.', 'Subcommittee')
+        return committee
+
+    def scrape_committee(self, chamber, name, url, subcommittee=None):
+        name = self._fix_committee_name(name)
+        name = self._fix_committee_case(name)
+
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+
+        # Get the subcommittee name.
+        xpath = '//div[@class="ms-WPBody"]//table//tr/td/b/text()'
+
+        if subcommittee:
+            subcommittee = page.xpath(xpath).pop(0)
+            subcommittee = self._fix_committee_name(
+                subcommittee, parent=name, subcommittee=True)
+            subcommittee = self._fix_committee_case(subcommittee)
+
+        # Dedupe.
         if (chamber, name, subcommittee) in self._seen:
             return
         self._seen.add((chamber, name, subcommittee))
 
-        comm = Committee(chamber, name.title(), subcommittee=subcommittee)
+        comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
-
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
 
         for tr in page.xpath('//table[@class="gridtable"]/tr[position()>1]'):
             if tr.xpath('string(td[1])'):

@@ -31,7 +31,7 @@ metadata = dict(
     session_details={
         '108': {
             'type': 'primary',
-            'display_name': '108th Regular Session (2009-2010)'},
+            'display_name': '108th Regular Session (2013-2014)'},
         '107': {
             'start_date': datetime.date(2011, 1, 11),
             'end_date': datetime.date(2012, 1, 10),
@@ -39,7 +39,7 @@ metadata = dict(
             'display_name': '107th Regular Session (2011-2012)'},
         '106': {
             'type': 'primary',
-            'display_name': '106th Regular Session (2013-2014)'},
+            'display_name': '106th Regular Session (2009-2010)'},
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=[
