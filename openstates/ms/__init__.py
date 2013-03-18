@@ -1,4 +1,7 @@
 import lxml.html
+from .bills import MSBillScraper
+from .legislators import MSLegislatorScraper
+from .committees import MSCommitteeScraper
 
 metadata = dict(
     name='Mississippi',

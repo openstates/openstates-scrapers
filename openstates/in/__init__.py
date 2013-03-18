@@ -1,5 +1,8 @@
 import datetime
 import lxml.html
+from .bills import INBillScraper
+from .legislators import INLegislatorScraper
+from .committees import INCommitteeScraper
 
 metadata = dict(
     name='Indiana',

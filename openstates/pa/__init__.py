@@ -1,5 +1,9 @@
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import PABillScraper
+from .legislators import PALegislatorScraper
+from .committees import PACommitteeScraper
+from .events import PAEventScraper
 
 settings = dict(SCRAPELIB_RPM=30)
 

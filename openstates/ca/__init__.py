@@ -1,5 +1,9 @@
 import datetime
 import lxml.html
+from .bills import CABillScraper
+from .legislators import CALegislatorScraper
+from .committees import CACommitteeScraper
+from .events import CAEventScraper
 
 settings = dict(SCRAPELIB_RPM=30)
 

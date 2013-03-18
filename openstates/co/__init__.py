@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import worddata_to_text
+from .bills import COBillScraper
+from .legislators import COLegislatorScraper
+from .committees import COCommitteeScraper
+from .votes import COVoteScraper
 
 metadata = dict(
     name='Colorado',

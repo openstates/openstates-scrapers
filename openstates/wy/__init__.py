@@ -1,6 +1,10 @@
 import re
 import datetime
 from billy.utils.fulltext import pdfdata_to_text
+from .bills import WYBillScraper
+from .legislators import WYLegislatorScraper
+from .committees import WYCommitteeScraper
+from .events import WYEventScraper
 
 metadata = dict(
     name='Wyoming',

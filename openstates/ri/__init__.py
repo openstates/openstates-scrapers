@@ -1,5 +1,10 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import RIBillScraper
+from .legislators import RILegislatorScraper
+from .committees import RICommitteeScraper
+from .events import RIEventScraper
+from .votes import RIVoteScraper
 
 metadata = dict(
     _partial_vote_bill_id=True,

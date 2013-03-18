@@ -1,5 +1,9 @@
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import MIBillScraper
+from .legislators import MILegislatorScraper
+from .committees import MICommitteeScraper
+from .events import MIEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 

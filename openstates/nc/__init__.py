@@ -1,6 +1,10 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import NCBillScraper
+from .legislators import NCLegislatorScraper
+from .committees import NCCommitteeScraper
+from .votes import NCVoteScraper
 
 metadata = dict(
     name='North Carolina',

@@ -1,4 +1,7 @@
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import HIBillScraper
+from .legislators import HILegislatorScraper
+from .events import HIEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 

@@ -1,6 +1,8 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import VABillScraper
+from .legislators import VALegislatorScraper
 
 settings = dict(SCRAPELIB_RPM=40)
 

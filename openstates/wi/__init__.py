@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import WIBillScraper
+from .legislators import WILegislatorScraper
+from .committees import WICommitteeScraper
+from .events import WIEventScraper
 
 metadata = {
     'abbreviation': 'wi',

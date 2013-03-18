@@ -1,6 +1,10 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import IABillScraper
+from .legislators import IALegislatorScraper
+from .events import IAEventScraper
+from .votes import IAVoteScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=240)
 

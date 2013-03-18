@@ -1,6 +1,10 @@
 import re
 import datetime
 from billy.utils.fulltext import pdfdata_to_text
+from .bills import NEBillScraper
+from .legislators import NELegislatorScraper
+from .committees import NECommitteeScraper
+from .votes import NEVoteScraper
 
 metadata = dict(
     name='Nebraska',

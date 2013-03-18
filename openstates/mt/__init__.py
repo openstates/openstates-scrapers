@@ -1,4 +1,7 @@
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import MTBillScraper
+from .legislators import MTLegislatorScraper
+from .committees import MTCommitteeScraper
 
 metadata = {
     'name': 'Montana',

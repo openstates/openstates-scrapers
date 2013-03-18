@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import UTBillScraper
+from .legislators import UTLegislatorScraper
+from .committees import UTCommitteeScraper
+from .events import UTEventScraper
 
 metadata = dict(
     name='Utah',

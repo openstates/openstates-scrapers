@@ -1,6 +1,10 @@
 import re
 import datetime
 from billy.utils.fulltext import pdfdata_to_text
+from .bills import TNBillScraper
+from .legislators import TNLegislatorScraper
+from .committees import TNCommitteeScraper
+from .events import TNEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 

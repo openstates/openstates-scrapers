@@ -1,5 +1,8 @@
 import lxml.html
 import datetime
+from .bills import SCBillScraper
+from .legislators import SCLegislatorScraper
+from .events import SCEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 

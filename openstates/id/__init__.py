@@ -1,5 +1,8 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import IDBillScraper
+from .legislators import IDLegislatorScraper
+from .committees import IDCommitteeScraper
 
 metadata = dict(
     name='Idaho',

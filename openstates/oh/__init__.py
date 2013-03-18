@@ -1,6 +1,9 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import OHBillScraper
+from .legislators import OHLegislatorScraper
+from .events import OHEventScraper
 
 metadata = dict(
     name='Ohio',

@@ -1,4 +1,7 @@
 import lxml.html
+from .bills import CTBillScraper
+from .legislators import CTLegislatorScraper
+from .events import CTEventScraper
 
 settings = dict(SCRAPELIB_RPM = 20)
 

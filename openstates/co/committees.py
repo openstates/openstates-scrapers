@@ -8,7 +8,7 @@ COMMITTEE_URL = ("http://www.colorado.gov/cs/Satellite?c=Page&"
     "cid=1245677985421&pagename=CLCWrapper")
 
 
-class DECommitteeScraper(CommitteeScraper):
+class COCommitteeScraper(CommitteeScraper):
     jurisdiction = "co"
 
     def lxmlize(self, url):
