@@ -7,3 +7,5 @@ http://www.blueoregon.com/feeds/latest/
 http://feeds2.feedburner.com/OregonCatalyst
 
 http://www.therepublic.com/feed/cat/2560
+http://projects.registerguard.com/feeds/sunlight/
+http://projects.registerguard.com/feeds/ap/
