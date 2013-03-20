@@ -1,5 +1,7 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import ALBillScraper
+from .legislators import ALLegislatorScraper
 
 metadata =  {
     'name': 'Alabama',

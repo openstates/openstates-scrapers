@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import MOBillScraper
+from .legislators import MOLegislatorScraper
+from .committees import MOCommitteeScraper
+from .votes import MOVoteScraper
 
 metadata = dict(
     name='Missouri',

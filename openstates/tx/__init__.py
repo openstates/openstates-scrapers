@@ -1,5 +1,9 @@
 import lxml.html
 import datetime
+from .bills import TXBillScraper
+from .legislators import TXLegislatorScraper
+from .events import TXEventScraper
+from .votes import TXVoteScraper
 
 metadata = dict(
     name='Texas',

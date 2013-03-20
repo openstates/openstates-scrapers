@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import ARBillScraper
+from .legislators import ARLegislatorScraper
+from .committees import ARCommitteeScraper
+from .events import AREventScraper
 
 metadata = dict(
     name='Arkansas',

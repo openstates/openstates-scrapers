@@ -124,6 +124,7 @@ class TXEventScraper(EventScraper):
                     "of the Senate": "",
                     "Finance Committee": "",
                     "or upon adjournment": "",
+                    "9:00 AM Mountain Time": "",
                     "or upon the adjournment": "",
                     "of the House and the Senate": "",
                     "or upon final adjourn./recess": "",

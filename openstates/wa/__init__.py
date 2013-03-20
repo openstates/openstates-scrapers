@@ -1,5 +1,9 @@
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import WABillScraper
+from .legislators import WALegislatorScraper
+from .committees import WACommitteeScraper
+from .events import WAEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 

@@ -1,6 +1,9 @@
 from billy.utils.fulltext import text_after_line_numbers
 from .util import get_client
 import lxml.html
+from .bills import GABillScraper
+from .legislators import GALegislatorScraper
+from .committees import GACommitteeScraper
 
 metadata = {
     'name': 'Georgia',

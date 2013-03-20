@@ -1,5 +1,8 @@
 import lxml.html
-
+from .bills import DEBillScraper
+from .legislators import DELegislatorScraper
+from .committees import DECommitteeScraper
+from .events import DEEventScraper
 
 metadata = dict(
     name='Delaware',

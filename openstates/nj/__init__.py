@@ -2,6 +2,10 @@ import datetime
 import lxml.html
 from billy.scrape.utils import url_xpath
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import NJBillScraper
+from .legislators import NJLegislatorScraper
+from .committees import NJCommitteeScraper
+from .events import NJEventScraper
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)

@@ -1,4 +1,6 @@
 import lxml.html
+from .bills import NHBillScraper
+from .legislators import NHLegislatorScraper
 
 metadata = {
     'abbreviation': 'nh',

@@ -1,6 +1,10 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers, pdfdata_to_text
+from .bills import AZBillScraper
+from .legislators import AZLegislatorScraper
+from .committees import AZCommitteeScraper
+from .events import AZEventScraper
 
 metadata = dict(
     name='Arizona',

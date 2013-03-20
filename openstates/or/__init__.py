@@ -1,5 +1,7 @@
 import re
 import lxml.html
+from .bills import ORBillScraper
+from .legislators import ORLegislatorScraper
 
 metadata = dict(
     name='Oregon',

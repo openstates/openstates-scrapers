@@ -1,5 +1,7 @@
 import datetime
 import lxml.html
+from .bills import SDBillScraper
+from .legislators import SDLegislatorScraper
 
 settings = dict(
     SCRAPELIB_RPM=8,

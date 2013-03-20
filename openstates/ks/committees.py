@@ -8,7 +8,7 @@ from billy.scrape.committees import Committee, CommitteeScraper
 
 import ksapi
 
-class KSBillScraper(CommitteeScraper):
+class KSCommitteeScraper(CommitteeScraper):
     jurisdiction = 'ks'
     latest_only = True
 

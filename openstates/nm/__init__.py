@@ -1,4 +1,6 @@
 import lxml.html
+from .bills import NMBillScraper
+from .legislators import NMLegislatorScraper
 
 metadata = {
     'abbreviation': 'nm',

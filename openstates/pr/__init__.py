@@ -1,4 +1,8 @@
 from billy.utils.fulltext import worddata_to_text
+from .bills import PRBillScraper
+from .legislators import PRLegislatorScraper
+from .committees import PRCommitteeScraper
+from .events import PREventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 

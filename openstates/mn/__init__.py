@@ -1,4 +1,9 @@
 import lxml.html
+from .bills import MNBillScraper
+from .legislators import MNLegislatorScraper
+from .committees import MNCommitteeScraper
+from .events import MNEventScraper
+from .votes import MNVoteScraper
 
 metadata = dict(
     name='Minnesota',

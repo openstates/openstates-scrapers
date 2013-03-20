@@ -1,5 +1,9 @@
 from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
+from .bills import ILBillScraper
+from .legislators import ILLegislatorScraper
+from .committees import ILCommitteeScraper
+from .events import ILEventScraper
 
 metadata = {
     'abbreviation': 'il',

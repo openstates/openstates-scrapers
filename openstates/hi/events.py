@@ -13,7 +13,7 @@ import pytz
 URL = "http://www.capitol.hawaii.gov/upcominghearings.aspx"
 
 
-class WIEventScraper(EventScraper):
+class HIEventScraper(EventScraper):
     jurisdiction = 'hi'
 
     def lxmlize(self, url):

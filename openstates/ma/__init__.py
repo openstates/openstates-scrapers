@@ -1,6 +1,10 @@
 import datetime
 import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
+from .bills import MABillScraper
+from .legislators import MALegislatorScraper
+from .committees import MACommitteeScraper
+from .events import MAEventScraper
 
 settings = dict(
     SCRAPELIB_TIMEOUT=600,

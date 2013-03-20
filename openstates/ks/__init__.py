@@ -1,5 +1,8 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import KSBillScraper
+from .legislators import KSLegislatorScraper
+from .committees import KSCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 

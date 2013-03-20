@@ -1,5 +1,9 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from .bills import LABillScraper
+from .legislators import LALegislatorScraper
+from .committees import LACommitteeScraper
+from .events import LAEventScraper
 
 metadata = {
     "capitol_timezone": 'America/Chicago',
