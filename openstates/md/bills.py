@@ -286,6 +286,9 @@ class MDBillScraper(BillScraper):
         elif 'Rejected' in motion:
             motion = motion.split(' Rejected')[0]
             passed = False
+        elif 'Failed' in motion:
+            motion = motion.split(' Failed')[0]
+            passed = False
         elif 'Floor Amendment' in motion:
             passed = int(yes_count) > int(no_count)
         else:
