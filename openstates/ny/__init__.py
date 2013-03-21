@@ -4,7 +4,7 @@ from billy.utils.fulltext import text_after_line_numbers
 from .bills import NYBillScraper
 from .legislators import NYLegislatorScraper
 from .committees import NYCommitteeScraper
-from .events import NYAssemblyEventScraper, NYSenateEventScraper
+from .events import NYEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
