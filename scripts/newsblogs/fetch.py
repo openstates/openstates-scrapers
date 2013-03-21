@@ -29,7 +29,7 @@ logger.addHandler(ch)
 
 request_defaults = {
     #'proxies': {"http": "localhost:8001"},
-    'timeout': 5.0,
+    'timeout': 15.0,
     'headers': {
         'Accept': ('text/html,application/xhtml+xml,application/'
                    'xml;q=0.9,*/*;q=0.8'),
