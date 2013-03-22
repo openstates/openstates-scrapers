@@ -35,8 +35,8 @@ class WVCommitteeScraper(CommitteeScraper):
         comm = Committee('lower', name)
         comm.add_source(url)
 
-        xpath = '//a[contains(@href, "delmemview")]'
-        for link in doc.xpath(xpath)[2:]:
+        xpath = '//a[contains(@href, "?member=")]'
+        for link in doc.xpath(xpath):
             name = link.text_content().strip()
             name = re.sub(r'^Delegate\s+', '', name)
             role = link.getnext().text or 'member'
@@ -68,8 +68,8 @@ class WVCommitteeScraper(CommitteeScraper):
         comm = Committee('upper', name)
         comm.add_source(url)
 
-        xpath = '//a[contains(@href, "senmemview")]'
-        for link in doc.xpath(xpath)[2:]:
+        xpath = '//a[contains(@href, "?member=")]'
+        for link in doc.xpath(xpath):
             name = link.text_content().strip()
             name = re.sub(r'^Delegate\s+', '', name)
             role = link.getnext().text or 'member'

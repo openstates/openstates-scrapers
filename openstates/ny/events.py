@@ -9,7 +9,7 @@ import lxml.html
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 
 
-class NYAssemblyEventScraper(EventScraper):
+class NYEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
     jurisdiction = 'ny'
 
@@ -19,7 +19,7 @@ class NYAssemblyEventScraper(EventScraper):
         page.make_links_absolute(url)
         return page
 
-    def parse_page(self, url, session):
+    def lower_parse_page(self, url, session):
         page = self.lxmlize(url)
         tables = page.xpath("//table[@class='pubhrgtbl']")
         date = None
@@ -82,6 +82,7 @@ class NYAssemblyEventScraper(EventScraper):
             if "tbd" in date.lower():
                 continue
 
+            date = date.replace(' PLEASE NOTE NEW TIME', '')
             try:
                 datetime = dt.datetime.strptime(date, "%B %d %Y %I:%M %p")
             except ValueError:
@@ -101,16 +102,16 @@ class NYAssemblyEventScraper(EventScraper):
             self.save_event(event)
 
     def scrape(self, chamber, session):
+        self.scrape_lower(chamber, session)
+        self.scrape_upper(chamber, session)
+
+    def scrape_lower(self, chamber, session):
         if chamber == 'other':
-            self.parse_page(url, session)
+            self.lower_parse_page(url, session)
 
-
-class NYSenateEventScraper(EventScraper):
-    _tz = pytz.timezone('US/Eastern')
-    jurisdiction = 'ny'
     crappy = []
 
-    def scrape(self, chamber, session):
+    def scrape_upper(self, chamber, session):
         if chamber != 'upper':
             return
 
@@ -122,12 +123,12 @@ class NYSenateEventScraper(EventScraper):
             if not resp.response.json['response']['results']:
                 break
             for obj in resp.response.json['response']['results']:
-                event = self.scrape_event(chamber, session, obj)
+                event = self.upper_scrape_event(chamber, session, obj)
                 if event:
                     self.save_event(event)
             page_index += 1
 
-    def scrape_event(self, chamber, session, obj):
+    def upper_scrape_event(self, chamber, session, obj):
         meeting = obj['data']['meeting']
         date = int(meeting['meetingDateTime'])
         date = dt.datetime.fromtimestamp(date / 1000)

@@ -14,19 +14,17 @@ class WVLegislatorScraper(LegislatorScraper):
         self.validate_term(term, latest_only=True)
 
         if chamber == 'upper':
-            chamber_abbrev = 'sen'
-            title_abbrev = 'sen'
+            chamber_abbrev = 'Senate1'
         else:
-            chamber_abbrev = 'hse'
-            title_abbrev = 'del'
+            chamber_abbrev = 'House'
 
-        url = "http://www.legis.state.wv.us/districts/maps/%s_dist.cfm" % (
-            chamber_abbrev)
+        url = 'http://www.legis.state.wv.us/%s/roster.cfm' % chamber_abbrev
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        view_url = '%smemview' % title_abbrev
-        for link in page.xpath("//a[contains(@href, '%s')]" % view_url):
+        for link in page.xpath("//a[contains(@href, '?member=')]"):
+            if not link.text:
+                continue
             name = link.xpath("string()").strip()
             leg_url = urlescape(link.attrib['href'])
 
@@ -37,16 +35,16 @@ class WVLegislatorScraper(LegislatorScraper):
             self.scrape_legislator(chamber, term, name, leg_url)
 
     def scrape_legislator(self, chamber, term, name, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        html = self.urlopen(url)
+        page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
-        xpath = '//select[@name="sel_district"]/option[@selected]/text()'
-        district = page.xpath(xpath).pop().strip().lstrip('0')
+        xpath = '//select[@name="sel_member"]/option[@selected]/text()'
+        district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop().split()[1].strip().lstrip('0')
 
-        mem_span = page.xpath("//span[contains(@class, 'memname')]")[0]
-        mem_tail = mem_span.tail.strip()
+        party = page.xpath('//h2').pop().text_content()
+        party = re.search(r'\((R|D)[ \-\]]', party).group(1)
 
-        party = re.match(r'\((R|D)', mem_tail).group(1)
         if party == 'D':
             party = 'Democratic'
         elif party == 'R':
@@ -66,24 +64,30 @@ class WVLegislatorScraper(LegislatorScraper):
         self.save_legislator(leg)
 
     def scrape_offices(self, legislator, doc):
-        text = doc.xpath('//b[contains(., "Capitol Address:")]')[0]
+        text = doc.xpath('//b[contains(., "Capitol Office:")]')[0]
         text = text.getparent().itertext()
         text = filter(None, [t.strip() for t in text])
         officedata = defaultdict(list)
         current = None
         for chunk in text:
             if chunk.strip().endswith(':'):
-                current = officedata[chunk.strip()]
+                current_key = chunk.strip()
+                current = officedata[current_key]
             elif current is not None:
                 current.append(chunk)
+                if current_key == 'Business Phone:':
+                    break
+
+        email = doc.xpath('//a[contains(@href, "mailto:")]/@href')[1]
+        email = email[7:]
 
         office = dict(
             name='Capitol Office',
             type='capitol',
             phone=(officedata['Capitol Phone:'] or [None]).pop(),
             fax=None,
-            email=officedata['E-mail:'].pop(),
-            address='\n'.join(officedata['Capitol Address:']))
+            email=email,
+            address='\n'.join(officedata['Capitol Office:']))
 
         legislator.add_office(**office)
 
