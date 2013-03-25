@@ -190,6 +190,8 @@ class MIBillScraper(BillScraper):
             if p.startswith(u'Roll Call No. %s' % rc_num):
                 break
 
+        vtype = None
+
         # once we find the roll call, go through voters
         for p in pieces[i:]:
             # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
@@ -203,8 +205,10 @@ class MIBillScraper(BillScraper):
                 continue
             elif p.startswith('In The Chair:'):
                 break
-            else:
+            elif vtype:
                 # split on spaces not preceeded by commas
                 for l in re.split('(?<!,)\s+', p):
                     if l:
                         vtype(l)
+            else:
+                self.warning('piece without vtype set: %s', p)

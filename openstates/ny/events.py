@@ -120,9 +120,9 @@ class NYEventScraper(EventScraper):
         page_index = 1
         while True:
             resp = self.urlopen(url % page_index)
-            if not resp.response.json['response']['results']:
+            if not resp.response.json()['response']['results']:
                 break
-            for obj in resp.response.json['response']['results']:
+            for obj in resp.response.json()['response']['results']:
                 event = self.upper_scrape_event(chamber, session, obj)
                 if event:
                     self.save_event(event)
