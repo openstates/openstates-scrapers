@@ -282,9 +282,10 @@ class WVBillScraper(BillScraper):
         lines = filter(None, text.splitlines())
         actual_vote = collections.defaultdict(int)
         for line in lines:
-            toks = re.split('\s{2,}', line.strip())
-            vals = zip(toks[::2], toks[1::2])
+            vals = re.findall(r'(Y|N|A)\s+((?:\S+ ?)+)', line)
             for vote_val, name in vals:
+                vote_val = vote_val.strip()
+                name = name.strip()
                 if vote_val == 'Y':
                     vote.yes(name)
                     vote['yes_count'] += 1
