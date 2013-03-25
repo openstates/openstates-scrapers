@@ -10,6 +10,7 @@ class DCCommitteeScraper(CommitteeScraper):
         com_url = 'http://www.dccouncil.washington.dc.us/committees'
         data = self.urlopen(com_url)
         doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(com_url)
 
         urls = set(doc.xpath('//a[contains(@href, "committee-on")]/@href'))
         for url in urls:

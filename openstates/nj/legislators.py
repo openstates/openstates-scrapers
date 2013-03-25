@@ -57,7 +57,11 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
                 email = rec["Email"]
             else:
                 email = ''
-            photo_url = photos[rec['Roster Key']]
+            try:
+                photo_url = photos[rec['Roster Key']]
+            except KeyError:
+                photo_url = ''
+                self.warning('no photo url for %s', rec['Roster Key'])
             url = ('http://www.njleg.state.nj.us/members/bio.asp?Leg=' +
                    str(int(rec['Roster Key'])))
             address = '{0}\n{1}, {2} {3}'.format(rec['Address'], rec['City'],
