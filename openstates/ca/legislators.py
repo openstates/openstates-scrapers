@@ -70,7 +70,8 @@ class CALegislatorScraper(LegislatorScraper):
         xpath = 'td[contains(@class, "views-field-field-%s-%s")]%s'
 
         xp = {
-            'url':       [('lname-value-1', '/a/@href')],
+            'url':       [('lname-value-1', '/a/@href'),
+                          ('member-lname-value-1', '/a/@href')],
             'district':  [('district-value', '/text()')],
             'party':     [('party-value', '/text()')],
             'full_name': [('feedbackurl-value', '/a/text()')],
@@ -119,21 +120,28 @@ class CALegislatorScraper(LegislatorScraper):
                     addresses.remove(address)
 
         # Re-key the addresses
-        addresses[0].update(type='capitol', name='Capitol Office')
-        offices = [addresses[0]]
-        for office in addresses[1:]:
-            office.update(type='district', name='District Office')
-            offices.append(office)
+        offices = []
+        if addresses:
+            # Mariko Yamada's addresses wouldn't parse correctly as of
+            # 3/23/2013, so here we're forced to test whether any
+            # addresses were even found.
+            addresses[0].update(type='capitol', name='Capitol Office')
+            offices.append(addresses[0])
 
-        for office in offices:
-            street = office['street']
-            street = '%s\n%s, %s %s' % (street, office['city'], 'CA',
-                                        office['zip'])
-            office['address'] = street
-            office['fax'] = None
-            office['email'] = None
+            for office in addresses[1:]:
+                office.update(type='district', name='District Office')
+                offices.append(office)
 
-            del office['street'], office['city'], office['zip']
+            for office in offices:
+                street = office['street']
+                street = '%s\n%s, %s %s' % (street, office['city'], 'CA',
+                                            office['zip'])
+                office['address'] = street
+                office['fax'] = None
+                office['email'] = None
+
+                del office['street'], office['city'], office['zip']
+
         res['offices'] = offices
         del res['address']
 
@@ -151,10 +159,16 @@ class CALegislatorScraper(LegislatorScraper):
             else:
                 res['party'] = None
 
-        res['url'] = res['url'].pop()
+        # Mariko Yamada also didn't have a url that lxml would parse
+        # as of 3/22/2013.
+        if res['url']:
+            res['url'] = res['url'].pop()
+        else:
+            del res['url']
 
         # strip leading zero
         res['district'] = str(int(res['district'].pop()))
+
         # Add a source for the url.
         leg = Legislator(term, chamber, **res)
         leg.update(**res)
