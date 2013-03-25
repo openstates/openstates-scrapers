@@ -55,7 +55,10 @@ class IAEventScraper(EventScraper):
                 when = when.replace(key, '')
 
             when = re.sub("\s+", " ", when).strip()
-            when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
+            try:
+                when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
+            except ValueError:
+                when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
 
             event = Event(session, when, 'committee:meeting',
                           desc, location)
