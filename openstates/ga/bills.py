@@ -127,6 +127,7 @@ class GABillScraper(BillScraper):
                 "HCA": ["other"],
                 "HNOM": ["other"],
                 "HTT": ["other"],
+                "STT": ["other"],
                 "SCRA": ["other"],
                 "SNOM": ["other"],
                 "S2R": ["bill:reading:2"],
