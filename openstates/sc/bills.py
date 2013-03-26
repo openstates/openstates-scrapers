@@ -77,9 +77,9 @@ class SCBillScraper(BillScraper):
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.urlopen(subject_search_url, 'POST',
-                            (('GETINDEX','Y'), ('SESSION', session_code),
-                             ('INDEXCODE','0'), ('INDEXTEXT', ''),
-                             ('AORB', 'B'), ('PAGETYPE', '0')))
+                            dict((('GETINDEX','Y'), ('SESSION', session_code),
+                                  ('INDEXCODE','0'), ('INDEXTEXT', ''),
+                                  ('AORB', 'B'), ('PAGETYPE', '0'))))
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
