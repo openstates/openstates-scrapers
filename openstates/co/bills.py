@@ -408,6 +408,9 @@ class COBillScraper(BillScraper):
                     other = local_other
 
                 passed = (result['FINAL_ACTION'] == "PASS")
+                if passage['MOTION'].strip() == "":
+                    continue
+
                 if "without objection" in passage['MOTION'].lower():
                     passed = True
 
