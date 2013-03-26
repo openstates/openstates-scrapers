@@ -1,11 +1,16 @@
 import scrapelib
+import lxml.html
 
-scrapelib._user_agent = "Mozilla/5.0 (compatible; %s)" % (
+UAS = scrapelib._user_agent = "Mozilla/5.0 (compatible; %s)" % (
     scrapelib._user_agent)
 
-import lxml.html
+scrapelib._user_agent = UAS
+scrapelib._default_scraper.user_agent = UAS
+
 from .bills import NMBillScraper
 from .legislators import NMLegislatorScraper
+
+
 
 metadata = {
     'abbreviation': 'nm',
