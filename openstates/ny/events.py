@@ -88,8 +88,12 @@ class NYEventScraper(EventScraper):
             except ValueError:
                 datetime = dt.datetime.strptime(date, "%b. %d %Y %I:%M %p")
 
+            title_key = set(metainf) & set(['Public Hearing:', 'Summitt:'])
+            assert len(title_key) == 1, "Couldn't determine event title."
+            title_key = list(title_key).pop()
+
             event = Event(session, datetime, 'committee:meeting',
-                          metainf['Public Hearing:'],
+                          metainf[title_key],
                           location=metainf['Place:'],
                           contact=metainf['Contact:'],
                           media_contact=metainf['Media Contact:'])
@@ -120,6 +124,8 @@ class NYEventScraper(EventScraper):
         page_index = 1
         while True:
             resp = self.urlopen(url % page_index)
+            if not resp.response.json:
+                break
             if not resp.response.json['response']['results']:
                 break
             for obj in resp.response.json['response']['results']:
