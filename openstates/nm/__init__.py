@@ -1,3 +1,8 @@
+import scrapelib
+
+scrapelib._user_agent = "Mozilla/5.0 (compatible; %s)" % (
+    scrapelib._user_agent)
+
 import lxml.html
 from .bills import NMBillScraper
 from .legislators import NMLegislatorScraper
