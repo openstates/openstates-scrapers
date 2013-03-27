@@ -27,18 +27,9 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-request_defaults = {
-    #'proxies': {"http": "localhost:8001"},
-    'timeout': 15.0,
-    'user_agent': ('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
-                   'Gecko/20100101 Firefox/10.0.2'),
-    'follow_robots': False,
-    }
-
-
 if __name__ == '__main__':
 
-    session = scrapelib.Scraper(**request_defaults)
+    session = scrapelib.Scraper()
     session.headers = {
         'Accept': ('text/html,application/xhtml+xml,application/'
                    'xml;q=0.9,*/*;q=0.8'),
@@ -46,6 +37,11 @@ if __name__ == '__main__':
         'Accept-Language': 'en-us,en;q=0.5',
         'Connection': 'keep-alive',
         }
+    session.user_agent = (
+        'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:10.0.2) '
+        'Gecko/20100101 Firefox/10.0.2')
+    session.timeout = 15.0
+    session.follow_robots = False
 
     def fetch(url):
         logger.info('trying %r' % url)
