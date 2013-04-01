@@ -74,7 +74,7 @@ metadata = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
-    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
+    'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2013 Regular Legislative Session',  # In as 2013 Regular Session
         '2013 Regular Legislative Session',  # Samesies.
