@@ -3,6 +3,8 @@ from billy.scrape.bills import BillScraper, Bill
 
 import datetime as dt
 import lxml.html
+import scrapelib
+import re
 
 
 URL = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?r=%s1*"
@@ -31,6 +33,7 @@ class LABillScraper(BillScraper):
         ret = lxml.html.fromstring(self.urlopen(form.action,
                                    method=form.method,
                                    body=block))
+
         ret.make_links_absolute(form.action)
         return ret
 
@@ -43,12 +46,16 @@ class LABillScraper(BillScraper):
             if hrefs == [] or "disabled" in hrefs[0].attrib:
                 return
 
+            href = hrefs[0].attrib['href']
+            tokens = re.match(".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
+
             page = self.do_post_back(
                 page,
-                "ctl00$ctl00$PageBody$PageContent$DataPager1$ctl02$ctl00",
+                tokens['token'],
                 ""
             )
-            yield page
+            if page:
+                yield page
 
     def scrape_bare_page(self, url):
         page = self.lxmlize(url)
@@ -83,8 +90,16 @@ class LABillScraper(BillScraper):
             "//a[contains(text(), '%s')]" % (x))[0].attrib['href'])
 
         authors = [x.text for x in sbp("Authors")]
-        digests = sbp("Digests")
-        versions = sbp("Text")
+
+        try:
+            digests = sbp("Digests")
+        except IndexError:
+            digests = []
+
+        try:
+            versions = sbp("Text")
+        except IndexError:
+            versions = []
 
         title = page.xpath(
             "//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]

@@ -3,7 +3,7 @@ from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import LABillScraper
 from .legislators import LALegislatorScraper
 from .committees import LACommitteeScraper
-from .events import LAEventScraper
+# from .events import LAEventScraper
 
 metadata = {
     "capitol_timezone": 'America/Chicago',
@@ -76,6 +76,8 @@ metadata = {
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
+        '2013 Regular Legislative Session',  # In as 2013 Regular Session
+        '2013 Regular Legislative Session',  # Samesies.
         '2008 Regular Session',
         '2008 Organizational Session',
         '2008 Second Extraordinary Session',
@@ -100,7 +102,13 @@ metadata = {
         '2001 First Extraordinary Session',
         '2000 Second Extraordinary Session',
         '2000 First Extraordinary Session',
-        '1998 First Extraordinary Session'
+        '1998 First Extraordinary Session',
+        '2012 Organizational Session',
+        '2000 Organizational Session',
+        '2004 Organizational Session',
+        'Other Sessions',
+        'Other Sessions',
+        'Sessions',
     ]
 }
 
@@ -110,7 +118,7 @@ def session_list():
     import re
     return url_xpath(
                 'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
-                '//select//option/text()')
+                '//a[contains(text(), "Session")]/text()')
 
 
 def extract_text(doc, data):
