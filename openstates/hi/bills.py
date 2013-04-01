@@ -140,18 +140,14 @@ class HIBillScraper(BillScraper):
             tds = version.xpath("./*")
             http_href = tds[0].xpath("./a")
             name = http_href[0].text_content().strip()
-            category  = tds[1].text_content().strip()
-            pdf_href  = tds[2].xpath("./a")
+            # category  = tds[1].text_content().strip()
+            pdf_href  = tds[1].xpath("./a")
 
             http_link = http_href[0].attrib['href']
             pdf_link  = pdf_href[0].attrib['href']
 
-            if category == 'Bills':
-                bill.add_version(name, http_link, mimetype="text/html")
-                bill.add_version(name, pdf_link, mimetype="application/pdf")
-            else:
-                bill.add_document(name, http_link, mimetype="text/html")
-                bill.add_document(name, pdf_link, mimetype="application/pdf")
+            bill.add_version(name, http_link, mimetype="text/html")
+            bill.add_version(name, pdf_link, mimetype="application/pdf")
 
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.urlopen(url)
