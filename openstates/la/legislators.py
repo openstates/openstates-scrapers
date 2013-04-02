@@ -26,8 +26,6 @@ class LALegislatorScraper(LegislatorScraper):
         return page
 
     def scrape_upper_leg_page(self, term, url, who):
-        return
-
         page = self.lxmlize(url)
         info = page.xpath("//td[@bgcolor='#EBEAEC']")
         who = page.xpath("//font[@size='4']")
@@ -39,13 +37,32 @@ class LALegislatorScraper(LegislatorScraper):
 
         infopane = page.xpath("//table[@cellpadding='3']")
         rundown = infopane[1].xpath("./*")[-1]
+        rundown_txt = rundown.text_content()
+        parties = {
+            "Republican": "Republican",
+            "Democrat": "Democratic",
+        }
+
+        party = 'other'
+        for slug in parties:
+            if slug in rundown_txt:
+                party = parties[slug]
+
+        if party == 'other':
+            raise Exception
+
+        kwargs = {
+            "party": party
+        }
 
         leg = Legislator(term,
                          'upper',
                          district,
-                         who)
+                         who,
+                         **kwargs)
 
-#        self.save_legislator(leg)
+        leg.add_source(url)
+        self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
         url = "http://senate.la.gov/Senators/"
