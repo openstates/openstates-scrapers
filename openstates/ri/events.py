@@ -72,10 +72,11 @@ class RIEventScraper(EventScraper):
             return
 
         transtable = {
-            "P.M." : "PM",
-            "A.M." : "AM",
             "P.M" : "PM",
             "PM." : "PM",
+            "P.M." : "PM",
+            "A.M." : "AM",
+            "POSTPONED" : "",
             "RESCHEDULED": "",
         }
         for trans in transtable:
