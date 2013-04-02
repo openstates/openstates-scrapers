@@ -25,8 +25,38 @@ class LALegislatorScraper(LegislatorScraper):
         page.make_links_absolute(url)
         return page
 
+    def scrape_upper_leg_page(self, term, url, who):
+        return
+
+        page = self.lxmlize(url)
+        info = page.xpath("//td[@bgcolor='#EBEAEC']")
+        who = page.xpath("//font[@size='4']")
+        who = who[0].text_content()
+        who = re.sub("\s+", " ", who)
+        who, district = (x.strip() for x in who.rsplit("-", 1))
+        who = who.replace("Senator", "").strip()
+        district = district.replace("District", "").strip()
+
+        infopane = page.xpath("//table[@cellpadding='3']")
+        rundown = infopane[1].xpath("./*")[-1]
+
+        leg = Legislator(term,
+                         'upper',
+                         district,
+                         who)
+
+#        self.save_legislator(leg)
+
     def scrape_upper(self, chamber, term):
-        pass
+        url = "http://senate.la.gov/Senators/"
+        page = self.lxmlize(url)
+        table = page.xpath("//table[@width='94%']")[0]
+        legs = table.xpath(".//tr//a[contains(@href, 'senate.la.gov')]")
+        for leg in legs:
+            who = leg.text_content().strip()
+            if who == "":
+                continue
+            self.scrape_upper_leg_page(term, leg.attrib['href'], who)
 
     def scrape_lower_legislator(self, url, leg_info, term):
         page = self.lxmlize(url)
@@ -38,15 +68,22 @@ class LALegislatorScraper(LegislatorScraper):
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
+        partyblk = filter(lambda x: "District" in x,
+                          page.xpath('//p[@align="center"]//text()'))[0]
+
         party_flags = {
-            "Democratic": "Democratic",
-            "Republican": "Republican"
+            "Democrat": "Democratic",
+            "Republican": "Republican",
+            "Independent": "Independent"
         }
 
         party = 'other'
         for p in party_flags:
-            if p in info:
+            if p in partyblk:
                 party = party_flags[p]
+
+        if party == 'other':
+            raise Exception
 
         kwargs = {"url": url,
                   "party": party,
