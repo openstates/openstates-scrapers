@@ -43,14 +43,14 @@ PARTY_DETAILS = {
 #         "offices.email",
 #     ],
 # }
-# 
+#
 # BILL_FILTERS = {
 #     "billy.importers.filters.single_space_filter": [
 #         "actions.action",
 #         "title",
 #     ]
 # }
-# 
+#
 # EVENT_FILTERS = {
 #     "billy.importers.filters.single_space_filter": [
 #         "description",
@@ -66,7 +66,7 @@ ENABLE_DOCUMENT_VIEW = {
     'ak': True,
     'al': True,
     'ar': False,    # revisit
-    'az': True,
+    'az': False,
     'ca': False,
     'co': False,    # revisit
     'ct': True,
