@@ -24,7 +24,7 @@ class NDBillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         table = page.xpath(
-            "//table[@summary='Measure Number Breakdown']"
+            "//table[@summary='Bill Number Breakdown']"
         )
 
         if len(table) > 1:  # Pre-2013 pages.
