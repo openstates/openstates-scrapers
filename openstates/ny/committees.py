@@ -67,7 +67,7 @@ class NYCommitteeScraper(CommitteeScraper):
 
         comm = Committee('lower', name)
         comm.add_source(url)
-
+        seen = set()
         for link in page.xpath("//div[@class='commlinks']//a[contains(@href, 'mem')]"):
 
             member = link.text.strip()
@@ -81,7 +81,9 @@ class NYCommitteeScraper(CommitteeScraper):
             else:
                 role = 'member'
 
-            comm.add_member(name, role)
+            if name not in seen:
+                comm.add_member(name)
+                seen.add(name)
 
         if comm['members']:
             self.save_committee(comm)
@@ -125,7 +127,7 @@ class NYCommitteeScraper(CommitteeScraper):
         if chair:
             comm.add_member(chair.pop().strip(), 'chair')
 
-        seen = set()
+        seen = set([member['name'] for member in comm['members']])
         for link in member_div.xpath(".//a"):
             if not link.text:
                 try:
