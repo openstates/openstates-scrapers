@@ -338,7 +338,7 @@ class IDBillScraper(BillScraper):
         passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
         yes_votes = [ name for name in
                       spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
-                      if name ]
+                      if name ] if spans[1].tail else []
 
         no_votes = [ name for name in
                      spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
