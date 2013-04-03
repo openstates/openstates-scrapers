@@ -118,8 +118,14 @@ class PDFHouseVote(object):
         for (vote_val, count), (actual_vote, _), text in self._parse():
             vote[vote_val + '_count'] = count
             for name in filter(None, PlaintextColumns(text)):
-                actual_vote_dict[actual_vote].append(name)
-                getattr(vote, vote_val)(name)
+                names = [name]
+                if 'Candelaria Reardon' in name:
+                    names.append('Candelaria Reardon')
+                    other_name = name.replace('Candelaria Reardon', '').strip()
+                    names.append(other_name)
+                for name in filter(None, names):
+                    actual_vote_dict[actual_vote].append(name)
+                    getattr(vote, vote_val)(name)
 
         vote.add_source(self.url)
         return vote
