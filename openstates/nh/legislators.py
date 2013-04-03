@@ -81,6 +81,7 @@ class NHLegislatorScraper(LegislatorScraper):
 
             romans = r'(?i)\s([IXV]+)(?:\s|$)'
             for com in (com1, com2, com3, com4):
+                com = com.strip('"')
                 if com:
                     com_name = com.title()
                     com_name = re.sub(romans, lambda m: m.group().upper(),
