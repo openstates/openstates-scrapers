@@ -28,6 +28,9 @@ class NVLegislatorScraper(LegislatorScraper):
         resp = json.loads(self.urlopen(leg_json_url))
 
         for item in resp:
+            # empty district
+            if 'District No' in item['FullName']:
+                continue
             leg = Legislator(term_name, chamber, item['DistrictNbr'],
                              item['FullName'], party=item['Party'],
                              photo_url=item['PhotoURL'])
