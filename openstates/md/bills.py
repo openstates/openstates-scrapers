@@ -275,7 +275,7 @@ class MDBillScraper(BillScraper):
             action_text = action_text[21:]
             chamber = 'lower'
 
-        motion, unused_date = action_text.split(' - ')
+        motion, unused_date = action_text.rsplit(' - ', 1)
         yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
