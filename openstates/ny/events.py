@@ -83,17 +83,35 @@ class NYEventScraper(EventScraper):
                 continue
 
             date = date.replace(' PLEASE NOTE NEW TIME', '')
-            try:
-                datetime = dt.datetime.strptime(date, "%B %d %Y %I:%M %p")
-            except ValueError:
-                datetime = dt.datetime.strptime(date, "%b. %d %Y %I:%M %p")
+
+            # Check if the event has been postponed.
+            postponed = 'POSTPONED' in date
+            if postponed:
+                date = date.replace(' POSTPONED', '')
+
+            date_formats = ["%B %d %Y %I:%M %p", "%b. %d %Y %I:%M %p"]
+            datetime = None
+            for fmt in date_formats:
+                try:
+                    datetime = dt.datetime.strptime(date, fmt)
+                except ValueError:
+                    pass
+
+            # If the datetime can't be parsed, bail.
+            if datetime is None:
+                return
 
             title_key = set(metainf) & set(['Public Hearing:', 'Summitt:'])
             assert len(title_key) == 1, "Couldn't determine event title."
             title_key = list(title_key).pop()
+            title = metainf[title_key]
+
+            # If event was postponed, add a warning to the title.
+            if postponed:
+                title = 'POSTPONED: %s' % title
 
             event = Event(session, datetime, 'committee:meeting',
-                          metainf[title_key],
+                          title,
                           location=metainf['Place:'],
                           contact=metainf['Contact:'],
                           media_contact=metainf['Media Contact:'])
@@ -112,8 +130,6 @@ class NYEventScraper(EventScraper):
     def scrape_lower(self, chamber, session):
         if chamber == 'other':
             self.lower_parse_page(url, session)
-
-    crappy = []
 
     def scrape_upper(self, chamber, session):
         if chamber != 'upper':
