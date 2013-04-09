@@ -98,7 +98,8 @@ class IAVoteScraper(VoteScraper):
 
             motion = text.strip()
             motion = re.sub(r'\s+', ' ', motion)
-            motion, _ = motion.rsplit('(', 1)
+            if "(" in motion:
+                motion, _ = motion.rsplit('(', 1)
             motion = motion.replace('"', '')
             motion = motion.replace(u'“', '')
             motion = motion.replace(u'\u201d', '')

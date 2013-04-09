@@ -275,7 +275,7 @@ class MDBillScraper(BillScraper):
             action_text = action_text[21:]
             chamber = 'lower'
 
-        motion, unused_date = action_text.split(' - ')
+        motion, unused_date = action_text.rsplit(' - ', 1)
         yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
@@ -382,8 +382,9 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Bond Bill Fact Sheet':
                 bill.add_document('Bond Bill Fact Sheet', a.get('href'),
                                   mimetype='application/pdf')
-            elif a.text == 'Amendments':
-                bill.add_document('Amendments - ' + a.tail.strip(),
+            elif a.text in ('Amendments', 'Conference Committee Amendment',
+                            'Conference Committee Report'):
+                bill.add_document(a.text + ' - ' + a.tail.strip(),
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate - Committee':
                 bill.add_document('Senate %s Committee Vote' %
