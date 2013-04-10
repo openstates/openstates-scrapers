@@ -36,6 +36,24 @@ class LALegislatorScraper(LegislatorScraper):
         district = district.replace("District", "").strip()
 
         infopane = page.xpath("//table[@cellpadding='3']")
+        infos = [x.tail.strip() if x.tail else ""
+                 for x in infopane[1].xpath(".//br")]
+
+        keys = ["party", "email", "capitol-office",
+                "district-office", "phone", "fax", "staffer"]
+        nodes = [[]]
+        for node in infos:
+            if node == "":
+                if nodes[-1] != []:
+                    nodes.append([])
+                continue
+            nodes[-1].append(node)
+
+        data = dict(zip(keys, nodes))
+
+        district_office = "\n".join(data['district-office'])
+        capitol_office = "\n".join(data['capitol-office'])
+
         rundown = infopane[1].xpath("./*")[-1]
         rundown_txt = rundown.text_content()
         parties = {
@@ -61,7 +79,17 @@ class LALegislatorScraper(LegislatorScraper):
                          who,
                          **kwargs)
 
+
+        leg.add_office('district',
+                       'District Office',
+                       address=district_office)
+
+        leg.add_office('capitol',
+                       'Capitol Office',
+                       address=capitol_office)
+
         leg.add_source(url)
+
         self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
@@ -124,7 +152,6 @@ class LALegislatorScraper(LegislatorScraper):
         leg.add_office('district',
                        'District Office',
                        **kwargs)
-
 
         leg.add_source(url)
         self.save_legislator(leg)
