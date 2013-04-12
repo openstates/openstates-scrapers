@@ -108,6 +108,9 @@ class AssemblyBillPage(object):
             'Senator']
         for rgx in junk:
             name = re.sub(rgx, '', name, re.I)
+
+        # Collabpse whitespace.
+        name = re.sub('\s+', ' ', name)
         return name.strip('(), ')
 
     def get_sponsors(self):
@@ -133,7 +136,7 @@ class AssemblyBillPage(object):
                         # Figure out sponsor type.
                         spons_swap = {'SPONSOR': 'primary'}
                         _sponsor_type = spons_swap.get(
-                                            sponsor_type, 'cosponsor')
+                            sponsor_type, 'cosponsor')
 
                         self.bill.add_sponsor(_sponsor_type, sponsor.strip(),
                                          official_type=sponsor_type)
