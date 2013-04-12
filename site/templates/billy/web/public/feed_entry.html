@@ -7,12 +7,12 @@
                             {% if obj.author %}<address class="author">{{obj.author|striptags}}{% endif %}
                             <a rel="author" class="colorRollover" href="http://{{obj.host|striptags}}">{{obj.host|striptags}}</a></address>
                         </div>
-                    </header>    
+                    </header>
                     <div class="postContent">
                         <p>{{obj.display|safe}}</p>
                     </div>
                     <div class="postTags">
-                    {% for entity, display_name, id, url in obj.entity_data %}
+                    {% for entity, display_name, id, url in obj.entity_data|slice:":15" %}
                         <span class="label" ><a href="{{url}}">{{display_name}}</a></span>
                     {% endfor %}
                     </div>
