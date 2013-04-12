@@ -111,7 +111,7 @@ class NCBillScraper(BillScraper):
             version_url = vlink.xpath('./following-sibling::span/a/@href')
             version_url = 'http://www.ncga.state.nc.us' + version_url[0]
             bill.add_version(version_name, version_url,
-                             mimetype='text/html')
+                             mimetype='text/html', on_duplicate='use_new')
 
         # sponsors
         spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
