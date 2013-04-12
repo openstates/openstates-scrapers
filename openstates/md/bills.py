@@ -414,6 +414,8 @@ class MDBillScraper(BillScraper):
                 chamber = 'upper'
             elif new_chamber.text == 'House':
                 chamber = 'lower'
+            elif new_chamber.text == 'Post Passage':
+                chamber = 'executive'
             elif new_chamber.text is not None:
                 raise ValueError('unexpected chamber: ' + new_chamber.text)
 
