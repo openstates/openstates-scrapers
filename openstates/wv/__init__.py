@@ -1,7 +1,9 @@
 import lxml.html
+
 from .bills import WVBillScraper
 from .legislators import WVLegislatorScraper
 from .committees import WVCommitteeScraper
+
 
 metadata = {
     'abbreviation': 'wv',
