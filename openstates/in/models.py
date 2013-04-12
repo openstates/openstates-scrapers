@@ -100,7 +100,8 @@ class PDFHouseVote(object):
             'DEFEATED': False,
             'PREVAILED': True,
             'PASSED': True,
-            'SUSTAINED': True
+            'SUSTAINED': True,
+            'NOT SECONDED': False,
         }
         rgx = r'Roll\s+Call\s+\d+:\s+(%s)' % '|'.join(result_types.keys())
         passed = re.search(rgx, self.text).group(1)
