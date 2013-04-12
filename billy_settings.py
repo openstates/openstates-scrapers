@@ -114,7 +114,7 @@ ENABLE_DOCUMENT_VIEW = {
     'wa': False,    # revisit
     'wi': True,
     'wv': False,
-    'wv': True
+    'wv': False
 }
 
 try:
