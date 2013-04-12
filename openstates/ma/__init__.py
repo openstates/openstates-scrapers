@@ -1,10 +1,13 @@
 import datetime
 import lxml.html
+
 from billy.utils.fulltext import text_after_line_numbers
+
 from .bills import MABillScraper
 from .legislators import MALegislatorScraper
 from .committees import MACommitteeScraper
 from .events import MAEventScraper
+
 
 settings = dict(
     SCRAPELIB_TIMEOUT=600,
@@ -18,19 +21,19 @@ metadata = {
             'end_year': 2010,
             'start_year': 2009,
             'name': '186',
-            'sessions': [ '186th' ]
+            'sessions': ['186th']
         },
         {
             'end_year': 2012,
             'start_year': 2011,
             'name': '187',
-            'sessions': [ '187th' ]
+            'sessions': ['187th']
         },
         {
             'end_year': 2013,
             'start_year': 2014,
             'name': '188',
-            'sessions': [ '188th' ]
+            'sessions': ['188th']
         }
     ],
     'name': 'Massachusetts',
