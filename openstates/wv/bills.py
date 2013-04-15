@@ -122,6 +122,10 @@ class WVBillScraper(BillScraper):
         for name in sponsors:
             name = name.strip(', \n\r')
             if name:
+                # Fix name splitting bug where "Neale, D. Hall"
+                match = re.search('(.+?), [DM]\. Hall', name)
+                if match:
+                    name = match.group(1)
                 bill.add_sponsor('cosponsor', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
