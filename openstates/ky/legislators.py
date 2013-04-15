@@ -88,8 +88,8 @@ class KYLegislatorScraper(LegislatorScraper):
         member_page = self.urlopen(member_url)
         doc = lxml.html.fromstring(member_page)
 
-        photo_url = doc.xpath('//img[contains(@src, "pubinfo/thumbnails")]/@src')[0]
-        name_pieces = doc.xpath('//strong/text()')[0].split()
+        photo_url = doc.xpath('//div[@id="bioImage"]/img/@src')[0]
+        name_pieces = doc.xpath('//span[@id="name"]/text()')[0].split()
         full_name = ' '.join(name_pieces[1:-1]).strip()
 
         party = name_pieces[-1]
@@ -100,20 +100,20 @@ class KYLegislatorScraper(LegislatorScraper):
         elif party == '(I)':
             party = 'Independent'
 
-        district = doc.xpath('//title/text()')[0].split()[-1]
+        district = doc.xpath('//span[@id="districtHeader"]/text()')[0].split()[-1]
 
         leg = Legislator(year, chamber, district, full_name, party=party,
                          photo_url=photo_url, url=member_url)
         leg.add_source(member_url)
 
-        #address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
-        #phone = None
-        #phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
-        #for num in phone_numbers:
-        #    if num.startswith('Annex: '):
-        #        phone = num.replace('Annex: ', '')
+        address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
+        phone = None
+        phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
+        for num in phone_numbers:
+            if num.startswith('Annex: '):
+                phone = num.replace('Annex: ', '')
 
-        #leg.add_office('capitol', 'Capitol Office', address=address,
-        #               phone=phone)
+        leg.add_office('capitol', 'Capitol Office', address=address,
+                       phone=phone)
 
         self.save_legislator(leg)
