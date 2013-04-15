@@ -98,7 +98,7 @@ class MABillScraper(BillScraper):
                 actor_txt = act_row.xpath('./td[@headers="bBranch"]')[0].text_content().strip()
                 if actor_txt:
                     actor = chamber_map[actor_txt]
-                action = act_row.xpath('./td[@headers="bAction"]/text()')[0].strip()
+                action = act_row.xpath('./td[@headers="bAction"]')[0].text_content().strip()
                 atype, whom = classify_action(action)
                 kwargs = {}
                 if not whom is None:
