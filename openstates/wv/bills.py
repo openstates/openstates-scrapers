@@ -123,10 +123,12 @@ class WVBillScraper(BillScraper):
             name = name.strip(', \n\r')
             if name:
                 # Fix name splitting bug where "Neale, D. Hall"
-                match = re.search('(.+?), [DM]\. Hall', name)
+                match = re.search('(.+?), ([DM]\. Hall)', name)
                 if match:
-                    name = match.group(1)
-                bill.add_sponsor('cosponsor', name)
+                    for name in match.groups():
+                        bill.add_sponsor('cosponsor', name)
+                else:
+                    bill.add_sponsor('cosponsor', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_house_vote(bill, link.attrib['href'])
