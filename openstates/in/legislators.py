@@ -159,7 +159,7 @@ class INLegislatorScraper(LegislatorScraper):
         except IndexError:
             msg = ('This legislator has FAILED to have a profile page '
                    'that is similar to the others\'. Skipping.')
-            self.logger.info(msg)
+            self.logger.critical(msg)
 
         # Contact url
         xpath = '//div[@id="sennavcontainer"]/ul/li/a/@href'
