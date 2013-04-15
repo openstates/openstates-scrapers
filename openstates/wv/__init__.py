@@ -45,10 +45,12 @@ metadata = {
 
 }
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
                      '//select[@name="year"]/option/text()')
+
 
 def extract_text(doc, data):
     if (doc.get('mimetype') == 'text/html' or 'bills_text.cfm' in doc['url']):
