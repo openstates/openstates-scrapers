@@ -1,7 +1,6 @@
 import datetime as dt
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
 
 import lxml.html
@@ -12,9 +11,11 @@ urls = {
     "lower": "http://www.ilga.gov/house/schedules/weeklyhearings.asp"
 }
 
+
 class ILEventScraper(EventScraper):
     jurisdiction = 'il'
     _tz = pytz.timezone('US/Eastern')
+
     def lxmlize(self, url):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
@@ -43,7 +44,7 @@ class ILEventScraper(EventScraper):
         datetime = re.sub("\s+", " ", datetime)
         repl = {
             "AM": " AM",
-            "PM": " PM" # Space shim.
+            "PM": " PM"  # Space shim.
         }
         for r in repl:
             datetime = datetime.replace(r, repl[r])
@@ -62,7 +63,6 @@ class ILEventScraper(EventScraper):
                 continue
             # First, let's get the bill ID:
             bill_id = tds[0].text_content()
-            descr = tds[2].text_content()
             event.add_related_bill(bill_id,
                                    description=description,
                                    type='consideration')
