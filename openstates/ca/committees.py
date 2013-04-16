@@ -58,6 +58,12 @@ class CACommitteeScraper(CommitteeScraper):
             urls = div.xpath('descendant::span[@class="field-content"]/a/@href')
 
             for c, _url in zip(committees, urls):
+
+                if 'autism' in _url:
+                    # The autism page takes a stunning 10 minutes to respond
+                    # with a 403. Skip it.
+                    continue
+
                 if c.endswith('Committee'):
                     if type_ not in c:
                         c = '%s %s' % (type_, c)
