@@ -161,7 +161,7 @@ class MDBillScraper(BillScraper):
 
         for elem in elems:
             href = elem.get('href')
-            if (href and "votes" in href and href.endswith('htm') and 
+            if (href and "votes" in href and href.endswith('htm') and
                 href not in seen_votes):
                 seen_votes.add(href)
                 vote = self.parse_vote_page(href)
@@ -305,7 +305,6 @@ class MDBillScraper(BillScraper):
             if text.startswith('Calendar Date: '):
                 vote['date'] = datetime.datetime.strptime(text.split(': ', 1)[1], '%b %d, %Y %H:%M %p')
             elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
-                self.debug(text)
                 yeas, nays, nv, exc, absent = re.match('(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused \(Absent\)\s+(\d+) Absent', text).groups()
                 vote['yes_count'] = int(yeas)
                 vote['no_count'] = int(nays)
@@ -317,7 +316,12 @@ class MDBillScraper(BillScraper):
             elif 'Not Voting' in text or 'Excused' in text:
                 vfunc = vote.other
             elif vfunc:
-                vfunc(text)
+                if ' and ' in text:
+                    a, b = text.split(' and ')
+                    vfunc(a)
+                    vfunc(b)
+                else:
+                    vfunc(text)
 
         vote.validate()
         vote.add_source(url)
