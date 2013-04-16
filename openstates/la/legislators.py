@@ -138,7 +138,6 @@ class LALegislatorScraper(LegislatorScraper):
                          'lower',
                          leg_info['dist'],
                          leg_info['name'],
-                         email=leg_info['email'],
                          **kwargs)
 
         kwargs = {

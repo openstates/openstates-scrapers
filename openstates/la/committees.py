@@ -43,10 +43,14 @@ class LACommitteeScraper(CommitteeScraper):
         links = page.xpath('//table[@bordercolor="#EBEAEC"]/tr/td/font/a')
 
         for link in links:
+            role = "member"
+            if link.tail:
+                role = link.tail.strip().strip("() ")
+
             name = link.xpath('string()')
             name = name.replace('Senator ', '').strip()
 
-            committee.add_member(name)
+            committee.add_member(name, role)
 
         self.save_committee(committee)
 

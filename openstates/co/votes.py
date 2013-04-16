@@ -157,6 +157,17 @@ class COVoteScraper(VoteScraper):
                                 continue
 
                             vot = cur_vote[person]
+
+                            if person.endswith("Y"):
+                                vot = "Y"
+                                person = person[:-1]
+                            if person.endswith("N"):
+                                vot = "N"
+                                person = person[:-1]
+                            if person.endswith("E"):
+                                vot = "E"
+                                person = person[:-1]
+
                             if vot == 'Y':
                                 vote.yes(person)
                             elif vot == 'N':
@@ -289,6 +300,17 @@ class COVoteScraper(VoteScraper):
                                 continue
 
                             howvote = cur_vote[person]
+
+                            if person.endswith("Y"):
+                                howvote = "Y"
+                                person = person[:-1]
+                            if person.endswith("N"):
+                                howvote = "N"
+                                person = person[:-1]
+                            if person.endswith("E"):
+                                howvote = "E"
+                                person = person[:-1]
+
                             howvote = howvote.upper()
                             if howvote == 'Y':
                                 vote.yes(person)

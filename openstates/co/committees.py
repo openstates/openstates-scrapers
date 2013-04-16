@@ -35,6 +35,7 @@ class COCommitteeScraper(CommitteeScraper):
         tables = page.xpath("//table[@width='545' or @width='540']")
         added = False
 
+        seen_people = set([])
         for table in tables:
             people = table.xpath(
                 ".//a[contains(@href, 'MemberDetailPage')]/text()")
@@ -44,6 +45,9 @@ class COCommitteeScraper(CommitteeScraper):
                     if person.endswith(flag):
                         role = roles[flag]
                         person = person[:-len(flag)].strip()
+                if person in seen_people:
+                    continue
+                seen_people.add(person)
                 committee.add_member(person, role)
                 added = True
 
@@ -53,11 +57,15 @@ class COCommitteeScraper(CommitteeScraper):
 
         tables = page.xpath("//table[@width='466']")
         added = False
+        seen_people = set([])
         for table in tables:
             if "committee members" in table.text_content().lower():
                 for person in table.xpath(".//td/text()"):
                     person = person.strip()
                     if person != "":
+                        if person in seen_people:
+                            continue
+                        seen_people.add(person)
                         committee.add_member(person, "member")
                         added = True
 

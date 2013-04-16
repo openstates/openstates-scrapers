@@ -164,7 +164,7 @@ class KSBillScraper(BillScraper):
 
         os.remove(vote_doc)
 
-        comma_or_and = re.compile(', |\sand\s')
+        comma_or_and = re.compile(', (?!Sr.|Jr.)|\sand\s')
 
         vote = None
         passed = True
