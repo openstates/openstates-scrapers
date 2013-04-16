@@ -425,8 +425,13 @@ class COBillScraper(BillScraper):
                 # v.add_source( bill_vote_href )
 
                 # XXX: Add more stuff to kwargs, we have a ton of data
+                seen = set([])
                 for voter in filed_votes:
                     who = voter
+                    if who in seen:
+                        raise Exception("Seeing the double-thing. - bug #702")
+                    seen.add(who)
+
                     vote = filed_votes[who]
                     if vote.lower() == "yes":
                         v.yes(who)

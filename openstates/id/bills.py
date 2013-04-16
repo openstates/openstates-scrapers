@@ -198,11 +198,14 @@ class IDBillScraper(BillScraper):
             else:
                 bill.add_document(name, href)
 
+        def _split(string):
+            return re.split(r"\w+[,|AND]\s+", string)
+
         # sponsors range from a committee to one legislator to a group of legs
         sponsor_lists = bill_tables[0].text_content().split('by')
         if len(sponsor_lists) > 1:
             for sponsors in sponsor_lists[1:]:
-                for person in sponsors.split(","):
+                for person in _split(sponsors):
                     person = person.strip()
                     if person != "":
                         bill.add_sponsor('primary', person)
