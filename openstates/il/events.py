@@ -54,6 +54,8 @@ class ILEventScraper(EventScraper):
                       description, location=where)
         event.add_source(url)
 
+        if ctty_name.startswith('Hearing Notice For'):
+            ctty_name.replace('Hearing Notice For', '')
         event.add_participant('host', ctty_name, 'committee', chamber=chamber)
 
         bills = tables[1]
