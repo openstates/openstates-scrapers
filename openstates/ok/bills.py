@@ -227,6 +227,7 @@ class OKBillScraper(BillScraper):
             for name in votes['other']:
                 vote.other(name)
 
+            vote.validate()
             bill.add_vote(vote)
 
     def scrape_subjects(self, chamber, session):
