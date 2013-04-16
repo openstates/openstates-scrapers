@@ -44,39 +44,66 @@ class MELegislatorScraper(LegislatorScraper):
             leg_url = link.get('href')
             name = link.text_content()
 
-            if len(name) > 0:
-                if name.split()[0] != 'District':
-                    mark = name.find('(')
-                    party = name[mark + 1]
-                    district_name = name[mark + 3:-1]
-                    name = name[15:mark]
+            if len(name) == 0:
+                return
+            if name.split()[0] == 'District':
+                return
 
-                    # vacant
-                    if party == "V":
-                        continue
-                    else:
-                        party = _party_map[party]
+            mark = name.find('(')
+            party = name[mark + 1]
+            district_name = name[mark + 3:-1]
+            name = name[15:mark]
 
-                    leg = Legislator(term_name, chamber, str(district),
-                                     name, party=party, url=leg_url,
-                                     district_name=district_name)
-                    leg.add_source(url)
-                    leg.add_source(leg_url)
+            # vacant
+            if party == "V":
+                continue
+            else:
+                party = _party_map[party]
 
-                    # Get the photo url.
-                    html = self.urlopen(leg_url)
-                    doc = lxml.html.fromstring(html)
-                    doc.make_links_absolute(leg_url)
-                    xpath = ('//img')
-                    photo_url = doc.xpath(xpath)[0]
-                    if 'src' in photo_url.attrib:
-                        photo_url = photo_url.attrib.pop('src')
-                        leg['photo_url'] = photo_url
-                    else:
-                        photo_url = None
+            leg = Legislator(term_name, chamber, str(district),
+                             name, party=party, url=leg_url,
+                             district_name=district_name)
+            leg.add_source(url)
+            leg.add_source(leg_url)
 
-                    self.scrape_lower_offices(leg, page, leg_url)
-                    self.save_legislator(leg)
+            # Get the photo url.
+            html = self.urlopen(leg_url)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(leg_url)
+
+            # Get the default (B&W) photo url.
+            photo_url = doc.xpath('//img')[0]
+            if 'src' in photo_url.attrib:
+                photo_url = photo_url.attrib.pop('src')
+                leg['photo_url'] = photo_url
+            else:
+                photo_url = None
+
+            # Try to get color photo from the GPO website.
+            if party == 'Republican':
+                xpath = '//a[contains(@href, "house_gop")]/@href'
+                party_website_url = doc.xpath(xpath)[0]
+                party_website_html = self.urlopen(party_website_url)
+                if party_website_html.response.status_code == 200:
+                    party_website = lxml.html.fromstring(party_website_html)
+                    photo_url = party_website.xpath('//img/@src')[1]
+
+            # Try to get color photo from the dems' website.
+            elif party == 'Democratic':
+                xpath = '//a[contains(@href, "housedems")]/@href'
+                party_website_url = doc.xpath(xpath)[0]
+                try:
+                    party_website_html = self.urlopen(party_website_url)
+                except scrapelib.HTTPError:
+                    # Sometimes the page doesn't exist.
+                    pass
+                else:
+                    if party_website_html.response.status_code == 200:
+                        party_website = lxml.html.fromstring(party_website_html)
+                        photo_url = party_website.xpath('//img/@src')[1]
+
+            self.scrape_lower_offices(leg, page, leg_url)
+            self.save_legislator(leg)
 
     def scrape_lower_offices(self, legislator, list_page, url):
         html = self.urlopen(url)
@@ -203,12 +230,6 @@ class MELegislatorScraper(LegislatorScraper):
     def scrape_senators(self, chamber, term):
         session = ((int(term[0:4]) - 2009) / 2) + 124
 
-        DISTRICT = 1
-        FIRST_NAME = 3
-        MIDDLE_NAME = 4
-        LAST_NAME = 6
-        PARTY = 7
-
         mapping = {
             'district': 1,
             'first_name': 3,
@@ -240,7 +261,6 @@ class MELegislatorScraper(LegislatorScraper):
                 # 'phone': 13,
                 'email': 9,
             }
-
 
         url = ('http://www.maine.gov/legis/senate/senators/email/'
                '%dSenatorsList.xls' % session)
@@ -303,11 +323,10 @@ class MELegislatorScraper(LegislatorScraper):
             else:
                 photo_url = None
 
-
             office = dict(
-                    name='District Office', type='district',
-                    fax=None, email=None,
-                    address=''.join(address))
+                name='District Office', type='district',
+                fax=None, email=None,
+                address=''.join(address))
 
             leg['email'] = d['email']
             leg.add_office(**office)
