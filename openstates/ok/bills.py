@@ -1,4 +1,5 @@
 import re
+import urllib
 import datetime
 import collections
 
@@ -34,18 +35,20 @@ class OKBillScraper(BillScraper):
 
         session_id = self.metadata['session_details'][session]['session_id']
 
-        values = [('cbxSessionId', session_id),
-                  ('cbxActiveStatus', 'All'),
-                  ('RadioButtonList1', 'On Any day'),
-                  ('Button1', 'Retrieve')]
+        values = {'cbxSessionId': session_id,
+                  'cbxActiveStatus': 'All',
+                  'RadioButtonList1': 'On Any day',
+                  'Button1': 'Retrieve'}
 
+        lbxTypes = []
         for bill_type in self.bill_types:
-            values.append(('lbxTypes', chamber_letter + bill_type))
+            lbxTypes.append(chamber_letter + bill_type)
+        values['lbxTypes'] = lbxTypes
 
         for hidden in form_page.xpath("//input[@type='hidden']"):
-            values.append((hidden.attrib['name'], hidden.attrib['value']))
+            values[hidden.attrib['name']] =  hidden.attrib['value']
 
-        page = self.urlopen(url, "POST", dict(values))
+        page = self.urlopen(url, "POST", values)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -89,6 +92,8 @@ class OKBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@id, 'Auth')]"):
             name = link.xpath("string()").strip()
 
+            if ':' in name:
+                raise Exception(name)
             if 'otherAuth' in link.attrib['id']:
                 bill.add_sponsor('cosponsor', name)
             else:
@@ -211,6 +216,9 @@ class OKBillScraper(BillScraper):
             vote.validate()
 
             vote.add_source(url)
+
+            if ':' in name:
+                raise Exception(name)
 
             for name in votes['yes']:
                 vote.yes(name)
