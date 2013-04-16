@@ -203,11 +203,12 @@ class MNBillScraper(BillScraper):
                              mimetype='text/html')
         else:
             version_doc = lxml.html.fromstring(version_html)
-            for v in version_doc.xpath('//a[starts-with(@href, "/bin/getbill.php")]'):
+            for v in version_doc.xpath('//a[starts-with(@href, "text.php")]'):
                 version_url = urlparse.urljoin(VERSION_URL_BASE,
                                                v.get('href'))
-                bill.add_version(v.text.strip(), version_url,
-                                 mimetype='text/html')
+                if 'pdf' not in version_url:
+                    bill.add_version(v.text.strip(), version_url,
+                                     mimetype='text/html')
 
         self.save_bill(bill)
 

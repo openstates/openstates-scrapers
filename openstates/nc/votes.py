@@ -51,8 +51,8 @@ class NCVoteScraper(VoteScraper):
         # 11: sponsor
         # 12: reading info
         # 13: info
-        # 21: PASSED/FAILED
-        # 22: legislative day
+        # 20: PASSED/FAILED
+        # 21: legislative day
         vote_file = zf.open(naming_scheme.format(file_label='Votes', session=session))
         bill_chambers = {'H':'lower', 'S':'upper'}
         votes = {}
@@ -67,7 +67,7 @@ class NCVoteScraper(VoteScraper):
                     continue
 
                 votes[data[0]] = Vote(chamber, date, data[13],
-                                      data[20] == 'PASSED',
+                                      'PASS' in data[21],
                                       int(data[5]),
                                       int(data[6]),
                                       int(data[7])+int(data[8])+int(data[9]),
