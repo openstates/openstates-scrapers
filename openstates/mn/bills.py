@@ -11,7 +11,7 @@ from billy.scrape.bills import BillScraper, Bill
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
 
 # The versions of a bill use a different base URL.
-VERSION_URL_BASE = "https://www.revisor.mn.gov"
+VERSION_URL_BASE = "https://www.revisor.mn.gov/bills/"
 
 class MNBillScraper(BillScraper):
     jurisdiction = 'mn'

@@ -164,7 +164,8 @@ class KSBillScraper(BillScraper):
 
         os.remove(vote_doc)
 
-        comma_or_and = re.compile(', (?!Sr.|Jr.)|\sand\s')
+        comma_or_and = re.compile(', |\sand\s')
+        comma_or_and_jrsr = re.compile(', (?!Sr.|Jr.)|\sand\s')
 
         vote = None
         passed = True
@@ -188,7 +189,12 @@ class KSBillScraper(BillScraper):
                         vote.yes(member)
             elif vote and line.startswith('Nays:'):
                 line = line.split(':', 1)[1].strip()
-                for member in comma_or_and.split(line):
+                # slightly different vote format if Jr stands alone on a line
+                if ', Jr.,' in line:
+                    regex = comma_or_and_jrsr
+                else:
+                    regex = comma_or_and
+                for member in regex.split(line):
                     if member != 'None.':
                         vote.no(member)
             elif vote and line.startswith('Present '):

@@ -178,25 +178,28 @@ class OKBillScraper(BillScraper):
             counts = collections.defaultdict(int)
             votes = collections.defaultdict(list)
 
+            seen_yes = False
+
             for sib in header.xpath("following-sibling::p")[13:]:
                 line = sib.xpath("string()").replace('\r\n', ' ').strip()
                 if "*****" in line:
                     break
 
                 match = re.match(
-                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)',
                     line)
                 if match:
-                    if match.group(1) == 'YEAS':
+                    if match.group(1) == 'YEAS' and 'RCS#' not in line:
                         vtype = 'yes'
-                    elif match.group(1) == 'NAYS':
+                        seen_yes = True
+                    elif match.group(1) == 'NAYS' and seen_yes:
                         vtype = 'no'
                     elif match.group(1) == 'VACANT':
                         continue  # skip these
-                    else:
+                    elif seen_yes:
                         vtype = 'other'
                     counts[vtype] += int(match.group(2))
-                else:
+                elif seen_yes:
                     for name in line.split('   '):
                         if not name:
                             continue
@@ -217,16 +220,16 @@ class OKBillScraper(BillScraper):
 
             vote.add_source(url)
 
-            if ':' in name:
-                raise Exception(name)
-
             for name in votes['yes']:
                 vote.yes(name)
             for name in votes['no']:
+                if ':' in name:
+                    raise Exception(name)
                 vote.no(name)
             for name in votes['other']:
                 vote.other(name)
 
+            vote.validate()
             bill.add_vote(vote)
 
     def scrape_subjects(self, chamber, session):

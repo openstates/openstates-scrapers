@@ -517,7 +517,7 @@ class NMBillScraper(BillScraper):
 
                 # pull votes out
                 matches = re.match(
-                    ' ([A-Z,.]+)(\s+)X\s+([A-Z,.]+)(\s+)X', line)
+                    ' ([A-Z,\'\-.]+)(\s+)X\s+([A-Z,\'\-.]+)(\s+)X', line)
 
                 if matches is not None:
                     matches = matches.groups()
