@@ -91,7 +91,11 @@ class MELegislatorScraper(LegislatorScraper):
             # Try to get color photo from the dems' website.
             elif party == 'Democratic':
                 xpath = '//a[contains(@href, "housedems")]/@href'
-                party_website_url = doc.xpath(xpath)[0]
+
+                els = doc.xpath(xpath)
+                if els:
+                    party_website_url = els[0]
+
                 try:
                     party_website_html = self.urlopen(party_website_url)
                 except scrapelib.HTTPError:
