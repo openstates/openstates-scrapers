@@ -28,6 +28,8 @@ SUBCOMMITTEES = {
     "Primary and Secondary Education Subcommittee": "Education",
 }
 
+committee_cache = {}
+
 
 class OHLegislatorScraper(LegislatorScraper):
     jurisdiction = 'oh'
@@ -40,6 +42,24 @@ class OHLegislatorScraper(LegislatorScraper):
             "http://www.ohiohouse.gov/members/member-directory")
         self.scrape_page(chamber, term, url)
 
+    def fetch_committee_positions(self, a):
+        page = self.urlopen(a.attrib['href'])
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(a.attrib['href'])
+        ret = {}
+        for entry in page.xpath("//div[@class='committeeMembers']//td//a"):
+            person = re.sub(
+                "\s+", " ", re.sub("\(.*\)", "", entry.text or "")).strip()
+
+            if person == "":
+                continue
+
+            title = entry.xpath(".//div[@class='title']/text()") or ["member"]
+            title = title[0]
+            ret[person] = title
+
+        return ret
+
     def scrape_homepage(self, leg, chamber, homepage, term):
         page = self.urlopen(homepage)
         page = lxml.html.fromstring(page)
@@ -51,12 +71,26 @@ class OHLegislatorScraper(LegislatorScraper):
             leg['biography'] = bio
 
         ctties = page.xpath("//div[@class='committeeList']//a")
-        for entry in [x.text_content() for x in ctties]:
+        for a in ctties:
+            entry = a.text_content()
+
+            if entry in committee_cache:
+                committee_positions = committee_cache[entry]
+            else:
+                committee_positions = self.fetch_committee_positions(a)
+                committee_cache[entry] = committee_positions
+
+            position = "member"
+            name = leg['full_name']
+            if name in committee_positions:
+                position = committee_positions[name]
+
             chmbr = "joint" if "joint" in entry.lower() else chamber
             if entry in JOINT_COMMITTEE_OVERRIDE:
                 chmbr = "joint"
 
             kwargs = {}
+
             if "subcommittee" in entry.lower():
                 if entry in SUBCOMMITTEES:
                     kwargs['subcommittee'] = entry
@@ -65,7 +99,7 @@ class OHLegislatorScraper(LegislatorScraper):
                     self.warning("No subcommittee known - %s" % (entry))
                     raise Exception
 
-            leg.add_role('committee member',
+            leg.add_role(position,
                          term=term,
                          chamber=chmbr,
                          committee=entry,
