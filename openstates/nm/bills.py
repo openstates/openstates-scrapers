@@ -523,6 +523,9 @@ class NMBillScraper(BillScraper):
                     matches = matches.groups()
                     name1, spaces1, name2, spaces2 = matches
 
+                    if "District" in name1 or "District" in name2:
+                        continue
+
                     # vote can be determined by # of spaces
                     if len(spaces1) == 1:
                         vote.yes(name1)

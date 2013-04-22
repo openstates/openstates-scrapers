@@ -67,7 +67,7 @@ class NCVoteScraper(VoteScraper):
                     continue
 
                 votes[data[0]] = Vote(chamber, date, data[13],
-                                      'PASS' in data[21],
+                                      'PASS' in data[20],
                                       int(data[5]),
                                       int(data[6]),
                                       int(data[7])+int(data[8])+int(data[9]),
