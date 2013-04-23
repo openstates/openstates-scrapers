@@ -54,9 +54,11 @@ class OHLegislatorScraper(LegislatorScraper):
             if person == "":
                 continue
 
-            title = entry.xpath(".//div[@class='title']/text()") or ["member"]
-            title = title[0]
-            ret[person] = title
+            title = entry.xpath(".//div[@class='title']/text()") or None
+
+            if title:
+                title = title[0]
+                ret[person] = title
 
         return ret
 
@@ -99,7 +101,8 @@ class OHLegislatorScraper(LegislatorScraper):
                     self.warning("No subcommittee known - %s" % (entry))
                     raise Exception
 
-            leg.add_role(position,
+            leg.add_role('committee member',
+                         position=position,
                          term=term,
                          chamber=chmbr,
                          committee=entry,
