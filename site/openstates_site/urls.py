@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import patterns, include
 from django.conf import settings
+from django.views.generic.base import RedirectView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -27,20 +28,14 @@ urlpatterns = patterns('',
      {'template':'flat/openstatesmap.svg'}),
 
     # api docs
-    (r'^api/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/api.html'}),
-    (r'^api/metadata/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/metadata.html'}),
-    (r'^api/bills/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/bills.html'}),
-    (r'^api/committees/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/committees.html'}),
-    (r'^api/legislators/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/legislators.html'}),
-    (r'^api/events/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/events.html'}),
-    (r'^api/districts/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/api/districts.html'}),
+    (r'^api/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/')),
+    (r'^api/metadata/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/metadata.html')),
+    (r'^api/bills/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/bills.html')),
+    (r'^api/committees/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/committees.html')),
+    (r'^api/legislators/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/legislators.html')),
+    (r'^api/events/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/events.html')),
+    (r'^api/districts/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/districts.html')),
+
 
     # locksmith & sunlightauth
     (r'^api/locksmith/', include('locksmith.mongoauth.urls')),
