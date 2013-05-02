@@ -59,6 +59,9 @@ class MSLegislatorScraper(LegislatorScraper):
 
     def scrape_details(self, chamber, term, leg_name, leg_link, role):
         if not leg_link:
+            # Vacant post, likely:
+            if "Vacancy" in leg_name:
+                return
             raise Exception("leg_link is null. something went wrong")
         try:
             url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
