@@ -366,12 +366,23 @@ class TNBillScraper(BillScraper):
             vote = Vote(chamber, vote_date, motion, passed, yes_count,
                         no_count, other_count)
             vote.add_source(link)
+
+            seen = set()
             for a in ayes:
+                if a in seen:
+                    continue
                 vote.yes(a)
+                seen.add(a)
             for n in nos:
+                if n in seen:
+                    continue
                 vote.no(n)
+                seen.add(n)
             for o in others:
+                if o in seen:
+                    continue
                 vote.other(o)
+                seen.add(o)
 
             vote.validate()
             bill.add_vote(vote)
