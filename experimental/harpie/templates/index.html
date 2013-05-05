@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action = '/who' method = 'get' >
+    Hi! I'm interested in
+    <select name = 'subject'>
+    {% for sub in subjects %}
+        <option>{{sub}}</option>
+    {% endfor %}
+    </select>. Who I can talk to?
+    <button type = 'submit'>Tell me!</button>
+</form>
+{% endblock %}
