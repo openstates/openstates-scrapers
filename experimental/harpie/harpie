@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+from collections import Counter, defaultdict
+from billy.core import db
+import json
+
+STATES = defaultdict(dict)
+
+for who in db.legislators.find({"state": "ri"}):
+    leg_id = who['leg_id']
+    STATES[who['state']][leg_id] = Counter(
+        [el for sl in map(lambda x: x.get('subjects', []),
+                          db.bills.find({
+                              "sponsors.leg_id": leg_id
+                          })) for el in sl])
+
+open('harpie.json', 'w').write(json.dumps(STATES))
