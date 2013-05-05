@@ -4,14 +4,28 @@ from collections import Counter, defaultdict
 from billy.core import db
 import json
 
-STATES = defaultdict(dict)
+from scipy.stats import zscore
 
-for who in db.legislators.find({"state": "ri"}):
+
+STATES = defaultdict(dict)
+blacklist = ["Resolutions"]
+
+
+def do_math(what):
+    what = sorted([(x, y) for x, y in what.items()], key=lambda x: x[1])
+    values = map(lambda x: x[1], what)
+    bound = 3
+    outliers = filter(lambda x: abs(x[0]) > bound, zip(zscore(values), what))
+    return outliers
+
+
+for who in db.legislators.find(): #{"state": "ma"}):
     leg_id = who['leg_id']
-    STATES[who['state']][leg_id] = Counter(
-        [el for sl in map(lambda x: x.get('subjects', []),
-                          db.bills.find({
-                              "sponsors.leg_id": leg_id
-                          })) for el in sl])
+    count = Counter([el for sl in map(lambda x: x.get('subjects', []),
+                                      db.bills.find({
+                                          "sponsors.leg_id": leg_id
+                                      })) for el in sl])
+    [count.pop(x) for x in blacklist if x in count]
+    STATES[who['state']][leg_id] = do_math(count)
 
 open('harpie.json', 'w').write(json.dumps(STATES))
