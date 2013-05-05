@@ -31,10 +31,10 @@ def digest_state(state):
                                           })) for el in sl])
         [count.pop(x) for x in blacklist if x in count]
         info = do_math(count)
-        nudb.interests.insert({
+        nudb.interests.update({"_id": leg_id}, {
             "_id": leg_id,
-            "subjects": info
-        })
+            "subjects": {x[1][0]: info for x in info}
+        }, upsert=True, safe=True)
 
 
 for state in db.metadata.find({"feature_flags": "subjects"}):

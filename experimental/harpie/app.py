@@ -18,8 +18,8 @@ def index():
 @app.route("/who")
 def who():
     subject = request.args.get('subject', '')
-    yinz = nudb.interests.find({"subject": subject})
-    els = ((x, db.legislators.find_one(x['_id'])) for x in yinz)
+    yinz = nudb.interests.find({"subjects.%s" % (subject): {"$exists": True}})
+    els = [(x, db.legislators.find_one(x['_id'])) for x in yinz]
     return render_template('who.html', els=els)
 
 
