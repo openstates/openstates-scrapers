@@ -135,6 +135,7 @@ class TXEventScraper(EventScraper):
                     "or during reading and referral of bills": "",
                     "(or 15 minutes after adjournment of the .*)": "",
                     "Upon final adjourn./recess": "",
+                    "or upon recess/adjournment": "",
                 }
                 for rep in replace:
                     datetime = re.sub(rep, replace[rep], datetime)
