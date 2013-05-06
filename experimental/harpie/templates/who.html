@@ -2,6 +2,6 @@
 
 {% block content %}
 {% for harpie, who in els %}
-    {{who.full_name}}<br />
+    <a href = 'http://openstates.org/{{who.state}}/legislators/{{who.leg_id}}' >{{who.full_name}} ({{who.party}}-{{who.state}})</a><br />
 {% endfor %}
 {% endblock %}

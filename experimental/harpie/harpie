@@ -42,4 +42,5 @@ for state in db.metadata.find({"feature_flags": "subjects"}):
     sys.stdout.write(".")
     sys.stdout.flush()
     digest_state(abbr)
+
 print ""
