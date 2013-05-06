@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% for harpie, who in els %}
+{% for harpy, who in els %}
     <a href = 'http://openstates.org/{{who.state}}/legislators/{{who.leg_id}}' >{{who.full_name}} ({{who.party}}-{{who.state}})</a><br />
 {% endfor %}
 {% endblock %}

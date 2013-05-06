@@ -8,7 +8,7 @@ import json
 import sys
 
 connection = Connection('localhost', 27017)
-nudb = connection.harpie
+nudb = connection.harpy
 
 blacklist = ["Resolutions"]
 

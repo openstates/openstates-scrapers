@@ -3,7 +3,7 @@ from billy.core import settings, db
 from pymongo import Connection
 
 connection = Connection('localhost', 27017)
-nudb = connection.harpie
+nudb = connection.harpy
 
 app = Flask(__name__)
 
