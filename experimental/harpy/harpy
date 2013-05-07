@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+from collections import Counter, defaultdict
+from scipy.stats import zscore
+from pymongo import Connection
+from billy.core import db
+import json
+import sys
+
+connection = Connection('localhost', 27017)
+nudb = connection.harpy
+
+blacklist = ["Resolutions"]
+
+
+def do_math(what):
+    what = sorted([(x, y) for x, y in what.items()], key=lambda x: x[1])
+    values = map(lambda x: x[1], what)
+    bound = 3
+    outliers = filter(lambda x: abs(x[0]) > bound, zip(zscore(values), what))
+    return outliers
+
+
+def digest_state(state):
+    info = {}
+    for who in db.legislators.find({"state": state}):
+        leg_id = who['leg_id']
+        count = Counter([el for sl in map(lambda x: x.get('subjects', []),
+                                          db.bills.find({
+                                              "sponsors.leg_id": leg_id
+                                          })) for el in sl])
+        [count.pop(x) for x in blacklist if x in count]
+        info = do_math(count)
+        nudb.interests.update({"_id": leg_id}, {
+            "_id": leg_id,
+            "subjects": {x[1][0]: info for x in info}
+        }, upsert=True, safe=True)
+
+
+for state in db.metadata.find({"feature_flags": "subjects"}):
+    abbr = state['_id']
+    sys.stdout.write(".")
+    sys.stdout.flush()
+    digest_state(abbr)
+
+print ""
