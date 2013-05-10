@@ -88,7 +88,7 @@ metadata = dict(
                    '_scraped_name': '2012 Special Session 2',
                   },
         '2013': {'display_name': '2013 Regular Session',
-                   'type': 'special',
+                   'type': 'primary',
                    '_scraped_name': '2013 Regular Session',
                   },
     },
