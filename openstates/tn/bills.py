@@ -263,7 +263,8 @@ class TNBillScraper(BillScraper):
         # Primary Sponsor
         sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
         sponsor = sponsor.replace('*', '').strip()
-        bill.add_sponsor('primary', sponsor)
+        if sponsor:
+            bill.add_sponsor('primary', sponsor)
 
         # bill text
         btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
@@ -295,7 +296,9 @@ class TNBillScraper(BillScraper):
             # secondary sponsor
             secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
             secondary_sponsor = secondary_sponsor.replace('*', '').replace(')', '').strip()
-            bill.add_sponsor('primary', secondary_sponsor)
+            # Skip black-name sponsors.
+            if secondary_sponsor:
+                bill.add_sponsor('primary', secondary_sponsor)
 
             # secondary actions
             cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
@@ -363,12 +366,23 @@ class TNBillScraper(BillScraper):
             vote = Vote(chamber, vote_date, motion, passed, yes_count,
                         no_count, other_count)
             vote.add_source(link)
+
+            seen = set()
             for a in ayes:
+                if a in seen:
+                    continue
                 vote.yes(a)
+                seen.add(a)
             for n in nos:
+                if n in seen:
+                    continue
                 vote.no(n)
+                seen.add(n)
             for o in others:
+                if o in seen:
+                    continue
                 vote.other(o)
+                seen.add(o)
 
             vote.validate()
             bill.add_vote(vote)

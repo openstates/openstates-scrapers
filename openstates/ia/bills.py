@@ -220,6 +220,9 @@ class IABillScraper(BillScraper):
             else:
                 atype = 'other'
 
+            if action.strip() == "":
+                continue
+
             bill.add_action(actor, action, date, type=atype)
 
         bill['subjects'] = self._subjects[bill_id]

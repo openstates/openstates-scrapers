@@ -61,6 +61,7 @@ class RIEventScraper(EventScraper):
         fmts = [
             "%A, %B %d, %Y",
             "%A, %B %d, %Y %I:%M %p",
+            "%A, %B %d, %Y %I:%M",
         ]
 
         if time in all_day:
@@ -78,6 +79,7 @@ class RIEventScraper(EventScraper):
             "A.M." : "AM",
             "POSTPONED" : "",
             "RESCHEDULED": "",
+            "and Rise of the Senate": "",
         }
         for trans in transtable:
             datetime = datetime.replace(trans, transtable[trans])
