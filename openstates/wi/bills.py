@@ -268,7 +268,7 @@ class WIBillScraper(BillScraper):
                                      chamber=sponsor_chamber)
 
     def add_vote(self, bill, chamber, date, text, url):
-        votes = re.findall(r'Ayes (\d+)\, N(?:oes|ays) (\d+)', text)
+        votes = re.findall(r'Ayes,? (\d+)[,;] N(?:oes|ays),? (\d+)', text)
         (yes, no) = int(votes[0][0]), int(votes[0][1])
 
         vtype = 'other'
@@ -308,11 +308,11 @@ class WIBillScraper(BillScraper):
                 continue
             elif 'AYES -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip():
+                    if name.strip() and 'AYES' not in name:
                         vote.yes(name.strip())
             elif 'NAYS -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip():
+                    if name.strip() and 'NAYS' not in name:
                         vote.no(name.strip())
             elif 'NOT VOTING -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
