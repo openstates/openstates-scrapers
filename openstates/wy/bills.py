@@ -1,11 +1,13 @@
-import re
+from collections import defaultdict
 import datetime
+import re
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 import scrapelib
 import lxml.html
+
 
 def split_names(voters):
     """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""
@@ -166,14 +168,15 @@ class WYBillScraper(BillScraper):
                 bill.add_action(actor, action, date,
                                 type=categorize_action(action))
             elif line == 'ROLL CALL':
-                voters = {}
+                voters = defaultdict(str)
                 # if we hit a roll call, use an inner loop to consume lines
                 # in a psuedo-state machine manner, 3 types
                 # Ayes|Nays|Excused|... - indicates next line is voters
                 # : (Senators|Representatives): ... - voters
                 # \d+ Nays \d+ Excused ... - totals
-                while True:
-                    nextline = clean_line(aiter.next())
+                voters_type = None
+                for ainext in aiter:
+                    nextline = clean_line(ainext)
                     if not nextline:
                         continue
 
