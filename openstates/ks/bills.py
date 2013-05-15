@@ -149,7 +149,18 @@ class KSBillScraper(BillScraper):
 
     def parse_vote(self, bill, vote_date, vote_chamber, vote_status, vote_url):
         vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
-        vote_date = datetime.datetime.strptime(vote_date, '%a %d %b %Y')
+        formats = ['%a %d %b %Y', '%b. %d, %Y, %H:%M %p',
+                   '%B %d, %Y, %H:%M %p', '%B %d, %Y, %H %p']
+        vote_date = vote_date.replace('.m.', 'm')
+        for format in formats:
+            try:
+                vote_date = datetime.datetime.strptime(vote_date, format)
+                break
+            except ValueError:
+                pass
+        else:
+            raise ValueError("couldn't parse date: " + vote_date)
+
 
         vote_doc, resp = self.urlretrieve(vote_url)
 
