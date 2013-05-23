@@ -43,7 +43,7 @@ class NHLegislatorScraper(LegislatorScraper):
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4) = line.split('\t')
+             com4, com5, com6, com7) = line.split('*')
 
             chamber = chamber_map[chamber]
 
@@ -80,7 +80,7 @@ class NHLegislatorScraper(LegislatorScraper):
                     leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
 
             romans = r'(?i)\s([IXV]+)(?:\s|$)'
-            for com in (com1, com2, com3, com4):
+            for com in (com1, com2, com3, com4, com5, com6, com7):
                 com = com.strip('"')
                 if com:
                     com_name = com.title()
