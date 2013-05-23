@@ -101,7 +101,7 @@ class NYEventScraper(EventScraper):
             if datetime is None:
                 return
 
-            title_key = set(metainf) & set(['Public Hearing:', 'Summitt:'])
+            title_key = set(metainf) & set(['Public Hearing:', 'Summitt:', 'Roundtable:'])
             assert len(title_key) == 1, "Couldn't determine event title."
             title_key = list(title_key).pop()
             title = metainf[title_key]
