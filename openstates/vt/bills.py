@@ -20,6 +20,11 @@ def parse_exec_date(date_str):
         date_str = "%s %s, %s" % (match.group(2), match.group(3), match.group(4))
         return datetime.datetime.strptime(date_str, "%B %d, %Y")
 
+    match = re.search(r'((\w+), (\d{1,2}),\s?(\d{4,4}))', date_str)
+    if match:
+        date_str = "%s, %s, %s" % (match.group(2), match.group(3), match.group(4))
+        return datetime.datetime.strptime(date_str, "%B, %d, %Y")
+
     match = re.search(r'(\d{1,2}/\d{1,2}/\d{4,4})', date_str)
     if match:
         return datetime.datetime.strptime(match.group(1), "%m/%d/%Y")
