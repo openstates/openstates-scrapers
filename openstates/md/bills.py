@@ -385,8 +385,9 @@ class MDBillScraper(BillScraper):
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
-            elif a.text == 'Bond Bill Fact Sheet':
-                bill.add_document('Bond Bill Fact Sheet', a.get('href'),
+            elif a.text in ('Bond Bill Fact Sheet',
+                            "Attorney General's Review Letter"):
+                bill.add_document(a.text, a.get('href'),
                                   mimetype='application/pdf')
             elif a.text in ('Amendments', 'Conference Committee Amendment',
                             'Conference Committee Report'):

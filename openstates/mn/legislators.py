@@ -105,11 +105,12 @@ Saint Paul, Minnesota 55155'''
                              **leg_data[name]
                             )
             leg.add_office('capitol', 'Capitol Office',
-                           address='%s\nRoom %s\n%s, %s %s' % (
-                               row['Office Address'], row['Rm. Number'],
+                           address='%s\n%s\n%s, %s %s' % (
+                               row['Address'], row['Address2'],
                                row['City'], row['State'], row['Zipcode']),
-                           phone='%s-%s' % (row['Area Code'],
-                                            row['Office Phone']))
+                          )
+                           #phone='%s-%s' % (row['Area Code'],
+                           #                 row['Office Phone']))
 
 
             leg.add_source(csv_url)
