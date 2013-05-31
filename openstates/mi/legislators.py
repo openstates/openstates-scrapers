@@ -103,5 +103,8 @@ class MILegislatorScraper(LegislatorScraper):
                            email=email)
 
 
+            if email:
+                leg.add_source(contact_url)
+
             leg.add_source(url)
             self.save_legislator(leg)
