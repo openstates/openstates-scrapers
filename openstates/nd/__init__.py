@@ -21,6 +21,8 @@ metadata = dict(
         # 2013 term is already there, but we avoid scraping it
         {'name': '63', 'sessions': ['63'],
          'start_year': 2013, 'end_year': 2014},
+#        {'name': '64', 'sessions': ['64'],
+#         'start_year': 2015, 'end_year': 2016},
     ],
     session_details={
         '62' : {'start_date' : datetime.date(2011, 1, 4),
@@ -30,10 +32,15 @@ metadata = dict(
         '63' : {'start_date': datetime.date(2013, 1, 8),
                 'display_name' : '63rd Legislative Assembly (2013-2014)',
                 '_scraped_name': '63rd Legislative Assembly (2013-14)',
-               }
+               },
+#        '64' : {'start_date': datetime.date(2015, 1, 8),
+#                'display_name' : '64th Legislative Assembly (2015-2016)',
+#                '_scraped_name': '64th Legislative Assembly (2015-16)',
+#               },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=[
+        '64th Legislative Assembly (2015-16)',  # Erm. This is bad.
         '61st Legislative Assembly (2009-10)',
         '60th Legislative Assembly (2007-08)',
         '59th Legislative Assembly (2005-06)',
