@@ -115,11 +115,11 @@ class NDLegislatorScraper(LegislatorScraper):
                        'District Office',
                        **kwargs)
 
-        for committee in committees:
-            leg.add_role('committee member',
-                         term=term,
-                         chamber=chamber,
-                         committee=committee)
+        #for committee in committees:
+        #    leg.add_role('committee member',
+        #                 term=term,
+        #                 chamber=chamber,
+        #                 committee=committee)
 
         leg.add_source(url)
         self.save_legislator(leg)
