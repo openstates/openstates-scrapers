@@ -37,7 +37,7 @@ class IALegislatorScraper(LegislatorScraper):
                          "?GA=%s&PID=%s" % (session_id, pid))
 
             leg = Legislator(term, chamber, district, name, party=party,
-                             email=email, photo_url=photo_url, url=url)
+                             photo_url=photo_url, url=url)
             leg.add_source(url)
 
             leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
