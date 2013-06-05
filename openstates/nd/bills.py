@@ -49,11 +49,23 @@ class NDBillScraper(BillScraper):
             "S": "upper"
         }[bid[0]]
 
+        type_ = bid[1:3]
+        bill_type = "bill"
+        if type_.startswith("B"):
+            bill_type = "bill"
+
+        if type_.startswith("R"):
+            bill_type = "resolution"
+
+        if type_ == "CR":
+            bill_type = "concurrent resolution"
+
         bill = Bill(session,
                     chamber,
                     bid,
                     title,
-                    subject=subject)
+                    subject=subject,
+                    type=bill_type)
 
         bill.add_source(href)
 
