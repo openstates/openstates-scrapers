@@ -63,6 +63,8 @@ _ACTIONS = (
      # bill:reading:3, bill:passed
      (r'^3rd rdg as amen - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
      (r'^3rd rdg - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
+     (r'^Read Third Time in Full - (ADOPTED|PASSED).*', [
+         "bill:reading:3", "bill:passed"]),
      # bill:reading:3, bill:failed
      (r'^3rd rdg as amen - (FAILED)', ["bill:reading:3", "bill:failed"]),
      (r'^3rd rdg - (FAILED)', ["bill:reading:3", "bill:failed"]),
