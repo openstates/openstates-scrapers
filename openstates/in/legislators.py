@@ -69,7 +69,14 @@ class INLegislatorScraper(LegislatorScraper):
         profile = lxml.html.fromstring(profile)
         profile.make_links_absolute(href)
 
-        about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
+        try:
+            about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
+        except IndexError:
+            msg = ('This legislator has FAILED to have a profile page '
+                   'that is similar to the others\'. Skipping.')
+            self.logger.critical(msg)
+            return
+
         about = self.urlopen(about_url)
         if about.strip() == "":
             self.logger.info("WARNING: Blank page @ %s - skipping" % (
