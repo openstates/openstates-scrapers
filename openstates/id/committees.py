@@ -104,10 +104,15 @@ class IDCommitteeScraper(CommitteeScraper):
 
             # membership
             for td in row[1:]:
+                if td.text:
+                    leg = td.text
+                    committee.add_member(leg.replace(u'\xa0', ' '))
+
                 for elem in td:
                     position, leg = elem.text, elem.tail
                     if position and leg:
-                        committee.add_member(leg.replace(u'\xa0', ' '), role=position)
+                        committee.add_member(leg.replace(u'\xa0', ' '),
+                                             role=position)
                     elif leg:
                         committee.add_member(leg.replace(u'\xa0', ' '))
             self.save_committee(committee)
