@@ -95,6 +95,10 @@ class NDVoteScraper(VoteScraper):
                     except KeyError:
                         bc = 'other'
 
+                    if cur_date is None:
+                        self.warning("Cur-date is None. Passing.")
+                        continue
+
                     vote = Vote(chamber,
                                 cur_date,
                                 cur_motion,

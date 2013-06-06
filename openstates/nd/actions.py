@@ -5,6 +5,8 @@ _categorizer_rules = (
     Rule(r'^Filed with ', 'bill:introduced'),
     Rule(r'^Introduced', 'bill:introduced'),
     Rule(r'^Second reading', 'bill:reading:2'),
+    Rule(r'passed as amended', 'bill:passed'),
+    Rule(r'passed', 'bill:passed'),
     Rule(r'^Signed by Governor', 'governor:signed'),
 )
 

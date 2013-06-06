@@ -78,16 +78,6 @@ class MSLegislatorScraper(LegislatorScraper):
             other_phone = root.xpath('string(//OTH_PHONE)')
             org_info = root.xpath('string(//ORG_INFO)')
             email_name = root.xpath('string(//EMAIL_ADDRESS)')
-
-            kwargs = {}
-
-            if email_name.strip() != "":
-                email = '%s@%s.ms.gov' % (email_name, {
-                    "upper": "senate",
-                    "lower": "house"
-                }[chamber])
-                kwargs['email'] = email
-
             cap_room = root.xpath('string(//CAP_ROOM)')
 
             if party == 'D':
@@ -100,9 +90,17 @@ class MSLegislatorScraper(LegislatorScraper):
                              role=role,
                              org_info=org_info,
                              url=url,
-                             photo_url=photo,
-                             **kwargs)
+                             photo_url=photo)
             leg.add_source(url)
+
+            kwargs = {}
+
+            if email_name.strip() != "":
+                email = '%s@%s.ms.gov' % (email_name, {
+                    "upper": "senate",
+                    "lower": "house"
+                }[chamber])
+                kwargs['email'] = email
 
             if capital_phone != "":
                 kwargs['phone'] = capital_phone

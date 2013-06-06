@@ -59,6 +59,7 @@ _ACTIONS = (
      # explicit third reading action
      (r'2nd rdg - to 3rd rdg', "bill:reading:3"),
      (r'^3rd rdg$', "bill:reading:3"),
+     (r'.*Third Time.*PASSED.*', ["bill:reading:3", "bill:passed"]),
      # bill:reading:3, bill:passed
      (r'^3rd rdg as amen - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
      (r'^3rd rdg - (ADOPTED|PASSED)', ["bill:reading:3", "bill:passed"]),
@@ -77,6 +78,8 @@ _ACTIONS = (
 def get_action(actor, text):
     # the biggest issue with actions is that some lines seem to indicate more
     # than one action
+    print text
+
     for pattern, action in _ACTIONS:
         match = re.match(pattern, text, re.I)
         if match:
