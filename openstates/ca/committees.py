@@ -67,7 +67,7 @@ class CACommitteeScraper(CommitteeScraper):
                 if c.endswith('Committee'):
                     if type_ not in c:
                         c = '%s %s' % (type_, c)
-                elif ('Subcommittee' not in c):
+                elif ('Subcommittee' not in c and 'Committee on' not in c):
                     c = '%s Committee on %s' % (type_, c)
                 else:
                     if type_ not in c:
