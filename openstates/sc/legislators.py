@@ -27,6 +27,10 @@ class SCLegislatorScraper(LegislatorScraper):
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
 
+            if 'Resigned effective' in leg_html:
+                self.info('Resigned')
+                continue
+
             party, district, _ = leg_doc.xpath('//p[@style="font-size: 17px; margin: 0 0 0 0; padding: 0;"]/text()')
             if 'Republican' in party:
                 party = 'Republican'
