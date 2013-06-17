@@ -6,7 +6,7 @@ from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 
 BILL_RE = re.compile('^LEGISLATIVE (BILL|RESOLUTION) (\d+C?A?).')
-VETO_BILL_RE = re.compile('MOTION - Override Veto on (\w+)')
+VETO_BILL_RE = re.compile('MOTION - Override (?:Line-Item )?Veto on (\w+)')
 DATE_RE = re.compile('(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER) (\d+), (\d{4})')
 QUESTION_RE = re.compile("(?:the question is, '|The question shall be, ')(.+)")
 QUESTION_MATCH_END = "' \""

@@ -136,7 +136,11 @@ class HIBillScraper(BillScraper):
                 bill.add_vote(vote)
 
     def parse_bill_versions_table(self, bill, versions):
-        for version in versions.xpath("./*")[1:]:
+        versions = versions.xpath("./*")
+        if len(versions) > 1:
+            versions = versions[1:]
+
+        for version in versions:
             tds = version.xpath("./*")
             http_href = tds[0].xpath("./a")
             name = http_href[0].text_content().strip()
@@ -173,6 +177,10 @@ class HIBillScraper(BillScraper):
                  subjects=subs,
                  type=bill_type)
         b.add_source(url)
+
+
+        if not bill_id.startswith("SR"):
+            return
 
         companion = meta['Companion'].strip()
         if companion:

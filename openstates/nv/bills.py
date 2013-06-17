@@ -260,6 +260,8 @@ class NVBillScraper(BillScraper):
             root = lxml.html.fromstring(page)
 
             date = root.xpath('//h1/text()')[-1].strip()
+            if not date:
+                date = root.xpath('//h1/text()')[-2].strip()
             date = datetime.strptime(date, "%B %d, %Y at %H:%M %p")
             top_block_text = root.xpath('//div[@align="center"]')[0].text_content()
             yes_count = int(re.findall("(\d+) Yea", top_block_text)[0])

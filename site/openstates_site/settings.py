@@ -101,7 +101,7 @@ AUTHENTICATION_BACKENDS = (
     #'django.contrib.auth.backends.ModelBackend',
 )
 
-SUNLIGHT_AUTH_BASE_URL = 'http://login.sunlightfoundation.com/'
+SUNLIGHT_AUTH_BASE_URL = 'https://login.sunlightfoundation.com/'
 SUNLIGHT_AUTH_APP_ID = 'openstates'
 #SUNLIGHT_AUTH_SECRET = 'set in local settings'
 SUNLIGHT_AUTH_SCOPE = []

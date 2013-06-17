@@ -26,7 +26,7 @@ metadata =  {
         # 'end_year': 2010},
         {'name': '2011-2014',
          'sessions': ['2011rs','2012rs', 'First Special Session 2012',
-                      '2013rs'],
+                      '2013rs', '2014rs'],
          'start_year': 2011,
          'end_year': 2014,
         }
@@ -98,6 +98,12 @@ metadata =  {
             'internal_id': '1061',
             'type': 'primary',
             '_scraped_name': 'Regular Session 2013',
+        },
+        '2014rs': {
+            'display_name': '2014 Regular Session',
+            'internal_id': '1062',
+            'type': 'primary',
+            '_scraped_name': 'Regular Session 2014',
         },
     },
     '_ignored_scraped_sessions': [

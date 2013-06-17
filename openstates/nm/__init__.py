@@ -69,8 +69,8 @@ metadata = {
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://www.nmlegis.gov/lcs/BillFinderNumber.aspx',
-        "//select[@name='ctl00$mainCopy$SessionList']/option/text()" )
+    return url_xpath( 'http://www.nmlegis.gov/lcs/keyword.aspx',
+        "//select[@name='ctl00$mainCopy$ddlSessions']/option/text()" )
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
