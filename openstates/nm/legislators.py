@@ -30,28 +30,26 @@ class NMLegislatorScraper(LegislatorScraper):
 
         # most properties are easy to pull
         properties = {
-            'first_name': 'FNAME',
-            'last_name': 'LNAME',
-            'party': 'PARTY',
-            'district': 'DISTRICT',
-            'county': 'COUNTY',
-            'start_year': 'STARTYEAR',
-            'occupation': 'OCCUPATION',
-            'addr_street': 'STREET',
-            'addr_city': 'CITY',
-            'addr_state': 'STATE',
-            'addr_zip': 'ZIP',
-            'office_phone': 'WKPH',
-            'home_phone': 'HMPH'
+            'start_year': 'lblStartYear',
+            'district': "linkDistrict",
+            'occupation': "labelOccupation",
+            'header': "lblHeader",
+            'addr_street': "lblAddress",
+            'office_phone': "lblCapitolPhone",
+            'home_phone': "lblHomePhone",
+#            '': "",
+#            '': "",
+#            '': "",
+#            '': "",
             }
 
         for key, value in properties.iteritems():
-            id_ = 'ctl00_mainCopy_LegisInfo_%sLabel' % value
+            id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
             try:
                 val = doc.get_element_by_id(id_).text
             except KeyError:
                 self.warning('bad legislator page %s missing %s' %
-                             (url, id))
+                             (url, id_))
                 return
             if val:
                 properties[key] = val.strip()
@@ -59,8 +57,8 @@ class NMLegislatorScraper(LegislatorScraper):
                 properties[key] = None
 
         # image & email are a bit different
-        properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_LegisInfo_LegislatorPhoto"]/@src')[0]
-        email = doc.get_element_by_id('ctl00_mainCopy_LegisInfo_lnkEmail').text
+        properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
+        email = doc.get_element_by_id('ctl00_mainCopy_formViewLegislator_linkEmail').text
         if email:
             properties['email'] = email.strip()
 
@@ -68,7 +66,11 @@ class NMLegislatorScraper(LegislatorScraper):
 
         properties['chamber'] = chamber
         properties['term'] = term
-        properties['full_name'] = '%(first_name)s %(last_name)s' % properties
+
+        full_name, party = properties['header'].rsplit("-", 1)
+
+        properties['full_name'] = full_name
+        properties['party'] = party
 
         if '(D)' in properties['party']:
             properties['party'] = 'Democratic'
@@ -80,10 +82,8 @@ class NMLegislatorScraper(LegislatorScraper):
         else:
             raise Exception("unknown party encountered")
 
-        address = '%s\n%s, %s %s' % (properties.pop('addr_street'),
-                                     properties.pop('addr_city'),
-                                     properties.pop('addr_state'),
-                                     properties.pop('addr_zip'))
+        address = properties.pop('addr_street')
+
         phone = (properties.pop('office_phone') or
                  properties.pop('home_phone'))
 
