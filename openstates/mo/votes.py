@@ -4,6 +4,7 @@ from billy.scrape.utils import convert_pdf
 import datetime as dt
 import lxml
 import re
+import os
 
 
 SENATE_URL = 'http://www.senate.mo.gov/12info/jrnlist/journals.aspx'
@@ -37,6 +38,7 @@ class MOVoteScraper(VoteScraper):
     def get_pdf(self, url):
         (path, response) = self.urlretrieve(url)
         data = convert_pdf(path, type='text')
+        os.remove(path)
         return data
 
     def scrape_senate(self, session):
