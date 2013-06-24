@@ -33,7 +33,7 @@ class NMLegislatorScraper(LegislatorScraper):
         properties = {
             'start_year': 'lblStartYear',
             'district': "linkDistrict",
-            'occupation': "labelOccupation",
+            'occupation': "lblOccupation",
             'header': "lblHeader",
             'addr_street': "lblAddress",
             'office_phone': ["lblCapitolPhone", "lblOfficePhone"],
@@ -54,7 +54,7 @@ class NMLegislatorScraper(LegislatorScraper):
             for value in values:
                 id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
                 try:
-                    val = doc.get_element_by_id(id_).text
+                    val = doc.get_element_by_id(id_).text_content()
                     found = True
                 except KeyError:
                     pass
