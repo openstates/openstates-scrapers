@@ -29,13 +29,14 @@ class NMLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(url)
 
         # most properties are easy to pull
+        optional = ["home_phone"]
         properties = {
             'start_year': 'lblStartYear',
             'district': "linkDistrict",
             'occupation': "labelOccupation",
             'header': "lblHeader",
             'addr_street': "lblAddress",
-            'office_phone': "lblCapitolPhone",
+            'office_phone': ["lblCapitolPhone", "lblOfficePhone"],
             'home_phone': "lblHomePhone",
 #            '': "",
 #            '': "",
@@ -44,17 +45,28 @@ class NMLegislatorScraper(LegislatorScraper):
             }
 
         for key, value in properties.iteritems():
-            id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
-            try:
-                val = doc.get_element_by_id(id_).text
-            except KeyError:
+            if isinstance(value, list):
+                values = value
+            else:
+                values = [value]
+
+            found = False
+            for value in values:
+                id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
+                try:
+                    val = doc.get_element_by_id(id_).text
+                    found = True
+                except KeyError:
+                    pass
+                if val:
+                    properties[key] = val.strip()
+                else:
+                    properties[key] = None
+
+            if found is False and key not in optional:
                 self.warning('bad legislator page %s missing %s' %
                              (url, id_))
                 return
-            if val:
-                properties[key] = val.strip()
-            else:
-                properties[key] = None
 
         # image & email are a bit different
         properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
