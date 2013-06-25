@@ -54,7 +54,7 @@ class NMLegislatorScraper(LegislatorScraper):
             for value in values:
                 id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
                 try:
-                    val = doc.get_element_by_id(id_).text_content()
+                    val = "\n".join(doc.get_element_by_id(id_).itertext())
                     found = True
                 except KeyError:
                     pass
