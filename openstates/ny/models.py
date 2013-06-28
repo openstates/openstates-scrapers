@@ -361,9 +361,8 @@ class SenateBillPage(object):
             self.bill.add_vote(vote)
 
     def get_versions(self):
-        text = self.doc.xpath('//*[contains(., "Versions:")]')[-1].text_content()
-        version_text = text
-        _, version_text = text.split('Versions:')
+        text = self.doc.xpath('//*[contains(., "Versions")]')[-1].text_content()
+        version_text = re.sub('Versions:?\s*', '', text)
 
         url_tmpl = 'http://open.nysenate.gov/legislation/bill/'
         for version_bill_id in re.findall('\S+', version_text):
