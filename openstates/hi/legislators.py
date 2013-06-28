@@ -34,14 +34,22 @@ class HILegislatorScraper(LegislatorScraper):
         if len(table) > 0:
             table = table[0]
         else:
-            return None
+            table = None
 
-        cttys = table.xpath( "./tr/td/a" )
-        for ctty in cttys:
-            ret['ctty'].append({
-                "name" : ctty.text,
-                "page" : "%s/%s" % (HI_BASE_URL, ctty.attrib['href'])
-            })
+        chamber = page.xpath("//span[contains(@id, 'LabelChamber')]")
+        if chamber == []:
+            raise Exception("Can't find the chamber label")
+
+        chamber = chamber[0].text_content()
+        ret['chamber'] = chamber
+
+        if table:
+            cttys = table.xpath( "./tr/td/a" )
+            for ctty in cttys:
+                ret['ctty'].append({
+                    "name" : ctty.text,
+                    "page" : "%s/%s" % (HI_BASE_URL, ctty.attrib['href']),
+                })
         return ret
 
     def scrape_leg_page( self, url ):
@@ -74,11 +82,16 @@ class HILegislatorScraper(LegislatorScraper):
                 "image"    : image,
                 "source"   : [ url ],
                 "district" : district,
+                "chamber": None
             }
 
             if homepage != None:
                 pmeta['source'].append(homepage['source'])
                 pmeta['ctty'] = homepage['ctty']
+                pmeta['chamber'] = homepage['chamber']
+
+            if pmeta['chamber'] is None:
+                raise Exception("No chamber found.")
 
             for meta in metainf:
                 pmeta[meta] = metainf[meta]
@@ -170,6 +183,8 @@ class HILegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, session):
         metainf = self.scrape_leg_page(get_chamber_listing_url( chamber ))
         for leg in metainf:
+            chamber = {"House": "lower",
+                       "Senate": "upper"}[leg['chamber']]
             p = Legislator( session, chamber, leg['district'], leg['name'],
                 party=leg['party'],
                 # some additional things the website provides:
