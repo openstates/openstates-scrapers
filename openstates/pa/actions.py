@@ -27,7 +27,7 @@ _categorizer_rules = (
     # Passage.
     Rule([r'^Final passage', '^Third consideration and final passage'],
          'bill:passed'),
-    Rule(r'adopted', 'bill:passed'),
+    Rule(r'(?i)adopted', 'bill:passed'),
     Rule(r'^First consideration', 'bill:reading:1'),
     Rule(r'Second consideration', 'bill:reading:2'),
     Rule(r'Third consideration', 'bill:reading:3'),
