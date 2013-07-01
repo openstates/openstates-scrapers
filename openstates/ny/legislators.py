@@ -210,13 +210,7 @@ class NYLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(url)
 
         contact = doc.xpath('//div[@id="addrinfo"]')[0]
-        email = contact.xpath(".//a[contains(@href, 'mailto:')]")
-        if email != []:
-            email = email[0].attrib['href'].replace("mailto:", "").strip()
-            if not email:
-                email = None
-        else:
-            email = None
+        email = None
 
         # Sometimes class is "addrcol1", others "addrcola"
         col_generators = [
