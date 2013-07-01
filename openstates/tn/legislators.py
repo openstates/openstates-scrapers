@@ -77,6 +77,6 @@ class TNLegislatorScraper(LegislatorScraper):
             # TODO: add district address from this page
 
             leg.add_office('capitol', 'Nashville Address',
-                           address=address, phone=phone, email=email)
+                           address=address, phone=phone)
 
             self.save_legislator(leg)
