@@ -58,6 +58,9 @@ class NCVoteScraper(VoteScraper):
         votes = {}
         for line in vote_file.readlines():
             data = line.split(delimiter)
+            if len(data) < 24:
+                self.warning('line too short %s', data)
+                continue
             if data[1] == chamber_code:
                 date = datetime.datetime.strptime(data[2][:16],
                                                   '%Y-%m-%d %H:%M')
