@@ -29,10 +29,14 @@ metadata = {
                 },
         '2013': {'display_name': '2013 Regular Session',
                  'zip_url': 'http://gencourt.state.nh.us/downloads/2013%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2013 Session',
+                 # Their dump filename changed, probably just a hiccup.
+                 '_scraped_name': '2013',
+                 # '_scraped_name': '2013 Session',
                 },
     },
     'feature_flags': ['influenceexplorer'],
+
+    '_ignored_scraped_sessions': ['2013 Session'],
 }
 
 def session_list():
