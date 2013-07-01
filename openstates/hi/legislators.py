@@ -5,17 +5,13 @@ from billy.scrape.committees  import Committee
 import lxml.html
 import re, contextlib
 
+
 HI_BASE_URL = "http://capitol.hawaii.gov"
 
-def get_chamber_listing_url( chamber ):
-    chamber_translation = {
-        "upper" : "S",
-        "lower" : "H"
-    }
-    return "%s/members/legislators.aspx?chamber=%s" % (
-        HI_BASE_URL,
-        chamber_translation[chamber]
-    )
+
+def get_legislator_listing_url():
+    return "%s/members/legislators.aspx" % (HI_BASE_URL,)
+
 
 class HILegislatorScraper(LegislatorScraper):
     jurisdiction = 'hi'
@@ -180,8 +176,8 @@ class HILegislatorScraper(LegislatorScraper):
             ret[entry] = callback( els[index] )
         return ret
 
-    def scrape(self, chamber, session):
-        metainf = self.scrape_leg_page(get_chamber_listing_url( chamber ))
+    def scrape(self, session, chambers):
+        metainf = self.scrape_leg_page(get_legislator_listing_url())
         for leg in metainf:
             chamber = {"House": "lower",
                        "Senate": "upper"}[leg['chamber']]
