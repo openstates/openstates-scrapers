@@ -26,6 +26,19 @@ class WVCommitteeScraper(CommitteeScraper):
             committee.add_source(url)
             self.save_committee(committee)
 
+        url = 'http://www.legis.state.wv.us/committees/interims/interims.cfm'
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        xpath = '//a[contains(@href, "committee.cfm")]'
+        for link in doc.xpath(xpath):
+            text = link.text_content().strip()
+            if text == '-':
+                continue
+            committee = self.scrape_interim_committee(link=link, name=text)
+            committee.add_source(url)
+            self.save_committee(committee)
+
     def scrape_lower_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
         html = self.urlopen(url)
@@ -39,6 +52,25 @@ class WVCommitteeScraper(CommitteeScraper):
         for link in doc.xpath(xpath):
             name = link.text_content().strip()
             name = re.sub(r'^Delegate\s+', '', name)
+            role = link.getnext().text or 'member'
+            comm.add_member(name, role.strip())
+
+        return comm
+
+    def scrape_interim_committee(self, link, name):
+        url = re.sub(r'\s+', '', link.attrib['href'])
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        comm = Committee('joint', name)
+        comm.add_source(url)
+
+        xpath = '//a[contains(@href, "?member=")]'
+        for link in doc.xpath(xpath):
+            name = link.text_content().strip()
+            name = re.sub(r'^Delegate\s+', '', name)
+            name = re.sub(r'^Senator\s+', '', name)
             role = link.getnext().text or 'member'
             comm.add_member(name, role.strip())
 
