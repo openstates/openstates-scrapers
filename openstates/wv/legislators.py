@@ -70,6 +70,8 @@ class WVLegislatorScraper(LegislatorScraper):
         officedata = defaultdict(list)
         current = None
         for chunk in text:
+            if chunk.lower() == 'biography':
+                break
             if chunk.strip().endswith(':'):
                 current_key = chunk.strip()
                 current = officedata[current_key]
