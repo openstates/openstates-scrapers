@@ -133,11 +133,13 @@ class WVBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_house_vote(bill, link.attrib['href'])
 
-        actor = chamber
         for tr in reversed(page.xpath("//table[@class='tabborder']/descendant::tr")[1:]):
             tds = tr.xpath('td')
             if len(tds) < 3:
                 continue
+
+            chamber_letter = tds[0].text_content()
+            chamber = {'S': 'upper', 'H': 'lower'}[chamber_letter]
 
             # Index of date info no longer varies on resolutions.
             date = tds[2].text_content().strip()
@@ -148,7 +150,7 @@ class WVBillScraper(BillScraper):
                 for href in tds[1].xpath('a/@href'):
                     self.scrape_senate_vote(bill, href, date)
 
-            attrs = dict(actor=actor, action=action, date=date)
+            attrs = dict(actor=chamber, action=action, date=date)
             attrs.update(self.categorizer.categorize(action))
             bill.add_action(**attrs)
 
