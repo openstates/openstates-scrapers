@@ -88,7 +88,6 @@ class WVLegislatorScraper(LegislatorScraper):
             type='capitol',
             phone=(officedata['Capitol Phone:'] or [None]).pop(),
             fax=None,
-            email=email,
             address='\n'.join(officedata['Capitol Office:']))
 
         legislator.add_office(**office)
