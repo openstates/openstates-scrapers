@@ -107,7 +107,7 @@ class NMLegislatorScraper(LegislatorScraper):
 
         # committees
         # skip first header row
-        for row in doc.xpath('//table[@id="ctl00_mainCopy_MembershipGrid"]/tr')[1:]:
+        for row in doc.xpath('//table[@id="ctl00_mainCopy_gridViewCommittees"]/tr')[1:]:
             role, committee, note = [x.text_content()
                                      for x in row.xpath('td')]
             committee = committee.title()
