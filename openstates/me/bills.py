@@ -99,6 +99,9 @@ class MEBillScraper(BillScraper):
                              'Process and Lessen the Regulatory Burden on'
                              ' Providers')
 
+            if not title:
+                title = '[Title not available]'
+
             if (title.lower().startswith('joint order') or
                     title.lower().startswith('joint resolution')):
                 bill_type = 'joint resolution'
