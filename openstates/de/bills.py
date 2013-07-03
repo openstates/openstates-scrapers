@@ -1,5 +1,6 @@
 import re
 import itertools
+import logging
 from urlparse import urlparse
 from datetime import datetime
 from operator import methodcaller
@@ -22,6 +23,17 @@ class BillIdParseError(ScrapeError):
     doesn't remotely resmble a valid bill_id.
     '''
     pass
+
+
+class WeirdDataError(ScrapeError):
+    '''Raised when unexpected format is encountered, probably due to
+    manual entry.
+    '''
+    logger = logging.getLogger('billy')
+
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self.logger.warning(message)
 
 
 def get_text(doc, i, xpath):
@@ -53,6 +65,8 @@ def parse_votestring(v, strptime=datetime.strptime,
     motion = motion.strip()
 
     m = re_date.search(v)
+    if m is None:
+        raise WeirdDataError('Got unexpected date format: %s' % v)
     date = strptime(m.group(), '%m/%d/%Y %I:%M:%S %p')
 
     chamber, _ = v.split(' ', 1)
@@ -232,7 +246,10 @@ class DEBillScraper(BillScraper):
 
         scrape_bill = self.scrape_bill
         for url, kw in self._get_urls(chamber, session):
-            scrape_bill(url, kw)
+            try:
+                scrape_bill(url, kw)
+            except WeirdDataError as exc:
+                continue
 
     def scrape_bill(self, url, kw,
                     re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
