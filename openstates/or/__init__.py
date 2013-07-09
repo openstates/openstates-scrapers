@@ -41,7 +41,7 @@ metadata = dict(
         },
         '2013 Regular Session': {
             'display_name': '2013 Regular Session',
-            '_scraped_name': '2013 Regular Session (Started January 14)',
+            '_scraped_name': '2013 Regular Session (Started February 4)',
             'slug': '13reg',
         },
     },
