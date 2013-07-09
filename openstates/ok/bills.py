@@ -121,10 +121,12 @@ class OKBillScraper(BillScraper):
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
         for link in version_table.xpath(".//a[contains(@href, '.PDF')]"):
             version_url = link.attrib['href']
+            name = link.text.strip()
+
             if 'COMMITTEE REPORTS' in version_url:
+                bill.add_document(name, version_url, mimetype='application/pdf')
                 continue
 
-            name = link.text.strip()
             bill.add_version(name, version_url, mimetype='application/pdf')
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
