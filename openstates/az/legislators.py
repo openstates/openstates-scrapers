@@ -62,6 +62,17 @@ class AZLegislatorScraper(LegislatorScraper):
                 position = name.tail.strip()
                 name = name[0].text_content().strip()
 
+            linkpage = self.urlopen(link)
+            linkroot = html.fromstring(linkpage)
+            linkroot.make_links_absolute(link)
+
+            photos = linkroot.xpath("//img[@name='memberphoto']")
+
+            if len(photos) != 1:
+                raise Exception
+
+            photo_url = photos[0].attrib['src']
+
             district = district.text_content()
             party = party.text_content().strip()
             email = email.text_content().strip()
@@ -97,8 +108,9 @@ class AZLegislatorScraper(LegislatorScraper):
                                   party=party, url=link)
                 leg['roles'][0]['end_date'] = end_date
             else:
-                leg = Legislator( term, chamber, district, full_name=name,
-                                  party=party, email=email, url=link)
+                leg = Legislator(term, chamber, district, full_name=name,
+                                 party=party, email=email, url=link,
+                                 photo=photo_url)
 
             leg.add_office('capitol', 'Capitol Office', address=address,
                            phone=phone, fax=fax)
