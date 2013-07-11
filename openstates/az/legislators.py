@@ -110,7 +110,7 @@ class AZLegislatorScraper(LegislatorScraper):
             else:
                 leg = Legislator(term, chamber, district, full_name=name,
                                  party=party, email=email, url=link,
-                                 photo=photo_url)
+                                 photo_url=photo_url)
 
             leg.add_office('capitol', 'Capitol Office', address=address,
                            phone=phone, fax=fax)
