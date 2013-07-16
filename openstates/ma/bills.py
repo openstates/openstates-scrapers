@@ -84,7 +84,7 @@ class MABillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://www.malegislature.gov/')
 
-            title = doc.xpath('//h2/text()')[0]
+            title = doc.xpath('//h2/span/text()')[0].strip()
             desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
 
             # create bill

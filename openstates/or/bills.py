@@ -182,7 +182,7 @@ class ORBillScraper(BillScraper):
                                            False)
                 self.all_bills[bill_id].add_vote(vote)
 
-            if self.all_bills[bill_id] is None:
+            if self.all_bills.get(bill_id) is None:
                 continue
 
             self.all_bills[bill_id].add_action(a['actor'], a['action'],
@@ -214,7 +214,9 @@ class ORBillScraper(BillScraper):
         splits = [u"\xe4", u"\ufffd", u"\u05d4"]
         for s in splits:
             info = line.split(s)
-            info = filter(lambda x: x != "", info)
+            if len(info) != 5:
+                info = filter(lambda x: x != "", info)
+
             if len(info) == 5:
                 found = True
                 found_thing = info
@@ -340,6 +342,9 @@ class ORBillScraper(BillScraper):
                         if bill_id not in self.all_bills:
                             self.warning("unknown bill %s" % bill_id)
                             continue
+                        if self.all_bills[bill_id] is None:
+                            continue
+
                         self.all_bills[bill_id].setdefault('subjects',
                                                            []).append(title)
             # sometimes we need to look back

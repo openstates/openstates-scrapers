@@ -9,8 +9,11 @@ import re, contextlib
 HI_BASE_URL = "http://capitol.hawaii.gov"
 
 
-def get_legislator_listing_url():
-    return "%s/members/legislators.aspx" % (HI_BASE_URL,)
+def get_legislator_listing_url(chamber):
+    chamber = {"lower": "H",
+               "upper": "S"}[chamber]
+
+    return "%s/members/legislators.aspx?chamber=%s" % (HI_BASE_URL, chamber)
 
 
 class HILegislatorScraper(LegislatorScraper):
@@ -176,8 +179,8 @@ class HILegislatorScraper(LegislatorScraper):
             ret[entry] = callback( els[index] )
         return ret
 
-    def scrape(self, session, chambers):
-        metainf = self.scrape_leg_page(get_legislator_listing_url())
+    def scrape(self, chamber, session):
+        metainf = self.scrape_leg_page(get_legislator_listing_url(chamber))
         for leg in metainf:
             chamber = {"House": "lower",
                        "Senate": "upper"}[leg['chamber']]
