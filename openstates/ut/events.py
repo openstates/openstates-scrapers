@@ -1,4 +1,5 @@
 import re
+import requests
 import datetime as dt
 
 from billy.scrape.events import EventScraper, Event
@@ -20,7 +21,12 @@ class UTEventScraper(EventScraper):
 
     def scrape_page(self, url, session, chamber):
         try:
-            page = self.lxmlize(url)
+            try:
+                page = self.lxmlize(url)
+            except requests.exceptions.Timeout:
+                self.warning("Erm, we got a timeout here. Bailing")
+                return
+
         except lxml.etree.XMLSyntaxError:
             self.warning("Ugh. Invalid HTML")
             return  # Ugh, invalid HTML.
