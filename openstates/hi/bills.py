@@ -178,10 +178,6 @@ class HIBillScraper(BillScraper):
                  type=bill_type)
         b.add_source(url)
 
-
-        if not bill_id.startswith("SR"):
-            return
-
         companion = meta['Companion'].strip()
         if companion:
             b['companion'] = companion
