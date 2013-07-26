@@ -117,6 +117,7 @@ class TXEventScraper(EventScraper):
                     continue
 
                 replace = {
+                    "or recess": "",
                     "see below": "",
                     "See Below": "",
                     "See below": "",
