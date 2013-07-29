@@ -237,6 +237,8 @@ class VTBillScraper(BillScraper):
 
     def scrape_vote(self, bill, chamber, url):
         page = self.urlopen(url)
+        if 'There are no details available for this roll call' in page:
+            return
         page = page.replace('&nbsp;', ' ')
         page = lxml.html.fromstring(page)
 
