@@ -10,9 +10,9 @@ class NMLegislatorScraper(LegislatorScraper):
         self.validate_term(term, latest_only=True)
 
         if chamber == 'lower':
-            xpath = '//table[@id="ctl00_mainCopy_HouseDistGrid"]//a[contains(@href, "SPONCODE")]/@href'
+            xpath = '//table[@id="ctl00_mainCopy_gridViewHouseDistricts"]//a[contains(@href, "SPONCODE")]/@href'
         else:
-            xpath = '//table[@id="ctl00_mainCopy_SenateDistGrid"]//a[contains(@href, "SPONCODE")]/@href'
+            xpath = '//table[@id="ctl00_mainCopy_gridViewSenateDistricts"]//a[contains(@href, "SPONCODE")]/@href'
 
         html = self.urlopen('http://www.nmlegis.gov/lcs/districts.aspx')
         doc = lxml.html.fromstring(html)

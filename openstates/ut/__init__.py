@@ -19,7 +19,7 @@ metadata = dict(
         dict(name='2011-2012', sessions=['2011', '2011S1', '2011S2', '2011S3',
                                          '2012', '2012S4'],
              start_year=2011, end_year=2012),
-        dict(name='2013-2014', sessions=['2013', '2013h1'],
+        dict(name='2013-2014', sessions=['2013', '2013h1', '2013s1'],
              start_year=2013, end_year=2014),
         ],
     session_details={
@@ -41,6 +41,8 @@ metadata = dict(
                   '_scraped_name': '2013 General Session', },
         '2013h1': { 'display_name': '2013 House Session',
                   '_scraped_name': '2013 House Session', },
+        '2013s1': { 'display_name': '2013 1st Special Session',
+                   '_scraped_name': '2013 1st Special Session', },
     },
     feature_flags=['events', 'subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[

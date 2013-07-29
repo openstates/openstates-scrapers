@@ -461,6 +461,13 @@ class DEBillScraper(BillScraper):
                 # xpath lookup failed.
                 pass
 
+        if bill['title'].strip() == "":
+            if bill['bill_id'] != "HB 130" and bill['session'] != '147':
+                raise Exception("bill title is empty")
+            bill['title'] = bill['summary']
+            # This added to help hack around the page that's missing
+            # the bill title.
+
         self.save_bill(bill)
 
     def scrape_vote(self, url, date, chamber, passed, motion,

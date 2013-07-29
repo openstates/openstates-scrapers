@@ -54,7 +54,7 @@ def categorize_action(action):
     return ('other', ctty)
 
 def split_specific_votes(voters):
-    if voters.startswith('none'):
+    if voters is None or voters.startswith('none'):
         return []
     elif voters.startswith('Senator(s)'):
         voters = voters.replace('Senator(s) ', '')
@@ -178,10 +178,6 @@ class HIBillScraper(BillScraper):
                  type=bill_type)
         b.add_source(url)
 
-
-        if not bill_id.startswith("SR"):
-            return
-
         companion = meta['Companion'].strip()
         if companion:
             b['companion'] = companion
@@ -195,15 +191,17 @@ class HIBillScraper(BillScraper):
         self.save_bill(b)
 
     def parse_vote(self, action):
-        pattern = r"were as follows: (?P<n_yes>\d+) Aye\(?s\)?:\s+(?P<yes>.*?);\s+Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);\s+(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);\s+and (?P<n_excused>\d*) Excused: (?P<excused>.*)"
-        if 'as follows' in action:
-            result = re.search(pattern, action)
-            if result is None:
-                return None
-            result = result.groupdict()
-            motion = action.split('.')[0] + '.'
-            return result, motion
-        return None
+        pattern = (r"(?P<n_yes>\d+) Aye\(?s\)?(:\s+(?P<yes>.*?))?;\s+"
+                   "Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);?"
+                   "(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);?"
+                   "(\s+and\s+)?"
+                   "(?P<n_excused>\d*) Excused: (?P<excused>.*)")
+        result = re.search(pattern, action)
+        if result is None:
+            return None
+        result = result.groupdict()
+        motion = action.split('.')[0] + '.'
+        return result, motion
 
     def scrape_type(self, chamber, session, billtype):
         session_urlslug = \
