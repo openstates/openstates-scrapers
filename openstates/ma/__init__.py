@@ -1,3 +1,4 @@
+
 import datetime
 import lxml.html
 
@@ -8,6 +9,7 @@ from .legislators import MALegislatorScraper
 from .committees import MACommitteeScraper
 from .events import MAEventScraper
 from .votes import MAVoteScraper
+
 
 settings = dict(
     SCRAPELIB_TIMEOUT=600,
