@@ -53,28 +53,27 @@ class MICommitteeScraper(CommitteeScraper):
             self.save_committee(com)
 
     def scrape_senate_committees(self):
-        base_url = 'http://www.senate.michigan.gov/committee/'
-        url = 'http://www.senate.michigan.gov/committee/committeeinfo.shtm'
+        url = 'http://www.senate.michigan.gov/committee.html'
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-        for opt in doc.xpath('//option/@value'):
-            com_url = base_url + opt
-            if opt == 'appropssubcommittee.htm':
-                self.scrape_approp_subcommittees(com_url)
-            elif opt != 'statutory.htm' and opt != '#':
-                self.scrape_senate_committee(com_url)
+        for link in doc.xpath('//li/a[contains(@href, "/committee/")]/@href'):
+            if link.endswith('appropssubcommittee.htm'):
+                self.scrape_approp_subcommittees(link)
+            elif not link.endswith(('statutory.htm','pdf')):
+                self.scrape_senate_committee(link)
 
 
     def scrape_senate_committee(self, url):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
-        name = doc.xpath('//h6/text()')[0]
+        name = doc.xpath('//h3/text()')[0]
 
         com = Committee(chamber='upper', committee=name)
 
-        for member in doc.xpath('//div[@id="committeelist"]//a'):
+        for member in doc.xpath('//div[@id="committeeright"]//a'):
             member_name = member.text.strip()
 
             # don't add clerks
