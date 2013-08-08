@@ -305,6 +305,9 @@ class MDBillScraper(BillScraper):
         for text in nobrs:
             text = text.replace(u'\xa0', ' ')
             if text.startswith('Calendar Date: '):
+                if vote['date']:
+                    self.warning('two dates!, skipping rest of bill')
+                    break
                 vote['date'] = datetime.datetime.strptime(text.split(': ', 1)[1], '%b %d, %Y %H:%M %p')
             elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
                 yeas, nays, nv, exc, absent = re.match('(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused \(Absent\)\s+(\d+) Absent', text).groups()
