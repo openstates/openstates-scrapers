@@ -82,7 +82,7 @@ class NCBillScraper(BillScraper):
         data = self.urlopen(bill_detail_url)
         doc = lxml.html.fromstring(data)
 
-        title_div_txt = doc.xpath('//td[@style="text-align: center; width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
+        title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
         if 'Joint Resolution' in title_div_txt:
             bill_type = 'joint resolution'
             bill_id = bill_id[0] + 'JR ' + bill_id[1:]
