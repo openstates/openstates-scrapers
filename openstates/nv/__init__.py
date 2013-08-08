@@ -54,7 +54,7 @@ metadata = dict(
               },
         '77': {'type': 'primary',
                'display_name': '2013 Regular Session',
-               '_scraped_name': '77th (2013) Session',
+               '_scraped_name': u'77th (2013) Session\xa0\xa0(click to close)',
                'slug': '77th2013',
               },
         '2013Special27': {'type': 'special',
