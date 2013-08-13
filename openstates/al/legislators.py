@@ -23,7 +23,7 @@ class ALLegislatorScraper(LegislatorScraper):
 
             # if the name column contains a link it isn't vacant
             link = name.xpath('a')
-            if link:
+            if link and link[0].text != 'Vacant':
                 name = name.text_content().strip()
 
                 party = party_dict[party.text_content().strip()]
@@ -36,7 +36,8 @@ class ALLegislatorScraper(LegislatorScraper):
 
                 leg = Legislator(term, chamber, district, name,
                                  party=party, url=leg_url)
-                self.get_details(leg, term, leg_url)
+                if leg_url.startswith('http://'):
+                    self.get_details(leg, term, leg_url)
                 leg.add_office('capitol', 'Capitol Office',
                                address=office_address, phone=phone)
 

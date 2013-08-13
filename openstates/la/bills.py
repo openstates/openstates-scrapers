@@ -1,9 +1,13 @@
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import pdf_to_lxml
 
 import datetime as dt
 import lxml.html
 import scrapelib
+import tempfile
+import os
 import re
 
 
@@ -78,6 +82,91 @@ class LABillScraper(BillScraper):
             raise Exception
         return ret[0]
 
+    def scrape_votes(self, bill, url):
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute(url)
+
+        for a in page.xpath("//a[contains(@href, 'ViewDocument.aspx')]"):
+            self.scrape_vote(bill, a.text, a.attrib['href'])
+
+    def scrape_vote(self, bill, name, url):
+        match = re.match('^(Senate|House) Vote on [^,]*,(.*)$', name)
+
+        if not match:
+            return
+
+        chamber = {'Senate': 'upper', 'House': 'lower'}[match.group(1)]
+        motion = match.group(2).strip()
+
+        if motion.startswith('FINAL PASSAGE'):
+            type = 'passage'
+        elif motion.startswith('AMENDMENT'):
+            type = 'amendment'
+        elif 'ON 3RD READING' in motion:
+            type = 'reading:3'
+        else:
+            type = 'other'
+
+        vote = Vote(chamber, None, motion, None,
+                    None, None, None)
+        vote['type'] = type
+        vote.add_source(url)
+
+        (fd, temp_path) = tempfile.mkstemp()
+        self.urlretrieve(url, temp_path)
+
+        html = pdf_to_lxml(temp_path)
+        os.close(fd)
+        os.remove(temp_path)
+
+        vote_type = None
+        total_re = re.compile('^Total--(\d+)$')
+        body = html.xpath('string(/html/body)')
+
+        date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
+        try:
+            date = date_match.group(1)
+        except AttributeError:
+            self.warning("BAD VOTE: date error")
+            return
+
+        vote['date'] = dt.datetime.strptime(date, '%m/%d/%Y')
+
+        for line in body.replace(u'\xa0', '\n').split('\n'):
+            line = line.replace('&nbsp;', '').strip()
+            if not line:
+                continue
+
+            if line in ('YEAS', 'NAYS', 'ABSENT'):
+                vote_type = {'YEAS': 'yes', 'NAYS': 'no',
+                             'ABSENT': 'other'}[line]
+            elif line in ('Total', '--'):
+                vote_type = None
+            elif vote_type:
+                match = total_re.match(line)
+                if match:
+                    vote['%s_count' % vote_type] = int(match.group(1))
+                elif vote_type == 'yes':
+                    vote.yes(line)
+                elif vote_type == 'no':
+                    vote.no(line)
+                elif vote_type == 'other':
+                    vote.other(line)
+
+        # tally counts
+        vote['yes_count'] = len(vote['yes_votes'])
+        vote['no_count'] = len(vote['no_votes'])
+        vote['other_count'] = len(vote['other_votes'])
+
+        # The PDFs oddly don't say whether a vote passed or failed.
+        # Hopefully passage just requires yes_votes > not_yes_votes
+        if vote['yes_count'] > (vote['no_count'] + vote['other_count']):
+            vote['passed'] = True
+        else:
+            vote['passed'] = False
+
+        bill.add_vote(vote)
 
     def scrape_bill_page(self, chamber, session, bill_url, bill_type):
         page = self.lxmlize(bill_url)
@@ -133,6 +222,14 @@ class LABillScraper(BillScraper):
             "prefiled": ["bill:filed"],
             "referred to the committee": ["committee:referred"],
         }
+
+        try:
+            votes_link = page.xpath("//a[text() = 'Votes']")[0]
+            self.scrape_votes(bill, votes_link.attrib['href'])
+        except IndexError:
+            # Some bills don't have any votes
+            pass
+
 
         for action in actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
