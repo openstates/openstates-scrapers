@@ -99,7 +99,7 @@ class MAVoteScraper(VoteScraper):
         # Visit the tree and add rollcall votes to the vote object.
         vote_data = without_image.VoteVisitor().visit(tree)
 
-        vote_data['passed'] = vote_data['yes_count'] < vote_data['no_count']
+        vote_data['passed'] = vote_data['yes_count'] > vote_data['no_count']
         vote_data['session'] = session
         vote_data['bill_chamber'] = {
             'S': 'upper',
