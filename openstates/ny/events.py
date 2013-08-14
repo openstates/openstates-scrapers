@@ -115,8 +115,9 @@ class NYEventScraper(EventScraper):
             event = Event(session, datetime, 'committee:meeting',
                           title,
                           location=metainf['Place:'],
-                          contact=metainf['Contact:'],
-                          media_contact=metainf['Media Contact:'])
+                          contact=metainf['Contact:'])
+            if 'Media Contact:' in metainf:
+                event.update(media_contact=metainf['Media Contact:'])
             event.add_source(url)
             event.add_participant('host',
                                   ctty,
