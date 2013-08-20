@@ -28,7 +28,7 @@ class OHBillScraper(BillScraper):
                                 ('scr','concurrent resolution')]}
 
         for bill_prefix, bill_type in bill_types[chamber]:
-            url = base_url + '%s.xls' % bill_prefix
+            url = base_url + '%s.xlsx' % bill_prefix
 
             try:
                 fname, resp = self.urlretrieve(url)
