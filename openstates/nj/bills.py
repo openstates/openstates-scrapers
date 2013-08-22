@@ -298,7 +298,6 @@ class NJBillScraper(BillScraper, MDBMixin):
                 vote_id = '_'.join((bill_id, chamber, action))
                 vote_id = vote_id.replace(" ", "_")
 
-
                 if vote_id not in votes:
                     votes[vote_id] = Vote(chamber, date, action, None, None,
                                           None, None, bill_id=bill_id)
@@ -332,10 +331,10 @@ class NJBillScraper(BillScraper, MDBMixin):
                     # http://www.njleg.state.nj.us/legislativepub/glossary.asp
                     vote['passed'] = False
                     if vote['chamber'] == 'lower':
-                        if vote_yes_count > 54:
+                        if vote_yes_count >= 54:
                             vote['passed'] = True
                     elif vote['chamber'] == 'upper':
-                        if vote_yes_count > 27:
+                        if vote_yes_count >= 27:
                             vote['passed'] = True
 
                 # Regular vote.
