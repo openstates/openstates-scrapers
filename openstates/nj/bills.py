@@ -298,6 +298,7 @@ class NJBillScraper(BillScraper, MDBMixin):
                 vote_id = '_'.join((bill_id, chamber, action))
                 vote_id = vote_id.replace(" ", "_")
 
+
                 if vote_id not in votes:
                     votes[vote_id] = Vote(chamber, date, action, None, None,
                                           None, None, bill_id=bill_id)
@@ -323,7 +324,22 @@ class NJBillScraper(BillScraper, MDBMixin):
                 vote["yes_count"] = vote_yes_count
                 vote["no_count"] = vote_no_count
                 vote["other_count"] = vote_other_count
-                if vote_yes_count > vote_no_count:
+
+                # Veto override.
+                if vote['motion'] == 'OVERRIDE':
+                    # Per the NJ leg's glossary, a veto override requires
+                    # 2/3ds of each chamber. 27 in the senate, 54 in the house.
+                    # http://www.njleg.state.nj.us/legislativepub/glossary.asp
+                    vote['passed'] = False
+                    if vote['chamber'] == 'lower':
+                        if vote_yes_count > 54:
+                            vote['passed'] = True
+                    elif vote['chamber'] == 'upper':
+                        if vote_yes_count > 27:
+                            vote['passed'] = True
+
+                # Regular vote.
+                elif vote_yes_count > vote_no_count:
                     vote["passed"] = True
                 else:
                     vote["passed"] = False
