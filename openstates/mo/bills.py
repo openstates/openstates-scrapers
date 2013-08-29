@@ -220,8 +220,8 @@ class MOBillScraper(BillScraper):
 
     def get_votes(self, date, actor, action):
         ret = []
-        vre = r"(?P<leader>.*)YEAS:\s+(?P<yeas>\d+)\s+NAYS:\s+(?P<nays>\d+).*"
-        if "YEAS" in action.upper():
+        vre = r"(?P<leader>.*)(AYES|YEAS):\s+(?P<yeas>\d+)\s+(NOES|NAYS):\s+(?P<nays>\d+).*"
+        if "YEAS" in action.upper() or "AYES" in action.upper():
             match = re.match(vre, action)
             if match:
                 v = match.groupdict()
