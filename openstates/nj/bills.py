@@ -260,57 +260,66 @@ class NJBillScraper(BillScraper, MDBMixin):
                 self.warning('could not find %s' % s_vote_url)
                 continue
             zipedfile = zipfile.ZipFile(s_vote_zip)
-            vfile = "%s.txt" % filename
-            vote_file = zipedfile.open(vfile, 'U')
-            vdict_file = csv.DictReader(vote_file)
+            for vfile in ["%s.txt" % (filename), "%sEnd.txt" % (filename)]:
+                try:
+                    vote_file = zipedfile.open(vfile, 'U')
+                except KeyError:
+                    #
+                    # Right, so, 2011 we have an "End" file with more
+                    # vote data than was in the original dump.
+                    #
+                    self.warning("No such file: %s" % (vfile))
+                    continue
 
-            votes = {}
-            if filename.startswith('A') or filename.startswith('CA'):
-                chamber = "lower"
-            else:
-                chamber = "upper"
+                vdict_file = csv.DictReader(vote_file)
 
-            if filename.startswith('C'):
-                vote_file_type = 'committee'
-            else:
-                vote_file_type = 'chamber'
-
-            for rec in vdict_file:
-
-                if vote_file_type == 'chamber':
-                    bill_id = rec["Bill"].strip()
-                    leg = rec["Full_Name"]
-
-                    date = rec["Session_Date"]
-                    action = rec["Action"]
-                    leg_vote = rec["Legislator_Vote"]
+                votes = {}
+                if filename.startswith('A') or filename.startswith('CA'):
+                    chamber = "lower"
                 else:
-                    bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
-                    leg = rec['Name']
-                    # drop time portion
-                    date = rec['Agenda_Date'].split()[0]
-                    # make motion readable
-                    action = self._com_vote_motions[rec['BillAction']]
-                    # first char (Y/N) use [0:1] to ignore ''
-                    leg_vote = rec['LegislatorVote'][0:1]
+                    chamber = "upper"
 
-                date = datetime.strptime(date, "%m/%d/%Y")
-                vote_id = '_'.join((bill_id, chamber, action))
-                vote_id = vote_id.replace(" ", "_")
-
-                if vote_id not in votes:
-                    votes[vote_id] = Vote(chamber, date, action, None, None,
-                                          None, None, bill_id=bill_id)
-                if vote_file_type == 'committee':
-                    votes[vote_id]['committee'] = self._committees[
-                        rec['Committee_House']]
-
-                if leg_vote == "Y":
-                    votes[vote_id].yes(leg)
-                elif leg_vote == "N":
-                    votes[vote_id].no(leg)
+                if filename.startswith('C'):
+                    vote_file_type = 'committee'
                 else:
-                    votes[vote_id].other(leg)
+                    vote_file_type = 'chamber'
+
+                for rec in vdict_file:
+
+                    if vote_file_type == 'chamber':
+                        bill_id = rec["Bill"].strip()
+                        leg = rec["Full_Name"]
+
+                        date = rec["Session_Date"]
+                        action = rec["Action"]
+                        leg_vote = rec["Legislator_Vote"]
+                    else:
+                        bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
+                        leg = rec['Name']
+                        # drop time portion
+                        date = rec['Agenda_Date'].split()[0]
+                        # make motion readable
+                        action = self._com_vote_motions[rec['BillAction']]
+                        # first char (Y/N) use [0:1] to ignore ''
+                        leg_vote = rec['LegislatorVote'][0:1]
+
+                    date = datetime.strptime(date, "%m/%d/%Y")
+                    vote_id = '_'.join((bill_id, chamber, action))
+                    vote_id = vote_id.replace(" ", "_")
+
+                    if vote_id not in votes:
+                        votes[vote_id] = Vote(chamber, date, action, None, None,
+                                              None, None, bill_id=bill_id)
+                    if vote_file_type == 'committee':
+                        votes[vote_id]['committee'] = self._committees[
+                            rec['Committee_House']]
+
+                    if leg_vote == "Y":
+                        votes[vote_id].yes(leg)
+                    elif leg_vote == "N":
+                        votes[vote_id].no(leg)
+                    else:
+                        votes[vote_id].other(leg)
 
             # remove temp file
             os.remove(s_vote_zip)
@@ -323,7 +332,22 @@ class NJBillScraper(BillScraper, MDBMixin):
                 vote["yes_count"] = vote_yes_count
                 vote["no_count"] = vote_no_count
                 vote["other_count"] = vote_other_count
-                if vote_yes_count > vote_no_count:
+
+                # Veto override.
+                if vote['motion'] == 'OVERRIDE':
+                    # Per the NJ leg's glossary, a veto override requires
+                    # 2/3ds of each chamber. 27 in the senate, 54 in the house.
+                    # http://www.njleg.state.nj.us/legislativepub/glossary.asp
+                    vote['passed'] = False
+                    if vote['chamber'] == 'lower':
+                        if vote_yes_count >= 54:
+                            vote['passed'] = True
+                    elif vote['chamber'] == 'upper':
+                        if vote_yes_count >= 27:
+                            vote['passed'] = True
+
+                # Regular vote.
+                elif vote_yes_count > vote_no_count:
                     vote["passed"] = True
                 else:
                     vote["passed"] = False

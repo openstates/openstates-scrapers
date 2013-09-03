@@ -97,6 +97,10 @@ class ORLegislatorScraper(LegislatorScraper):
             else:
                 cdict['committee'] = com.get('name')
 
+            if com_name.startswith("Conference Committee"):
+                # All of the Conference Committees are joint.
+                cdict['chamber'] = 'joint'
+
             leg.add_role('committee member', term, **cdict)
 
         leg.add_source(self.source_url)

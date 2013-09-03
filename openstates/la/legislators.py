@@ -122,6 +122,9 @@ class LALegislatorScraper(LegislatorScraper):
             "Independent": "Independent"
         }
 
+        if leg_info['name'].startswith("Vacant"):
+            return
+
         party = 'other'
         for p in party_flags:
             if p in partyblk:
