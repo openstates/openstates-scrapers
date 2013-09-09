@@ -55,10 +55,17 @@ class IAEventScraper(EventScraper):
                 when = when.replace(key, '')
 
             when = re.sub("\s+", " ", when).strip()
-            try:
-                when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
-            except ValueError:
-                when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
+            if "tbd" in when.lower():
+                # OK. This is a partial date of some sort.
+                when = datetime.datetime.strptime(
+                    when,
+                    "%m/%d/%Y TIME - TBD %p"
+                )
+            else:
+                try:
+                    when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
+                except ValueError:
+                    when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
 
             event = Event(session, when, 'committee:meeting',
                           desc, location)
