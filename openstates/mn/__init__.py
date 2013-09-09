@@ -31,7 +31,7 @@ metadata = dict(
         },
         {
             'name': '2013-2014',
-            'sessions': ['2013-2014'],
+            'sessions': ['2013-2014', '2013s1'],
             'start_year': 2013,
             'end_year': 2014,
             'biennium': 88
@@ -78,7 +78,14 @@ metadata = dict(
             'type': "primary",
             'display_name': '2013-2014 Regular Session',
             '_scraped_name': '88th Legislature, 2013-2014'
-        }
+        },
+        '2013s1': {
+            'site_id': '1882013', 'type': 'special',
+            'votes_url': None,
+            'display_name': '2013, 1st Special Session',
+            '_scraped_name': '88th Legislature, 2013 1st Special Session',
+        },
+
 
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
