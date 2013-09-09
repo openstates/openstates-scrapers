@@ -1,20 +1,36 @@
 # -*- coding: utf-8 -*-
 import re
+import os
 import pdb
 import datetime
 from operator import itemgetter
+import contextlib
 
 import sh
 import tesseract
 from tater import parse
 
 import scrapelib
-from billy.utils import cd
 from billy.scrape.utils import convert_pdf
 from billy.scrape.votes import VoteScraper, Vote as BillyVote
 
 from .lexers import with_image
 from .lexers import without_image
+
+
+@contextlib.contextmanager
+def cd(path):
+    '''Creates the path if it doesn't exist'''
+    old_dir = os.getcwd()
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(old_dir)
 
 
 class MAVoteScraper(VoteScraper):
