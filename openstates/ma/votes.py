@@ -49,6 +49,7 @@ class MAVoteScraper(VoteScraper):
         '''
 
     def scrape(self, chamber, session):
+        self.filenames = []
         if chamber == 'upper':
             self.scrape_senate(session)
         elif chamber == 'lower':
@@ -102,6 +103,7 @@ class MAVoteScraper(VoteScraper):
         vote.add_source(url)
         self.house_check_vote(vote)
         self.save_vote(vote)
+        os.remove(vote_file)
 
     def house_get_vote(self, text, vote_file, session):
 
@@ -176,11 +178,6 @@ class MAVoteScraper(VoteScraper):
 
         # Convert it to .png
         image_file = vote_file + '-000.pbm'
-        try:
-            sh.convert(image_file, image_file.replace('.pbm', '.png'))
-        except sh.ErrorReturnCode_1:
-            # This pdf had no images in it.
-            raise self.MiscellaneousVote('PDF had no images in it.')
 
         with open(image_file, 'rb') as f:
             data = f.read()
@@ -198,6 +195,8 @@ class MAVoteScraper(VoteScraper):
 
         # Visit the tree and add rollcall votes to the vote object.
         visitor = with_image.VoteVisitor(vote).visit(tree)
+
+        os.remove(image_file)
 
     def house_check_vote(self, vote):
         assert len(vote['yes_votes']) == vote['yes_count']
