@@ -49,6 +49,8 @@ class CALegislatorScraper(LegislatorScraper):
         parse = self.parse_legislator
         for tr in rows:
             legislator = parse(tr, term, chamber)
+            if legislator is None:
+                continue
             # Try to spot on the janky ways the site expresses vacant seats.
             if legislator['full_name'].startswith('Vacant'):
                 continue
@@ -85,6 +87,9 @@ class CALegislatorScraper(LegislatorScraper):
             'full_name': lambda s: s.replace('Contact Senator', '').strip(),
             'address': parse_address,
             }
+
+        if 'Vacant' in tr.text_content():
+            return
 
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
