@@ -55,6 +55,8 @@ class PABillScraper(BillScraper):
         title = page.xpath(
             "//td[text() = 'Short Title:']/following-sibling::td")[0]
         title = title.text.strip()
+        if not title:
+            return
 
         bill = Bill(session, chamber, bill_id, title, type=btype)
         bill.add_source(url)
