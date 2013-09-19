@@ -56,6 +56,8 @@ class CALegislatorScraper(LegislatorScraper):
                 continue
             if '[ Vacant ]' in legislator['full_name']:
                 continue
+            if 'Vacant ' in legislator['full_name']:
+                continue
             fullname = legislator['full_name']
             if not legislator['first_name'] and fullname.endswith('Vacant'):
                 continue
@@ -87,9 +89,6 @@ class CALegislatorScraper(LegislatorScraper):
             'full_name': lambda s: s.replace('Contact Senator', '').strip(),
             'address': parse_address,
             }
-
-        if 'Vacant' in tr.text_content():
-            return
 
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
