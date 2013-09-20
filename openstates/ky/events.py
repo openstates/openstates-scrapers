@@ -30,8 +30,11 @@ class KYEventScraper(EventScraper):
                 self.warning('skipping event with invalid time: %s', time)
                 continue
             when = "%s %s" % (date, time)
-            when = datetime.datetime.strptime(when,
-                                              "%A, %B %d, %Y %I:%M%p")
+            try:
+                when = datetime.datetime.strptime(when, "%A, %B %d, %Y %I:%M%p")
+            except ValueError:
+                when = datetime.datetime.strptime(when, "%A, %B %d, %Y %I:%M %p")
+
             when = self._tz.localize(when)
 
             desc = div.xpath("string(span[2])").strip()
