@@ -116,7 +116,7 @@ class DCBillScraper(BillScraper):
         vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
         for td in vote_tds:
             vote_type = td.text
-            vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d)'",
+            vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d+)'",
                                      td.get('onclick')).groups()[0]
             # some votes randomly break
             try:
