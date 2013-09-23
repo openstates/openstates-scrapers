@@ -52,9 +52,8 @@ class PABillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        title = page.xpath(
-            "//td[text() = 'Short Title:']/following-sibling::td")[0]
-        title = title.text.strip()
+        xpath = "//td[text() = 'Short Title:']/following-sibling::td/div"
+        title = page.xpath(xpath)[1].text_content().strip()
         if not title:
             return
 
