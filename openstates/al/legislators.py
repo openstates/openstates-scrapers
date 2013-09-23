@@ -23,7 +23,7 @@ class ALLegislatorScraper(LegislatorScraper):
 
             # if the name column contains a link it isn't vacant
             link = name.xpath('a')
-            if link and link[0].text != 'Vacant':
+            if link and link[0].text.lower() != 'vacant':
                 name = name.text_content().strip()
 
                 party = party_dict[party.text_content().strip()]

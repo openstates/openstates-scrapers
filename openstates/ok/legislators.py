@@ -87,7 +87,7 @@ class OKLegislatorScraper(LegislatorScraper):
                 xpath = '//a[contains(@href, "mailto")]/@href'
                 email = doc.xpath(xpath)[0][7:]
             except IndexError:
-                email = None
+                email = ''
 
             legislator['email'] = email
 
