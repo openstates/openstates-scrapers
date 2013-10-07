@@ -15,7 +15,7 @@ metadata = {
     'terms': [
         {'name': '2011-2012', 'sessions': ['2011', '2012'],
          'start_year': 2011, 'end_year': 2012},
-        {'name': '2013-2014', 'sessions': ['2013'],
+        {'name': '2013-2014', 'sessions': ['2013', '2014'],
          'start_year': 2013, 'end_year': 2014}
     ],
     'session_details': {
@@ -32,6 +32,10 @@ metadata = {
                  # Their dump filename changed, probably just a hiccup.
                  '_scraped_name': '2013',
                  # '_scraped_name': '2013 Session',
+                },
+        '2014': {'display_name': '2014 Regular Session',
+                 'zip_url': 'http://gencourt.state.nh.us/downloads/2014%20Session%20Bill%20Status%20Tables.zip',
+                 '_scraped_name': '2014 Session',
                 },
     },
     'feature_flags': ['influenceexplorer'],
