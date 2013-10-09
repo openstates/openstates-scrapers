@@ -43,6 +43,9 @@ class MILegislatorScraper(LegislatorScraper):
             email = metainf['email'].text_content().strip()
             leg_url = metainf['website'].xpath("./a")[0].attrib['href']
             name = metainf['name'].text_content().strip()
+            if name == 'Vacant':
+                self.info('district %s is vacant', district)
+                continue
             leg = Legislator(term=term,
                              chamber=chamber,
                              full_name=name,
