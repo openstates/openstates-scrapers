@@ -516,6 +516,21 @@ class PDFCommitteeVote(object):
 
         self.text = '\n'.join(filter(None, text.splitlines()))
 
+    def committee(self):
+        """
+        XXX: OK. So, the error here:
+
+
+            When we have a `joint' chamber vote, we also need the committee
+            attached with the bill, or the OCD conversion won't know which
+            committee on the whole to associate with.
+
+            In addition, matching to the COW is wrong; since this was a
+            committee vote. I'm stubbing this out since the site is currently
+            offline
+        """
+        raise NotImplemented
+
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
         chamber = re.search(r'(HOUSE|SENATE|JOINT)', self.text)
@@ -619,7 +634,7 @@ class PDFCommitteeVote(object):
     def asdict(self):
         res = {}
         methods = '''yes_count no_count motion
-                  chamber other_count passed date'''.split()
+                  chamber committee other_count passed date'''.split()
         for m in methods:
             res[m] = getattr(self, m)()
         return res
