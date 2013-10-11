@@ -101,7 +101,9 @@ class MAVoteScraper(VoteScraper):
             self.house_add_votes_from_image(vote_file, vote)
 
         vote.add_source(url)
-        self.house_check_vote(vote)
+        if not self.house_check_vote(vote):
+            self.logger.warning('Bad vote counts for %s' % vote)
+            return
         self.save_vote(vote)
         os.remove(vote_file)
 
@@ -199,6 +201,7 @@ class MAVoteScraper(VoteScraper):
         os.remove(image_file)
 
     def house_check_vote(self, vote):
-        assert len(vote['yes_votes']) == vote['yes_count']
-        assert len(vote['no_votes']) == vote['no_count']
-        assert len(vote['other_votes']) == vote['other_count']
+        return all([
+            len(vote['yes_votes']) == vote['yes_count'],
+            len(vote['no_votes']) == vote['no_count'],
+            len(vote['other_votes']) == vote['other_count']])
