@@ -135,6 +135,8 @@ class MABillScraper(BillScraper):
             for sponsor in sponsors.values():
                 if sponsor == 'NONE':
                     continue
+                if sponsor is None:
+                    continue
                 bill.add_sponsor('primary', sponsor)
 
             for petitioner in petitioners.values():
