@@ -56,8 +56,6 @@ class ILLegislatorScraper(LegislatorScraper):
             photo_url_parsed = urlparse(photo_url)
             encoded_path = quote(photo_url_parsed.path)
             photo_url = photo_url_parsed._replace(path=encoded_path).geturl()
-            print photo_url
-            import pdb; pdb.set_trace()
             leg.update(photo_url=photo_url)
             leg.add_source(leg_url)
 
