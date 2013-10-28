@@ -45,6 +45,12 @@ metadata = dict(
                  'type': 'primary',
                  'slug': '2013R',
                 }
+        '2013X1': {'start_date': datetime.date(2013, 10, 18),
+                 'display_name': '2013 First Extraordinary Session',
+                 '_scraped_name': 'First Extraordinary Session, 2013',
+                 'type': 'special',
+                 'slug': '2013X1',
+                }
         },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['Regular Session, 2009',
