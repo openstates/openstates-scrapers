@@ -13,6 +13,7 @@ class NCBillScraper(BillScraper):
     _action_classifiers = {
         'Vetoed': 'governor:vetoed',
         'Signed By Gov': 'governor:signed',
+        'Signed by Gov': 'governor:signed',
         'Pres. To Gov.': 'governor:received',
         'Withdrawn from ': 'bill:withdrawn',
         'Ref ': 'committee:referred',
