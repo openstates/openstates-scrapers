@@ -59,7 +59,7 @@ class RIVoteScraper(VoteScraper):
         # 4:31:14 PM TUESDAY, JANUARY 17, 2012
         date_time = dt.datetime.strptime( time_string, fmt_string )
 
-        bill_s_n_no = r"(?P<year>[0-9]{2,4})(?P<chamber>[SH])\s*(?P<bill>[0-9]+)"
+        bill_s_n_no = r"(?P<year>[0-9]{2,4})(-?)(?P<chamber>[SH])\s*(?P<bill>[0-9]+)"
         # This is technically wrong, but it's close enough to be fine.
         # something like "123S  3023" is technically valid, even though it's
         # silly

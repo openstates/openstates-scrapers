@@ -48,7 +48,7 @@ metadata = {
                       'September 2011 Special Session'],
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014',
-         'sessions': ['2013 Regular Session',],
+         'sessions': ['2013 Regular Session', 'October 2013 Special Session'],
          'start_year': 2013, 'end_year': 2014},
     ],
     'session_details': {
@@ -90,6 +90,12 @@ metadata = {
                                  'display_name': '2013 Regular Session',
                                  '_scraped_name': '2013 Regular Session',
                                 },
+        'October 2013 Special Session': {
+            'type': 'special',
+            'display_name': 'Oct 2013 Special Session',
+            '_scraped_name': 'Oct 2013 Special Session',
+            'site_id': 'oc3'
+        }
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [

@@ -26,6 +26,8 @@ SUBCOMMITTEES = {
     "Agriculture and Development Subcommittee":
             "Agriculture And Natural Resources",
     "Primary and Secondary Education Subcommittee": "Education",
+    "Tax Reform Ways and Means Subcommittee":
+            "Ways and Means",
 }
 
 committee_cache = {}

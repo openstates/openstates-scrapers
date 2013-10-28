@@ -119,7 +119,7 @@ class HIBillScraper(BillScraper):
             vote = self.parse_vote(string)
             if vote:
                 v, motion = vote
-                vote = Vote(actor, date, motion, 'PASSED' in string,
+                vote = Vote(actor, date, motion, 'passed' in string.lower(),
                     int( v['n_yes'] or 0 ),
                     int( v['n_no'] or 0 ),
                     int( v['n_excused'] or 0))

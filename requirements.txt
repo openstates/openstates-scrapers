@@ -10,3 +10,9 @@ SQLAlchemy>=0.5.3
 MySQL-python
 # GA
 suds
+
+# Massachussetts votes
+sh
+-e git+git@github.com:twneale/tater.git#egg=tater
+numpy
+python-opencv

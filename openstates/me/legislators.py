@@ -236,38 +236,24 @@ class MELegislatorScraper(LegislatorScraper):
 
         mapping = {
             'district': 1,
-            'first_name': 3,
-            'middle_name': 4,
-            'last_name': 5,
-            'suffix': 6,
-            'party': 7,
-            'resident_county': 8,
-            'street_addr': 9,
-            'city': 10,
-            'zip_code': 12,
-            'phone': 13,
-            'email': 14,
+            'first_name': 2,
+            'middle_name': 3,
+            'last_name': 4,
+            # 'suffix': 6,
+            'party': 6,
+            'resident_county': 5,
+            'street_addr': 7,
+            'city': 8,
+            'state': 9,
+            'zip_code': 10,
+            'phone1': 12,
+            'phone2': 13,
+            'email': 11,
         }
 
-        # The sheet changed from session 126.
-        if session == 126:
-            mapping = {
-                'district': 0,
-                'first_name': 1,
-                'middle_name': 2,
-                'last_name': 3,
-                # 'suffix': 6,
-                'party': 4,
-                # 'resident_county': 8,
-                'street_addr': 5,
-                'city': 6,
-                'zip_code': 8,
-                # 'phone': 13,
-                'email': 9,
-            }
-
-        url = ('http://www.maine.gov/legis/senate/senators/email/'
-               '%dSenatorsList.xls' % session)
+        url = (
+            'http://legisweb1.mainelegislature.org/wp/senate/'
+            'wp-content/uploads/sites/2/2013/09/%sthSenatorsList.xlsx' % session)
 
         try:
             fn, result = self.urlretrieve(url)
@@ -298,18 +284,18 @@ class MELegislatorScraper(LegislatorScraper):
             # For matching up legs with votes
             district_name = d['city']
 
-            # phone = d['phone']
+            phone = d['phone1']
 
             district = d['district'].split('.')[0]
 
             leg_url = 'http://www.maine.gov/legis/senate/bio%02ds.htm' % int(district)
 
             leg = Legislator(term, chamber, district, full_name,
-                             d['first_name'], d['last_name'], d['middle_name'],
+                             d['first_name'], d['middle_name'], d['last_name'],
                              _party_map[d['party']],
-                             # resident_county=d['resident_county'],
+                             resident_county=d['resident_county'],
                              office_address=address,
-                             # office_phone=phone,
+                             office_phone=phone,
                              email=None,
                              district_name=district_name,
                              url=leg_url)

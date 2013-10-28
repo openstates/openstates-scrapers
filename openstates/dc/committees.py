@@ -17,7 +17,11 @@ class DCCommitteeScraper(CommitteeScraper):
             data = self.urlopen(url)
             doc = lxml.html.fromstring(data)
 
-            name = doc.xpath('//h1/text()')[0].replace('Committee on ', '')
+            try:
+                name = doc.xpath('//h1/text()')[0].replace('Committee on ', '')
+            except IndexError:
+                name = doc.xpath('//h2/text()')[0].replace('Committee on ', '')
+
 
             # skip link to Committees page
             if name == 'Committees':

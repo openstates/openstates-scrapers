@@ -77,7 +77,7 @@ var clickable_rows = function(selector) {
 
 var fix_images = function() {
     // this URL will change
-    var placeholder = 'http://static.openstates.org/assets/v2/images/placeholder.png';
+    var placeholder = 'http://static.openstates.org/assets/v3.1/images/placeholder.png';
     $('img.legImgSmall').error(function() {
             $(this).attr("src", placeholder).attr(
                 "title", "No Photo Available");
@@ -86,7 +86,7 @@ var fix_images = function() {
 
 var img_error = function(img) {
     img.onerror = '';
-    img.src = 'http://static.openstates.org/assets/v2.2/images/placeholder.png';
+    img.src = 'http://static.openstates.org/assets/v3.1/images/placeholder.png';
     return false;
 }
 

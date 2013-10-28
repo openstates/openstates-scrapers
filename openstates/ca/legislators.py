@@ -49,10 +49,16 @@ class CALegislatorScraper(LegislatorScraper):
         parse = self.parse_legislator
         for tr in rows:
             legislator = parse(tr, term, chamber)
+            if legislator is None:
+                continue
             # Try to spot on the janky ways the site expresses vacant seats.
             if legislator['full_name'].startswith('Vacant'):
                 continue
             if '[ Vacant ]' in legislator['full_name']:
+                continue
+            if 'Vacant ' in legislator['full_name']:
+                continue
+            if 'Vacant, ' in legislator['full_name']:
                 continue
             fullname = legislator['full_name']
             if not legislator['first_name'] and fullname.endswith('Vacant'):
@@ -147,7 +153,11 @@ class CALegislatorScraper(LegislatorScraper):
 
         # Remove junk from assembly member names.
         junk = 'Contact Assembly Member '
-        res['full_name'] = res['full_name'].pop().replace(junk, '')
+
+        try:
+            res['full_name'] = res['full_name'].pop().replace(junk, '')
+        except IndexError:
+            return
 
         # Normalize party.
         for party in res['party'][:]:

@@ -62,6 +62,7 @@ class NYBillScraper(BillScraper):
                 code = e.response.status_code
                 if code == 404:
                     errors += 1
+                    continue
                 else:
                     raise
             else:

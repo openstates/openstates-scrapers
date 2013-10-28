@@ -12,13 +12,13 @@ def extract_int(text):
 
 def convert_date(text):
     long_date = re.findall('\d{1,2}-\d{1,2}-\d{4}', text)
-    if long_date:
-        return datetime.datetime.strptime(long_date[0], '%m-%d-%Y')
-    short_date = re.findall('\d{1,2}-\d{1,2}-\d{2}', text)
-    if short_date:
-        return datetime.datetime.strptime(short_date[0], '%m-%d-%y')
-
     try:
+        if long_date:
+            return datetime.datetime.strptime(long_date[0], '%m-%d-%Y')
+        short_date = re.findall('\d{1,2}-\d{1,2}-\d{2}', text)
+        if short_date:
+            return datetime.datetime.strptime(short_date[0], '%m-%d-%y')
+
         return datetime.datetime.strptime(text, '%A, %B %d, %Y')
     except ValueError:
         return None
@@ -116,7 +116,7 @@ class DCBillScraper(BillScraper):
         vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
         for td in vote_tds:
             vote_type = td.text
-            vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d)'",
+            vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d+)'",
                                      td.get('onclick')).groups()[0]
             # some votes randomly break
             try:

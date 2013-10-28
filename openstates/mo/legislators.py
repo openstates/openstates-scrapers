@@ -61,7 +61,7 @@ class MOLegislatorScraper(LegislatorScraper):
             leg.add_source(url)
             homepage = url
             page = lxml.html.fromstring(details_page)
-            photo_url = page.xpath('//div[2]/div/img')
+            photo_url = page.xpath("//div[@id='container']/div[1]/img")
             photo_url = photo_url[0].attrib['src']
 
             url = self.senator_address_url % (

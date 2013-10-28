@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from urlparse import urlparse
+from urllib import quote
+
 import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -50,6 +53,9 @@ class ILLegislatorScraper(LegislatorScraper):
                 continue
 
             photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
+            photo_url_parsed = urlparse(photo_url)
+            encoded_path = quote(photo_url_parsed.path)
+            photo_url = photo_url_parsed._replace(path=encoded_path).geturl()
             leg.update(photo_url=photo_url)
             leg.add_source(leg_url)
 
