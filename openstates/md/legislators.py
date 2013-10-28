@@ -60,6 +60,6 @@ class MDLegislatorScraper(LegislatorScraper):
             if img_src:
                 leg['photo_url'] = img_src[0]
 
-            leg.add_office('capitol', 'Capitol Office', address=address,
+            leg.add_office('capitol', 'Capitol Office', address=address or None,
                            phone=phone)
             self.save_legislator(leg)
