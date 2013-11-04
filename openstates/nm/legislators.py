@@ -53,6 +53,7 @@ class NMLegislatorScraper(LegislatorScraper):
             found = False
             for value in values:
                 id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
+                val = None
                 try:
                     val = "\n".join(doc.get_element_by_id(id_).itertext())
                     found = True
