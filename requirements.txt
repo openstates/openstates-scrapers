@@ -15,4 +15,4 @@ suds
 sh
 -e git+git@github.com:twneale/tater.git#egg=tater
 numpy
-python-opencv
+# python-opencv
