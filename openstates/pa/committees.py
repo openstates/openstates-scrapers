@@ -53,11 +53,15 @@ class PACommitteeScraper(CommitteeScraper):
                     continue
 
                 # Everybody else normal.
+                subcommittee_name = None
                 committee_name = li.xpath('a/text()').pop()
                 role = 'member'
                 for _role in li.xpath('i/text()') or []:
-                    role = re.sub(r'[\s,]+', '', _role).lower()
-                subcommittee_name = None
+                    if 'subcommittee' in _role.lower():
+                        subcommittee_name, _, _role = _role.rpartition('-')
+                        subcommittee_name = re.sub(r'[\s,]+', ' ',
+                                                   subcommittee_name).strip()
+                    role = re.sub(r'[\s,]+', ' ', _role).lower()
 
                 # Add the committee member.
                 key = (chamber, committee_name, subcommittee_name)
