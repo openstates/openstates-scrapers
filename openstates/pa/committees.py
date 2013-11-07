@@ -5,11 +5,23 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 
+class CommitteeDict(dict):
+
+    def __missing__(self, key):
+        (chamber, committee_name, subcommittee_name) = key
+        committee = Committee(chamber, committee_name)
+        if subcommittee_name:
+            committee['subcommittee'] = subcommittee_name
+        self[key] = committee
+        return committee
+
+
 class PACommitteeScraper(CommitteeScraper):
     jurisdiction = 'pa'
     latest_only = True
 
     def scrape(self, chamber, term):
+
         if chamber == 'upper':
             url = ('http://www.legis.state.pa.us/cfdocs/legis/'
                    'home/member_information/senators_ca.cfm')
@@ -20,57 +32,40 @@ class PACommitteeScraper(CommitteeScraper):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
-        committees = {}
+        committees = CommitteeDict()
 
-        for li in page.xpath("//a[contains(@href, 'bio.cfm')]/../.."):
-            name = li.xpath("string(b/a[contains(@href, 'bio.cfm')])")
-            name = name[0:-4]
+        for div in page.xpath("//div[@class='MemberInfoCteeList-Member']"):
+            thumbnail, bio, committee_list, _ = list(div)
+            name = bio.xpath(".//a")[-1].text_content().strip()
+            namey_bits = name.split()
+            party = namey_bits.pop().strip('()')
+            name = ' '.join(namey_bits).replace(' ,', ',')
 
-            for link in li.xpath("a"):
-                if not link.tail:
+            for li in committee_list.xpath('div/ul/li'):
+
+                # Add the ex-officio members to all committees, apparently.
+                msg = 'Member ex-officio of all Standing Committees'
+                if li.text_content() == msg:
+                    for (_chamber, _, _), committee in committees.items():
+                        if chamber != _chamber:
+                            continue
+                        committee.add_member(name, 'member')
                     continue
 
-                # Get committee names.
-                committee_name = link.tail.strip().strip(',')
-                committee_name = re.sub(r"\s+", " ", committee_name)
+                # Everybody else normal.
+                committee_name = li.xpath('a/text()').pop()
+                role = 'member'
+                for _role in li.xpath('i/text()') or []:
+                    role = re.sub(r'[\s,]+', '', _role).lower()
                 subcommittee_name = None
 
-                # Get person's role, if present.
-                role = 'member'
-                rest = link.getnext().text
-                if rest:
-                    match = re.match(r',\s+(Subcommittee on .*)\s+-',
-                                     rest)
-
-                    if match:
-                        subcommittee_name = match.group(1)
-                        role = rest.rsplit('-', 1)[-1].strip().lower()
-                    else:
-                        role = rest.replace(', ', '').strip().lower()
-
-                    if role == 'chairman':
-                        role = 'chair'
-
-                # Get the committee.
-                try:
-                    committee = committees[(chamber, committee_name,
-                                            subcommittee_name)]
-                except KeyError:
-                    committee = Committee(chamber, committee_name)
-                    committee.add_source(url)
-
-                    if subcommittee_name:
-                        committee['subcommittee'] = subcommittee_name
-
-                    committees[(chamber, committee_name,
-                                subcommittee_name)] = committee
-
                 # Add the committee member.
-                committee.add_member(name.strip(), role)
+                key = (chamber, committee_name, subcommittee_name)
+                committees[key].add_member(name, role)
 
+        # Save the non-empty committees.
         for committee in committees.values():
             if not committee['members']:
                 continue
-            # if committee['committee'].lower() == 'urban affairs':
-            #     import pdb; pdb.set_trace()
+            committee.add_source(url)
             self.save_committee(committee)
