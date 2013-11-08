@@ -2022,6 +2022,7 @@ html.revealbanner.collapsed {
   cursor: pointer;
   border: none;
   padding-top: 0;
+  text-indent: 0;
 }
 #donor_banner .notnow:focus {
   outline: none;
