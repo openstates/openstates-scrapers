@@ -1848,6 +1848,7 @@ td[title]:hover {
 }
 
 /*  Donor Banner   */
+/*  Donor Banner   */
 #donor_banner {
   display:block;
   font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
@@ -1873,7 +1874,6 @@ td[title]:hover {
   -webkit-box-shadow: 3px 3px  5px #bfb78f;
   box-shadow: 3px 3px  5px #bfb78f;
 }
-
 html.revealbanner {
   transition: all .8s ease-in-out;
   -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
@@ -1948,7 +1948,7 @@ html.revealbanner.collapsed {
   border-right: 1px solid #ffffff;
   margin: 10px 0;
   line-height: 1.3;
-  min-height: 72px;
+  min-height: 52px;
 }
 #donor_banner .because.quote {
   font-style: italic;
@@ -1966,7 +1966,7 @@ html.revealbanner.collapsed {
   width: 392px;
   position: absolute;
   right: -55px;
-  bottom: -288px;
+  bottom: -266px;
 }
 #donor_banner .donationplea {
   position: absolute;
@@ -2001,7 +2001,7 @@ html.revealbanner.collapsed {
   font-size: 24px;
   font-weight: bold;
   line-height: 1.3em;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   margin-top: 0;
 }
 #donor_banner .notnow {
