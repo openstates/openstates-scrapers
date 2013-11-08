@@ -1,0 +1,234 @@
+/*  Donor Banner   */
+#donor_banner {
+  display:block;
+  font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  position: fixed;
+  z-index: 10000000;
+  width: 100%;
+  min-height: 50px;
+  margin-top: -20px;
+  padding-top: 20px;
+  background-color: #f3ce51;
+  background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_border.png) center bottom repeat-x, #f3ce51;
+  top: 0;
+  left: 0;
+  transition: all .8s ease-in-out;
+  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .8s ease-in-out; /** Firefox **/
+  -o-transition: all .8s ease-in-out; /** Opera **/
+  -moz-transform: scale(1) rotate(1deg) translate(0px, 288px) skew(0deg, 0deg);
+  -webkit-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+  -o-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+  -ms-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+  transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+  -webkit-box-shadow: 3px 3px  5px #bfb78f;
+  box-shadow: 3px 3px  5px #bfb78f;
+}
+
+html.revealbanner {
+  transition: all .8s ease-in-out;
+  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .8s ease-in-out; /** Firefox **/
+  -o-transition: all .8s ease-in-out; /** Opera **/
+  -moz-transform: translate(0px, 55px);
+  -webkit-transform: translate(0px, 55px);
+  -o-transform: translate(0px, 55px);
+  -ms-transform: translate(0px, 55px);
+  transform: translate(0px, 55px);
+}
+html.revealbanner.collapsed {
+  transition: all .8s ease-in-out;
+  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .8s ease-in-out; /** Firefox **/
+  -o-transition: all .8s ease-in-out; /** Opera **/
+  -moz-transform: translate(0px, 0px);
+  -webkit-transform: translate(0px, 0px);
+  -o-transform: translate(0px, 0px);
+  -ms-transform: translate(0px, 50px);
+  transform: translate(0px, 0px);
+}
+
+.revealbanner #donor_banner {
+    margin-top: -20px;
+  transition: all .8s ease-in-out;
+  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .8s ease-in-out; /** Firefox **/
+  -o-transition: all .8s ease-in-out; /** Opera **/
+  -moz-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  -webkit-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  -o-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  -ms-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  -webkit-box-shadow: 3px 3px  5px #bfb78f;
+  box-shadow: 3px 3px  5px #bfb78f;
+}
+.revealbanner.collapsed #donor_banner {
+  transition: all .8s ease-in-out;
+  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .8s ease-in-out; /** Firefox **/
+  -o-transition: all .8s ease-in-out; /** Opera **/
+  -moz-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+  -webkit-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+  -o-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+  -ms-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+}
+#donor_banner .donorcontainer {
+  width: 960px;
+  margin: 0 auto;
+  -moz-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+  -webkit-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+  -o-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+  -ms-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+  transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg); }
+#donor_banner .sf_logo {
+  background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/smalldonor_sf_logo.png) center top no-repeat;
+  text-indent: -9999em;
+  display: block;
+  width: 119px;
+  height: 54px;
+  float: left;
+  margin-left: -10px;
+}
+#donor_banner .because {
+  float: left;
+  width: 487px;
+  color: #4d5b5c;
+  font-size: 13px;
+  text-align: right;
+  padding: 0 20px 0 5px;
+  border-right: 1px solid #ffffff;
+  margin: 10px 0;
+  line-height: 1.3;
+  min-height: 72px;
+}
+#donor_banner .because.quote {
+  font-style: italic;
+}
+.attribution {
+  display: block;
+  text-align: right;
+}
+.attribution em{
+  font-weight: bold;
+}
+#donor_banner .bubble {
+  background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_bubble.png) center bottom no-repeat;
+  min-height: 330px;
+  width: 392px;
+  position: absolute;
+  right: -55px;
+  bottom: -288px;
+}
+#donor_banner .donationplea {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  width: 287px;
+}
+#donor_banner .donationplea span {
+  display: block;
+}
+#donor_banner .donationplea span.line2 {
+  margin-left: 60px;
+}
+#donor_banner .donationplea p {
+  font-size: 16px;
+  margin-left: 45px;
+  color: #4d5b5c;
+  line-height: 1.2;
+  margin-bottom: 20px;
+}
+#donor_banner .donationplea p em {
+  font-weight: bold;
+}
+#donor_banner .donationplea .btn {
+  margin-left: 74px;
+}
+#donor_banner h2 {
+  font-family: "Georgia", "Times New Roman", "Times", serif;
+  color: #4d5b5c;
+  font-style: italic;
+  text-transform: none;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.3em;
+  margin-bottom: 20px;
+  margin-top: 0;
+}
+#donor_banner .notnow {
+  background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_close.png) center top no-repeat;
+  display: block;
+  position: absolute;
+  width: 126px;
+  height: 36px;
+  bottom: 4px;
+  left: 121px;
+  opacity: 1;
+  text-align: center;
+  padding: 9px 0 0 0;
+  color: #ffffff;
+  text-shadow: none;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+  border: none;
+  padding-top: 0;
+}
+#donor_banner .notnow:focus {
+  outline: none;
+}
+
+#donor_banner .close:hover, #donor_banner .notnow:hover {
+  text-decoration: none;
+}
+.closebanner {
+  opacity: 0;
+  -webkit-transition: all .3s ease-in-out; /** Chrome & Safari **/
+  -moz-transition: all .3s ease-in-out; /** Firefox **/
+  -o-transition: all .3s ease-in-out; /** Opera **/
+  transition: all .3s ease-in-out; /** Opera **/
+}
+.btn {
+  border: 3px solid #dad8d1;
+  border: 3px solid rgba(218, 216, 209, 0.8);
+  background: #cb610b;
+  background-image: -webkit-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image: -moz-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image: -ms-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image: -o-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image: linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  color: #eee;
+  font-family: "Georgia", "Times New Roman", "Times", serif;
+  font-size: 17px;
+  font-weight: normal;
+  padding: 0.45em 1.8em;
+  -webkit-background-clip: padding;
+  -moz-background-clip: padding;
+  background-clip: padding-box;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  -ms-border-radius: 6px;
+  -o-border-radius: 6px;
+  border-radius: 6px;
+  text-shadow: 0 0 0;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #b85301;
+  background-image: -webkit-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image: -moz-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image: -ms-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image: -o-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image: linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  color: #fff;
+  -webkit-background-clip: padding;
+  -moz-background-clip: padding;
+  background-clip: padding-box;
+}
+
+.donorbanner_2#donor_banner .bubble {
+  bottom: -297px;
+}
+.donorbanner_2#donor_banner .donationplea p, .openstates_1#donor_banner .donationplea p{
+  margin-top: -15px;
+}
