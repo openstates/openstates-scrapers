@@ -52,8 +52,8 @@ class PABillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        xpath = "//td[text() = 'Short Title:']/following-sibling::td/div"
-        title = page.xpath(xpath)[1].text_content().strip()
+        xpath = '//div[contains(@class, "BillInfo-ShortTitle")]/div[@class="BillInfo-Section-Data"]'
+        title = page.xpath(xpath).pop().text_content().strip()
         if not title:
             return
 
@@ -115,9 +115,14 @@ class PABillScraper(BillScraper):
 
     def parse_sponsors(self, bill, page):
         first = True
-        sponsor_list = page.xpath("//td[text() = 'Sponsors:']/../td[2]")[0].text_content().strip()
 
-        for sponsor in sponsor_list.split(','):
+        xpath = ("//div[contains(@class, 'BillInfo-PrimeSponsor')]"
+                 "/div[@class='BillInfo-Section-Data']/a")
+        sponsors = page.xpath(xpath)
+
+        first = True
+        for sponsor in sponsors:
+            sponsor = sponsor.text_content()
             if first:
                 sponsor_type = 'primary'
                 first = False
