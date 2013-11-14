@@ -1848,7 +1848,6 @@ td[title]:hover {
 }
 
 /*  Donor Banner   */
-/*  Donor Banner   */
 #donor_banner {
   display:block;
   font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
@@ -1858,77 +1857,80 @@ td[title]:hover {
   min-height: 50px;
   margin-top: -20px;
   padding-top: 20px;
-  background-color: #f3ce51;
-  background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_border.png) center bottom repeat-x, #f3ce51;
+  background: #f3ce51 url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_border.png) center bottom repeat-x;
   top: 0;
   left: 0;
-  transition: all .8s ease-in-out;
+          transition: all .8s ease-in-out;
   -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .8s ease-in-out; /** Firefox **/
-  -o-transition: all .8s ease-in-out; /** Opera **/
-  -moz-transform: scale(1) rotate(1deg) translate(0px, 288px) skew(0deg, 0deg);
+     -moz-transition: all .8s ease-in-out; /** Firefox **/
+       -o-transition: all .8s ease-in-out; /** Opera **/
+     -moz-transform: scale(1) rotate(1deg) translate(0px, 288px) skew(0deg, 0deg);
   -webkit-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
-  -o-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
-  -ms-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
-  transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+       -o-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+      -ms-transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
+          transform: scale(1) rotate(1deg) translate(0px, -288px) skew(0deg, 0deg);
   -webkit-box-shadow: 3px 3px  5px #bfb78f;
-  box-shadow: 3px 3px  5px #bfb78f;
+          box-shadow: 3px 3px  5px #bfb78f;
 }
+.no-csstransforms #donor_banner {
+  margin-top:-304px;
+}
+
 html.revealbanner {
-  transition: all .8s ease-in-out;
+          transition: all .8s ease-in-out;
   -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .8s ease-in-out; /** Firefox **/
-  -o-transition: all .8s ease-in-out; /** Opera **/
-  -moz-transform: translate(0px, 55px);
+     -moz-transition: all .8s ease-in-out; /** Firefox **/
+       -o-transition: all .8s ease-in-out; /** Opera **/
+     -moz-transform: translate(0px, 55px);
   -webkit-transform: translate(0px, 55px);
-  -o-transform: translate(0px, 55px);
-  -ms-transform: translate(0px, 55px);
-  transform: translate(0px, 55px);
+       -o-transform: translate(0px, 55px);
+      -ms-transform: translate(0px, 55px);
+          transform: translate(0px, 55px);
 }
+html.no-csstransforms.revealbanner {
+  margin-top: 55px;
+}
+
 html.revealbanner.collapsed {
-  transition: all .8s ease-in-out;
-  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .8s ease-in-out; /** Firefox **/
-  -o-transition: all .8s ease-in-out; /** Opera **/
-  -moz-transform: translate(0px, 0px);
+     -moz-transform: translate(0px, 0px);
   -webkit-transform: translate(0px, 0px);
-  -o-transform: translate(0px, 0px);
-  -ms-transform: translate(0px, 50px);
-  transform: translate(0px, 0px);
+       -o-transform: translate(0px, 0px);
+      -ms-transform: translate(0px, 0px);
+          transform: translate(0px, 0px);
+}
+html.no-csstransforms.revealbanner.collapsed {
+  margin-top: 0;
 }
 
 .revealbanner #donor_banner {
-    margin-top: -20px;
-  transition: all .8s ease-in-out;
-  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .8s ease-in-out; /** Firefox **/
-  -o-transition: all .8s ease-in-out; /** Opera **/
-  -moz-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+  margin-top: -20px;
+     -moz-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
   -webkit-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
-  -o-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
-  -ms-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
-  transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+       -o-transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg);
+          transform: scale(1) rotate(1deg) translate(0px, -55px) skew(0deg, 0deg); /* This order is wrong and important and should stay this way */
+      -ms-transform: scale(1) rotate(1deg) translate(0px, 0) skew(0deg, 0deg);
   -webkit-box-shadow: 3px 3px  5px #bfb78f;
-  box-shadow: 3px 3px  5px #bfb78f;
+          box-shadow: 3px 3px  5px #bfb78f;
 }
 .revealbanner.collapsed #donor_banner {
-  transition: all .8s ease-in-out;
-  -webkit-transition: all .8s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .8s ease-in-out; /** Firefox **/
-  -o-transition: all .8s ease-in-out; /** Opera **/
-  -moz-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+     -moz-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
   -webkit-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
-  -o-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
-  -ms-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+       -o-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
+      -ms-transform: scale(1) rotate(1deg) translate(0px, -200px) skew(0deg, 0deg);
 }
+.no-csstransforms.revealbanner.collapsed #donor_banner {
+  margin-top: -194px;
+}
+
 #donor_banner .donorcontainer {
   width: 960px;
   margin: 0 auto;
-  -moz-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+     -moz-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
   -webkit-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
-  -o-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
-  -ms-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
-  transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg); }
+       -o-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+      -ms-transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+          transform: scale(1) rotate(-1deg) translate(0px, 0px) skew(0deg, 0deg);
+}
 #donor_banner .sf_logo {
   background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/smalldonor_sf_logo.png) center top no-repeat;
   text-indent: -9999em;
@@ -1948,16 +1950,16 @@ html.revealbanner.collapsed {
   border-right: 1px solid #ffffff;
   margin: 10px 0;
   line-height: 1.3;
-  min-height: 52px;
+  min-height: 72px;
 }
 #donor_banner .because.quote {
   font-style: italic;
 }
-.attribution {
+#donor_banner .attribution {
   display: block;
   text-align: right;
 }
-.attribution em{
+#donor_banner .attribution em{
   font-weight: bold;
 }
 #donor_banner .bubble {
@@ -1966,14 +1968,24 @@ html.revealbanner.collapsed {
   width: 392px;
   position: absolute;
   right: -55px;
-  bottom: -266px;
+  bottom: -288px;
 }
+.no-csstransforms #donor_banner .bubble {
+  bottom: -192px;
+  right: 155px;
+}
+
 #donor_banner .donationplea {
   position: absolute;
   top: 8px;
   right: 0;
   width: 287px;
 }
+.no-csstransforms #donor_banner .donationplea {
+  top: 18px;
+  right: 210px;
+}
+
 #donor_banner .donationplea span {
   display: block;
 }
@@ -1985,14 +1997,13 @@ html.revealbanner.collapsed {
   margin-left: 45px;
   color: #4d5b5c;
   line-height: 1.2;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 #donor_banner .donationplea p em {
   font-weight: bold;
 }
 #donor_banner .donationplea .btn {
   margin-left: 74px;
-  color: #ffffff;
 }
 #donor_banner h2 {
   font-family: "Georgia", "Times New Roman", "Times", serif;
@@ -2002,7 +2013,7 @@ html.revealbanner.collapsed {
   font-size: 24px;
   font-weight: bold;
   line-height: 1.3em;
-  margin-bottom: 0;
+  margin-bottom: 25px;
   margin-top: 0;
 }
 #donor_banner .notnow {
@@ -2023,7 +2034,6 @@ html.revealbanner.collapsed {
   cursor: pointer;
   border: none;
   padding-top: 0;
-  text-indent: 0;
 }
 #donor_banner .notnow:focus {
   outline: none;
@@ -2032,54 +2042,54 @@ html.revealbanner.collapsed {
 #donor_banner .close:hover, #donor_banner .notnow:hover {
   text-decoration: none;
 }
-.closebanner {
+#donor_banner .closebanner {
   opacity: 0;
   -webkit-transition: all .3s ease-in-out; /** Chrome & Safari **/
-  -moz-transition: all .3s ease-in-out; /** Firefox **/
-  -o-transition: all .3s ease-in-out; /** Opera **/
-  transition: all .3s ease-in-out; /** Opera **/
+     -moz-transition: all .3s ease-in-out; /** Firefox **/
+       -o-transition: all .3s ease-in-out; /** Opera **/
+          transition: all .3s ease-in-out; /** Opera **/
 }
-.btn {
+#donor_banner .btn {
   border: 3px solid #dad8d1;
   border: 3px solid rgba(218, 216, 209, 0.8);
   background: #cb610b;
   background-image: -webkit-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
-  background-image: -moz-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
-  background-image: -ms-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
-  background-image: -o-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
-  background-image: linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image:    -moz-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image:     -ms-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image:      -o-linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
+  background-image:         linear-gradient(#cb610b 0%, #bc5b0a 55%, #cb610b 55%);
   color: #eee;
   font-family: "Georgia", "Times New Roman", "Times", serif;
   font-size: 17px;
   font-weight: normal;
   padding: 0.45em 1.8em;
   -webkit-background-clip: padding;
-  -moz-background-clip: padding;
-  background-clip: padding-box;
+     -moz-background-clip: padding;
+          background-clip: padding-box;
   -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  -ms-border-radius: 6px;
-  -o-border-radius: 6px;
-  border-radius: 6px;
+     -moz-border-radius: 6px;
+      -ms-border-radius: 6px;
+       -o-border-radius: 6px;
+          border-radius: 6px;
   text-shadow: 0 0 0;
   cursor: pointer;
 }
-.btn:hover {
+#donor_banner .btn:hover {
   background: #b85301;
   background-image: -webkit-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
-  background-image: -moz-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
-  background-image: -ms-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
-  background-image: -o-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
-  background-image: linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image:    -moz-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image:     -ms-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image:      -o-linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
+  background-image:         linear-gradient(#b85301 0%, #a54e01 55%, #b85301 55%);
   color: #fff;
   -webkit-background-clip: padding;
-  -moz-background-clip: padding;
-  background-clip: padding-box;
+     -moz-background-clip: padding;
+          background-clip: padding-box;
 }
 
-.donorbanner_2#donor_banner .bubble {
+#donor_banner.donorbanner_2 .bubble {
   bottom: -297px;
 }
-.donorbanner_2#donor_banner .donationplea p, .openstates_1#donor_banner .donationplea p{
+#donor_banner.donorbanner_2 .donationplea p, .openstates_1#donor_banner .donationplea p{
   margin-top: -15px;
 }
