@@ -2020,6 +2020,7 @@ html.no-csstransforms.revealbanner.collapsed {
   background: url(http://assets.sunlightfoundation.com.s3.amazonaws.com/donorbanner/donorbanner_close.png) center top no-repeat;
   display: block;
   position: absolute;
+  text-indent: 0;
   width: 126px;
   height: 36px;
   bottom: 4px;
