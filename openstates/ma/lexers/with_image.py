@@ -4,16 +4,15 @@ votes are shown as embedded images.
 import logging
 from operator import itemgetter
 
-from tater import Node, RegexLexer, bygroups, include, matches, parse
+from tater import Lexer, bygroups, include
+from tater import Node, matches
 from tater import Visitor
-from tater import Rule as r
-from tater import Token as t
 
 
-class Lexer(RegexLexer):
+class Lexer(Lexer):
 
     re_skip = r'[\s\n]+'
-    dont_emit = [t.Skip]
+    dont_emit = ['Skip']
 
     re_name = r'[A-Z][a-z]+[A-Za-z]+'
 
@@ -26,36 +25,36 @@ class Lexer(RegexLexer):
 
         'vote_value': [
             # Tokenize vote values.
-            r(bygroups(t.VoteVal), r'^([NYXP])', 'name'),
-            r(bygroups(t.VoteVal), r'([NYXP])', 'name'),
+            (bygroups('VoteVal'), r'^([NYXP])', 'name'),
+            (bygroups('VoteVal'), r'([NYXP])', 'name'),
         ],
 
         'name': [
-            r(t.Skip, r'\*'),
+            ('Skip', r'\*'),
 
             # Hypephenated last name.
-            r(t.Name, r'%s\s*-\s*%s' % (re_name, re_name)),
+            ('Name', r'%s\s*-\s*%s' % (re_name, re_name)),
 
             # Tokenize names, Smith
-            r(t.Name, re_name),
+            ('Name', re_name),
 
             # Tokenize deMacedo
-            r(t.Name, r'(de|di|da)%s' % re_name),
+            ('Name', r'(de|di|da)%s' % re_name),
 
             # Special case of Mr. Speaker
-            r(t.Speaker, 'Mrs?\s*\.\s+Speaker'),
+            ('Speaker', 'Mrs?\s*\.\s+Speaker'),
 
             # O'Flanery, D'Emilia
-            r(t.Name, "[OD]\s*'\s*[A-Z][a-z]+"),
+            ('Name', "[OD]\s*'\s*[A-Z][a-z]+"),
 
             # The comma after Smith ,
-            r(t.Comma, r','),
+            ('Comma', r','),
 
             # The trailing initial of Smith , J .
-            r(bygroups(t.Initial), '([A-Z])\s*\.'),
+            (bygroups('Initial'), '([A-Z])\s*\.'),
 
             # Lower case name fragments.
-            r(t.Fragment, '[a-z]+'),
+            ('Fragment', '[a-z]+'),
             ],
         }
 
@@ -64,47 +63,35 @@ class Lexer(RegexLexer):
 # Node definitions for assembling the tokens into a tree.
 class Rollcall(Node):
 
-    @matches(t.VoteVal)
+    @matches('VoteVal')
     def handle_vote(self, *items):
-        return self.descend(Vote).descend(VoteValue, items)
+        return self.descend(Vote).descend('VoteValue', items)
 
 
 class Vote(Node):
 
-    @matches(t.Name)
+    @matches('Name')
     def handle_name(self, *items):
-        return self.descend(Name, items)
+        return self.descend('Name', items)
 
-    @matches(t.Speaker)
+    @matches('Speaker')
     def handle_speaker(self, *items):
-        return self.descend(Speaker, items)
-
-
-class VoteValue(Node):
-    pass
+        return self.descend('Speaker', items)
 
 
 class Name(Node):
 
-    @matches(t.Comma, t.Initial)
+    @matches('Comma', 'Initial')
     def handle_initial(self, *items):
         comma, initial = items
-        return self.descend(Initial, initial)
+        return self.descend('Initial', initial)
 
-    @matches(t.Fragment)
+    @matches('Fragment')
     def handle_fragment(self, *items):
         '''Append any lowercase name fragments to the main name.
         '''
         return self.extend(*items)
 
-
-class Speaker(Node):
-    '''Represent's the speaker's vote.
-    '''
-
-class Initial(Node):
-    '''Represents a voter name's initial, like Smith *J .*
-    '''
 
 # ---------------------------------------------------------------------------
 # Visit the parse tree and add votes from it.
