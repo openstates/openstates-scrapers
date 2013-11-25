@@ -165,14 +165,14 @@ class ARBillScraper(BillScraper):
             # No cosponsor link is OK
             pass
 
-        hist_link = page.xpath("//a[contains(@href, 'BillStatusHistory')]")[0]
-        self.scrape_votes(bill, hist_link.attrib['href'])
+    #     hist_link = page.xpath("//a[contains(@href, 'BillStatusHistory')]")[0]
+    #     self.scrape_votes(bill, hist_link.attrib['href'])
 
-    def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url))
-        page.make_links_absolute(url)
+    # def scrape_votes(self, bill, url):
+    #     page = lxml.html.fromstring(self.urlopen(url))
+    #     page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'Votes.aspx')]"):
+        for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
             date = link.xpath("string(../../td[2])")
             date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
 
@@ -205,16 +205,14 @@ class ARBillScraper(BillScraper):
                     no_count, other_count)
         vote.add_source(url)
 
-        vote_path = "//h3[. = '%s']/following-sibling::table[1]/tr/td/a"
-        for yes in page.xpath(vote_path % "Yeas"):
-            vote.yes(yes.text)
-        for no in page.xpath(vote_path % "Nays"):
-            vote.no(no.text)
-        for other in page.xpath(vote_path % "Non Voting"):
-            vote.other(other.text)
-        for other in page.xpath(vote_path % "Present"):
-            vote.other(other.text)
-
+        xpath = (
+            '//*[contains(@class, "ms-standardheader")]/'
+            'following-sibling::table')
+        divs = page.xpath(xpath)
+        votevals = 'yes no other other'.split()
+        for (voteval, div) in zip(votevals, divs):
+            for a in div.xpath('.//a'):
+                getattr(vote, voteval)(a.text_content())
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):

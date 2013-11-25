@@ -89,10 +89,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    sessions = url_xpath(
+    links = url_xpath(
         'http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages/Previous%20Legislatures.aspx',
-        '//div[@id="ctl00_ctl15_g_91c28874_44ca_4b3e_9969_7202c1ca63dd_panel"]//a')
-    return [s.text_content() for s in sessions if s.text_content()]
+        '//a')
+    sessions = [a.text_content() for a in links if 'Session' in a.attrib.get('title', '')]
+    return sessions
 
 
 def extract_text(doc, data):
