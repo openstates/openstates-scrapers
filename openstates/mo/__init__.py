@@ -26,7 +26,9 @@ metadata = dict(
     session_details={
         '2012': {'start_date': datetime.date(2012,1,26), 'type': 'primary',
                  'display_name': '2012 Regular Session'},
-        '2013': {'start_date': datetime.date(2012,1,26), 'type': 'primary',
+        '2013': {'start_date': datetime.date(2012,1,26),
+                 'type': 'primary',
+                 "_scraped_name": "2013 - 97th General Assembly - 1st Regular Session",
                  'display_name': '2013 Regular Session'},
     },
     feature_flags=["subjects", 'influenceexplorer'],
