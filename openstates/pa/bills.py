@@ -140,8 +140,7 @@ class PABillScraper(BillScraper):
     def parse_actions(self, bill, page):
         chamber = bill['chamber']
 
-        for tr in page.xpath("//td[text() = 'Actions:']/"
-                             "following-sibling::td/table/tr"):
+        for tr in page.xpath("//table[@class='DataTable']//tr"):
             action = tr.xpath("string()").replace(u'\xa0', ' ').strip()
 
             if action == 'In the House':
