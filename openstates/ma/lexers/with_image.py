@@ -2,7 +2,7 @@
 votes are shown as embedded images.
 '''
 import logging
-from operator import itemgetter
+from operator import attrgetter
 
 from tater import Lexer, bygroups, include
 from tater import Node, matches
@@ -110,7 +110,7 @@ class VoteVisitor(Visitor):
             voter_name = voter_name.replace(' . ', '. ')
             initial = ''
         else:
-            voter_name = map(itemgetter(2), node.find_one('Name').items)
+            voter_name = map(attrgetter('text'), node.find_one('Name').items)
             voter_name = ''.join(voter_name)
             voter_name = voter_name.replace(' ', '')
             initial = node.find_one('Initial')

@@ -72,6 +72,8 @@ class FLLegislatorScraper(LegislatorScraper):
             name = link.text.strip()
             name = re.sub(r'\s+', ' ', name)
             leg_url = link.get('href')
+            leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_doc.make_links_absolute(leg_url)
 
             if 'Vacant' in name:
                 continue
@@ -92,9 +94,7 @@ class FLLegislatorScraper(LegislatorScraper):
 
             if term != '2013-2014':
                 raise ValueError('Please change the senate photo_url string.')
-            photo_url = ("http://www.flsenate.gov/userContent/"
-                         "Senators/2012-2014/photos/s%03d.jpg" % (
-                             int(district)))
+            photo_url = leg_doc.xpath('//div[@id="sidebar"]//img/@src').pop()
 
             leg = Legislator(term, 'upper', district, name,
                              party=party, photo_url=photo_url, url=leg_url)
