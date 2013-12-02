@@ -15,8 +15,15 @@ class MDCommitteeScraper(CommitteeScraper):
 
         for a in doc.xpath('//a[contains(@href, "cmtepage")]'):
             url = a.get('href').replace('stab=01', 'stab=04')
-            chamber = {'House': 'lower', 'Senate': 'upper'}[a.xpath('../following-sibling::td')[-2].text]
-            if chamber in chambers:
+            chamber = a.xpath('../../..//th/text()')[0]
+            if 'Senate' in chamber and 'upper' in chambers:
+                chamber = 'upper'
+                self.scrape_committee(chamber, a.text, url)
+            elif 'House' in chamber and 'Delegation' not in chamber and 'lower' in chambers:
+                chamber = 'lower'
+                self.scrape_committee(chamber, a.text, url)
+            elif chamber in ('Joint', 'Statutory', 'Special Joint'):
+                chamber = 'joint'
                 self.scrape_committee(chamber, a.text, url)
 
 
