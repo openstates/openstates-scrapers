@@ -16,9 +16,8 @@ class FLBillScraper(BillScraper):
         self.validate_session(session)
 
         cname = {'upper': 'Senate', 'lower': 'House'}[chamber]
-        url = ("http://flsenate.gov/Session/Bills.cfm?"
-               "SessionName=%s&PageNumber=1&Chamber=%s&LastAction="
-               "&Senator=&SearchQuery=" % (session, cname))
+        url = "http://flsenate.gov/Session/Bills/%s?chamber=%s"
+        url = url % (session, cname)
         while True:
             html = self.urlopen(url)
             page = lxml.html.fromstring(html)
@@ -33,8 +32,9 @@ class FLBillScraper(BillScraper):
                     "string(../following-sibling::td[1])").strip()
                 sponsor = link.xpath(
                     "string(../following-sibling::td[2])").strip()
+                url = link.attrib['href'] + '/ByCategory'
                 self.scrape_bill(chamber, session, bill_id, title,
-                                 sponsor, link.attrib['href'])
+                                 sponsor, url)
 
             try:
                 next_link = page.xpath("//a[. = 'Next']")[0]
@@ -55,10 +55,12 @@ class FLBillScraper(BillScraper):
                     'The page you have requested has encountered an error.' \
                     not in response.text
 
-        return (normal and
+        x = (normal and
                 bill_check and
                 text_check)
-
+        if not x:
+            import pdb; pdb.set_trace()
+        return x
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
         html = self.urlopen(url)
@@ -70,8 +72,7 @@ class FLBillScraper(BillScraper):
 
         bill.add_sponsor('primary', sponsor)
 
-        next_href = page.xpath("//a[@id='optionBillHistory']")[0]
-        next_href = next_href.attrib['href']
+        next_href = url + '/?Tab=BillHistory'
         html = self.urlopen(next_href)
         hist_page = lxml.html.fromstring(html)
         hist_page.make_links_absolute(url)
@@ -90,21 +91,23 @@ class FLBillScraper(BillScraper):
                 "//div[@id = 'tabBodyBillHistory']//table")[0]
 
         # now try and get second h1
-        bill_type_h1 = page.xpath('//h1/text()')[1]
-        if re.findall('[SH]B', bill_type_h1):
+        bill_type_h2 = page.xpath('//h2/text()')[-1]
+        if re.findall('[SH]B', bill_type_h2):
             bill_type = 'bill'
-        if re.findall('[SH]PB', bill_type_h1):
+        elif re.findall('[SH]PB', bill_type_h2):
             bill_type = 'proposed bill'
-        elif re.findall('[SH]R', bill_type_h1):
+        elif re.findall('[SH]R', bill_type_h2):
             bill_type = 'resolution'
-        elif re.findall('[SH]JR', bill_type_h1):
+        elif re.findall('[SH]JR', bill_type_h2):
             bill_type = 'joint resolution'
-        elif re.findall('[SH]CR', bill_type_h1):
+        elif re.findall('[SH]CR', bill_type_h2):
             bill_type = 'concurrent resolution'
-        elif re.findall('[SH]M', bill_type_h1):
+        elif re.findall('[SH]M', bill_type_h2):
             bill_type = 'memorial'
-        elif re.findall('\s+Senate \d+', bill_type_h1):
+        elif re.findall('\s+Senate \d+', bill_type_h2):
             bill_type = 'bill'
+        else:
+            raise Exception('Failed to identify bill type.')
 
         bill['type'] = [bill_type]
 
@@ -158,12 +161,12 @@ class FLBillScraper(BillScraper):
                 "//div[@id = 'tabBodyBillText']/table")[0]
             for tr in version_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
-                url = tr.xpath("td/a[1]")[0].attrib['href']
-                if url.endswith('PDF'):
+                version_url = tr.xpath("td/a[1]")[0].attrib['href']
+                if version_url.endswith('PDF'):
                     mimetype = 'application/pdf'
-                elif url.endswith('HTML'):
+                elif version_url.endswith('HTML'):
                     mimetype = 'text/html'
-                bill.add_version(name, url, mimetype=mimetype)
+                bill.add_version(name, version_url, mimetype=mimetype)
         except IndexError:
             self.log("No version table for %s" % bill_id)
 
@@ -176,14 +179,12 @@ class FLBillScraper(BillScraper):
                 date = tr.xpath("string(td[4])").strip()
                 if date:
                     name += " (%s)" % date
-                url = tr.xpath("td/a")[0].attrib['href']
-                bill.add_document(name, url)
+                analysis_url = tr.xpath("td/a")[0].attrib['href']
+                bill.add_document(name, analysis_url)
         except IndexError:
             self.log("No analysis table for %s" % bill_id)
 
-        next_href = page.xpath("//a[@id='optionVoteHistory']")[0]
-
-        next_href = next_href.attrib['href']
+        next_href = url + '/?Tab=VoteHistory'
         html = self.urlopen(next_href)
         vote_page = lxml.html.fromstring(html)
         vote_page.make_links_absolute(url)
