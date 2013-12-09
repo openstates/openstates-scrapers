@@ -175,8 +175,6 @@ class GABillScraper(BillScraper):
                 if 'committee:referred' in _types:
                     committees = [str(x) for x in ccommittees.get(chamber, [])]
 
-                print committees
-
                 bill.add_action(chamber, action['action'], action['date'], _types,
                                 committees=committees,
                                 _code=action['code'],
