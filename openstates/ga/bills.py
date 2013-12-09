@@ -181,7 +181,7 @@ class GABillScraper(BillScraper):
                                 _code_id=action['_guid'])
 
             sponsors = instrument['Authors']['Sponsorship']
-            if 'Sponsors' in instrument:
+            if 'Sponsors' in instrument and instrument['Sponsors']:
                 sponsors += instrument['Sponsors']['Sponsorship']
 
             sponsors = [
