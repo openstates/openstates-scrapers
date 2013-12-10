@@ -418,5 +418,7 @@ party_dict = {
     'McKevitt, Tom': 'Republican',           'Lopez, Peter': 'Republican',
 
     'Clark, Barbara': 'Democratic',          'Nolan, Catherine': 'Democratic',
+
+    'Davila, Maritza': 'Democratic',         'Pichardo, Victor': 'Democratic',
     }
 
