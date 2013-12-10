@@ -180,9 +180,11 @@ class GABillScraper(BillScraper):
                                 _code=action['code'],
                                 _code_id=action['_guid'])
 
-            sponsors = instrument['Authors']['Sponsorship']
-            if 'Sponsors' in instrument and instrument['Sponsors']:
-                sponsors += instrument['Sponsors']['Sponsorship']
+            sponsors = []
+            if instrument['Authors']:
+                sponsors = instrument['Authors']['Sponsorship']
+                if 'Sponsors' in instrument and instrument['Sponsors']:
+                    sponsors += instrument['Sponsors']['Sponsorship']
 
             sponsors = [
                 (x['Type'], self.get_member(x['MemberId'])) for x in sponsors
