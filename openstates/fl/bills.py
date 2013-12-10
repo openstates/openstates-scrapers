@@ -52,15 +52,15 @@ class FLBillScraper(BillScraper):
                 bill_check = "tabBodyVoteHistory" in response.text
 
             text_check = \
-                    'The page you have requested has encountered an error.' \
+                    'he page you have requested has encountered an error.' \
                     not in response.text
 
-        x = (normal and
+        valid = (normal and
                 bill_check and
                 text_check)
-        if not x:
-            import pdb; pdb.set_trace()
-        return x
+        if not valid:
+            raise ValueError('Response was invalid. Timsucks.')
+        return valid
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
         html = self.urlopen(url)
@@ -194,24 +194,13 @@ class FLBillScraper(BillScraper):
 
         for vote_table in vote_tables:
             for tr in vote_table.xpath("tbody/tr"):
-                vote_chamber = tr.xpath("string(td[3])").strip()
-                vote_date = tr.xpath("string(td[2])").strip()
+                vote_date = tr.xpath("string(td[3])").strip()
                 version = tr.xpath("string(td[1])").strip().split()
                 version_chamber = version[0]
 
-                # sometimes these are flipped
-                if ' at ' in vote_chamber:
-                    vote_date, vote_chamber = vote_chamber, vote_date
-                try:
-                    vote_chamber = {'Senate': 'upper',
-                                    'House': 'lower'}[vote_chamber]
-                except KeyError:
-                    vote_chamber = {'S': 'upper',
-                                    'H': 'lower',
-                                    'J': 'joint'}[version_chamber]
-
+                vote_chamber = chamber
                 vote_date = datetime.datetime.strptime(
-                    vote_date, "%m/%d/%Y at %H:%M %p").date()
+                    vote_date, "%m/%d/%Y %H:%M %p").date()
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                 self.scrape_vote(bill, vote_chamber, vote_date,
@@ -283,4 +272,5 @@ class FLBillScraper(BillScraper):
         # vote.validate()
         if not vote['motion']:
             vote['motion'] = '[No motion given.]'
+
         bill.add_vote(vote)
