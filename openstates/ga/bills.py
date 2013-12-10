@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from collections import defaultdict
 from .util import get_client, get_url
 
 #         Methods (7):
@@ -148,6 +149,15 @@ class GABillScraper(BillScraper):
                 "HTS": ["other"],
             }
 
+            ccommittees = defaultdict(list)
+            committees = instrument['Committees']
+            if committees:
+                for committee in committees[0]:
+                    ccommittees[{
+                        "House": "lower",
+                        "Senate": "upper",
+                    }[committee['Type']]].append(committee['Name'])
+
             for action in actions:
                 chamber = {
                     "H": "lower",
@@ -161,14 +171,20 @@ class GABillScraper(BillScraper):
                     self.debug(action)
                     _types = ["other"]
 
-                bill.add_action(chamber, action['action'], action['date'],
-                                _types,
+                committees = []
+                if 'committee:referred' in _types:
+                    committees = [str(x) for x in ccommittees.get(chamber, [])]
+
+                bill.add_action(chamber, action['action'], action['date'], _types,
+                                committees=committees,
                                 _code=action['code'],
                                 _code_id=action['_guid'])
 
-            sponsors = instrument['Authors']['Sponsorship']
-            if 'Sponsors' in instrument:
-                sponsors += instrument['Sponsors']['Sponsorship']
+            sponsors = []
+            if instrument['Authors']:
+                sponsors = instrument['Authors']['Sponsorship']
+                if 'Sponsors' in instrument and instrument['Sponsors']:
+                    sponsors += instrument['Sponsors']['Sponsorship']
 
             sponsors = [
                 (x['Type'], self.get_member(x['MemberId'])) for x in sponsors
