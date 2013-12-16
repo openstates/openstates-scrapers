@@ -172,7 +172,7 @@ class GABillScraper(BillScraper):
                     _types = ["other"]
 
                 committees = []
-                if 'committee:referred' in _types:
+                if any(('committee' in x for x in _types)):
                     committees = [str(x) for x in ccommittees.get(chamber, [])]
 
                 bill.add_action(chamber, action['action'], action['date'], _types,
