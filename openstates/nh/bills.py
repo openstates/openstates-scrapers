@@ -57,7 +57,7 @@ class NHBillScraper(BillScraper):
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
         last_line = []
-        for line in self.zf.open('tbllsrs.txt').readlines():
+        for line in self.zf.open('weblsrs.txt').readlines():
             line = line.split('|')
             if len(line) < 36:
                 if len(last_line + line[1:]) == 36:
