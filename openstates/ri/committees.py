@@ -27,7 +27,7 @@ class RICommitteeScraper(CommitteeScraper):
             self.scrape_reps_comm()
 
     def scrape_comm_list(self, ctype):
-        url = 'http://webserver.rilin.state.ri.us/Sitemap.html'
+        url = 'http://webserver.rilin.state.ri.us/CommitteeMembers/'
         self.log("looking for "+ctype)
         page = self.urlopen(url)
         root = lxml.html.fromstring(page)
