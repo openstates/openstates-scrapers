@@ -26,7 +26,7 @@ class BasePageyThing(object):
         self.session = session
         self.chamber = chamber
         self.data = {}
-        self.bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        self.bill = Bill(session, bill_chamber, bill_id, title, type=bill_type)
 
         self.term = term_for_session('ny', session)
         for data in self.metadata['terms']:
