@@ -57,45 +57,50 @@ class NYBillScraper(BillScraper):
                     bills[(letter, number)].append((bill, details))
 
         for billset in bills.values():
-            self.scrape_bill(session, chamber, bills)
+            self.scrape_bill(session, chamber, billset)
 
     def scrape_bill(self, session, chamber, bills):
 
-        billdata, details = bills[0][0]
+        billdata, details = bills[0]
 
         (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
          title, (letter, number, is_amd)) = details
 
         data = billdata['data']['bill']
-        source_url = billdata['url']
-        bill = Bill(session, chamber, bill_id, data['title'])
-        bill.add_source(senate_url)
-        bill.add_source(assembly_url)
+        # source_url = billdata['url']
+        # bill = Bill(session, chamber, bill_id, data['title'])
+        # bill.add_source(senate_url)
+        # bill.add_source(assembly_url)
 
-        # Add prime sponsor.
-        bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
+        assembly = AssemblyBillPage(self, session, chamber, details)
+        assembly.build()
+        bill = assembly.bill
+        bill.add_source(billdata['url'])
 
-        # Add cosponsors.
-        for sponsor in data['coSponsors'] + data['multiSponsors']:
-            if sponsor['fullname']:
-                bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
+        # # Add prime sponsor.
+        # bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
 
-        for action in data['actions']:
-            timestamp = int(action['date'])
-            action_text = action['text']
-            date = self.date_from_timestamp(timestamp)
-            actor = 'upper' if action_text.isupper() else 'lower'
-            attrs = dict(actor=actor, action=action_text, date=date)
-            categories, kwargs = self.categorizer.categorize(action_text)
-            attrs.update(kwargs, type=categories)
-            bill.add_action(**attrs)
+        # # Add cosponsors.
+        # for sponsor in data['coSponsors'] + data['multiSponsors']:
+        #     if sponsor['fullname']:
+        #         bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
 
-        # Add companion.
-        if data['sameAs']:
-            bill.add_companion(data['sameAs'])
+        # for action in data['actions']:
+        #     timestamp = int(action['date'])
+        #     action_text = action['text']
+        #     date = self.date_from_timestamp(timestamp)
+        #     actor = 'upper' if action_text.isupper() else 'lower'
+        #     attrs = dict(actor=actor, action=action_text, date=date)
+        #     categories, kwargs = self.categorizer.categorize(action_text)
+        #     attrs.update(kwargs, type=categories)
+        #     bill.add_action(**attrs)
 
-        if data['summary']:
-            bill['summary'] = data['summary']
+        # # Add companion.
+        # if data['sameAs']:
+        #     bill.add_companion(data['sameAs'])
+
+        # if data['summary']:
+        #     bill['summary'] = data['summary']
 
         if data['votes']:
             for vote_data in data['votes']:
