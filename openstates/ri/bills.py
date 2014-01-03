@@ -71,6 +71,9 @@ class RIBillScraper(BillScraper):
         current = []
 
         p = lxml.html.fromstring(page)
+        if "We're Sorry! You seem to be lost." in p.text_content():
+            raise ValueError('POSTing has gone wrong')
+
         nodes = p.xpath("//span[@id='lblBills']/*")
         for node in nodes:
             if node.tag == "br":
