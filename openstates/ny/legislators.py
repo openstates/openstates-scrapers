@@ -99,7 +99,6 @@ class NYLegislatorScraper(LegislatorScraper):
                     type='capitol', phone=phone,
                     fax=None, email=None,
                     address=address)
-
             legislator.add_office(**office)
 
         except IndexError:
@@ -261,6 +260,13 @@ class NYLegislatorScraper(LegislatorScraper):
                     fax=None, email=email,
                     address=''.join(address).strip())
 
+                if not office['address']:
+                    # Congrat's Maritza Davila, you have your own special
+                    # exception in the code for people who have magical
+                    # district offices with no mailing address.
+                    # http://assembly.state.ny.us/mem/Maritza-Davila
+                    continue
+
                 legislator.add_office(**office)
 
 
@@ -420,5 +426,7 @@ party_dict = {
     'Clark, Barbara': 'Democratic',          'Nolan, Catherine': 'Democratic',
 
     'Davila, Maritza': 'Democratic',         'Pichardo, Victor': 'Democratic',
+
+    'Palumbo, Anthony H.': 'Republican',
     }
 
