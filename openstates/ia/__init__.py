@@ -52,7 +52,6 @@ metadata = dict(
 
 
 def session_list():
-
     def url_xpath(url, path):
         import requests
         import lxml.html
@@ -61,8 +60,9 @@ def session_list():
 
     import re
     sessions = url_xpath(
-        'https://www.legis.iowa.gov/Legislation/Find/findLegislation.aspx',
-        "//div[@id='ctl00_ctl00_ctl00_cphMainContent_cphCenterCol_cphCenterCol_ucGASelect_divLinks']/ul/li/a/text()")
+        'https://www.legis.iowa.gov/legislation/findLegislation',
+        "//section[@class='grid_6']//li/a/text()"
+    )
     sessions = [
         re.findall(".*\(", session)[0][:-1].strip()
         for session in sessions
