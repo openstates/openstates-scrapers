@@ -47,6 +47,10 @@ class COCommitteeScraper(CommitteeScraper):
                         person = person[:-len(flag)].strip()
                 if person in seen_people:
                     continue
+
+                if person in "":
+                    continue
+
                 seen_people.add(person)
                 committee.add_member(person, role)
                 added = True

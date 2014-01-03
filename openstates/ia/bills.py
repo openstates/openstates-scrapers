@@ -6,13 +6,15 @@ from billy.scrape.bills import BillScraper, Bill
 
 import lxml.html
 
+from .scraper import InvalidHTTPSScraper
+
 
 def get_popup_url(link):
     onclick = link.attrib['onclick']
     return re.match(r'openWin\("(.*)"\)$', onclick).group(1)
 
 
-class IABillScraper(BillScraper):
+class IABillScraper(InvalidHTTPSScraper, BillScraper):
     jurisdiction = 'ia'
 
     _subjects = defaultdict(list)
