@@ -2,11 +2,12 @@ import re
 import datetime
 
 from billy.scrape.events import EventScraper, Event
+from .scraper import InvalidHTTPSScraper
 
 import lxml.html
 
 
-class IAEventScraper(EventScraper):
+class IAEventScraper(InvalidHTTPSScraper, EventScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, session):

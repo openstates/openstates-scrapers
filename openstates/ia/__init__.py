@@ -6,6 +6,7 @@ from .legislators import IALegislatorScraper
 from .events import IAEventScraper
 from .votes import IAVoteScraper
 
+
 settings = dict(SCRAPELIB_TIMEOUT=240)
 
 metadata = dict(
@@ -51,7 +52,13 @@ metadata = dict(
 
 
 def session_list():
-    from billy.scrape.utils import url_xpath
+
+    def url_xpath(url, path):
+        import requests
+        import lxml.html
+        doc = lxml.html.fromstring(requests.get(url, verify=False).text)
+        return doc.xpath(path)
+
     import re
     sessions = url_xpath(
         'https://www.legis.iowa.gov/Legislation/Find/findLegislation.aspx',

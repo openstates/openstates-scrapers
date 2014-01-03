@@ -2,11 +2,12 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from .scraper import InvalidHTTPSScraper
 
 import lxml.html
 
 
-class IALegislatorScraper(LegislatorScraper):
+class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, term):
