@@ -7,9 +7,10 @@ import lxml.etree
 
 from billy.scrape.utils import convert_pdf
 from billy.scrape.votes import VoteScraper, Vote
+from .scraper import InvalidHTTPSScraper
 
 
-class IAVoteScraper(VoteScraper):
+class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, session):
