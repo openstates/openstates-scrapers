@@ -142,6 +142,9 @@ class HIBillScraper(BillScraper):
 
         for version in versions:
             tds = version.xpath("./*")
+            if tds[0].text_content() == 'No other versions':
+                return
+
             http_href = tds[0].xpath("./a")
             name = http_href[0].text_content().strip()
             # category  = tds[1].text_content().strip()
