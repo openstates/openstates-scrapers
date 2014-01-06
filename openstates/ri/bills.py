@@ -40,7 +40,14 @@ def get_default_headers( page ):
             value = el.attrib['value']
         except KeyError:
             value = el.text
+
+        if value:
+            value = value.strip()
+
         headers[name] = value or ""
+    headers['__EVENTTARGET'] = ""
+    headers['__EVENTARGUMENT'] = ""
+    headers['__LASTFOCUS'] = ""
     return headers
 
 SEARCH_URL = "http://status.rilin.state.ri.us/"
@@ -124,6 +131,11 @@ class RIBillScraper(BillScraper):
             default_headers['ctl00$rilinContent$cbYear'] = session
 
             #headers = urllib.urlencode( default_headers )
+
+            #print "\n".join([
+            #    "%s: %s" % (x, default_headers[x][:20]) for x in default_headers
+            #])
+
             blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
                 method="POST", body=default_headers))
             blocks = blocks[1:-1]
