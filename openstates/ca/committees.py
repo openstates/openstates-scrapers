@@ -8,6 +8,8 @@ import lxml.html
 import scrapelib
 from billy.scrape.committees import CommitteeScraper, Committee
 
+from .utils import Urls
+
 
 strip = methodcaller('strip')
 
@@ -29,6 +31,13 @@ class CACommitteeScraper(CommitteeScraper):
                  'lower': 'http://assembly.ca.gov/'}
 
     def scrape(self, chamber, term):
+        if chamber == 'lower':
+            self.scrape_lower(term)
+        elif chamber == 'upper':
+            self.scrape_upper(term)
+
+
+    def scrape_lower(self, term):
         url = self.urls[chamber]
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -47,6 +56,7 @@ class CACommitteeScraper(CommitteeScraper):
             for xpath in [
                 '//div[contains(@class, "view-view-%sCommittee")]' % type_,
                 '//div[contains(@id, "block-views-view_StandingCommittee-block_1")]',
+                '//div[contains(@class, "views-field-title")]',
                 ]:
                 div = doc.xpath(xpath)
                 if div:
@@ -222,6 +232,14 @@ class CACommitteeScraper(CommitteeScraper):
         names = cache[committee['subcommittee']]
         return Membernames.scrub(names)
 
+    def scrape_upper(self, term):
+        for committee_type in SenateCommitteePage(self):
+            for senate_committee in committee_type:
+                comm = senate_committee.get_committee_obj()
+                self.save_committee(comm)
+                import pprint
+                pprint.pprint(comm)
+
 
 class Membernames(object):
 
@@ -285,3 +303,126 @@ class Membernames(object):
                 res.append((name, role, kw))
 
         return res
+
+
+# -----------------------------------------------------------------------------
+# Senate classes.
+# -----------------------------------------------------------------------------
+class SenateCommitteePage(object):
+    '''The senate re-did their committee page in 2014. This class is an
+    iterator over each group of committees (Standing, Select, Sub, etc.)
+    '''
+    urls = dict(index='http://senate.ca.gov/committees')
+
+    def __init__(self, scraper):
+        self.urls = Urls(scraper, self.urls)
+
+    def __iter__(self):
+        xpath = '//div[contains(@class, "block-views")]'
+        for el in self.urls.index.xpath(xpath):
+            yield SenateCommitteeGroup(self.urls, el)
+
+
+class SenateCommitteeGroup(object):
+    '''An iterator of the committees within this group.
+    '''
+    def __init__(self, urls, div):
+        self.urls = urls
+        self.div = div
+
+    def get_type(self):
+        return self.div.xpath('//h2[@class="title"]/h2/text()')
+
+    def __iter__(self):
+        xpath = 'div[@class="content"]//li[contains(@class, "views-row")]'
+        type_ = self.get_type()
+
+        # Join committees currently get scraped in the Assembly scraper.
+        if type_ == 'Joint Committees':
+            return
+
+        for li in self.div.xpath(xpath):
+            yield SenateCommittee(self.urls, type_, li)
+
+
+class SenateCommittee(object):
+    '''Helper to get info about a given committee.
+    '''
+    def __init__(self, urls, type_, li):
+        self.urls = urls
+        self.type_ = type_
+        self.li = li
+
+    def get_name(self):
+        return self.li.xpath(".//a")[0].text_content()
+
+    def get_url(self):
+        return self.li.xpath(".//a")[0].attrib['href']
+
+    def get_parent_name(self):
+        '''Get the name of the parent committee if this is a subcommittee.
+        '''
+        parent = self.li.xpath("../../h3/text()")
+        if parent:
+           return parent[0]
+
+    def get_committee_obj(self):
+        name = self.get_name()
+        url = self.get_url()
+        parent_name = self.get_parent_name()
+        print name, url, parent_name
+
+        if parent_name is not None:
+            subcommittee = name
+            committee_name = parent_name
+        else:
+            subcommittee = None
+            committee_name = name
+
+        self.committee = Committee(
+            'upper', committee_name, subcommittee=subcommittee)
+
+        self.add_members()
+        self.add_sources()
+        return self.committee
+
+    def add_members(self):
+        url = self.get_url()
+        self.urls.add(detail=url)
+        for name, role in SenateMembers(self.urls):
+            self.committee.add_member(name, role)
+
+    def add_sources(self):
+        for url in self.urls:
+            self.committee.add_source(url.url)
+
+
+class SenateMembers(object):
+
+    def __init__(self, urls):
+        self.urls = urls
+
+    def get_a_list(self):
+        xpath = '//h2/following-sibling::p//a'
+        a_list = self.urls.detail.xpath(xpath)
+        if a_list:
+            return a_list
+
+        xpath = '//div[@class="content"]'
+        a_list = self.urls.detail.xpath(xpath)[0].xpath('.//a')
+        return a_list
+
+    def get_name_role(self, text):
+        role = 'member'
+        rgxs = [r"\((.+?)\)", r"\((.+)"]
+        for rgx in rgxs:
+            role_match = re.search(rgx, text)
+            if role_match:
+                role = role_match.group(1)
+                text = re.sub(rgx, '', text).strip()
+        return text, role
+
+    def __iter__(self):
+        for a in self.get_a_list():
+            yield self.get_name_role(a.text_content())
+
