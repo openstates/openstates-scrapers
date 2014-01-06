@@ -338,7 +338,7 @@ class MDBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        title = doc.xpath('//h3[@class="h3billright"]')[0].text
+        title = doc.xpath('//h3[@class="h3billright"]')[0].text_content()
         # TODO: grab summary (none present at time of writing)
 
         if 'B' in bill_id:
