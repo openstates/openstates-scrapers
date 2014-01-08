@@ -1,4 +1,5 @@
 import lxml.html
+import gc
 from .bills import MNBillScraper
 from .legislators import MNLegislatorScraper
 from .committees import MNCommitteeScraper
@@ -121,4 +122,6 @@ def extract_text(doc, data):
     xtend = doc.xpath('//div[@class="xtend"]')[0].text_content()
     for v in doc.xpath('.//var/text()'):
         xtend = xtend.replace(v, '')
+    doc = None
+    gc.collect()
     return xtend
