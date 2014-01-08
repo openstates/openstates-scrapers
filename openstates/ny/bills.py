@@ -49,6 +49,8 @@ class NYBillScraper(BillScraper):
                     break
 
                 for bill in data['response']['results']:
+                    del bill['data']['bill']['fulltext']
+
                     details = self.bill_id_details(bill)
                     if details is None:
                         continue
