@@ -114,17 +114,19 @@ class NHBillScraper(BillScraper):
             #body = line[4]
 
         # sponsors
-        for line in self.zf.open('tbllsrsponsors.txt').readlines():
-            session_yr, lsr, seq, employee, primary = line.strip().split('|')
+        lsr_url = self.metadata['session_details'][session]['lsr_url']
+        import pdb; pdb.set_trace()
+        # for line in self.zf.open('tbllsrsponsors.txt').readlines():
+        #     session_yr, lsr, seq, employee, primary = line.strip().split('|')
 
-            if session_yr == session and lsr in self.bills:
-                sp_type = 'primary' if primary == '1' else 'cosponsor'
-                try:
-                    self.bills[lsr].add_sponsor(sp_type,
-                                        self.legislators[employee]['name'],
-                                        _code=self.legislators[employee]['seat'])
-                except KeyError:
-                    self.warning("Error, can't find person %s" % employee)
+        #     if session_yr == session and lsr in self.bills:
+        #         sp_type = 'primary' if primary == '1' else 'cosponsor'
+        #         try:
+        #             self.bills[lsr].add_sponsor(sp_type,
+        #                                 self.legislators[employee]['name'],
+        #                                 _code=self.legislators[employee]['seat'])
+        #         except KeyError:
+        #             self.warning("Error, can't find person %s" % employee)
 
 
         # actions
