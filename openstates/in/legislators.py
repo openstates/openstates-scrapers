@@ -8,8 +8,8 @@ import scrapelib
 
 class INLegislatorScraper(LegislatorScraper):
     jurisdiction = 'in'
-
     def scrape(self, chamber, term):
+        self.retry_attempts = 0
         self.validate_term(term, latest_only=True)
 
         chamber_name = {'upper': 'Senate',
@@ -74,41 +74,36 @@ class INLegislatorScraper(LegislatorScraper):
         profile = lxml.html.fromstring(profile)
         profile.make_links_absolute(href)
 
-        import pdb; pdb.set_trace()
-
         # Get contact info.
         el = profile.xpath("//div[@class='sen-contact']/p")[0]
-        lines = ''.join(get_chunks(el)).splitlines()
+        lines = list(el.itertext())
         line_data = {}
         for line in lines:
             if ':' in line:
                 key, val = line.split(':', 1)
-                line_data[key] = val.strip()
+                line_data[key.lower()] = val.strip()
+            else:
+                address = line_data.get('address', [])
+                address.append(line)
+                line_data['address'] = address
+
+        line_data['address'] = '\n'.join(line_data['address'])
 
         offices = []
-        if 'Statehouse Mailing Address':
-            office = {}
-            for key, otherkey in (
-                ('phone', 'Statehouse Phone'),
-                ('address', 'Statehouse Mailing Address')
-                ):
+        office = dict(
+            line_data, fax=None, type='capitol',
+            name='Statehouse Mailing Address')
+
+        # Nothing is uniform on Indiana's website.
+        if 'phone' not in office:
+            for key_fail in ('Statehouse Telephone',
+                             'Statehouse Telephone Number'):
                 try:
-                    office[key] = line_data[otherkey]
+                    office['phone'] = line_data[key_fail]
                 except KeyError:
                     pass
-            office.update(fax=None, type='capitol',
-                          name='Statehouse Mailing Address')
 
-            # Nothing is uniform on Indiana's website.
-            if 'phone' not in office:
-                for key_fail in ('Statehouse Telephone',
-                                 'Statehouse Telephone Number'):
-                    try:
-                        office['phone'] = line_data[key_fail]
-                    except KeyError:
-                        pass
-
-            offices.append(office)
+        offices.append(office)
 
         # If the phone field contains multiple numbers, take the final
         # and least impersonal one (the first number is a general 800).
@@ -156,12 +151,16 @@ class INLegislatorScraper(LegislatorScraper):
         contact = self.urlopen(contact_url)
         contact = lxml.html.fromstring(contact)
         contact.make_links_absolute(href)
-        last_p = contact.xpath('//h3[3]/following-sibling::p')
+        last_p = contact.xpath('//h3/following-sibling::p')
         if last_p:
             last_p = last_p[-1]
         else:
             self.logger.info('Skipping garbage html')
             return
+        if not last_p.text_content().strip():
+            self.logger.warning('Utter garbage has no address')
+            return
+
         lines = ''.join(get_chunks(last_p)).splitlines()
         lines = filter(None, lines)
         leg.add_office(name='Statehouse Mailing Address',
@@ -264,15 +263,16 @@ class INLegislatorScraper(LegislatorScraper):
             return cache['images'].get(district)
 
         images = {}
-        url = 'http://www.in.gov/legislative/senate_republicans/2355.htm'
+        url = 'http://www.indianasenaterepublicans.com/senators/'
         page = self.urlopen(url)
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(url)
-        for p in doc.xpath('//div[@id="col2content"]/div/p'):
-            m = re.search(r'SD (\d+)', p.text_content())
+        for p in doc.xpath("//p[@class='list-district']"):
+            m = re.search(r'(\d+)', p.text_content())
             if m:
                 _district = m.group(1)
-                images[_district] = p.xpath('a/img/@src')[0]
+                src = p.xpath('./..//img/@src').pop()
+                images[_district] = src
         cache['images'] = images
         return images.get(district)
 
