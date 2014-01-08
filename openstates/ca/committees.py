@@ -368,7 +368,6 @@ class SenateCommittee(object):
         name = self.get_name()
         url = self.get_url()
         parent_name = self.get_parent_name()
-        print name, url, parent_name
 
         if parent_name is not None:
             subcommittee = name
