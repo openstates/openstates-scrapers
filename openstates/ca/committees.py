@@ -238,7 +238,6 @@ class CACommitteeScraper(CommitteeScraper):
                 comm = senate_committee.get_committee_obj()
                 self.save_committee(comm)
 
-
 class Membernames(object):
 
     @staticmethod
@@ -329,7 +328,7 @@ class SenateCommitteeGroup(object):
         self.div = div
 
     def get_type(self):
-        return self.div.xpath('//h2[@class="title"]/h2/text()')
+        return self.div.xpath('./h2/text()').pop()
 
     def __iter__(self):
         xpath = 'div[@class="content"]//li[contains(@class, "views-row")]'
@@ -351,8 +350,15 @@ class SenateCommittee(object):
         self.type_ = type_
         self.li = li
 
+    def get_type(self):
+        return self.type_.replace(' Committees', '')
+
     def get_name(self):
-        return self.li.xpath(".//a")[0].text_content()
+        name = self.li.xpath(".//a")[0].text_content()
+        type_ = self.get_type()
+        if type_ == 'Sub-Committees':
+            return name
+        return '%s Committee on %s' % (self.get_type(), name)
 
     def get_url(self):
         return self.li.xpath(".//a")[0].attrib['href']
@@ -362,7 +368,7 @@ class SenateCommittee(object):
         '''
         parent = self.li.xpath("../../h3/text()")
         if parent:
-           return parent[0]
+           return 'Standing Committee on ' + parent[0]
 
     def get_committee_obj(self):
         name = self.get_name()
