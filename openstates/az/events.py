@@ -130,7 +130,7 @@ class AZEventScraper(EventScraper):
             related_bill['type'] = 'consideration'
             related_bills.append(related_bill)
 
-        div = doc.xpath('//div[@class="Section1"]')[0]
+        div = doc.xpath('//div[@class="WordSection1"]')[0]
         # probably committee + meeting_type?
         meeting_type = div.xpath('string(//p'
                                  '[contains(a/@name, "Joint_Meeting")])')

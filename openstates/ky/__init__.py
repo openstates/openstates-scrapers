@@ -25,7 +25,7 @@ metadata = dict(
         dict(
             name='2013-2014', start_year=2013, end_year=2014,
             sessions=[
-                '2013RS', '2013SS',
+                '2013RS', '2013SS', '2014RS',
             ]
         ),
     ],
@@ -51,6 +51,10 @@ metadata = dict(
         '2013SS': {'type': 'special',
                    'display_name': '2013 Extraordinary Session',
                    '_scraped_name': '2013 Extraordinary Session'},
+        '2014RS': {'type': 'primary',
+                   'display_name': '2014 Regular Session',
+                   '_scraped_name': '2014 Regular Session ',
+                  },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
     _ignored_scraped_sessions=[],
