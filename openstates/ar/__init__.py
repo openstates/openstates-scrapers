@@ -23,7 +23,7 @@ metadata = dict(
         {'name': '2013-2014',
          'start_year': 2013,
          'end_year': 2014,
-         'sessions': ['2013', '2013S1']}
+         'sessions': ['2013', '2013S1', '2014']}
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -44,6 +44,12 @@ metadata = dict(
                  '_scraped_name': 'Regular Session, 2013',
                  'type': 'primary',
                  'slug': '2013R',
+                },
+        '2014': {'start_date': datetime.date(2014, 2, 10),
+                 'display_name': '2014 Regular Session',
+                 '_scraped_name': 'Regular Session, 2014',
+                 'type': 'primary',
+                 'slug': '2014R',
                 },
         '2013S1': {'start_date': datetime.date(2013, 10, 18),
                  'display_name': '2013 First Extraordinary Session',
