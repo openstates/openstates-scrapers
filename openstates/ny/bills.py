@@ -17,19 +17,12 @@ from .models import AssemblyBillPage, SenateBillPage
 from .actions import Categorizer
 
 
-class DontRunThisScraperWithLowerAsTheChamberBecauseItWillHitTheAPITwice(Exception):
-    '''Channelling my inner java programmer.
-    '''
-    pass
-
 class NYBillScraper(BillScraper):
 
     jurisdiction = 'ny'
     categorizer = Categorizer()
 
-    def scrape(self, chamber, session):
-        if chamber == 'lower':
-            raise DontRunThisScraperWithLowerAsTheChamberBecauseItWillHitTheAPITwice()
+    def scrape(self, session, chambers):
 
         term_id = term_for_session('ny', session)
         for term in self.metadata['terms']:
@@ -64,9 +57,9 @@ class NYBillScraper(BillScraper):
                     bills[(letter, number)].append((bill, details))
 
         for billset in bills.values():
-            self.scrape_bill(session, chamber, billset)
+            self.scrape_bill(session, billset)
 
-    def scrape_bill(self, session, chamber, bills):
+    def scrape_bill(self, session, bills):
 
         billdata, details = bills[0]
 
@@ -79,7 +72,7 @@ class NYBillScraper(BillScraper):
         # bill.add_source(senate_url)
         # bill.add_source(assembly_url)
 
-        assembly = AssemblyBillPage(self, session, chamber, details)
+        assembly = AssemblyBillPage(self, session, bill_chamber, details)
         assembly.build()
         bill = assembly.bill
         bill.add_source(billdata['url'])

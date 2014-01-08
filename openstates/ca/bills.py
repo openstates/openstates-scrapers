@@ -371,6 +371,9 @@ class CABillScraper(BillScraper):
                 if title:
                     all_titles.add(title)
 
+                # if bill_id == 'scr 1':
+                #     import pdb; pdb.set_trace()
+
                 type_ = [bill_type]
 
                 if version.appropriation == 'Yes':
