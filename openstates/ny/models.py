@@ -10,9 +10,9 @@ import lxml.html
 
 from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
-from billy.utils import term_for_session, metadata, CachedAttr
+from billy.utils import term_for_session, metadata
 
-from .utils import Urls
+from .utils import Urls, CachedAttr
 
 
 class BasePageyThing(object):
