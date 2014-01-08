@@ -2,7 +2,15 @@ import collections
 
 import lxml.html
 
-from billy.utils import CachedAttr
+
+class memoize(dict):
+    def __init__(self, func):
+        self.func = func
+    def __call__(self, *args):
+        return self[args]
+    def __missing__(self, key):
+        result = self[key] = self.func(*key)
+        return result
 
 
 class UrlData(object):
@@ -20,20 +28,20 @@ class UrlData(object):
     def __repr__(self):
         return 'UrlData(url=%r)' % self.url
 
-    @CachedAttr
+    @memoize
     def text(self):
         text = self.scraper.urlopen(self.url)
         self.urls_object.validate(self.name, self.url, text)
         return text
 
-    @CachedAttr
+    @memoize
     def resp(self):
         '''Return the decoded html or xml or whatever. sometimes
         necessary for a quick "if 'page not found' in html:..."
         '''
         return self.text.response
 
-    @CachedAttr
+    @memoize
     def doc(self):
         '''Return the page's lxml doc.
         '''
@@ -41,17 +49,17 @@ class UrlData(object):
         doc.make_links_absolute(self.url)
         return doc
 
-    @CachedAttr
+    @memoize
     def xpath(self):
         return self.doc.xpath
 
-    @CachedAttr
+    @memoize
     def pdf_to_lxml(self):
         filename, resp = self.scraper.urlretrieve(self.url)
         text = convert_pdf(filename, 'html')
         return lxml.html.fromstring(text)
 
-    @CachedAttr
+    @memoize
     def etree(self):
         '''Return the documents element tree.
         '''

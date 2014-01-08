@@ -10,9 +10,9 @@ import lxml.html
 
 from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
-from billy.utils import term_for_session, metadata, CachedAttr
+from billy.utils import term_for_session, metadata
 
-from .utils import Urls
+from .utils import Urls, memoize
 
 
 class BasePageyThing(object):
@@ -60,7 +60,7 @@ class AssemblyBillPage(BasePageyThing):
     '''Get the actions, sponsors, sponsors memo and summary
     and assembly floor votes from the assembly page.
     '''
-    @CachedAttr
+    @memoize
     def chunks(self):
         url = ('http://assembly.state.ny.us/leg/?default_fld=&'
                'bn=%s&Summary=Y&Actions=Y&term=%s')
