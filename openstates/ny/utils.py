@@ -3,13 +3,25 @@ import collections
 import lxml.html
 
 
-class memoize(dict):
-    def __init__(self, func):
-        self.func = func
-    def __call__(self, *args):
-        return self[args]
-    def __missing__(self, key):
-        result = self[key] = self.func(*key)
+class CachedAttr(object):
+    '''Computes attribute value and caches it in instance.
+
+    Example:
+        class MyClass(object):
+            def myMethod(self):
+                # ...
+            myMethod = CachedAttribute(myMethod)
+    Use "del inst.myMethod" to clear cache.'''
+
+    def __init__(self, method, name=None):
+        self.method = method
+        self.name = name or method.__name__
+
+    def __get__(self, inst, cls):
+        if inst is None:
+            return self
+        result = self.method(inst)
+        setattr(inst, self.name, result)
         return result
 
 
@@ -28,20 +40,20 @@ class UrlData(object):
     def __repr__(self):
         return 'UrlData(url=%r)' % self.url
 
-    @memoize
+    @CachedAttr
     def text(self):
         text = self.scraper.urlopen(self.url)
         self.urls_object.validate(self.name, self.url, text)
         return text
 
-    @memoize
+    @CachedAttr
     def resp(self):
         '''Return the decoded html or xml or whatever. sometimes
         necessary for a quick "if 'page not found' in html:..."
         '''
         return self.text.response
 
-    @memoize
+    @CachedAttr
     def doc(self):
         '''Return the page's lxml doc.
         '''
@@ -49,17 +61,17 @@ class UrlData(object):
         doc.make_links_absolute(self.url)
         return doc
 
-    @memoize
+    @CachedAttr
     def xpath(self):
         return self.doc.xpath
 
-    @memoize
+    @CachedAttr
     def pdf_to_lxml(self):
         filename, resp = self.scraper.urlretrieve(self.url)
         text = convert_pdf(filename, 'html')
         return lxml.html.fromstring(text)
 
-    @memoize
+    @CachedAttr
     def etree(self):
         '''Return the documents element tree.
         '''
