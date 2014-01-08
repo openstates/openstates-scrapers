@@ -65,37 +65,19 @@ class INLegislatorScraper(LegislatorScraper):
 
     def scrape_upper_republican(self, chamber, term, href, page, party, leg):
 
-        profile = self.urlopen(href)
+        try:
+            profile = self.urlopen(href)
+        except scrapelib.HTTPError:
+            self.logger.warning("Bogus detail url for legislator %r" % leg)
+            return
+
         profile = lxml.html.fromstring(profile)
         profile.make_links_absolute(href)
 
-        try:
-            about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
-        except IndexError:
-            msg = ('This legislator has FAILED to have a profile page '
-                   'that is similar to the others\'. Skipping.')
-            self.logger.critical(msg)
-            return
-
-        about = self.urlopen(about_url)
-        if about.strip() == "":
-            self.logger.info("WARNING: Blank page @ %s - skipping" % (
-                about_url
-            ))
-            return
-
-        about = lxml.html.fromstring(about)
-        about.make_links_absolute(about_url)
-
-        leg.add_source(about_url)
+        import pdb; pdb.set_trace()
 
         # Get contact info.
-        el = about.xpath('//strong[contains(., "Contact")]')
-        if el:
-            el = el[0].getparent()
-        else:
-            el = about.xpath('//span[contains(., "Contact")]')
-            el = el[0].getparent().getparent()
+        el = profile.xpath("//div[@class='sen-contact']/p")[0]
         lines = ''.join(get_chunks(el)).splitlines()
         line_data = {}
         for line in lines:
@@ -176,8 +158,8 @@ class INLegislatorScraper(LegislatorScraper):
         contact.make_links_absolute(href)
         last_p = contact.xpath('//h3[3]/following-sibling::p')
         if last_p:
-            last_p = last_p[0]
-        if not last_p:
+            last_p = last_p[-1]
+        else:
             self.logger.info('Skipping garbage html')
             return
         lines = ''.join(get_chunks(last_p)).splitlines()
