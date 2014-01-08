@@ -32,12 +32,12 @@ class CACommitteeScraper(CommitteeScraper):
 
     def scrape(self, chamber, term):
         if chamber == 'lower':
-            self.scrape_lower(term)
+            self.scrape_lower(chamber, term)
         elif chamber == 'upper':
-            self.scrape_upper(term)
+            self.scrape_upper(chamber, term)
 
 
-    def scrape_lower(self, term):
+    def scrape_lower(self, chamber, term):
         url = self.urls[chamber]
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -232,13 +232,11 @@ class CACommitteeScraper(CommitteeScraper):
         names = cache[committee['subcommittee']]
         return Membernames.scrub(names)
 
-    def scrape_upper(self, term):
+    def scrape_upper(self, chamber, term):
         for committee_type in SenateCommitteePage(self):
             for senate_committee in committee_type:
                 comm = senate_committee.get_committee_obj()
                 self.save_committee(comm)
-                import pprint
-                pprint.pprint(comm)
 
 
 class Membernames(object):
