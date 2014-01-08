@@ -57,9 +57,9 @@ class NYBillScraper(BillScraper):
                     bills[(letter, number)].append((bill, details))
 
         for billset in bills.values():
-            self.scrape_bill(session, chamber, billset)
+            self.scrape_bill(session, billset)
 
-    def scrape_bill(self, session, chamber, bills):
+    def scrape_bill(self, session, bills):
 
         billdata, details = bills[0]
 
@@ -72,7 +72,7 @@ class NYBillScraper(BillScraper):
         # bill.add_source(senate_url)
         # bill.add_source(assembly_url)
 
-        assembly = AssemblyBillPage(self, session, chamber, details)
+        assembly = AssemblyBillPage(self, session, bill_chamber, details)
         assembly.build()
         bill = assembly.bill
         bill.add_source(billdata['url'])
