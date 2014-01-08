@@ -45,11 +45,16 @@ class MOLegislatorScraper(LegislatorScraper):
                 continue
             tds = tr.xpath('td')
             full_name = tds[0].xpath('div/a')[0].text_content().strip()
+
+            if full_name == 'Vacant':
+                continue
+
             party_and_district = tds[1].xpath('div')[0].text_content().strip().split('-')
             if party_and_district[0] == 'D':
                 party = 'Democratic'
             elif party_and_district[0] == 'R':
                 party = 'Republican'
+
             senator_key = "%s%s" % (party_and_district[0].lower(),party_and_district[1])
             district = party_and_district[1]
             phone = tds[3].xpath('div')[0].text_content().strip()

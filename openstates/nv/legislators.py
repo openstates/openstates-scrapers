@@ -39,15 +39,18 @@ class NVLegislatorScraper(LegislatorScraper):
             # fetch office from legislator page
             try:
                 doc = lxml.html.fromstring(self.urlopen(leg_url))
-                address = doc.xpath('//div[@class="contactAddress"]')[0].text_content()
-                address2 = doc.xpath('//div[@class="contactAddress2"]')
-                if address2:
-                    address += ' ' + address2[0].text_content()
-                address += '\n' + doc.xpath('//div[@class="contactCityStateZip"]')[0].text_content()
-                phone = doc.xpath('//div[@class="contactPhone"]')[0].text_content()
+                if not doc.xpath('//div'):
+                    self.warning('invalid page, maybe a weird PDF?')
+                else:
+                    address = doc.xpath('//div[@class="contactAddress"]')[0].text_content()
+                    address2 = doc.xpath('//div[@class="contactAddress2"]')
+                    if address2:
+                        address += ' ' + address2[0].text_content()
+                    address += '\n' + doc.xpath('//div[@class="contactCityStateZip"]')[0].text_content()
+                    phone = doc.xpath('//div[@class="contactPhone"]')[0].text_content()
 
-                leg.add_office('district', 'District Address', address=address,
-                               phone=phone)
+                    leg.add_office('district', 'District Address', address=address,
+                                   phone=phone)
             except scrapelib.HTTPError:
                 self.warning('could not fetch %s' % leg_url)
                 pass

@@ -26,8 +26,8 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
         for link in table.xpath(".//a[contains(@href, 'legislator')]"):
             name = link.text.strip()
             leg_url = link.get('href')
-            district = link.xpath("string(../../td[2])")
-            party = link.xpath("string(../../td[3])")
+            district = link.xpath("string(../../td[3])")
+            party = link.xpath("string(../../td[4])")
             email = link.xpath("string(../../td[5])")
 
             if party == 'Democrat':
