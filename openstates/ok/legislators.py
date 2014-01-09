@@ -32,8 +32,15 @@ class OKLegislatorScraper(LegislatorScraper):
         for link in page.xpath("//a[contains(@href, 'District')]")[2:]:
             name = link.text.strip()
             district = link.xpath("string(../../td[3])").strip()
+            if not district.isdigit():
+                district = re.search(r'District (\d+)', district).group(1)
 
-            party = link.xpath("string(../../td[4])").strip()
+            matchobj = re.search(r'\(([A-Z])\)', link.text_content())
+            if matchobj is None:
+                party = link.xpath('string(./../../*[3])')
+            else:
+                party = matchobj.group(1)
+
             if party == 'R':
                 party = 'Republican'
             elif party == 'D':
