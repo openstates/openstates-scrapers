@@ -134,6 +134,7 @@ class AZEventScraper(EventScraper):
             '//div[@class="Section1"]',
             '//div[@class="WordSection1"]',
             )
+        for xpath in xpaths:
             try:
                 div = doc.xpath(xpath)[0]
             except IndexError:
