@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+import urlparse
 from collections import defaultdict
 
 import scrapelib
@@ -12,6 +13,7 @@ from billy.importers.bills import fix_bill_id
 import pytz
 import lxml.html
 
+from .apiclient import ApiClient
 from .actions import Categorizer
 from .models import PDFHouseVote
 
@@ -45,10 +47,10 @@ class INBillScraper(BillScraper):
     jurisdiction = 'in'
 
     categorizer = Categorizer()
-
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
+
         self.build_subject_mapping(session)
 
         bill_types = {
@@ -269,7 +271,10 @@ class INBillScraper(BillScraper):
             return
 
     def scrape_senate_vote(self, bill, url):
-        (path, resp) = self.urlretrieve(url)
+        try:
+            (path, resp) = self.urlretrieve(url)
+        except:
+            return
         text = convert_pdf(path, 'text')
         os.remove(path)
 
