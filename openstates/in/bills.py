@@ -336,3 +336,79 @@ class INBillScraper(BillScraper):
         check_vote_counts(vote)
 
         bill.add_vote(vote)
+
+
+# -----------------------------------------------------------------------------
+# Below is a bunch of code that uses the API. Maybe for the future.
+# -----------------------------------------------------------------------------
+    # def scrape(self, chamber, session):
+    #     self.retry_attempts = 0
+    #     self.client = ApiClient(self)
+    #     self.api_chamber = dict(upper='senate', lower='house')[chamber]
+    #     self.chamber = chamber
+    #     self.session = session
+    #     self.get_subjects()
+
+    #     bills = self.client.get('chamber_bills',
+    #         session=self.api_session, chamber=self.api_chamber)
+    #     bills = self.client.unpaginate(bills)
+    #     for data in bills:
+    #         data = self.client.get_relurl(data['link'])
+    #         self.scrape_bill(data)
+
+    # def get_subjects(self):
+    #     bill2subjects = defaultdict(list)
+    #     subjects = self.client.get('subjects', session=self.api_session)
+    #     subjects = self.client.unpaginate(subjects)
+    #     for subject in subjects:
+    #         if subject['link'] == '/2013/subjects/si_workers_compensation_7426':
+    #             self.warning('Skipping known messed up subject')
+    #             continue
+    #         bills = self.client.get_relurl(subject['link'])
+    #         for bill in bills['bills']:
+    #             bill2subjects[bill['billName']].append(subject['entry'])
+    #     self.bill2subjects = bill2subjects
+
+    # def scrape_bill(self, data):
+    #     bill = Bill(
+    #         self.session, self.chamber,
+    #         data['billName'],
+    #         data['title'],
+    #         type=data['type'].lower())
+
+    #     url = urlparse.urljoin(self.client.root, data['link'])
+    #     bill.add_source(url)
+
+    #     for author in data['authors'] + data['coauthors']:
+    #         name = '%s %s' % (author['firstName'], author['lastName'])
+    #         bill.add_sponsor('primary', name)
+
+    #     for cosponspr in data['cosponsors']:
+    #         name = '%s %s' % (cosponsors['firstName'], cosponsors['lastName'])
+    #         bill.add_sponsor('cosponsor', name)
+
+    #     for version in data['versions']:
+    #         url = urlparse.urljoin(self.client.root, version['link'])
+    #         version = self.client.get_relurl(url)
+    #         name = version['printVersionName']
+    #         bill['summary'] = version['digest']
+    #         version_url = urlparse.urljoin(
+    #             self.client.root, version['pdfDownloadLink'])
+    #         bill.add_version(name, version_url, mimetype='application/pdf')
+
+    #     actions = self.client.get_relurl(data['actions']['link'])
+    #     action_chambers = dict(House='lower', Senate='upper')
+    #     for action in self.client.unpaginate(actions):
+    #         date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
+    #         text = action['description']
+    #         action_chamber = action_chambers[action['chamber']['name']]
+    #         kwargs = dict(date=date, actor=self.chamber, action=text)
+    #         kwargs.update(**self.categorizer.categorize(text))
+    #         bill.add_action(**kwargs)
+
+    #     bill['subjects'] = self.bill2subjects[data['billName']]
+
+    #     rollcalls = self.client.get('bill_rollcalls')
+
+    #     self.save_bill(bill)
+
