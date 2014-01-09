@@ -107,7 +107,7 @@ class LALegislatorScraper(LegislatorScraper):
         page = self.lxmlize(url)
         photo = xpath_one(page, '//img[@rel="lightbox"]').attrib['src']
         infoblk = xpath_one(page,
-                         '//font/b[contains(text(), "CAUCUS MEMBERSHIP")]')
+                         '//font/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
         infoblk = infoblk.getparent()
         info = infoblk.text_content()
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")

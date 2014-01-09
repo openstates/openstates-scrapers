@@ -68,10 +68,10 @@ class LACommitteeScraper(CommitteeScraper):
             if name.startswith('Vacant'):
                 continue
 
-            font = cells[1].xpath('font')[0]
+            font = cells[1]
             committees = []
 
-            if font.text:
+            if font is not None and font.text:
                 committees.append(font.text.strip())
             for br in font.xpath('br'):
                 if br.text:
