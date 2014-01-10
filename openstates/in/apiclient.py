@@ -16,7 +16,7 @@ def check_response(method):
             if resp.status_code == 429:
                 self.handle_429(resp, *args, **kwargs)
                 return method(self, *args, **kwargs).json()
-            raise Exception('Bad api response: %r %r %r' % (resp, resp.text, resp.headers)
+            raise Exception('Bad api response: %r %r %r' % (resp, resp.text, resp.headers))
         return resp.json()
     return wrapped
 
