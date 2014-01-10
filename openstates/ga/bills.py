@@ -35,7 +35,22 @@ class GABillScraper(BillScraper):
     def get_member(self, member_id):
         if member_id in member_cache:
             return member_cache[member_id]
-        mem = self.mservice.GetMember(member_id)
+
+            max_retries = 5
+            tries = 0
+            while True:
+                if max_retries <= tries:
+                    msg = 'The service timed out %d times. Bailing.'
+                    raise Exception(msg % tries)
+                try:
+                    member_info = self.sservice.GetMember(member_id)
+                except socket.timeout:
+                    msg = "Service timed out. Sleeping 5 seconds."
+                    self.logger.info(msg)
+                    time.sleep(5)
+                    tries += 1
+                    continue
+                break
         member_cache[member_id] = mem
         return mem
 
