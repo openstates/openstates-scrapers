@@ -61,7 +61,7 @@ class OKCommitteeScraper(CommitteeScraper):
             member = link.xpath('string()').strip()
             member = re.sub(r'\s+', ' ', member)
 
-            if not member:
+            if not member or member == 'House District Maps':
                 continue
 
             match = re.match(r'((Co-)?(Vice )?Chair)?Rep\. ([^\(]+)', member)
