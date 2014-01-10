@@ -19,7 +19,8 @@ metadata = dict(
         dict(name='2011-2012', sessions=['2011', '2011S1', '2011S2', '2011S3',
                                          '2012', '2012S4'],
              start_year=2011, end_year=2012),
-        dict(name='2013-2014', sessions=['2013', '2013h1', '2013s1', '2014'],
+        dict(name='2013-2014', sessions=['2013', '2013h1', '2013s1', '2013s2',
+                                         '2014'],
              start_year=2013, end_year=2014),
         ],
     session_details={
@@ -43,6 +44,8 @@ metadata = dict(
                   '_scraped_name': '2013 House Session', },
         '2013s1': { 'display_name': '2013 1st Special Session',
                    '_scraped_name': '2013 1st Special Session', },
+        '2013s2': { 'display_name': '2013 2nd Special Session',
+                   '_scraped_name': '2013 2nd Special Session', },
         '2014': { 'display_name': '2014 General Session',
                   '_scraped_name': '2014 General Session', },
     },
