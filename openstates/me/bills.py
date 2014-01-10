@@ -124,6 +124,11 @@ class MEBillScraper(BillScraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
+        # Add the LD number in.
+        for ld_num in page.xpath("//b[contains(text(), 'LD ')]/text()"):
+            if re.search(r'LD \d+', ld_num):
+                bill['ld_number'] = ld_num
+
         if 'Bill not found.' in html:
             self.warning('%s returned "Bill not found." page' % url)
             raise BillNotFound
