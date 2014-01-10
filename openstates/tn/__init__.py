@@ -26,9 +26,16 @@ metadata = dict(
         {'name': '107', 'sessions': ['107'],
             'start_year': 2010, 'end_year': 2011},
         {'name': '108', 'sessions': ['108'],
-            'start_year': 2012, 'end_year': 2013}
+            'start_year': 2012, 'end_year': 2013},
+        {'name': '109', 'sessions': ['109'],
+            'start_year': 2014, 'end_year': 2015}
     ],
     session_details={
+        '109': {
+            'start_date': datetime.date(2014, 1, 14),
+            'end_date': datetime.date(2014, 5, 1),
+            'type': 'primary',
+            'display_name': '108th Regular Session (2013-2014)'},
         '108': {
             'type': 'primary',
             'display_name': '108th Regular Session (2013-2014)'},

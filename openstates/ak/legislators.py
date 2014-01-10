@@ -86,7 +86,7 @@ class AKLegislatorScraper(LegislatorScraper):
         else:
             district = district.group(1)
 
-        party = re.search(r'Party: (.+) Toll-Free', info).group(1).strip()
+        party = re.search(r'Party: (.+)', info).group(1).strip()
         email = re.search(r'Email: ([\w_]+@legis\.state\.ak\.us)',
                           info)
 

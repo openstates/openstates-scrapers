@@ -23,7 +23,7 @@ class OKCommitteeScraper(CommitteeScraper):
 
         parents = {}
 
-        for link in page.xpath("//a[contains(@href, 'Members')]"):
+        for link in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_dgrdCommittee_ctl00']//a[contains(@href, 'Members')]"):
             name = link.xpath("string()").strip()
 
             if 'Members' in name or 'Conference' in name:
@@ -61,7 +61,7 @@ class OKCommitteeScraper(CommitteeScraper):
             member = link.xpath('string()').strip()
             member = re.sub(r'\s+', ' ', member)
 
-            if not member:
+            if not member or member == 'House District Maps':
                 continue
 
             match = re.match(r'((Co-)?(Vice )?Chair)?Rep\. ([^\(]+)', member)

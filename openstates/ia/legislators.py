@@ -2,11 +2,12 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from .scraper import InvalidHTTPSScraper
 
 import lxml.html
 
 
-class IALegislatorScraper(LegislatorScraper):
+class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, term):
@@ -18,21 +19,21 @@ class IALegislatorScraper(LegislatorScraper):
         else:
             chamber_name = 'house'
 
-        url = "http://www.legis.iowa.gov/Legislators/%s.aspx" % chamber_name
+        url = "https://www.legis.iowa.gov/legislators/%s" % chamber_name
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
-        table = page.xpath('//table[@class="legis"]')[0]
-        for link in table.xpath(".//a[contains(@href, 'legislator.aspx')]"):
+        table = page.xpath('//table[@id="sortableTable"]')[0]
+        for link in table.xpath(".//a[contains(@href, 'legislator')]"):
             name = link.text.strip()
             leg_url = link.get('href')
-            district = link.xpath("string(../../td[2])")
-            party = link.xpath("string(../../td[3])")
+            district = link.xpath("string(../../td[3])")
+            party = link.xpath("string(../../td[4])")
             email = link.xpath("string(../../td[5])")
 
             if party == 'Democrat':
                 party = 'Democratic'
 
-            pid = re.search("PID=(\d+)", link.attrib['href']).group(1)
+            pid = re.search("personID=(\d+)", link.attrib['href']).group(1)
             photo_url = ("http://www.legis.iowa.gov/getPhotoPeople.aspx"
                          "?GA=%s&PID=%s" % (session_id, pid))
 

@@ -23,6 +23,7 @@ class WIEventScraper(EventScraper):
         legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
         role_map = {"participant": "participant",
                     "Chair": "chair",
+                    "Co-Chair": "chair",
                     "Vice-Chair": "participant"}
         ret = []
         for leg in legs:

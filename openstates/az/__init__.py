@@ -143,6 +143,7 @@ metadata = dict(
             'sessions': [
             '51st-1st-regular',
             '51st-1st-special',
+            '51st-2nd-regular',
             ],
             'start_year': 2013, 'end_year': 2014
         },
@@ -496,6 +497,11 @@ metadata = dict(
                 {'type': 'primary', 'session_id': 111,
                  'display_name': '51st Legislature - 1st Special Session (2013)',
                  '_scraped_name': 'Fifty-first Legislature - First Special Session'
+                },
+            '51st-2nd-regular':
+                {'type': 'primary', 'session_id': 112,
+                 'display_name': '51st Legislature - 2nd Regular Session',
+                 '_scraped_name': 'Fifty-first Legislature - Second Regular Session'
                 }
                 # get session id from http://www.azleg.gov/SelectSession.asp select
         },

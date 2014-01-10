@@ -7,7 +7,7 @@ import re
 import os
 
 
-SENATE_URL = 'http://www.senate.mo.gov/12info/jrnlist/journals.aspx'
+SENATE_URL = 'http://www.senate.mo.gov/%sinfo/jrnlist/journals.aspx'
 HOUSE_URL = 'http://www.house.mo.gov/journallist.aspx'
 
 motion_re = r"(?i)On motion of .*, .*"
@@ -42,7 +42,7 @@ class MOVoteScraper(VoteScraper):
         return data
 
     def scrape_senate(self, session):
-        url = SENATE_URL
+        url = SENATE_URL % (session[-2:])
         classes = [
             "YEAS",
             "NAYS",

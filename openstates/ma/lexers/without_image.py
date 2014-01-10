@@ -1,47 +1,47 @@
 import logging
 import datetime
 
-from tater import Node, RegexLexer, bygroups, include, matches, parse
+from tater import Node, matches
+from tater import Lexer, bygroups, include, Rule as r
 from tater import Visitor
-from tater import Rule as r
-from tater import Token as t
 
 
-class HeaderLexer(RegexLexer):
+class HeaderLexer(Lexer):
     '''Lexer for the House PDF vote files that are normal (nice)
     PDFs with machine-readable text and no embedded images.
     '''
     # DEBUG = logging.DEBUG
     re_skip = r'[\s\n]+'
-    dont_emit = [t.Skip]
+    dont_emit = ['Skip']
 
     tokendefs = {
 
         'root': [
-            r(t.Skip, 'MASSACHUSETTS HOUSE OF REPRESENTATIVES'),
+            ('Skip', 'MASSACHUSETTS HOUSE OF REPRESENTATIVES'),
             include('meta'),
         ],
 
         'meta': [
-            r(t.BillId, '[A-Z]\.\s{,2}\d+', push='motion'),
-            r(t.Skip, 'Yea and Nay'),
-            r(t.Date, r'[\d/]+ [\d:]+ [AP]M'),
-            r(bygroups(t.CalendarNumber), r'No. (\d+)',
+            r('BillId', '[A-Z]\.\s{,2}\d+', push='motion'),
+            (bygroups('Motion'), '(Shall.+?)\n\n'),
+            ('Skip', 'Yea and Nay'),
+            ('Date', r'[\d/]+ [\d:]+ [AP]M'),
+            r(bygroups('CalendarNumber'), r'No. (\d+)',
               push=['votes', 'counts']),
         ],
 
         'motion': [
-            r(bygroups(t.Motion), '(.+?)\n\n'),
+            (bygroups('Motion'), '(.+?)\n\n'),
         ],
 
         'counts': [
-            r(bygroups(t.YesCount), r'(\d+)\s{,5}YEAS'),
-            r(bygroups(t.NoCount), r'(\d+)\s{,5}NAYS'),
-            r(bygroups(t.OtherCount), r'(\d+)\s{,5}N/V'),
+            (bygroups('YesCount'), r'(\d+)\s{,5}YEAS'),
+            (bygroups('NoCount'), r'(\d+)\s{,5}NAYS'),
+            (bygroups('OtherCount'), r'(\d+)\s{,5}N/V'),
         ],
 
         'votes': [
-            r(bygroups(t.Votes), '(?s)(.+)\*=AFTER VOTE'),
+            (bygroups('Votes'), '(?s)(.+)\*=AFTER VOTE.+'),
         ]
     }
 
@@ -50,69 +50,37 @@ class HeaderLexer(RegexLexer):
 # Node definitions.
 class Rollcall(Node):
 
-    @matches(t.BillId)
+    @matches('BillId')
     def handle_bill_id(self, *items):
-        return self.descend(BillId, items)
+        return self.descend('BillId', items)
 
-    @matches(t.Motion)
+    @matches('Motion')
     def handle_motion(self, *items):
-        return self.descend(Motion, items)
+        return self.descend('Motion', items)
 
-    @matches(t.Date)
+    @matches('Date')
     def handle_date(self, *items):
-        return self.descend(Date, items)
+        return self.descend('Date', items)
 
-    @matches(t.CalendarNumber)
+    @matches('CalendarNumber')
     def handle_calendar_number(self, *items):
-        return self.descend(CalendarNumber, items)
+        return self.descend('CalendarNumber', items)
 
-    @matches(t.YesCount)
+    @matches('YesCount')
     def handle_yes_count(self, *items):
-        return self.descend(YesCount, items)
+        return self.descend('YesCount', items)
 
-    @matches(t.NoCount)
+    @matches('NoCount')
     def handle_no_count(self, *items):
-        return self.descend(NoCount, items)
+        return self.descend('NoCount', items)
 
-    @matches(t.OtherCount)
+    @matches('OtherCount')
     def handle_other_count(self, *items):
-        return self.descend(OtherCount, items)
+        return self.descend('OtherCount', items)
 
-    @matches(t.Votes)
+    @matches('Votes')
     def handle_votes(self, *items):
-        return self.descend(Votes, items)
-
-
-class BillId(Node):
-    pass
-
-
-class Motion(Node):
-    pass
-
-
-class Date(Node):
-    pass
-
-
-class YesCount(Node):
-    pass
-
-
-class NoCount(Node):
-    pass
-
-
-class OtherCount(Node):
-    pass
-
-
-class Votes(Node):
-    pass
-
-
-class CalendarNumber(Node):
-    pass
+        return self.descend('Votes', items)
 
 
 # -----------------------------------------------------------------

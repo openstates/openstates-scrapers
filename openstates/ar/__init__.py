@@ -23,7 +23,7 @@ metadata = dict(
         {'name': '2013-2014',
          'start_year': 2013,
          'end_year': 2014,
-         'sessions': ['2013']}
+         'sessions': ['2013', '2013S1', '2014']}
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -44,6 +44,18 @@ metadata = dict(
                  '_scraped_name': 'Regular Session, 2013',
                  'type': 'primary',
                  'slug': '2013R',
+                },
+        '2014': {'start_date': datetime.date(2014, 2, 10),
+                 'display_name': '2014 Regular Session',
+                 '_scraped_name': 'Regular Session, 2014',
+                 'type': 'primary',
+                 'slug': '2014R',
+                },
+        '2013S1': {'start_date': datetime.date(2013, 10, 18),
+                 'display_name': '2013 First Extraordinary Session',
+                 '_scraped_name': 'First Extraordinary Session, 2013',
+                 'type': 'special',
+                 'slug': '2013S1',
                 }
         },
     feature_flags=['influenceexplorer'],
@@ -83,10 +95,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    sessions = url_xpath(
+    links = url_xpath(
         'http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages/Previous%20Legislatures.aspx',
-        '//div[@id="ctl00_ctl15_g_91c28874_44ca_4b3e_9969_7202c1ca63dd_panel"]//a')
-    return [s.text_content() for s in sessions if s.text_content()]
+        '//a')
+    sessions = [a.text_content() for a in links if 'Session' in a.attrib.get('title', '')]
+    return sessions
 
 
 def extract_text(doc, data):

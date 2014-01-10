@@ -22,7 +22,7 @@ metadata = {
          },
         {'name': '2013-2014',
          'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013'],
+         'sessions': ['2013', '2014'],
          }
         ],
     'session_details': {
@@ -34,6 +34,9 @@ metadata = {
                  },
         '2013': {'display_name': '2013 Regular Session',
                  '_scraped_name': '2013'
+                 },
+        '2014': {'display_name': '2014 Regular Session',
+                 '_scraped_name': '2014'
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],

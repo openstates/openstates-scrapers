@@ -29,15 +29,11 @@ class OKLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'District')]")[2:]:
-            name = link.text.strip()
-            district = link.xpath("string(../../td[3])").strip()
-
-            party = link.xpath("string(../../td[4])").strip()
-            if party == 'R':
-                party = 'Republican'
-            elif party == 'D':
-                party = 'Democratic'
+        for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
+            name = tr.xpath('.//td[1]/a')[0].text.strip()
+            district = tr.xpath('.//td[3]')[0].text_content().strip()
+            party = tr.xpath('.//td[4]')[0].text_content().strip()
+            party = {'R': 'Republican', 'D': 'Democratic'}[party]
 
             leg_url = 'http://www.okhouse.gov/District.aspx?District=' + district
             leg_doc = lxml.html.fromstring(self.urlopen(leg_url))

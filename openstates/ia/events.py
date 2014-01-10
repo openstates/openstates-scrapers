@@ -2,11 +2,12 @@ import re
 import datetime
 
 from billy.scrape.events import EventScraper, Event
+from .scraper import InvalidHTTPSScraper
 
 import lxml.html
 
 
-class IAEventScraper(EventScraper):
+class IAEventScraper(InvalidHTTPSScraper, EventScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, session):
@@ -40,7 +41,7 @@ class IAEventScraper(EventScraper):
             location = link.xpath("string(../../td[3])")
 
             when = link.xpath("string(../../td[1])").strip()
-            if when == 'Cancelled' or "Upon" in when:
+            if 'cancelled' in when.lower() or "upon" in when.lower():
                 continue
             if "To Be Determined" in when:
                 continue

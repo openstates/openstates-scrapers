@@ -42,8 +42,16 @@ class MDLegislatorScraper(LegislatorScraper):
             party = _get_table_item(ldoc, 'Party Affiliation:').text
             if party == 'Democrat':
                 party = 'Democratic'
-            address = '\n'.join(_get_table_item(ldoc, 'Annapolis Address:').xpath('text()'))
-            phone = _get_table_item(ldoc, 'Phone').text    # first number
+            addr_lines = _get_table_item(ldoc, 'Annapolis Address:').xpath('text()')
+            address = []
+            for line in addr_lines:
+                if 'Phone:' not in line:
+                    address.append(line)
+                else:
+                    phone = line
+            address = '\n'.join(address)
+            phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', phone)[0]
+
             email = ldoc.xpath('//a[contains(@href, "mailto:")]/@href')
             if email:
                 email = email[0].strip('mailto:')
@@ -60,6 +68,6 @@ class MDLegislatorScraper(LegislatorScraper):
             if img_src:
                 leg['photo_url'] = img_src[0]
 
-            leg.add_office('capitol', 'Capitol Office', address=address,
+            leg.add_office('capitol', 'Capitol Office', address=address or None,
                            phone=phone)
             self.save_legislator(leg)

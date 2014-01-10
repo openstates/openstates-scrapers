@@ -19,42 +19,49 @@ class VTCommitteeScraper(CommitteeScraper):
                chamber_abbr)
         html = self.urlopen(url)
         page = lxml.html.fromstring(html)
+        comm = None
+        for tr in page.xpath('//table')[3].xpath('tr')[1:]:
 
-        for li in page.xpath("//li"):
-            # Strip the room number from the committee name
-            comm_name = re.match(r'[^\(]+', li.text_content()).group(0).strip()
+            tds = list(tr)
+            if len(tds) < 2:
+                continue
 
-            # Strip chamber from beginning of committee name
-            comm_name = re.sub(r'^(HOUSE|SENATE) COMMITTEE ON ', '',
-                               comm_name)
-            # normalize case of committee name
-            comm_name = comm_name.title()
+            if 'COMMITTEE' in tds[1].text_content():
+                # Save the current committee.
+                if (comm or {}).get('members', []):
+                    self.save_committee(comm)
+                # Start a new one.
+                comm = self.parse_committee_name(tds[1], chamber)
+                comm.add_source(url)
+                print comm
+                continue
 
-            comm = Committee(chamber, comm_name)
-            comm.add_source(url)
+            name = tds[1].text_content().strip()
+            match = re.search(
+                '^([\w\s\.]+),\s+'
+                '(Chair|Vice Chair|Vice-Chair|Ranking Member|Clerk)$',
+                name)
+            if match:
+                name = match.group(1)
+                mtype = match.group(2).lower()
+            else:
+                mtype = 'member'
 
-            for tr in li.xpath("../../following-sibling::tr"):
+            # if not name.startswith(DOUBLED_NAMES):
+            name = re.sub(r'of [\w\s\.]+$', '', name)
 
-                name = tr.text_content().strip()
+            print name
+            comm.add_member(name, mtype)
 
-                # Break when we reach the next committee
-                if 'COMMITTEE' in name:
-                    break
 
-                match = re.search(
-                    '^([\w\s\.]+),\s+'
-                    '(Chair|Vice Chair|Vice-Chair|Ranking Member|Clerk)$',
-                    name)
-                if match:
-                    name = match.group(1)
-                    mtype = match.group(2).lower()
-                else:
-                    mtype = 'member'
+    def parse_committee_name(self, td, chamber):
+        # Strip the room number from the committee name
+        comm_name = re.match(r'[^\(]+', td.text_content()).group(0).strip()
 
-                if not name.startswith(DOUBLED_NAMES):
-                    name = re.sub(r'of [\w\s\.]+$', '', name)
+        # Strip chamber from beginning of committee name
+        comm_name = re.sub(r'^(HOUSE|SENATE) COMMITTEE ON ', '',
+                           comm_name)
+        # normalize case of committee name
+        comm_name = comm_name.title()
 
-                comm.add_member(name, mtype)
-
-            if comm['members']:
-                self.save_committee(comm)
+        return Committee(chamber, comm_name)

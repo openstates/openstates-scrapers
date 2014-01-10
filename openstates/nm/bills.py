@@ -110,6 +110,9 @@ class NMBillScraper(BillScraper):
         matches = sorted([
             (datetime.strptime(date, '%m-%d-%y  %H:%M%p'), filename)
             for date, filename in matches])
+        if matches == []:
+            raise ValueError("%s contains no matching files." % (ftp_base))
+
         remote_file = ftp_base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it

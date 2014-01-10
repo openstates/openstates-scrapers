@@ -140,8 +140,11 @@ class WABillScraper(BillScraper):
         page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
 
+        first = True
         for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
-            bill.add_sponsor('primary', sponsor.text)
+            args = ('primary' if first else 'cosponsor', sponsor.text)
+            bill.add_sponsor(*args)
+            first = False
 
     def scrape_actions(self, bill, bill_num):
         bill_id = bill['bill_id'].replace(' ', '%20')

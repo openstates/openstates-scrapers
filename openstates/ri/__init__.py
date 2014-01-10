@@ -28,17 +28,28 @@ metadata = dict(
          'start_year': 2013,
          'end_year': 2014,
          'sessions': ['2013']},
+        {'name': '2014',
+         'start_year': 2014,
+         'end_year': 2015,
+         'sessions': ['2014']},
     ],
     feature_flags=['subjects', 'events', 'influenceexplorer'],
     session_details={
+
         '2012': {'start_date': datetime.date(2012, 1, 4),
+                 '_scraped_name': '2012',
                  'type': 'primary',
                  'display_name': '2012 Regular Session'},
+
         '2013': {'type': 'primary',
+                 '_scraped_name': '2013',
                  'display_name': '2013 Regular Session'},
+
+        '2014': {'type': 'primary',
+                 '_scraped_name': '2014',
+                 'display_name': '2014 Regular Session'},
     },
-    _ignored_scraped_sessions=['2013', '2012', '2011', '2010', '2009', '2008',
-                               '2007']
+    _ignored_scraped_sessions=['2011', '2010', '2009', '2008', '2007']
 )
 
 

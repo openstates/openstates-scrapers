@@ -69,16 +69,20 @@ class HIEventScraper(EventScraper):
             event = Event(session, when, 'committee:meeting', descr,
                           location=where)
 
-            if "INFO" in committee:
-                continue
-
             if "/" in committee:
                 committees = committee.split("/")
             else:
                 committees = [committee,]
 
             for committee in committees:
-                committee = self.short_ids[committee]
+                if "INFO" not in committee:
+                    committee = self.short_ids[committee]
+                else:
+                    committee = {
+                        "chamber": "joint",
+                        "name": committee,
+                    }
+
                 event.add_participant('host', committee['name'], 'committee',
                                       chamber=committee['chamber'])
 

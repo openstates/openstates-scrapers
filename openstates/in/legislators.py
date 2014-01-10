@@ -1,316 +1,99 @@
 import re
+import difflib
+import urlparse
+import collections
 
 import lxml.html
 
+from billy.utils import metadata
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
+
+from .apiclient import ApiClient
 
 
 class INLegislatorScraper(LegislatorScraper):
     jurisdiction = 'in'
+    meta = metadata(jurisdiction)
+
+    # The value to pass to the api as the "session" url component.
+    api_session = '2013'
+
+    def api_legislators(self):
+        legislators = self.client.get('chamber_legislators',
+            session=self.api_session, chamber=self.api_chamber)
+        for data in legislators['items']:
+            yield data
+        while True:
+            if 'nextLink' in legislators:
+                legislators = self.client.get_relurl(legislators['nextLink'])
+                for data in legislators['items']:
+                    yield data
+            else:
+                break
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+        self.retry_attempts = 0
+        self.client = ApiClient(self)
+        self.api_chamber = dict(upper='senate', lower='house')[chamber]
 
-        chamber_name = {'upper': 'Senate',
-                        'lower': 'House'}[chamber]
+        districts = self.get_districts(chamber)
+        for data in self.api_legislators():
+            data = self.client.get_relurl(data['link'])
+            name = '%s %s' % (data['firstName'], data['lastName'])
 
-        url = ("http://www.in.gov/cgi-bin/legislative/listing/"
-               "listing-2.pl?data=alpha&chamber=%s" % chamber_name)
+            matches = difflib.get_close_matches(name, districts)
+            if not matches:
+                msg = "Found no matching district for legislator %r." % data
+                self.warning(msg)
+                continue
+            key = matches[0]
+            district = districts[key]['district']
+            leg_url = districts[key]['url']
 
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
+            photo_url = data['pngDownloadLink']
+            photo_url = urlparse.urljoin(self.client.root, photo_url)
+            leg = Legislator(
+                term, chamber, district, name,
+                first_name=data['firstName'],
+                last_name=data['lastName'],
+                party=data['party'],
+                photo_url=photo_url)
 
-        for link in page.xpath("//div[@id='col2']/p/a"):
-
-            name = link.text.strip()
-            href = link.get('href')
-
-            details = link.getnext().text.strip()
-
-            party = details.split(',')[0]
-            if party == 'Democrat':
-                party = 'Democratic'
-
-            district = re.search(r'District (\d+)', details).group(1)
-            district = district.lstrip('0')
-
-            # Get the legislator's bio page.
-
-            leg = Legislator(term, chamber, district, name, party=party,
-                             url=href)
+            url = self.client.make_url('chamber_legislators',
+                session=self.api_session, chamber=self.api_chamber)
             leg.add_source(url)
-            leg.add_source(href)
+            leg.add_source(leg_url)
 
-            details = self.scrape_details(chamber, term, href, page, party, leg)
-            if details:
-                leg.update(details)
+            for comm in data['committees']:
+                leg.add_role(
+                    'member', term=term, chamber=chamber,
+                    commmittee=comm['name'])
 
-            self.fix_hotgarbage(leg)
             self.save_legislator(leg)
 
-    def scrape_details(self, *args):
-        chamber, term, href, page, party, leg = args
-        methods = {
-            'upper': {
-                'Democratic': self.scrape_upper_democrat,
-                'Republican': self.scrape_upper_republican,
-                },
-            'lower': {
-                'Democratic': self.scrape_lower_democrat,
-                'Republican': self.scrape_lower_republican,
-                }
-            }
-        return methods[chamber][party](*args)
+    def get_districts(self, chamber):
+        urls = {
+            'upper': ('https://secure.in.gov/cgi-bin/legislative/listing/'
+                      'listing-2.pl?data=district&chamber=Senate'),
+            'lower': ('https://secure.in.gov/cgi-bin/legislative/listing/'
+                      'listing-2.pl?data=district&chamber=House')}
+        res = collections.defaultdict(dict)
+        url = urls[chamber]
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        scrub = lambda el: el.text_content().strip()
+        for tr in doc.xpath('//table/tr')[1:]:
+            dist1, leg1, _, dist2, leg2 = tr
 
-    def scrape_upper_republican(self, chamber, term, href, page, party, leg):
+            dist1 = scrub(dist1)
+            leg1_name = leg1.xpath('string(a)').strip()
+            leg1_url = leg1.xpath('a/@href')[0]
 
-        profile = self.urlopen(href)
-        profile = lxml.html.fromstring(profile)
-        profile.make_links_absolute(href)
+            dist2 = scrub(dist2)
+            leg2_name = leg2.xpath('string(a)').strip()
+            leg2_url = leg2.xpath('a/@href')[0]
 
-        try:
-            about_url = profile.xpath('//a[contains(., "About Sen.")]/@href')[0]
-        except IndexError:
-            msg = ('This legislator has FAILED to have a profile page '
-                   'that is similar to the others\'. Skipping.')
-            self.logger.critical(msg)
-            return
-
-        about = self.urlopen(about_url)
-        if about.strip() == "":
-            self.logger.info("WARNING: Blank page @ %s - skipping" % (
-                about_url
-            ))
-            return
-
-        about = lxml.html.fromstring(about)
-        about.make_links_absolute(about_url)
-
-        leg.add_source(about_url)
-
-        # Get contact info.
-        el = about.xpath('//strong[contains(., "Contact")]')
-        if el:
-            el = el[0].getparent()
-        else:
-            el = about.xpath('//span[contains(., "Contact")]')
-            el = el[0].getparent().getparent()
-        lines = ''.join(get_chunks(el)).splitlines()
-        line_data = {}
-        for line in lines:
-            if ':' in line:
-                key, val = line.split(':', 1)
-                line_data[key] = val.strip()
-
-        offices = []
-        if 'Statehouse Mailing Address':
-            office = {}
-            for key, otherkey in (
-                ('phone', 'Statehouse Phone'),
-                ('address', 'Statehouse Mailing Address')
-                ):
-                try:
-                    office[key] = line_data[otherkey]
-                except KeyError:
-                    pass
-            office.update(fax=None, type='capitol',
-                          name='Statehouse Mailing Address')
-
-            # Nothing is uniform on Indiana's website.
-            if 'phone' not in office:
-                for key_fail in ('Statehouse Telephone',
-                                 'Statehouse Telephone Number'):
-                    try:
-                        office['phone'] = line_data[key_fail]
-                    except KeyError:
-                        pass
-
-            offices.append(office)
-
-        # If the phone field contains multiple numbers, take the final
-        # and least impersonal one (the first number is a general 800).
-        for office in offices:
-            if 'phone' in office and ' ' in office['phone']:
-                office['phone'] = re.findall('[\d\-]+', office['phone']).pop()
-
-            leg.add_office(**office)
-
-        # Fix idiocy.
-        if 'Email' in line_data:
-            leg['email'] = re.sub(r'^Senator\.mailto:', '', line_data['Email'])
-
-        district = leg['roles'][0]['district']
-        photo_url = self._upper_republicans_photos(district)
-        if photo_url:
-            leg['photo_url'] = photo_url
-            url = 'http://www.in.gov/legislative/senate_republicans/2355.htm'
-            leg.add_source(url)
-
-    def scrape_upper_democrat(self, chamber, term, href, page, party, leg):
-        profile = self.urlopen(href)
-        profile = lxml.html.fromstring(profile)
-        profile.make_links_absolute(href)
-
-        district = leg['roles'][0]['district']
-        photo_url = self._upper_democrats_photos(district)
-        if photo_url:
-            leg['photo_url'] = photo_url
-            url = ('http://www.in.gov/legislative/senate_democrats/'
-                   'listingbyname.htm')
-            leg.add_source(url)
-
-        try:
-            xpath = '//div[@id="leftcontent"]/p[3]/a/text()'
-            leg['email'] = profile.xpath(xpath)[0]
-        except IndexError:
-            msg = ('This legislator has FAILED to have a profile page '
-                   'that is similar to the others\'. Skipping.')
-            self.logger.critical(msg)
-
-        # Contact url
-        xpath = '//div[@id="sennavcontainer"]/ul/li/a/@href'
-        contact_url = profile.xpath(xpath)[0]
-        contact = self.urlopen(contact_url)
-        contact = lxml.html.fromstring(contact)
-        contact.make_links_absolute(href)
-        last_p = contact.xpath('//h3[3]/following-sibling::p')
-        if last_p:
-            last_p = last_p[0]
-        if not last_p:
-            self.logger.info('Skipping garbage html')
-            return
-        lines = ''.join(get_chunks(last_p)).splitlines()
-        lines = filter(None, lines)
-        leg.add_office(name='Statehouse Mailing Address',
-                       address=lines[1] + ' ' + lines[2],
-                       phone=lines[-1], type='capitol')
-
-    def scrape_lower_republican(self, chamber, term, href, page, party, leg):
-        leg.add_office(
-            name='Statehouse Mailing Address',
-            address='200 W. Washington St. Indianapolis, IN 46204-2786',
-            type='capitol', phone='800-382-9842')
-
-        district = leg['roles'][0]['district']
-        photo_url = self._lower_republicans_photos(district)
-        if photo_url:
-            leg['photo_url'] = photo_url
-            leg.add_source('http://www.in.gov/legislative/house_republicans/members.html')
-
-    def scrape_lower_democrat(self, chamber, term, href, page, party, leg):
-
-        leg.add_office(
-            name='Statehouse Mailing Address',
-            address='200 W. Washington St. Indianapolis, IN 46204-2786',
-            type='capitol', phone='800-382-9842')
-
-        district = leg['roles'][0]['district']
-        photo_url = self._lower_democrats_photos(district)
-        if photo_url:
-            leg['photo_url'] = photo_url
-            leg.add_source('http://indianahousedemocrats.org/members')
-
-        try:
-            resp = self.urlopen(href)
-        except scrapelib.HTTPError:
-            self.logger.warning('Found no profile page for %r' % leg)
-            return
-        profile = lxml.html.fromstring(resp)
-        profile.make_links_absolute(href)
-
-    def _lower_republicans_photos(self, district, cache={}):
-        if 'images' in cache:
-            return cache['images'].get(district)
-
-        images = {}
-        url = 'http://www.in.gov/legislative/house_republicans/members.html'
-        page = self.urlopen(url)
-        doc = lxml.html.fromstring(page)
-        doc.make_links_absolute(url)
-        for href in doc.xpath('//img/@src'):
-            m = re.search(r'r(\d+)thumb.jpg', href)
-            if m:
-                _district = m.group(1)
-                images[_district] = href
-
-        cache['images'] = images
-        return images.get(district)
-
-    def _lower_democrats_photos(self, district, cache={}):
-        if 'images' in cache:
-            return cache['images'].get(district)
-
-        images = {}
-        url = 'http://indianahousedemocrats.org/members'
-        page = self.urlopen(url)
-        doc = lxml.html.fromstring(page)
-        doc.make_links_absolute(url)
-        for div in doc.xpath('//div[@class="thumbnail"]'):
-            m = re.search(r'District (\d+)', div.text_content())
-            if m:
-                _district = m.group(1)
-                images[_district] = div.xpath('a/img/@src')[0]
-
-        cache['images'] = images
-        return images.get(district)
-
-    def _upper_democrats_photos(self, district, cache={}):
-        if 'images' in cache:
-            return cache['images'].get(district)
-
-        images = {}
-        url = ('http://www.in.gov/legislative/senate_democrats/'
-               'listingbyname.htm')
-        page = self.urlopen(url)
-        doc = lxml.html.fromstring(page)
-        doc.make_links_absolute(url)
-        texts = doc.xpath('//div[@id="fullcontent"]/div/h3/text()')
-        texts = filter(lambda s: s.strip(), texts)
-        photos = doc.xpath('//div[@id="fullcontent"]/descendant::img/@src')
-        for text, url in zip(texts, photos):
-            regex = r'\d+'
-            m = re.search(regex, text)
-            if m:
-                _district = m.group()
-                images[_district] = url
-        cache['images'] = images
-        return images.get(district)
-
-    def _upper_republicans_photos(self, district, cache={}):
-        if 'images' in cache:
-            return cache['images'].get(district)
-
-        images = {}
-        url = 'http://www.in.gov/legislative/senate_republicans/2355.htm'
-        page = self.urlopen(url)
-        doc = lxml.html.fromstring(page)
-        doc.make_links_absolute(url)
-        for p in doc.xpath('//div[@id="col2content"]/div/p'):
-            m = re.search(r'SD (\d+)', p.text_content())
-            if m:
-                _district = m.group(1)
-                images[_district] = p.xpath('a/img/@src')[0]
-        cache['images'] = images
-        return images.get(district)
-
-
-    def fix_hotgarbage(self, leg):
-        '''In this heinous function, we manually fix any terribleness
-        we find.
-        '''
-        if leg['full_name'] == 'Peter. Miller':
-            leg['full_name'] = 'Peter Miller'
-
-
-def get_chunks(el, buff=None, offset=' '):
-    tagmap = {'br': '\n'}
-    buff = buff or []
-    for kid in el:
-        # Tag, text, tail, recur...
-        buff.append(tagmap.get(kid.tag, ''))
-        buff.append(kid.text or '')
-        if kid.tail:
-            buff.append('\n' + kid.tail)
-        buff = get_chunks(kid, buff, offset + ' ')
-    return buff
+            res[leg1_name] = dict(district=dist1, url=leg1_url)
+            res[leg2_name] = dict(district=dist2, url=leg2_url)
+        return res

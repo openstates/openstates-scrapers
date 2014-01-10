@@ -41,20 +41,20 @@ metadata = dict(
              'session_id': '121X',
              '_scraped_name': '2012 Special Session'
             },
-         '2013-2014':
-             {'display_name': '2013-2014 Regular Session',
-              'session_id': '1300',
-              '_scraped_name': '2013 Regular Session',
-             },
         '2013SS1': {
             'display_name': '2013 Special Session',
             'session_id': '131X',
             '_scraped_name': '2013 Special Session',
-        }
+        },
+         '2013-2014':
+             {'display_name': '2013-2014 Regular Session',
+              'session_id': '1400',
+              '_scraped_name': '2014 Regular Session',
+             },
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
-        '2014 Regular Session',     # FIXME for 2014
+        '2013 Regular Session',
         '2011 Regular Session', '2010 Regular Session',
         '2009 Regular Session', '2008 Regular Session',
         '2007 Regular Session',

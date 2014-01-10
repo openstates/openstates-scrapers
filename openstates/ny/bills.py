@@ -1,7 +1,13 @@
+'''Note, this needs to scrape both assembly and senate sites. Neither
+house has the other's votes, so you have to scrape both and merge them.
+'''
 import re
+import datetime
 from collections import defaultdict
 
-from billy.scrape.bills import BillScraper
+from billy.utils import term_for_session
+from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 import scrapelib
 import lxml.html
@@ -14,102 +20,101 @@ from .actions import Categorizer
 class NYBillScraper(BillScraper):
 
     jurisdiction = 'ny'
-
     categorizer = Categorizer()
 
-    def url2lxml(self, url, xml=False):
-
-        cache = getattr(self, '_url_cache', {})
-        self._url_cache = cache
-
-        if url in cache:
-            return cache[url]
-        if xml:
-            xml = self.urlopen(url)
-            doc = lxml.etree.fromstring(xml.bytes)
-        else:
-            html = self.urlopen(url)
-            html = html.replace('\x00', '')
-            try:
-                doc = lxml.html.fromstring(html)
-            except lxml.etree.XMLSyntaxError:
-                return None
-            doc.make_links_absolute(url)
-        cache[url] = doc
-        return doc
-
-    def clear_url_cache(self):
-        self._url_cache = {}
-
-    def scrape(self, chamber, session):
-
-        errors = 0
-        index = 0
-
-        billdata = defaultdict(lambda: defaultdict(list))
-        while errors < 10:
-
-            index += 1
-            url = ("http://open.nysenate.gov/legislation/search/"
-                   "?search=otype:bill&searchType=&format=xml"
-                   "&pageIdx=%d" % index)
-
-            # Bails if 10 pages in a row return 404.
-            try:
-                doc = self.url2lxml(url, xml=True)
-            except scrapelib.HTTPError as e:
-                # There wasn't a bill at this page.
-                code = e.response.status_code
-                if code == 404:
-                    errors += 1
-                    continue
-                else:
-                    raise
-            else:
-                errors = 0
-
-            if doc is None:
-                # There was an error parsing the document.
-                continue
-
-            if not doc.getchildren():
-                # If the result response is empty, we've hit the end of
-                # the data. Quit.
+    def scrape(self, session, chambers):
+        term_id = term_for_session('ny', session)
+        for term in self.metadata['terms']:
+            if term['name'] == term_id:
                 break
-            results = doc.xpath("//result[@type = 'bill']")
-            if not results:
-                break
-            for result in results:
-                details = self.bill_id_details(result)
-                if details:
-                    letter, number, is_amd = details[-1]
-                    billdata[letter][number].append(details)
+        self.term = term
+        for billset in self.yield_grouped_versions():
+            self.scrape_bill(session, billset)
 
-        for letter in {
-            'upper': 'SRJB',
-            'lower': 'AEKL'}[chamber]:
+    def scrape_bill(self, session, bills):
 
-            for number in billdata[letter]:
+        billdata, details = bills[0]
 
-                data = billdata[letter][number]
+        (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+         title, (letter, number, is_amd)) = details
 
-                # Sort from earliest version to most recent.
-                data.sort(key=lambda t: ord(t[-1][-1]) if t[-1][-1] else 0)
+        data = billdata['data']['bill']
 
-                # There may have been multiple bill versions with this number.
-                # Taking the last one ignores the previous versions.
-                values = data[-1]
+        assembly = AssemblyBillPage(self, session, bill_chamber, details)
+        assembly.build()
+        bill = assembly.bill
+        bill.add_source(billdata['url'])
 
-                # Create the bill object.
-                bill = self.scrape_bill(session, chamber, *values)
-                if bill:
-                    self.save_bill(bill)
-                    self.clear_url_cache()
+        # Add prime sponsor.
+        bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
 
-    def bill_id_details(self, result):
+        # Add cosponsors.
+        for sponsor in data['coSponsors'] + data['multiSponsors']:
+            if sponsor['fullname']:
+                bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
 
-        api_id = result.attrib['id']
-        title = result.attrib['title'].strip()
+        for action in data['actions']:
+            timestamp = int(action['date'])
+            action_text = action['text']
+            date = self.date_from_timestamp(timestamp)
+            actor = 'upper' if action_text.isupper() else 'lower'
+            attrs = dict(actor=actor, action=action_text, date=date)
+            categories, kwargs = self.categorizer.categorize(action_text)
+            attrs.update(kwargs, type=categories)
+            bill.add_action(**attrs)
+
+        # Add companion.
+        if data['sameAs']:
+            bill.add_companion(data['sameAs'])
+
+        if data['summary']:
+            bill['summary'] = data['summary']
+
+        if data['votes']:
+            for vote_data in data['votes']:
+                vote = Vote(
+                    chamber='upper',
+                    date=self.date_from_timestamp(vote_data['voteDate']),
+                    motion=vote_data['description'] or '[No motion available.]',
+                    passed=False,
+                    yes_votes=[],
+                    no_votes=[],
+                    other_votes=[],
+                    yes_count=0,
+                    no_count=0,
+                    other_count=0)
+
+                for name in vote_data['ayes']:
+                    vote.yes(name)
+                    vote['yes_count'] += 1
+                for names in map(vote_data.get, ['absent', 'excused', 'abstains']):
+                    for name in names:
+                        vote.other(name)
+                        vote['other_count'] += 1
+                for name in vote_data['nays']:
+                    vote.no(name)
+                    vote['no_count'] += 1
+
+                bill.add_vote(vote)
+
+        # if data['previousVersions']:
+        #   These are instances of the same bill from prior sessions.
+        #     import pdb; pdb.set_trace()
+
+        if not data['title']:
+            bill['title'] = bill['summary']
+
+        self.save_bill(bill)
+
+    def date_from_timestamp(self, timestamp):
+        return datetime.datetime.fromtimestamp(int(timestamp) / 1000)
+
+    def bill_id_details(self, billdata):
+        data = billdata['data']['bill']
+        api_id = billdata['oid']
+        source_url = billdata['url']
+
+        title = data['title'].strip()
         if not title:
             return
 
@@ -130,9 +135,7 @@ class NYBillScraper(BillScraper):
             'K': ('lower', 'legislative resolution'),
             'L': ('lower', 'joint resolution')}[letter]
 
-        senate_url = (
-            "http://open.nysenate.gov/legislation/"
-            "bill/%s" % api_id)
+        senate_url = billdata['url']
 
         assembly_url = (
             'http://assembly.state.ny.us/leg/?'
@@ -141,48 +144,59 @@ class NYBillScraper(BillScraper):
         return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
                 title, (letter, number, is_amd))
 
-    def scrape_bill(self, session, chamber, senate_url, assembly_url,
-                    bill_chamber, bill_type, bill_id, title, bill_id_parts):
 
-        assembly_doc = self.url2lxml(assembly_url)
-        if not assembly_doc:
-            msg = 'Skipping bill %r due to XMLSyntaxError at %r'
-            self.logger.warning(msg % (bill_id, assembly_url))
-            return None
+    def yield_api_bills(self):
+        '''Yield individual versions. The caller can get all versions
+        for a particular ID, process the group, then throw everything
+        away and move onto the next ID.
+        '''
+        # The bill api object keys we'll actually use. Throw rest away.
+        keys = set([
+            'coSponsors', 'multiSponsors', 'sponsor', 'actions',
+            'versions', 'votes', 'title', 'sameAs', 'summary'])
 
-        # The bill id, minus the trailing amendment letter.
-        bill_id = ''.join(bill_id_parts[:-1])
+        index = 0
+        bills = defaultdict(list)
 
-        assembly_page = AssemblyBillPage(
-                        self, session, bill_chamber, assembly_url, assembly_doc,
-                        bill_type, bill_id, title,
-                        bill_id_parts)
+        billdata = defaultdict(lambda: defaultdict(list))
+        for year in (self.term['start_year'], self.term['end_year']):
+            while True:
+                index += 1
+                url = (
+                    'http://open.nysenate.gov/legislation/2.0/search.json'
+                    '?term=otype:bill AND year:2013=&pageSize=20&pageIdx=%d'
+                    )
+                url = url % index
+                resp = self.get(url)
 
-        try:
-            senate_doc = self.url2lxml(senate_url)
-        except scrapelib.HTTPError:
-            senate_succeeded = False
-        else:
-            senate_page = SenateBillPage(
-                            self, session, bill_chamber, senate_url, senate_doc,
-                            bill_type, bill_id, title, bill_id_parts)
-            senate_succeeded = True
+                data = resp.json()
+                if not data['response']['results']:
+                    break
 
-        # Add the senate sources, votes, memo, and
-        # subjects onto the assembly bill.
-        bill = assembly_page.bill
-        if senate_succeeded:
-            bill['votes'].extend(senate_page.bill['votes'])
-            bill['subjects'] = senate_page.bill['subjects']
-            bill['documents'].extend(senate_page.bill['documents'])
-            bill['sources'].extend(senate_page.bill['sources'])
-            bill['versions'].extend(senate_page.bill['versions'])
+                for bill in data['response']['results']:
+                    billdata = bill['data']['bill']
+                    for junk in set(billdata) - keys:
+                        del billdata[junk]
 
-        # Dedupe sources.
-        source_urls = set([])
-        for source in bill['sources'][:]:
-            if source['url'] in source_urls:
-                bill['sources'].remove(source)
-            source_urls.add(source['url'])
+                    details = self.bill_id_details(bill)
+                    if details is None:
+                        continue
+                    (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+                     title, (letter, number, is_amd)) = details
 
-        return bill
+                    key = (letter, number)
+                    yield key, bill, details
+
+    def yield_grouped_versions(self):
+        '''Generates a lists of versions grouped by bill id.
+        '''
+        prev_key = None
+        versions = []
+        for key, bill, details in self.yield_api_bills():
+            if key is not prev_key and versions:
+                yield versions
+                versions = []
+            versions.append((bill, details))
+            prev_key = key
+
+

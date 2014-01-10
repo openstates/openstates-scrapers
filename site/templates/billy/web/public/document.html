@@ -20,7 +20,7 @@
 {% block content %}
     <div class="fullWidth mainModule">
         <div class="medModule">
-            <h1 class="withTimeline withTip" style="padding-top: 30px;">{{ bill.bill_id }}</h1>
+            <h1 class="withTimeline withTip" style="padding-top: 30px;"><a href="{{bill.get_absolute_url}}">{{ bill.bill_id }}</a></h1>
             <p class="tip">{{ metadata.name }} {{ bill.chamber_name }} {{bill.type_string|title}}</p>
             <h5>{{ bill.title|capfirst }}</h5>
         </div>

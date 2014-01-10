@@ -1,102 +1,109 @@
+'''OVERENGINEERING FTW!
+'''
 import re
+import inspect
 import datetime
-from itertools import islice
 import collections
+from itertools import islice
+
+import lxml.html
 
 from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
 from billy.utils import term_for_session, metadata
 
+from .utils import Urls, CachedAttr
 
-class AssemblyBillPage(object):
-    '''Get the actions, sponsors, sponsors memo and summary
-    and assembly floor votes from the assembly page.
-    '''
 
+class BasePageyThing(object):
     metadata = metadata('ny')
+    chamber_name = None
+    def __init__(self, scraper, session, chamber, details):
+        (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+          title, bill_id_parts) = details
 
-    def __init__(self, scraper, session, chamber, url, doc, bill_type,
-                 bill_id, title, bill_id_parts):
         self.scraper = scraper
         self.session = session
+        self.chamber = chamber
+        self.data = {}
+        self.bill = Bill(session, bill_chamber, bill_id, title, type=bill_type)
+
         self.term = term_for_session('ny', session)
         for data in self.metadata['terms']:
             if session in data['sessions']:
                 self.termdata = data
             self.term_start_year = data['start_year']
-        self.chamber = chamber
-        self.url = url
-        self.doc = doc
+
+        self.assembly_url = assembly_url
+        self.senate_url = senate_url
+        self.bill_chamber = bill_chamber
+        self.bill_type = bill_type
         self.bill_id = bill_id
+        self.title = title
         self.letter, self.number, self.version = bill_id_parts
-        self.data = {}
-        self.bill = Bill(session, chamber, bill_id, title, type=bill_type)
-        self.succeeded = False
 
-        self._build()
+        self.urls = Urls(scraper=self.scraper, urls={
+            'assembly': assembly_url,
+            'senate': senate_url})
 
-    def _build(self):
-        if not self.doc.xpath('//pre/text()'):
-            return
-        self.get_actions()
-        self.get_sponsors_memo()
-        self.get_sponsors()
-        self.get_summary()
-        self.get_companions()
-        self.get_lower_votes()
-        self.get_version()
-        self.succeeded = True
-        self.bill.add_source(self.url)
+    def build(self):
+        '''Run all the build_* functions.
+        '''
+        for name, member in inspect.getmembers(self):
+            if inspect.ismethod(member):
+                if name.startswith('build_'):
+                    key = re.sub(r'^build_', '', name)
+                    member()
 
-    def _get_chunks(self):
-        if 'summary' not in self.data:
-            url = ('http://assembly.state.ny.us/leg/?default_fld=&'
-                   'bn=%s&Summary=Y&Actions=Y&term=%s')
-            url = url % (self.bill_id, self.term_start_year)
-            doc = self.url2lxml(url)
-            summary, actions = doc.xpath('//pre')[:2]
-            summary = summary.text_content()
-            actions = actions.text_content()
-            self.data['summary'] = summary
-            self.data['actions'] = actions
-            return summary, actions
-        else:
-            return self.data['summary'], self.data['actions']
 
-    def url2lxml(self, url):
+class AssemblyBillPage(BasePageyThing):
+    '''Get the actions, sponsors, sponsors memo and summary
+    and assembly floor votes from the assembly page.
+    '''
+    @CachedAttr
+    def chunks(self):
+        url = ('http://assembly.state.ny.us/leg/?default_fld=&'
+               'bn=%s&Summary=Y&Actions=Y&term=%s')
+        url = url % (self.bill_id, self.term_start_year)
+        self.urls.add(summary=url)
         self.bill.add_source(url)
-        return self.scraper.url2lxml(url)
+        summary, actions = self.urls.summary.xpath('//pre')[:2]
+        summary = summary.text_content()
+        actions = actions.text_content()
+        self.data['summary'] = summary
+        self.data['actions'] = actions
+        return summary, actions
 
-    def get_version(self):
+    def build_version(self):
         url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn=%s&term=%s'
         url = url % (self.bill_id, self.term_start_year)
         version = self.bill_id
         self.bill.add_version(version, url, mimetype='text/html')
 
-    def get_companions(self):
-        summary, _ = self._get_chunks()
+    def build_companions(self):
+        summary, _ = self.chunks
         chunks = summary.split('\n\n')
         for chunk in chunks:
             if chunk.startswith('SAME AS'):
                 companions = chunk.replace('SAME AS    ', '')
                 if companions != 'No same as':
                     for companion in re.split(r'\s*[\,\\]\s*', companions):
-                        companion = re.sub(r'^Same as ', '', companion)
+                        companion = re.sub(r'^(?i)Same as ', '', companion)
                         companion = re.sub(r'^Uni', '', companion)
                         companion = re.sub(r'\-\w+$', '', companion)
                         self.bill.add_companion(companion)
 
-    def get_sponsors_memo(self):
+    def build_sponsors_memo(self):
         if self.chamber == 'lower':
             url = ('http://assembly.state.ny.us/leg/?'
                    'default_fld=&bn=%s&term=%s&Memo=Y')
             url = url % (self.bill_id, self.term_start_year)
             self.bill.add_document("Sponsor's Memorandum", url)
 
-    def get_summary(self):
-        summary, _ = self._get_chunks()
+    def build_summary(self):
+        summary, _ = self.chunks
         chunks = summary.split('\n\n')
-        self.bill['summary'] = chunks[-1]
+        self.bill['summary'] = ' '.join(chunks[-1].split())
 
     def _scrub_name(self, name):
         junk = [
@@ -113,8 +120,8 @@ class AssemblyBillPage(object):
         name = re.sub('\s+', ' ', name)
         return name.strip('(), ')
 
-    def get_sponsors(self):
-        summary, _ = self._get_chunks()
+    def build_sponsors(self):
+        summary, _ = self.chunks
         chunks = summary.split('\n\n')
         for chunk in chunks:
             for sponsor_type in ('SPONSOR', 'COSPNSR', 'MLTSPNSR'):
@@ -141,8 +148,8 @@ class AssemblyBillPage(object):
                         self.bill.add_sponsor(_sponsor_type, sponsor.strip(),
                                          official_type=sponsor_type)
 
-    def get_actions(self):
-        _, actions = self._get_chunks()
+    def build_actions(self):
+        _, actions = self.chunks
         categorizer = self.scraper.categorizer
         actions_rgx = r'(\d{2}/\d{2}/\d{4})\s+(.+)'
         actions_data = re.findall(actions_rgx, actions)
@@ -155,12 +162,14 @@ class AssemblyBillPage(object):
             if 'substituted by' in action:
                 return
 
-    def get_lower_votes(self):
+    def build_lower_votes(self):
 
         url = ('http://assembly.state.ny.us/leg/?'
                'default_fld=&bn=%s&term=%s&Votes=Y')
         url = url % (self.bill_id, self.term_start_year)
-        doc = self.url2lxml(url)
+        self.urls.add(votes=url)
+        self.bill.add_source(url)
+        doc = self.urls.votes.doc
         if doc is None:
             return
 
@@ -213,46 +222,24 @@ class AssemblyBillPage(object):
 class SenateBillPage(object):
     '''Used for categories, senate votes, events.'''
 
-    def __init__(self, scraper, session, chamber, url, doc, bill_type,
-                 bill_id, title, bill_id_parts):
-        self.scraper = scraper
-        self.chamber = chamber
-        self.url = url
-        self.doc = doc
-        self.bill_id = bill_id
-        self.letter, self.number, self.version = bill_id_parts
-        self.data = {}
-        self.bill = Bill(session, chamber, bill_id, title, type=bill_type)
-        self.succeeded = False
+    def __init__(self, scraper, session, chamber, bill, details):
+        (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+          title, (letter, number, is_amd)) = details
 
-        self._build()
-
-        self.bill.add_source(self.url)
-
-    def _build(self):
-        self.get_senate_votes()
-        self.get_sponsors_memo()
-        self.get_subjects()
-        self.get_versions()
-        self.succeeded = True
-
-    def url2lxml(self, url):
-        self.bill.add_source(url)
-        return self.scraper.url2lxml(url)
-
-    def get_subjects(self):
+    def build_subjects(self):
         subjects = []
         for link in self.doc.xpath("//a[contains(@href, 'lawsection')]"):
             subjects.append(link.text.strip())
 
         self.bill['subjects'] = subjects
 
-    def get_sponsors_memo(self):
+    def build_sponsors_memo(self):
         if self.chamber == 'upper':
             self.bill.add_document("Sponsor's Memorandum", self.url)
 
-    def get_senate_votes(self):
-        for b in self.doc.xpath("//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"):
+    def build_senate_votes(self):
+        xpath = "//div/b[starts-with(., 'VOTE: FLOOR VOTE:')]"
+        for b in self.urls.senate.xpath(xpath):
             date = b.text.split('-')[1].strip()
             date = datetime.datetime.strptime(date, "%b %d, %Y").date()
 
@@ -307,7 +294,8 @@ class SenateBillPage(object):
             vote.add_source(self.url)
             self.bill.add_vote(vote)
 
-        for b in self.doc.xpath("//div/b[starts-with(., 'VOTE: COMMITTEE VOTE:')]"):
+        xpath = "//div/b[starts-with(., 'VOTE: COMMITTEE VOTE:')]"
+        for b in self.urls.senate.xpath(xpath):
             _, committee, date = re.split(r'\s*\t+\s*-\s*', b.text)
             date = date.strip()
             date = datetime.datetime.strptime(date, "%b %d, %Y").date()
@@ -360,8 +348,9 @@ class SenateBillPage(object):
             vote.add_source(self.url)
             self.bill.add_vote(vote)
 
-    def get_versions(self):
-        text = self.doc.xpath('//*[contains(., "Versions")]')[-1].text_content()
+    def build_versions(self):
+        xpath = '//*[contains(., "Versions")]'
+        text = self.urls.senate.xpath(xpath)[-1].text_content()
         version_text = re.sub('Versions:?\s*', '', text)
 
         url_tmpl = 'http://open.nysenate.gov/legislation/bill/'

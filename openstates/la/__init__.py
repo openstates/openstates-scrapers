@@ -26,7 +26,8 @@ metadata = {
             "sessions": [
                 "2012",
                 "2013",
-                ]
+                "2014",
+            ]
         }
     ],
     "name": "Louisiana",
@@ -68,6 +69,11 @@ metadata = {
             'display_name': '2013 Regular Session',
             '_scraped_name': '2013 Regular Session',
         },
+        "2014": {
+            "type": "primary",
+            'display_name': '2014 Regular Session',
+            '_scraped_name': '2014 Regular Session',
+        },
     },
     "legislature_name": "Louisiana Legislature",
     'chambers': {
@@ -76,7 +82,8 @@ metadata = {
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
-        '2013 Regular Legislative Session',  # In as 2013 Regular Session
+        '2014 Regular Legislative Session',  # In as 2014 Regular Session
+        '2013 Regular Legislative Session',  # Samesies.
         '2013 Regular Legislative Session',  # Samesies.
         '2008 Regular Session',
         '2008 Organizational Session',

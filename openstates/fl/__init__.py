@@ -40,7 +40,7 @@ metadata = dict(
                 },
     },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions=['2010O', '2010A', '2012O'],
+    _ignored_scraped_sessions=['2010O', '2010A', '2012O', '2010'],
 )
 
 

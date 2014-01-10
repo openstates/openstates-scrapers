@@ -8,7 +8,6 @@ import contextlib
 
 import sh
 import tesseract
-from tater import parse
 
 import scrapelib
 from billy.scrape.utils import convert_pdf
@@ -71,9 +70,6 @@ class MAVoteScraper(VoteScraper):
 
     def scrape_vote(self, session, rollcall_number):
 
-        # if rollcall_number != 129:
-        #     return
-
         # Fetch this piece of garbage.
         url = (
             'http://www.mass.gov/legis/journal/RollCallPdfs/'
@@ -93,7 +89,7 @@ class MAVoteScraper(VoteScraper):
         text = text.decode('utf8')
 
         # A hack to guess whether this PDF has embedded images or contains
-        # machien readable text.
+        # machine readable text.
         if len(re.findall(r'[YNPX]', text)) > 157:
             vote = self.house_get_vote(text, vote_file, session)
         else:
@@ -101,21 +97,28 @@ class MAVoteScraper(VoteScraper):
             self.house_add_votes_from_image(vote_file, vote)
 
         vote.add_source(url)
-        self.house_check_vote(vote)
+        if not self.house_check_vote(vote):
+            self.logger.warning('Bad vote counts for %s' % vote)
+            return
         self.save_vote(vote)
         os.remove(vote_file)
 
     def house_get_vote(self, text, vote_file, session):
 
-        # Skip quorum votes.
+        # Skip quorum votes.*
         if 'QUORUM' in text:
             raise self.MiscellaneousVote
 
         # Parse the text into a tree.
-        tree = parse(without_image.Rollcall, without_image.HeaderLexer(text))
+        tree = without_image.Rollcall.parse(without_image.HeaderLexer(text))
 
         # Visit the tree and add rollcall votes to the vote object.
         vote_data = without_image.VoteVisitor().visit(tree)
+
+        if 'bill_id' not in vote_data:
+            msg = 'Skipping vote not associated with any bill_id'
+            self.logger.warning(msg)
+            raise self.MiscellaneousVote(msg)
 
         vote_data['passed'] = vote_data['yes_count'] > vote_data['no_count']
         vote_data['session'] = session
@@ -127,7 +130,7 @@ class MAVoteScraper(VoteScraper):
         vote = BillyVote('lower', **vote_data)
 
         # Parse the text into a tree.
-        tree = parse(with_image.Rollcall, with_image.Lexer(voters))
+        tree = with_image.Rollcall.parse(with_image.Lexer(voters))
 
         # Visit the tree and add rollcall votes to the vote object.
         visitor = with_image.VoteVisitor(vote).visit(tree)
@@ -191,7 +194,7 @@ class MAVoteScraper(VoteScraper):
             text = tesseract.ProcessPagesBuffer(data, len(data), api)
 
         # Parse the text into a tree.
-        tree = parse(with_image.Rollcall, with_image.Lexer(text))
+        tree = with_image.Rollcall.parse(with_image.Lexer(text))
 
         # Visit the tree and add rollcall votes to the vote object.
         visitor = with_image.VoteVisitor(vote).visit(tree)
@@ -199,6 +202,7 @@ class MAVoteScraper(VoteScraper):
         os.remove(image_file)
 
     def house_check_vote(self, vote):
-        assert len(vote['yes_votes']) == vote['yes_count']
-        assert len(vote['no_votes']) == vote['no_count']
-        assert len(vote['other_votes']) == vote['other_count']
+        return all([
+            len(vote['yes_votes']) == vote['yes_count'],
+            len(vote['no_votes']) == vote['no_count'],
+            len(vote['other_votes']) == vote['other_count']])

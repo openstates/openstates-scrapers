@@ -33,6 +33,7 @@ class ARCommitteeScraper(CommitteeScraper):
             chamber_url = urlescape(base_url + url_ext)
             page = self.urlopen(chamber_url)
             page = lxml.html.fromstring(page)
+            page.make_links_absolute(chamber_url)
 
             for a in page.xpath('//td[@class="dxtl dxtl__B0"]/a'):
                 if a.attrib.get('colspan') == '2':
@@ -118,15 +119,20 @@ class ARCommitteeScraper(CommitteeScraper):
 
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
         # Get the subcommittee name.
         xpath = '//div[@class="ms-WPBody"]//table//tr/td/b/text()'
 
         if subcommittee:
-            subcommittee = page.xpath(xpath).pop(0)
-            subcommittee = self._fix_committee_name(
-                subcommittee, parent=name, subcommittee=True)
-            subcommittee = self._fix_committee_case(subcommittee)
+            subcommittee = page.xpath(xpath)
+            if subcommittee:
+                subcommittee = page.xpath(xpath).pop(0)
+                subcommittee = self._fix_committee_name(
+                    subcommittee, parent=name, subcommittee=True)
+                subcommittee = self._fix_committee_case(subcommittee)
+            else:
+                subcommittee = None
 
         # Dedupe.
         if (chamber, name, subcommittee) in self._seen:
@@ -136,9 +142,9 @@ class ARCommitteeScraper(CommitteeScraper):
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
-        for tr in page.xpath('//table[@class="gridtable"]/tr[position()>1]'):
-            if tr.xpath('string(td[1])'):
-                mtype = tr.xpath('string(td[1])')
+        for tr in page.xpath('//table[@class="dxgvTable"]/tr[position()>1]'):
+            if tr.xpath('string(td[1])').strip():
+                mtype = tr.xpath('string(td[1])').strip()
             else:
                 mtype = 'member'
 

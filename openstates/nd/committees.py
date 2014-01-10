@@ -31,6 +31,10 @@ class NDCommitteeScraper(CommitteeScraper):
             role = {"Legislative Members": "member",
                     "Chairman": "chair",
                     "Vice Chairman": "member"}[role]
+
+            if member is None or member.startswith("District"):
+                continue
+
             cttie.add_member(member, role=role)
 
         cttie.add_source(href)
