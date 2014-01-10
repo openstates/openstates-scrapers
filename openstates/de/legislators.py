@@ -95,7 +95,7 @@ class DELegislatorScraper(LegislatorScraper):
             if len(chunks) == 1:
                 if ':' in chunks[0].splitlines()[0]:
                     # It's just phone numbers with no actual address.
-                    numbers = chunks[0]
+                    numbers = [chunks[0]]
                     office['address'] = None
                 else:
                     office['address'] = chunks[0]
@@ -103,18 +103,20 @@ class DELegislatorScraper(LegislatorScraper):
                 if not chunks:
                     # This office has no data.
                     continue
-                address, numbers = chunks
+                address = chunks.pop(0)
+                numbers = chunks
                 office['address'] = address
-            for line in numbers.splitlines():
-                if not line.strip():
-                    continue
-                for key in ('phone', 'fax'):
-                    if key in line.lower():
-                        break
-                number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
-                if number:
-                    number = number.group()
-                    office[key] = number
-            offices.append(office)
+            for number in numbers:
+                for line in number.splitlines():
+                    if not line.strip():
+                        continue
+                    for key in ('phone', 'fax'):
+                        if key in line.lower():
+                            break
+                    number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
+                    if number:
+                        number = number.group()
+                        office[key] = number
+                offices.append(office)
 
         return dict(info, offices=offices)

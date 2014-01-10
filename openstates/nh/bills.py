@@ -3,8 +3,6 @@ import re
 import zipfile
 import datetime as dt
 
-import xlrd
-
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 
@@ -59,20 +57,19 @@ class NHBillScraper(BillScraper):
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
         last_line = []
-        for line in self.zf.open('weblsrs.txt').readlines():
-            line = line.strip().split('\t')
-            # if len(line) < 36:
-            #     if len(last_line + line[1:]) == 36:
-            #         # combine two lines for processing
-            #         # (skip an empty entry at beginning of second line)
-            #         line = last_line + line
-            #         self.warning('used bad line')
-            #     else:
-            #         # skip this line, maybe we'll use it later
-            #         self.warning('bad line: %s' % '|'.join(line))
-            #         last_line = line
-            #         continue
-            print line
+        for line in self.zf.open('tbllsrs.txt').readlines():
+            line = line.split('|')
+            if len(line) < 36:
+                if len(last_line + line[1:]) == 36:
+                    # combine two lines for processing
+                    # (skip an empty entry at beginning of second line)
+                    line = last_line + line
+                    self.warning('used bad line')
+                else:
+                    # skip this line, maybe we'll use it later
+                    self.warning('bad line: %s' % '|'.join(line))
+                    last_line = line
+                    continue
             session_yr = line[0]
             lsr = line[1]
             title = line[2]
@@ -80,7 +77,6 @@ class NHBillScraper(BillScraper):
             type_num = line[4]
             expanded_bill_id = line[9]
             bill_id = line[10]
-            import pdb; pdb.set_trace()
 
             if body == body_code[chamber] and session_yr == session:
                 if expanded_bill_id.startswith('CACR'):
@@ -118,30 +114,17 @@ class NHBillScraper(BillScraper):
             #body = line[4]
 
         # sponsors
-        lsr_url = self.metadata['session_details'][session]['lsr_url']
-        fn, resp = self.urlretrieve(lsr_url)
-        workbook = xlrd.open_workbook(fn)
-        worksheet = workbook.sheets()[0]
-        num_rows = worksheet.nrows - 1
-        curr_row = 0
-        fields = ('lsr', 'type', 'title', 'prime', 'sponsor')
-        while curr_row < num_rows:
-            curr_row += 1
-            row = worksheet.row(curr_row)
-            data = dict(zip(fields, row))
-            import pdb; pdb.set_trace()
-            print row
-        # for line in self.zf.open('tbllsrsponsors.txt').readlines():
-        #     session_yr, lsr, seq, employee, primary = line.strip().split('|')
+        for line in self.zf.open('tbllsrsponsors.txt').readlines():
+            session_yr, lsr, seq, employee, primary = line.strip().split('|')
 
-        #     if session_yr == session and lsr in self.bills:
-        #         sp_type = 'primary' if primary == '1' else 'cosponsor'
-        #         try:
-        #             self.bills[lsr].add_sponsor(sp_type,
-        #                                 self.legislators[employee]['name'],
-        #                                 _code=self.legislators[employee]['seat'])
-        #         except KeyError:
-        #             self.warning("Error, can't find person %s" % employee)
+            if session_yr == session and lsr in self.bills:
+                sp_type = 'primary' if primary == '1' else 'cosponsor'
+                try:
+                    self.bills[lsr].add_sponsor(sp_type,
+                                        self.legislators[employee]['name'],
+                                        _code=self.legislators[employee]['seat'])
+                except KeyError:
+                    self.warning("Error, can't find person %s" % employee)
 
 
         # actions
@@ -216,12 +199,8 @@ class NHBillScraper(BillScraper):
             session_yr, body, v_num, employee, bill_id, vote, date \
                     = line.split('|')
 
-            date = date.strip()
-
-            datetime = dt.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-            # We don't actually use the datetime - this is for each person's
-            # actual vote. We can't throw it in the yes/no as a kwarg, so
-            # going to punt this back.
+            if not bill_id:
+                continue
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
                 try:
