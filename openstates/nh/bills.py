@@ -199,12 +199,8 @@ class NHBillScraper(BillScraper):
             session_yr, body, v_num, employee, bill_id, vote, date \
                     = line.split('|')
 
-            date = date.strip()
-
-            datetime = dt.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-            # We don't actually use the datetime - this is for each person's
-            # actual vote. We can't throw it in the yes/no as a kwarg, so
-            # going to punt this back.
+            if not bill_id:
+                continue
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
                 try:
