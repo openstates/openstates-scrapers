@@ -1,3 +1,6 @@
+import time
+import socket
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url
 
@@ -49,7 +52,22 @@ class GALegislatorScraper(LegislatorScraper):
 
         for member in members:
             guid = member['Id']
-            member_info = self.sservice.GetMember(guid)
+
+            max_retries = 5
+            tries = 0
+            while True:
+                if max_retries <= tries:
+                    msg = 'The service timed out %d times. Bailing.'
+                    raise Exception(msg % tries)
+                try:
+                    member_info = self.sservice.GetMember(guid)
+                except socket.timeout:
+                    msg = "Service timed out. Sleeping 5 seconds."
+                    self.logger.info(msg)
+                    time.sleep(5)
+                    tries += 1
+                    continue
+                break
 
             nick_name, first_name, middle_name, last_name = (
                 member_info['Name'][x] for x in [

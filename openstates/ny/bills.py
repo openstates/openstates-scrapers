@@ -23,42 +23,12 @@ class NYBillScraper(BillScraper):
     categorizer = Categorizer()
 
     def scrape(self, session, chambers):
-
         term_id = term_for_session('ny', session)
         for term in self.metadata['terms']:
             if term['name'] == term_id:
                 break
-
-        index = 0
-        bills = defaultdict(list)
-
-        billdata = defaultdict(lambda: defaultdict(list))
-        for year in (term['start_year'], term['end_year']):
-            while True:
-
-                index += 1
-                url = (
-                    'http://open.nysenate.gov/legislation/2.0/search.json'
-                    '?term=otype:bill AND year:2013=&pageSize=20&pageIdx=%d'
-                    )
-                url = url % index
-                resp = self.urlopen(url)
-
-                data = resp.response.json()
-                if not data['response']['results']:
-                    break
-
-                for bill in data['response']['results']:
-                    del bill['data']['bill']['fulltext']
-
-                    details = self.bill_id_details(bill)
-                    if details is None:
-                        continue
-                    (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
-                     title, (letter, number, is_amd)) = details
-                    bills[(letter, number)].append((bill, details))
-
-        for billset in bills.values():
+        self.term = term
+        for billset in self.yield_grouped_versions():
             self.scrape_bill(session, billset)
 
     def scrape_bill(self, session, bills):
@@ -69,40 +39,36 @@ class NYBillScraper(BillScraper):
          title, (letter, number, is_amd)) = details
 
         data = billdata['data']['bill']
-        # source_url = billdata['url']
-        # bill = Bill(session, chamber, bill_id, data['title'])
-        # bill.add_source(senate_url)
-        # bill.add_source(assembly_url)
 
         assembly = AssemblyBillPage(self, session, bill_chamber, details)
         assembly.build()
         bill = assembly.bill
         bill.add_source(billdata['url'])
 
-        # # Add prime sponsor.
-        # bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
+        # Add prime sponsor.
+        bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
 
-        # # Add cosponsors.
-        # for sponsor in data['coSponsors'] + data['multiSponsors']:
-        #     if sponsor['fullname']:
-        #         bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
+        # Add cosponsors.
+        for sponsor in data['coSponsors'] + data['multiSponsors']:
+            if sponsor['fullname']:
+                bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
 
-        # for action in data['actions']:
-        #     timestamp = int(action['date'])
-        #     action_text = action['text']
-        #     date = self.date_from_timestamp(timestamp)
-        #     actor = 'upper' if action_text.isupper() else 'lower'
-        #     attrs = dict(actor=actor, action=action_text, date=date)
-        #     categories, kwargs = self.categorizer.categorize(action_text)
-        #     attrs.update(kwargs, type=categories)
-        #     bill.add_action(**attrs)
+        for action in data['actions']:
+            timestamp = int(action['date'])
+            action_text = action['text']
+            date = self.date_from_timestamp(timestamp)
+            actor = 'upper' if action_text.isupper() else 'lower'
+            attrs = dict(actor=actor, action=action_text, date=date)
+            categories, kwargs = self.categorizer.categorize(action_text)
+            attrs.update(kwargs, type=categories)
+            bill.add_action(**attrs)
 
-        # # Add companion.
-        # if data['sameAs']:
-        #     bill.add_companion(data['sameAs'])
+        # Add companion.
+        if data['sameAs']:
+            bill.add_companion(data['sameAs'])
 
-        # if data['summary']:
-        #     bill['summary'] = data['summary']
+        if data['summary']:
+            bill['summary'] = data['summary']
 
         if data['votes']:
             for vote_data in data['votes']:
@@ -177,3 +143,60 @@ class NYBillScraper(BillScraper):
 
         return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
                 title, (letter, number, is_amd))
+
+
+    def yield_api_bills(self):
+        '''Yield individual versions. The caller can get all versions
+        for a particular ID, process the group, then throw everything
+        away and move onto the next ID.
+        '''
+        # The bill api object keys we'll actually use. Throw rest away.
+        keys = set([
+            'coSponsors', 'multiSponsors', 'sponsor', 'actions',
+            'versions', 'votes', 'title', 'sameAs', 'summary'])
+
+        index = 0
+        bills = defaultdict(list)
+
+        billdata = defaultdict(lambda: defaultdict(list))
+        for year in (self.term['start_year'], self.term['end_year']):
+            while True:
+                index += 1
+                url = (
+                    'http://open.nysenate.gov/legislation/2.0/search.json'
+                    '?term=otype:bill AND year:2013=&pageSize=20&pageIdx=%d'
+                    )
+                url = url % index
+                resp = self.get(url)
+
+                data = resp.json()
+                if not data['response']['results']:
+                    break
+
+                for bill in data['response']['results']:
+                    billdata = bill['data']['bill']
+                    for junk in set(billdata) - keys:
+                        del billdata[junk]
+
+                    details = self.bill_id_details(bill)
+                    if details is None:
+                        continue
+                    (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+                     title, (letter, number, is_amd)) = details
+
+                    key = (letter, number)
+                    yield key, bill, details
+
+    def yield_grouped_versions(self):
+        '''Generates a lists of versions grouped by bill id.
+        '''
+        prev_key = None
+        versions = []
+        for key, bill, details in self.yield_api_bills():
+            if key is not prev_key and versions:
+                yield versions
+                versions = []
+            versions.append((bill, details))
+            prev_key = key
+
+

@@ -3,6 +3,8 @@ import re
 import zipfile
 import datetime as dt
 
+import xlrd
+
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 
@@ -58,18 +60,19 @@ class NHBillScraper(BillScraper):
         self.bills_by_id = {}   # need a second table to attach votes
         last_line = []
         for line in self.zf.open('weblsrs.txt').readlines():
-            line = line.split('|')
-            if len(line) < 36:
-                if len(last_line + line[1:]) == 36:
-                    # combine two lines for processing
-                    # (skip an empty entry at beginning of second line)
-                    line = last_line + line
-                    self.warning('used bad line')
-                else:
-                    # skip this line, maybe we'll use it later
-                    self.warning('bad line: %s' % '|'.join(line))
-                    last_line = line
-                    continue
+            line = line.strip().split('\t')
+            # if len(line) < 36:
+            #     if len(last_line + line[1:]) == 36:
+            #         # combine two lines for processing
+            #         # (skip an empty entry at beginning of second line)
+            #         line = last_line + line
+            #         self.warning('used bad line')
+            #     else:
+            #         # skip this line, maybe we'll use it later
+            #         self.warning('bad line: %s' % '|'.join(line))
+            #         last_line = line
+            #         continue
+            print line
             session_yr = line[0]
             lsr = line[1]
             title = line[2]
@@ -77,6 +80,7 @@ class NHBillScraper(BillScraper):
             type_num = line[4]
             expanded_bill_id = line[9]
             bill_id = line[10]
+            import pdb; pdb.set_trace()
 
             if body == body_code[chamber] and session_yr == session:
                 if expanded_bill_id.startswith('CACR'):
@@ -115,7 +119,18 @@ class NHBillScraper(BillScraper):
 
         # sponsors
         lsr_url = self.metadata['session_details'][session]['lsr_url']
-        import pdb; pdb.set_trace()
+        fn, resp = self.urlretrieve(lsr_url)
+        workbook = xlrd.open_workbook(fn)
+        worksheet = workbook.sheets()[0]
+        num_rows = worksheet.nrows - 1
+        curr_row = 0
+        fields = ('lsr', 'type', 'title', 'prime', 'sponsor')
+        while curr_row < num_rows:
+            curr_row += 1
+            row = worksheet.row(curr_row)
+            data = dict(zip(fields, row))
+            import pdb; pdb.set_trace()
+            print row
         # for line in self.zf.open('tbllsrsponsors.txt').readlines():
         #     session_yr, lsr, seq, employee, primary = line.strip().split('|')
 
