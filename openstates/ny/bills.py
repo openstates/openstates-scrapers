@@ -22,25 +22,13 @@ class NYBillScraper(BillScraper):
     jurisdiction = 'ny'
     categorizer = Categorizer()
 
-    def yeild_grouped_versions(self):
-        '''Generates a lists of versions grouped by bill id.
-        '''
-        prev_key = None
-        versions = []
-        for key, bill, details in self.yeild_api_bills():
-            if key is not prev_key and versions:
-                yield versions
-                versions = []
-            versions.append((bill, details))
-            prev_key = key
-
     def scrape(self, session, chambers):
         term_id = term_for_session('ny', session)
         for term in self.metadata['terms']:
             if term['name'] == term_id:
                 break
         self.term = term
-        for billset in self.yeild_grouped_versions():
+        for billset in self.yield_grouped_versions():
             self.scrape_bill(session, billset)
 
     def scrape_bill(self, session, bills):
@@ -157,7 +145,7 @@ class NYBillScraper(BillScraper):
                 title, (letter, number, is_amd))
 
 
-    def yeild_api_bills(self):
+    def yield_api_bills(self):
         '''Yield individual versions. The caller can get all versions
         for a particular ID, process the group, then throw everything
         away and move onto the next ID.
@@ -198,5 +186,17 @@ class NYBillScraper(BillScraper):
 
                     key = (letter, number)
                     yield key, bill, details
+
+    def yield_grouped_versions(self):
+        '''Generates a lists of versions grouped by bill id.
+        '''
+        prev_key = None
+        versions = []
+        for key, bill, details in self.yield_api_bills():
+            if key is not prev_key and versions:
+                yield versions
+                versions = []
+            versions.append((bill, details))
+            prev_key = key
 
 
