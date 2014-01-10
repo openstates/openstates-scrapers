@@ -16,7 +16,7 @@ def check_response(method):
             if resp.status_code == 429:
                 self.handle_429(resp, *args, **kwargs)
                 return method(self, *args, **kwargs).json()
-            raise Exception('Bad api response: %r' % resp)
+            raise Exception('Bad api response: %r %r %r' % (resp, resp.text, resp.headers)
         return resp.json()
     return wrapped
 
@@ -25,7 +25,7 @@ class ApiClient(object):
     '''
     docs: http://docs.api.iga.in.gov/
     '''
-    root = "https://api.iga.in.gov/"
+    root = "https://api.iga.in.gov/"d
     resources = dict(
         sessions='/sessions',
         subjects='/{session}/subjects',
