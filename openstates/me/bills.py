@@ -176,6 +176,16 @@ class MEBillScraper(BillScraper):
         docket_link = page.xpath("//a[contains(@href, 'dockets.asp')]")[0]
         self.scrape_actions(bill, docket_link.attrib['href'])
 
+        # Add signed by guv action.
+        if page.xpath('//b[contains(text(), "Signed by the Governor")]'):
+            date = page.xpath(
+                ('string(//td[contains(text(), "Date")]/'
+                 'following-sibling::td/b/text())'))
+            dt = datetime.datetime.strptime(date, "%m/%d/%Y")
+            bill.add_action(
+                action="Signed by Governor", date=dt,
+                actor="governor", type=["governor:signed"])
+
         xpath = "//a[contains(@href, 'rollcalls.asp')]"
         votes_link = page.xpath(xpath)[0]
         self.scrape_votes(bill, votes_link.attrib['href'])
@@ -197,13 +207,14 @@ class MEBillScraper(BillScraper):
         except socket.timeout:
             pass
         else:
-            vdoc = lxml.html.fromstring(ver_html)
-            vdoc.make_links_absolute(ver_url)
-            # various versions: billtexts, billdocs, billpdfs
-            vurl = vdoc.xpath('//a[contains(@href, "billtexts/")]/@href')
-            if vurl:
-                bill.add_version('Initial Version', vurl[0],
-                                 mimetype='text/html')
+            if ver_html:
+                vdoc = lxml.html.fromstring(ver_html)
+                vdoc.make_links_absolute(ver_url)
+                # various versions: billtexts, billdocs, billpdfs
+                vurl = vdoc.xpath('//a[contains(@href, "billtexts/")]/@href')
+                if vurl:
+                    bill.add_version('Initial Version', vurl[0],
+                                     mimetype='text/html')
 
     def scrape_votes(self, bill, url):
         page = self.urlopen(url, retry_on_404=True)
