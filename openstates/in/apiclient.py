@@ -25,7 +25,7 @@ class ApiClient(object):
     '''
     docs: http://docs.api.iga.in.gov/
     '''
-    root = "https://api.iga.in.gov/"d
+    root = "https://api.iga.in.gov/"
     resources = dict(
         sessions='/sessions',
         subjects='/{session}/subjects',
