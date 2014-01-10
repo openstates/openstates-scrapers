@@ -10,6 +10,10 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
 
 
+class NoDetails(Exception):
+    pass
+
+
 class MTLegislatorScraper(LegislatorScraper):
 
     jurisdiction = 'mt'
@@ -92,7 +96,11 @@ class MTLegislatorScraper(LegislatorScraper):
                 fax=None, email=None,
                 address=address)
 
-            deets = self._scrape_details(detail_url)
+            try:
+                deets = self._scrape_details(detail_url)
+            except NoDetails:
+                self.logger.warning("No details found at %r" % detail_url)
+                continue
 
             # Add the details and delete junk.
             entry.update(deets)
@@ -188,7 +196,12 @@ class MTLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(baseurl)
 
         xpath = '//img[contains(@src, "legislator")]/@src'
-        photo_url = doc.xpath(xpath).pop()
+
+        try:
+            photo_url = doc.xpath(xpath).pop()
+        except IndexError:
+            raise NoDetails('No details found at %r' % url)
+
         details = { 'photo_url': photo_url }
 
         # # Parse address.
