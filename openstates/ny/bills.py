@@ -22,49 +22,25 @@ class NYBillScraper(BillScraper):
     jurisdiction = 'ny'
     categorizer = Categorizer()
 
-    def scrape(self, session, chambers):
+    def yeild_grouped_versions(self):
+        '''Generates a lists of versions grouped by bill id.
+        '''
+        prev_key = None
+        versions = []
+        for key, bill, details in self.yeild_api_bills():
+            if key is not prev_key and versions:
+                yield versions
+                versions = []
+            versions.append((bill, details))
+            prev_key = key
 
+    def scrape(self, session, chambers):
         term_id = term_for_session('ny', session)
         for term in self.metadata['terms']:
             if term['name'] == term_id:
                 break
-
-        index = 0
-        bills = defaultdict(list)
-
-        # The bill api object keys we'll actually use. Throw rest away.
-        keys = set([
-            'coSponsors', 'multiSponsors', 'sponsor', 'actions',
-            'versions', 'votes', 'title', 'sameAs', 'summary'])
-        billdata = defaultdict(lambda: defaultdict(list))
-        for year in (term['start_year'], term['end_year']):
-            while True:
-
-                index += 1
-                url = (
-                    'http://open.nysenate.gov/legislation/2.0/search.json'
-                    '?term=otype:bill AND year:2013=&pageSize=20&pageIdx=%d'
-                    )
-                url = url % index
-                resp = self.urlopen(url)
-
-                data = resp.response.json()
-                if not data['response']['results']:
-                    break
-
-                for bill in data['response']['results']:
-                    billdata = bill['data']['bill']
-                    for junk in set(billdata) - keys:
-                        del billdata[junk]
-
-                    details = self.bill_id_details(bill)
-                    if details is None:
-                        continue
-                    (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
-                     title, (letter, number, is_amd)) = details
-                    bills[(letter, number)].append((bill, details))
-
-        for billset in bills.values():
+        self.term = term
+        for billset in self.yeild_grouped_versions():
             self.scrape_bill(session, billset)
 
     def scrape_bill(self, session, bills):
@@ -83,7 +59,6 @@ class NYBillScraper(BillScraper):
 
         # Add prime sponsor.
         bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
-
 
         # Add cosponsors.
         for sponsor in data['coSponsors'] + data['multiSponsors']:
@@ -180,3 +155,48 @@ class NYBillScraper(BillScraper):
 
         return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
                 title, (letter, number, is_amd))
+
+
+    def yeild_api_bills(self):
+        '''Yield individual versions. The caller can get all versions
+        for a particular ID, process the group, then throw everything
+        away and move onto the next ID.
+        '''
+        # The bill api object keys we'll actually use. Throw rest away.
+        keys = set([
+            'coSponsors', 'multiSponsors', 'sponsor', 'actions',
+            'versions', 'votes', 'title', 'sameAs', 'summary'])
+
+        index = 0
+        bills = defaultdict(list)
+
+        billdata = defaultdict(lambda: defaultdict(list))
+        for year in (self.term['start_year'], self.term['end_year']):
+            while True:
+                index += 1
+                url = (
+                    'http://open.nysenate.gov/legislation/2.0/search.json'
+                    '?term=otype:bill AND year:2013=&pageSize=20&pageIdx=%d'
+                    )
+                url = url % index
+                resp = self.get(url)
+
+                data = resp.json()
+                if not data['response']['results']:
+                    break
+
+                for bill in data['response']['results']:
+                    billdata = bill['data']['bill']
+                    for junk in set(billdata) - keys:
+                        del billdata[junk]
+
+                    details = self.bill_id_details(bill)
+                    if details is None:
+                        continue
+                    (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
+                     title, (letter, number, is_amd)) = details
+
+                    key = (letter, number)
+                    yield key, bill, details
+
+
