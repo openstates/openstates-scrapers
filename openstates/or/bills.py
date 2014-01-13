@@ -106,10 +106,17 @@ class ORBillScraper(BillScraper):
         page.make_links_absolute(url)
         return page
 
+    def create_url(self, url, bill_id):
+        return "https://olis.leg.state.or.us/liz/{session}/{url}".format(
+            session=self.slug,
+            url=url
+        ).format(bill=bill_id)
+
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
         measure_url = self._resolve_ftp_path(sessionYear, 'measures.txt')
         action_url = self._resolve_ftp_path(sessionYear, 'meashistory.txt')
+        self.slug = self.metadata['session_details'][session]['slug']
 
         self.all_bills = {}
         slug = self.metadata['session_details'][session]['slug']
@@ -125,24 +132,20 @@ class ORBillScraper(BillScraper):
             if bill is None:
                 continue  # XXX: ...
 
-            overview = ("https://olis.leg.state.or.us/liz/%s/Measures/"
-                        "Overview/%s" % (slug, bill_id.replace(" ", "")))
+            bid = bill_id.replace(" ", "")
+            overview = self.create_url("Measures/Overview/{bill}", bid)
             # Right, let's do some versions.
+
             page = self.lxmlize(overview)
             versions = page.xpath(
                 "//ul[@class='dropdown-menu']/li/a[contains(@href, 'Text')]")
             for version in versions:
                 name = version.text
 
-                link = ('https://olis.leg.state.or.us/liz/%s/Downloads/'
-                        'MeasureDocument/%s/%s' % (
-                            slug,
-                            bill_id.replace(" ", ""),
-                            name,
-                    )
-                )
-                bill.add_version(name=name,
-                                 url=link,
+                link = self.create_url(
+                    'Downloads/MeasureDocument/{bill}/%s' % (name), bid)
+
+                bill.add_version(name=name, url=link,
                                  mimetype='application/pdf')
 
             bill.add_source(overview)
