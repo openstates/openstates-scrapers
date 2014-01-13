@@ -1,5 +1,5 @@
 from billy.utils.fulltext import text_after_line_numbers
-from .util import get_client
+from .util import get_client, backoff
 import lxml.html
 from .bills import GABillScraper
 from .legislators import GALegislatorScraper
@@ -54,7 +54,7 @@ metadata = {
 def session_list():
     sessions = get_client("Session").service
     sessions = [x['Description'].strip()
-                for x in sessions.GetSessions()['Session']]
+                for x in backoff(sessions.GetSessions)['Session']]
     return sessions
 
 

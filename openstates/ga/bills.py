@@ -1,6 +1,6 @@
 from billy.scrape.bills import BillScraper, Bill
 from collections import defaultdict
-from .util import get_client, get_url
+from .util import get_client, get_url, backoff
 
 #         Methods (7):
 #            GetLegislationDetail(xs:int LegislationId, )
@@ -36,32 +36,19 @@ class GABillScraper(BillScraper):
         if member_id in member_cache:
             return member_cache[member_id]
 
-            max_retries = 5
-            tries = 0
-            while True:
-                if max_retries <= tries:
-                    msg = 'The service timed out %d times. Bailing.'
-                    raise Exception(msg % tries)
-                try:
-                    member_info = self.sservice.GetMember(member_id)
-                except socket.timeout:
-                    msg = "Service timed out. Sleeping 5 seconds."
-                    self.logger.info(msg)
-                    time.sleep(5)
-                    tries += 1
-                    continue
-                break
+        mem = backoff(self.mservice.GetMember, member_id)
         member_cache[member_id] = mem
         return mem
 
     def scrape(self, session, chambers):
         sid = self.metadata['session_details'][session]['_guid']
-        legislation = self.lservice.GetLegislationForSession(
+        legislation = backoff(
+            self.lservice.GetLegislationForSession,
             sid
         )['LegislationIndex']
         for leg in legislation:
             lid = leg['Id']
-            instrument = self.lservice.GetLegislationDetail(lid)
+            instrument = backoff(self.lservice.GetLegislationDetail, lid)
             history = [x for x in instrument['StatusHistory'][0]]
             actions = [{
                 "code": x['Code'],
