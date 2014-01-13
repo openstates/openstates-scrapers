@@ -1,6 +1,7 @@
 from suds.client import Client
 import logging
 import socket
+import urllib2
 import time
 
 logging.getLogger('suds').setLevel(logging.WARNING)
@@ -29,7 +30,7 @@ def backoff(function, *args, **kwargs):
     for attempt in range(retries):
         try:
             return _()
-        except socket.timeout as e:
+        except (socket.timeout, urllib2.URLError) as e:
             backoff = (attempt * 15)
             log.warning(
                 "[attempt %s]: Connection broke. Backing off for %s seconds." % (
