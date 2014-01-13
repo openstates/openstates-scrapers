@@ -1,5 +1,6 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
+import re
 
 
 def itergraphs(elements, break_):
@@ -52,6 +53,8 @@ class ORLegislatorScraper(LegislatorScraper):
                     if len(kvpair) == 1:
                         key, = kvpair
                         value = key.tail.strip() if key.tail else None
+                        if value:
+                            value = re.sub("\s+", " ", value).strip()
                     elif len(kvpair) == 2:
                         key, value = kvpair
                     else:
@@ -62,13 +65,24 @@ class ORLegislatorScraper(LegislatorScraper):
                     if value is None:
                         # A page has the value in a <strong> tag. D'oh.
                         key, value = (x.strip() for x in key.rsplit(":", 1))
+
+                    key = re.sub("\s+", " ", key).strip()
+
                     info[key] = value
 
             leg = Legislator(term=term,
                              chamber=chamber,
                              full_name=name,
                              party=info['Party'],
-                             district=info['District'])
-            leg.add_source(url=url,
-                           note='Biographical Information')
+                             district=info['District'],
+                             photo_url=img)
+            leg.add_source(url)
+
+            leg.add_office(type='capitol',
+                           name='Capitol Office',
+                           address=info['Capitol Address'],
+                           phone=info.get('Capitol Phone',
+                                          info.get('apitol Phone')),
+                           email=info['Email'].attrib['href'])
+
             self.save_legislator(leg)
