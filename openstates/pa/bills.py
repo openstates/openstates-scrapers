@@ -80,22 +80,33 @@ class PABillScraper(BillScraper):
         self.save_bill(bill)
 
     def parse_bill_versions(self, bill, page):
-        for link in page.xpath(
-                '//div[@class="pn_table"]/descendant::tr/td[2]/a[@class="imgDim"]'):
-            href = link.attrib['href']
+        mimetypes = {
+            'icon-IE': 'text/html',
+            'icon-file-pdf': 'application/pdf',
+            'icon-file-word': 'application/msword',
+            }
+        for a in page.xpath('//*[contains(@class, "BillInfo-PNTable")]//td/a'):
+            try:
+                span = a[0]
+            except IndexError:
+                continue
+            for cls in span.attrib['class'].split():
+                if cls in mimetypes:
+                    mimetype = mimetypes[cls]
+                    break
+
+            href = a.attrib['href']
             params = urlparse.parse_qs(href[href.find("?") + 1:])
-            printers_number = params['pn'][0]
-            version_type = params['txtType'][0]
-            mime_type = 'text/html'
-            if version_type == 'PDF':
-                mime_type = 'application/pdf'
-            elif version_type == 'DOC':
-                mime_type = 'application/msword'
-            elif 'HTML':
-                mime_type = 'text/html'
+
+            for key in ('pn', 'PrintersNumber'):
+                try:
+                    printers_number = params[key][0]
+                    break
+                except KeyError:
+                    continue
 
             bill.add_version("Printer's No. %s" % printers_number,
-                             href, mimetype=mime_type, on_duplicate='use_old')
+                             href, mimetype=mimetype, on_duplicate='use_old')
 
     def parse_history(self, bill, url):
         bill.add_source(url)
