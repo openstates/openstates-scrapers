@@ -28,11 +28,11 @@ def backoff(function, *args, **kwargs):
         time.sleep(1)  # Seems like their server can't handle the load.
         return function(*args, **kwargs)
 
-    for attempt in range(1, (retries + 1)):
+    for attempt in range(retries):
         try:
             return _()
         except (socket.timeout, urllib2.URLError) as e:
-            backoff = (attempt * 15)
+            backoff = ((attempt + 1) * 15)
             log.warning(
                 "[attempt %s]: Connection broke. Backing off for %s seconds." % (
                     attempt,
