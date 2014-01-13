@@ -253,6 +253,7 @@ class TNBillScraper(BillScraper):
         # bill subject
         subject_pos = title.find('-')
         subjects = [s.strip() for s in title[:subject_pos - 1].split(',')]
+        subjects = filter(None, subjects)
 
         bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
                     subjects=subjects)
