@@ -693,7 +693,7 @@ if __name__ == '__main__':
         ex.process_all_feeds()
         stats[ex.abbr] = ex.entrycount
 
-    logger = logging.getLogger('mysql-update')
+    logger = logging.getLogger('newsblogs fetch')
     logger.setLevel(logging.INFO)
 
     ch = logging.StreamHandler()
