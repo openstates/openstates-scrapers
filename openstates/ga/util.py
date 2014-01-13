@@ -1,6 +1,10 @@
 from suds.client import Client
 import logging
+import socket
+import time
+
 logging.getLogger('suds').setLevel(logging.WARNING)
+log = logging.getLogger('billy')
 
 
 url = 'http://webservices.legis.ga.gov/GGAServices/%s/Service.svc?wsdl'
@@ -13,3 +17,25 @@ def get_client(service):
 
 def get_url(service):
     return url % (service)
+
+
+def backoff(function, *args, **kwargs):
+    retries = 5
+    nice = 0
+
+    def _():
+        return function(*args, **kwargs)
+
+    for attempt in range(retries):
+        try:
+            return _()
+        except socket.timeout as e:
+            backoff = (attempt * 15)
+            log.warning(
+                "[attempt %s]: Connection broke. Backing off for %s seconds." % (
+                    attempt,
+                    backoff
+                )
+            )
+            log.info(str(e))
+            time.sleep(backoff)
