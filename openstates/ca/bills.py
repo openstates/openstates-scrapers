@@ -21,6 +21,14 @@ SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
 
 def clean_title(s):
     # replace smart quote characters
+    s = s.replace(u'\xe2\u20ac\u201c', '-')
+
+    # Cesar Chavez e
+    s = s.replace(u'\xc3\xa9', u'\u00E9')
+    # Cesar Chavez a
+    s = s.replace(u'\xc3\xa1', u'\u00E1')
+    s = s.replace(u'\xe2\u20ac\u201c', u'\u2013')
+
     s = re.sub(ur'[\u2018\u2019]', "'", s)
     s = re.sub(ur'[\u201C\u201D]', '"', s)
     s = re.sub(u'\u00e2\u20ac\u2122', u"'", s)
@@ -370,9 +378,6 @@ class CABillScraper(BillScraper):
 
                 if title:
                     all_titles.add(title)
-
-                # if bill_id == 'scr 1':
-                #     import pdb; pdb.set_trace()
 
                 type_ = [bill_type]
 
