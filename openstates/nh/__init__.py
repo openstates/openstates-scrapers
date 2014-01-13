@@ -35,7 +35,6 @@ metadata = {
                 },
         '2014': {'display_name': '2014 Regular Session',
                  'zip_url': 'http://gencourt.state.nh.us/downloads/2014%20Session%20Bill%20Status%20Tables.zip',
-                 'lsr_url': 'http://gencourt.state.nh.us/downloads/2014%20LSRs.xls',
                  '_scraped_name': '2014 Session',
                 },
     },
