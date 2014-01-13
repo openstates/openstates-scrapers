@@ -25,6 +25,7 @@ def backoff(function, *args, **kwargs):
     nice = 0
 
     def _():
+        time.sleep(1)  # Seems like their server can't handle the load.
         return function(*args, **kwargs)
 
     for attempt in range(retries):
@@ -40,3 +41,7 @@ def backoff(function, *args, **kwargs):
             )
             log.info(str(e))
             time.sleep(backoff)
+
+    raise ValueError(
+        "The server's not playing nice. We can't keep slamming it."
+    )
