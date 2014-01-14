@@ -139,6 +139,28 @@ class ORBillScraper(BillScraper):
             page = self.lxmlize(overview)
             versions = page.xpath(
                 "//ul[@class='dropdown-menu']/li/a[contains(@href, 'Text')]")
+
+            measure_info = {}
+            info = page.xpath("//table[@id='measureOverviewTable']/tr")
+            for row in info:
+                key, value = row.xpath("./*")
+                key = key.text.strip(": ")
+                measure_info[key] = value
+
+            for sponsor in measure_info['Chief Sponsors'].xpath("./a"):
+                bill.add_sponsor(type='primary', name=sponsor.text_content())
+
+            for sponsor in measure_info['Regular Sponsors'].xpath("./a"):
+                bill.add_sponsor(type='cosponsor', name=sponsor.text_content())
+
+            c = lambda x: re.sub("\s+", " ", x).strip()
+
+            title = c(measure_info['Bill Title'].text_content())
+            summary = c(measure_info['Catchline/Summary'].text_content())
+
+            bill['summary'] = summary
+            # bill['title'] = title
+
             for version in versions:
                 name = version.text
 
@@ -147,6 +169,13 @@ class ORBillScraper(BillScraper):
 
                 bill.add_version(name=name, url=link,
                                  mimetype='application/pdf')
+
+
+            history = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
+            history = self.lxmlize(history).xpath("//table/tr")
+            for entry in history:
+                wwhere, action = [c(x.text) for x in entry.xpath("*")]
+                print wwhere
 
             bill.add_source(overview)
             self.save_bill(bill)
