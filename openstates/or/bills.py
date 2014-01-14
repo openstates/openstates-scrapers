@@ -130,8 +130,8 @@ class ORBillScraper(BillScraper):
                 if types == []:
                     types = ['other']
 
-                if types == ['other']:
-                    print(action)
+                #if types == ['other']:
+                #    print(action)
 
                 # actor, action, date, type, committees, legislators
                 bill.add_action(chamber, action, when, type=types)
