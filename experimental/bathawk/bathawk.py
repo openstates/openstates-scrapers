@@ -219,7 +219,7 @@ class BatCommands(batshell.ShellCommands):
             p.communicate(input=argtext)
 
     @command('sw')
-    def swtich_test_list(self, target):
+    def switch_test_list(self, target):
         '''Switch the regex tester to test against matched,
         unmatched, or all ('list') actions.
         '''
@@ -251,7 +251,7 @@ class BatCommands(batshell.ShellCommands):
         '''
         search = functools.partial(re.search, self.game_state['current_rgx'])
         text = '\n'.join(filter(search, self.actions.list))
-        self.pager(text)
+        self.pager(text.encode('utf-8'))
 
     @command('#')
     def show(self, line):
@@ -261,19 +261,19 @@ class BatCommands(batshell.ShellCommands):
         self.show = number
 
     @command('a')
-    def show_actions(self, line):
+    def show_actions(self, line=None):
         '''List the first 10 actions.
         '''
         text = '\n'.join(self.actions.unmatched)
-        self.pager(text)
+        self.pager(text.encode('utf-8'))
 
     @command('as')
-    def show_actions_sorted(self, line):
+    def show_actions_sorted(self, line=None):
         '''Show actions in alphabetical order.
         '''
         self.show_actions_start = 0
         text = '\n'.join(sorted(list(self.actions.unmatched)))
-        self.pager(text)
+        self.pager(text.encode('utf-8'))
 
     @command('c')
     def categories(self):
@@ -464,7 +464,7 @@ class BatCommands(batshell.ShellCommands):
         '''List the first 10 actions.
         '''
         text = '\n'.join(self.game_state.unmatched_actions())
-        self.pager(text)
+        self.pager(text.encode('utf-8'))
 
     @command('u')
     def show_unmatched_actions_sorted(self):
@@ -474,7 +474,7 @@ class BatCommands(batshell.ShellCommands):
         '''
         self.show_actions_start = 0
         text = '\n'.join(sorted(list(self.game_state.unmatched_actions())))
-        self.pager(text)
+        self.pager(text.encode('utf-8'))
 
     @command('im')
     def import_state_action_rules(self):
@@ -519,7 +519,7 @@ class BatCommands(batshell.ShellCommands):
                 action = '[%s]' % action
             action = str(count).ljust(5) + action
             actions.append(action)
-        self.pager('\n'.join(actions))
+        self.pager('\n'.join(actions).encode('utf8'))
 
     @command('bu')
     def show_breakdown_unmatched(self):
@@ -527,7 +527,7 @@ class BatCommands(batshell.ShellCommands):
         '''
         counts = collections.Counter(self.game_state.unmatched_actions())
         items = sorted(counts.items(), key=itemgetter(1))
-        self.pager('\n'.join(str(count).ljust(5) + action for (action, count) in items))
+        self.pager('\n'.join(str(count).ljust(5) + action for (action, count) in items).encode('utf8'))
 
     @command('md')
     def metadata(self):
