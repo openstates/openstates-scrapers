@@ -1,112 +1,88 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
+import re
+
+
+def itergraphs(elements, break_):
+    buf = []
+    for element in elements:
+        if element.tag == break_:
+            yield buf
+            buf = []
+            continue
+        buf.append(element)
+    if buf:
+        yield buf
+
 
 class ORLegislatorScraper(LegislatorScraper):
     jurisdiction = 'or'
 
-    rawdata    = None
-    source_url = 'http://www.leg.state.or.us/xml/members.xml'
-
-    extra_fields = {
-        'phone':
-            './phone-numbers/phone-number[@title="Capitol Phone"]/@number',
-        'district_phone':
-            './phone-numbers/phone-number[@title="District Phone"]/@number'
+    URLs = {
+        "lower": "http://www.oregonlegislature.gov/house/Pages/RepresentativesAll.aspx",
+        "upper": "http://www.oregonlegislature.gov/senate/Pages/SenatorsAll.aspx",
     }
 
-    addr_fields = {
-        'capitol_address':
-            './addresses/address[@title="Capitol Address"]',
-        'district_address':
-            './addresses/address[@title="District Office Address"]',
-    }
-
-    party_map = {'DEM': 'Democratic', 'REP': 'Republican'}
+    def lxmlize(self, url):
+        page = self.urlopen(url)
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+        return page
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-        html = self._load_data()
-        doc = lxml.html.fromstring(html)
+        url = self.URLs[chamber]
+        page = self.lxmlize(url)
 
-        mtype = {'upper':'senator', 'lower': 'representative'}[chamber]
+        for block in page.xpath("//div[@class='ms-rtestate-field']")[1:-1]:
+            # Each legislator block.
 
-        for member in doc.xpath('//member[@member-type="%s"]' % mtype):
-            leg = self._parse_member(chamber, term, member)
+            photo_block, = block.xpath("ancestor::td/preceding-sibling::td")
+            # (The <td> before ours was the photo)
+            img, = photo_block.xpath("*")
+            img = img.attrib['src']
+
+            name, = block.xpath(".//h2/a")
+            name = name.text
+
+            info = {}
+            # Right, now let's get info out of their little profile box.
+            for entry in block.xpath(".//p"):
+                for kvpair in itergraphs(entry.xpath("./*"), 'br'):
+                    # OK. We either get the tail or the next element
+                    # (usually an <a> tag)
+                    if len(kvpair) == 1:
+                        key, = kvpair
+                        value = key.tail.strip() if key.tail else None
+                        if value:
+                            value = re.sub("\s+", " ", value).strip()
+                    elif len(kvpair) == 2:
+                        key, value = kvpair
+                    else:
+                        # Never seen text + an <a> tag, perhaps this can happen.
+                        raise ValueError("Too many elements. Something changed")
+
+                    key = key.text_content().strip(" :")
+                    if value is None:
+                        # A page has the value in a <strong> tag. D'oh.
+                        key, value = (x.strip() for x in key.rsplit(":", 1))
+
+                    key = re.sub("\s+", " ", key).strip()
+
+                    info[key] = value
+
+            leg = Legislator(term=term,
+                             chamber=chamber,
+                             full_name=name,
+                             party=info['Party'],
+                             district=info['District'],
+                             photo_url=img)
+            leg.add_source(url)
+
+            leg.add_office(type='capitol',
+                           name='Capitol Office',
+                           address=info['Capitol Address'],
+                           phone=info.get('Capitol Phone',
+                                          info.get('apitol Phone')),
+                           email=info['Email'].attrib['href'])
+
             self.save_legislator(leg)
-
-    def _parse_member(self, chamber, term, member):
-        first_name = member.get('first-name')
-        last_name = member.get('last-name')
-        party = self.party_map[member.get('party')]
-
-        # this is semi-safe because we validated term w/ latest_only=True
-        session = self.metadata['terms'][-1]['sessions'][-1]
-
-        # extra_fields
-        extra_dict = {}
-        for name, xpath in self.extra_fields.iteritems():
-            result = member.xpath(xpath)
-            if result:
-                extra_dict[name] = result[0]
-
-        # address fields
-        for name, xpath in self.addr_fields.iteritems():
-            result = member.xpath(xpath)
-            if result:
-                result = result[0]
-                extra_dict[name] = '%s, %s, %s %s' % (
-                    result.get('street-address'),
-                    result.get('city'),
-                    result.get('state'),
-                    result.get('postal-code'))
-
-        leg = Legislator(term, chamber, member.get('district-number'),
-                         full_name=first_name+' '+last_name,
-                         first_name=first_name,
-                         last_name=last_name,
-                         middle_name=member.get('middle-initial'),
-                         party=party,
-                         email=member.get('e-mail'),
-                         url=member.get('website'),
-                         photo_url="%s/member_photo.jpg" % (
-                             member.get('website')
-                         ),
-                         oregon_member_id=member.get('leg-member-id'))
-
-        # add offices
-        leg.add_office('capitol', 'Capitol Office',
-                       address=extra_dict['capitol_address'],
-                       phone=extra_dict['phone'])
-        if 'district_address' in extra_dict or 'district_phone' in extra_dict:
-            leg.add_office('district', 'District Office',
-                           address=extra_dict.get('district_address', None),
-                           phone=extra_dict.get('district_phone', None))
-
-        # committees
-        com_xpath = 'committee-membership/session[@session-name="%s"]/committee' % session
-        for com in member.xpath(com_xpath):
-            cdict = {
-                'position': com.get('title').lower(),
-                'chamber': chamber,
-            }
-            com_name = com.get('name')
-            com_class = com.get('committee-class')
-            if com_class == 'sub-committee':
-                cdict['committee'], cdict['subcommittee'] = \
-                        com.get('name').split(' Subcommittee On ')
-            else:
-                cdict['committee'] = com.get('name')
-
-            if com_name.startswith("Conference Committee"):
-                # All of the Conference Committees are joint.
-                cdict['chamber'] = 'joint'
-
-            leg.add_role('committee member', term, **cdict)
-
-        leg.add_source(self.source_url)
-        return leg
-
-    def _load_data(self):
-        if not self.rawdata:
-            self.rawdata = self.urlopen(self.source_url)
-        return self.rawdata
