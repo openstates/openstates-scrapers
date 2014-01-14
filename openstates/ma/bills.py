@@ -7,33 +7,12 @@ import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
 
-
-_classifiers = (
-    ('Bill Filed', 'bill:filed'),
-    ('Referred to', 'committee:referred'),
-    ('Read second', 'bill:reading:2'),
-    ('Read third.* and passed', ['bill:reading:3', 'bill:passed']),
-    ('Committee recommended ought NOT', 'committee:passed:unfavorable'),
-    ('Committee recommended ought to pass', 'committee:passed:favorable'),
-    ('Bill reported favorably', 'committee:passed:favorable'),
-    ('Signed by the Governor', 'governor:signed'),
-    ('Amendment.* (A|a)dopted', 'amendment:passed'),
-    ('Amendment.* (R|r)ejected', 'amendment:failed'),
-)
-
-
-def classify_action(action):
-    whom = None
-    for pattern, type in _classifiers:
-        if re.match(pattern, action):
-            if "committee:referred" in type:
-                whom = re.sub("Referred to the committee on the ", "", action)
-            return (type, whom)
-    return ('other', whom)
+from .actions import Categorizer
 
 
 class MABillScraper(BillScraper):
     jurisdiction = 'ma'
+    categorizer = Categorizer()
 
     def __init__(self, *args, **kwargs):
         super(MABillScraper, self).__init__(*args, **kwargs)
@@ -99,11 +78,8 @@ class MABillScraper(BillScraper):
                 if actor_txt:
                     actor = chamber_map[actor_txt]
                 action = act_row.xpath('./td[@headers="bAction"]')[0].text_content().strip()
-                atype, whom = classify_action(action)
-                kwargs = {}
-                if not whom is None:
-                    kwargs['committees'] = [whom]
-                bill.add_action(actor, action, date, type=atype, **kwargs)
+                attrs = self.categorizer.categorize(action)
+                bill.add_action(actor, action, date, **attrs)
 
             # I tried to, as I was finding the sponsors, detect whether a
             # sponsor was already known. One has to do this because an author
