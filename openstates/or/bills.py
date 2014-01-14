@@ -174,8 +174,18 @@ class ORBillScraper(BillScraper):
             history = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
             history = self.lxmlize(history).xpath("//table/tr")
             for entry in history:
-                wwhere, action = [c(x.text) for x in entry.xpath("*")]
-                print wwhere
+                wwhere, action = [c(x.text_content()) for x in entry.xpath("*")]
+                wwhere = re.match(
+                    "(?P<when>.*) \((?P<where>.*)\)", wwhere).groupdict()
+
+                chamber = {"S": "upper",
+                           "H": "lower"}[wwhere['where']]
+
+                when = "%s-%s" % (slug[:4], wwhere['when'])
+                when = dt.datetime.strptime(when, "%Y-%m-%d")
+
+                # actor, action, date, type, committees, legislators
+                bill.add_action(chamber, action, when, type='other')
 
             bill.add_source(overview)
             self.save_bill(bill)
