@@ -112,7 +112,7 @@ class WAEventScraper(EventScraper):
                 where = body.xpath(".//br")[1].tail
 
                 kwargs = {
-                    "location": where.strip() or "unknown"
+                    "location": (where or '').strip() or "unknown"
                 }
 
                 if cancel:
