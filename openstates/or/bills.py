@@ -10,65 +10,6 @@ import re
 import lxml.html
 import scrapelib
 
-# OR only provides people not voting yes,  this is fragile and annoying
-# these regexes will pull the appropriate numbers/voters out
-ayes_re = re.compile(" ayes, (\d+)", re.I)
-nays_re = re.compile(" nays, (\d+)--([^;]*)", re.I)
-absent_re = re.compile(" absent, (\d+)--([^;]*)", re.I)
-excused_re = re.compile(" excused(?: for business of the house)?, (\d+)--([^;]*)", re.I)
-
-example_votes = """Third reading. Carried by Conger. Passed. Ayes, 60.
-Third reading. Carried by Read. Passed. Ayes, 58; Nays, 2--Garrard, Wingard.
-Third reading. Carried by Holvey. Passed. Ayes, 49; Nays, 10--Esquivel, Garrard, Krieger, McLane, Parrish, Richardson, Schaufler, Sprenger, Wand, Wingard; Excused, 1--Kennemer.
-Third reading. Carried by Esquivel. Passed. Ayes, 59; Absent, 1--Berger.
-Third reading. Carried by Bailey. Passed. Ayes, 58; Excused, 2--Hicks, Richardson.
-Read. Carried by Richardson. Adopted. Ayes, 58; Absent, 1--Parrish; Excused, 1--Nolan.
-Read. Carried by Matthews. Adopted. Ayes, 57; Excused, 1--Witt; Excused for Business of the House, 2--Buckley, Richardson.
-Read. Carried by Cowan. Adopted. Ayes, 50; Nays, 9--Freeman, Garrard, Hicks, Lindsay, Olson, Parrish, Thatcher, Weidner, Wingard; Excused, 1--Brewer.
-Read. Carried by Huffman. Adopted. Ayes, 58; Excused for Business of the House, 2--Berger, Speaker Hanna.
-Third reading. Carried by Cameron. Passed. Ayes, 58; Excused, 2--Frederick, Kennemer.
-Third reading. Carried by  Wingard. Failed. Ayes, 28; Nays, 32--Bailey, Barker, Barnhart, Beyer, Boone, Buckley, Cannon, Clem, Cowan, Dembrow, Doherty, Frederick, Garrard, Garrett, Gelser, Greenlick, Harker, Holvey, Hoyle, Hunt, Jenson, Kotek, Matthews, Nathanson, Nolan, Read, Schaufler, Smith G., Smith J., Tomei, Witt, Speaker Roblan.
-Third reading. Carried by Conger. Failed. Ayes, 28; Nays, 28--Barnhart, Bentz, Brewer, Cannon, Clem, Esquivel, Frederick, Freeman, Garrard, Greenlick, Hicks, Johnson, Kennemer, Komp, Olson, Parrish, Richardson, Schaufler, Sheehan, Smith G., Smith J., Sprenger, Thatcher, Thompson, Wand, Weidner, Wingard, Speaker Hanna; Excused, 2--Gilliam, Lindsay; Excused for Business of the House, 2--Cowan, Jenson.
-Third reading.  Carried by  Bonamici.  Failed. Ayes, 11; nays, 18--Atkinson, Beyer, Bonamici, Boquist, Ferrioli, Girod, Hass, Kruse, Monnes Anderson, Morse, Nelson, Olsen, Prozanski, Starr, Telfer, Thomsen, Whitsett, Winters; excused, 1--George.""".splitlines()
-
-def _handle_3rd_reading(action, chamber, date, passed):
-
-    ayes = ayes_re.findall(action)
-    if ayes:
-        ayes = int(ayes[0])
-    else:
-        ayes = 0
-
-    nays = nays_re.findall(action)
-    if nays:
-        nays, n_votes = nays[0]
-        nays = int(nays)
-        n_votes = n_votes.split(', ')
-    else:
-        nays = 0
-        n_votes = []
-
-    absent = absent_re.findall(action)
-    excused = excused_re.findall(action)
-    others = 0
-    o_votes = []
-    if absent:
-        absents, a_votes = absent[0]
-        others += int(absents)
-        o_votes += a_votes.split(', ')
-    # might be multiple excused matches ("on business of house" case)
-    for excused_match in excused:
-        excuseds, e_votes = excused_match
-        others += int(excuseds)
-        o_votes += e_votes.split(', ')
-
-    vote = Vote(chamber, date, 'Bill Passage', passed, ayes, nays, others)
-    for n in n_votes:
-        vote.no(n)
-    for o in o_votes:
-        vote.other(o)
-
-    return vote
 
 
 class ORBillScraper(BillScraper):
@@ -157,9 +98,7 @@ class ORBillScraper(BillScraper):
 
             title = c(measure_info['Bill Title'].text_content())
             summary = c(measure_info['Catchline/Summary'].text_content())
-
             bill['summary'] = summary
-            # bill['title'] = title
 
             for version in versions:
                 name = version.text
@@ -178,14 +117,28 @@ class ORBillScraper(BillScraper):
                 wwhere = re.match(
                     "(?P<when>.*) \((?P<where>.*)\)", wwhere).groupdict()
 
-                chamber = {"S": "upper",
-                           "H": "lower"}[wwhere['where']]
-
+                chamber = {"S": "upper", "H": "lower"}[wwhere['where']]
                 when = "%s-%s" % (slug[:4], wwhere['when'])
                 when = dt.datetime.strptime(when, "%Y-%m-%d")
 
                 # actor, action, date, type, committees, legislators
                 bill.add_action(chamber, action, when, type='other')
+
+            amendments = self.create_url('Measures/ProposedAmendments/{bill}', bid)
+            amendments = self.lxmlize(amendments).xpath("//div[@id='amendments']/table//tr")
+
+            for amendment in amendments:
+                nodes = amendment.xpath("./td")
+                if nodes == []:
+                    continue
+                pdf_href, date, committee, adopted = nodes
+                pdf_href, = pdf_href.xpath("./a")
+                pdf_link = pdf_href.attrib['href']
+
+                name = "Ammendment %s" % (pdf_href.text_content())
+
+                bill.add_document(name=name, url=pdf_link,
+                                  mimetype='application/pdf')
 
             bill.add_source(overview)
             self.save_bill(bill)
