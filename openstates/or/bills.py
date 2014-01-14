@@ -159,7 +159,6 @@ class ORBillScraper(BillScraper):
             bill.add_source(overview)
             self.save_bill(bill)
 
-        raise Exception("Don't import")
 
     def parse_bill(self, session, chamber, line):
         found = False
