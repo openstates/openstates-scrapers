@@ -50,7 +50,7 @@ class INBillScraper(BillScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
-        self.retry_attempts = 0
+        # self.retry_attempts = 0
         self.build_subject_mapping(session)
 
         bill_types = {
