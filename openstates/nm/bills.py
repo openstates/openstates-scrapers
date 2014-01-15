@@ -98,9 +98,9 @@ class NMBillScraper(BillScraper):
 
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        if session == '2013':
-            fname = 'LegInfo13'
-            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo13.*zip)'
+        if session == '2014':
+            fname = 'LegInfo14'
+            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo14t.*zip)'
         else:
             raise ValueError('no zip file present for %s' % session)
 
