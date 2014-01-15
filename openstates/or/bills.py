@@ -28,15 +28,15 @@ class ORBillScraper(BillScraper):
         ('Introduction and first reading', ['bill:introduced', 'bill:reading:1']),
         ('First reading', ['bill:introduced', 'bill:reading:1']),
         ('Second reading', ['bill:reading:2']),
-        ('Referred to ', 'committee:referred'),
-        ('Assigned to Subcommittee', 'committee:referred'),
-        ('Recommendation: Do pass', 'committee:passed:favorable'),
-        ('Governor signed', 'governor:signed'),
+        ('Referred to .*', ['committee:referred']),
+        ('Assigned to Subcommittee', ['committee:referred']),
+        ('Recommendation: Do pass', ['committee:passed:favorable']),
+        ('Governor signed', ['governor:signed']),
         ('.*Third reading.* Passed', ['bill:passed', 'bill:reading:3']),
         ('.*Third reading.* Failed', ['bill:failed', 'bill:reading:3']),
-        ('Final reading.* Adopted', 'bill:passed'),
+        ('Final reading.* Adopted', ['bill:passed']),
         ('Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
-        ('Read\. .* Adopted', 'bill:passed'),
+        ('Read\. .* Adopted', ['bill:passed']),
     )
 
     all_bills = {}
@@ -121,29 +121,44 @@ class ORBillScraper(BillScraper):
                 when = "%s-%s" % (slug[:4], wwhere['when'])
                 when = dt.datetime.strptime(when, "%Y-%m-%d")
 
+                types = []
+                for expr, types_ in self.action_classifiers:
+                    m = re.match(expr, action)
+                    if m:
+                        types + types_
+
+                if types == []:
+                    types = ['other']
+
+                #if types == ['other']:
+                #    print(action)
+
                 # actor, action, date, type, committees, legislators
-                bill.add_action(chamber, action, when, type='other')
+                bill.add_action(chamber, action, when, type=types)
 
             amendments = self.create_url('Measures/ProposedAmendments/{bill}', bid)
             amendments = self.lxmlize(amendments).xpath("//div[@id='amendments']/table//tr")
 
             for amendment in amendments:
                 nodes = amendment.xpath("./td")
+
                 if nodes == []:
                     continue
+
                 pdf_href, date, committee, adopted = nodes
                 pdf_href, = pdf_href.xpath("./a")
                 pdf_link = pdf_href.attrib['href']
 
                 name = "Ammendment %s" % (pdf_href.text_content())
 
+                adopted = adopted.text
                 bill.add_document(name=name, url=pdf_link,
+                                  adopted=adopted,
                                   mimetype='application/pdf')
 
             bill.add_source(overview)
             self.save_bill(bill)
 
-        raise Exception("Don't import")
 
     def parse_bill(self, session, chamber, line):
         found = False
