@@ -2,6 +2,7 @@ import re
 import lxml.html
 from .bills import ORBillScraper
 from .legislators import ORLegislatorScraper
+from .committees import ORCommitteeScraper
 
 metadata = dict(
     name='Oregon',
