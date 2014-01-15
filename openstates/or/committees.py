@@ -20,8 +20,7 @@ class ORCommitteeScraper(CommitteeScraper):
         for chamber, id_ in cdict.items():
             for committee in page.xpath("//ul[@id='%s']//li/a" % (id_)):
                 self.scrape_committee(committee.attrib['href'],
-                                      committee.text,
-                                      chamber)
+                                      committee.text, chamber)
 
     def scrape_committee(self, committee_url, committee_name, chamber):
         page = self.lxmlize(committee_url)
