@@ -49,7 +49,6 @@ def main(state):
         roles = obj.get('roles', [])
         for role in list(roles):
             if role['term'] == '109':
-                import pdb; pdb.set_trace()
                 roles.remove(role)
 
         db.legislators.save(obj)
