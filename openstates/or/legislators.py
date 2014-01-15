@@ -41,8 +41,8 @@ class ORLegislatorScraper(LegislatorScraper):
             img, = photo_block.xpath("*")
             img = img.attrib['src']
 
-            name, = block.xpath(".//h2/a")
-            name = name.text
+            h2, = block.xpath(".//h2/a")
+            name = h2.text
 
             info = {}
             # Right, now let's get info out of their little profile box.
@@ -71,6 +71,7 @@ class ORLegislatorScraper(LegislatorScraper):
                     info[key] = value
 
             leg = Legislator(term=term,
+                             url=h2.attrib['href'],
                              chamber=chamber,
                              full_name=name,
                              party=info['Party'],

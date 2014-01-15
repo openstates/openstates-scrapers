@@ -25,18 +25,20 @@ class ORBillScraper(BillScraper):
                   'CR': 'concurrent resolution'}
 
     action_classifiers = (
-        ('Introduction and first reading', ['bill:introduced', 'bill:reading:1']),
-        ('First reading', ['bill:introduced', 'bill:reading:1']),
-        ('Second reading', ['bill:reading:2']),
-        ('Referred to .*', ['committee:referred']),
-        ('Assigned to Subcommittee', ['committee:referred']),
-        ('Recommendation: Do pass', ['committee:passed:favorable']),
-        ('Governor signed', ['governor:signed']),
+        ('.*Introduction and first reading.*',
+             ['bill:introduced', 'bill:reading:1']),
+
+        ('.*First reading.*', ['bill:introduced', 'bill:reading:1']),
+        ('.*Second reading.*', ['bill:reading:2']),
+        ('.*Referred to .*', ['committee:referred']),
+        ('.*Assigned to Subcommittee.*', ['committee:referred']),
+        ('.*Recommendation: Do pass.*', ['committee:passed:favorable']),
+        ('.*Governor signed.*', ['governor:signed']),
         ('.*Third reading.* Passed', ['bill:passed', 'bill:reading:3']),
         ('.*Third reading.* Failed', ['bill:failed', 'bill:reading:3']),
-        ('Final reading.* Adopted', ['bill:passed']),
-        ('Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
-        ('Read\. .* Adopted', ['bill:passed']),
+        ('.*Final reading.* Adopted', ['bill:passed']),
+        ('.*Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
+        ('.*Read\. .* Adopted.*', ['bill:passed']),
     )
 
     all_bills = {}
@@ -125,13 +127,13 @@ class ORBillScraper(BillScraper):
                 for expr, types_ in self.action_classifiers:
                     m = re.match(expr, action)
                     if m:
-                        types + types_
+                        types += types_
 
                 if types == []:
                     types = ['other']
 
-                #if types == ['other']:
-                #    print(action)
+                if types == ['other']:
+                    print(action)
 
                 # actor, action, date, type, committees, legislators
                 bill.add_action(chamber, action, when, type=types)
