@@ -95,9 +95,6 @@ class INLegislatorScraper(LegislatorScraper):
                 address=address, name='District Office',
                 type='district', fax=None)
 
-            import pprint
-            pprint.pprint(office)
-
             self.save_legislator(leg)
 
     def get_districts(self, chamber):
