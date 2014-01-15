@@ -17,7 +17,7 @@ class INLegislatorScraper(LegislatorScraper):
     meta = metadata(jurisdiction)
 
     # The value to pass to the api as the "session" url component.
-    api_session = '2013'
+    api_session = '2014'
 
     def api_legislators(self):
         legislators = self.client.get('chamber_legislators',
