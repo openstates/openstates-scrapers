@@ -50,7 +50,7 @@ class INBillScraper(BillScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
-
+        # self.retry_attempts = 0
         self.build_subject_mapping(session)
 
         bill_types = {
@@ -313,7 +313,7 @@ class INBillScraper(BillScraper):
                               for n in re.split(r'\s{2,}', line)])
 
         if yes_count is None or no_count is None:
-            self.log("Couldne't find vote counts in %s" % url)
+            self.log("Couldn't find vote counts in %s" % url)
             return
 
         passed = yes_count > no_count + other_count

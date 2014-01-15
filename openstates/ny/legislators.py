@@ -31,6 +31,8 @@ class NYLegislatorScraper(LegislatorScraper):
             if link.text in (None, 'Contact', 'RSS'):
                 continue
             name = link.text.strip()
+            if name.lower().startswith('senate district'):
+                continue
 
             district = link.xpath("string(../../../div[3]/span[1])")
             district = re.match(r"District (\d+)", district).group(1)

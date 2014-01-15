@@ -1,7 +1,7 @@
 import time
 
 from billy.scrape.committees import CommitteeScraper, Committee
-from .util import get_client, get_url
+from .util import get_client, get_url, backoff
 
 
 CTTIE_URL = ("http://www.house.ga.gov/COMMITTEES/en-US/committee.aspx?"
@@ -18,9 +18,7 @@ class GACommitteeScraper(CommitteeScraper):
 
     def scrape_session(self, term, chambers, session):
         sid = self.metadata['session_details'][session]['_guid']
-        committees = self.cservice.GetCommitteesBySession(
-            sid
-        )
+        committees = backoff(self.cservice.GetCommitteesBySession, sid)
 
         #if committees.strip() == "":
         #    return  # If we get here, it's a problem.
@@ -29,22 +27,7 @@ class GACommitteeScraper(CommitteeScraper):
         committees = committees['CommitteeListing']
         for committee in committees:
             cid = committee['Id']
-
-            max_retries = 5
-            tries = 0
-            while True:
-                if max_retries <= tries:
-                    msg = 'The service screwed up %d times. Bailing.'
-                    raise Exception(msg % tries)
-                try:
-                    committee = self.cservice.GetCommittee(cid)
-                except Exception as exc:
-                    msg = "Got an error: %r; sleeping 5 seconds."
-                    self.logger.info(msg % exc)
-                    time.sleep(5)
-                    tries += 1
-                break
-
+            committee = backoff(self.cservice.GetCommittee, cid)
             name, typ, guid, code, description = [committee[x] for x in [
                 'Name', 'Type', 'Id', 'Code', 'Description'
             ]]

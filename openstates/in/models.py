@@ -3,6 +3,7 @@ import os
 import datetime
 import collections
 
+import scrapelib
 from billy.scrape.utils import convert_pdf, PlaintextColumns
 from billy.scrape.votes import Vote
 
@@ -21,7 +22,11 @@ class PDFHouseVote(object):
         text = getattr(self, '_text', None)
         if text:
             return text
-        (path, resp) = self.scraper.urlretrieve(self.url)
+        try:
+            (path, resp) = self.scraper.urlretrieve(self.url)
+        except scrapelib.HttpError as exc:
+            self.scraper.warning('Got error %r while fetching %s' % (exc, self.url))
+            raise self.VoteParseError()
         text = convert_pdf(path, 'text')
         os.remove(path)
         self._text = text
