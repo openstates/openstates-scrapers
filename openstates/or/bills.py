@@ -132,14 +132,17 @@ class ORBillScraper(BillScraper):
                 if types == []:
                     types = ['other']
 
-                if types == ['other']:
-                    print(action)
+                #if types == ['other']:
+                #    print(action)
 
                 # actor, action, date, type, committees, legislators
                 bill.add_action(chamber, action, when, type=types)
 
-            amendments = self.create_url('Measures/ProposedAmendments/{bill}', bid)
-            amendments = self.lxmlize(amendments).xpath("//div[@id='amendments']/table//tr")
+            amendments = self.create_url(
+                'Measures/ProposedAmendments/{bill}', bid)
+
+            amendments = self.lxmlize(amendments).xpath(
+                "//div[@id='amendments']/table//tr")
 
             for amendment in amendments:
                 nodes = amendment.xpath("./td")
