@@ -1,9 +1,8 @@
 import sys
-import pymongo
 
+from billy.core import db
 
 def main(state):
-    db = pymongo.MongoClient().fiftystates
 
     spec = dict(state=state)
 
