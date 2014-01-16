@@ -79,11 +79,14 @@ class ORLegislatorScraper(LegislatorScraper):
                              photo_url=img)
             leg.add_source(url)
 
+            phone = info.get('Capitol Phone', info.get('apitol Phone'))
+            if hasattr(phone, 'text_content'):
+                phone = phone.text_content()
+
             leg.add_office(type='capitol',
                            name='Capitol Office',
                            address=info['Capitol Address'],
-                           phone=info.get('Capitol Phone',
-                                          info.get('apitol Phone')),
+                           phone=phone,
                            email=info['Email'].attrib['href'])
 
             self.save_legislator(leg)
