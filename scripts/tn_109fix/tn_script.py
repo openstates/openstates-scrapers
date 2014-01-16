@@ -7,11 +7,11 @@ def main(state):
     spec = dict(state=state)
 
     print('fixing bills')
-    bill_spec = dict(spec, session='109')
+    bill_spec = dict(spec, session=108)
     for bill_109th in db.bills.find(bill_spec):
         print(bill_109th['bill_id'])
         # Reset session and _term to 108.
-        bill_109th.update(session=108, _term=108)
+        bill_109th.update(session='108', _term='108')
 
         try:
             db.bills.save(bill_109th)
@@ -21,6 +21,7 @@ def main(state):
             # bad 109 bill id to the 108 bills' _all_ids.
 
             # First get the 108th session bill.
+            import pdb; pdb.set_trace()
             spec = dict(spec,
                 session=108,
                 chamber=bill_109th['chamber'],
@@ -36,20 +37,20 @@ def main(state):
             db.bills.remove(bill_109th_id)
 
 
-    print('adding legislators')
-    for obj in db.legislators.find(spec):
-        # Remove 108 and 109 from old roles. 108 are the current roles,
-        # 109 are bogus.
-        obj.get('old_roles', {}).pop('108', None)
-        obj.get('old_roles', {}).pop('109', None)
+    # print('adding legislators')
+    # for obj in db.legislators.find(spec):
+    #     # Remove 108 and 109 from old roles. 108 are the current roles,
+    #     # 109 are bogus.
+    #     obj.get('old_roles', {}).pop('108', None)
+    #     obj.get('old_roles', {}).pop('109', None)
 
-        # Remove roles with term: 109.
-        roles = obj.get('roles', [])
-        for role in list(roles):
-            if role['term'] == '109':
-                roles.remove(role)
+    #     # Remove roles with term: 109.
+    #     roles = obj.get('roles', [])
+    #     for role in list(roles):
+    #         if role['term'] == '109':
+    #             roles.remove(role)
 
-        db.legislators.save(obj)
+    #     db.legislators.save(obj)
 
 
 if __name__ == "__main__":
