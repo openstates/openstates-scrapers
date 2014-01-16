@@ -52,7 +52,7 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
                 continue
             title = rec["Title"]
             legal_position = rec["LegPos"]
-            phone = rec["Phone"]
+            phone = rec["Phone"] or None
             if 'Email' in rec:
                 email = rec["Email"]
             else:

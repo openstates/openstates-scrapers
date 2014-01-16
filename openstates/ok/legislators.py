@@ -121,9 +121,10 @@ class OKLegislatorScraper(LegislatorScraper):
 
         sheet = xlrd.open_workbook(fname).sheet_by_index(0)
 
-        for rownum in xrange(1, sheet.nrows):
+        # 5 dumb rows at the top
+        for rownum in xrange(5, sheet.nrows):
             name = str(sheet.cell(rownum, 0).value)
-            if not name:
+            if not name.strip() or name == 'Senator':
                 continue
 
             party = str(sheet.cell(rownum, 1).value)
