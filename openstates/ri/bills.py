@@ -9,10 +9,17 @@ from billy.scrape.utils import url_xpath
 subjects      = None
 bill_subjects = None
 
-#HB_START_BILLNO=7000
-#SB_START_BILLNO=2000
-HB_START_BILLNO=5000
-SB_START_BILLNO=1
+HB_START_BILLNO=7000
+SB_START_BILLNO=2000
+# This was 2012 and 2014's list.
+#   (The second half of a term.)
+# XXX: Change this for the 2015 session.
+
+#HB_START_BILLNO=5000
+#SB_START_BILLNO=1
+# This was 2013's list.
+#   (The first half of a term.)
+# XXX: Change this for the 2015 session.
 
 START_IDEX = {
     "lower" : HB_START_BILLNO,
@@ -85,19 +92,29 @@ class RIBillScraper(BillScraper):
         for node in nodes:
             if node.tag == "br":
                 if len(current) > 0:
-                    current = []
                     blocks.append(current)
+                    current = []
             else:
                 current.append(node)
+        if current:
+            blocks.append(current)
         return blocks
 
     def digest_results_page( self, nodes ):
         blocks = {}
         for node in nodes:
             nblock = { 'actions' : [] }
-            lines = [ ( n.text_content(), n ) for n in node ]
+            lines = [(n.text_content().strip(), n) for n in node]
+            if 'No Bills Met this Criteria' in [x[0] for x in lines]:
+                self.info("No results. Skipping block")
+                return []
+
             for line in lines:
                 line, node = line
+                if ('Total Bills:' in line and
+                        'State House, Providence, Rhode Island' in line):
+                    continue
+
                 found = False
                 for regexp in BILL_STRING_FLAGS:
                     if re.match(BILL_STRING_FLAGS[regexp], line):
@@ -108,9 +125,12 @@ class RIBillScraper(BillScraper):
                         found = True
                 if not found:
                     nblock['actions'].append(line)
+
+            self.info("Working on %s" % (nblock.get("bill_id")))
             if "bill_id" in nblock:
                 blocks[nblock['bill_id']] = nblock
             else:
+                self.warning(lines)
                 self.warning("ERROR! Can not find bill_id for current entry!")
                 self.warning("This should never happen!!! Oh noes!!!")
         return blocks
@@ -246,6 +266,7 @@ class RIBillScraper(BillScraper):
                     if billid[:len(b)] == b:
                         billid = BILL_NAME_TRANSLATIONS[b] + \
                             billid[len(b)+1:].split()[0]
+
                 b = Bill(session, chamber, billid, title,
                     type=self.get_type_by_name(bill['bill_id']),
                     subjects=subs
