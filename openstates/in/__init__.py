@@ -29,6 +29,8 @@ metadata = dict(
                  '_scraped_name': '2012 Regular Session',},
         '2013': {'display_name': '2013 Regular Session',
                  '_scraped_name': '2013 Regular Session'},
+        '2014': {'display_name': '2014 Regular Session',
+                 '_scraped_name': '2014 Regular Session'},
         },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
