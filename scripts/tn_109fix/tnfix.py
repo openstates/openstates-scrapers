@@ -18,13 +18,12 @@ def main(state):
 
     print('adding committees')
     for obj in db.committees.find(spec):
-        index.add_object(bill)
+        index.add_object(obj)
 
     print('adding votes')
-    for obj in db.committees.find(spec):
-        index.add_object(bill)
+    for obj in db.votes.find(spec):
+        index.add_object(obj)
 
-	
     import pdb; pdb.set_trace()
 
 
