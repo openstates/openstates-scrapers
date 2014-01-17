@@ -36,6 +36,8 @@ class ORBillScraper(BillScraper):
         ('.*Governor signed.*', ['governor:signed']),
         ('.*Third reading.* Passed', ['bill:passed', 'bill:reading:3']),
         ('.*Third reading.* Failed', ['bill:failed', 'bill:reading:3']),
+        ('.*President signed.*', ['bill:passed']),
+        ('.*Speaker signed.*', ['bill:passed']),
         ('.*Final reading.* Adopted', ['bill:passed']),
         ('.*Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
         ('.*Read\. .* Adopted.*', ['bill:passed']),
