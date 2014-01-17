@@ -3,6 +3,7 @@ import re
 import datetime
 import urlparse
 from collections import defaultdict
+from contextlib import contextmanager
 
 import scrapelib
 from billy.scrape.bills import BillScraper, Bill
@@ -13,7 +14,7 @@ from billy.importers.bills import fix_bill_id
 import pytz
 import lxml.html
 
-from .apiclient import ApiClient
+from .apiclient import ApiClient, BadApiResponse
 from .actions import Categorizer
 from .models import PDFHouseVote
 
@@ -238,175 +239,22 @@ class INBillScraper(BillScraper):
                 # sometimes there are blank actions, just skip these
                 continue
 
-            attrs = self.categorizer.categorize(action)
-
-            bill.add_action(chamber, action, date, **attrs)
-
-    def build_subject_mapping(self, session):
-        self.subjects = defaultdict(list)
-
-        url = ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
-               "?year=%s&session=1&request=getSubjectList" % session)
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'getSubject')]"):
-            subject = link.text.strip()
-
-            self.scrape_subject(subject, link.attrib['href'])
-
-    def scrape_subject(self, subject, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-
-        for link in page.xpath("//a[contains(@href, 'getBill')]"):
-            self.subjects[link.text.strip()].append(subject)
-
-    def scrape_house_vote(self, bill, url):
+    @contextmanager
+    def skip_api_errors(self, msg):
         try:
-            bill.add_vote(PDFHouseVote(url, self).vote())
-        except PDFHouseVote.VoteParseError:
-            # It was a scanned, hand-written document, most likely.
-            return
+            yield
+        except BadApiResponse as exc:
+            self.warning(msg.format(resp=exc.resp))
 
-    def scrape_senate_vote(self, bill, url):
-        try:
-            (path, resp) = self.urlretrieve(url)
-        except:
-            return
-        text = convert_pdf(path, 'text')
-        os.remove(path)
+    def scrape_bill(self, data):
+        bill = Bill(
+            self.session, self.chamber,
+            data['billName'],
+            data['title'],
+            type=data['type'].lower())
 
-        lines = text.split('\n')
-
-        date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
-        if not date_match:
-            self.log("Couldn't find date on %s" % url)
-            return
-
-        time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
-        date = "%s %s %s" % (date_match.group(1), time_match.group(1),
-                             time_match.group(2))
-        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-        date = self._tz.localize(date)
-
-        vote_type = None
-        yes_count, no_count, other_count = None, None, 0
-        votes = []
-        for line in lines[21:]:
-            line = line.strip()
-            if not line:
-                continue
-
-            if line.startswith('YEAS'):
-                yes_count = int(line.split(' - ')[1])
-                vote_type = 'yes'
-            elif line.startswith('NAYS'):
-                no_count = int(line.split(' - ')[1])
-                vote_type = 'no'
-            elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
-                other_count += int(line.split(' - ')[1])
-                vote_type = 'other'
-            else:
-                votes.extend([(n.strip(), vote_type)
-                              for n in re.split(r'\s{2,}', line)])
-
-        if yes_count is None or no_count is None:
-            self.log("Couldn't find vote counts in %s" % url)
-            return
-
-        passed = yes_count > no_count + other_count
-
-        clean_bill_id = fix_bill_id(bill['bill_id'])
-        motion_line = None
-        for i, line in enumerate(lines):
-            if line.strip() == clean_bill_id:
-                motion_line = i + 2
-        motion = lines[motion_line]
-        if not motion:
-            self.log("Couldn't find motion for %s" % url)
-            return
-
-        vote = Vote('upper', date, motion, passed, yes_count, no_count,
-                    other_count)
-        vote.add_source(url)
-
-        insert_specific_votes(vote, votes)
-        check_vote_counts(vote)
-
-        bill.add_vote(vote)
-
-
-# -----------------------------------------------------------------------------
-# Below is a bunch of code that uses the API. Maybe for the future.
-# -----------------------------------------------------------------------------
-    # def scrape(self, chamber, session):
-    #     self.retry_attempts = 0
-    #     self.client = ApiClient(self)
-    #     self.api_chamber = dict(upper='senate', lower='house')[chamber]
-    #     self.chamber = chamber
-    #     self.session = session
-    #     self.get_subjects()
-
-    #     bills = self.client.get('chamber_bills',
-    #         session=self.api_session, chamber=self.api_chamber)
-    #     bills = self.client.unpaginate(bills)
-    #     for data in bills:
-    #         data = self.client.get_relurl(data['link'])
-    #         self.scrape_bill(data)
-
-    # def get_subjects(self):
-    #     bill2subjects = defaultdict(list)
-    #     subjects = self.client.get('subjects', session=self.api_session)
-    #     subjects = self.client.unpaginate(subjects)
-    #     for subject in subjects:
-    #         if subject['link'] == '/2013/subjects/si_workers_compensation_7426':
-    #             self.warning('Skipping known messed up subject')
-    #             continue
-    #         bills = self.client.get_relurl(subject['link'])
-    #         for bill in bills['bills']:
-    #             bill2subjects[bill['billName']].append(subject['entry'])
-    #     self.bill2subjects = bill2subjects
-
-    # def scrape_bill(self, data):
-    #     bill = Bill(
-    #         self.session, self.chamber,
-    #         data['billName'],
-    #         data['title'],
-    #         type=data['type'].lower())
-
-    #     url = urlparse.urljoin(self.client.root, data['link'])
-    #     bill.add_source(url)
-
-    #     for author in data['authors'] + data['coauthors']:
-    #         name = '%s %s' % (author['firstName'], author['lastName'])
-    #         bill.add_sponsor('primary', name)
-
-    #     for cosponspr in data['cosponsors']:
-    #         name = '%s %s' % (cosponsors['firstName'], cosponsors['lastName'])
-    #         bill.add_sponsor('cosponsor', name)
-
-    #     for version in data['versions']:
-    #         url = urlparse.urljoin(self.client.root, version['link'])
-    #         version = self.client.get_relurl(url)
-    #         name = version['printVersionName']
-    #         bill['summary'] = version['digest']
-    #         version_url = urlparse.urljoin(
-    #             self.client.root, version['pdfDownloadLink'])
-    #         bill.add_version(name, version_url, mimetype='application/pdf')
-
-    #     actions = self.client.get_relurl(data['actions']['link'])
-    #     action_chambers = dict(House='lower', Senate='upper')
-    #     for action in self.client.unpaginate(actions):
-    #         date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
-    #         text = action['description']
-    #         action_chamber = action_chambers[action['chamber']['name']]
-    #         kwargs = dict(date=date, actor=self.chamber, action=text)
-    #         kwargs.update(**self.categorizer.categorize(text))
-    #         bill.add_action(**kwargs)
-
-    #     bill['subjects'] = self.bill2subjects[data['billName']]
+        url = urlparse.urljoin(self.client.root, data['link'])
+        bill.add_source(url)
 
     #     rollcalls = self.client.get('bill_rollcalls')
 

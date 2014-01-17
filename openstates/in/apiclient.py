@@ -4,6 +4,15 @@ import urlparse
 import functools
 
 
+class BadApiResponse(Exception):
+    '''Raised if the service returns a service code higher than 400,
+    other than 429. Makes the response object avaible as exc.resp
+    '''
+    def __init__(self, resp, *args):
+        super(BadApiResponse, self).__init__(self, *args)
+        self.resp = resp
+
+
 def check_response(method):
     '''Decorated functions will run, and if they come back
     with a 429 and retry-after header, will wait and try again.
@@ -16,7 +25,9 @@ def check_response(method):
             if resp.status_code == 429:
                 self.handle_429(resp, *args, **kwargs)
                 return method(self, *args, **kwargs).json()
-            raise Exception('Bad api response: %r %r %r' % (resp, resp.text, resp.headers))
+            msg_args = (resp, resp.text, resp.headers)
+            msg = 'Bad api response: %r %r %r' % msg_args
+            raise BadApiResponse(resp, msg)
         return resp.json()
     return wrapped
 
