@@ -6,6 +6,6 @@ Links
 * `Open State Project API <http://openstates.org/api/>`_
 * `Contributing Guidelines <http://openstates.org/contributing/>`_
 * `Code on GitHub <http://github.com/sunlightlabs/openstates/>`_
-* `Issue Tracker <http://code.google.com/p/openstates/issues/list>`_
+* `Issue Tracker <http://sunlight.atlassian.net>`_
 * `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
 * `Sunlight Labs <http://sunlightlabs.com>`_
