@@ -12,7 +12,7 @@ def main(state):
 
     spec = dict(state=state)
     for vote in db.votes.find(spec):
-        if vote['session'] in ('109', 108):
+        if vote['session'] in ('109'):
             vote['session'] = '108'
             print('fixing', vote['_id'])
             db.votes.save(vote, w=1)
