@@ -385,7 +385,7 @@ class TNBillScraper(BillScraper):
                 vote.other(o)
                 seen.add(o)
 
-            vote.validate()
+            # vote.validate()
             bill.add_vote(vote)
 
         return bill
