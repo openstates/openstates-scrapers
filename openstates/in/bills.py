@@ -51,193 +51,40 @@ class INBillScraper(BillScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
+
         # self.retry_attempts = 0
-        self.build_subject_mapping(session)
+        self.session = session
+        self.chamber = chamber
 
-        bill_types = {
-            'B': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo"
-                  "?year=%s&session=1&request=all" % session),
-            'JR': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?"
-                   "year=%s&session=1&request=getJointResolutions" % session),
-            'CR': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?year"
-                   "=%s&session=1&request=getConcurrentResolutions" % session),
-            'R': ("http://www.in.gov/apps/lsa/session/billwatch/billinfo?year="
-                  "%s&session=1&request=getSimpleResolutions" % session)
-        }
+        self.client = ApiClient(self)
+        self.api_session = int(session)
+        self.api_chamber = dict(upper='senate', lower='house')[chamber]
+        self.get_subjects()
 
-        for type, url in bill_types.iteritems():
-            html = self.urlopen(url)
-            page = lxml.html.fromstring(html)
-            page.make_links_absolute(url)
-
-            abbrev = {'upper': 'S', 'lower': 'H'}[chamber] + type
-            xpath = "//a[contains(@href, 'doctype=%s')]" % abbrev
-            for link in page.xpath(xpath):
-                bill_id = link.text.strip()
-
-                short_title = link.tail.split(' -- ')[1].strip()
-
-                if not short_title:
-                    msg = 'Bill %r has no title; skipping.'
-                    self.logger.warning(msg % bill_id)
-                    continue
-                self.scrape_bill(session, chamber, bill_id, short_title,
-                                 link.attrib['href'])
-
-    def scrape_bill(self, session, chamber, bill_id, short_title, url):
-
-        try:
-            page = self.urlopen(url)
-        except scrapelib.HTTPError:
-            self.logger.warning('500 error at: %r' % url)
-            return
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        # check for Bill Withdrawn header
-        h1text = page.xpath('//h1/text()')
-        if h1text and h1text[0] == 'Bill Withdrawn':
-            return
-
-        title = page.xpath("//br")[8].tail
-        if not title:
-            title = short_title
-        title = title.strip()
-
-        abbrev = bill_id.split()[0]
-        if abbrev.endswith('B'):
-            bill_type = ['bill']
-        elif abbrev.endswith('JR'):
-            bill_type = ['joint resolution']
-        elif abbrev.endswith('CR'):
-            bill_type = ['concurrent resolution']
-        elif abbrev.endswith('R'):
-            bill_type = ['resolution']
-
-        bill = Bill(session, chamber, bill_id, title,
-                    type=bill_type)
-        bill.add_source(url)
-
-        action_link = page.xpath("//a[contains(@href, 'getActions')]")[0]
-        self.scrape_actions(bill, action_link.attrib['href'])
-
-        version_path = "//a[contains(., '%s')]"
-        for version_type in ('Introduced Bill', 'House Bill',
-                             'Senate Bill', 'Engrossed Bill',
-                             'Enrolled Act'):
-            path = version_path % version_type
-            links = page.xpath(path)
-            if links:
-
-                _url = links[0].attrib['href']
-
-                # Set the mimetype.
-                if 'pdf' in _url:
-                    mimetype = 'application/pdf'
-                else:
-                    mimetype = 'text/html'
-
-                bill.add_version(version_type, _url, mimetype=mimetype)
-
-        for vote_link in page.xpath("//a[contains(@href, 'Srollcal')]"):
-            self.scrape_senate_vote(bill, vote_link.attrib['href'])
-
-        for vote_link in page.xpath("//a[contains(@href, 'Hrollcal')]"):
-            self.scrape_house_vote(bill, vote_link.attrib['href'])
-
-        for doc_link in page.xpath("//a[contains(@href, 'FISCAL')]"):
-            num = doc_link.text.strip().split("(")[0]
-            bill.add_document("Fiscal Impact Statement #%s" % num,
-                              doc_link.attrib['href'])
-
-        bill['subjects'] = self.subjects[bill_id]
-
-        # Also retrieve the "latest printing" bill if it hasn't
-        # been found yet.
-        latest_printing = '//a[contains(@href, "bills")]/@href'
-        for url in set(page.xpath(latest_printing)):
-
-            # Set the mimetype.
-            if 'pdf' in url:
-                mimetype = 'application/pdf'
-            else:
-                mimetype = 'text/html'
-
+        bills = self.client.get('chamber_bills',
+            session=self.api_session, chamber=self.api_chamber)
+        bills = self.client.unpaginate(bills)
+        for data in bills:
+            data = self.client.get_relurl(data['link'])
             try:
-                bill.add_version('Latest printing', url,
-                                 mimetype=mimetype)
-            except ValueError:
-                # The url was a duplicate.
-                pass
-
-        if not bill['sponsors']:
-
-            # Indiana has so-called 'vehicle bills', which are empty
-            # placeholders that may later get injected with content
-            # concerning such innocuous topics as redistricting
-            # (2011 SB 0192) and marijuana studies (2011 SB 0192).
-            url = bill['sources'][0]['url']
-            page = self.urlopen(url)
-            if 'Vehicle Bill' in page:
-                msg = 'Skipping vehicle bill: {bill_id}.'
-                self.logger.info(msg.format(**bill))
-                return
-
-            # And some bills are withdrawn before first reading, which
-            # case they don't really exist, and the main version link
-            # will 404.
-            withdrawn = 'Withdrawn prior to first reading'
-            if bill['actions']:
-                if bill['actions'][-1]['action'] == withdrawn:
-                    msg = ('Skipping bill withdrawn before first '
-                           'reading: {bill_id}.')
-                    self.logger.info(msg.format(**bill))
-                    return
-
-        self.save_bill(bill)
-
-    def scrape_actions(self, bill, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-
-        bill.add_source(url)
-
-        slist = page.xpath("//strong[contains(., 'Authors:')]")[0]
-        slist = slist.tail.split(',')
-        sponsors = []
-        for sponsor in slist:
-            name = sponsor.strip()
-            if not name:
+                self.scrape_bill(data)
+            except BadApiResponse as exc:
+                msg = 'Skipping bill due to bad API response at %r: %s'
+                self.warning(msg % (exc.resp, exc.resp.text))
                 continue
-            if name == 'Jr.':
-                sponsors[-1] = sponsors[-1] + ", Jr."
-            else:
-                sponsors.append(name)
-        for sponsor in sponsors:
-            bill.add_sponsor('primary', sponsor)
 
-        act_table = page.xpath("//table")[1]
-
-        for row in act_table.xpath("tr")[1:]:
-            date = row.xpath("string(td[1])").strip()
-            date = datetime.datetime.strptime(date, "%m/%d/%Y").date()
-
-            # Handle idiot typo of year 1320 instead of 2013.
-            if date.year == 1320:
-                date = datetime.datetime(
-                    year=2013, month=date.month, day=date.day)
-
-            chamber = row.xpath("string(td[2])").strip()
-            if chamber == 'S':
-                chamber = 'upper'
-            elif chamber == 'H':
-                chamber = 'lower'
-
-            action = row.xpath("string(td[4])").strip(' ;\t\n')
-
-            if not action:
-                # sometimes there are blank actions, just skip these
+    def get_subjects(self):
+        bill2subjects = defaultdict(list)
+        subjects = self.client.get('subjects', session=self.api_session)
+        subjects = self.client.unpaginate(subjects)
+        for subject in subjects:
+            if subject['link'] == '/2013/subjects/si_workers_compensation_7426':
+                self.warning('Skipping known messed up subject')
                 continue
+            bills = self.client.get_relurl(subject['link'])
+            for bill in bills['bills']:
+                bill2subjects[bill['billName']].append(subject['entry'])
+        self.bill2subjects = bill2subjects
 
     @contextmanager
     def skip_api_errors(self, msg):
@@ -256,7 +103,41 @@ class INBillScraper(BillScraper):
         url = urlparse.urljoin(self.client.root, data['link'])
         bill.add_source(url)
 
-    #     rollcalls = self.client.get('bill_rollcalls')
+        for author in data['authors'] + data['coauthors']:
+            name = '%s %s' % (author['firstName'], author['lastName'])
+            bill.add_sponsor('primary', name)
 
-    #     self.save_bill(bill)
+        for cosponspr in data['cosponsors']:
+            name = '%s %s' % (cosponsors['firstName'], cosponsors['lastName'])
+            bill.add_sponsor('cosponsor', name)
+
+        for version in data['versions']:
+            url = urlparse.urljoin(self.client.root, version['link'])
+            msg = 'Skipping version api error {resp.status_code}: {resp.text}'
+            with self.skip_api_errors(msg):
+                version = self.client.get_relurl(url)
+                name = version['printVersionName']
+                bill['summary'] = version['digest']
+                version_url = urlparse.urljoin(
+                    self.client.root, version['pdfDownloadLink'])
+                bill.add_version(name, version_url, mimetype='application/pdf')
+
+        actions = self.client.get_relurl(data['actions']['link'])
+        action_chambers = dict(House='lower', Senate='upper')
+        for action in self.client.unpaginate(actions):
+            date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
+            text = action['description']
+            action_chamber = action_chambers[action['chamber']['name']]
+            kwargs = dict(date=date, actor=self.chamber, action=text)
+            kwargs.update(**self.categorizer.categorize(text))
+            bill.add_action(**kwargs)
+
+        bill['subjects'] = self.bill2subjects[data['billName']]
+
+        msg = 'Skipped rollcall response: {resp.status_code}: {resp.text}'
+        with self.skip_api_errors(msg):
+            rollcalls = self.client.get('bill_rollcalls',
+                session=self.api_session, bill_id=data['billName'])
+
+        self.save_bill(bill)
 
