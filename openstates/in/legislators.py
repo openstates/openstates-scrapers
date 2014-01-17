@@ -5,7 +5,6 @@ import collections
 
 import lxml.html
 
-from billy.utils import metadata
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
 
@@ -14,14 +13,12 @@ from .apiclient import ApiClient
 
 class INLegislatorScraper(LegislatorScraper):
     jurisdiction = 'in'
-    meta = metadata(jurisdiction)
 
-    # The value to pass to the api as the "session" url component.
-    api_session = '2014'
-
-    def api_legislators(self):
+    def api_legislators(self, session_year):
+        '''Since we're scraping per term, this iterator
+        '''
         legislators = self.client.get('chamber_legislators',
-            session=self.api_session, chamber=self.api_chamber)
+            session=session_year, chamber=self.api_chamber)
         for data in legislators['items']:
             yield data
         while True:
@@ -32,72 +29,102 @@ class INLegislatorScraper(LegislatorScraper):
             else:
                 break
 
+    def get_termdata(self, term_id):
+        '''The api legislator calls expect a "session" parameter, which
+        is simply a four-digit year. Aside from death, legislators generally
+        shouldn't change between sessions (only terms), and tests with api
+        responses for different years within a single term returned the same
+        data.
+        '''
+        for term in self.metadata['terms']:
+            if term['name'] == term_id:
+                return term
+
+    def get_api_id(self, photo_url):
+        return photo_url.split('_').pop()
+
     def scrape(self, chamber, term):
+        self.termdata = self.get_termdata(term)
         self.retry_attempts = 0
         self.client = ApiClient(self)
         self.api_chamber = dict(upper='senate', lower='house')[chamber]
 
+        legislators = {}
         districts = self.get_districts(chamber)
-        for data in self.api_legislators():
-            data = self.client.get_relurl(data['link'])
-            name = '%s %s' % (data['firstName'], data['lastName'])
+        years = (self.termdata['start_year'], self.termdata['start_year'])
+        for session_year in years:
+            for data in self.api_legislators(session_year):
+                data = self.client.get_relurl(data['link'])
+                name = '%s %s' % (data['firstName'], data['lastName'])
 
-            matches = difflib.get_close_matches(name, districts)
-            if not matches:
-                msg = "Found no matching district for legislator %r." % data
-                self.warning(msg)
-                continue
-            key = matches[0]
-            district = districts[key]['district']
-            leg_url = districts[key]['url']
+                matches = difflib.get_close_matches(name, districts)
+                if not matches:
+                    msg = "Found no matching district for legislator %r." % data
+                    self.warning(msg)
+                    continue
+                key = matches[0]
+                district = districts[key]['district']
+                leg_url = districts[key]['url']
 
-            photo_url = data['pngDownloadLink']
-            photo_url = urlparse.urljoin(self.client.root, photo_url)
-            leg = Legislator(
-                term, chamber, district, name,
-                first_name=data['firstName'],
-                last_name=data['lastName'],
-                party=data['party'],
-                photo_url=photo_url)
+                photo_url = data['pngDownloadLink']
+                photo_url = urlparse.urljoin(self.client.root, photo_url)
 
-            url = self.client.make_url('chamber_legislators',
-                session=self.api_session, chamber=self.api_chamber)
-            leg.add_source(url)
-            leg.add_source(leg_url)
+                api_id = self.get_api_id(photo_url)
+                if api_id not in legislators:
+                    leg = Legislator(
+                        term, chamber, district, name,
+                        first_name=data['firstName'],
+                        last_name=data['lastName'],
+                        party=data['party'],
+                        photo_url=photo_url)
+                else:
+                    leg = legislators[api_id]
+                    import pdb; pdb.set_trace()
 
-            for comm in data['committees']:
-                leg.add_role(
-                    'member', term=term, chamber=chamber,
-                    commmittee=comm['name'])
+                url = self.client.make_url('chamber_legislators',
+                    session=session_year, chamber=self.api_chamber)
+                leg.add_source(url)
+                leg.add_source(leg_url)
 
-            # Woooooo! Email addresses are guessable in IN/
-            tmpl = '{chamber[0]}{district}@igo.in.gov'
-            leg['email'] = tmpl.format(chamber=chamber, district=district)
+                for comm in data['committees']:
+                    leg.add_role(
+                        'member', term=term, chamber=chamber,
+                        commmittee=comm['name'])
 
-            # Add district generic IGA address, usually the only thing available.
-            tmpl = '''{title} {full_name}
-            200 W. Washington St.
-            Indianapolis, IN 46204'''
-            title = 'Senator' if chamber == 'upper' else 'Representative'
-            address = tmpl.format(title=title, full_name=leg['full_name'])
-            address = re.sub(r' +', ' ', address)
+                # Woooooo! Email addresses are guessable in IN/
+                tmpl = '{chamber[0]}{district}@igo.in.gov'
+                leg['email'] = tmpl.format(chamber=chamber, district=district)
 
-            # Get the contact details.
-            deets_getter = 'get_contact_%s_%s' % (chamber, data['party'])
-            deets_getter = getattr(self, deets_getter)
-            deets = deets_getter(leg, leg_url)
+                # Add district generic IGA address, usually the only thing available.
+                tmpl = '''{title} {full_name}
+                    200 W. Washington St.
+                    Indianapolis, IN 46204'''
+                title = 'Senator' if chamber == 'upper' else 'Representative'
+                address = tmpl.format(title=title, full_name=leg['full_name'])
+                address = re.sub(r' +', ' ', address)
 
-            # If email found, use that instead of guessed email.
-            if deets.get("email"):
-                leg['email'] = deets.pop("email")
+                # Get the contact details.
+                deets_getter = 'get_contact_%s_%s' % (chamber, data['party'])
+                deets_getter = getattr(self, deets_getter)
+                deets = deets_getter(leg, leg_url)
 
-            office = dict(deets,
-                address=address, name='District Office',
-                type='district', fax=None)
+                # If email found, use that instead of guessed email.
+                if deets.get("email"):
+                    leg['email'] = deets.pop("email")
 
-            self.save_legislator(leg)
+                office = dict(deets,
+                    address=address, name='District Office',
+                    type='district', fax=None)
+
+                if office not in leg['offices']:
+                    leg.add_office(**office)
+
+                self.save_legislator(leg)
 
     def get_districts(self, chamber):
+        '''In an epic winfail, API doesn't provide districts, so we have to
+        get them from the public site.
+        '''
         urls = {
             'upper': ('https://secure.in.gov/cgi-bin/legislative/listing/'
                       'listing-2.pl?data=district&chamber=Senate'),
