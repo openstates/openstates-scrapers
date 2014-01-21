@@ -119,8 +119,13 @@ class INBillScraper(BillScraper):
             name = '%s %s' % (cosponsors['firstName'], cosponsors['lastName'])
             bill.add_sponsor('cosponsor', name)
 
+        version_urls = set()
         for version in data['versions']:
             url = urlparse.urljoin(self.client.root, version['link'])
+            if url in version_urls:
+                continue
+            version_urls.add(url)
+
             msg = 'Skipping version api error {resp.status_code}: {resp.text}'
             with self.skip_api_errors(msg):
                 version = self.client.get_relurl(url)
