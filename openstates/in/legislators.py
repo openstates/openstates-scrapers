@@ -187,7 +187,8 @@ class INLegislatorScraper(LegislatorScraper):
             m = re.search(r'\(\d{3}\)\s+\d{3}-\d{4}', tail)
             if m:
                 phones.append(m.group())
-        return dict(phone=', '.join(phones))
+        phone = ', '.join(phones)
+        return dict(phone=phone or None)
 
     def get_contact_upper_Democratic(self, leg, leg_url):
         '''Get contact info for Senate Dems.
