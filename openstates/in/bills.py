@@ -51,6 +51,9 @@ class INBillScraper(BillScraper):
     categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
 
+    # Can turn this on or off. There are thousands of subjects and it takes hours.
+    SCRAPE_SUBJECTS = True
+
     def scrape(self, chamber, session):
 
         # self.retry_attempts = 0
@@ -60,7 +63,9 @@ class INBillScraper(BillScraper):
         self.client = ApiClient(self)
         self.api_session = int(session)
         self.api_chamber = dict(upper='senate', lower='house')[chamber]
-        self.get_subjects()
+
+        if self.SCRAPE_SUBJECTS:
+            self.get_subjects()
 
         bills = self.client.get('chamber_bills',
             session=self.api_session, chamber=self.api_chamber)
@@ -100,7 +105,7 @@ class INBillScraper(BillScraper):
         bill = Bill(
             self.session, self.chamber,
             data['billName'],
-            data['title'],
+            data['title'] or data['latestVersion']['title'] or data['latestVersion']['digest'],
             type=data['type'].lower())
 
         url = urlparse.urljoin(self.client.root, data['link'])
@@ -135,7 +140,8 @@ class INBillScraper(BillScraper):
             kwargs.update(**self.categorizer.categorize(text))
             bill.add_action(**kwargs)
 
-        bill['subjects'] = self.bill2subjects[data['billName']]
+        if self.SCRAPE_SUBJECTS:
+            bill['subjects'] = self.bill2subjects[data['billName']]
 
         msg = 'Skipped rollcall response: {resp.status_code}: {resp.text}'
         with self.skip_api_errors(msg):
