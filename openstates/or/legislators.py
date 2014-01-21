@@ -70,6 +70,9 @@ class ORLegislatorScraper(LegislatorScraper):
 
                     info[key] = value
 
+            info['District'] = info['District'].encode(
+                'ascii', 'ignore').strip()
+
             leg = Legislator(term=term,
                              url=h2.attrib['href'],
                              chamber=chamber,
