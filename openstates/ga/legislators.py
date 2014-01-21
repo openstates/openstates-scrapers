@@ -143,7 +143,8 @@ class GALegislatorScraper(LegislatorScraper):
             # if we have more than 2 chars (eg state)
             # or a phone/fax/email address record the info
             if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
-                if 'quickrxdrugs@yahoo.com' in capital_contact_info[1]:
+                if (capital_contact_info[0] \
+                        and 'quickrxdrugs@yahoo.com' in capital_contact_info[0]):
                     self.warning("XXX: GA SITE WAS HACKED.")
                     capital_contact_info[1] = None
 
@@ -180,6 +181,11 @@ class GALegislatorScraper(LegislatorScraper):
                 )).strip()
 
             if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
+                if (district_contact_info[1] and \
+                        'quickrxdrugs@yahoo.com' in district_contact_info[1]):
+                    self.warning("XXX: GA SITE WAS HACKED.")
+                    district_contact_info[1] = None
+
                 if district_address.strip() != "":
                     legislator.add_office(
                         'district',
