@@ -8,7 +8,7 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import scrapelib
 
-from .apiclient import ApiClient
+from .apiclient import ApiClient, BadApiResponse
 
 
 class INLegislatorScraper(LegislatorScraper):
@@ -54,7 +54,12 @@ class INLegislatorScraper(LegislatorScraper):
         years = (self.termdata['start_year'], self.termdata['start_year'])
         for session_year in years:
             for data in self.api_legislators(session_year):
-                data = self.client.get_relurl(data['link'])
+                try:
+                    data = self.client.get_relurl(data['link'])
+                except BadApiResponse:
+                    self.warning('Got bad API Response at %r' % data['link'])
+                    self.warning('Skipping legislator: %r' % data)
+                    continue
                 name = '%s %s' % (data['firstName'], data['lastName'])
 
                 matches = difflib.get_close_matches(name, districts)
