@@ -138,7 +138,12 @@ class INBillScraper(BillScraper):
         actions = self.client.get_relurl(data['actions']['link'])
         action_chambers = dict(House='lower', Senate='upper')
         for action in self.client.unpaginate(actions):
-            date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
+            try:
+                date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
+            except TypeError:
+                self.warning('Skipping action due to null date: %r' % action)
+                continue
+
             text = action['description']
             action_chamber = action_chambers[action['chamber']['name']]
             kwargs = dict(date=date, actor=self.chamber, action=text)
