@@ -6,6 +6,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import scrapelib
+import requests
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
@@ -92,6 +93,8 @@ class INBillScraper(BillScraper):
             yield
         except BadApiResponse as exc:
             self.warning(msg.format(resp=exc.resp))
+        except requests.exceptions.ConnectionError:
+            self.warning('Got a connection error. Skipping.')
 
     def scrape_bill(self, data):
         bill = Bill(
