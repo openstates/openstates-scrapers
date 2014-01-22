@@ -154,7 +154,7 @@ class VABillScraper(BillScraper):
             actor, action = action.split(': ', 1)
 
             actor = self.actor_map[actor]
-            date = datetime.datetime.strptime(date, '%m/%d/%y')
+            date = datetime.datetime.strptime(date.strip(), '%m/%d/%y')
 
             # if action ends in (##-Y ##-N) remove that part
             vrematch = self.vote_strip_re.match(action)
