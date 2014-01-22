@@ -2,7 +2,7 @@
 {% load markup_tags %}
 {% load i18n %}
 
-<span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first"></a></span>
+<span style="float: right"><a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?chamber={{chamber.type}}&sort=first">RSS</a></span>
 <h5>{% trans "Recently Introduced" %}</h5>
 {% if chamber.latest_bills %}
     <ul>

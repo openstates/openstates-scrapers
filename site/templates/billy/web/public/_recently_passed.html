@@ -2,7 +2,7 @@
 {% load markup_tags %}
 {% load i18n %}
 
-<span style="float: right"><a class="rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}"></a></span>
+<span style="float: right"><a class="textReplace rssIcon" href="{% url 'bills_feed' abbr %}?status=passed_{{chamber.type}}&sort=passed_{{chamber.type}}">RSS</a></span>
 <h5>{% trans "Recently Passed" %}</h5>
 {% if chamber.passed_bills %}
     <ul>
