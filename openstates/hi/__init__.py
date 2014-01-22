@@ -28,12 +28,17 @@ metadata = dict(
             'name': '2013-2014',
             'sessions': [
                 '2013 Regular Session',
+                '2014 Regular Session',
             ],
             'start_year' : 2013,
             'end_year'   : 2014
         },
      ],
     session_details={
+        '2014 Regular Session' : {
+            'display_name'  : '2013-2014 Regular Session',
+            '_scraped_name' : '2014'
+        },
         '2013 Regular Session' : {
             'display_name'  : '2013-2014 Regular Session',
             '_scraped_name' : '2013'
