@@ -118,7 +118,7 @@ class GABillScraper(BillScraper):
                 "STR": ["bill:reading:3"],
                 "SAHAS": ["other"],
                 "SE": ["bill:passed"],
-                "SR": ["bill:passed"],
+                "SR": ["committee:referred"],
                 "HTRL": ["bill:reading:3", "bill:failed"],
                 "HTR": ["bill:reading:3"],
                 "S3RLT": ["bill:reading:3", "bill:failed"],
