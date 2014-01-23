@@ -119,8 +119,8 @@ class INBillScraper(BillScraper):
             name = '%s %s' % (author['firstName'], author['lastName'])
             bill.add_sponsor('primary', name)
 
-        for cosponsponsor in data['cosponsors']:
-            name = '%s %s' % (cosponsor['firstName'], cosponsor['lastName'])
+        for spons in data['cosponsors']:
+            name = '%s %s' % (spons['firstName'], spons['lastName'])
             bill.add_sponsor('cosponsor', name)
 
         version_urls = set()
