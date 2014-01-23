@@ -76,6 +76,10 @@ class INBillScraper(BillScraper):
             except BadApiResponse:
                 self.logger.warning('Skipping due to 500 error: %r' % data)
                 continue
+            except requests.exceptions.ConnectionError:
+                self.logger.warning('Skipping due to connection error: %r' % data)
+                continue
+
             try:
                 self.scrape_bill(data)
             except BadApiResponse as exc:
