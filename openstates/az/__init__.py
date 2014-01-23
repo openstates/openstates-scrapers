@@ -555,11 +555,18 @@ metadata = dict(
 
 
 def session_list():
-    import scrapelib
-    from billy.scrape.utils import url_xpath
-    data = scrapelib.urlopen('http://www.azleg.gov/xml/sessions.asp?sort=SessionID')
-    doc = lxml.html.fromstring(data.bytes)
-    return doc.xpath('//session/@session_full_name')
+    import re
+    import requests
+    session = requests.Session()
+
+    # idiocy
+    data = session.get('http://www.azleg.gov/')
+    data = session.get('http://www.azleg.gov/SelectSession.asp')
+
+    doc = lxml.html.fromstring(data.text)
+    sessions = doc.xpath('//select/option/text()')
+    sessions = [re.sub(r'\(.+$', '', x).strip() for x in sessions]
+    return sessions
 
 
 def extract_text(doc, data):

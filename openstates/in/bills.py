@@ -71,7 +71,15 @@ class INBillScraper(BillScraper):
             session=self.api_session, chamber=self.api_chamber)
         bills = self.client.unpaginate(bills)
         for data in bills:
-            data = self.client.get_relurl(data['link'])
+            try:
+                data = self.client.get_relurl(data['link'])
+            except BadApiResponse:
+                self.logger.warning('Skipping due to 500 error: %r' % data)
+                continue
+            except requests.exceptions.ConnectionError:
+                self.logger.warning('Skipping due to connection error: %r' % data)
+                continue
+
             try:
                 self.scrape_bill(data)
             except BadApiResponse as exc:
@@ -115,8 +123,8 @@ class INBillScraper(BillScraper):
             name = '%s %s' % (author['firstName'], author['lastName'])
             bill.add_sponsor('primary', name)
 
-        for cosponsponsor in data['cosponsors']:
-            name = '%s %s' % (cosponsor['firstName'], cosponsor['lastName'])
+        for spons in data['cosponsors']:
+            name = '%s %s' % (spons['firstName'], spons['lastName'])
             bill.add_sponsor('cosponsor', name)
 
         version_urls = set()

@@ -49,6 +49,7 @@ class COBillScraper(BillScraper):
         ret['meta']['url'] = bill_vote_url
         vote_html = self.urlopen(bill_vote_url)
         bill_vote_page = lxml.html.fromstring(vote_html)
+        bill_vote_page.make_links_absolute(bill_vote_url)
         nodes = bill_vote_page.xpath('//table/tr')
 
         # The first tr is funky and we can ignore it.
@@ -120,6 +121,7 @@ class COBillScraper(BillScraper):
 
         vote_html = self.urlopen(bill_vote_url)
         bill_vote_page = lxml.html.fromstring(vote_html)
+        bill_vote_page.make_links_absolute(bill_vote_url)
         nodes = bill_vote_page.xpath('//b/font')
         title = nodes[0].text
         ret['sanity-check'] = title[title.find("-") + 1:].strip()
@@ -143,7 +145,7 @@ class COBillScraper(BillScraper):
                 # We have a vote line for the previous line
                 try:
                     vote_url = line.xpath('a')[0].attrib['href']
-                    vote_page = CO_URL_BASE + vote_url
+                    vote_page = vote_url
                     vote_dict = self.parse_all_votes(vote_page)
 
                     vote_dict['meta']['x-parent-date'] = date
@@ -173,6 +175,7 @@ class COBillScraper(BillScraper):
         try:
             versions_html = self.urlopen(bill_versions_url)
             bill_versions_page = lxml.html.fromstring(versions_html)
+            bill_versions_page.make_links_absolute(bill_versions_url)
         except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
             return []
 
@@ -190,7 +193,7 @@ class COBillScraper(BillScraper):
         return [{
             "name": x.text,
             "mimetype": "application/pdf",
-            "link": CO_URL_BASE + url + (
+            "link": url + (
                 re.findall(
                     "_doClick\('(?P<slug>.+)'",
                     x.getparent().attrib['onclick']
@@ -225,8 +228,7 @@ class COBillScraper(BillScraper):
         # </mess>
 
         try:
-            bill_history_url = CO_URL_BASE + \
-                clean_args['target']
+            bill_history_url = CO_URL_BASE + clean_args['target']
             # We're wrapping it because guessing at the URL
             # param is not really great.
 
@@ -236,6 +238,7 @@ class COBillScraper(BillScraper):
         try:
             history_html = self.urlopen(bill_history_url)
             bill_history_page = lxml.html.fromstring(history_html)
+            bill_history_page.make_links_absolute(bill_history_url)
         except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
             return []
 
@@ -279,6 +282,7 @@ class COBillScraper(BillScraper):
 
         sheet_html = self.urlopen(sheet_url)
         sheet_page = lxml.html.fromstring(sheet_html)
+        sheet_page.make_links_absolute(sheet_url)
 
         bills = sheet_page.xpath('//table/tr')
 
@@ -329,18 +333,14 @@ class COBillScraper(BillScraper):
 
             versions_url = \
                 bill[index["version"]].xpath('font/a')[0].attrib["href"]
-            versions_url = CO_URL_BASE + versions_url
+            versions_url = versions_url
             versions = self.parse_versions(versions_url)
 
             for version in versions:
                 b.add_version(version['name'], version['link'],
                     mimetype=version['mimetype'])
 
-            bill_history_href = CO_URL_BASE + \
-                bill[index["history"]][0][0].attrib['href']
-                # ^^^^^^^ We assume this is a full path to the target.
-                # might want to consider some better rel-path support
-                # XXX: Look at this ^
+            bill_history_href = bill[index["history"]][0][0].attrib['href']
 
             history = self.parse_history(bill_history_href)
             b.add_source(bill_history_href)
@@ -360,10 +360,15 @@ class COBillScraper(BillScraper):
             # Now that we have history, let's see if we can't grab some
             # votes
 
-            bill_vote_href = self.get_vote_url(bill_id, session)
+            bill_vote_href, = bill.xpath(".//a[contains(text(), 'Votes')]")
+            bill_vote_href = bill_vote_href.attrib['href']
+            #bill_vote_href = self.get_vote_url(bill_id, session)
             votes = self.parse_votes(bill_vote_href)
 
-            if votes['sanity-check'] != bill_id:
+            if (votes['sanity-check'] == 'This site only supports frames '
+                    'compatible browsers!'):
+                votes['votes'] = []
+            elif votes['sanity-check'] != bill_id:
                 self.warning("XXX: READ ME! Sanity check failed!")
                 self.warning(" -> Scraped ID: " + votes['sanity-check'])
                 self.warning(" -> 'Real' ID:  " + bill_id)
