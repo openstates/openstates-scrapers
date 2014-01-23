@@ -1,11 +1,16 @@
+import re
+import datetime
+import urlparse
+
+import lxml
+from scrapelib import HTTPError
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from lxml import etree, html
+
 from . import utils
-from scrapelib import HTTPError
-import re, datetime
 
 base_url = 'http://www.azleg.gov/'
+
 
 class AZCommitteeScraper(CommitteeScraper):
     jurisdiction = 'az'
@@ -32,43 +37,26 @@ class AZCommitteeScraper(CommitteeScraper):
         except KeyError:
             raise NoDataForPeriod
 
-        # not getting the floor committees maybe try it during the new session
-        # for committee_type in ('S', 'F'):
-        #     self.scrape_index(chamber, session, session_id, committee_type)
+        url = 'http://www.azleg.gov/StandingCom.asp'
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
 
-        url = base_url + 'xml/committees.asp?session=%s' % session_id
+        chamber_name = dict(
+            upper="Senate",
+            lower="House of Representatives")[chamber]
+        xpath = '//strong[contains(text(), "%s")]/../../following-sibling::tr/td'
+        tds = doc.xpath(xpath % chamber_name)
+        for td in tds:
+            name = td.text_content().strip()
+            source_url = td.xpath('a/@href')[0]
+            query = urlparse.urlparse(source_url).query
+            params = dict(urlparse.parse_qsl(query))
+            c_id = params['Committee_ID']
+            session_id = params['Session_ID']
 
-        page = self.urlopen(url)
-        root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
+            c = Committee(chamber, name, session=session, az_committee_id=c_id)
 
-        body = '//body[@Body="%s"]/committee' % {'upper': 'S',
-                                                 'lower': 'H'}[chamber]
-
-        for com in root.xpath(body):
-            c_id, name, short_name, sub = com.values()
-            # the really good thing about AZ xml api is that their committee element
-            # tells you whether this is a sub committee or not
-            if sub == '1':
-                # bad thing is that the committee names are no longer consistant
-                # so we can try to get the parent name:
-                parent = name.split('Subcommittee')[0].strip()
-                # and maybe the Sub Committee's name
-                try:
-                    name = name[name.index('Subcommittee'):]
-                except ValueError:
-                    # but if that doesn't work out then we will fix it manually
-                    # shouldnt be too hard since parent and subcommittee will be the same
-                    #self.log("I am my own grandpa: %s" % name)
-                    pass
-
-                c = Committee(chamber, parent, short_name=short_name,
-                          subcommittee=name, session=session,
-                          az_committee_id=c_id)
-            else:
-                c = Committee(chamber, name, short_name=short_name,
-                              session=session, az_committee_id=c_id)
-
-            c.add_source(url)
+            c.add_source(source_url)
             #for some reason they don't always have any info on the committees'
             try:
                 self.scrape_com_info(session, session_id, c_id, c)
@@ -87,7 +75,7 @@ class AZCommitteeScraper(CommitteeScraper):
 
         page = self.urlopen(url)
         committee.add_source(url)
-        root = html.fromstring(page)
+        root = lxml.html.fromstring(page)
         p = '//table/tr/td[1]/a/ancestor::tr[1]'
         rows = root.xpath(p)
         #need to skip the first row cause its a link to the home page
