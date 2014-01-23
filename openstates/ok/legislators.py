@@ -116,58 +116,42 @@ class OKLegislatorScraper(LegislatorScraper):
             legislator.add_office(**office)
 
     def scrape_upper(self, term):
-        url = "http://www.oksenate.gov/Senators/directory.xls"
-        fname, resp = self.urlretrieve(url)
+        url = "http://oksenate.gov/Senators/Default.aspx"
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-        sheet = xlrd.open_workbook(fname).sheet_by_index(0)
+        for a in doc.xpath('//table[@summary]')[1].xpath('.//td//a[contains(@href, "biographies")]'):
+            name, party = a.text.rsplit(None, 1)
 
-        # 5 dumb rows at the top
-        for rownum in xrange(5, sheet.nrows):
-            name = str(sheet.cell(rownum, 0).value)
-            if not name.strip() or name == 'Senator':
-                continue
-
-            party = str(sheet.cell(rownum, 1).value)
-            if party == 'D':
+            if party == '(D)':
                 party = 'Democratic'
-            elif party == 'R':
+            elif party == '(R)':
                 party = 'Republican'
-            elif not party:
-                party = 'N/A'
 
-            district = str(int(sheet.cell(rownum, 2).value))
-            email = str(sheet.cell(rownum, 6).value)
+            tail = a.xpath('..')[0].tail
+            if tail:
+                district = tail.split()[1]
+            else:
+                district = a.xpath('../../span')[1].text.split()[1]
+            url = a.get('href')
 
-            leg = Legislator(term, 'upper', district, name, party=party,
-                             email=email, url=url)
+            leg = Legislator(term, 'upper', district, name, party=party, url=url)
             leg.add_source(url)
-            self.scrape_upper_offices(leg)
+            self.scrape_upper_offices(leg, url)
             self.save_legislator(leg)
 
-    def scrape_upper_offices(self, legislator):
-
-        guessed_url_tmpl = ('http://www.oksenate.gov/Senators/'
-                            'biographies/%s_bio.html')
-        last_name_parts = name_tools.split(legislator['full_name'])
-        last_name = last_name_parts[2].replace(' ', '_')
-
-        guessed_url = guessed_url_tmpl % last_name
-
-        try:
-            html = self.urlopen(guessed_url)
-        except scrapelib.HTTPError:
-            # The name was backwards; retry with first name (i.e., last name)
-            last_name = last_name_parts[1].replace(' ', '_').strip(',')
-            guessed_url = guessed_url_tmpl % last_name
-
-            html = self.urlopen(guessed_url)
-
-        legislator.add_source(guessed_url)
+    def scrape_upper_offices(self, legislator, url):
+        url = url.replace('aspx', 'html')
+        html = self.urlopen(url)
+        legislator.add_source(url)
         doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(guessed_url)
+        doc.make_links_absolute(url)
 
         xpath = '//h3[contains(., "Office")]'
-        table = doc.xpath(xpath)[0].itersiblings().next()
+        for table in doc.xpath(xpath)[0].itersiblings():
+            if table.tag == 'table':
+                break
         col1, col2 = table.xpath('tr[2]/td')
 
         # Add the capitol office.
