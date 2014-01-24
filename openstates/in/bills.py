@@ -151,8 +151,12 @@ class INBillScraper(BillScraper):
             except TypeError:
                 self.warning('Skipping action due to null date: %r' % action)
                 continue
-
             text = action['description']
+
+            # Some are inexplicably blank.
+            if not text.strip():
+                continue
+
             action_chamber = action_chambers[action['chamber']['name']]
             kwargs = dict(date=date, actor=self.chamber, action=text)
             kwargs.update(**self.categorizer.categorize(text))
