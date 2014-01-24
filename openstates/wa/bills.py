@@ -128,7 +128,7 @@ class WABillScraper(BillScraper):
         if version_resp.status_code != 200:
             webpage = self.get(fake_source).text
             webdoc = lxml.html.fromstring(webpage)
-            version_url = webdoc.xpath('string(//a[contains(@href, "billdocs")]/@href)')
+            version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
             if version_url.lower().endswith('.pdf'):
                 mimetype = 'application/pdf'
 
