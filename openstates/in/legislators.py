@@ -57,6 +57,8 @@ class INLegislatorScraper(LegislatorScraper):
                 try:
                     data = self.client.get_relurl(data['link'])
                 except BadApiResponse:
+                    # At this point, we don't have district for the
+                    # legislator, so we have to skip.
                     self.warning('Got bad API Response at %r' % data['link'])
                     self.warning('Skipping legislator: %r' % data)
                     continue

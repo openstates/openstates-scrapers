@@ -151,8 +151,12 @@ class INBillScraper(BillScraper):
             except TypeError:
                 self.warning('Skipping action due to null date: %r' % action)
                 continue
-
             text = action['description']
+
+            # Some are inexplicably blank.
+            if not text.strip():
+                continue
+
             action_chamber = action_chambers[action['chamber']['name']]
             kwargs = dict(date=date, actor=self.chamber, action=text)
             kwargs.update(**self.categorizer.categorize(text))
@@ -165,6 +169,81 @@ class INBillScraper(BillScraper):
         with self.skip_api_errors(msg):
             rollcalls = self.client.get('bill_rollcalls',
                 session=self.api_session, bill_id=data['billName'])
+            # Todo: get the rollcalls.
+            import pdb; pdb.set_trace()
 
         self.save_bill(bill)
 
+    def scrape_house_vote(self, bill, url):
+        try:
+            bill.add_vote(PDFHouseVote(url, self).vote())
+        except PDFHouseVote.VoteParseError:
+            # It was a scanned, hand-written document, most likely.
+            return
+
+    def scrape_senate_vote(self, bill, url):
+        try:
+            (path, resp) = self.urlretrieve(url)
+        except:
+            return
+        text = convert_pdf(path, 'text')
+        os.remove(path)
+
+        lines = text.split('\n')
+
+        date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
+        if not date_match:
+            self.log("Couldn't find date on %s" % url)
+            return
+
+        time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
+        date = "%s %s %s" % (date_match.group(1), time_match.group(1),
+                             time_match.group(2))
+        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+        date = self._tz.localize(date)
+
+        vote_type = None
+        yes_count, no_count, other_count = None, None, 0
+        votes = []
+        for line in lines[21:]:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('YEAS'):
+                yes_count = int(line.split(' - ')[1])
+                vote_type = 'yes'
+            elif line.startswith('NAYS'):
+                no_count = int(line.split(' - ')[1])
+                vote_type = 'no'
+            elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
+                other_count += int(line.split(' - ')[1])
+                vote_type = 'other'
+            else:
+                votes.extend([(n.strip(), vote_type)
+                              for n in re.split(r'\s{2,}', line)])
+
+        if yes_count is None or no_count is None:
+            self.log("Couldne't find vote counts in %s" % url)
+            return
+
+        passed = yes_count > no_count + other_count
+
+        clean_bill_id = fix_bill_id(bill['bill_id'])
+        motion_line = None
+        for i, line in enumerate(lines):
+            if line.strip() == clean_bill_id:
+                motion_line = i + 2
+        motion = lines[motion_line]
+        if not motion:
+            self.log("Couldn't find motion for %s" % url)
+            return
+
+        vote = Vote('upper', date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        insert_specific_votes(vote, votes)
+        check_vote_counts(vote)
+
+        bill.add_vote(vote)

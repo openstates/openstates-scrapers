@@ -109,18 +109,30 @@ class WABillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, title,
                     type=[bill_type])
 
+        fake_source = ("http://apps.leg.wa.gov/billinfo/"
+                       "summary.aspx?bill=%s&year=%s" % (
+                           bill_num, session[0:4]))
+        bill.add_source(fake_source)
+
         chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
+        mimetype = 'text/html'
         version_url = ("http://www.leg.wa.gov/pub/billinfo/%s/"
                        "Htm/Bills/%s %ss/%s.htm" % (biennium,
                                                     chamber_name,
                                                     bill_type.title(),
                                                     bill_num))
-        bill.add_version(bill_id, version_url, mimetype='text/html')
 
-        fake_source = ("http://apps.leg.wa.gov/billinfo/"
-                       "summary.aspx?bill=%s&year=%s" % (
-                           bill_num, session[0:4]))
-        bill.add_source(fake_source)
+        # Sometimes the measure's version_url isn't guessable. When that happens
+        # have to get the url from the source page.
+        version_resp = self.get(version_url)
+        if version_resp.status_code != 200:
+            webpage = self.get(fake_source).text
+            webdoc = lxml.html.fromstring(webpage)
+            version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
+            if version_url.lower().endswith('.pdf'):
+                mimetype = 'application/pdf'
+
+        bill.add_version(bill_id, version_url, mimetype=mimetype)
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
