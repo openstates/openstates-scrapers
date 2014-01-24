@@ -64,7 +64,7 @@ metadata = dict(
                 '_scraped_name': '83(2) - 2013',
                },
         '833': {'type': 'special',
-                'display_name': '83nd Legislature, 3ed Called Session (2013)',
+                'display_name': '83nd Legislature, 3rd Called Session (2013)',
                 '_scraped_name': '83(3) - 2013',
                },
     },
