@@ -6,23 +6,11 @@ import lxml.html
 
 class SDLegislatorScraper(LegislatorScraper):
     jurisdiction = 'sd'
+    latest_only = True
 
     def scrape(self, chamber, term):
-        start_year = None
-        for term_ in self.metadata['terms']:
-            if term_['name'] == term:
-                start_year = term_['start_year']
-                break
-        else:
-            raise NoDataForPeriod(term)
-
-        if int(start_year) > 2009:
-            self.scrape_legislators(chamber, term)
-
-    def scrape_legislators(self, chamber, term):
         year = term[0:4]
-        url = "http://legis.state.sd.us/sessions/%s/MemberMenu.aspx" % (
-            year)
+        url = 'http://legis.sd.gov/Legislators/default.aspx?CurrentSession=True'
 
         if chamber == 'upper':
             search = 'Senate Members'
