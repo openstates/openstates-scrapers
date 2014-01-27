@@ -2,8 +2,11 @@ import os
 import re
 import datetime
 import urlparse
+import operator
+import itertools
 from collections import defaultdict
 from contextlib import contextmanager
+from StringIO import StringIO
 
 import scrapelib
 import requests
@@ -54,125 +57,163 @@ class INBillScraper(BillScraper):
     # Can turn this on or off. There are thousands of subjects and it takes hours.
     SCRAPE_SUBJECTS = True
 
-    def scrape(self, chamber, session):
+    def scrape(self, term, chambers):
 
-        # self.retry_attempts = 0
-        self.session = session
-        self.chamber = chamber
+        url = 'http://iga.in.gov/legislative/%s/bills/' % term
+        self.logger.info('GET ' + url)
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-        self.client = ApiClient(self)
-        self.api_session = int(session)
-        self.api_chamber = dict(upper='senate', lower='house')[chamber]
+        seen_bill_ids = set()
 
-        if self.SCRAPE_SUBJECTS:
-            self.get_subjects()
+        # First scrape subjects and any bills found on those pages.
+        for subject_url, subject in self.generate_subjects():
+            subject_bills = self.generate_subject_bills(subject_url)
+            for bill_id, bill_url, bill_title in subject_bills:
+                chamber = 'upper' if bill_id[0] == 'S' else 'lower'
+                self.scrape_bill(
+                    chamber, term, bill_id, bill_url, bill_title, subject=subject)
+                seen_bill_ids.add(bill_id)
 
-        bills = self.client.get('chamber_bills',
-            session=self.api_session, chamber=self.api_chamber)
-        bills = self.client.unpaginate(bills)
-        for data in bills:
-            try:
-                data = self.client.get_relurl(data['link'])
-            except BadApiResponse:
-                self.logger.warning('Skipping due to 500 error: %r' % data)
-                continue
-            except requests.exceptions.ConnectionError:
-                self.logger.warning('Skipping due to connection error: %r' % data)
-                continue
+        # Then hit bill index page to catch any uncategorized bills.
+        uls = doc.xpath('//ul[contains(@class, "clean-list")]')
 
-            try:
-                self.scrape_bill(data)
-            except BadApiResponse as exc:
-                msg = 'Skipping bill due to bad API response at %r: %s'
-                self.warning(msg % (exc.resp, exc.resp.text))
-                continue
+        for chamber, ul in zip(chambers, uls):
+            for li in ul.xpath('li'):
+                if bill_id in seen_bill_ids:
+                    continue
+                bill_id = li.xpath('string(a/strong)')
+                bill_url = li.xpath('string(a/@href)')
+                bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
+                bill = self.scrape_bill(
+                    chamber, term, bill_id, bill_url, bill_title)
 
-    def get_subjects(self):
-        bill2subjects = defaultdict(list)
-        subjects = self.client.get('subjects', session=self.api_session)
-        subjects = self.client.unpaginate(subjects)
-        for subject in subjects:
-            if subject['link'] == '/2013/subjects/si_workers_compensation_7426':
-                self.warning('Skipping known messed up subject')
-                continue
-            bills = self.client.get_relurl(subject['link'])
-            for bill in bills['bills']:
-                bill2subjects[bill['billName']].append(subject['entry'])
-        self.bill2subjects = bill2subjects
+    def generate_subjects(self):
+        url = 'http://iga.in.gov/legislative/2014/bysubject/'
+        self.logger.info('GET ' + url)
+        resp = self.get(url)
+        html = resp.text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for li in doc.xpath('//li[contains(@class, "subject-list_item")]'):
+            yield li.xpath('string(a/@href)'), li.text_content().strip()
 
-    @contextmanager
-    def skip_api_errors(self, msg):
-        try:
-            yield
-        except BadApiResponse as exc:
-            self.warning(msg.format(resp=exc.resp))
-        except requests.exceptions.ConnectionError:
-            self.warning('Got a connection error. Skipping.')
+    def generate_subject_bills(self, url):
+        self.logger.info('GET ' + url)
+        resp = self.get(url)
+        html = resp.text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for row in doc.xpath('//table//tr')[1:]:
+            bill_id = row[2].text_content()
+            bill_url = row[2].xpath('string(a/@href)')
+            bill_title = row[3].text_content()
+            yield bill_id, bill_url, bill_title
 
-    def scrape_bill(self, data):
-        bill = Bill(
-            self.session, self.chamber,
-            data['billName'],
-            data['title'] or data['latestVersion']['title'] or data['latestVersion']['digest'],
-            type=data['type'].lower())
+    def scrape_bill(self, chamber, term, bill_id, url, title, subject=None):
+        self.logger.info('GET ' + url)
+        resp = self.get(url)
+        html = resp.text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-        url = urlparse.urljoin(self.client.root, data['link'])
+        bill = Bill(term, chamber, bill_id, title)
         bill.add_source(url)
+        if subject is not None:
+            bill['subjects'] = [subject]
 
-        for author in data['authors'] + data['coauthors']:
-            name = '%s %s' % (author['firstName'], author['lastName'])
-            bill.add_sponsor('primary', name)
+        # Sponsors
+        sponsor_map = {
+            'author': 'primary',
+            'co-author': 'cosponsor',
+            'sponsor': 'primary',
+            'co-sponsor': 'cosponsor',
+            }
+        for div in doc.xpath('//div[contains(@class, "bill-author-info")]'):
+            name = div.xpath('string(b)').strip()
+            sp_type = sponsor_map[div.xpath('string(p)').strip().lower()]
+            bill.add_sponsor(sp_type, name)
 
-        for spons in data['cosponsors']:
-            name = '%s %s' % (spons['firstName'], spons['lastName'])
-            bill.add_sponsor('cosponsor', name)
-
-        version_urls = set()
-        for version in data['versions']:
-            url = urlparse.urljoin(self.client.root, version['link'])
-            if url in version_urls:
+        # Actions
+        for li in doc.xpath('//div[@id="bill-actions"]//li'):
+            if li.text_content() == 'None currently available.':
                 continue
-            version_urls.add(url)
-
-            msg = 'Skipping version api error {resp.status_code}: {resp.text}'
-            with self.skip_api_errors(msg):
-                version = self.client.get_relurl(url)
-                name = version['printVersionName']
-                bill['summary'] = version['digest']
-                version_url = urlparse.urljoin(
-                    self.client.root, version['pdfDownloadLink'])
-                bill.add_version(name, version_url, mimetype='application/pdf')
-
-        actions = self.client.get_relurl(data['actions']['link'])
-        action_chambers = dict(House='lower', Senate='upper')
-        for action in self.client.unpaginate(actions):
-            try:
-                date = datetime.datetime.strptime(action['date'], '%Y-%m-%dT%H:%M:%S')
-            except TypeError:
-                self.warning('Skipping action due to null date: %r' % action)
+            chamber_str = li.xpath('string(strong)').strip()
+            action_chamber = dict(H='lower', S='upper')[chamber_str]
+            action_date = li.xpath('string(span[@class="document-date"])')
+            action_date = datetime.datetime.strptime(action_date.strip(), '%m/%d/%Y')
+            action_text = li.xpath('string(span[2])').strip()
+            if not action_text.strip():
                 continue
-            text = action['description']
-
-            # Some are inexplicably blank.
-            if not text.strip():
-                continue
-
-            action_chamber = action_chambers[action['chamber']['name']]
-            kwargs = dict(date=date, actor=self.chamber, action=text)
-            kwargs.update(**self.categorizer.categorize(text))
+            kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
+            kwargs.update(**self.categorizer.categorize(action_text))
             bill.add_action(**kwargs)
 
-        if self.SCRAPE_SUBJECTS:
-            bill['subjects'] = self.bill2subjects[data['billName']]
+        # Versions and documents.
+        xpath = '//*[@data-myiga-actiondata]'
+        doctypes = {
+            'fiscalnote': "Fiscal Note",
+            'amendment': 'Amendment',
+            }
 
-        msg = 'Skipped rollcall response: {resp.status_code}: {resp.text}'
-        with self.skip_api_errors(msg):
-            rollcalls = self.client.get('bill_rollcalls',
-                session=self.api_session, bill_id=data['billName'])
-            # Todo: get the rollcalls.
-            import pdb; pdb.set_trace()
+        # Drop of top links to latest version and fiscal note.
+        doc_links = doc.xpath(xpath)
+        for doc in list(doc_links):
+            if 'title' in doc.attrib:
+                break
+            else:
+                doc_links.pop(0)
+
+        for a in doc_links:
+            if not a.attrib['data-myiga-actiondata']:
+                continue
+            data = self.get_document_meta(a.attrib)
+            if not data:
+                continue
+            pdf_url = self.get_document_url(data)
+            if 'title' in a.attrib:
+                version_title = a.attrib['title']
+                bill.add_version(version_title, url=pdf_url, mimetype='application/pdf')
+            else:
+                parent = a.getparent()
+                if 'class' in parent.attrib:
+                    title = parent.attrib['class'].replace('-item', '')
+                    title = doctypes[title]
+                else:
+                    title = 'Report'
+                bill.add_document(title, url=pdf_url, mimetype='application/pdf')
 
         self.save_bill(bill)
+
+    def get_document_meta(self, attrib):
+        '''The document link gives you json if you hit with the right
+        Accept header.
+        '''
+        headers = dict(accept="application/json, text/javascript, */*")
+        version_id = attrib['data-myiga-actiondata']
+        png_url = 'http://iga.in.gov/documents/' + version_id
+        self.logger.info('GET ' + png_url)
+        resp = self.get(png_url, headers=headers)
+        try:
+            data = resp.json()
+        except:
+            return
+        return data
+
+    def get_document_url(self, data):
+        '''If version_id is b5ff1c9c, the url will be:
+        http://iga.in.gov/static-documents/b/5/f/f/b5ff1c9c/{data[name]}
+        '''
+        buf = StringIO()
+        buf.write('http://iga.in.gov/static-documents/')
+        for char in data['uid'][:4]:
+            buf.write(char)
+            buf.write('/')
+        buf.write(data['uid'])
+        buf.write('/')
+        buf.write(data['name'])
+        return buf.getvalue()
 
     def scrape_house_vote(self, bill, url):
         try:
