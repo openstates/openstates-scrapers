@@ -72,7 +72,12 @@ class MSBillScraper(BillScraper):
             main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
             bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
             details_page = self.urlopen(bill_details_url)
-            details_root = lxml.etree.fromstring(details_page.bytes)
+
+            page = details_page.bytes.replace(chr(11), "")
+            # Some pages have the (invalid) byte 11 sitting around. Just drop
+            # them out. Might as well.
+
+            details_root = lxml.etree.fromstring(page)
             title = details_root.xpath('string(//SHORTTITLE)')
             longtitle = details_root.xpath('string(//LONGTITLE)')
 
