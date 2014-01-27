@@ -24,7 +24,7 @@ metadata = dict(
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011', '2011s', '2012']},
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013']},
+         'sessions': ['2013', '2014']},
         ],
     session_details={
         '2009': {'display_name': '2009 Regular Session',
@@ -44,32 +44,24 @@ metadata = dict(
                  '_scraped_name': '2012 (87th) Session',
                 },
         '2013': {'display_name': '2013 Regular Session',
+                 '_scraped_name': '2013 (88th) Session',
+                },
+        '2014': {'display_name': '2014 Regular Session',
+                 '_scraped_name': '2014 (89th) Session',
                 }
     },
     feature_flags=['subjects', 'influenceexplorer'],
-    _ignored_scraped_sessions=['2008 (83rd) Session', '2007 (82nd) Session',
-                               '2006 (81st) Session',
-                               '2005 (80th) Special Session',
-                               '2005 (80th) Session', '2004 (79th) Session',
-                               '2003 (78th) Special Session',
-                               '2003 (78th) Session', '2002 (77th) Session',
-                               '2001 (76th) Special Session',
-                               '2001 (76th) Session',
-                               '2000 (75th) Special Session',
-                               '2000 (75th) Session', '1999 (74th) Session',
-                               '1998 (73rd) Session',
-                               '1997 (72nd) Special Session',
-                               '1997 (72nd) Session']
+    _ignored_scraped_sessions=['Previous Years'],
 )
 
 
 def session_list():
-    import urllib
+    import scrapelib
     import lxml.html
     # uses urllib because httplib2 has a compression issue on this page
-    html = urllib.urlopen('http://legis.state.sd.us/PastSessions.aspx').read()
+    html = scrapelib.urlopen('http://legis.sd.gov/Legislative_Session/Menu.aspx')
     doc = lxml.html.fromstring(html)
-    return doc.xpath('//span[@class="link"]/text()')
+    return doc.xpath('//div[@id="ContentPlaceHolder1_BlueBoxLeft"]//ul/li/a/div/text()')
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
