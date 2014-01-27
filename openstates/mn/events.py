@@ -176,7 +176,7 @@ class MNEventScraper(EventScraper):
             if element.tag == 'b':
                 raw = element.text_content().strip()
                 r = pattern.search(raw)
-                if r:
+                if r and element.tail:
                     tail = element.tail.strip()
                     if tail != '':
                         return tail
