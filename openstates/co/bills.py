@@ -193,7 +193,7 @@ class COBillScraper(BillScraper):
         return [{
             "name": x.text,
             "mimetype": "application/pdf",
-            "link": url + (
+            "link": CO_URL_BASE + url + (
                 re.findall(
                     "_doClick\('(?P<slug>.+)'",
                     x.getparent().attrib['onclick']
