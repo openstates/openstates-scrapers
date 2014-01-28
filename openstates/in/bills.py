@@ -20,7 +20,7 @@ import lxml.html
 
 from .apiclient import ApiClient, BadApiResponse
 from .actions import Categorizer
-from .models import PDFHouseVote
+from .models import parse_vote, BillDocuments, VoteParseError
 
 
 def parse_vote_count(s):
@@ -150,141 +150,91 @@ class INBillScraper(BillScraper):
             kwargs.update(**self.categorizer.categorize(action_text))
             bill.add_action(**kwargs)
 
-        # Versions and documents.
-        xpath = '//*[@data-myiga-actiondata]'
-        doctypes = {
-            'fiscalnote': "Fiscal Note",
-            'amendment': 'Amendment',
-            }
-
-        # Drop of top links to latest version and fiscal note.
-        doc_links = doc.xpath(xpath)
-        for doc in list(doc_links):
-            if 'title' in doc.attrib:
-                break
-            else:
-                doc_links.pop(0)
-
-        for a in doc_links:
-            if not a.attrib['data-myiga-actiondata']:
-                continue
-            data = self.get_document_meta(a.attrib)
-            if not data:
-                continue
-            pdf_url = self.get_document_url(data)
-            if 'title' in a.attrib:
-                version_title = a.attrib['title']
-                bill.add_version(version_title, url=pdf_url, mimetype='application/pdf')
-            else:
-                parent = a.getparent()
-                if 'class' in parent.attrib:
-                    title = parent.attrib['class'].replace('-item', '')
-                    title = doctypes[title]
-                else:
-                    title = 'Report'
-                bill.add_document(title, url=pdf_url, mimetype='application/pdf')
+        for doc_type, doc_meta in BillDocuments(self, doc):
+            if doc_type == 'version':
+                bill.add_version(
+                    doc_meta.title or doc_meta.text, url=doc_meta.url,
+                    mimetype='application/pdf')
+            elif doc_type == 'document':
+                bill.add_document(doc_meta.title or doc_meta.text, url=doc_meta.url,
+                    mimetype='application/pdf')
+            elif doc_type == 'rollcall':
+                self.add_rollcall(chamber, bill, doc_meta)
 
         self.save_bill(bill)
 
-    def get_document_meta(self, attrib):
-        '''The document link gives you json if you hit with the right
-        Accept header.
-        '''
-        headers = dict(accept="application/json, text/javascript, */*")
-        version_id = attrib['data-myiga-actiondata']
-        png_url = 'http://iga.in.gov/documents/' + version_id
-        self.logger.info('GET ' + png_url)
-        resp = self.get(png_url, headers=headers)
+    def add_rollcall(self, chamber, bill, doc_meta):
         try:
-            data = resp.json()
-        except:
-            return
-        return data
-
-    def get_document_url(self, data):
-        '''If version_id is b5ff1c9c, the url will be:
-        http://iga.in.gov/static-documents/b/5/f/f/b5ff1c9c/{data[name]}
-        '''
-        buf = StringIO()
-        buf.write('http://iga.in.gov/static-documents/')
-        for char in data['uid'][:4]:
-            buf.write(char)
-            buf.write('/')
-        buf.write(data['uid'])
-        buf.write('/')
-        buf.write(data['name'])
-        return buf.getvalue()
-
-    def scrape_house_vote(self, bill, url):
-        try:
-            bill.add_vote(PDFHouseVote(url, self).vote())
-        except PDFHouseVote.VoteParseError:
+            vote = parse_vote(self, chamber, doc_meta)
+            bill.add_vote(vote)
+        except VoteParseError:
             # It was a scanned, hand-written document, most likely.
             return
 
-    def scrape_senate_vote(self, bill, url):
-        try:
-            (path, resp) = self.urlretrieve(url)
-        except:
-            return
-        text = convert_pdf(path, 'text')
-        os.remove(path)
+    # def scrape_senate_vote(self, bill, url):
+    #     try:
+    #         (path, resp) = self.urlretrieve(url)
+    #     except:
+    #         return
+    #     text = convert_pdf(path, 'text')
+    #     os.remove(path)
 
-        lines = text.split('\n')
+    #     lines = text.split('\n')
 
-        date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
-        if not date_match:
-            self.log("Couldn't find date on %s" % url)
-            return
+    #     date_match = re.search(r'Date:\s+(\d+/\d+/\d+)', text)
+    #     if not date_match:
+    #         self.log("Couldn't find date on %s" % url)
+    #         return
 
-        time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
-        date = "%s %s %s" % (date_match.group(1), time_match.group(1),
-                             time_match.group(2))
-        date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
-        date = self._tz.localize(date)
+    #     time_match = re.search(r'Time:\s+(\d+:\d+:\d+)\s+(AM|PM)', text)
+    #     date = "%s %s %s" % (date_match.group(1), time_match.group(1),
+    #                          time_match.group(2))
+    #     date = datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p")
+    #     date = self._tz.localize(date)
 
-        vote_type = None
-        yes_count, no_count, other_count = None, None, 0
-        votes = []
-        for line in lines[21:]:
-            line = line.strip()
-            if not line:
-                continue
+    #     vote_type = None
+    #     yes_count, no_count, other_count = None, None, 0
+    #     votes = []
+    #     for line in lines[21:]:
+    #         line = line.strip()
+    #         if not line:
+    #             continue
 
-            if line.startswith('YEAS'):
-                yes_count = int(line.split(' - ')[1])
-                vote_type = 'yes'
-            elif line.startswith('NAYS'):
-                no_count = int(line.split(' - ')[1])
-                vote_type = 'no'
-            elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
-                other_count += int(line.split(' - ')[1])
-                vote_type = 'other'
-            else:
-                votes.extend([(n.strip(), vote_type)
-                              for n in re.split(r'\s{2,}', line)])
+    #         if line.startswith('YEAS'):
+    #             yes_count = int(line.split(' - ')[1])
+    #             vote_type = 'yes'
+    #         elif line.startswith('NAYS'):
+    #             no_count = int(line.split(' - ')[1])
+    #             vote_type = 'no'
+    #         elif line.startswith('EXCUSED') or line.startswith('NOT VOTING'):
+    #             other_count += int(line.split(' - ')[1])
+    #             vote_type = 'other'
+    #         else:
+    #             votes.extend([(n.strip(), vote_type)
+    #                           for n in re.split(r'\s{2,}', line)])
 
-        if yes_count is None or no_count is None:
-            self.log("Couldne't find vote counts in %s" % url)
-            return
+    #     if yes_count is None or no_count is None:
+    #         self.log("Couldne't find vote counts in %s" % url)
+    #         return
 
-        passed = yes_count > no_count + other_count
+    #     passed = yes_count > no_count + other_count
 
-        clean_bill_id = fix_bill_id(bill['bill_id'])
-        motion_line = None
-        for i, line in enumerate(lines):
-            if line.strip() == clean_bill_id:
-                motion_line = i + 2
-        motion = lines[motion_line]
-        if not motion:
-            self.log("Couldn't find motion for %s" % url)
-            return
+    #     clean_bill_id = fix_bill_id(bill['bill_id'])
+    #     motion_line = None
+    #     for i, line in enumerate(lines):
+    #         if line.strip() == clean_bill_id:
+    #             motion_line = i + 2
+    #     motion = lines[motion_line]
+    #     if not motion:
+    #         self.log("Couldn't find motion for %s" % url)
+    #         return
 
-        vote = Vote('upper', date, motion, passed, yes_count, no_count,
-                    other_count)
-        vote.add_source(url)
+    #     vote = Vote('upper', date, motion, passed, yes_count, no_count,
+    #                 other_count)
+    #     vote.add_source(url)
 
-        insert_specific_votes(vote, votes)
-        check_vote_counts(vote)
+    #     insert_specific_votes(vote, votes)
+    #     check_vote_counts(vote)
 
-        bill.add_vote(vote)
+    #     bill.add_vote(vote)
+
