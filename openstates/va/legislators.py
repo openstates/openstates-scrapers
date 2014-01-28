@@ -69,7 +69,7 @@ class VALegislatorScraper(LegislatorScraper):
                 if re.match('\(\d{3}\)', text):
                     phone = text
                 elif text.startswith('email:'):
-                    email = text.strip('email: ')
+                    email = text.strip('email: ').strip()
                 else:
                     address.append(text)
                 type = ('capitol' if 'Capitol Square' in address

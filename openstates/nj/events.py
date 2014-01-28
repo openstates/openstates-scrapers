@@ -30,6 +30,7 @@ class NJEventScraper(EventScraper, MDBMixin):
             'JBOC': 'Joint Budget Oversight',
             'JPS': 'Joint Committee on the Public Schools',
             'LRC': 'New Jersey Law Revision Commission',
+            'LSI': 'Select Committee on Investigation',
             'PHBC': 'Pension and Health Benefits Review Commission',
             'SBAB': 'Senate Budget and Appropriations Committee',
             'JLSU': 'Space Leasing and Space Utilization Committee',

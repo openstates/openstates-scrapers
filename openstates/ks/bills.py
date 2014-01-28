@@ -108,7 +108,7 @@ class KSBillScraper(BillScraper):
         for row in version_rows:
             # version, docs, sn, fn
             tds = row.getchildren()
-            title = tds[0].text_content()
+            title = tds[0].text_content().strip()
             doc_url = get_doc_link(tds[1])
             if doc_url:
                 bill.add_version(title, doc_url, mimetype='application/pdf')

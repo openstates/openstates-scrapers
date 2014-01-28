@@ -240,9 +240,8 @@ class UTBillScraper(BillScraper):
             count = int(count)
             votes = []
             for vote in obj.xpath(".//br"):
-                vote = vote.tail
+                vote = vote.tail.strip()
                 if vote:
-                    vote = vote.strip()
                     votes.append(vote)
             return {
                 "type": typ,

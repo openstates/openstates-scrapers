@@ -11,7 +11,6 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 class MNEventScraper(EventScraper):
     jurisdiction = 'mn'
-    central_timezone = pytz.timezone('US/Central')
     date_formats = (
         '%A, %B %d, %Y %I:%M %p',
         '%A, %B %d'
@@ -88,12 +87,9 @@ class MNEventScraper(EventScraper):
         for date_format in self.date_formats:
             try:
                 date = datetime.strptime(date_string, date_format)
+                return date
             except ValueError:
                 pass
-
-        if 'date' in locals():
-            return self.central_timezone.localize(date)
-        return
 
     def get_description(self, meeting, i=0):
         """
