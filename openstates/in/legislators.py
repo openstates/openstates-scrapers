@@ -119,7 +119,7 @@ class INLegislatorScraper(LegislatorScraper):
                 if deets.get("email"):
                     leg['email'] = deets.pop("email")
 
-                office = dict(deets,
+                office = dict(deets or {},
                     address=address, name='District Office',
                     type='district', fax=None)
 
@@ -162,7 +162,10 @@ class INLegislatorScraper(LegislatorScraper):
         '''Get contact info for Senate Republicans.
         '''
         deets = {}
-        html = self.urlopen(leg_url)
+        try:
+            html = self.urlopen(leg_url)
+        except:
+            return
         doc = lxml.html.fromstring(html)
         phone = email = None
         for el in doc.iterdescendants():
@@ -181,7 +184,10 @@ class INLegislatorScraper(LegislatorScraper):
     def get_contact_lower_Republican(self, leg, leg_url):
         '''Get contact info for House Republicans.
         '''
-        html = self.urlopen(leg_url)
+        try:
+            html = self.urlopen(leg_url)
+        except:
+            return
         doc = lxml.html.fromstring(html)
         phones = []
         for el in doc.iterdescendants():
@@ -199,7 +205,10 @@ class INLegislatorScraper(LegislatorScraper):
         tmpl = ('http://www.in.gov/legislative/senate_democrats/'
                 'homepages/s%s/contactme.htm')
         contact_url = tmpl % leg['roles'][0]['district']
-        html = self.urlopen(leg_url)
+        try:
+            html = self.urlopen(leg_url)
+        except:
+            return
         doc = lxml.html.fromstring(html)
         for el in doc.iterdescendants():
             tail = (el.tail or '').strip()
