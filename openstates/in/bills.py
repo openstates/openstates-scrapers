@@ -150,6 +150,7 @@ class INBillScraper(BillScraper):
             kwargs.update(**self.categorizer.categorize(action_text))
             bill.add_action(**kwargs)
 
+        # Documents (including votes)
         for doc_type, doc_meta in BillDocuments(self, doc):
             if doc_type == 'version':
                 bill.add_version(
