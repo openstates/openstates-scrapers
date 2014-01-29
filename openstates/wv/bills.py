@@ -362,12 +362,18 @@ class WVBillScraper(BillScraper):
         '''
         for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
             # split name out of HTML - Introduced Version - SB 1
-            name = link.getprevious().tail.strip(' -\r\n')
+            name = link.getparent().text.strip(' -\r\n|')
+            if not name:
+                name = link.getprevious().tail.strip(' -\r\n|')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'text/html'}
 
         for link in page.xpath("//a[contains(@title, 'WordPerfect')]"):
-            name = link.getprevious().getprevious().tail.strip('\r\n -')
+            name = link.getparent().text.strip(' -\r\n|')
+            if not name:
+                name = link.getprevious().tail.strip(' -\r\n|')
+            if not name:
+                name = link.getprevious().getprevious().tail.strip(' -\r\n|')
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'application/vnd.wordperfect'}
 
