@@ -29,6 +29,7 @@ def parse_vote(scraper, chamber, doc_meta):
     if 'Roll Call' in text:
         return RollCallVote(text, scraper, chamber, doc_meta).vote()
     else:
+        scraper.warning('Skipping a committee vote (See Jira issue DATA-80).')
         raise VoteParseError()
 
 
@@ -128,7 +129,8 @@ class DocumentMeta(object):
         text = re.sub(r'\s+', ' ', text).strip()
         api_meta = self.get_doc_api_meta(self.el.attrib)
         if api_meta is None:
-            raise BogusDocument()
+            msg = 'No data recieved from the API for %r' % self.el.attrib
+            raise BogusDocument(msg)
         return self.DocMeta(
             a=self.el,
             text=text,
@@ -203,7 +205,9 @@ class BillDocuments(object):
         for a in self.doc.xpath(xpath):
             try:
                 data = DocumentMeta(self.scraper, a).get_doc_meta()
-            except BogusDocument:
+            except BogusDocument as exc:
+                self.scraper.logger.warning(exc)
+                self.scraper.logger.warning('Skipping document %r.' % (data,))
                 continue
             meta.append(data)
         return meta
