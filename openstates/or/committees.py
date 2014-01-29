@@ -1,12 +1,23 @@
 from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
+import scrapelib
 
 
 class ORCommitteeScraper(CommitteeScraper):
     jurisdiction = 'or'
 
-    def lxmlize(self, url):
-        page = self.urlopen(url)
+    def lxmlize(self, url, ignore=None):
+        if ignore is None:
+            ignore = []
+
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError as e:
+            if e.response.status_code in ignore:
+                self.warning("Page is giving me a 500: %s" % (url))
+                return None
+            raise
+
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
@@ -23,7 +34,9 @@ class ORCommitteeScraper(CommitteeScraper):
                                       committee.text, chamber)
 
     def scrape_committee(self, committee_url, committee_name, chamber):
-        page = self.lxmlize(committee_url)
+        page = self.lxmlize(committee_url, ignore=[500])
+        if page is None:
+            return
         people = page.xpath("//div[@id='membership']//tbody/tr")
         c = Committee(chamber=chamber, committee=committee_name)
         for row in people:
