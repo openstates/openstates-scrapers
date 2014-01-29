@@ -116,8 +116,6 @@ class NDBillScraper(BillScraper):
                 dt = datetime.strptime("%s %s" % (date, self.year), "%m/%d %Y")
 
             kwargs = self.categorizer.categorize(action)
-            if kwargs['type'] == []:
-                print action
 
             bill.add_action(chamber, action, dt, **kwargs)
 
