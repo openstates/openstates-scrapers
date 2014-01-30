@@ -123,10 +123,8 @@ class WAEventScraper(EventScraper):
                 meeting_title = "Scheduled Meeting of " + who
 
                 agenda = self.scrape_agenda(body.xpath(".//ol"))
-                guid = event[1].xpath('td/a/@href')[-1].split("=")[-1]
                 event = Event(session, when, 'committee:meeting',
                               meeting_title, **kwargs)
-                event['_guid'] = guid
                 event.add_participant(
                     "host",
                     who,
