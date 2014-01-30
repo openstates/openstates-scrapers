@@ -322,6 +322,7 @@ class NMBillScraper(BillScraper):
             '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7712': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7798': ('Succeeding entries', 'other'),
+            '7804': ('Partial Veto', 'governor:vetoed:line-item'),
             '7805': ('Signed', 'governor:signed'),
             '7806': ('Vetoed', 'governor:vetoed'),
             '7807': ('Pocket Veto', 'governor:vetoed'),
@@ -359,6 +360,7 @@ class NMBillScraper(BillScraper):
             else:
                 actor = 'other'
             action_code = action['ActionCode']
+
             try:
                 action_name, action_type = action_map[action_code]
             except KeyError:
@@ -564,6 +566,10 @@ class NMBillScraper(BillScraper):
         os.remove(fname)
 
         # get date
+        if text.strip() == 'NEW MEXICO HOUSE OF REPRESENTATIVES':
+            self.warning("What the heck: %s" % (url))
+            return None
+
         date = re.findall('(\d+/\d+/\d+)', text)[0]
         date = datetime.strptime(date, '%m/%d/%y')
 
