@@ -268,11 +268,13 @@ class Membernames(object):
         '''Separate names from roles and chambers, etc.
         '''
         role_rgxs = [r'(.+?)\s+\((.+?)\)',
+                     r'(.+?),\s+(?![III])(.+)',
                      r'(.+?),\s+(?![JS]r.)(.+)',
                      ur'(.+?)\s*[-–]\s+(.+)']
 
         res = []
         for name in names:
+
             name = clean(name)
 
             role = 'member'
@@ -281,6 +283,11 @@ class Membernames(object):
                 if m:
                     name, role = m.groups()
                     break
+
+            # Special case for Isadore hall. This entire hot mess needs
+            # a re-write at some point.
+            if role == 'III':
+                role = 'member'
 
             kw = {}
             for s, ch in (('Senator', 'upper'),
