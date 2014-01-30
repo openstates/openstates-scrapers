@@ -106,7 +106,11 @@ class INBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         for row in doc.xpath('//table//tr')[1:]:
-            bill_id = row[2].text_content()
+            try:
+                bill_id = row[2].text_content()
+            except IndexError:
+                # We hit the last row.
+                return
             bill_url = row[2].xpath('string(a/@href)')
             bill_title = row[3].text_content()
             yield bill_id, bill_url, bill_title
