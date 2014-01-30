@@ -207,7 +207,7 @@ class BillDocuments(object):
                 data = DocumentMeta(self.scraper, a).get_doc_meta()
             except BogusDocument as exc:
                 self.scraper.logger.warning(exc)
-                self.scraper.logger.warning('Skipping document %r.' % (data,))
+                self.scraper.logger.warning('Skipping document: %r.' % (a.attrib,))
                 continue
             meta.append(data)
         return meta
