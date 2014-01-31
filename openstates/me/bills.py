@@ -149,28 +149,35 @@ class MEBillScraper(BillScraper):
 
         tr_text = sponsors_page.xpath('//tr')
         tr_text = [tr.text_content() for tr in tr_text]
-        rgx = (r'(?:^(\S+)e[rd](?: by)?)\s*:?\s*'
-               r'(Speaker|President|Senator|Representative) '
-               r'(.+?)(?:\s+of\s+.+)')
+        rgx = '(Speaker|President|Senator|Representative) ([A-Z ]+)'
         for text in tr_text:
-            match = re.search(rgx, text, re.I)
-            if match:
-                type_, chamber_title, name = map(strip, match.groups())
-                type_ = type_.lower()
-                # introduc[er] gets clipped by regex, we change it anyway
-                if type_ in ('sponsor', 'introduc'):
-                    type_ = 'primary'
+            text = str(text)
+
+            if 'the Majority' in text:
+                # At least one bill was sponsored by 'the Majority'.
+                bill.add_sponsor('primary', 'the Majority',
+                                 chamber=bill['chamber'])
+                continue
+
+            if text.lower().startswith('sponsored by:'):
+                type_ = 'primary'
+            elif 'introduc' in text.lower():
+                type_ = 'primary'
+            elif text.lower().startswith('cosponsored by:'):
+                type_ = 'cosponsor'
+            else:
+                continue
+
+            for match in re.finditer(rgx, text):
+                chamber_title, name = map(strip, match.groups())
                 if chamber_title in ['President', 'Speaker']:
                     chamber = bill['chamber']
                 else:
                     chamber = {'Senator': 'upper',
                                'Representative': 'lower'}
                     chamber = chamber[chamber_title]
-                bill.add_sponsor(type_.lower(), name, chamber=chamber)
-            elif 'the Majority' in text:
-                # At least one bill was sponsored by 'the Majority'.
-                bill.add_sponsor('primary', 'the Majority',
-                                 chamber=bill['chamber'])
+                bill.add_sponsor(type_.lower(), name.strip(), chamber=chamber)
+
         bill.add_source(sponsors_url)
 
         docket_link = page.xpath("//a[contains(@href, 'dockets.asp')]")[0]
