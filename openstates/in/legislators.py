@@ -116,15 +116,16 @@ class INLegislatorScraper(LegislatorScraper):
                 deets = deets_getter(leg, leg_url)
 
                 # If email found, use that instead of guessed email.
-                if deets.get("email"):
-                    leg['email'] = deets.pop("email")
+                if deets is not None:
+                    if deets.get("email"):
+                        leg['email'] = deets.pop("email")
 
-                office = dict(deets or {},
-                    address=address, name='District Office',
-                    type='district', fax=None)
+                    office = dict(deets or {},
+                        address=address, name='District Office',
+                        type='district', fax=None)
 
-                if office not in leg['offices']:
-                    leg.add_office(**office)
+                    if office not in leg['offices']:
+                        leg.add_office(**office)
 
                 self.save_legislator(leg)
 
