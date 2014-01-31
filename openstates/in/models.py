@@ -164,7 +164,7 @@ class DocumentMeta(object):
         '''
         buf = StringIO()
         buf.write('http://iga.in.gov/static-documents/')
-        for char in data['uid'][:4]:
+        for char in str(data['uid'])[:4]:
             buf.write(char)
             buf.write('/')
         buf.write(data['uid'])
