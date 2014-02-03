@@ -45,7 +45,7 @@ class INLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         self.termdata = self.get_termdata(term)
-        self.retry_attempts = 0
+        self.requests_per_minute = 15
         self.client = ApiClient(self)
         self.api_chamber = dict(upper='senate', lower='house')[chamber]
 
