@@ -77,7 +77,6 @@ class DELegislatorScraper(LegislatorScraper):
 
         # If multiple email addresses listed, only take the official
         # noone@state.de.us address.
-        print re.split(r'(?:\n| or |;|\s+)', email)
         emails = re.split(r'(?:\n| or |;|\s+)', email)
         for email in filter(None, emails):
             if email.strip():
