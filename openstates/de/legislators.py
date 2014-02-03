@@ -80,7 +80,7 @@ class DELegislatorScraper(LegislatorScraper):
         if ';' in email:
             emails = filter(lambda s: 'state.de.us' in s, email.split(';'))
             if emails:
-                info['email'] = [s.strip() for s in emails[0]]
+                info['email'] = emails[0].strip()
         else:
             info['email'] = email.strip()
 
