@@ -56,7 +56,6 @@ class ApiClient(object):
         self.scraper = scraper
         self.apikey = os.environ['INDIANA_API_KEY']
 
-
     @check_response
     def geturl(self, url):
         headers = {}
