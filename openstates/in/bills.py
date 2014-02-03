@@ -81,9 +81,9 @@ class INBillScraper(BillScraper):
 
         for chamber, ul in zip(chambers, uls):
             for li in ul.xpath('li'):
+                bill_id = li.xpath('string(a/strong)')
                 if bill_id in seen_bill_ids:
                     continue
-                bill_id = li.xpath('string(a/strong)')
                 bill_url = li.xpath('string(a/@href)')
                 bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
                 bill = self.scrape_bill(
