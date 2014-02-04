@@ -58,7 +58,7 @@ class INBillScraper(BillScraper):
     SCRAPE_SUBJECTS = True
 
     def scrape(self, term, chambers):
-        self.requests_per_minute = 15
+        self.requests_per_minute = 30
         url = 'http://iga.in.gov/legislative/%s/bills/' % term
         self.logger.info('GET ' + url)
         html = self.get(url).text
