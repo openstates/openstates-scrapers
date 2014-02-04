@@ -140,7 +140,7 @@ class INBillScraper(BillScraper):
             bill.add_sponsor(sp_type, name)
 
         # Actions
-        for li in doc.xpath('//div[@id="bill-actions"]//li'):
+        for li in doc.xpath('//div[@id="bill-actions"]//li')[::-1]:
             if li.text_content() == 'None currently available.':
                 continue
             chamber_str = li.xpath('string(strong)').strip()
