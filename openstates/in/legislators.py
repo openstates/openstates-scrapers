@@ -99,7 +99,7 @@ class INLegislatorScraper(LegislatorScraper):
                         commmittee=comm['name'])
 
                 # Woooooo! Email addresses are guessable in IN/
-                tmpl = '{chamber[0]}{district}@igo.in.gov'
+                tmpl = '{chamber[0]}{district}@iga.in.gov'
                 leg['email'] = tmpl.format(chamber=chamber, district=district)
 
                 # Add district generic IGA address, usually the only thing available.
