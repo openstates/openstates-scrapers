@@ -95,7 +95,7 @@ class INLegislatorScraper(LegislatorScraper):
 
                 for comm in data['committees']:
                     leg.add_role(
-                        'member', term=term, chamber=chamber,
+                        'committee member', term=term, chamber=chamber,
                         commmittee=comm['name'])
 
                 # Woooooo! Email addresses are guessable in IN/
