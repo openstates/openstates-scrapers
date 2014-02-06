@@ -193,7 +193,7 @@ class COBillScraper(BillScraper):
         return [{
             "name": x.text,
             "mimetype": "application/pdf",
-            "link": url + (
+            "link": CO_URL_BASE + url + (
                 re.findall(
                     "_doClick\('(?P<slug>.+)'",
                     x.getparent().attrib['onclick']
@@ -355,7 +355,11 @@ class COBillScraper(BillScraper):
             for sponsor in sponsors:
                 if sponsor != None and sponsor != "(NONE)" and \
                    sponsor != "":
-                    b.add_sponsor("primary", sponsor)
+                    if "&" in sponsor:
+                        for sponsor in [x.strip() for x in sponsor.split("&")]:
+                            b.add_sponsor("primary", sponsor)
+                    else:
+                        b.add_sponsor("primary", sponsor)
 
             # Now that we have history, let's see if we can't grab some
             # votes

@@ -45,7 +45,7 @@ class INLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         self.termdata = self.get_termdata(term)
-        self.retry_attempts = 0
+        self.requests_per_minute = 15
         self.client = ApiClient(self)
         self.api_chamber = dict(upper='senate', lower='house')[chamber]
 
@@ -95,11 +95,11 @@ class INLegislatorScraper(LegislatorScraper):
 
                 for comm in data['committees']:
                     leg.add_role(
-                        'member', term=term, chamber=chamber,
+                        'committee member', term=term, chamber=chamber,
                         commmittee=comm['name'])
 
                 # Woooooo! Email addresses are guessable in IN/
-                tmpl = '{chamber[0]}{district}@igo.in.gov'
+                tmpl = '{chamber[0]}{district}@iga.in.gov'
                 leg['email'] = tmpl.format(chamber=chamber, district=district)
 
                 # Add district generic IGA address, usually the only thing available.
@@ -116,15 +116,16 @@ class INLegislatorScraper(LegislatorScraper):
                 deets = deets_getter(leg, leg_url)
 
                 # If email found, use that instead of guessed email.
-                if deets.get("email"):
-                    leg['email'] = deets.pop("email")
+                if deets is not None:
+                    if deets.get("email"):
+                        leg['email'] = deets.pop("email")
 
-                office = dict(deets or {},
-                    address=address, name='District Office',
-                    type='district', fax=None)
+                    office = dict(deets or {},
+                        address=address, name='District Office',
+                        type='district', fax=None)
 
-                if office not in leg['offices']:
-                    leg.add_office(**office)
+                    if office not in leg['offices']:
+                        leg.add_office(**office)
 
                 self.save_legislator(leg)
 

@@ -85,6 +85,7 @@ class NDBillScraper(BillScraper):
 
 
         dt = None
+        oldchamber = 'other'
         for row in table.xpath(".//tr"):
             if row.text_content().strip() == '':
                 continue
@@ -107,19 +108,16 @@ class NDBillScraper(BillScraper):
                     "House": "lower",
                     "Senate": "upper"
                 }[chamber]
+                oldchamber = chamber
             except KeyError:
-                chamber = "other"
+                chamber = oldchamber
 
             if date != '':
                 dt = datetime.strptime("%s %s" % (date, self.year), "%m/%d %Y")
 
             kwargs = self.categorizer.categorize(action)
 
-            bill.add_action(chamber,
-                            action,
-                            dt,
-                            **kwargs)
-
+            bill.add_action(chamber, action, dt, **kwargs)
 
         version_url = page.xpath("//a[contains(text(), 'Versions')]")
         if len(version_url) == 1:

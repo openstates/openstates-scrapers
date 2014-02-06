@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 import urlparse
 import functools
@@ -54,7 +55,6 @@ class ApiClient(object):
     def __init__(self, scraper):
         self.scraper = scraper
         self.apikey = os.environ['INDIANA_API_KEY']
-
 
     @check_response
     def geturl(self, url):

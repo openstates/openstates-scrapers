@@ -36,7 +36,11 @@ class ORLegislatorScraper(LegislatorScraper):
         for block in page.xpath("//div[@class='ms-rtestate-field']")[1:-1]:
             # Each legislator block.
 
-            photo_block, = block.xpath("ancestor::td/preceding-sibling::td")
+            photo_block = block.xpath("ancestor::td/preceding-sibling::td")
+            if len(photo_block) == 0:
+                continue
+
+            photo_block, = photo_block
             # (The <td> before ours was the photo)
             img, = photo_block.xpath("*")
             img = img.attrib['src']

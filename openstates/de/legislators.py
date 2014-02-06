@@ -62,7 +62,6 @@ class DELegislatorScraper(LegislatorScraper):
 
         contact_info = self.scrape_contact_info(doc)
         leg.update(contact_info)
-
         return leg
 
     def scrape_contact_info(self, doc):
@@ -78,10 +77,11 @@ class DELegislatorScraper(LegislatorScraper):
 
         # If multiple email addresses listed, only take the official
         # noone@state.de.us address.
-        if ';' in email:
-            emails = filter(lambda s: 'state.de.us' in s, email.split(';'))
-            if emails:
-                info['email'] = emails[0]
+        emails = re.split(r'(?:\n| or |;|\s+)', email)
+        for email in filter(None, emails):
+            if email.strip():
+                info['email'] = email.strip()
+                break
 
         # Offices
         offices = []

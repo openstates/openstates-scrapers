@@ -120,7 +120,7 @@ class WAEventScraper(EventScraper):
 
                 when = dt.datetime.strptime(when, "%m/%d/%y  %I:%M %p")
 
-                meeting_title = "Scheduled Meeting"  # XXX: Fixme
+                meeting_title = "Scheduled Meeting of " + who
 
                 agenda = self.scrape_agenda(body.xpath(".//ol"))
                 event = Event(session, when, 'committee:meeting',
@@ -141,4 +141,6 @@ class WAEventScraper(EventScraper):
                         description=descr,
                         type="consideration"
                     )
+
+
                 self.save_event(event)
