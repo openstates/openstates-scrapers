@@ -11,6 +11,10 @@ from .utils import parse_directory_listing, open_csv
 import lxml.html
 
 
+class SkipBill(Exception):
+    pass
+
+
 class CTBillScraper(BillScraper):
     jurisdiction = 'ct'
     latest_only = True
@@ -66,18 +70,22 @@ class CTBillScraper(BillScraper):
                 bill.add_sponsor('primary', introducer,
                                  official_type='introducer')
 
-            self.scrape_bill_page(bill)
+            try:
+                self.scrape_bill_page(bill)
 
-            bill['subjects'] = self._subjects[bill_id]
+                bill['subjects'] = self._subjects[bill_id]
 
-            self.bills[bill_id] = bill
+                self.bills[bill_id] = bill
+            except SkipBill:
+                self.warning('no such bill: ' + bill_id)
+                pass
 
     def scrape_bill_page(self, bill):
-        url = ("http://www.cga.ct.gov/asp/cgabillstatus/"
-               "cgabillstatus.asp?selBillType=Bill"
-               "&bill_num=%s&which_year=%s" % (bill['bill_id'],
-                                               bill['session']))
+        url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
+               "&bill_num=%s&which_year=%s" % (bill['bill_id'], bill['session']))
         page = self.urlopen(url)
+        if 'not found in Database' in page:
+            raise SkipBill()
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         bill.add_source(url)
