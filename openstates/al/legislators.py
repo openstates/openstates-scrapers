@@ -27,7 +27,7 @@ class ALLegislatorScraper(LegislatorScraper):
                 name = name.text_content().strip()
 
                 party = party_dict[party.text_content().strip()]
-                district = district.text_content().strip()
+                district = district.text_content().strip().replace('(', '').replace(')', '')
                 office = office.text_content().strip()
                 phone = phone.text_content().strip()
                 leg_url = link[0].get('href')
