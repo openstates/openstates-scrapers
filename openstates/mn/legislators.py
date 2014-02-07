@@ -22,9 +22,6 @@ class MNLegislatorScraper(LegislatorScraper):
 
     def scrape_house(self, term):
         url = 'http://www.house.leg.state.mn.us/members/housemembers.asp'
-        office_addr = ''' State Office Building,
-100 Rev. Dr. Martin Luther King Jr. Blvd.
-Saint Paul, Minnesota 55155'''
 
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -41,7 +38,7 @@ Saint Paul, Minnesota 55155'''
                 elif party == '(DFL)':
                     party = 'Democratic-Farmer-Labor'
                 leg_url = row.xpath('td[2]/p/a/@href')[0]
-                addr = tds[2] + office_addr
+                addr = tds[2]
                 phone = tds[3]
                 email = tds[4]
 
