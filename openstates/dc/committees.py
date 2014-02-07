@@ -32,7 +32,7 @@ class DCCommitteeScraper(CommitteeScraper):
             for chair in doc.xpath('//h3[text()="Committee Chair"]/following-sibling::p'):
                 com.add_member(chair.text_content(), role='chairperson')
 
-            for member in doc.xpath('//h3[text()="Councilmembers"]/following-sibling::p/a'):
+            for member in doc.xpath('//h3[text()="Councilmembers"]/following-sibling::ul//a'):
                 com.add_member(member.text_content(), role='member')
 
             com.add_source(url)
