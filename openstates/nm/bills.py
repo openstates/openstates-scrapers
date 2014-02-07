@@ -258,7 +258,8 @@ class NMBillScraper(BillScraper):
         for loc in self.access_to_csv('TblLocations'):
             com_location_map[loc['LocationCode']] = loc['LocationDesc']
 
-        # combination of tblActions and http://www.nmlegis.gov/lcs/abbrev.aspx
+        # combination of tblActions and
+        # http://www.nmlegis.gov/lcs/action_abbreviations.aspx
         # table will break when new actions are encountered
         action_map = {
             # committee results
@@ -319,6 +320,7 @@ class NMBillScraper(BillScraper):
             '7702': ('failed passage in Senate', 'bill:failed'),
             '7704': ('tabled indefinitely', 'other'),
             '7708': ('action postponed indefinitely', 'other'),
+            '7709': ('bill not germane', 'other'),
             '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7712': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7798': ('Succeeding entries', 'other'),
