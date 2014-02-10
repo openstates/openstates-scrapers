@@ -364,8 +364,11 @@ class MDBillScraper(BillScraper):
             sponsor_type = 'cosponsor'
 
         # subjects
-        subjects = _get_td(doc, 'Narrow Subject(s):').xpath('a/text()')
-        bill['subjects'] = [s.split(' -see also-')[0] for s in subjects if s]
+        subject_list = []
+        for heading in ('Broad Subject(s):', 'Narrow Subject(s):'):
+            subjects =  _get_td(doc, heading).xpath('a/text()')
+            subject_list += [s.split(' -see also-')[0] for s in subjects if s]
+        bill['subjects'] = subject_list
 
         # documents
         self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
