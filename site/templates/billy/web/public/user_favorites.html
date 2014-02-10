@@ -82,6 +82,7 @@ $(document).ready(function() {
                 {% endfor %}
                 </tbody>
             </table>
+            <a href="{% url 'favorite_bills_csv' %}">Click to download CSV file of your favorite bills</a>
         </div>
         {% endif %}
 
