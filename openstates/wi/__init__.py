@@ -49,7 +49,7 @@ metadata = {
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014',
          'sessions': ['2013 Regular Session', 'October 2013 Special Session',
-                      'December 2013 Special Session' ],
+                      'December 2013 Special Session', 'January 2014 Special Session' ],
          'start_year': 2013, 'end_year': 2014},
     ],
     'session_details': {
@@ -102,6 +102,12 @@ metadata = {
             'display_name': 'Dec 2013 Special Session',
             '_scraped_name': 'Dec 2013 Special Session',
             'site_id': 'de3'
+        },
+        'January 2014 Special Session': {
+            'type': 'special',
+            'display_name': 'Jan 2014 Special Session',
+            '_scraped_name': 'Jan 2014 Special Session',
+            'site_id': 'jr4'
         }
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],

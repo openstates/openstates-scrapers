@@ -59,9 +59,9 @@ class MICommitteeScraper(CommitteeScraper):
         doc.make_links_absolute(url)
 
         for link in doc.xpath('//li/a[contains(@href, "/committee/")]/@href'):
-            if link.endswith('appropssubcommittee.htm'):
+            if link.endswith('appropssubcommittee.html'):
                 self.scrape_approp_subcommittees(link)
-            elif not link.endswith(('statutory.htm','pdf')):
+            elif not link.endswith(('statutory.htm','pdf','taskforce.html')):
                 self.scrape_senate_committee(link)
 
 

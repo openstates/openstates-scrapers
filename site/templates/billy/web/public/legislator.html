@@ -122,7 +122,8 @@
                                 {% endif %}
                                 {% if office.email %}
                                 <div class="email">
-                                    <span class="type smTitle">{% trans "Email" %}:</span> {{office.email}}
+                                    <span class="type smTitle">{% trans "Email" %}:</span> 
+                                    <a href="mailto:{{office.email}}">{{office.email}}</a>
                                 </div>
                                 {% endif %}
                             </address>
