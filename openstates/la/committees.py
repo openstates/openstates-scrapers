@@ -106,6 +106,9 @@ class LACommitteeScraper(CommitteeScraper):
                 try:
                     committee = comm_cache[comm_name]
                 except KeyError:
+                    if comm_name.strip() == "":
+                        continue
+
                     committee = Committee(chamber, comm_name)
                     committee.add_source(url)
                     comm_cache[comm_name] = committee
