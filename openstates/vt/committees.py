@@ -33,7 +33,6 @@ class VTCommitteeScraper(CommitteeScraper):
                 # Start a new one.
                 comm = self.parse_committee_name(tds[1], chamber)
                 comm.add_source(url)
-                print comm
                 continue
 
             name = tds[1].text_content().strip()
@@ -49,9 +48,10 @@ class VTCommitteeScraper(CommitteeScraper):
 
             # if not name.startswith(DOUBLED_NAMES):
             name = re.sub(r'of [\w\s\.]+$', '', name)
-
-            print name
             comm.add_member(name, mtype)
+
+        # And save the last committee.
+        self.save_committee(comm)
 
 
     def parse_committee_name(self, td, chamber):
