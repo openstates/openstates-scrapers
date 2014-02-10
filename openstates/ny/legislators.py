@@ -210,7 +210,10 @@ class NYLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        contact = doc.xpath('//div[@id="addrinfo"]')[0]
+        try:
+            contact = doc.xpath('//div[@id="addrinfo"]')[0]
+        except:
+            contact = doc
         email = None
 
         # Sometimes class is "addrcol1", others "addrcola"
@@ -270,7 +273,6 @@ class NYLegislatorScraper(LegislatorScraper):
                     continue
 
                 legislator.add_office(**office)
-
 
 # Map ID's to party affiliation. Has to be an id-to-party mapping, because
 # full_name gets normalized on import and may be different at scrape time
