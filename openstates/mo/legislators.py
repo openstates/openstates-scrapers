@@ -81,6 +81,9 @@ class MOLegislatorScraper(LegislatorScraper):
             # then there is only a webform. So...no email?
             # TODO a lot of these have fax numbers. Include?
 
+            if 'Contact.aspx' in email:
+                email = None
+
             kwargs = {
                 "address": "%s%s" % (address[0],address[1])
             }
