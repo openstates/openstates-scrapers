@@ -164,6 +164,14 @@ class VTBillScraper(BillScraper):
             'actions', 'versions', 'documents')):
             return False
 
+        # Get subjects.
+        subjects = []
+        for subject in page.xpath('//font')[-1].text_content().splitlines():
+            subject = subject.strip()
+            if subject:
+                subjects.append(subject)
+        bill['subjects'] = subjects
+
         self.save_bill(bill)
         return True
 

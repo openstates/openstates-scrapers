@@ -93,6 +93,8 @@ class INLegislatorScraper(LegislatorScraper):
                 leg.add_source(url)
                 leg.add_source(leg_url)
 
+                if 'breaux' in data['lastName']:
+                    import pdb; pdb.set_trace()
                 for comm in data['committees']:
                     leg.add_role(
                         'committee member', term=term, chamber=chamber,
