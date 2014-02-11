@@ -41,7 +41,13 @@ class MOCommitteeScraper(CommitteeScraper):
                 a = links[0]
                 committee_name = a.text_content().strip()
                 committee_url = a.attrib.get('href')
-                committee = Committee(chamber, committee_name)
+
+                if 'joint' in committee_name.lower():
+                    c = "joint"
+                else:
+                    c = chamber
+
+                committee = Committee(c, committee_name)
                 committee_page_string = self.urlopen(committee_url)
                 committee_page = lxml.html.fromstring(
                                                     committee_page_string)
@@ -80,8 +86,9 @@ class MOCommitteeScraper(CommitteeScraper):
             committee_url = '{base}{url}'.format(base=self.reps_url_base,
                                                  url=committee_url)
             actual_chamber = chamber
-            if committee_name.startswith('Joint'):
+            if 'joint' in committee_name.lower():
                 actual_chamber = 'joint'
+
             committee = Committee(actual_chamber, committee_name, status=status)
             committee_page_string = self.urlopen(committee_url)
             committee_page = lxml.html.fromstring(
