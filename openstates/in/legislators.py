@@ -18,12 +18,6 @@ class INLegislatorScraper(LegislatorScraper):
         return self._url % self.year
 
     def get_termdata(self, term_id):
-        '''The api legislator calls expect a "session" parameter, which
-        is simply a four-digit year. Aside from death, legislators generally
-        shouldn't change between sessions (only terms), and tests with api
-        responses for different years within a single term returned the same
-        data.
-        '''
         for term in self.metadata['terms']:
             if term['name'] == term_id:
                 return term
