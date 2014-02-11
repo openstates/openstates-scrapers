@@ -47,8 +47,7 @@ class KYBillScraper(BillScraper):
             self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):
-        bill_url = session_url(session) + "bills_%s.htm" % (
-            chamber_abbr(chamber))
+        bill_url = session_url(session) + "bills_%s.htm" % chamber_abbr(chamber)
         self.scrape_bill_list(chamber, session, bill_url)
 
         resolution_url = session_url(session) + "res_%s.htm" % (
@@ -81,10 +80,9 @@ class KYBillScraper(BillScraper):
         page.make_links_absolute(url)
 
         try:
-            short_bill_id = re.sub(r'S([JC])R', r'S\1', bill_id)
+            short_bill_id = re.sub(r'(H|S)([JC])R', r'\1\2', bill_id)
 
-            version_link = page.xpath(
-                "//a[contains(@href, '%s/bill.doc')]" % short_bill_id)[0]
+            version_link = page.xpath("//a[contains(@href, '%s/bill.doc')]" % short_bill_id)[0]
         except IndexError:
             # Bill withdrawn
             return
