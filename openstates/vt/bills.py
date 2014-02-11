@@ -48,62 +48,6 @@ def clean_action(action):
     return action
 
 
-def action_type(action):
-    # action = action.lower()
-    # atypes = []
-
-    # if re.match('^read (the )?(first|1st) time', action):
-    #     atypes.append('bill:introduced')
-    #     atypes.append('bill:reading:1')
-
-    # if 'read second time' in action:
-    #     atypes.append('bill:reading:2')
-
-    # if 'proposal of amendment concurred in' in action:
-    #     atypes.append('amendment:passed')
-
-    # if re.match(r'proposal of amendment by .* agreed to', action):
-    #     atypes.append('amendment:passed')
-
-    # if action.endswith('and passed'):
-    #     atypes.append('bill:passed')
-
-    # if action.startswith('read third time'):
-    #     atypes.append('bill:reading:3')
-
-    # if action.startswith('signed by governor'):
-    #     atypes.append('governor:signed')
-
-    # if 'reported favorably' in action or 'favorable report' in action:
-    #     atypes.append('committee:passed:favorable')
-
-    # if 'reported unfavorably' in action or 'unfavorable report' in action:
-    #     atypes.append('committee:passed:unfavorable')
-
-    # if 'reported without recommendation' in action:
-    #     atypes.append('committee:passed')
-
-    # if re.match(r'(re)?committed to committee', action):
-    #     atypes.append('committee:referred')
-
-    # if 'referred to' in action:
-    #     atypes.append('committee:referred')
-
-    # if 'motion to amend bill agreed to' in action:
-    #     atypes.append('amendment:passed')
-
-    # if 'read 3rd time & passed' in action:
-    #     atypes.append('bill:passed')
-    #     atypes.append('bill:reading:3')
-
-    # if re.match(r'^floor amendment by (.*) agreed to$', action):
-    #     atypes.append('amendment:passed')
-
-    # if atypes:
-    #     return atypes
-    return ['other']
-
-
 class VTBillScraper(BillScraper):
     jurisdiction = 'vt'
     categorizer = Categorizer()
