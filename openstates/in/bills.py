@@ -18,7 +18,6 @@ from billy.importers.bills import fix_bill_id
 import pytz
 import lxml.html
 
-from .apiclient import ApiClient, BadApiResponse
 from .actions import Categorizer
 from .models import parse_vote, BillDocuments, VoteParseError
 
