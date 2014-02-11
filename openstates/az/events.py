@@ -124,7 +124,10 @@ class AZEventScraper(EventScraper):
             if not bill_id or bill_id[0] not in 'HS':
                 continue
             related_bill['bill_id'] = bill_id
-            description = tr[3].text_content().strip()
+            try:
+                description = tr[3].text_content().strip()
+            except IndexError:
+                continue
             description = re.sub(r'\s+', ' ', description)
             related_bill['description'] = description
             related_bill['type'] = 'consideration'
