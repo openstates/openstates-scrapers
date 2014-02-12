@@ -45,16 +45,6 @@ class NYBillScraper(BillScraper):
         bill = assembly.bill
         bill.add_source(billdata['url'])
 
-        for action in data['actions']:
-            timestamp = int(action['date'])
-            action_text = action['text']
-            date = self.date_from_timestamp(timestamp)
-            actor = 'upper' if action_text.isupper() else 'lower'
-            attrs = dict(actor=actor, action=action_text, date=date)
-            categories, kwargs = self.categorizer.categorize(action_text)
-            attrs.update(kwargs, type=categories)
-            bill.add_action(**attrs)
-
         # Add companion.
         if data['sameAs']:
             bill.add_companion(data['sameAs'])
