@@ -45,24 +45,6 @@ class NYBillScraper(BillScraper):
         bill = assembly.bill
         bill.add_source(billdata['url'])
 
-        # Add prime sponsor.
-        bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
-
-        # Add cosponsors.
-        for sponsor in data['coSponsors'] + data['multiSponsors']:
-            if sponsor['fullname']:
-                bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
-
-        for action in data['actions']:
-            timestamp = int(action['date'])
-            action_text = action['text']
-            date = self.date_from_timestamp(timestamp)
-            actor = 'upper' if action_text.isupper() else 'lower'
-            attrs = dict(actor=actor, action=action_text, date=date)
-            categories, kwargs = self.categorizer.categorize(action_text)
-            attrs.update(kwargs, type=categories)
-            bill.add_action(**attrs)
-
         # Add companion.
         if data['sameAs']:
             bill.add_companion(data['sameAs'])
