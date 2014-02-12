@@ -45,14 +45,6 @@ class NYBillScraper(BillScraper):
         bill = assembly.bill
         bill.add_source(billdata['url'])
 
-        # Add prime sponsor.
-        bill.add_sponsor(name=data['sponsor']['fullname'], type='primary')
-
-        # Add cosponsors.
-        for sponsor in data['coSponsors'] + data['multiSponsors']:
-            if sponsor['fullname']:
-                bill.add_sponsor(name=sponsor['fullname'], type='cosponsor')
-
         for action in data['actions']:
             timestamp = int(action['date'])
             action_text = action['text']
