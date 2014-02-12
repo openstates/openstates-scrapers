@@ -130,7 +130,7 @@ class INBillScraper(BillScraper):
         sponsor_map = {
             'author': 'primary',
             'co-author': 'cosponsor',
-            'sponsor': 'primary',
+            'sponsor': 'cosponsor',
             'co-sponsor': 'cosponsor',
             }
         for div in doc.xpath('//div[contains(@class, "bill-author-info")]'):
