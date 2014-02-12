@@ -117,7 +117,7 @@ class SCBillScraper(BillScraper):
                                                    '%m/%d/%Y %H:%M %p')
             yeas = int(yeas.text)
             nays = int(nays.text)
-            others = int(nv.text) + int(exc.text) + int(abst.text)
+            others = int(nv.text) + int(exc.text) + int(abst.text) = int(pres.txt)
             assert yeas + nays + others == int(total.text)
 
             passed = (result.text == 'Passed')
