@@ -18,7 +18,6 @@ from billy.importers.bills import fix_bill_id
 import pytz
 import lxml.html
 
-from .apiclient import ApiClient, BadApiResponse
 from .actions import Categorizer
 from .models import parse_vote, BillDocuments, VoteParseError
 
@@ -131,7 +130,7 @@ class INBillScraper(BillScraper):
         sponsor_map = {
             'author': 'primary',
             'co-author': 'cosponsor',
-            'sponsor': 'primary',
+            'sponsor': 'cosponsor',
             'co-sponsor': 'cosponsor',
             }
         for div in doc.xpath('//div[contains(@class, "bill-author-info")]'):

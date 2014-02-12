@@ -212,7 +212,10 @@ class ARBillScraper(BillScraper):
         votevals = 'yes no other other'.split()
         for (voteval, div) in zip(votevals, divs):
             for a in div.xpath('.//a'):
-                getattr(vote, voteval)(a.text_content())
+                name = a.text_content().strip()
+                if not name:
+                    continue
+                getattr(vote, voteval)()
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):
