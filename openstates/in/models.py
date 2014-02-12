@@ -52,7 +52,7 @@ class RollCallVote(object):
         return datetime.datetime.strptime(date, "%b %d, %Y")
 
     def get_counts(self):
-        return dict(re.findall(r'(Yeas|Nays|Excused|Not Voting)\s+(\d+)', self.text))
+        return dict(re.findall(r'(Yeas?|Nays?|Excused|Not Voting)\s+(\d+)', self.text))
 
     def motion(self):
         return re.search('Roll Call \d+', self.text).group()
