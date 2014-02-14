@@ -166,8 +166,8 @@ class PRBillScraper(BillScraper):
             # ignore row missing date
             if len(tds) != 2:
                 continue
-            date = datetime.datetime.strptime(tds[0].text_content(),
-                                              "%m/%d/%Y")
+            if tds[0].text_content():
+                date = datetime.datetime.strptime(tds[0].text_content(), "%m/%d/%Y")
             action = tds[1].text_content().strip()
             #parse the text to see if it's a new version or a unrelated document
             #if has - let's *shrug* assume it's a vote document
