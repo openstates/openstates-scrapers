@@ -215,7 +215,7 @@ class ARBillScraper(BillScraper):
                 name = a.text_content().strip()
                 if not name:
                     continue
-                getattr(vote, voteval)()
+                getattr(vote, voteval)(name)
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):

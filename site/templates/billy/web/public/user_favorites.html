@@ -149,6 +149,12 @@ $(document).ready(function() {
 
                 <td>{{ obj.metadata.name }}</td>
                 <td>{{ obj.chamber_name }}</td>
+                {% if obj.has_been_deleted %}
+                <td>
+                    Please Note: An old committee you were tracking has been deleted. To continue tracking it, please find the new committee and add it to your favorites again. For more information about this issue, please visit <a href="https://sunlight.atlassian.net/browse/OS-35">our bug tracker.</a>
+                </td>
+                <td></td>
+                {% else %}
                 <td><a href="{{ obj.get_absolute_url }}">{{ obj.display_name }}</a></td>
                 <td>
                   {% if not obj.members %}
@@ -169,6 +175,7 @@ $(document).ready(function() {
                     </ul>
                   {% endif %}
                 </td>
+                {% endif %}
                 <td class="followBox">{% favorite_short obj.id 'committee' obj.metadata.abbr 'is_favorite' %}</td>
               </tr>
               {% endfor %}
