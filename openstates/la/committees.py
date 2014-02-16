@@ -115,5 +115,68 @@ class LACommitteeScraper(CommitteeScraper):
 
                 committee.add_member(name, mtype)
 
+        special = self.scrape_house_special(comm_cache.keys())
+        for name, comm in special.items():
+            comm_cache[name] = comm
+
         for committee in comm_cache.values():
             self.save_committee(committee)
+            
+    def scrape_house_special(self, scraped_committees):
+        url = 'http://house.louisiana.gov/H_Reps/H_Reps_SpecialCmtes.asp'
+        text = self.urlopen(url)
+        page = lxml.html.fromstring(text)
+        page.make_links_absolute('http://house.louisiana.gov')
+        
+        committees = {}
+        for el in page.xpath("//a[contains(@href,'../H_Cmtes/')]"):
+            comm_name = el.xpath('normalize-space(string())')
+            comm_name = self.normalize_committee_name(comm_name)
+            
+            # skip committees that have already been scraped from 
+            # http://house.louisiana.gov/H_Reps/H_Reps_CmtesFull.asp
+            if comm_name not in scraped_committees:    
+                comm_url = el.get('href').replace('../','')
+                committees[comm_name] = comm_url
+
+        for name, url in committees.items():
+            chamber = 'joint' if name.startswith('Joint') else 'lower'
+            committee = Committee(chamber, name)
+            committee.add_source(url)
+            
+            text = self.urlopen(url)
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute('http://house.louisiana.gov')
+
+            for row in page.xpath('//table[@id="table1"]//tbody/tr'):
+                member_info = row.xpath('./td')
+                mname = member_info[0].xpath('normalize-space(string())')
+                mtype = member_info[1].xpath('normalize-space(string())')
+                if mtype == 'Chairman':
+                    mtype = 'chairman'
+                elif mtype  == 'Co-Chairmain':
+                    mtype = 'co-chairmain'
+                elif mtype ==  'Vice Chair':
+                    mtype = 'vice chair'
+                elif mtype  == 'Ex Officio':
+                    mtype = 'ex officio'
+                elif mtype == 'Interim Member':
+                    mtype = 'interim'
+                else:
+                    mtype = 'member'
+                committee.add_member(mname, mtype)
+            
+            committees[name] = committee
+        
+        return committees
+        
+    def normalize_committee_name(self, name):
+        committees = {
+            'House Executive Cmte': 'House Executive Committee',
+            'Atchafalaya Basin Oversight': 'Atchafalaya Basin Program Oversight Committee',
+            'Homeland Security': 'House Select Committee on Homeland Security',
+            'Hurricane Recovery': 'Select Committee on Hurricane Recovery',
+            'Legislative Budgetary Control': 'Legislative Budgetary Control Council',
+            'Military and Veterans Affairs': 'Special Committee on Military and Veterans Affairs'
+        }
+        return committees[name] if name in committees else name
