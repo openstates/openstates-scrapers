@@ -17,19 +17,24 @@ class LACommitteeScraper(CommitteeScraper):
             self.scrape_house()
 
     def scrape_senate(self):
-        url = 'http://senate.legis.state.la.us/Committees/default.asp'
-        text = self.urlopen(url)
-        page = lxml.html.fromstring(text)
-        page.make_links_absolute(url)
+        committee_types = {
+            'Standing': 'http://senate.legis.state.la.us/Committees/default.asp',
+            'Select': 'http://senate.louisiana.gov/committees/default.asp?type=Select'
+        }
+        
+        for name, url in committee_types.items():
+            text = self.urlopen(url)
+            page = lxml.html.fromstring(text)
+            page.make_links_absolute(url)
 
-        links = page.xpath('//b[contains(text(), "Standing Committees")]'
-                           '/../following-sibling::font/ul/li/a')
+            links = page.xpath('//b[contains(text(), "{0} Committees")]'
+                               '/../following-sibling::font/ul/li/a'.format(name))
 
-        for link in links:
-            name = link.xpath('string()')
-            url = link.attrib['href']
-
-            self.scrape_senate_committee(name, url)
+            for link in links:
+                name = link.xpath('string()')
+                url = link.attrib['href']
+                self.scrape_senate_committee(name, url)
+        
 
     def scrape_senate_committee(self, name, url):
         url = url.replace('Default.asp', 'Assignments.asp')
