@@ -348,6 +348,7 @@ class DEBillScraper(BillScraper):
         #---------------------------------------------------------------------
         # Votes
         vote_strings = doc.xpath('//*[contains(text(), "vote:")]/text()')
+        self.info('Vote strings: %r' % vote_strings)
 
         # Sometimes vote strings are contained in weird, separate elements. Probably
         # hand edited.
@@ -359,6 +360,8 @@ class DEBillScraper(BillScraper):
 
         vote_urls = doc.xpath('//*[contains(text(), "vote:")]'
                               '/following-sibling::a/@href')
+        self.info('Vote urls: %r' % vote_urls)
+        assert len(vote_urls) == len(vote_strings)
         for string, url in zip(vote_strings, vote_urls):
 
             vote_data = parse_votestring(string)
