@@ -488,6 +488,8 @@ class DEBillScraper(BillScraper):
                 #      As a result, this. Forgive me.
                 #            -PRT
                 if url in known_fail_links:
+                    msg = 'Recieved a bogus 22/404 return code. Skipping vote.'
+                    self.warning(msg)
                     return
             raise
 
@@ -503,10 +505,10 @@ class DEBillScraper(BillScraper):
             # Here the vote page didn't have have the typical format.
             # Maybe it's a hand edited page. Log and try to parse
             # the vitals from plain text.
-            self.log('Found an unusual votes page at url: "%s"' % url)
+            self.warning('Found an unusual votes page at url: "%s"' % url)
             totals = re_totals.findall(doc.text_content())
             if len(totals) == 4:
-                self.log('...was able to parse vote tallies from "%s"' % url)
+                self.warning('...was able to parse vote tallies from "%s"' % url)
 
         else:
             totals = re_digit.findall(totals)
