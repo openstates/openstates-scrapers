@@ -96,6 +96,6 @@ class ORLegislatorScraper(LegislatorScraper):
                            name='Capitol Office',
                            address=info['Capitol Address'],
                            phone=phone,
-                           email=info['Email'].attrib['href'])
+                           email=info['Email'].attrib['href'].replace("mailto:",""))
 
             self.save_legislator(leg)
