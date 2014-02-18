@@ -1,4 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 from collections import defaultdict
 from .util import get_client, get_url, backoff
 
@@ -28,9 +29,11 @@ SOURCE_URL = "http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}"
 class GABillScraper(BillScraper):
     jurisdiction = 'ga'
     lservice = get_client("Legislation").service
+    vservice = get_client("Votes").service
     mservice = get_client("Members").service
     lsource = get_url("Legislation")
     msource = get_url("Members")
+    vsource = get_url("Votes")
 
     def get_member(self, member_id):
         if member_id in member_cache:
@@ -87,6 +90,39 @@ class GABillScraper(BillScraper):
                 description=description,
                 _guid=guid
             )
+
+            if instrument['Votes']:
+                for vote_ in instrument['Votes']:
+                    _, vote_ = vote_
+                    vote_ = backoff(self.vservice.GetVote, vote_[0]['VoteId'])
+
+                    vote = Vote(
+                        {"House": "lower", "Senate": "upper"}[vote_['Branch']],
+                        vote_['Date'],
+                        vote_['Caption'],
+                        (vote_['Yeas'] > vote_['Nays']),
+                        vote_['Yeas'],
+                        vote_['Nays'],
+                        (vote_['Excused'] + vote_['NotVoting']),
+                        session=session,
+                        bill_id=bill_id,
+                        bill_chamber=chamber)
+
+                    vote.add_source(self.vsource)
+
+                    methods = {"Yea": vote.yes, "Nay": vote.no,}
+
+                    for vdetail in vote_['Votes'][0]:
+                        whom = vdetail['Member']
+                        how = vdetail['MemberVoted']
+                        try:
+                            m = methods[how]
+                        except KeyError:
+                            m = vote.other
+                        m(whom['Name'])
+
+                    bill.add_vote(vote)
+
 
             types = {
                 "HI": ["other"],

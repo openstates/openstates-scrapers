@@ -33,6 +33,9 @@ def backoff(function, *args, **kwargs):
         try:
             return _()
         except (socket.timeout, urllib2.URLError, suds.WebFault) as e:
+            if "This Roll Call Vote is not published." in e.message:
+                raise ValueError("Roll Call Vote isn't published")
+
             backoff = ((attempt + 1) * 15)
             log.warning(
                 "[attempt %s]: Connection broke. Backing off for %s seconds." % (
