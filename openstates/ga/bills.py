@@ -99,7 +99,7 @@ class GABillScraper(BillScraper):
                     vote = Vote(
                         {"House": "lower", "Senate": "upper"}[vote_['Branch']],
                         vote_['Date'],
-                        vote_['Caption'],
+                        vote_['Caption'] or "Vote on Bill",
                         (vote_['Yeas'] > vote_['Nays']),
                         vote_['Yeas'],
                         vote_['Nays'],
