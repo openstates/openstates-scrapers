@@ -5,7 +5,7 @@ from urlparse import urlparse
 from datetime import datetime
 from operator import methodcaller
 from functools import partial
-
+from collections import defaultdict
 
 import lxml.html
 
@@ -347,25 +347,10 @@ class DEBillScraper(BillScraper):
 
         #---------------------------------------------------------------------
         # Votes
-        vote_strings = doc.xpath('//*[contains(text(), "vote:")]/text()')
-        self.info('Vote strings: %r' % vote_strings)
-
-        # Sometimes vote strings are contained in weird, separate elements. Probably
-        # hand edited.
-        if not all(re.search('\d', string) for string in vote_strings):
-            # Use the parent's text_content instead.
-            vote_strings = []
-            for el in doc.xpath('//*[contains(text(), "vote:")]/..'):
-                vote_strings.append(el.text_content())
-
         vote_urls = doc.xpath('//*[contains(text(), "vote:")]'
                               '/following-sibling::a/@href')
-        self.info('Vote urls: %r' % vote_urls)
-        assert len(vote_urls) == len(vote_strings)
-        for string, url in zip(vote_strings, vote_urls):
-
-            vote_data = parse_votestring(string)
-            vote = self.scrape_vote(url, **vote_data)
+        for url in vote_urls:
+            vote = self.scrape_vote(url)
             if vote:
                 bill.add_vote(vote)
 
@@ -473,7 +458,7 @@ class DEBillScraper(BillScraper):
 
         self.save_bill(bill)
 
-    def scrape_vote(self, url, date, chamber, passed, motion,
+    def scrape_vote(self, url,
                     re_digit=re.compile(r'\d{1,3}'),
                     re_totals=re.compile(
                         r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
@@ -527,9 +512,37 @@ class DEBillScraper(BillScraper):
         else:
             other_count = abstentions + absent
 
+        font_text = [s.strip() for s in doc.xpath('//font/text()')]
+        date_index = font_text.index('Date:')
+        date_string = font_text[date_index + 2]
+        date = datetime.strptime(date_string, '%m/%d/%Y %H:%M %p')
+        passed = True if font_text[date_index + 4] else False
+        counts = defaultdict(int)
+        for key, string in [
+            ('yes_count', 'Yes:'),
+            ('no_count', 'No:'),
+            ('absent_count', 'Absent:'),
+            ('not_voting', 'Not Voting:')]:
+            try:
+                counts[key] = int(font_text[font_text.index(string) + 2])
+            except ValueError:
+                continue
+        counts['other_count'] = counts['absent_count'] + counts['not_voting']
+
+        chamber_string = doc.xpath('string(//b/u/font/text())').lower()
+        if 'senate' in chamber_string:
+            chamber = 'upper'
+        elif 'house' in chamber_string:
+            chamber = 'lower'
+
+        motion = doc.xpath('string(//td/b/text())')
+        if not motion:
+            motion = doc.xpath('string(//td/b/font/text())')
+
         # Create the vote object.
         vote = Vote(chamber, date, motion, passed,
-                    yes_count, no_count, other_count)
+                    counts['yes_count'], counts['no_count'],
+                    counts['other_count'])
 
         # Add source.
         vote.add_source(url)
