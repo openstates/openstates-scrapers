@@ -535,9 +535,14 @@ class DEBillScraper(BillScraper):
         elif 'house' in chamber_string:
             chamber = 'lower'
 
-        motion = doc.xpath('string(//td/b/text())')
-        if not motion:
-            motion = doc.xpath('string(//td/b/font/text())')
+        for xpath in (
+            'string(//td/b/text())',
+            'string(//td/b/font/text())',
+            'string(//form/b/font/text())'):
+            motion = doc.xpath(xpath)
+            if motion:
+                break
+            # Will fail at validictory level if no motion found.
 
         # Create the vote object.
         vote = Vote(chamber, date, motion, passed,
