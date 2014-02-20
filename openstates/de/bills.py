@@ -468,10 +468,10 @@ class DEBillScraper(BillScraper):
                     re_digit=re.compile(r'\d{1,3}'),
                     re_totals=re.compile(
                         r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
-
         namespaces = {"re": "http://exslt.org/regular-expressions"}
         try:
-            doc = lxml.html.fromstring(self.urlopen(url))
+            html = self.urlopen(url)
+            doc = lxml.html.fromstring(html)
         except scrapelib.HTTPError as e:
             known_fail_links = [
                 "http://legis.delaware.gov/LIS/lis146.nsf/7712cf7cc0e9227a852568470077336f/cdfd8149e79c2bb385257a24006e9f7a?OpenDocument"
@@ -486,6 +486,11 @@ class DEBillScraper(BillScraper):
                     self.warning(msg)
                     return
             raise
+
+        if 'Committee Report' in lxml.html.tostring(doc):
+            # This was a committee vote with weird formatting.
+            self.info('Skipping committee report.')
+            return
 
         xpath = ("//font[re:match(., '^(Yes|No|Not Voting|Absent):', 'i')]"
                  "/ancestor::tr[1]")
