@@ -347,8 +347,14 @@ class DEBillScraper(BillScraper):
 
         #---------------------------------------------------------------------
         # Votes
-        vote_urls = doc.xpath('//*[contains(text(), "vote:")]'
-                              '/following-sibling::a/@href')
+        xpaths = [
+            '//*[contains(text(), "vote:")]/following-sibling::a/@href',
+            '//font[contains(., "vote:")]/a/@href']
+        for xpath in xpaths:
+            vote_urls = doc.xpath(xpath)
+            if vote_urls:
+                break
+
         for url in vote_urls:
             vote = self.scrape_vote(url)
             if vote:
