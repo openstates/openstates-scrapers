@@ -4,10 +4,10 @@ import collections
 from operator import methodcaller
 
 import lxml.html
-
 import scrapelib
-from billy.scrape.committees import CommitteeScraper, Committee
+import requests.exceptions
 
+from billy.scrape.committees import CommitteeScraper, Committee
 from .utils import Urls
 
 
@@ -190,7 +190,7 @@ class CACommitteeScraper(CommitteeScraper):
         # Now actually try to get the names.
         try:
             html = self.urlopen(url)
-        except scrapelib.HTTPError:
+        except (scrapelib.HTTPError, requests.exceptions.ConnectionError):
             self.warning('Bogus committee page link: %r' % url)
             return []
 
