@@ -28,21 +28,17 @@ class NDLegislatorScraper(LegislatorScraper):
         page = self.urlopen(main_url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
-        for district in page.xpath("//h2//a[contains(text(), 'District')]"):
-            dis = district.text.replace("District ", "")
-            for person in district.getparent().getnext().xpath(".//a"):
-                self.scrape_legislator_page(
-                    term,
-                    dis,
-                    person.attrib['href']
-                )
+        for person in page.xpath("//div[contains(@class, 'all-members')]//a"):
+            self.scrape_legislator_page(term, person.attrib['href'])
 
 
-    def scrape_legislator_page(self, term, district, url):
+    def scrape_legislator_page(self, term, url):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         name = page.xpath("//h1[@id='page-title']/text()")[0]
+        district = page.xpath("//a[contains(@href, 'district')]/text()")[0]
+        district = district.replace("District", "").strip()
 
         committees = page.xpath("//a[contains(@href, 'committees')]/text()")
 
