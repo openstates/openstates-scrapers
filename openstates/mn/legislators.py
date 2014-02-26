@@ -1,5 +1,5 @@
-from collections import defaultdict
 import csv
+from collections import defaultdict
 from cStringIO import StringIO
 
 from billy.scrape.legislators import Legislator, LegislatorScraper
@@ -101,13 +101,10 @@ class MNLegislatorScraper(LegislatorScraper):
                              last_name=row['Last Name'],
                              **leg_data[name]
                             )
+            row['rmnum'] = row['Rm. Number']
             leg.add_office('capitol', 'Capitol Office',
-                           address='%s\n%s\n%s, %s %s' % (
-                               row['Address'], row['Address2'],
-                               row['City'], row['State'], row['Zipcode']),
-                          )
-                           #phone='%s-%s' % (row['Area Code'],
-                           #                 row['Office Phone']))
+                           address='{rmnum} {Office Building}\n{Office Address}\n{City}, {State} {Zipcode}'.format(**row),
+                           phone='%s-%s' % (row['Area Code'], row['Office Phone']))
 
 
             leg.add_source(csv_url)
