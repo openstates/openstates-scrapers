@@ -63,10 +63,10 @@ def session_list():
         'https://www.legis.iowa.gov/legislation/findLegislation',
         "//section[@class='grid_6']//li/a/text()"
     )
-    sessions = [
-        re.findall(".*\(", session)[0][:-1].strip()
+    sessions = [x[0] for x in filter(lambda x: x != [], [
+        re.findall("(.*) \(", session)
         for session in sessions
-    ]
+    ])]
     return sessions
 
 def extract_text(doc, data):
