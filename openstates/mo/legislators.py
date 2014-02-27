@@ -76,17 +76,24 @@ class MOLegislatorScraper(LegislatorScraper):
             leg.add_source(url)
             page = lxml.html.fromstring(details_page)
             address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
-            email = page.xpath('/html/body/p/span[2]/a/@href')
+            emails = page.xpath('/html/body/p/span[2]/a/@href')
             # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
             # then there is only a webform. So...no email?
             # TODO a lot of these have fax numbers. Include?
 
-            if 'Contact.aspx' in email:
-                email = None
+            for email in emails:
+                if 'Contact.aspx' in email:
+                    email = None
+                if email:
+                    break
 
             kwargs = {
-                "address": "%s%s" % (address[0],address[1])
+                "address": "%s%s" % (address[0],address[1]),
+                "email": email,
             }
+
+            if email:
+                leg['email'] = email
 
             if phone.strip() != "":
                 kwargs['phone'] = phone
@@ -95,9 +102,6 @@ class MOLegislatorScraper(LegislatorScraper):
                            **kwargs)
 
             leg['photo_url'] = photo_url
-            if email and len(email) > 0 and email[0] != 'mailto:':
-                leg['email'] = email[0].split(':')[1]
-                #print "em = %s" % email
             self.save_legislator(leg)
 
     def scrape_reps(self, chamber, session, term):
