@@ -16,16 +16,22 @@ class UTCommitteeScraper(CommitteeScraper):
         return page
 
 
-    def scrape(self, chamber, term):
+    def scrape(self, term, chambers):
         self.validate_term(term, latest_only=True)
 
-        chamber_abbr = {'upper': 's', 'lower': 'h'}[chamber]
-
-        url = "http://le.utah.gov/asp/interim/standing.asp?house=%s" % chamber_abbr
+        url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2014&List=2#Results"
         page = self.lxmlize(url)
 
         for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
             comm_name = comm_link.text.strip()
+
+            if "House" in comm_name:
+                chamber = "lower"
+            if "Senate" in comm_name:
+                chamber = "upper"
+            else:
+                chamber = "joint"
+
 
             # Drop leading "House" or "Senate" from name
             comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
