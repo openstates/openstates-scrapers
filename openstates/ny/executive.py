@@ -33,8 +33,8 @@ class NYGovernorPressScraper(Scraper):
                 eo_page = re.sub('(\\r*\\n|\W)', ' ', eo_page.xpath('string()').lower())
                 eo_page = re.sub('\s+', ' ', eo_page)
                 date_par = re.search('(?:g i v e n)(.*)(?:by the governor)', eo_page).groups()[0]
-                date_comp = [re.sub('\s+(by.*)*', ' ', s).strip() for s in
-                             re.match('(?:.*this)(.*)(?:day\s*of)(.*)(?:in\s*the\s*year)(.*)', date_par).groups()]
+                date_comp = [s.strip() for s in
+                             re.match('(?:.*this)(.*)(?:day of)(.*)(?:in the year)(.*)', date_par).groups()]
                 eo_date = dt.datetime.strptime(' '.join(
                     (str(Wtn.parse(date_comp[0])), date_comp[1], str(Wtn.parse(date_comp[2])))), '%d %B %Y')
 
@@ -48,4 +48,4 @@ class NYGovernorPressScraper(Scraper):
 
                 yield eo
 
-        # get list of press statements
+        # TODO: get list of press statements
