@@ -3,6 +3,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 from . import ksapi
 import json
 
+LI = 'http://www.kslegislature.org/li'
+
 
 class KSLegislatorScraper(LegislatorScraper):
     jurisdiction = 'ks'
@@ -16,7 +18,6 @@ class KSLegislatorScraper(LegislatorScraper):
             for member in content['house_members']:
                 self.get_member(term, 'lower', member['KPID'])
 
-
     def get_member(self, term, chamber, kpid):
         url = '%smembers/%s' % (ksapi.url, kpid)
         content = json.loads(self.urlopen(url))['content']
@@ -26,15 +27,13 @@ class KSLegislatorScraper(LegislatorScraper):
             party = 'Democratic'
 
         slug = {'2013-2014': 'b2013_14'}[term]
-        leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
-        photo_url = 'http://www.kslegislature.org/li/m/images/pics/%s.jpg' % kpid
-        #photo = legislator_page.xpath('//img[@class="profile-picture"]/@src')[0]
+        leg_url = '%s/%s/members/%s/' % (LI, slug, kpid)
+        photo_url = '%s/m/images/pics/%s.jpg' % (LI, kpid)
 
         legislator = Legislator(term, chamber, str(content['DISTRICT']),
                                 content['FULLNAME'], email=content['EMAIL'],
                                 party=party, url=leg_url, photo_url=photo_url,
-                                occupation=content['OCCUPATION'],
-                               )
+                                occupation=content['OCCUPATION'])
 
         # just do office address for now, can get others from api
         if content['OFFICENUM']:

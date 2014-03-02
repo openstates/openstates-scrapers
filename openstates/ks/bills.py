@@ -9,7 +9,11 @@ import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-from billy.scrape import NoDataForPeriod
+import logging
+_log = logging.getLogger('billy')
+import ksapi
+from billy.scrape import ScrapeError
+LI = 'http://www.kslegislature.org/li'
 
 
 import ksapi
@@ -51,8 +55,9 @@ class KSBillScraper(BillScraper):
                         type=btype, status=bill_data['STATUS'])
             bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
-            if (bill_data['LONGTITLE'] and
-                bill_data['LONGTITLE'] != bill['title']):
+            if (
+                    bill_data['LONGTITLE'] and
+                    bill_data['LONGTITLE'] != bill['title']):
                 bill.add_title(bill_data['LONGTITLE'])
 
             for sponsor in bill_data['SPONSOR_NAMES']:
@@ -66,7 +71,9 @@ class KSBillScraper(BillScraper):
                 actor = ('upper' if event['chamber'] == 'Senate'
                          else 'lower')
 
-                date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
+                date = datetime.datetime.strptime(
+                    event['occurred_datetime'],
+                    "%Y-%m-%dT%H:%M:%S")
                 # append committee names if present
                 if 'committee_names' in event:
                     action = (event['status'] + ' ' +
@@ -93,12 +100,17 @@ class KSBillScraper(BillScraper):
     def scrape_html(self, bill):
         slug = {'2013-2014': 'b2013_14'}[bill['session']]
         # we have to go to the HTML for the versions & votes
-        base_url = 'http://www.kslegislature.org/li/%s/measures/' % slug
+        base_url = '%s/%s/measures/' % (LI, slug)
         if 'resolution' in bill['type']:
-            base_url = 'http://www.kslegislature.org/li/%s/year1/measures/' % slug
+            base_url = '%s/%s/year1/measures/' % (LI, slug)
 
         url = base_url + bill['bill_id'].lower() + '/'
-        doc = lxml.html.fromstring(self.urlopen(url))
+        data = self.urlopen(url)
+        if len(data) < 1:
+            raise Exception("No data from bill id: %s on url %s" % (
+                bill['bill_id'], url))
+
+        doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
 
         bill.add_source(url)
@@ -117,7 +129,7 @@ class KSBillScraper(BillScraper):
                 if sn_url:
                     bill.add_document(title + ' - Supplementary Note', sn_url)
             if len(tds) > 3:
-                fn_url = get_doc_link(tds[3])
+                #UNUSED fn_url = get_doc_link(tds[3])
                 if sn_url:
                     bill.add_document(title + ' - Fiscal Note', sn_url)
 
@@ -165,8 +177,10 @@ class KSBillScraper(BillScraper):
         vote_doc, resp = self.urlretrieve(vote_url)
 
         try:
-            subprocess.check_call('timeout 10 abiword --to=ksvote.txt %s' % vote_doc,
-                                  shell=True, cwd='/tmp/')
+            subprocess.check_call(
+                'timeout 10 abiword --to=ksvote.txt %s' %
+                vote_doc,
+                shell=True, cwd='/tmp/')
         except subprocess.CalledProcessError:
             # timeout failed, some documents hang abiword
             self.error('abiword hung for longer than 10s on conversion')
@@ -181,8 +195,13 @@ class KSBillScraper(BillScraper):
         vote = None
         passed = True
         for line in vote_lines:
-            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
-                                line)
+            totals = re.findall(
+                'Yeas (\d+)[;,] '
+                'Nays (\d+)[;,] '
+                '(?:Present but not voting|Present and Passing):? '
+                '(\d+)[;,] '
+                '(?:Absent or not voting|Absent or Not Voting):? (\d+)',
+                line)
             line = line.strip()
             if totals:
                 totals = totals[0]

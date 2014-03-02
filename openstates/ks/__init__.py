@@ -1,8 +1,5 @@
 import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import KSBillScraper
-from .legislators import KSLegislatorScraper
-from .committees import KSCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -14,17 +11,29 @@ metadata = dict(
     legislature_name='Kansas State Legislature',
     legislature_url='http://www.kslegislature.org/',
     capitol_timezone='America/Chicago',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
+    chambers={
+        'upper': {
+            'name': 'Senate',
+            'title': 'Senator'
+        },
+        'lower': {
+            'name': 'House',
+            'title': 'Representative'
+        },
     },
     terms=[
-        {'name': '2011-2012',
-         'sessions': ['2011-2012'],
-         'start_year': 2011, 'end_year': 2012,},
-        {'name': '2013-2014',
-         'sessions': ['2013-2014'],
-         'start_year': 2013, 'end_year': 2014,},
+        {
+            'name': '2011-2012',
+            'sessions': ['2011-2012'],
+            'start_year': 2011,
+            'end_year': 2012
+        },
+        {
+            'name': '2013-2014',
+            'sessions': ['2013-2014'],
+            'start_year': 2013,
+            'end_year': 2014
+        },
     ],
     session_details={
         '2011-2012': {
@@ -43,10 +52,12 @@ metadata = dict(
     feature_flags=['influenceexplorer'],
 )
 
+
 def session_list():
     from billy.scrape.utils import url_xpath
-    url = url_xpath('http://www.kslegislature.org/li',
-                     '//a[contains(text(), "Senate Bills")]/@href')[0]
+    url = url_xpath(
+        'http://www.kslegislature.org/li',
+        '//a[contains(text(), "Senate Bills")]/@href')[0]
     slug = url.split('/')[2]
     return [slug]
 
