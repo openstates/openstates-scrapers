@@ -400,7 +400,8 @@ class SenateCommittee(object):
         url = self.get_url()
         self.urls.add(detail=url)
         for name, role in SenateMembers(self.urls):
-            self.committee.add_member(name, role)
+            if name.strip():
+                self.committee.add_member(name, role)
 
     def add_sources(self):
         for url in self.urls:
