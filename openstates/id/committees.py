@@ -105,16 +105,20 @@ class IDCommitteeScraper(CommitteeScraper):
             # membership
             for td in row[1:]:
                 if td.text:
-                    leg = td.text
-                    committee.add_member(leg.replace(u'\xa0', ' '))
+                    leg = td.text.replace(u'\xa0', ' ').strip()
+                    if leg:
+                        committee.add_member(leg)
 
                 for elem in td:
                     position, leg = elem.text, elem.tail
                     if position and leg:
-                        committee.add_member(leg.replace(u'\xa0', ' '),
-                                             role=position)
+                        leg = leg.replace(u'\xa0', ' ').strip()
+                        if leg:
+                            committee.add_member(leg, role=position)
                     elif leg:
-                        committee.add_member(leg.replace(u'\xa0', ' '))
+                        leg = leg.replace(u'\xa0', ' ').strip()
+                        if leg:
+                            committee.add_member(leg)
             self.save_committee(committee)
 
     def scrape_joint_committees(self):
