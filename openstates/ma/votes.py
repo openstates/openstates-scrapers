@@ -83,6 +83,7 @@ class MAVoteScraper(VoteScraper):
             vote_file, resp = self.urlretrieve(url)
         except scrapelib.HTTPError:
             # We'll hit a 404 at the end of the votes.
+            self.warning('Stopping; encountered a 404 at %s' % url)
             raise self.EndOfHouseVotes
 
         text = convert_pdf(vote_file, type='text')
