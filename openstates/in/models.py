@@ -74,6 +74,7 @@ class RollCallVote(object):
             'SUSTAINED': True,
             'NOT SECONDED': False,
             'OVERRIDDEN': True,
+            'ADOPTED': True,
         }
         text = self.text.upper()
         for key, value in result_types.items():
