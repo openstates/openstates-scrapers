@@ -160,6 +160,9 @@ class INBillScraper(BillScraper):
             chamber_str = li.xpath('string(strong)').strip()
             action_chamber = dict(H='lower', S='upper')[chamber_str]
             action_date = li.xpath('string(span[@class="document-date"])')
+            # Some resolution actions have no dates.
+            if not action_date.strip():
+                continue
             action_date = datetime.datetime.strptime(action_date.strip(), '%m/%d/%Y')
             action_text = li.xpath('string(span[2])').strip()
             if not action_text.strip():
