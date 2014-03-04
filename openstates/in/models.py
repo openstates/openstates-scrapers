@@ -85,9 +85,9 @@ class RollCallVote(object):
         data = dict(zip(chunks[::2], chunks[1::2]))
         votekeys = dict(YEA='yes', NAY='no')
         for key, data in data.items():
-            for name in PlaintextColumns(data):
-                if name:
-                    yield votekeys.get(key, 'other'), name
+            garbage = re.split(r'(\s{4,}|\n)', data)
+            for name in [name.strip() for name in garbage if name.strip()]:
+                yield votekeys.get(key, 'other'), name
 
     def vote(self):
         '''Return a billy vote.
