@@ -17,7 +17,7 @@ class MABillScraper(BillScraper):
     def __init__(self, *args, **kwargs):
         super(MABillScraper, self).__init__(*args, **kwargs)
         # forcing these values so that 500s come back as skipped bills
-        self.retry_attempts = 0
+        # self.retry_attempts = 0
         self.raise_errors = False
 
     def scrape(self, chamber, session):
