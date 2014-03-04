@@ -26,13 +26,13 @@ PARTY_DETAILS = {
 }
 
 
-# LEGISLATOR_FILTERS = {
-#     "billy.importers.filters.single_space_filter": [
-#         "full_name",
-#         "first_name",
-#         "last_name",
-#         "middle_name",
-#     ],
+LEGISLATOR_FILTERS = {
+    "billy.importers.filters.single_space_filter": [
+        "full_name",
+        "first_name",
+        "last_name",
+        "middle_name",
+    ],
 #     "billy.importers.filters.phone_filter": [
 #         "office_phone",
 #         "phone",
@@ -42,23 +42,23 @@ PARTY_DETAILS = {
 #     "billy.importers.filters.email_filter": [
 #         "offices.email",
 #     ],
-# }
-#
-# BILL_FILTERS = {
-#     "billy.importers.filters.single_space_filter": [
-#         "actions.action",
-#         "title",
-#     ]
-# }
-#
-# EVENT_FILTERS = {
-#     "billy.importers.filters.single_space_filter": [
-#         "description",
-#         "participants.participant",
-#         "related_bills.bill_id",
-#         "related_bills.description",
-#     ]
-# }
+}
+
+BILL_FILTERS = {
+    "billy.importers.filters.single_space_filter": [
+        "actions.action",
+        "title",
+    ]
+}
+
+EVENT_FILTERS = {
+    "billy.importers.filters.single_space_filter": [
+        "description",
+        "participants.participant",
+        "related_bills.bill_id",
+        "related_bills.description",
+    ]
+}
 
 
 BOUNDARY_SERVICE_SETS = 'sldl,sldu'
