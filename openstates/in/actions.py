@@ -48,6 +48,7 @@ _categorizer_rules = (
 
     # Passage/failure.
     Rule(r'passed', 'bill:passed'),
+    Rule(r'reading:\s+adopted', 'bill:passed'),
     Rule(r'Third reading: passed', 'bill:passed'),
 
     # Weird.
