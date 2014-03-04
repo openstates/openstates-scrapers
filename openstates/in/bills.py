@@ -58,13 +58,28 @@ class INBillScraper(BillScraper):
 
     def scrape(self, term, chambers):
         self.requests_per_minute = 30
+        seen_bill_ids = set()
+
+        # Get resolutions.
+        url = 'http://iga.in.gov/legislative/2014/resolutions'
+        self.logger.info('GET ' + url)
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+        for a in doc.xpath('//strong/ancestor::a'):
+            bill_id = a.text_content().strip()
+            bill_chamber = ('upper' if bill_id[0] in 'SJ' else 'lower')
+            bill_url = a.attrib['href']
+            bill_title = a.xpath('string(./following-sibling::em)').strip()
+            bill = self.scrape_bill(
+                bill_chamber, term, bill_id, bill_url, bill_title)
+
         url = 'http://iga.in.gov/legislative/%s/bills/' % term
         self.logger.info('GET ' + url)
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        seen_bill_ids = set()
 
         # First scrape subjects and any bills found on those pages.
         for subject_url, subject in self.generate_subjects():
