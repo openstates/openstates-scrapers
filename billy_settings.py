@@ -33,15 +33,15 @@ LEGISLATOR_FILTERS = {
         "last_name",
         "middle_name",
     ],
-#     "billy.importers.filters.phone_filter": [
-#         "office_phone",
-#         "phone",
-#         "offices.phone",
-#         "offices.fax",
-#     ],
-#     "billy.importers.filters.email_filter": [
-#         "offices.email",
-#     ],
+    "billy.importers.filters.phone_filter": [
+        "office_phone",
+        "phone",
+        "offices.phone",
+        "offices.fax",
+    ],
+    "billy.importers.filters.email_filter": [
+        "offices.email",
+    ],
 }
 
 BILL_FILTERS = {
