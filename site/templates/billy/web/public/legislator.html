@@ -137,7 +137,7 @@
                         </li>
                         {% endif %}
                         {% endfor %}
-                        {% if legislator.email not in legislator.office_emails %}
+                        {% if legislator.email and legislator.email not in legislator.office_emails %}
                         <li class="clear">
                             <span class="email smTitle">{% trans "Email" %}: </span>
                             <a href="mailto:{{legislator.email}}">{{legislator.email}}</a>
