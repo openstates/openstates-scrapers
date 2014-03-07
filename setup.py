@@ -11,5 +11,4 @@ setup(name='openstates',
       url="http://openstates.org",
       description='Open States',
       long_description=long_description,
-      platforms=['any'],
-)
+      platforms=['any'])

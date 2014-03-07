@@ -7,8 +7,12 @@ comment = re.compile(r'^#')
 variable = re.compile(r'\$([a-z_]+)\$')
 
 voted = re.compile(r'.*\$vote_tally\$.*')
-passed = re.compile(r'.*(?!not )(passed|adopted).*\$vote_tally\$.*', re.IGNORECASE)
-failed = re.compile(r'.*(failed|not adopted|not passed).*\$vote_tally\$.*', re.IGNORECASE)
+
+RE_PASSED = r'.*(?!not )(passed|adopted).*\$vote_tally\$.*'
+passed = re.compile(RE_PASSED, re.IGNORECASE)
+
+RE_FAILED = r'.*(failed|not adopted|not passed).*\$vote_tally\$.*'
+failed = re.compile(RE_FAILED, re.IGNORECASE)
 
 voted_codes = []
 passed_codes = []

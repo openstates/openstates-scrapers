@@ -1,12 +1,11 @@
-import re
-import os
-import datetime
+#import re
+#import os
+#import datetime
 import json
 import scrapelib
-
 from billy.scrape.committees import Committee, CommitteeScraper
-
 import ksapi
+
 
 class KSCommitteeScraper(CommitteeScraper):
     jurisdiction = 'ks'
@@ -48,9 +47,13 @@ class KSCommitteeScraper(CommitteeScraper):
                 for chair in details['CHAIR']:
                     committee.add_member(chair['FULLNAME'], 'chairman')
                 for vicechair in details['VICECHAIR']:
-                    committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
+                    committee.add_member(
+                        vicechair['FULLNAME'],
+                        'vice-chairman')
                 for rankedmember in details['RMMEM']:
-                    committee.add_member(rankedmember['FULLNAME'], 'ranking member')
+                    committee.add_member(
+                        rankedmember['FULLNAME'],
+                        'ranking member')
                 for member in details['MEMBERS']:
                     committee.add_member(member['FULLNAME'])
 
