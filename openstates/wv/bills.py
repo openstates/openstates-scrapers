@@ -112,7 +112,7 @@ class WVBillScraper(BillScraper):
         #bill['summary'] = values['SUMMARY:']
 
         # Add primary sponsor.
-        primary = strip_sponsors('', values['LEAD SPONSOR:'])
+        primary = strip_sponsors('', values.get('LEAD SPONSOR:', ''))
         if primary:
             bill.add_sponsor('primary', primary)
 
