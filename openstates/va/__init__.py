@@ -56,7 +56,8 @@ metadata = {
                  'display_name': '2014 Regular Session',
                  '_scraped_name': '2014 Session',
                 },
-        '2014specialI': {'start_date': datetime.date(2014, 1, 9), 'site_id': '141',
+        '2014specialI': {
+                 'site_id': '141',
                  'display_name': '2014, 1st Special Session',
                  '_scraped_name': '2014 Special Session I',
                 },
