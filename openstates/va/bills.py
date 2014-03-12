@@ -6,6 +6,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import lxml.html
 
+
 BASE_URL = 'http://lis.virginia.gov'
 
 class VABillScraper(BillScraper):
