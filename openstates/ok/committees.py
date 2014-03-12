@@ -71,7 +71,14 @@ class OKCommitteeScraper(CommitteeScraper):
             comm.add_member(member, role.lower())
 
         if not comm['members']:
-            raise Exception('no members for %s', comm['name'])
+            if comm['subcommittee'] == 'test':
+                # Whoopsie, prod data.
+                return
+
+            raise Exception('no members for %s (%s)' % (
+                comm['committee'], comm['subcommittee'])
+            )
+
         self.save_committee(comm)
 
     def scrape_upper(self):
