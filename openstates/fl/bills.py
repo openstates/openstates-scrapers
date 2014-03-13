@@ -37,9 +37,10 @@ class FLBillScraper(BillScraper):
                                  sponsor, url)
 
             try:
-                next_link = page.xpath("//a[. = 'Next']")[0]
+                next_link = page.xpath("//a[contains(., 'Next')]")[0]
                 url = next_link.attrib['href']
             except (KeyError, IndexError):
+                self.logger.info('Hit last page of search results.')
                 break
 
     def accept_response(self, response):
