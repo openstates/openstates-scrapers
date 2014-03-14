@@ -264,6 +264,8 @@ class FLBillScraper(BillScraper):
 
                 if match:
                     name = match.group(2)
+                    if '=' in name:
+                        continue
                     if match.group(1) == 'Y':
                         vote.yes(name)
                     elif match.group(1) == 'N':
