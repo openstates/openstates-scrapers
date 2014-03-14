@@ -34,7 +34,7 @@ class LAEventScraper(EventScraper):
         self.scrape_committee_schedule(session, chamber)
 
     def scrape_committee_schedule(self, session, chamber):
-        url = "http://www.legis.state.la.us/billdata/bycmte.asp"
+        url = "http://www.legis.la.gov/legis/ByCmte.aspx"
 
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
@@ -71,9 +71,9 @@ class LAEventScraper(EventScraper):
                 continue  # Sometimes we have a dead link. This is only on
                 # dead entries.
 
-            committee = link.xpath("string(../../../td[1])").strip()
+            committee = link.xpath("string(../../td[1])").strip()
 
-            when_and_where = link.xpath("string(../../../td[2])").strip()
+            when_and_where = link.xpath("string(../../td[2])").strip()
 
             location = when_and_where.split(',')[-1]
 

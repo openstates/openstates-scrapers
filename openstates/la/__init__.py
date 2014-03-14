@@ -3,7 +3,7 @@ from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import LABillScraper
 from .legislators import LALegislatorScraper
 from .committees import LACommitteeScraper
-# from .events import LAEventScraper
+from .events import LAEventScraper
 
 metadata = {
     "capitol_timezone": 'America/Chicago',
@@ -80,7 +80,7 @@ metadata = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
-    'feature_flags': ['subjects', 'influenceexplorer'],
+    'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
         '2014 Regular Legislative Session',  # In as 2014 Regular Session
         '2013 Regular Legislative Session',  # Samesies.
