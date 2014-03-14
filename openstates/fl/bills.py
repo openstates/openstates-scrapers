@@ -196,12 +196,18 @@ class FLBillScraper(BillScraper):
         for vote_table in vote_tables:
             for tr in vote_table.xpath("tbody/tr"):
                 vote_date = tr.xpath("string(td[3])").strip()
+                if vote_date.isalpha():
+                    vote_date = tr.xpath("string(td[2])").strip()
                 version = tr.xpath("string(td[1])").strip().split()
                 version_chamber = version[0]
 
                 vote_chamber = chamber
-                vote_date = datetime.datetime.strptime(
-                    vote_date, "%m/%d/%Y %H:%M %p").date()
+                try:
+                    vote_date = datetime.datetime.strptime(
+                        vote_date, "%m/%d/%Y %H:%M %p").date()
+                except ValueError:
+                    msg = 'Got bogus vote date: %r'
+                    self.logger.warning(msg % vote_date)
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                 self.scrape_vote(bill, vote_chamber, vote_date,
