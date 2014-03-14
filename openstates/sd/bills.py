@@ -144,6 +144,9 @@ class SDBillScraper(BillScraper):
 
         header = page.xpath("string(//h4[contains(@id, 'hdVote')])")
 
+        if 'No Bill Action' in header:
+            self.warning("bad vote header -- skipping")
+            return
         location = header.split(', ')[1]
 
         if location.startswith('House'):
