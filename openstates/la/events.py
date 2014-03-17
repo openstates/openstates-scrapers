@@ -61,6 +61,12 @@ class LAEventScraper(EventScraper):
         time ,= page.xpath("//span[@id='lTime']/text()")
         location ,= page.xpath("//span[@id='lLocation']/text()")
 
+        if time == "UPON ADJOURNMENT":
+            return
+
+        if "A.M." in time:
+            time = time.replace("A.M.", "AM")
+
         try:
             when = datetime.datetime.strptime("%s %s" % (
                 date, time
