@@ -40,7 +40,7 @@ class LAEventScraper(EventScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'agenda.asp')]"):
+        for link in page.xpath("//a[contains(@href, 'Agenda.aspx')]"):
             self.scrape_meeting(session, chamber, link.attrib['href'])
 
     def scrape_bills(self, line):
@@ -56,6 +56,67 @@ class LAEventScraper(EventScraper):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+        title ,= page.xpath("//a[@id='linkTitle']//text()")
+        date ,= page.xpath("//span[@id='lDate']/text()")
+        time ,= page.xpath("//span[@id='lTime']/text()")
+        location ,= page.xpath("//span[@id='lLocation']/text()")
+
+        try:
+            when = datetime.datetime.strptime("%s %s" % (
+                date, time
+            ), "%B %d, %Y %I:%M %p")
+        except ValueError:
+            when = datetime.datetime.strptime("%s %s" % (
+                date, time
+            ), "%B %d, %Y %I:%M")
+
+        description = "Meeting on %s of the %s" % (date, title)
+        chambers = {"house": "lower",
+                    "senate": "upper",
+                    "joint": "joint",}
+
+        for chamber_, normalized in chambers.items():
+            if chamber_ in title.lower():
+                chamber = normalized
+                break
+        else:
+            return
+
+        event = Event(
+            session,
+            when,
+            'committee:meeting',
+            description,
+            location=location
+        )
+        event.add_source(url)
+
+        event.add_participant('host', title, 'committee',
+                              chamber=chamber)
+
+        trs = iter(page.xpath("//tr[@valign='top']"))
+        next(trs)
+
+        for tr in trs:
+            try:
+                _, _, bill, whom, descr = tr.xpath("./td")
+            except ValueError:
+                continue
+
+            bill_title = bill.text_content()
+
+            if "S" in bill_title:
+                bill_chamber = "upper"
+            elif "H" in bill_title:
+                bill_chamber = "lower"
+            else:
+                continue
+
+            event.add_related_bill(bill_id=bill_title,
+                                   description=descr.text_content(),
+                                   chamber=bill_chamber,
+                                   type='consideration')
+            self.save_event(event)
 
     def scrape_house_weekly_schedule(self, session):
         url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
