@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include
 from django.conf import settings
 from django.views.generic.base import RedirectView
+from django.views.generic import TemplateView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -8,24 +9,15 @@ admin.autodiscover()
 urlpatterns = patterns('',
 
     # flat pages
-    (r'^about/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/about.html'}),
-    (r'^methodology/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/methodology.html'}),
-    (r'^contributing/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/contributing.html'}),
-    (r'^thanks/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/thanks.html'}),
-    (r'^contact/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/contact.html'}),
-    (r'^categorization/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/categorization.html'}),
-    (r'^csv_downloads/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/csv_downloads.html'}),
-    (r'^reportcard/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/reportcard.html'}),
-    (r'^map_svg/$', 'django.views.generic.simple.direct_to_template',
-     {'template':'flat/openstatesmap.svg'}),
+    (r'^about/$', TemplateView.as_view(template_name='flat/about.html')),
+    (r'^methodology/$', TemplateView.as_view(template_name='flat/methodology.html')),
+    (r'^contributing/$', TemplateView.as_view(template_name='flat/contributing.html')),
+    (r'^thanks/$', TemplateView.as_view(template_name='flat/thanks.html')),
+    (r'^contact/$', TemplateView.as_view(template_name='flat/contact.html')),
+    (r'^categorization/$', TemplateView.as_view(template_name='flat/categorization.html')),
+    (r'^csv_downloads/$', TemplateView.as_view(template_name='flat/csv_downloads.html')),
+    (r'^reportcard/$', TemplateView.as_view(template_name='flat/reportcard.html')),
+    (r'^map_svg/$', TemplateView.as_view(template_name='flat/openstatesmap.svg')),
 
     # api docs
     (r'^api/$', RedirectView.as_view(url='http://sunlightlabs.github.io/openstates-api/')),
