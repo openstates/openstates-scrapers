@@ -151,7 +151,6 @@ class MEBillScraper(BillScraper):
         tr_text = [tr.text_content() for tr in tr_text]
         rgx = '(Speaker|President|Senator|Representative) ([A-Z ]+)'
         for text in tr_text:
-            text = str(text)
 
             if 'the Majority' in text:
                 # At least one bill was sponsored by 'the Majority'.
