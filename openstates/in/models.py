@@ -98,8 +98,8 @@ class RollCallVote(object):
         motion = self.motion()
         passed = self.passed()
         counts = self.get_counts()
-        yes_count = int(counts.get('Yeas', 0))
-        no_count = int(counts.get('Nays', 0))
+        yes_count = sum(int(counts.get(key, 0)) for key in ('Yea', 'Yeas'))
+        no_count = sum(int(counts.get(key, 0)) for key in ('Nay', 'Nays'))
         vote = Vote(self.chamber, date, motion,
                     passed, yes_count, no_count,
                     sum(map(int, counts.values())) - (yes_count + no_count),
