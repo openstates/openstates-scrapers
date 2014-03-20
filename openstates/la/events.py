@@ -1,4 +1,5 @@
 import re
+import pytz
 import datetime
 
 from billy.scrape import NoDataForPeriod
@@ -26,6 +27,7 @@ def parse_datetime(s, year):
 
 class LAEventScraper(EventScraper):
     jurisdiction = 'la'
+    _tz = pytz.timezone('America/Chicago')
 
     def scrape(self, chamber, session):
         if chamber == 'lower':
@@ -75,6 +77,8 @@ class LAEventScraper(EventScraper):
             when = datetime.datetime.strptime("%s %s" % (
                 date, time
             ), "%B %d, %Y %I:%M")
+
+        when = self._tz.localize(when)
 
         description = "Meeting on %s of the %s" % (date, title)
         chambers = {"house": "lower",
