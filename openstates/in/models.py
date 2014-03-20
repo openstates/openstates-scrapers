@@ -80,6 +80,7 @@ class RollCallVote(object):
         for key, value in result_types.items():
             if key in text:
                 return value
+        raise Exception("Couldn't determine vote passage status.")
 
     def vote_values(self):
         chunks = re.split(r'(YEA|NAY|EXCUSED|NOT VOTING)\s+\d+', self.text)[1:]
