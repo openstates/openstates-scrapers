@@ -60,11 +60,14 @@ class FLBillScraper(BillScraper):
                 bill_check and
                 text_check)
         if not valid:
-            raise ValueError('Response was invalid. Timsucks.')
+            raise TimSucksError('Response was invalid. Timsucks.')
         return valid
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
-        html = self.urlopen(url)
+        try:
+            html = self.urlopen(url)
+        except TimSucksError:
+            return
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
@@ -283,3 +286,8 @@ class FLBillScraper(BillScraper):
             vote['motion'] = '[No motion given.]'
 
         bill.add_vote(vote)
+
+
+class TimSucksError(Exception):
+    '''Raise if response is invalid.
+    '''
