@@ -57,7 +57,8 @@ class INBillScraper(BillScraper):
     SCRAPE_SUBJECTS = True
 
     def scrape(self, term, chambers):
-        self.requests_per_minute = 30
+        if 0 < self._requests_per_minute:
+            self.requests_per_minute = 30
         seen_bill_ids = set()
 
         # Get resolutions.
