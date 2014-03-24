@@ -208,7 +208,8 @@ class MNBillScraper(BillScraper):
                                                v.get('href'))
                 if 'pdf' not in version_url:
                     bill.add_version(v.text.strip(), version_url,
-                                     mimetype='text/html')
+                                     mimetype='text/html',
+                                     on_duplicate='use_new')
 
         self.save_bill(bill)
 
