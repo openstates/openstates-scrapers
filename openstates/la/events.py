@@ -79,7 +79,7 @@ class LAEventScraper(EventScraper):
                 date, time
             ), "%B %d, %Y %I:%M")
 
-        when = self._tz.localize(when)
+        # when = self._tz.localize(when)
 
         description = "Meeting on %s of the %s" % (date, title)
         chambers = {"house": "lower",
@@ -162,7 +162,7 @@ class LAEventScraper(EventScraper):
 
             year = datetime.datetime.now().year
             when = parse_datetime(when_and_where, year)  # We can only scrape
-            when = self._tz.localize(when)
+            # when = self._tz.localize(when)
 
             bills = self.scrape_bills(when_and_where)
 
