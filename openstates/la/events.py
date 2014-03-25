@@ -15,9 +15,10 @@ def parse_datetime(s, year):
     if match:
         dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
 
-    match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
-    if match:
-        dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
+    # Commented out; unlikely this is correct anymore.
+    #match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
+    #if match:
+    #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
 
     if dt:
         return dt.replace(year=int(year))
@@ -146,10 +147,16 @@ class LAEventScraper(EventScraper):
 
             when_and_where = link.xpath("string(../../td[2])").strip()
 
-            location = when_and_where.split(',')[-1]
-
             if when_and_where.strip() == "":
                 continue
+
+            info = re.match(
+                r"(?P<when>.*) (?P<where>H|C.*-.*?)",
+                when_and_where
+            ).groupdict()
+
+            when_and_where = info['when']
+            location = info['where']
 
             year = datetime.datetime.now().year
             when = parse_datetime(when_and_where, year)  # We can only scrape
