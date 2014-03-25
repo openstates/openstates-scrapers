@@ -146,6 +146,8 @@ class LAEventScraper(EventScraper):
             committee = link.xpath("string(../../td[1])").strip()
 
             when_and_where = link.xpath("string(../../td[2])").strip()
+            if "@" in when_and_where:
+                continue  # Contains no time data.
 
             if when_and_where.strip() == "":
                 continue
