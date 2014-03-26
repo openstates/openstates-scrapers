@@ -181,7 +181,7 @@ class NMBillScraper(BillScraper):
                                                       "LegNo", "SessionYear"]})
 
             bill.add_source(
-                'http://www.nmlegis.gov/lcs/_session.aspx?Chamber='
+                'http://www.nmlegis.gov/lcs/legislation.aspx?Chamber='
                 "{Chamber}&LegType={LegType}&LegNo={LegNo}"
                 "&year={SessionYear}".format(**data))
 
@@ -325,7 +325,7 @@ class NMBillScraper(BillScraper):
             '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7712': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
             '7798': ('Succeeding entries', 'other'),
-            '7804': ('Partial Veto', 'governor:vetoed:line-item'),
+            '7804': ('Signed', 'governor:signed'),
             '7805': ('Signed', 'governor:signed'),
             '7806': ('Vetoed', 'governor:vetoed'),
             '7807': ('Pocket Veto', 'governor:vetoed'),
