@@ -147,7 +147,6 @@ class LAEventScraper(EventScraper):
 
             when_and_where = link.xpath("string(../../td[2])").strip()
             when_and_where = re.sub("\s+", " ", when_and_where).strip()
-            print when_and_where
             if "@" in when_and_where:
                 continue  # Contains no time data.
 

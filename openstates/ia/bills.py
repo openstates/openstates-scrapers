@@ -193,6 +193,8 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
                 atype = 'committee:referred'
             elif action.startswith('Sent to Governor'):
                 atype = 'governor:received'
+            elif action.startswith('Reported Signed by Governor'):
+                atype = 'governor:signed'
             elif action.startswith('Signed by Governor'):
                 atype = 'governor:signed'
             elif action.startswith('Vetoed by Governor'):
