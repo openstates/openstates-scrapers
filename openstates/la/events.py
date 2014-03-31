@@ -67,8 +67,14 @@ class LAEventScraper(EventScraper):
         if "UPON ADJOURNMENT" in time or "UPON  ADJOURNMENT" in time:
             return
 
-        if "A.M." in time:
-            time = time.replace("A.M.", "AM")
+        substs = {
+            "AM": ["A.M.", "a.m."],
+            "PM": ["P.M.", "p.m."],
+        }
+
+        for key, values in substs.items():
+            for value in values:
+                time = time.replace(value, key)
 
         try:
             when = datetime.datetime.strptime("%s %s" % (
