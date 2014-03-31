@@ -181,7 +181,7 @@ class NHBillScraper(BillScraper):
             nays = int(line[6])
             present = int(line[7])
             absent = int(line[8])
-            motion = line[11].strip()
+            motion = line[11].strip() or '[not available]'
 
             if session_yr == session and bill_id in self.bills_by_id:
                 actor = 'lower' if body == 'H' else 'upper'
