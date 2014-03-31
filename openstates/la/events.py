@@ -15,9 +15,10 @@ def parse_datetime(s, year):
     if match:
         dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
 
-    match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
-    if match:
-        dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
+    # Commented out; unlikely this is correct anymore.
+    #match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
+    #if match:
+    #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
 
     if dt:
         return dt.replace(year=int(year))
@@ -63,11 +64,17 @@ class LAEventScraper(EventScraper):
         time ,= page.xpath("//span[@id='lTime']/text()")
         location ,= page.xpath("//span[@id='lLocation']/text()")
 
-        if "UPON ADJOURNMENT" in time:
+        if "UPON ADJOURNMENT" in time or "UPON  ADJOURNMENT" in time:
             return
 
-        if "A.M." in time:
-            time = time.replace("A.M.", "AM")
+        substs = {
+            "AM": ["A.M.", "a.m."],
+            "PM": ["P.M.", "p.m."],
+        }
+
+        for key, values in substs.items():
+            for value in values:
+                time = time.replace(value, key)
 
         try:
             when = datetime.datetime.strptime("%s %s" % (
@@ -78,7 +85,7 @@ class LAEventScraper(EventScraper):
                 date, time
             ), "%B %d, %Y %I:%M")
 
-        when = self._tz.localize(when)
+        # when = self._tz.localize(when)
 
         description = "Meeting on %s of the %s" % (date, title)
         chambers = {"house": "lower",
@@ -145,15 +152,24 @@ class LAEventScraper(EventScraper):
             committee = link.xpath("string(../../td[1])").strip()
 
             when_and_where = link.xpath("string(../../td[2])").strip()
-
-            location = when_and_where.split(',')[-1]
+            when_and_where = re.sub("\s+", " ", when_and_where).strip()
+            if "@" in when_and_where:
+                continue  # Contains no time data.
 
             if when_and_where.strip() == "":
                 continue
 
+            info = re.match(
+                r"(?P<when>.*) (?P<where>H|C.*-.*?)",
+                when_and_where
+            ).groupdict()
+
+            when_and_where = info['when']
+            location = info['where']
+
             year = datetime.datetime.now().year
             when = parse_datetime(when_and_where, year)  # We can only scrape
-            # current year's events in LA.
+            # when = self._tz.localize(when)
 
             bills = self.scrape_bills(when_and_where)
 

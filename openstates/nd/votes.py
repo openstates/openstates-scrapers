@@ -1,3 +1,4 @@
+import requests.exceptions
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 import datetime
@@ -39,7 +40,12 @@ class NDVoteScraper(VoteScraper):
             cur_motion = ""
 
             pdf_url = pdf.attrib['href']
-            (path, response) = self.urlretrieve(pdf_url)
+
+            try:
+                (path, response) = self.urlretrieve(pdf_url)
+            except requests.exceptions.ConnectionError:
+                continue
+
             data = convert_pdf(path, type='text')
             os.unlink(path)
             lines = data.splitlines()

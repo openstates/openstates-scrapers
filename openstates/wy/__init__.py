@@ -39,7 +39,13 @@ metadata = dict(
                 },
     },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions=['2010 Budget Session', '2009 General Session',
+
+    # The reason the Budget sessions are in ignore is because the budget
+    # session is just for the budget bill, which is HB 1
+    # (http://openstates.org/wy/bills/2014/HB1/)
+    # So - we avoid the new session, because we'd dupe all bills.
+    _ignored_scraped_sessions=['2014 Budget Session',
+                               '2010 Budget Session', '2009 General Session',
                                '2008 Budget Session', '2007 General Session',
                                '2006 Budget Session', '2005 General Session',
                                '2004 Budget Session', '2003 General Session',

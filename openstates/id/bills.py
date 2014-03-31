@@ -53,6 +53,9 @@ _ACTIONS = (
      (r'rpt out - rec d/p', "committee:passed:favorable"),
      (r'^rpt out', 'committee:passed'),
 
+
+    (r'^Reported Signed by Governor', "governor:signed"),
+
      # I dont recall seeing a 2nd rdg by itself
      (r'^1st rdg - to 2nd rdg', "bill:reading:2"),
      # second to third will count as a third read if there is no

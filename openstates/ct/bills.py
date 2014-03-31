@@ -26,7 +26,7 @@ class CTBillScraper(BillScraper):
         self._subjects = defaultdict(list)
 
         self.scrape_committee_names()
-        self.scrape_subjects(session)
+        self.scrape_subjects()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
         self.scrape_bill_info(session, chambers)
@@ -181,21 +181,6 @@ class CTBillScraper(BillScraper):
         bill.add_vote(vote)
 
 
-    def scrape_subjects(self, session):
-        for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-            url = ('http://www.cga.ct.gov/asp/cgasubjectsearch/'
-                   'default.asp?which_year1=%s&LeadingChar=%s' % (session,
-                                                                  letter))
-            html = self.urlopen(url)
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-
-            for subj in doc.xpath('//a[contains(@href, "subbills")]'):
-                subj_html = self.urlopen(subj.get('href'))
-                for bill_id in doc.xpath('//a[contains(@href, "CGABillStatus")]/text()'):
-                    self._subjects[bill_id].append(subj.text)
-
-
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
         page = self.urlopen(history_url)
@@ -287,6 +272,14 @@ class CTBillScraper(BillScraper):
 
             url = versions_url + f.filename
             bill.add_version(match.group(2), url, mimetype='text/html')
+
+    def scrape_subjects(self):
+        info_url = "ftp://ftp.cga.ct.gov/pub/data/subject.csv"
+        data = self.urlopen(info_url)
+        page = open_csv(data)
+
+        for row in page:
+            self._subjects[row['bill_num']].append(row['subj_desc'])
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
