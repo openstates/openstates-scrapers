@@ -1,6 +1,7 @@
 import re
 import requests
 import datetime as dt
+import scrapelib
 
 from billy.scrape.events import EventScraper, Event
 
@@ -105,4 +106,7 @@ class UTEventScraper(EventScraper):
         page = lxml.etree.fromstring(page)
 
         for p in page.xpath("//link"):
-            self.scrape_page(p.text, session, chamber)
+            try:
+                self.scrape_page(p.text, session, chamber)
+            except scrapelib.HTTPError:
+                continue
