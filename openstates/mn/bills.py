@@ -16,6 +16,7 @@ VERSION_URL_BASE = "https://www.revisor.mn.gov/bills/"
 class MNBillScraper(BillScraper):
     jurisdiction = 'mn'
 
+    # Regular expressions to match category of actions
     _categorizers = (
         ('Introduced', 'bill:introduced'),
         ('Introduction and first reading, referred to',
@@ -39,6 +40,7 @@ class MNBillScraper(BillScraper):
         (" re-referred ", 'committee:referred'),
         ("Received from", "bill:introduced"),
     )
+
 
     def get_bill_topics(self, chamber, session):
         """
@@ -64,7 +66,7 @@ class MNBillScraper(BillScraper):
             opt_html = self.urlopen(opt_url)
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
-                bill = re.sub(r'(\w+?)0*(\d+)', r'\1\2', bill)
+                bill = self.make_bill_id(bill)
                 self._subject_mapping[bill].append(subject)
 
     def extract_bill_actions(self, doc, current_chamber):
@@ -179,14 +181,20 @@ class MNBillScraper(BillScraper):
         bill_type = {'F': 'bill', 'R':'resolution',
                      'C': 'concurrent resolution'}[bill_id[1]]
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
-        bill['subjects'] = self._subject_mapping[bill_id]
+
+        # Add source
         bill.add_source(bill_detail_url)
 
-        # Get companion bill.  Add space for consistent bill identifiers
+        # Add subjects.  Currently we are not mapping to Open States
+        # standardized subjects, so use 'scraped_subjects'
+        bill['scraped_subjects'] = self._subject_mapping[bill_id]
+
+        # Get companion bill.
         companion = doc.xpath('//table[@class="status_info"]//tr[1]/td[2]/a[starts-with(@href, "?")]/text()')
-        companion = companion[0].replace('HF', 'HF ').replace('SF', 'SF ') if len(companion) > 0 else None
-        companion_chamber = 'lower' if 'HF' in companion else 'upper'
-        bill.add_companion(companion, chamber=companion_chamber)
+        companion = self.make_bill_id(companion[0]) if len(companion) > 0 else None
+        companion_chamber = self.chamber_from_bill(companion)
+        if companion is not None:
+          bill.add_companion(companion, chamber=companion_chamber)
 
         # grab sponsors
         sponsors = doc.xpath('//h2[text()="Authors"]/following-sibling::ul[1]/li/a/text()')
@@ -290,3 +298,25 @@ class MNBillScraper(BillScraper):
 
             self.get_bill_info(search_chamber, session, bill_details_url,
                                bill_version_url)
+
+    def make_bill_id(self, bill):
+        """
+        Given a string, ensure that it is in a consistent format.  Bills
+        can be written as HF 123, HF123, or HF0123.
+
+        Historically, HF 123 has been used for top level bill id.
+        (HF0123 is a better id and should be considered in the future)
+        """
+        if bill is None:
+            return bill
+
+        return re.sub(r'(\w+?)0*(\d+)', r'\1 \2', bill)
+
+    def chamber_from_bill(self, bill):
+        """
+        Given a bill id, determine chamber.
+        """
+        if bill is None:
+            return bill
+
+        return 'lower' if bill.lower().startswith('hf') else 'upper'
