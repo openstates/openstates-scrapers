@@ -169,9 +169,11 @@ class MNBillScraper(BillScraper):
             chamber = 'upper'
             other_chamber = 'lower'
 
+        # Get html and parse
         bill_html = self.urlopen(bill_detail_url)
         doc = lxml.html.fromstring(bill_html)
 
+        # Get the basic parts of the bill
         bill_id = doc.xpath('//h1/text()')[0]
         bill_title = doc.xpath('//h2/following-sibling::p/text()')[0].strip()
         bill_type = {'F': 'bill', 'R':'resolution',
@@ -179,6 +181,12 @@ class MNBillScraper(BillScraper):
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
         bill['subjects'] = self._subject_mapping[bill_id]
         bill.add_source(bill_detail_url)
+
+        # Get companion bill.  Add space for consistent bill identifiers
+        companion = doc.xpath('//table[@class="status_info"]//tr[1]/td[2]/a[starts-with(@href, "?")]/text()')
+        companion = companion[0].replace('HF', 'HF ').replace('SF', 'SF ') if len(companion) > 0 else None
+        companion_chamber = 'lower' if 'HF' in companion else 'upper'
+        bill.add_companion(companion, chamber=companion_chamber)
 
         # grab sponsors
         sponsors = doc.xpath('//h2[text()="Authors"]/following-sibling::ul[1]/li/a/text()')
