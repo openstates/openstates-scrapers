@@ -20,6 +20,7 @@ class MNBillScraper(BillScraper):
         ('Introduced', 'bill:introduced'),
         ('Introduction and first reading, referred to',
          ['bill:introduced', 'committee:referred']),
+        ('Committee report, to pass as amended and re-refer to', ['committee:referred']),
         ('Introduction and first reading', 'bill:introduced'),
         ('Referred (by Chair )?to', 'committee:referred'),
         ('Second reading', 'bill:reading:2'),
@@ -40,6 +41,9 @@ class MNBillScraper(BillScraper):
     )
 
     def get_bill_topics(self, chamber, session):
+        """
+        Uses the leg search to map topics to bills.
+        """
         search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
         search_session = self.metadata['session_details'][session]['site_id']
         self._subject_mapping = defaultdict(list)
@@ -48,8 +52,10 @@ class MNBillScraper(BillScraper):
             BILL_DETAIL_URL_BASE, search_chamber, search_session)
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
-        # skip first one ('--- All ---')
-        for option in doc.xpath('//select[@name="topic[]"]/option')[1:]:
+
+        # Previously, we had to skip first one ('--- All ---'), but this is no
+        # longer the case.
+        for option in doc.xpath('//select[@name="topic[]"]/option')[0:]:
             # Subjects look like "Name of Subject (##)" -- split off the #
             subject = option.text.rsplit(' (')[0]
             value = option.get('value')
@@ -62,7 +68,8 @@ class MNBillScraper(BillScraper):
                 self._subject_mapping[bill].append(subject)
 
     def extract_bill_actions(self, doc, current_chamber):
-        """Extract the actions taken on a bill.
+        """
+        Extract the actions taken on a bill.
         A bill can have actions taken from either chamber.  The current
         chamber's actions will be the first table of actions. The other
         chamber's actions will be in the second table.
@@ -80,12 +87,17 @@ class MNBillScraper(BillScraper):
             for row in cur_table.xpath('.//tr'):
                 bill_action = dict()
 
-                # split up columns
+                # Split up columns
                 date_col, the_rest = row.xpath('td')
 
+                # The second column can hold a link to full text
+                # and pages (what should be in another column),
+                # but also links to committee elements or other spanned
+                # content.
                 action_date = date_col.text_content().strip()
                 action_text = the_rest.text.strip()
-                extra = ''.join(the_rest.xpath('span[not(@style)]/text()'))
+                committee = the_rest.xpath("a[contains(@href,'committee_bio.php')]/text()")
+                extra = ''.join(the_rest.xpath('span[not(@style)]/text() | a/text()'))
 
                 # skip non-actions (don't have date)
                 if action_text in ('Chapter number', 'See also', 'See',
@@ -114,8 +126,8 @@ class MNBillScraper(BillScraper):
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
-                        if 'committee:referred' in action_type:
-                            bill_action['committees'] = extra
+                        if 'committee:referred' in action_type and committee[0]:
+                            bill_action['committees'] = committee[0]
                         break
 
                 if extra:
@@ -185,7 +197,7 @@ class MNBillScraper(BillScraper):
         bill_actions = self.extract_bill_actions(doc, chamber)
         for action in bill_actions:
             kwargs = {}
-            if 'committee' in action:
+            if 'committees' in action:
                 kwargs['committees'] = action['committees']
 
             bill.add_action(action['action_chamber'],
