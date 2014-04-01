@@ -31,7 +31,7 @@ class MNBillScraper(BillScraper):
         ('Third reading Passed', 'bill:passed'),
         ('Bill was passed', 'bill:passed'),
         ('Third reading', 'bill:reading:3'),
-        ("Governor('s action )?Approval", 'governor:signed'),
+        ("Governor('s action)? (A|a)pproval", 'governor:signed'),
         (".+? (V|v)eto", 'governor:vetoed'),
         ("Presented to Governor", 'governor:received'),
         ("Amended", 'amendment:passed'),
