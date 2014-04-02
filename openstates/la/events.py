@@ -64,7 +64,8 @@ class LAEventScraper(EventScraper):
         time ,= page.xpath("//span[@id='lTime']/text()")
         location ,= page.xpath("//span[@id='lLocation']/text()")
 
-        if "UPON ADJOURNMENT" in time or "UPON  ADJOURNMENT" in time:
+        if ("UPON ADJOURNMENT" in time.upper() or
+                "UPON  ADJOURNMENT" in time.upper()):
             return
 
         substs = {
