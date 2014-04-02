@@ -1,3 +1,0 @@
-After editing the SVG copy it to the -embed version and then strip all the non-standard namespaces.
-
-Test in IE9
