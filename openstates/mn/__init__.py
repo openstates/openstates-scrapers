@@ -6,6 +6,17 @@ from .committees import MNCommitteeScraper
 from .events import MNEventScraper
 from .votes import MNVoteScraper
 
+"""
+Minnesota legislative data can be found at the Office of the Revisor
+of Statutes:
+https://www.revisor.mn.gov/
+
+Votes:
+There are not detailed vote data for Senate votes, simply yes and no counts.
+Bill pages have vote counts and links to House details, so it makes more
+sense to get vote data from the bill pages.
+
+"""
 metadata = dict(
     name='Minnesota',
     abbreviation='mn',
@@ -17,18 +28,19 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
-        {'name': '2009-2010',
-         'sessions': ['2009-2010', '2010 1st Special Session',
-                      '2010 2nd Special Session'],
-         'start_year': 2009,
-         'end_year': 2010,
-         'biennium': '86',
+        {
+            'name': '2009-2010',
+            'sessions': ['2009-2010', '2010 1st Special Session', '2010 2nd Special Session'],
+            'start_year': 2009,
+            'end_year': 2010,
+            'biennium': '86',
         },
-        {'name': '2011-2012',
-         'sessions': ['2011-2012', '2011s1', '2012s1'],
-         'start_year': 2011,
-         'end_year': 2012,
-         'biennium': '87',
+        {
+            'name': '2011-2012',
+            'sessions': ['2011-2012', '2011s1', '2012s1'],
+            'start_year': 2011,
+            'end_year': 2012,
+            'biennium': '87',
         },
         {
             'name': '2013-2014',
@@ -70,7 +82,7 @@ metadata = dict(
         },
         '2012s1': {
             'site_id': '1872012', 'type': 'special',
-            'votes_url': None,
+            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
             'display_name': '2012, 1st Special Session',
             '_scraped_name': '87th Legislature, 2012 1st Special Session',
         },
@@ -78,11 +90,12 @@ metadata = dict(
             'site_id': '0882013',
             'type': "primary",
             'display_name': '2013-2014 Regular Session',
-            '_scraped_name': '88th Legislature, 2013-2014'
+            '_scraped_name': '88th Legislature, 2013-2014',
+            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
         },
         '2013s1': {
             'site_id': '1882013', 'type': 'special',
-            'votes_url': None,
+            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
             'display_name': '2013, 1st Special Session',
             '_scraped_name': '88th Legislature, 2013 1st Special Session',
         },
