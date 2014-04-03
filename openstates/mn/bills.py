@@ -10,12 +10,27 @@ from billy.scrape.votes import Vote
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
+BILL_DETAIL_URL = ('https://www.revisor.mn.gov/bills/bill.php'
+    '?b=%s&f=%s&ssn=0&y=%s')
 
 # The versions of a bill use a different base URL.
-VERSION_URL_BASE = "https://www.revisor.mn.gov/bills/"
+VERSION_URL_BASE = 'https://www.revisor.mn.gov/bills/'
+VERSION_URL = ('https://www.revisor.mn.gov/bin/getbill.php'
+    '?session_year=%s&session_number=%s&number=%s&version=list')
+
+# Search URL
+BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
+    'status_results.php?body=%s&session=%s&bill=%s-%s'
+    '&bill_type=%s&submit_bill=GO')
+
 
 class MNBillScraper(BillScraper):
     jurisdiction = 'mn'
+
+    # For testing purposes, this will do a lite version of things.  If
+    # testing_bills is set, only these bills will be scraped.  Use SF0077
+    testing = False
+    testing_bills = [ 'SF1952' ]
 
     # Regular expressions to match category of actions
     _categorizers = (
@@ -50,28 +65,57 @@ class MNBillScraper(BillScraper):
         This method uses the legislature's search page to collect all the bills
         for a given chamber and session.
         """
-        search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
-        search_session = self.metadata['session_details'][session]['site_id']
+        # If testing, print a message
+        if self.is_testing():
+            self.debug('TESTING...')
 
+        # Get bill topics for matching later
         self.get_bill_topics(chamber, session)
 
-        # MN bill search page returns a maximum 500 search results
-        total_rows = list() # used to concatenate search results
+        # If testing and certain bills to test, only test those
+        if self.is_testing() and len(self.testing_bills) > 0:
+            for b in self.testing_bills:
+                bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b,
+                    session.split('-')[0])
+                version_url = VERSION_URL % (self.search_session(session)[-4:],
+                    self.search_session(session)[0], b)
+                self.get_bill_info(chamber, session, bill_url, version_url)
+
+            return
+
+        # Find list of all bills
+        bills = self.get_full_bill_list(chamber, session)
+
+        # Get each bill
+        for b in bills:
+            self.get_bill_info(chamber, session, b['bill_url'], b['version_url'])
+
+
+    def get_full_bill_list(self, chamber, session):
+        """
+        Uses the legislator search to get a full list of bills.  Search page
+        returns a maximum of 500 results.
+        """
+        search_chamber = self.search_chamber(chamber)
+        search_session = self.search_session(session)
+        total_rows = list()
+        bills = []
         stride = 500
         start = 0
 
-        # get total list of rows
-        search_url = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
-                      'status_results.php?body=%s&session=%s&bill=%s-%s'
-                      '&bill_type=%s&submit_bill=GO')
+        # If testing, only do a few
+        total = 300 if self.is_testing() else 10000
+
+        # Get total list of rows
         for bill_type in ('bill', 'concurrent', 'resolution'):
-            for start in xrange(0, 10000, stride):
+            for start in xrange(0, total, stride):
                 # body: "House" or "Senate"
                 # session: legislative session id
                 # bill: Range start-end (e.g. 1-10)
-                url = search_url % (search_chamber, search_session, start,
-                                    start+stride, bill_type)
+                url = BILL_SEARCH_URL % (search_chamber, search_session, start,
+                    start + stride, bill_type)
 
+                # Parse HTML
                 html = self.urlopen(url)
                 doc = lxml.html.fromstring(html)
 
@@ -79,28 +123,27 @@ class MNBillScraper(BillScraper):
                 rows = doc.xpath('//table/tr')[1:]
                 total_rows.extend(rows)
 
-                # out of rows
+                # Out of rows
                 if len(rows) == 0:
                     self.debug("Total Bills Found: %d" % len(total_rows))
                     break
 
-        # process each row
+        # Go through each row found
         for row in total_rows:
-            # second column: status link
+            bill = {}
+
+            # Second column: status link
             bill_details_link = row.xpath('td[2]/a')[0]
-            bill_details_url = urlparse.urljoin(BILL_DETAIL_URL_BASE,
-                                                bill_details_link.get('href'))
+            bill['bill_url'] = urlparse.urljoin(BILL_DETAIL_URL_BASE,
+                bill_details_link.get('href'))
 
-            # version link sometimes goes to wrong place, forge it
-            session_year = search_session[-4:]
-            session_number = search_session[0]
-            bill_id = bill_details_link.text_content()
-            bill_version_url = 'https://www.revisor.mn.gov/bin/getbill.php' \
-            '?session_year=%s&session_number=%s&number=%s&version=list' % (
-                session_year, session_number, bill_id)
+            # Version link sometimes goes to wrong place, forge it
+            bill['version_url'] =  VERSION_URL % (search_session[-4:],
+                search_session[0], bill_details_link.text_content())
 
-            self.get_bill_info(search_chamber, session, bill_details_url,
-                               bill_version_url)
+            bills.append(bill)
+
+        return bills
 
 
     def get_bill_info(self, chamber, session, bill_detail_url, version_list_url):
@@ -162,9 +205,14 @@ class MNBillScraper(BillScraper):
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
 
-        # Previously, we had to skip first one ('--- All ---'), but this is no
-        # longer the case.
-        for option in doc.xpath('//select[@name="topic[]"]/option')[0:]:
+        # For testing purposes, we don't really care about getting
+        # all the topics, just a few
+        if self.is_testing():
+            option_set = doc.xpath('//select[@name="topic[]"]/option')[0:5]
+        else:
+            option_set = doc.xpath('//select[@name="topic[]"]/option')[0:]
+
+        for option in option_set:
             # Subjects look like "Name of Subject (##)" -- split off the #
             subject = option.text.rsplit(' (')[0]
             value = option.get('value')
@@ -201,7 +249,7 @@ class MNBillScraper(BillScraper):
                 # content.
                 action_date = date_col.text_content().strip()
                 action_text = the_rest.text.strip()
-                committee = the_rest.xpath("a[contains(@href,'committee_bio.php')]/text()")
+                committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
                 extra = ''.join(the_rest.xpath('span[not(@style)]/text() | a/text()'))
 
                 # skip non-actions (don't have date)
@@ -231,7 +279,7 @@ class MNBillScraper(BillScraper):
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
-                        if 'committee:referred' in action_type and committee[0]:
+                        if 'committee:referred' in action_type and len(committee) > 0:
                             bill_action['committees'] = committee[0]
                         break
 
@@ -386,3 +434,24 @@ class MNBillScraper(BillScraper):
         Given a chamber, get the other.
         """
         return 'lower' if chamber == 'upper' else 'upper'
+
+
+    def search_chamber(self, chamber):
+        """
+        Given chamber, like lower, make into MN site friendly search chamber.
+        """
+        return { 'lower':'House', 'upper':'Senate' }[chamber]
+
+
+    def search_session(self, session):
+        """
+        Given session ID, make into MN site friendly search.
+        """
+        return self.metadata['session_details'][session]['site_id']
+
+
+    def is_testing(self):
+        """
+        Determine if this is test mode.
+        """
+        return False if self.testing is False or self.testing is None else True
