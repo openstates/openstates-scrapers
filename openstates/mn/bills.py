@@ -67,7 +67,7 @@ class MNBillScraper(BillScraper):
         """
         # If testing, print a message
         if self.is_testing():
-            print 'TESTING...'
+            self.debug('TESTING...')
 
         # Get bill topics for matching later
         self.get_bill_topics(chamber, session)
@@ -249,7 +249,7 @@ class MNBillScraper(BillScraper):
                 # content.
                 action_date = date_col.text_content().strip()
                 action_text = the_rest.text.strip()
-                committee = the_rest.xpath("a[contains(@href,'committee_bio.php')]/text()")
+                committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
                 extra = ''.join(the_rest.xpath('span[not(@style)]/text() | a/text()'))
 
                 # skip non-actions (don't have date)
@@ -279,7 +279,7 @@ class MNBillScraper(BillScraper):
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
-                        if 'committee:referred' in action_type and committee[0]:
+                        if 'committee:referred' in action_type and len(committee) > 0:
                             bill_action['committees'] = committee[0]
                         break
 
