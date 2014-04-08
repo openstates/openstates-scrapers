@@ -63,6 +63,10 @@ class MOCommitteeScraper(CommitteeScraper):
                     mem_role = 'member'
                     if len(mem_parts) > 2:
                         mem_role = mem_parts[2].lower()
+
+                    if mem_name == "":
+                        continue
+
                     committee.add_member(mem_name, role=mem_role)
                 committee.add_source(url)
                 committee.add_source(committee_url)
