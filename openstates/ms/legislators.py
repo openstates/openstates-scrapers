@@ -82,24 +82,20 @@ class MSLegislatorScraper(LegislatorScraper):
 
             if party == 'D':
                 party = 'Democratic'
-            else:
+            elif party == 'R':
                 party = 'Republican'
+            elif leg_name in ('Oscar Denton', 'Lataisha Jackson', 'John G. Faulkner'):
+                party = 'Democratic'
 
-            leg = Legislator(term, chamber, district, leg_name,
-                             party=party,
-                             role=role,
-                             org_info=org_info,
-                             url=url,
-                             photo_url=photo)
+            leg = Legislator(term, chamber, district, leg_name, party=party, role=role,
+                             org_info=org_info, url=url, photo_url=photo)
             leg.add_source(url)
 
             kwargs = {}
 
             if email_name.strip() != "":
-                email = '%s@%s.ms.gov' % (email_name, {
-                    "upper": "senate",
-                    "lower": "house"
-                }[chamber])
+                email = '%s@%s.ms.gov' % (email_name,
+                                          {"upper": "senate", "lower": "house"}[chamber])
                 kwargs['email'] = email
 
             if capital_phone != "":
@@ -110,9 +106,7 @@ class MSLegislatorScraper(LegislatorScraper):
             else:
                 kwargs['address'] = CAP_ADDRESS
 
-            leg.add_office('capitol',
-                           'Capitol Office',
-                           **kwargs)
+            leg.add_office('capitol', 'Capitol Office', **kwargs)
 
             self.save_legislator(leg)
         except scrapelib.HTTPError, e:
