@@ -69,7 +69,7 @@ class MOVoteScraper(VoteScraper):
             vote_type = 'other'
             cur_bill = ''
             cur_motion = ''
-            bc = ''
+            bc = None
             vote = {}
             counts = {
                 "yes": 0,
@@ -120,6 +120,8 @@ class MOVoteScraper(VoteScraper):
                         # print cur_motion
                         yes, no, other = counts['yes'], counts['no'], \
                                             counts['other']
+                        if bc is None:
+                            continue
 
                         v = Vote('upper',
                                   date,
