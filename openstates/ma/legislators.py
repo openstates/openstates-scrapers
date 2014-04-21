@@ -4,6 +4,11 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 def clean_district(district):
+
+    # Ugh.
+    if district.startswith('Consisting of'):
+        return district.split().pop().strip('., ')
+
     mappings = (
         ('\s+', ' '),
         ('Consisting.*', ''),
@@ -74,13 +79,14 @@ class MALegislatorScraper(LegislatorScraper):
 
         district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
         if len(district):
-            district = district[0].text_content().strip()
-            district = clean_district(district)
+            district_dirty = district[0].text_content().strip()
+            district = clean_district(district_dirty)
         else:
             self.logger.warning('No district tab found for this hot garbage. Skipping.')
             return
-        if not district:
-            self.logger.warning('No district tab found for this hot garbage. Skipping.')
+        if district_dirty and not district:
+            self.logger.critical('clean_district wiped out all district text.')
+            assert False
             return
 
         party = root.xpath('//span[@class="legislatorAffiliation"]/text()')[0]
