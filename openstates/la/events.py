@@ -134,7 +134,7 @@ class LAEventScraper(EventScraper):
                                    description=descr.text_content(),
                                    chamber=bill_chamber,
                                    type='consideration')
-            self.save_event(event)
+        self.save_event(event)
 
     def scrape_house_weekly_schedule(self, session):
         url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
