@@ -6,10 +6,13 @@ SCRAPER_PATHS=[os.path.join(os.getcwd(), 'openstates')]
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DATABASE = 'fiftystates'
-BILLY_MANUAL_DATA_DIR = os.path.join(
-    os.path.abspath(os.path.dirname(__file__)),
-    "manual_data",
-)
+
+BILLY_MANUAL_DATA_DIR = os.environ.get('BILLY_MANUAL_DATA_DIR')
+if BILLY_MANUAL_DATA_DIR is None:
+    BILLY_MANUAL_DATA_DIR = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        "manual_data",
+    )
 
 LEGISLATOR_FILTERS = {
     "billy.importers.filters.single_space_filter": [
