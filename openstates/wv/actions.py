@@ -86,7 +86,7 @@ rules = (
     Rule([u'Passed House'], [u'bill:passed']),
     Rule([u'Read 2nd time'], [u'bill:reading:2']),
     Rule([u', but first to (?P<committees>[^;]+)', u'Rejected'], []),
-    Rule([u'Approved by Governor'], [u'governor:signed']),
+    Rule([u'Approved by Governor \d{1,2}/\d{1,2}/\d{1,2}$'], [u'governor:signed']),
     Rule([u'^Introduced'], [u'bill:introduced']),
     Rule([u'To .+? then (?P<committees>.+)'], []),
     Rule([u'^Filed for intro'], [u'bill:filed']),
