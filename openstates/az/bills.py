@@ -455,7 +455,9 @@ class AZBillScraper(BillScraper):
         if 'committee' in kwargs:
             o_args['committee'] = utils.get_committee_name(kwargs.pop('committee'),
                                                             chamber)
-
+        if 'committees' in kwargs:
+            o_args['committee'] = utils.get_committee_name(kwargs.pop('committees'),
+                                                            chamber)
         vote_page = self.urlopen(url)
         root = html.fromstring(vote_page)
         vote_table = root.xpath('/html/body/div/table/tr[3]/td[4]/table/tr/td/table/tr/td/table')[0]
@@ -478,7 +480,7 @@ class AZBillScraper(BillScraper):
                 o_count += int(v)
         if passed == '':
             passed = yes_count > no_count
-            if 'committee' not in o_args:
+            if ('committee' not in o_args) and ('committees' not in o_args):
                 if chamber == 'upper' and passed:
                     if 'EMER' in o_args or '2/3 VOTE' in o_args:
                         passed = yes_count > 20
