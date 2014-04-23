@@ -43,7 +43,11 @@ class OHBillScraper(BillScraper):
             os.remove(fname)
 
             for rownum in range(1, sh.nrows):
-                bill_id = '%s %s' % (bill_prefix.upper(), rownum)
+                bill_no = sh.cell(rownum, 0).value
+                if isinstance(bill_no, basestring):
+                    bill_no = bill_no.replace("*", "")
+                bill_no = int(bill_no)
+                bill_id = '%s %s' % (bill_prefix.upper(), bill_no)
                 bill_title = str(sh.cell(rownum, 3).value)
                 bill = Bill(session, chamber, bill_id, bill_title,
                             type=bill_type)
