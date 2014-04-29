@@ -74,7 +74,7 @@ class AKLegislatorScraper(LegislatorScraper):
 
         info = page.xpath('string(//div[@id = "fullpage"])')
 
-        district = re.search(r'District ([\w\d]+)', info)
+        district = re.search(r'District: ([\w\d]+)', info)
         if district is None:
             maddr = page.xpath("//div[@id='fullpage']//a[contains(@href, 'mailto')]")
             if maddr == []:
