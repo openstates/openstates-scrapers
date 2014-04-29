@@ -83,6 +83,9 @@ class WVBillScraper(BillScraper):
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
 
+        if '4184' in bill_id:
+            import pdb; pdb.set_trace()
+
         html = self.urlopen(url)
 
         page = lxml.html.fromstring(html)
@@ -92,6 +95,10 @@ class WVBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
+
+        xpath = ('//strong[contains(., "SUBJECT")]/../'
+                 'following-sibling::td/a/text()')
+        bill['subjects'] = page.xpath(xpath)
 
         for version in self.scrape_versions(session, chamber, page, bill_id):
             bill.add_version(**version)
