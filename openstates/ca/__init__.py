@@ -41,7 +41,7 @@ metadata = dict(
          {'name': '20132014',
          'sessions': [
                 '20132014 Special Session 1', '20132014',
-                '20132014 Special Session 2']
+                '20132014 Special Session 2'],
          'start_year': 2013, 'end_year': 2014,
          # 'start_date': datetime.date(2013, ??, ?),
          },
