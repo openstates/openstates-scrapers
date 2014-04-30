@@ -56,20 +56,19 @@ class PABillScraper(BillScraper):
         title = page.xpath(xpath).pop().text_content().strip()
         if not title:
             return
-
         bill = Bill(session, chamber, bill_id, title, type=btype)
         bill.add_source(url)
 
         self.parse_bill_versions(bill, page)
 
-        vote_count = self.parse_history(bill,
-                            history_url(chamber, session, special,
-                                        type_abbr, bill_num))
+
+        self.parse_history(bill, history_url(chamber, session, special,
+            type_abbr, bill_num))
 
         # only fetch votes if votes were seen in history
-        if vote_count:
-            self.parse_votes(bill, vote_url(chamber, session, special,
-                                            type_abbr, bill_num))
+        # if vote_count:
+        self.parse_votes(bill, vote_url(chamber, session, special,
+                                        type_abbr, bill_num))
 
         # Dedupe sources.
         sources = bill['sources']
@@ -180,30 +179,28 @@ class PABillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for td in page.xpath("//td[@class = 'vote']"):
-            caption = td.xpath("string(preceding-sibling::td)").strip()
-
-            if caption == 'Senate':
-                chamber = 'upper'
-            elif caption == 'House':
-                chamber = 'lower'
+        for url in page.xpath("//a[contains(., 'Vote')]/@href"):
+            bill.add_source(url)
+            page = self.urlopen(url)
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
+            if '/RC/' in url:
+                self.parse_chamber_votes(bill, url)
+            elif '/RCC/' in url:
+                self.parse_committee_votes(bill, url)
             else:
-                committee = re.findall(r'\t?(.+)', caption).pop()
-                self.parse_committee_votes(committee,
-                    chamber, bill, td.xpath('a')[0].attrib['href'])
+                msg = 'Unexpected vote url: %r' % url
+                raise Exception(msg)
 
-            self.parse_chamber_votes(chamber, bill,
-                                     td.xpath('a')[0].attrib['href'])
-
-    def parse_chamber_votes(self, chamber, bill, url):
+    def parse_chamber_votes(self, bill, url):
         bill.add_source(url)
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
-
         xpath = "//a[contains(@href, 'rc_view_action2')]"
+        chamber = ('upper'if 'Senate' in page.xpath('string(//h1)') else 'lower')
         for link in page.xpath(xpath)[::-1]:
-            date_str = link.xpath("../../../td")[0].text.strip()
+            date_str = link.xpath('string(../preceding-sibling::td)').strip()
             date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
             vote = self.parse_roll_call(link, chamber, date)
             bill.add_vote(vote)
@@ -213,13 +210,9 @@ class PABillScraper(BillScraper):
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
-        motion_divs = page.xpath("//div[@class='font8text']")
-        motion = motion_divs[3].text.strip()
-        if not motion:
-            try:
-                motion = motion_divs[3].getnext().tail.strip()
-            except AttributeError:
-                motion = motion_divs[4].text.strip()
+        xpath = 'string(//div[@class="Column-OneFourth"]/div[3])'
+        motion = page.xpath(xpath).strip()
+        motion = re.sub(r'\s+', ' ', motion)
 
         if motion == 'FP':
             motion = 'FINAL PASSAGE'
@@ -243,42 +236,52 @@ class PABillScraper(BillScraper):
         vote = Vote(chamber, date, motion, passed, yeas, nays, other,
                     type=type)
 
-        for span in page.xpath("//span[text() = 'Y' or text() = 'N'"
-                               "or text() = 'X' or text() = 'E']"):
-            name = span.getnext().text.strip()
-
-            if span.text == 'Y':
-                vote.yes(name)
-            elif span.text == 'N':
-                vote.no(name)
+        for div in page.xpath('//*[contains(@class, "RollCalls-Vote")]'):
+            name = div.text_content().strip()
+            name = re.sub(r'^[\s,]+', '', name)
+            name = re.sub(r'[\s,]+$', '', name)
+            class_attr = div.attrib['class'].lower()
+            if 'yea' in class_attr:
+                voteval = 'yes'
+            elif 'nay' in class_attr:
+                voteval = 'no'
+            elif 'nvote' in class_attr:
+                voteval = 'other'
+            elif 'lve' in class_attr:
+                voteval = 'other'
             else:
-                vote.other(name)
+                msg = 'Unrecognized vote val: %s' % class_attr
+                raise Exception(msg)
+            vote[voteval + '_votes'].append(name)
 
         return vote
 
-    def parse_committee_votes(self, committee, chamber, bill, url):
+    def parse_committee_votes(self, bill, url):
         bill.add_source(url)
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-
+        chamber = ('upper'if 'Senate' in doc.xpath('string(//h1)') else 'lower')
+        committee = tuple(doc.xpath('//h2')[0].itertext())[-2].strip()
         for link in doc.xpath("//a[contains(@href, 'listVoteSummary.cfm')]"):
 
             # Date
-            date = link.xpath('../../td')[0].text_content()
-            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            for fmt in ("%m/%d/%Y", "%m-%d-%Y"):
+                date = link.xpath('../../td')[0].text_content()
+                try:
+                    date = datetime.datetime.strptime(date, fmt)
+                except ValueError:
+                    continue
+                break
 
             # Motion
-            motion = link.xpath('..')[0].text_content().strip()
-            _, motion = motion.split('-', 1)
-            motion = motion.strip()
 
-            vote_url = link.attrib['href']
+            motion = link.text_content().split(' - ')[-1].strip()
+            motion = 'Committee vote (%s): %s' % (committee, motion)
 
             # Roll call.
+            vote_url = link.attrib['href']
             rollcall = self.parse_upper_committee_vote_rollcall(bill, vote_url)
-
-            motion = 'Committee vote (%s): %s' % (committee, motion)
 
             vote = Vote(chamber, date, motion, type='other',
                         committee=committee, **rollcall)
@@ -291,34 +294,38 @@ class PABillScraper(BillScraper):
             vote.add_source(vote_url)
             bill.add_vote(vote)
 
-        for link in doc.xpath("//a[contains(@href, 'listVotes.cfm')]"):
-            self.parse_committee_votes(committee, chamber, bill, link.attrib['href'])
-
     def parse_upper_committee_vote_rollcall(self, bill, url):
         bill.add_source(url)
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         rollcall = collections.defaultdict(list)
-        for tr in doc.xpath("//*[text() = 'AYE']/..")[0].itersiblings():
-            tr = iter(tr)
-            name_td = tr.next()
-            name = name_td.text_content().strip()
-            if not name:
-                continue
-            tds = zip(['yes', 'no', 'other'], tr)
-            for voteval, td in tds:
-                if list(td):
-                    break
+        for div in doc.xpath('//*[contains(@class, "RollCalls-Vote")]'):
+            name = div.xpath('../preceding-sibling::td/text()')[0]
+            name = re.sub(r'^[\s,]+', '', name)
+            name = re.sub(r'[\s,]+$', '', name)
+            class_attr = div.attrib['class'].lower()
+            if 'yea' in class_attr:
+                voteval = 'yes'
+            elif 'nay' in class_attr:
+                voteval = 'no'
+            elif 'nvote' in class_attr:
+                voteval = 'other'
+            elif 'lve' in class_attr:
+                voteval = 'other'
+            else:
+                msg = 'Unrecognized vote val: %s' % class_attr
+                raise Exception(msg)
             rollcall[voteval + '_votes'].append(name)
 
-        for voteval, xpath in (('yes', '//td[text() = "AYES:"]'),
-                               ('no', '//td[text() = "NAYS:"]'),
-                               ('other', '//td[text() = "NV:"]')):
+        for voteval, xpath in (('yes', '//*[contains(@class, "RollCalls-Vote-Yeas")]'),
+                               ('no', '//*[contains(@class, "RollCalls-Vote-Nays")]'),
+                               ('other', '//*[contains(@class, "RollCalls-Vote-NV")]')):
 
-            count = doc.xpath(xpath)[0].itersiblings().next().text_content()
+            count = len(doc.xpath(xpath))
             rollcall[voteval + '_count'] = int(count)
 
         rollcall['passed'] = rollcall['yes_count'] > rollcall['no_count']
+
         return dict(rollcall)
 
