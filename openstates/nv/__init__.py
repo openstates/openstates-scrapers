@@ -58,9 +58,10 @@ metadata = dict(
                'slug': '77th2013',
               },
         '2013Special27': {'type': 'special',
-                            'display_name': '27th Special Session (2013)',
-                            '_scraped_name': '27th (2013) Special Session',
-                            'slug': '27th2013Special'},
+                          'display_name': '27th Special Session (2013)',
+                          '_scraped_name': '27th (2013) Special Session',
+                          '_committee_session': '77th2013',
+                          'slug': '27th2013Special'},
     },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[

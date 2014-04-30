@@ -26,6 +26,11 @@ class NVCommitteeScraper(CommitteeScraper):
 
         chamber_letter = {'lower':'A', 'upper':'S'}[chamber]
 
+        insert = self.metadata['session_details'][session].get(
+            '_committee_session', insert
+        )
+
+
         url = 'http://www.leg.state.nv.us/Session/%s/Committees/%s_Committees/' % (
             insert, chamber_letter)
 
