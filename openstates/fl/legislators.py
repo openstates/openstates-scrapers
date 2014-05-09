@@ -32,12 +32,23 @@ class FLLegislatorScraper(LegislatorScraper):
         skip_next_p = False
         office_type = 'district'
         office_name = 'District Office'
-        for elem in doc.xpath('//h3[contains(text(), "District Office")]/following-sibling::*'):
+        els = iter(doc.xpath('//h4[contains(text(), "District Office")]/following-sibling::*'))
+
+        while True:
+            try:
+                elem = next(els)
+            except StopIteration:
+                break
+
+            # Skip legislative assistants and secretaries.
+            if elem.tag == 'h5':
+                while elem.tag != 'h4':
+                    try:
+                        elem = next(els)
+                    except StopIteration:
+                        break
+
             if elem.tag == 'p' and elem.text_content().strip():
-                # skip legislative assistants
-                if skip_next_p:
-                    skip_next_p = False
-                    continue
                 # not skipping, parse the office
                 address = []
                 phone = None
@@ -56,9 +67,8 @@ class FLLegislatorScraper(LegislatorScraper):
                 leg.add_office(office_type, office_name,
                                address='\n'.join(address), phone=phone,
                                fax=fax)
-            elif elem.tag == 'h4':
-                skip_next_p = True
-            elif elem.tag == 'h3' and elem.text == 'Tallahassee Office:':
+
+            elif elem.tag == 'h4' and 'Tallahassee Office' in elem.text:
                 office_type = 'capitol'
                 office_name = 'Tallahassee Office'
 
