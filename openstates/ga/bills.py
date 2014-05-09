@@ -53,12 +53,12 @@ class GABillScraper(BillScraper):
             lid = leg['Id']
             instrument = backoff(self.lservice.GetLegislationDetail, lid)
             history = [x for x in instrument['StatusHistory'][0]]
-            actions = [{
+            actions = reversed([{
                 "code": x['Code'],
                 "action": x['Description'],
                 "_guid": x['Id'],
                 "date": x['Date']
-            } for x in history]
+            } for x in history])
 
             guid = instrument['Id']
 

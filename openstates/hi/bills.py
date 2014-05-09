@@ -140,6 +140,9 @@ class HIBillScraper(BillScraper):
         if len(versions) > 1:
             versions = versions[1:]
 
+        if versions == []:
+            raise Exception("Missing bill versions.")
+
         for version in versions:
             tds = version.xpath("./*")
             if 'No other versions' in tds[0].text_content():
