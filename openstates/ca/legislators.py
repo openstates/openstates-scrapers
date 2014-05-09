@@ -64,6 +64,7 @@ class CALegislatorScraper(LegislatorScraper):
             if not legislator['first_name'] and fullname.endswith('Vacant'):
                 continue
             legislator.add_source(url)
+            legislator['full_name'] = legislator['full_name'].strip()
             self.save_legislator(legislator)
 
     def parse_legislator(self, tr, term, chamber):
