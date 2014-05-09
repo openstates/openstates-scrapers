@@ -303,7 +303,7 @@ class Membernames(object):
                 if name.endswith(' (Chair'):
                     role = 'chair'
                     name = name.replace(' (Chair', '')
-                name.strip(',')
+                name.strip(',').strip()
                 res.append((name, role, kw))
 
         return res
