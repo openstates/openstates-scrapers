@@ -68,7 +68,7 @@ class RIEventScraper(EventScraper):
             datetime = date
         else:
             datetime = "%s %s" % ( date, time )
-        if "CANCELLED" in datetime:
+        if "CANCELLED" in datetime or "Rise of the House" in datetime:
             # XXX: Do something more advanced.
             return
 
