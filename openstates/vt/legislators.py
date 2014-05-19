@@ -51,15 +51,8 @@ class VTLegislatorScraper(LegislatorScraper):
             party = tr.xpath("string(td[6])")
             party = re.sub(r'Democrat\b', 'Democratic', party)
             parties = party.split('/')
-            if 'Republican' in parties:
-                if 'Democratic' in parties:
-                    pass
-                else:
-                    party = 'Republican'
-                    parties.remove('Republican')
-            elif 'Democratic' in parties:
-                party = 'Democratic'
-                parties.remove('Democratic')
+            if 'Republican' in parties and 'Democratic' in parties:
+                pass
             else:
                 party = parties.pop(0)
 
