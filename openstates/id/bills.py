@@ -55,6 +55,7 @@ _ACTIONS = (
 
 
     (r'^Reported Signed by Governor', "governor:signed"),
+    (r'^Signed by Governor', "governor:signed"),
 
      # I dont recall seeing a 2nd rdg by itself
      (r'^1st rdg - to 2nd rdg', "bill:reading:2"),
