@@ -77,6 +77,7 @@ class MOLegislatorScraper(LegislatorScraper):
             page = lxml.html.fromstring(details_page)
             address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
             emails = page.xpath('/html/body/p/span[2]/a/@href')
+            email = None
             # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
             # then there is only a webform. So...no email?
             # TODO a lot of these have fax numbers. Include?
