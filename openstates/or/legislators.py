@@ -40,13 +40,19 @@ class ORLegislatorScraper(LegislatorScraper):
             if len(photo_block) == 0:
                 continue
 
+            h2s = block.xpath(".//h2/a")
+            if len(h2s) != 1:
+                # We've got a Vacant person.
+                print("Found a Vacant position. Skipping block.")
+                continue
+
+            h2, = h2s
+            name = h2.text
+
             photo_block, = photo_block
             # (The <td> before ours was the photo)
             img, = photo_block.xpath("*")
             img = img.attrib['src']
-
-            h2, = block.xpath(".//h2/a")
-            name = h2.text
 
             info = {}
             # Right, now let's get info out of their little profile box.
