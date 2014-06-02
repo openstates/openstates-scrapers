@@ -101,10 +101,9 @@ class MNLegislatorScraper(LegislatorScraper):
                              last_name=row['Last Name'],
                              **leg_data[name]
                             )
-            row['rmnum'] = row['Rm. Number']
             leg.add_office('capitol', 'Capitol Office',
-                           address='{rmnum} {Office Building}\n{Office Address}\n{City}, {State} {Zipcode}'.format(**row),
-                           phone='%s-%s' % (row['Area Code'], row['Office Phone']))
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                           )
 
 
             leg.add_source(csv_url)
