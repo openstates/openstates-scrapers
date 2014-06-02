@@ -117,7 +117,7 @@ class NCVoteScraper(VoteScraper):
                     vote.other(member_voting)
 
         for vote in votes.itervalues():
-            vote.validate()
+            #vote.validate()
             vote.add_source(vote_data_url)
             self.save_vote(vote)
 
