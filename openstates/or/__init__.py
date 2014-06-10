@@ -54,11 +54,16 @@ metadata = dict(
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['Today',
-                               '2013 1st Special Session', '2013 Interim',
-                               '2012 1st Special Session', '2011 Interim',
-                               '2010 Special Session', '2009 Interim',
-                               '2009 Regular Session', '2008 Special Session',
-                               '2007 Interim', '2007 Regular Session']
+                               '2013 1st Special Session',
+                               '2012 1st Special Session',
+                               '2010 Special Session',
+                               '2009 Regular Session',
+                               '2008 Special Session',
+                               '2007 Regular Session',
+                               '2013 - 2014 Interim',
+                               '2011 - 2012 Interim',
+                               '2009 - 2010 Interim',
+                               '2007 - 2008 Interim']
 )
 
 def session_list():
