@@ -47,7 +47,7 @@ class ORLegislatorScraper(LegislatorScraper):
                 continue
 
             h2, = h2s
-            name = h2.text
+            name = h2.text.strip()
 
             photo_block, = photo_block
             # (The <td> before ours was the photo)
