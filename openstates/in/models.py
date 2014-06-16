@@ -153,9 +153,14 @@ class DocumentMeta(object):
             return
         png_url = 'http://iga.in.gov/documents/' + version_id
         self.scraper.logger.info('GET ' + png_url)
-        resp = self.scraper.get(png_url, headers=headers)
+        try:
+            resp = self.scraper.get(png_url, headers=headers)
+        except requests.exceptions.ConnectionError:
+            self.logger.exception('Connection error. Skipping doc metadata.')
+            return
         try:
             data = resp.json()
+            self.logger.exception('Sigh. Skipping doc metadata.')
         except:
             return
         return data
