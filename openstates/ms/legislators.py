@@ -73,6 +73,19 @@ class MSLegislatorScraper(LegislatorScraper):
             photo = "%s/%s" % (url_root, root.xpath('string(//IMG_NAME)'))
 
             home_phone = root.xpath('string(//H_PHONE)')
+
+            home_address = root.xpath('string(//H_ADDRESS)')
+            home_address2 = root.xpath('string(//H_ADDRESS2)')
+            home_city = root.xpath('string(//H_CITY)')
+            home_zip = root.xpath('string(//H_ZIP)')
+
+            home_address_total = "%s\n%s\n%s\n%s" % (
+                home_address,
+                home_address2,
+                home_city,
+                home_zip
+            )
+
             bis_phone = root.xpath('string(//B_PHONE)')
             capital_phone = root.xpath('string(//CAP_PHONE)')
             other_phone = root.xpath('string(//OTH_PHONE)')
@@ -107,6 +120,16 @@ class MSLegislatorScraper(LegislatorScraper):
                 kwargs['address'] = CAP_ADDRESS
 
             leg.add_office('capitol', 'Capitol Office', **kwargs)
+
+            kwargs = {}
+            if home_phone != "":
+                kwargs['phone'] = home_phone
+
+            if home_address_total != "":
+                kwargs['address'] = home_address_total
+
+            if kwargs != {}:
+                leg.add_office('district', 'District Office', **kwargs)
 
             self.save_legislator(leg)
         except scrapelib.HTTPError, e:
