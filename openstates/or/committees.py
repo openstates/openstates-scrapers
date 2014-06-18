@@ -27,7 +27,15 @@ class ORCommitteeScraper(CommitteeScraper):
                  "lower": "HouseCommittees_search",
                  "joint": "JointCommittees_search",}
 
-        page = self.lxmlize("https://olis.leg.state.or.us/liz/Committees/list/")
+        slug = self.metadata['session_details'][{
+            x['name']: x for x in self.metadata['terms']
+        }[term]['sessions'][-1]]['slug']
+
+        page = self.lxmlize(
+            "https://olis.leg.state.or.us/liz/%s/Committees/list/" % (
+                slug
+            )
+        )
         for chamber, id_ in cdict.items():
             for committee in page.xpath("//ul[@id='%s']//li/a" % (id_)):
                 self.scrape_committee(committee.attrib['href'],
