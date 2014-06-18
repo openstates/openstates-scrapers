@@ -91,21 +91,25 @@ class NDLegislatorScraper(LegislatorScraper):
                          name,
                          **kwargs)
 
-        kwargs = {
-            "address": address,
-            "url": url
-        }
-
-        for key, leg_key in [
-            ('email', 'email'),
-            ('home-telephone', 'home_phone'),
-            ('cellphone', 'cellphone'),
-            ('fax', 'fax'),
-            ('office-telephone', 'office_phone'),
-        ]:
+        kwargs = {"url": url}
+        for key, leg_key in [('email', 'email'),
+                             ('fax', 'fax'),
+                             ('office-telephone', 'phone')]:
             if key in metainf:
-                kwargs[leg_key] = metainf[key]
+                if metainf[key].strip():
+                    kwargs[leg_key] = metainf[key]
 
+        leg.add_office('capitol',
+                       'Capitol Office',
+                       **kwargs)
+
+        kwargs = {"address": address}
+
+        if 'cellphone' in metainf:
+            kwargs['phone'] = metainf['cellphone']
+
+        if 'home-telephone' in metainf:
+            kwargs['phone'] = metainf['home-telephone']
 
         leg.add_office('district',
                        'District Office',
