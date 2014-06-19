@@ -44,26 +44,28 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
             leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
 
             office_data = {
-                "email": "ctl00_cphMainContent_divEmailLegis",
-                "home_phone": "ctl00_cphMainContent_divPhoneHome",
-                "home_addr": "ctl00_cphMainContent_divAddrHome",
-                "office_phone": "ctl00_cphMainContent_divPhoneCapitol",
+                "Legislative Email:": "email",
+                "Home Phone:": "home_phone",
+                "Home Address:": "home_addr",
+                "Capitol Phone:": "office_phone",
             }
             metainf = {}
 
-            for attr in office_data:
-                path = office_data[attr]
-                info = leg_page.xpath("//div[@id='%s']" % path)
-                if len(info) != 1:
+            table ,= leg_page.xpath(
+                "//div[@class='legisIndent divideVert']/table"
+            )
+            for row in table.xpath(".//tr"):
+                try:
+                    key, value = (
+                        x.text_content().strip() for x in row.xpath("./td")
+                    )
+                except ValueError:
                     continue
-                info = info[0]
 
-                _, data = [x.text_content() for x in info.xpath("./span")]
-                data = data.strip()
-                if data == "":
+                try:
+                    metainf[office_data[key]] = value
+                except KeyError:
                     continue
-
-                metainf[attr] = data
 
             if "home_phone" in metainf or "home_addr" in metainf:
                 home_args = {}

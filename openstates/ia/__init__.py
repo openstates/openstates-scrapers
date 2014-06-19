@@ -46,8 +46,11 @@ metadata = dict(
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',
-                               'General Assembly: 81', 'General Assembly: 80']
-
+                               'General Assembly: 81', 'General Assembly: 80',
+                               'General Assembly: 79', 'General Assembly: 79',
+                               'General Assembly: 78', 'General Assembly: 78',
+                               'General Assembly: 77', 'General Assembly: 77',
+                               'General Assembly: 76', 'General Assembly: 76']
 )
 
 
