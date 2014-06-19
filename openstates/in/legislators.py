@@ -44,6 +44,10 @@ class INLegislatorScraper(LegislatorScraper):
         name, party, district = re.split(r'\s*,\s*', option.text.strip())
         name = re.sub(r'^(Sen\.|Rep\.)\s+', '', name)
         district = re.sub(r'^District\s+', '', district)
+        if district == '[N/A]':
+            msg = 'No district found for %r; skipping.'
+            self.logger.warning(msg, name)
+            return
         leg = Legislator(term, chamber, district, name, party=party)
         leg.add_source(self.url)
 
