@@ -182,8 +182,22 @@ class HILegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, session):
         metainf = self.scrape_leg_page(get_legislator_listing_url(chamber))
         for leg in metainf:
-            chamber = {"House": "lower",
-                       "Senate": "upper"}[leg['chamber']]
+            try:
+                chamber = {"House": "lower",
+                           "Senate": "upper"}[leg['chamber']]
+            except KeyError:
+                print("")
+                print("  ERROR: Bad Legislator page.")
+                print("    -> " + "\n    -> ".join(leg['source']))
+                print("")
+                print("  Added this workaround because of a bad legislator")
+                print("  page, while they filled their info out.")
+                print("")
+                print("  Emailed webmaster. Told to wait.")
+                print("   - PRT, Jun 23, 2014")
+                print("")
+                continue
+
             p = Legislator( session, chamber, leg['district'], leg['name'],
                 party=leg['party'],
                 # some additional things the website provides:
