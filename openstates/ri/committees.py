@@ -73,7 +73,7 @@ class RICommitteeScraper(CommitteeScraper):
         if linklist is not None:
             for a in linklist:
                 link=a.attrib['href']
-                commName=a.text
+                commName=clean(a.text_content())
                 url=base+link
                 self.log("url "+url)
                 c=Committee('lower',commName)
@@ -88,7 +88,7 @@ class RICommitteeScraper(CommitteeScraper):
         if linklist is not None:
             for a in linklist:
                 link=a.attrib['href']
-                commName=a.text
+                commName=clean(a.text_content())
                 self.log( commName )
                 if commName in COMM_BLACKLIST:
                     self.log( "XXX: Blacklisted" )
