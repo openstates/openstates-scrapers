@@ -42,16 +42,20 @@ class WYLegislatorScraper(LegislatorScraper):
             office_tds = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]/tr/td/text()')
             address = []
             phone = None
+            cell = None
             fax = None
+
             for td in office_tds:
                 if td.startswith('Home -'):
                     phone = td.strip('Home - ')
-                # only use cell if home isn't present
-                elif td.startswith('Cell -') and not phone:
+
+                if td.startswith('Cell -') and not phone:
                     phone = td.strip('Cell - ')
-                elif td.startswith('Fax -'):
+
+                if td.startswith('Fax -'):
                     fax = td.strip('Fax - ')
-                else:
+
+                elif ' - ' not in td:
                     address.append(td)
 
             leg = Legislator(term, chamber, district, name, party=party,
@@ -61,7 +65,7 @@ class WYLegislatorScraper(LegislatorScraper):
             adr = " ".join(address)
             if adr.strip() != "":
                 leg.add_office('district', 'Contact Information',
-                               address=adr, phone=phone, fax=fax)
+                               cell=cell, address=adr, phone=phone, fax=fax)
 
             leg.add_source(url)
             leg.add_source(leg_url)
