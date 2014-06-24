@@ -44,6 +44,7 @@ def action_type(action):
                    ('Rejected', 'bill:failed'),
                    ('Senate amendment amended', 'amendment:amended'),
                    ('Signed by governor', 'governor:signed'),
+                   ('Signed by Governor', 'governor:signed'),
                    ('Tabled', 'bill:failed'),
                    ('Veto overridden', 'bill:veto_override:passed'),
                    ('Veto sustained', 'bill:veto_override:failed'),
