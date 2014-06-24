@@ -19,21 +19,20 @@ class WYCommitteeScraper(CommitteeScraper):
             # together. So, we'll only scrape once.
             return None
 
-        year = None
+        session = None
 
         # Even thought each term spans two years, committee
         # memberships don't appear to change. So we only
         # need to scrape the first year of the term.
         for t in self.metadata["terms"]:
             if term == t["name"]:
-                year = t["start_year"]
+                session = t['sessions'][-1]
+                # session = self.metadata['session_details'][t['sessions'][-1]]
                 break
-
-        if not year:
+        else:
             raise NoDataForPeriod(term)
 
-
-        list_url = self.urls["list"] % (year, )
+        list_url = self.urls["list"] % (session, )
         committees = {}
         page = self.urlopen(list_url)
         page = lxml.html.fromstring(page)
