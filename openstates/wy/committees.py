@@ -4,6 +4,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 import re
 
+
 class WYCommitteeScraper(CommitteeScraper):
     jurisdiction = "wy"
 
@@ -46,16 +47,18 @@ class WYCommitteeScraper(CommitteeScraper):
             page = lxml.html.fromstring(page)
             if re.match('\d{1,2}-', c):
                 c = c.split('-', 1)[1]
-            comm = Committee('joint', c.strip())
+            jcomm = Committee('joint', c.strip())
             for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
                 rows = table.xpath(".//tr")
                 chamber = rows[0].xpath('.//td')[0].text_content().strip()
                 chamber = 'upper' if chamber == 'Senator' else 'lower'
+                comm = Committee(chamber, c.strip())
                 for row in rows[1:]:
                     tds = row.xpath('.//td')
                     name = tds[0].text_content().strip()
                     role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
                     comm.add_member(name, role, chamber=chamber)
+                    jcomm.add_member(name, role, chamber=chamber)
 
             comm.add_source(detail_url)
             self.save_committee(comm)
