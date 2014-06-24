@@ -13,6 +13,15 @@ COMM_BLACKLIST = [
     # it seems to happen all over the place.
 ]
 
+
+def clean(stream):
+    return re.sub(
+        "\s+",
+        " ",
+        stream.encode('ascii', errors='ignore')
+    ).strip()
+
+
 class RICommitteeScraper(CommitteeScraper):
     jurisdiction = 'ri'
 
@@ -98,7 +107,7 @@ class RICommitteeScraper(CommitteeScraper):
         if linklist is not None:
             for a in linklist:
                 link=a.attrib['href']
-                commName=a.text
+                commName=clean(a.text_content())
                 url=base+link
                 self.log("url "+url)
                 c=Committee('joint',commName)
