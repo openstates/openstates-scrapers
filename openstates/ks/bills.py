@@ -149,8 +149,12 @@ class KSBillScraper(BillScraper):
 
     def parse_vote(self, bill, vote_date, vote_chamber, vote_status, vote_url):
         vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
-        formats = ['%a %d %b %Y', '%b. %d, %Y, %H:%M %p',
-                   '%B %d, %Y, %H:%M %p', '%B %d, %Y, %H %p']
+        formats = ['%a %d %b %Y',
+                   '%b. %d, %Y, %H:%M %p',
+                   '%B %d, %Y, %H:%M %p',
+                   '%B %d, %Y, %H %p'
+                   '%a, %b %d, %Y'
+                  ]
         vote_date = vote_date.replace('.m.', 'm')
         for format in formats:
             try:
