@@ -60,5 +60,8 @@ class WYCommitteeScraper(CommitteeScraper):
                     comm.add_member(name, role, chamber=chamber)
                     jcomm.add_member(name, role, chamber=chamber)
 
-            comm.add_source(detail_url)
-            self.save_committee(comm)
+                comm.add_source(detail_url)
+                self.save_committee(comm)
+
+            jcomm.add_source(detail_url)
+            self.save_committee(jcomm)
