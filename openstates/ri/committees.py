@@ -40,6 +40,7 @@ class RICommitteeScraper(CommitteeScraper):
         self.log("looking for "+ctype)
         page = self.urlopen(url)
         root = lxml.html.fromstring(page)
+        root.make_links_absolute(url)
         return root.xpath("//a[contains(@href,'"+ctype+"')]")
 
     def add_members(self,comm,url):
@@ -67,23 +68,18 @@ class RICommitteeScraper(CommitteeScraper):
             comm.add_member(name, appt)
 
     def scrape_reps_comm(self):
-        base = 'http://webserver.rilin.state.ri.us'
-
-        linklist = self.scrape_comm_list('ComMemR')
+        linklist = self.scrape_comm_list('ComMemr')
         if linklist is not None:
             for a in linklist:
                 link=a.attrib['href']
                 commName=clean(a.text_content())
-                url=base+link
-                self.log("url "+url)
+                self.log("url "+ link)
                 c=Committee('lower',commName)
-                self.add_members(c,url)
-                c.add_source(url)
+                self.add_members(c,link)
+                c.add_source(link)
                 self.save_committee(c)
 
     def scrape_senate_comm(self):
-        base = 'http://webserver.rilin.state.ri.us'
-
         linklist = self.scrape_comm_list('ComMemS')
         if linklist is not None:
             for a in linklist:
@@ -93,25 +89,21 @@ class RICommitteeScraper(CommitteeScraper):
                 if commName in COMM_BLACKLIST:
                     self.log( "XXX: Blacklisted" )
                     continue
-                url=base+link
-                self.log("url "+url)
+                self.log("url "+link)
                 c=Committee('upper',commName)
-                self.add_members(c,url)
-                c.add_source(url)
+                self.add_members(c,link)
+                c.add_source(link)
                 self.save_committee(c)
 
     def scrape_joint_comm(self):
-        base = 'http://webserver.rilin.state.ri.us'
-
         linklist = self.scrape_comm_list('ComMemJ')
         if linklist is not None:
             for a in linklist:
                 link=a.attrib['href']
                 commName=clean(a.text_content())
-                url=base+link
-                self.log("url "+url)
+                self.log("url "+link)
                 c=Committee('joint',commName)
-                self.add_members(c,url)
-                c.add_source(url)
+                self.add_members(c,link)
+                c.add_source(link)
                 self.save_committee(c)
 
