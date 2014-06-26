@@ -106,13 +106,14 @@ class PRBillScraper(BillScraper):
                    isVersion = True;
             if isVersion:
                 # versions are mentioned several times, lets use original name
-                if action_url.lower().endswith('.doc'):
+                action_url = action_url.lower().strip()
+                if action_url.endswith('.doc'):
                     mimetype = 'application/msword'
-                elif action_url.lower().endswith('.rtf'):
+                elif action_url.endswith('.rtf'):
                     mimetype = 'application/rtf'
-                elif action_url.lower().endswith('.pdf'):
+                elif action_url.endswith('.pdf'):
                     mimetype = 'application/pdf'
-                elif action_url.lower().endswith('docx'):
+                elif action_url.endswith('docx'):
                     mimetype = 'application/octet-stream'
                 else:
                     raise Exception('unknown version type: %s' % action_url)
