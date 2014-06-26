@@ -58,7 +58,9 @@ class RILegislatorScraper(LegislatorScraper):
             leg_source_url_map[leg_name] = leg_url
 
         for rownum in xrange(1, sh.nrows):
-            d = {}
+            d = {
+                "phone": None
+            }
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
 
@@ -67,7 +69,6 @@ class RILegislatorScraper(LegislatorScraper):
             )
             if 'asp' in d['email']:
                 d['email'] = None
-
 
             if d['email'] is not None:
                 info = slug.groupdict()
@@ -80,7 +81,10 @@ class RILegislatorScraper(LegislatorScraper):
                 url = ("http://www.rilin.state.ri.us/{chamber}/"
                        "{slug}/Pages/Biography.aspx".format(**info))
 
-                # page = self.lxmlize(url)
+                page = self.lxmlize(url)
+                for el in page.xpath("//div[@id='WebPartWPQ4']//div//span/text()"):
+                    if re.match("\(\d{3}\) \d{3}-\d{4}", el):
+                        d['phone'] = el
 
 
             dist = str(int(d['district']))
@@ -102,6 +106,9 @@ class RILegislatorScraper(LegislatorScraper):
 
             if d['email'] is not None:
                 kwargs['email'] = d['email']
+
+            if d['phone'] is not None:
+                kwargs['phone'] = d['phone']
 
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
