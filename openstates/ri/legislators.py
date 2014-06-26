@@ -20,6 +20,14 @@ class RILegislatorScraper(LegislatorScraper):
     jurisdiction = 'ri'
     latest_only = True
 
+    def lxmlize(self, url):
+        page = self.urlopen(url)
+        if page.response.code != 200:
+            raise ValueError("HTTP: {}".format(page.response.code))
+        root = lxml.html.fromstring(page)
+        root.make_links_absolute(url)
+        return root
+
     def scrape(self, chamber, term):
         if chamber == 'upper':
             url = ('http://webserver.rilin.state.ri.us/Documents/Senators.xls')
@@ -53,6 +61,28 @@ class RILegislatorScraper(LegislatorScraper):
             d = {}
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
+
+            slug = re.match(
+                "(?P<class>sen|rep)-(?P<slug>.*)@rilin\.state\.ri\.us", d['email']
+            )
+            if 'asp' in d['email']:
+                d['email'] = None
+
+
+            if d['email'] is not None:
+                info = slug.groupdict()
+                info['chamber'] = "senators" if info['class'] == 'sen' else "representatives"
+
+                if info['slug'] == "tamasso":
+                    # See: DATA-243. Likely typo.
+                    info['slug'] = "tomasso"
+
+                url = ("http://www.rilin.state.ri.us/{chamber}/"
+                       "{slug}/Pages/Biography.aspx".format(**info))
+
+                # page = self.lxmlize(url)
+
+
             dist = str(int(d['district']))
             district_name = dist
             full_name = re.sub(rep_type, '', d['full_name']).strip()
@@ -68,8 +98,10 @@ class RILegislatorScraper(LegislatorScraper):
 
             kwargs = {
                 "town_represented": d['town_represented'],
-                "email": d['email']
             }
+
+            if d['email'] is not None:
+                kwargs['email'] = d['email']
 
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
@@ -84,4 +116,3 @@ class RILegislatorScraper(LegislatorScraper):
             if homepage_url:
                 leg.add_source(homepage_url)
             self.save_legislator(leg)
-
