@@ -59,7 +59,7 @@ metadata = dict(
               },
         '2013Special27': {'type': 'special',
                           'display_name': '27th Special Session (2013)',
-                          '_scraped_name': '27th (2013) Special Session',
+                          '_scraped_name': u'27th (2013) Special Session\xa0\xa0(click to close)',
                           '_committee_session': '77th2013',
                           'slug': '27th2013Special'},
     },
@@ -79,6 +79,8 @@ metadata = dict(
         },
     ],
     _ignored_scraped_sessions=[
+        '78th (2015) Session',
+
         '25th (2008) Special Session',
         '24th (2008) Special Session',
         '23rd (2007) Special Session',
