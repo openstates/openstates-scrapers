@@ -102,8 +102,6 @@ class FLLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            if term != '2013-2014':
-                raise ValueError('Please change the senate photo_url string.')
             photo_url = leg_doc.xpath('//div[@id="sidebar"]//img/@src').pop()
 
             leg = Legislator(term, 'upper', district, name,
