@@ -83,9 +83,6 @@ class WVBillScraper(BillScraper):
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
 
-        if '4184' in bill_id:
-            import pdb; pdb.set_trace()
-
         html = self.urlopen(url)
 
         page = lxml.html.fromstring(html)
