@@ -20,6 +20,14 @@ class RILegislatorScraper(LegislatorScraper):
     jurisdiction = 'ri'
     latest_only = True
 
+    def lxmlize(self, url):
+        page = self.urlopen(url)
+        if page.response.code != 200:
+            raise ValueError("HTTP: {}".format(page.response.code))
+        root = lxml.html.fromstring(page)
+        root.make_links_absolute(url)
+        return root
+
     def scrape(self, chamber, term):
         if chamber == 'upper':
             url = ('http://webserver.rilin.state.ri.us/Documents/Senators.xls')
@@ -50,9 +58,35 @@ class RILegislatorScraper(LegislatorScraper):
             leg_source_url_map[leg_name] = leg_url
 
         for rownum in xrange(1, sh.nrows):
-            d = {}
+            d = {
+                "phone": None
+            }
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
+
+            slug = re.match(
+                "(?P<class>sen|rep)-(?P<slug>.*)@rilin\.state\.ri\.us", d['email']
+            )
+            if 'asp' in d['email']:
+                d['email'] = None
+
+            if d['email'] is not None:
+                info = slug.groupdict()
+                info['chamber'] = "senators" if info['class'] == 'sen' else "representatives"
+
+                if info['slug'] == "tamasso":
+                    # See: DATA-243. Likely typo.
+                    info['slug'] = "tomasso"
+
+                url = ("http://www.rilin.state.ri.us/{chamber}/"
+                       "{slug}/Pages/Biography.aspx".format(**info))
+
+                page = self.lxmlize(url)
+                for el in page.xpath("//div[@id='WebPartWPQ4']//div//span/text()"):
+                    if re.match("\(\d{3}\) \d{3}-\d{4}", el):
+                        d['phone'] = el
+
+
             dist = str(int(d['district']))
             district_name = dist
             full_name = re.sub(rep_type, '', d['full_name']).strip()
@@ -68,8 +102,13 @@ class RILegislatorScraper(LegislatorScraper):
 
             kwargs = {
                 "town_represented": d['town_represented'],
-                "email": d['email']
             }
+
+            if d['email'] is not None:
+                kwargs['email'] = d['email']
+
+            if d['phone'] is not None:
+                kwargs['phone'] = d['phone']
 
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
@@ -84,4 +123,3 @@ class RILegislatorScraper(LegislatorScraper):
             if homepage_url:
                 leg.add_source(homepage_url)
             self.save_legislator(leg)
-

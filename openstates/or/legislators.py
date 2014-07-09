@@ -57,6 +57,7 @@ class ORLegislatorScraper(LegislatorScraper):
             info = {}
             # Right, now let's get info out of their little profile box.
             for entry in block.xpath(".//p"):
+                key = None
                 for kvpair in itergraphs(entry.xpath("./*"), 'br'):
                     # OK. We either get the tail or the next element
                     # (usually an <a> tag)
@@ -67,6 +68,15 @@ class ORLegislatorScraper(LegislatorScraper):
                             value = re.sub("\s+", " ", value).strip()
                     elif len(kvpair) == 2:
                         key, value = kvpair
+                    elif len(kvpair) == 3:
+                        k1, k2, value = kvpair
+                        # As seen with a <stong><strong>Email:</strong></strong>
+                        t = lambda x: x.text_content().strip()
+                        assert t(k1) == "" or t(k2) == ""
+                        if t(k1) != "":
+                            key = k1
+                        else:
+                            key = k2
                     else:
                         # Never seen text + an <a> tag, perhaps this can happen.
                         raise ValueError("Too many elements. Something changed")
