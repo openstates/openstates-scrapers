@@ -474,13 +474,18 @@ class DEBillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
         except scrapelib.HTTPError as e:
             known_fail_links = [
-                "http://legis.delaware.gov/LIS/lis146.nsf/7712cf7cc0e9227a852568470077336f/cdfd8149e79c2bb385257a24006e9f7a?OpenDocument"
+                "http://legis.delaware.gov/LIS/lis146.nsf/7712cf7cc0e9227a852568470077336f/cdfd8149e79c2bb385257a24006e9f7a?OpenDocument",
+                'http://legis.delaware.gov/LIS/lis147.nsf/7712cf7cc0e9227a852568470077336f/5f86852ea6649fa285257d08001bbe06?OpenDocument'
             ]
             if "404" in str(e.response):
                 # XXX: Ugh, ok, so there's no way (that I could find quickly)
                 #      to get the _actual_ response (just "ok") from the object.
                 #      As a result, this. Forgive me.
                 #            -PRT
+                # XXX: THERE SHALL BE NO FORGIVENESS FOR PAULTAG!!!!
+                #
+                #       Just kidding. I blame Delaware.
+                #            -TWN
                 if url in known_fail_links:
                     msg = 'Recieved a bogus 22/404 return code. Skipping vote.'
                     self.warning(msg)
