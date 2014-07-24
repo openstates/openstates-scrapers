@@ -130,6 +130,25 @@ class INBillScraper(BillScraper):
             bill_title = row[3].text_content()
             yield bill_id, bill_url, bill_title
 
+    bill_types = {
+        'HB': 'bill',
+        'HC': None,
+        'HCR': 'concurrent resolution',
+        'HJ': None,
+        'HJR': 'joint resolution',
+        'HR': 'resolution',
+        'SB': 'bill',
+        'SC': None,
+        'SCR': 'concurrent resolution',
+        'SJ': None,
+        'SJR': 'joint resolution',
+        'SR': 'resolution'
+        }
+
+    def get_bill_type(self, bill_id):
+        letters = re.search(r'^\s*([A-Za-z]+)', bill_id).group(1)
+        return self.bill_types.get(letters)
+
     def scrape_bill(self, chamber, term, bill_id, url, title, subject=None):
         self.logger.info('GET ' + url)
         resp = self.get(url)
@@ -137,7 +156,13 @@ class INBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        bill = Bill(term, chamber, bill_id, title)
+        type_ = self.get_bill_type(bill_id)
+        if type_ is None:
+            # Skip if the bill isn't a bill or resolution. IN has lots of
+            # bad data.
+            return
+
+        bill = Bill(term, chamber, bill_id, title, type=type_)
         bill.add_source(url)
         if subject is not None:
             bill['subjects'] = [subject]
