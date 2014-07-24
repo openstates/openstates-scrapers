@@ -52,7 +52,16 @@ class INLegislatorScraper(LegislatorScraper):
         leg.add_source(self.url)
 
         # Scrape leg page.
-        html = self.urlopen(url)
+        try:
+            html = self.urlopen(url, timeout=5)
+        except scrapelib.HTTPError as exc:
+            # As of July 2014, this only happens when a page has
+            # gone missing from their varnish server.
+            if exc.response.status_code is 503:
+                return
+            else:
+                raise exc
+
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.url)
         leg.add_source(url)
