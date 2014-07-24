@@ -500,7 +500,9 @@ class CABillScraper(BillScraper):
                 if legislators:
                     kwargs['legislators'] = legislators
 
-                date = action.action_date.date()
+                date = action.action_date
+                date = self._tz.localize(date)
+                date = date.date()
                 if (actor, act_str, date) in seen_actions:
                     continue
                 fsbill.add_action(actor, act_str, date, **kwargs)
