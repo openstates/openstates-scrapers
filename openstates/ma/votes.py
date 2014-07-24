@@ -48,6 +48,7 @@ class MAVoteScraper(VoteScraper):
         '''
 
     def scrape(self, chamber, session):
+        self._404_count = 0
         self.filenames = []
         if chamber == 'upper':
             self.scrape_senate(session)
@@ -81,10 +82,17 @@ class MAVoteScraper(VoteScraper):
 
         try:
             vote_file, resp = self.urlretrieve(url)
-        except scrapelib.HTTPError:
-            # We'll hit a 404 at the end of the votes.
-            self.warning('Stopping; encountered a 404 at %s' % url)
-            raise self.EndOfHouseVotes
+        except scrapelib.HTTPError as exc:
+            if exc.response.status_code is 404:
+                if 10 < self._404_count:
+                    # We'll hit a number of 404s at the end of the votes.
+                    self.warning('Stopping; encountered a 404 at %s' % url)
+                    raise self.EndOfHouseVotes()
+                else:
+                    self._404_count += 1
+            else:
+                self.logger.exception(exc)
+                continue
 
         text = convert_pdf(vote_file, type='text')
         text = text.decode('utf8')
