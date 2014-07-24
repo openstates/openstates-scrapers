@@ -590,7 +590,7 @@ class CABillScraper(BillScraper):
                 fsbill.add_vote(fsvote)
 
             self.save_bill(fsbill)
-
+            self.session.expire_all()
 
 def etree_text_content(el):
     el = html.fromstring(etree.tostring(el))
