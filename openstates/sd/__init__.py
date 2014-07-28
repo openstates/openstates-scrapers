@@ -51,7 +51,7 @@ metadata = dict(
                 }
     },
     feature_flags=['subjects', 'influenceexplorer'],
-    _ignored_scraped_sessions=['Previous Years'],
+    _ignored_scraped_sessions=['Previous Years', '2015 (90th) Session'],
 )
 
 
