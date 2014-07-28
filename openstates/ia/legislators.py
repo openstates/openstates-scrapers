@@ -34,8 +34,8 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
                 party = 'Democratic'
 
             pid = re.search("personID=(\d+)", link.attrib['href']).group(1)
-            photo_url = ("http://www.legis.iowa.gov/getPhotoPeople.aspx"
-                         "?GA=%s&PID=%s" % (session_id, pid))
+            photo_url = ("https://www.legis.iowa.gov/photo"
+                         "?action=getPhoto&ga=%s&pid=%s" % (session_id, pid))
 
             leg = Legislator(term, chamber, district, name, party=party,
                              photo_url=photo_url, url=url)

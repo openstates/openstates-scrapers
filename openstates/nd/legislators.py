@@ -51,8 +51,12 @@ class NDLegislatorScraper(LegislatorScraper):
         )
         photo = photo[0] if len(photo) else None
 
-        address = page.xpath("//div[@class='adr']")[0]
-        address = re.sub("\s+", " ", address.text_content()).strip()
+        address = page.xpath("//div[@class='adr']")
+        if address:
+            address = address[0]
+            address = re.sub("\s+", " ", address.text_content()).strip()
+        else:
+            address = None
 
         item_mapping = {
             "email": "email",
@@ -103,7 +107,9 @@ class NDLegislatorScraper(LegislatorScraper):
                        'Capitol Office',
                        **kwargs)
 
-        kwargs = {"address": address}
+        kwargs = {}
+        if address:
+            kwargs['address'] = address
 
         if 'cellphone' in metainf:
             kwargs['phone'] = metainf['cellphone']

@@ -2,6 +2,7 @@ import re
 import datetime
 import urlparse
 import collections
+import contextlib
 
 import lxml.html
 
@@ -39,6 +40,19 @@ class INLegislatorScraper(LegislatorScraper):
         for option in doc.xpath('//optgroup[@id="%s"]/option' % optgroup):
             self.scrape_legislator(chamber, term, option)
 
+    @contextlib.contextmanager
+    def scrapelib_settings(self, retry_attempts=0, timeout=0):
+        # Store existing settings.
+        _retry_attempts = self.retry_attempts
+        _timeout = self.timeout
+        # Override them.
+        self.retry_attempts = retry_attempts
+        self.timeout = timeout
+        yield
+        # Set the previous values back again.
+        self.retry_attempts = _retry_attempts
+        self.timeout = _timeout
+
     def scrape_legislator(self, chamber, term, option):
         url = urlparse.urljoin(self.url, option.attrib['value'])
         name, party, district = re.split(r'\s*,\s*', option.text.strip())
@@ -52,7 +66,20 @@ class INLegislatorScraper(LegislatorScraper):
         leg.add_source(self.url)
 
         # Scrape leg page.
-        html = self.urlopen(url)
+        with self.scrapelib_settings(retry_attempts=0, timeout=0):
+            try:
+                html = self.urlopen(url)
+            except scrapelib.HTTPError as exc:
+                # As of July 2014, this only happens when a page has
+                # gone missing from their varnish server.
+                if exc.response.status_code is 503:
+                    return
+            except:
+                # In addition, there's just no acceptable reason for this
+                # request to fail.
+                self.logger.warning('Skipping legislator at url: %s' % url)
+                return
+
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.url)
         leg.add_source(url)

@@ -23,7 +23,7 @@ metadata = dict(
         {'name': '2013-2014',
          'start_year': 2013,
          'end_year': 2014,
-         'sessions': ['2013', '2013S1', '2014', '2014F']}
+         'sessions': ['2013', '2013S1', '2014', '2014F', '2014S2']}
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -45,6 +45,12 @@ metadata = dict(
                  'type': 'primary',
                  'slug': '2013R',
                 },
+        '2013S1': {'start_date': datetime.date(2013, 10, 18),
+                 'display_name': '2013 First Extraordinary Session',
+                 '_scraped_name': 'First Extraordinary Session, 2013',
+                 'type': 'special',
+                 'slug': '2013S1',
+                },
         '2014': {'start_date': datetime.date(2014, 2, 10),
                  'display_name': '2014 Regular Session',
                  '_scraped_name': 'Regular Session, 2014',
@@ -57,11 +63,11 @@ metadata = dict(
                  'type': 'special',
                  'slug': '2014F',
                 },
-        '2013S1': {'start_date': datetime.date(2013, 10, 18),
-                 'display_name': '2013 First Extraordinary Session',
-                 '_scraped_name': 'First Extraordinary Session, 2013',
+        '2014S2': {'start_date': datetime.date(2014, 7, 2),
+                 'display_name': '2014 Second Extraordinary Session',
+                 '_scraped_name': 'Second Extraordinary Session, 2014',
                  'type': 'special',
-                 'slug': '2013S1',
+                 'slug': '2014S2',
                 }
         },
     feature_flags=['influenceexplorer'],
