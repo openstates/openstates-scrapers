@@ -92,7 +92,7 @@ class MAVoteScraper(VoteScraper):
                     self._404_count += 1
             else:
                 self.logger.exception(exc)
-                return
+                continue
 
         text = convert_pdf(vote_file, type='text')
         text = text.decode('utf8')
