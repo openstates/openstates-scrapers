@@ -67,18 +67,14 @@ class INLegislatorScraper(LegislatorScraper):
         leg.add_source(self.url)
 
         # Scrape leg page.
-        with self.scrapelib_settings(retry_attempts=0, timeout=0):
-            try:
-                html = self.urlopen(url)
-            except scrapelib.HTTPError as exc:
-                # As of July 2014, this only happens when a page has
-                # gone missing from their varnish server.
-                if exc.response.status_code is 503:
-                    return
-            except:
-                # In addition, there's just no acceptable reason for this
-                # request to fail.
+        try:
+            html = self.urlopen(url)
+        except scrapelib.HTTPError as exc:
+            # As of July 2014, this only happens when a page has
+            # gone missing from their varnish server.
+            if exc.response.status_code is 503:
                 self.logger.warning('Skipping legislator at url: %s' % url)
+                skipped = True
                 return
 
         doc = lxml.html.fromstring(html)
