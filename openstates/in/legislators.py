@@ -72,10 +72,11 @@ class INLegislatorScraper(LegislatorScraper):
         except scrapelib.HTTPError as exc:
             # As of July 2014, this only happens when a page has
             # gone missing from their varnish server.
-            if exc.response.status_code is 503:
-                self.logger.warning('Skipping legislator at url: %s' % url)
-                skipped = True
-                return
+            # if exc.response.status_code is 503:
+            self.logger.exception(exc)
+            self.logger.warning('Skipping legislator at url: %s' % url)
+            skipped = True
+            return
 
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.url)
