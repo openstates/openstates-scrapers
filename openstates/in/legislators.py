@@ -41,17 +41,18 @@ class INLegislatorScraper(LegislatorScraper):
             self.scrape_legislator(chamber, term, option)
 
     @contextlib.contextmanager
-    def scrapelib_settings(self, retry_attempts=0, timeout=0):
-        # Store existing settings.
-        _retry_attempts = self.retry_attempts
-        _timeout = self.timeout
-        # Override them.
-        self.retry_attempts = retry_attempts
-        self.timeout = timeout
+    def scrapelib_settings(self, **kwargs):
+        previous = {}
+        for k, v in kwargs.items():
+            # Store previous setting.
+            val = getattr(self, k, None)
+            previous[k] = val
+
+            # Override them.
+            setattr(self, k, val)
         yield
-        # Set the previous values back again.
-        self.retry_attempts = _retry_attempts
-        self.timeout = _timeout
+        for k, v in previous.items():
+            setattr(self, k, v)
 
     def scrape_legislator(self, chamber, term, option):
         url = urlparse.urljoin(self.url, option.attrib['value'])
