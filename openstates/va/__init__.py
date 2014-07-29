@@ -64,7 +64,7 @@ metadata = {
                 },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': ['2009 Session',
+    '_ignored_scraped_sessions': ['2009 Session', '2015 Session',
                                   '2009 Special Session I', '2008 Session',
                                   '2008 Special Session I',
                                   '2008 Special Session II',
