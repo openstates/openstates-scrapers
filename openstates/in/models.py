@@ -4,7 +4,9 @@ import datetime
 import collections
 from StringIO import StringIO
 
+import requests
 import scrapelib
+
 from billy.scrape.utils import convert_pdf, PlaintextColumns
 from billy.scrape.votes import Vote
 
