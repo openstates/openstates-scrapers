@@ -158,11 +158,11 @@ class DocumentMeta(object):
         try:
             resp = self.scraper.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
-            self.logger.exception('Connection error. Skipping doc metadata.')
+            self.warning('Connection error. Skipping doc metadata.')
             return
         try:
             data = resp.json()
-            self.logger.exception('Sigh. Skipping doc metadata.')
+            self.warning('Sigh. Skipping doc metadata.')
         except:
             return
         return data
