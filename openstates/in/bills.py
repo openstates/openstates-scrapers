@@ -100,7 +100,10 @@ class INBillScraper(BillScraper):
                 if bill_id in seen_bill_ids:
                     continue
                 bill_url = li.xpath('string(a/@href)')
-                bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
+                try:
+                    bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
+                except IndexError:
+                    continue
                 bill = self.scrape_bill(
                     chamber, term, bill_id, bill_url, bill_title)
 
