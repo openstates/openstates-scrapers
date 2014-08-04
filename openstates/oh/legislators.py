@@ -123,6 +123,10 @@ class OHLegislatorScraper(LegislatorScraper):
             data = legislator.xpath(".//div[@class='data']")[0]
             homepage = data.xpath(".//a[@class='black']")[0]
             full_name = homepage.text_content()
+
+            if "Vacant" in full_name:
+                continue
+
             homepage = homepage.attrib['href']
             party = data.xpath(
                 ".//span[@class='partyLetter']")[0].text_content()
