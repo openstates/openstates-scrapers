@@ -15,15 +15,19 @@ def parse_datetime(s, year):
     if match:
         dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
 
+    if dt:
+        return dt.replace(year=int(year))
+
     # Commented out; unlikely this is correct anymore.
     #match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
     #if match:
     #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
 
-    if dt:
-        return dt.replace(year=int(year))
-    else:
-        raise ValueError("Bad date string: %s" % s)
+    if dt is None:
+        dt = datetime.datetime.strptime(s, "%b %d, %Y, %I:%M %p")
+        return dt
+
+    raise ValueError("Bad date string: %s" % s)
 
 
 class LAEventScraper(EventScraper):
