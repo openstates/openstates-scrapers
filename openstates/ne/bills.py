@@ -69,7 +69,7 @@ class NEBillScraper(BillScraper):
             date = actions[0].text
             if 'Date' not in date:
                 date = datetime.strptime(date, '%b %d, %Y')
-                action = actions[1].text
+                action = actions[1].text_content()
 
                 if 'Governor' in action:
                     actor = 'Governor'
