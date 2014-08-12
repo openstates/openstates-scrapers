@@ -129,7 +129,7 @@ metadata = {
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://docs.legis.wisconsin.gov/search',
-                         "//select[id='sessionNumber']/option/text()")
+                         "//select[@id='sessionNumber']/option/text()")
     return [session.strip(' -') for session in sessions]
 
 def extract_text(doc, data):
