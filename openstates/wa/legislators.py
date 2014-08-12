@@ -17,9 +17,13 @@ class WALegislatorScraper(LegislatorScraper):
 
         # these pages are useful for checking if a leg is still in office
         if chamber == 'upper':
-            cur_members = self.urlopen('http://www.leg.wa.gov/senate/senators/Pages/default.aspx')
+            cur_member_url = 'http://www.leg.wa.gov/senate/senators/Pages/default.aspx'
         else:
-            cur_members = self.urlopen('http://www.leg.wa.gov/house/representatives/Pages/default.aspx')
+            cur_member_url = 'http://www.leg.wa.gov/house/representatives/Pages/default.aspx'
+
+        cur_members = self.urlopen(cur_member_url)
+        cur_members_doc = lxml.html.fromstring(cur_members)
+        cur_members_doc.make_links_absolute(cur_member_url)
 
         page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
@@ -38,6 +42,8 @@ class WALegislatorScraper(LegislatorScraper):
             if name not in cur_members:
                 self.warning('%s is no longer in office' % name)
                 continue
+            else:
+                leg_url = cur_members_doc.xpath('//a[text()="%s"]/@href' % name)[0]
 
             party = xpath(member, "string(wa:Party)")
             party = {'R': 'Republican', 'D': 'Democratic'}.get(
@@ -55,13 +61,6 @@ class WALegislatorScraper(LegislatorScraper):
             last = xpath(member, "string(wa:LastName)")
             last = last.lower().replace(' ', '')
 
-
-            if chamber == 'upper':
-                leg_url = ("http://www.leg.wa.gov/senate/senators/"
-                           "Pages/%s.aspx" % last)
-            else:
-                leg_url = ("http://www.leg.wa.gov/house/"
-                           "representatives/Pages/%s.aspx" % last)
             scraped_offices = []
 
             try:
@@ -102,7 +101,6 @@ class WALegislatorScraper(LegislatorScraper):
 
             for office in scraped_offices:
                 typ = 'district' if 'District' in office['name'] else 'capitol'
-                leg.add_office(typ, office.pop('name'),
-                               **office)
+                leg.add_office(typ, office.pop('name'), **office)
 
             self.save_legislator(leg)
