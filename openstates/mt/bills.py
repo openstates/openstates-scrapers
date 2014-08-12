@@ -80,7 +80,7 @@ class MTBillScraper(BillScraper):
 
         self.versions_dict = self._versions_dict(year)
 
-        base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
+        base_bill_url = 'http://leg.mt.gov/bills/%d/BillHtml/' % year
         index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
 
         bill_urls = []
@@ -280,7 +280,7 @@ class MTBillScraper(BillScraper):
 
         res = defaultdict(dict)
 
-        url = 'http://data.opi.mt.gov/bills/%d/' % year
+        url = 'http://leg.mt.gov/bills/%d/' % year
 
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
@@ -633,8 +633,9 @@ class PDFCommitteeVote(object):
 
     def asdict(self):
         res = {}
-        methods = '''yes_count no_count motion
-                  chamber committee other_count passed date'''.split()
+        methods = ('yes_count', 'no_count', 'motion', 'chamber',
+                   'other_count', 'passed', 'date')
+        # TODO: re-add committee
         for m in methods:
             res[m] = getattr(self, m)()
         return res
