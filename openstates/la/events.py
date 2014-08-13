@@ -165,7 +165,7 @@ class LAEventScraper(EventScraper):
                 continue
 
             info = re.match(
-                r"(?P<when>.*) (?P<where>H|C.*-.*?)",
+                r"(?P<when>.*) (?P<where>N|H|C.*-.*?)",
                 when_and_where
             ).groupdict()
 
