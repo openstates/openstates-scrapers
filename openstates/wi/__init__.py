@@ -67,7 +67,7 @@ metadata = {
         'December 2009 Special Session': {
             'type': 'special', 'site_id': 'de9',
             'display_name': 'Dec 2009 Special Session',
-            '_scraped_name': 'Dec 2009 Special Session',
+            '_scraped_name': 'December 2009 Special Session',
         },
         '2011 Regular Session': {'start_date': datetime.date(2011,1,11),
                                  'end_date': datetime.date(2013,1,7),
@@ -78,12 +78,12 @@ metadata = {
         'January 2011 Special Session': {
             'type': 'special', 'site_id': 'jr1',
             'display_name': 'Jan 2011 Special Session',
-            '_scraped_name': 'Jan 2011 Special Session',
+            '_scraped_name': 'January 2011 Special Session',
         },
         'September 2011 Special Session': {
             'type': 'special', 'site_id': 'se1',
             'display_name': 'Sep 2011 Special Session',
-            '_scraped_name': 'Sept 2011 Special Session',
+            '_scraped_name': 'September 2011 Special Session',
         },
         '2013 Regular Session': {'start_date': datetime.date(2013,1,7),
                                  'end_date': datetime.date(2014,1,13),
@@ -94,35 +94,36 @@ metadata = {
         'October 2013 Special Session': {
             'type': 'special',
             'display_name': 'Oct 2013 Special Session',
-            '_scraped_name': 'Oct 2013 Special Session',
+            '_scraped_name': 'October 2013 Special Session',
             'site_id': 'oc3'
         },
         'December 2013 Special Session': {
             'type': 'special',
             'display_name': 'Dec 2013 Special Session',
-            '_scraped_name': 'Dec 2013 Special Session',
+            '_scraped_name': 'December 2013 Special Session',
             'site_id': 'de3'
         },
         'January 2014 Special Session': {
             'type': 'special',
             'display_name': 'Jan 2014 Special Session',
-            '_scraped_name': 'Jan 2014 Special Session',
+            '_scraped_name': 'January 2014 Special Session',
             'site_id': 'jr4'
         }
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
-        '2007 Regular Session', u'Apr 2008 Special Session',
-        u'Mar 2008 Special Session', u'Dec 2007 Special Session',
-        u'Oct 2007 Special Session', u'Jan 2007 Special Session',
-        '2005 Regular Session', u'Jan 2005 Special Session',
-        '2003 Regular Session', u'Jan 2003 Special Session',
-        '2001 Regular Session', u'May 2002 Special Session',
-        u'Jan 2002 Special Session', u'May 2001 Special Session',
-        '1999 Regular Session', u'May 2000 Special Session',
-        u'Oct 1999 Special Session', '1997 Regular Session',
-        u'Apr 1998 Special Session', '1995 Regular Session',
-        u'Jan 1995 Special Session', u'Sept 1995 Special Session']
+        '2007 Regular Session', 'April 2008 Special Session',
+        'March 2008 Special Session', 'December 2007 Special Session',
+        'October 2007 Special Session', 'January 2007 Special Session',
+        'February 2006 Special Session',
+        '2005 Regular Session', 'January 2005 Special Session',
+        '2003 Regular Session', 'January 2003 Special Session',
+        '2001 Regular Session', 'May 2002 Special Session',
+        'January 2002 Special Session', 'May 2001 Special Session',
+        '1999 Regular Session', 'May 2000 Special Session',
+        'October 1999 Special Session', '1997 Regular Session',
+        'April 1998 Special Session', '1995 Regular Session',
+        'January 1995 Special Session', 'September 1995 Special Session']
 
 }
 
