@@ -13,7 +13,7 @@ url = 'http://webservices.legis.ga.gov/GGAServices/%s/Service.svc?wsdl'
 
 
 def get_client(service):
-    client = backoff(Client, get_url(service))
+    client = backoff(Client, get_url(service), autoblend=True)
     return client
 
 
