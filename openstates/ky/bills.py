@@ -161,6 +161,8 @@ class KYBillScraper(BillScraper):
                 atype.append('bill:reading:1')
             if '3rd reading' in action:
                 atype.append('bill:reading:3')
+                if 'passed' in action:
+                    atype.append('bill:passed')
             if '2nd reading' in action:
                 atype.append('bill:reading:2')
 
