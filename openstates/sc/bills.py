@@ -51,7 +51,7 @@ def action_type(action):
                    ('Vetoed by Governor', 'governor:vetoed'),
                   )
     for prefix, atype in classifiers:
-        if action.startswith(prefix):
+        if action.lower().startswith(prefix.lower()):
             return atype
     # otherwise
     return 'other'
