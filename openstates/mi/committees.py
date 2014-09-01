@@ -70,6 +70,7 @@ class MICommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//h3/text()')[0]
+        name = name.replace(' Committee', '')
 
         com = Committee(chamber='upper', committee=name)
 
