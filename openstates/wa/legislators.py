@@ -78,7 +78,9 @@ class WALegislatorScraper(LegislatorScraper):
                     office_name = office.text_content().strip().rstrip(":")
                     address_lines = [x.tail for x in office_block.xpath(".//br")]
                     address_lines = filter(lambda a: a is not None, address_lines)
+                    _ = address_lines.pop(len(address_lines) - 1)
                     phone = address_lines.pop(len(address_lines) - 1)
+                    print(phone)
                     address = "\n".join(address_lines)
                     obj = {
                         "name": office_name,
