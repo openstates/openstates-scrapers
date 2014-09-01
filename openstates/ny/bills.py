@@ -77,6 +77,8 @@ class NYBillScraper(BillScraper):
                     vote.no(name)
                     vote['no_count'] += 1
 
+                vote['passed'] = vote['yes_count'] > vote['no_count']
+
                 bill.add_vote(vote)
 
         # if data['previousVersions']:
