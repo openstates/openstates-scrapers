@@ -222,7 +222,10 @@ class LABillScraper(BillScraper):
             "prefiled": ["bill:filed"],
             "referred to the committee": ["committee:referred"],
             "sent to the house": ['bill:passed'],
+            "ordered returned to the house": ['bill:passed'],
             "ordered to the senate": ['bill:passed'],
+            "signed by the governor": ['governor:signed'],
+            "sent to the governor": ['governor:received'],
         }
 
         try:
