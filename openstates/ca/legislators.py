@@ -44,30 +44,58 @@ class CALegislatorScraper(LegislatorScraper):
         url = self.urls[chamber]
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
-        rows = doc.xpath('//table/tbody/tr')
 
-        parse = self.parse_legislator
+        if chamber == 'lower':
+            rows = doc.xpath('//table/tbody/tr')
+            parse = self.parse_assembly
+        else:
+            rows = doc.xpath('//div[contains(@class, "views-row")]')
+            parse = self.parse_senate
+
         for tr in rows:
             legislator = parse(tr, term, chamber)
             if legislator is None:
                 continue
-            # Try to spot on the janky ways the site expresses vacant seats.
-            if legislator['full_name'].startswith('Vacant'):
+            if 'Vacant' in legislator['full_name']:
                 continue
-            if '[ Vacant ]' in legislator['full_name']:
-                continue
-            if 'Vacant ' in legislator['full_name']:
-                continue
-            if 'Vacant, ' in legislator['full_name']:
-                continue
-            fullname = legislator['full_name']
-            if not legislator['first_name'] and fullname.endswith('Vacant'):
-                continue
+
             legislator.add_source(url)
             legislator['full_name'] = legislator['full_name'].strip()
             self.save_legislator(legislator)
 
-    def parse_legislator(self, tr, term, chamber):
+    def parse_senate(self, div, term, chamber):
+        name = div.xpath('.//h2/text()')[0]
+        if name.endswith(' (R)'):
+            party = 'Republican'
+        elif name.endswith(' (D)'):
+            party = 'Democratic'
+        else:
+            self.warning('skipping ' + name)
+            return None
+        name = name.split(' (')[0]
+
+        district = div.xpath('.//span[@class="district-number"]/text()')[0].split()[1]
+        photo_url = div.xpath('.//img/@src')[0]
+        url = div.xpath('.//a/@href')[0]
+
+        leg = Legislator(term, chamber, full_name=name, party=party, district=district,
+                         photo_url=photo_url, url=url)
+
+        for addr in div.xpath('.//div[@class="views-field-field-senate-offices-value"]//p'):
+            addr, phone = addr.text_content().split('; ')
+            leg.add_office('capitol', 'Senate Office', address=addr, phone=phone)
+        for addr in div.xpath('.//div[@class="views-field-field-senate-district-offices-value"]//p'):
+            for addr in addr.text_content().strip().splitlines():
+                try:
+                    addr, phone = addr.strip().replace(u'\xa0', ' ').split('; ')
+                    leg.add_office('district', 'District Office', address=addr, phone=phone)
+                except ValueError:
+                    addr = addr.strip().replace(u'\xa0', ' ')
+                    leg.add_office('district', 'District Office', address=addr)
+
+        return leg
+
+    def parse_assembly(self, tr, term, chamber):
         '''
         Given a tr element, get specific data from it.
         '''
