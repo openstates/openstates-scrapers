@@ -74,7 +74,7 @@ class CALegislatorScraper(LegislatorScraper):
             return None
         name = name.split(' (')[0]
 
-        district = div.xpath('.//span[@class="district-number"]/text()')[0].split()[1]
+        district = div.xpath('.//span[@class="district-number"]/text()')[0].split()[1].lstrip('0')
         photo_url = div.xpath('.//img/@src')[0]
         url = div.xpath('.//a/@href')[0]
 
