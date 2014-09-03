@@ -148,6 +148,11 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
                 'Government': 'State Government',
                 'Boef': 'De Boef'}.get(sponsor, sponsor)
 
+            if sponsor[0].islower():
+                # SSBs catch cruft in it ('charges', 'overpayments')
+                # https://sunlight.atlassian.net/browse/DATA-286
+                continue
+
             bill.add_sponsor('primary', sponsor)
 
         for tr in page.xpath("//table[3]/tr"):
