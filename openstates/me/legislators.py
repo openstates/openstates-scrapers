@@ -79,7 +79,7 @@ class MELegislatorScraper(LegislatorScraper):
             else:
                 photo_url = None
 
-            # Try to get color photo from the GPO website.
+            # Try to get color photo from the GOP website.
             if party == 'Republican':
                 xpath = '//a[contains(@href, "house_gop")]/@href'
                 party_website_url = doc.xpath(xpath)[0]

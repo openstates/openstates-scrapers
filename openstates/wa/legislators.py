@@ -80,7 +80,6 @@ class WALegislatorScraper(LegislatorScraper):
                     address_lines = filter(lambda a: a is not None, address_lines)
                     _ = address_lines.pop(len(address_lines) - 1)
                     phone = address_lines.pop(len(address_lines) - 1)
-                    print(phone)
                     address = "\n".join(address_lines)
                     obj = {
                         "name": office_name,
