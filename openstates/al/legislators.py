@@ -56,6 +56,8 @@ class ALLegislatorScraper(LegislatorScraper):
         if email:
             leg['email'] = email[0].strip('mailto:')
 
+        seen_coms = set()
+
         # find lis after the strong (or p) containing Committees
         coms = doc.xpath('//strong[contains(text(), "Committees")]/following::li')
         if not coms:
@@ -79,7 +81,12 @@ class ALLegislatorScraper(LegislatorScraper):
             com = com.replace("Taxation, ", "Taxation ")
             com = com.replace("Municiple ", "Municipal ")
             com = com.strip()
-            leg.add_role('committee member', term=leg['roles'][0]['term'],
-                         chamber=leg['roles'][0]['chamber'], committee=com,
-                         position=position)
+
+            if com not in seen_coms:
+                leg.add_role('committee member', term=leg['roles'][0]['term'],
+                             chamber=leg['roles'][0]['chamber'], committee=com,
+                             position=position)
+                seen_coms.add(com)
+            else:
+                self.warning('skipping second occurence of ' + com)
         leg.add_source(url)
