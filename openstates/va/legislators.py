@@ -3,6 +3,13 @@ from billy.scrape.legislators import Legislator, LegislatorScraper
 import re
 import lxml.html
 
+
+CHAMBER_MOVES = {
+    "A. Benton \"Ben\" Chafin-Elect": "upper",
+    "A. Benton Chafin-Senate Elect": "upper",
+}
+
+
 class VALegislatorScraper(LegislatorScraper):
     jurisdiction = 'va'
 
@@ -36,6 +43,10 @@ class VALegislatorScraper(LegislatorScraper):
             self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
+        if name in CHAMBER_MOVES:
+            if chamber != CHAMBER_MOVES[name]:
+                return  # Skip bad chambers.
+
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
         party_district_re = re.compile(
             r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
