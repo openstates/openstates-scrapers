@@ -111,12 +111,12 @@ class VTBillScraper(BillScraper):
                 mimetype = 'text/html'
             bill.add_version(link.text, link.attrib['href'], mimetype=mimetype)
 
-        more_sponsor_link = page.xpath("//a[text()='More Sponsors']")
-        if page.xpath("//a[text()='More Sponsors']"):
+        more_sponsor_link = page.xpath("//a[contains(.,'More Sponsors')]")
+        if more_sponsor_link:
             sponsor_url = more_sponsor_link[0].attrib['href']
             self.scrape_sponsors(bill, sponsor_url)
         else:
-            for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/b"):
+            for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/a|b"):
                 bill.add_sponsor("primary", b.text)
 
         for tr in page.xpath("""
@@ -178,7 +178,7 @@ class VTBillScraper(BillScraper):
 
     def scrape_sponsors(self, bill, url):
         bill.add_source(url)
-
+        self.log('Scraping sponsors page {0}'.format(url))
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
