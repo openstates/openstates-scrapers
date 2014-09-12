@@ -357,6 +357,13 @@ class MOBillScraper(BillScraper):
 
         self.log(bid)
 
+        if bill_desc == "":
+            print("ERROR: Blank title. Skipping. {} / {} / {}".format(
+                bill_id, bill_desc, official_title
+            ))
+            # XXX: Some pages full of blank bills.
+            return
+
         bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url,
                     bill_lr=bill_lr, official_title=official_title,
                     type=bill_type, subjects=subs)
