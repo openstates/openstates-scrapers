@@ -63,6 +63,8 @@ class MILegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, chamber, term):
         url = 'http://www.senate.michigan.gov/members/memberlist.htm'
+        r_contact_url_pattern = 'http://www.misenategop.com/senators/contact.asp?District=%s'
+
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         for row in doc.xpath('//table[@width=550]/tr')[1:39]:
@@ -78,6 +80,19 @@ class MILegislatorScraper(LegislatorScraper):
             office_phone = phone.text
             office_fax = fax.text
             office_loc = loc.text
+
+            email = None
+            if party == abbr['R']:
+                contact_url = r_contact_url_pattern % district
+                contact_html = self.urlopen(contact_url)
+                contact_doc = lxml.html.fromstring(contact_html)
+                email_link = contact_doc.xpath(".//*[@id='yui-main']/div/div/table/tr[9]/td[2]/p/a")
+                if(email_link):
+                    email_link_attr = email_link[0].attrib['href']
+                    if email_link_attr[0:7] == 'mailto:':
+                        email = email_link_attr[7:]
+
+
             leg = Legislator(term=term, chamber=chamber,
                              district=district,
                              full_name=name,
@@ -87,8 +102,12 @@ class MILegislatorScraper(LegislatorScraper):
             leg.add_office('capitol', 'Capitol Office',
                            address=office_loc,
                            fax=office_fax,
-                           phone=office_phone)
+                           phone=office_phone,
+                           email=email)
 
+
+            if email:
+                leg.add_source(contact_url)
 
             leg.add_source(url)
             self.save_legislator(leg)
