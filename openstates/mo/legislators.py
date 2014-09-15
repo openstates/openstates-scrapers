@@ -146,6 +146,7 @@ class MOLegislatorScraper(LegislatorScraper):
             else:
                 party_override = {
                     " Green": "Democratic",
+                    " Sisco": "Republican",
                 }
 
                 if party == "" and full_name in party_override:
