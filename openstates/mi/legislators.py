@@ -62,18 +62,27 @@ class MILegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
-        url = 'http://www.senate.michigan.gov/members/memberlist.htm'
+        url = 'http://www.senate.michigan.gov/senatorinfo.html'
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
-        for row in doc.xpath('//table[@width=550]/tr')[1:39]:
+        for row in doc.xpath("//table[@class='auto-style2']/tr")[4:]:
+            if len(row) != 6:
+                continue
+
             # party, dist, member, office_phone, office_fax, office_loc
             party, dist, member, phone, fax, loc = row.getchildren()
+            if (party.text_content().strip() == "" or
+                    'Lieutenant Governor' in member.text_content()):
+                continue
+
             party = abbr[party.text]
             district = dist.text_content().strip()
             name = member.text_content().strip()
+
             if name == 'Vacant':
                 self.info('district %s is vacant', district)
                 continue
+
             leg_url = member.xpath('a/@href')[0]
             office_phone = phone.text
             office_fax = fax.text
@@ -88,7 +97,6 @@ class MILegislatorScraper(LegislatorScraper):
                            address=office_loc,
                            fax=office_fax,
                            phone=office_phone)
-
 
             leg.add_source(url)
             self.save_legislator(leg)
