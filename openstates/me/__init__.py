@@ -14,6 +14,10 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
+        {'name': '2003-2004', 'sessions': ['121'], 'start_year': 2003,
+         'end_year': 2004},
+        {'name': '2005-2006', 'sessions': ['122'], 'start_year': 2005,
+         'end_year': 2006},
         {'name': '2007-2008', 'sessions': ['123'], 'start_year': 2007,
          'end_year': 2008},
         {'name': '2009-2010', 'sessions': ['124'], 'start_year': 2009,
@@ -24,6 +28,10 @@ metadata = dict(
          'end_year': 2014}
     ],
     session_details={
+        '121': {'display_name':  '121st Legislature (2003-2004)',
+                '_scraped_name': '121st Legislature'},
+        '122': {'display_name':  '122nd Legislature (2005-2006)',
+                '_scraped_name': '122nd Legislature'},
         '123': {'display_name':  '123rd Legislature (2007-2008)',
                 '_scraped_name': '123rd Legislature'},
         '124': {'display_name':  '124th Legislature (2009-2010)',
@@ -34,7 +42,7 @@ metadata = dict(
                 '_scraped_name': '126th Legislature'},
     },
     feature_flags=['subjects', 'influenceexplorer'],
-    _ignored_scraped_sessions=['121st Legislature', '122nd Legislature']
+    _ignored_scraped_sessions=[]
 
 )
 
