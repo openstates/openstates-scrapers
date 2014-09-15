@@ -24,6 +24,8 @@ def parse_datetime(s, year):
     #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
 
     if dt is None:
+        if s.endswith(","):
+            s = s[:-1]
         dt = datetime.datetime.strptime(s, "%b %d, %Y, %I:%M %p")
         return dt
 
@@ -53,6 +55,9 @@ class LAEventScraper(EventScraper):
     def scrape_bills(self, line):
         ret = []
         for blob in [x.strip() for x in line.split(",")]:
+            if blob == "":
+                continue
+
             if (blob[0] in ['H', 'S', 'J'] and
                     blob[1] in ['R', 'M', 'B', 'C']):
                 blob = blob.replace("-", "")
@@ -165,7 +170,7 @@ class LAEventScraper(EventScraper):
                 continue
 
             info = re.match(
-                r"(?P<when>.*) (?P<where>F|N|H|C.*-.*?)",
+                r"(?P<when>.*) (?P<where>L|F|N|H|C.*-.*?)",
                 when_and_where
             ).groupdict()
 
