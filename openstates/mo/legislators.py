@@ -144,10 +144,8 @@ class MOLegislatorScraper(LegislatorScraper):
                 leg.add_source(url)
                 self.save_vacant_legislator(leg)
             else:
-                party_override = {
-                    " Green": "Democratic",
-                    " Sisco": "Republican",
-                }
+                party_override = {" Green": "Democratic",
+                                  " Sisco": "Republican",}
 
                 if party == "" and full_name in party_override:
                     party = party_override[full_name]
