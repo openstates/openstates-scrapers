@@ -77,17 +77,45 @@ class MEBillScraper(BillScraper):
             self.scrape_session_directory(session, chamber, link)
 
     def scrape_session_directory(self, session, chamber, url):
-        # decide xpath based on upper/lower
-        link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
-                      'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
+        is_old_session = int(session) <= 122
+        if not is_old_session:
+            # decide xpath based on upper/lower
+            link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
+                          'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
+        else:
+            # cannot tell bill chamber from directory listing only,
+            # need to make separate http request for this info, see below
+            link_xpath = '//dl/dt/a'
 
         page = self.urlopen(url, retry_on_404=True)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for link in page.xpath(link_xpath):
-            bill_id = link.text
-            title = link.xpath("string(../../following-sibling::dd[1])")
+            if not is_old_session:
+                bill_id = link.text
+                title = link.xpath("string(../../following-sibling::dd[1])")
+            else:
+                # fetch info about bill to determine chamber and paper number
+                html = self.urlopen(link.get('href'))
+                bill_id = get_maine_paper_number(html)
+                if bill_id is None:
+                    msg = 'Could not determine bill id for {0} (skipping).'
+                    self.warning(msg.format(link.text_content()))
+                    continue
+                if bill_id[0] == 'H':
+                    bill_chamber = 'lower'
+                elif bill_id[0] == 'S':
+                    bill_chamber = 'upper'
+                else:
+                    # ignore citizen initiated bills and convention orders
+                    # TODO: this is a bug that affects all sessions; these
+                    #       important bills never get scraped
+                    bill_chamber = ''
+                # only continue if this bill is from desired chamber
+                if bill_chamber != chamber:
+                    continue
+                title = link.xpath("string(../following-sibling::dd[1])")
 
             # A temporary hack to add one particular title that's missing
             # on the directory page.
@@ -184,13 +212,20 @@ class MEBillScraper(BillScraper):
 
         # Add signed by guv action.
         if page.xpath('//b[contains(text(), "Signed by the Governor")]'):
+            # TODO: this is a problematic way to get governor signed action,
+            #       see 122nd legislature LD 1235 for an example of this phrase
+            #       appearing in the bill title!
             date = page.xpath(
                 ('string(//td[contains(text(), "Date")]/'
                  'following-sibling::td/b/text())'))
-            dt = datetime.datetime.strptime(date, "%m/%d/%Y")
-            bill.add_action(
-                action="Signed by Governor", date=dt,
-                actor="governor", type=["governor:signed"])
+            try:
+                dt = datetime.datetime.strptime(date, "%m/%d/%Y")
+            except:
+                self.warning('Could not parse signed date {0}'.format(date))
+            else:
+                bill.add_action(
+                    action="Signed by Governor", date=dt,
+                    actor="governor", type=["governor:signed"])
 
         xpath = "//a[contains(@href, 'rollcalls.asp')]"
         votes_link = page.xpath(xpath)[0]
@@ -343,6 +378,21 @@ def _get_chunks(el, buff=None, until=None):
         #     return
     if el.tag == 'text':
         yield '\n'
+
+
+def get_maine_paper_number(html):
+    """Takes HTML from legislative document page and finds the paper
+       number. This is necessary for sessions 121 and 122 because
+       the bill directory started listed paper numbers only for
+       sessions 123 onwards.
+    """
+    page = lxml.html.fromstring(html)
+    # legislature, paper, and LD numbers for the bill
+    numbers = page.xpath('//span[@class="field_head"]/span/text()')
+    if len(numbers) == 3:
+        # second number is paper number
+        return numbers[1].replace(' ', '')
+    return None
 
 
 def gettext(el):
