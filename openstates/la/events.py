@@ -11,6 +11,8 @@ import lxml.html
 def parse_datetime(s, year):
     dt = None
 
+    s = re.sub("\s+", " ", s).strip()
+
     match = re.match(r"[A-Z][a-z]{2,2} \d+, \d\d:\d\d (AM|PM)", s)
     if match:
         dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
