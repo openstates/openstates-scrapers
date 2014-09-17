@@ -23,23 +23,17 @@ class NDBillScraper(BillScraper):
         page = self.urlopen(href)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
-        table = page.xpath(
-            "//table[@summary='Bill Number Breakdown']"
-        )
+        table = page.xpath("//table[contains(@summary, 'Number Breakdown')]")
+        # some pages say "Measure Number Breakdown", others "Bill..."
 
         if len(table) > 1:  # Pre-2013 pages.
-            ttable, table = table
+            ttable, table = table[0], table[1]
             ttrows = ttable.xpath(".//tr")
             descr = ttrows[-1]
         else:
             table = table[0]
-            curnode = page.xpath("//div[@id='fastpath']")[0].getnext()
-            ret = []
-            while curnode.tag != "table":
-                curnode = curnode.getnext()
-                ret.append(curnode)
-            ttrows = ret
-            descr = page.xpath("//div[@class='section']//p")[-2]
+            ttrows = page.xpath("//div[@id='application']/p")
+            descr = ttrows[-2]
 
         title = re.sub("\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
@@ -70,6 +64,8 @@ class NDBillScraper(BillScraper):
         bill.add_source(href)
 
         for row in ttrows:
+            if isinstance(row, lxml.html.HtmlComment):
+                continue  # ignore HTML comments, no text_content()
             sponsors = row.text_content().strip()
             sinf = re.match(
                 "(?i)introduced by( (rep\.|sen\.))? (?P<sponsors>.*)",
@@ -143,8 +139,8 @@ class NDBillScraper(BillScraper):
         page.make_links_absolute(href)
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
         for bill in bills:
-            bt = bill.text_content()
-            typ, idd, _, = bt.split()
+            bt = bill.text_content().strip().split()
+            typ, idd = bt[0], bt[1]
             bid = "%s %s" % (typ, idd)
             self.scrape_actions(session, subject, bill.attrib['href'], bid)
 
