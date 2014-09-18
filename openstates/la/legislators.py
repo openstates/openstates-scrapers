@@ -3,6 +3,8 @@ import re
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
+from .common import BackoffScraper
+
 import scrapelib
 import lxml.html
 
@@ -15,7 +17,7 @@ def xpath_one(el, expr):
     return ret[0]
 
 
-class LALegislatorScraper(LegislatorScraper):
+class LALegislatorScraper(LegislatorScraper, BackoffScraper):
     jurisdiction = 'la'
     latest_only = True
 

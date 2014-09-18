@@ -3,6 +3,8 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import pdf_to_lxml
 
+from .common import BackoffScraper
+
 import datetime as dt
 import lxml.html
 import scrapelib
@@ -19,7 +21,7 @@ bill_types = {
 }
 
 
-class LABillScraper(BillScraper):
+class LABillScraper(BillScraper, BackoffScraper):
     jurisdiction = 'la'
 
     def lxmlize(self, url):
