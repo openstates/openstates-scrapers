@@ -15,8 +15,8 @@ import scrapelib
 class ORBillScraper(BillScraper):
     jurisdiction = 'or'
 
-    baseFtpUrl    = 'ftp://landru.leg.state.or.us'
-
+    bill_directory_url = ("https://olis.leg.state.or.us/liz/{0}"
+                          "/Navigation/BillNumberSearchForm")
     bill_types = {'B': 'bill',
                   'M': 'memorial',
                   'R': 'resolution',
@@ -59,29 +59,27 @@ class ORBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         sessionYear = year_from_session(session)
-        measure_url = self._resolve_ftp_path(sessionYear, 'measures.txt')
-        action_url = self._resolve_ftp_path(sessionYear, 'meashistory.txt')
-        self.slug = self.metadata['session_details'][session]['slug']
 
         self.all_bills = {}
-        slug = self.metadata['session_details'][session]['slug']
+        self.slug = self.metadata['session_details'][session]['slug']
 
-        # get the actual bills
-        bill_data = self.urlopen(measure_url)
-        # skip header row
-        for line in bill_data.split("\n")[1:]:
-            if line:
-                self.parse_bill(session, chamber, line.strip())
+        page = self.lxmlize(self.bill_directory_url.format(self.slug.upper()))
+        ulid = 'senateBills' if chamber == 'upper' else 'houseBills'  # id of <ul>
+        bill_list = page.xpath("//ul[@id='{0}']".format(ulid))[0]
+        bill_anchors = bill_list.xpath(".//a[boolean(@title)]")
 
-        for bill_id, bill in self.all_bills.items():
-            if bill is None:
-                continue  # XXX: ...
+        ws = re.compile(r"\s+")
+        def _clean_ws(txt):
+            """Remove extra whitespace from text."""
+            return ws.sub(' ', txt).strip()
 
-            bid = bill_id.replace(" ", "")
-            overview = self.create_url("Measures/Overview/{bill}", bid)
-            # Right, let's do some versions.
+        for a in bill_anchors:
+            bid = ws.sub('', a.text_content())  # bill id
+            bill_summary = _clean_ws(a.get('title'))
+            # bill title is added below
+            bill = Bill(session, chamber, bid, title='', summary=bill_summary)
 
-            page = self.lxmlize(overview)
+            page = self.lxmlize(a.get('href'))
             versions = page.xpath(
                 "//ul[@class='dropdown-menu']/li/a[contains(@href, 'Text')]")
 
@@ -98,11 +96,8 @@ class ORBillScraper(BillScraper):
             for sponsor in measure_info['Regular Sponsors'].xpath("./a"):
                 bill.add_sponsor(type='cosponsor', name=sponsor.text_content())
 
-            c = lambda x: re.sub("\s+", " ", x).strip()
 
-            title = c(measure_info['Bill Title'].text_content())
-            summary = c(measure_info['Catchline/Summary'].text_content())
-            bill['summary'] = summary
+            bill['title'] = _clean_ws(measure_info['Bill Title'].text_content())
 
             for version in versions:
                 name = version.text
@@ -117,12 +112,13 @@ class ORBillScraper(BillScraper):
             history = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
             history = self.lxmlize(history).xpath("//table/tr")
             for entry in history:
-                wwhere, action = [c(x.text_content()) for x in entry.xpath("*")]
+                wwhere, action = [_clean_ws(x.text_content())
+                                  for x in entry.xpath("*")]
                 wwhere = re.match(
                     "(?P<when>.*) \((?P<where>.*)\)", wwhere).groupdict()
 
                 chamber = {"S": "upper", "H": "lower"}[wwhere['where']]
-                when = "%s-%s" % (slug[:4], wwhere['when'])
+                when = "%s-%s" % (self.slug[:4], wwhere['when'])
                 when = dt.datetime.strptime(when, "%Y-%m-%d")
 
                 types = []
@@ -142,7 +138,6 @@ class ORBillScraper(BillScraper):
 
             amendments = self.create_url(
                 'Measures/ProposedAmendments/{bill}', bid)
-
             amendments = self.lxmlize(amendments).xpath(
                 "//div[@id='amendments']/table//tr")
 
@@ -163,7 +158,7 @@ class ORBillScraper(BillScraper):
                                   adopted=adopted,
                                   mimetype='application/pdf')
 
-            bill.add_source(overview)
+            bill.add_source(a.get('href'))
             self.save_bill(bill)
 
 
