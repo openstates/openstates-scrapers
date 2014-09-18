@@ -97,7 +97,12 @@ class ORBillScraper(BillScraper):
                 bill.add_sponsor(type='cosponsor', name=sponsor.text_content())
 
 
-            bill['title'] = _clean_ws(measure_info['Bill Title'].text_content())
+            title = _clean_ws(measure_info['Bill Title'].text_content())
+            # some bill titles need to be added manually
+            if self.slug == "2013R1" and bid == "HB2010":
+                title = ("Relating to Water Resources Department contested"
+                         "case proceedings.")
+            bill['title'] = title
 
             for version in versions:
                 name = version.text
