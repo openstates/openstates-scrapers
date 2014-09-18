@@ -124,13 +124,16 @@ class WABillScraper(BillScraper):
 
         # Sometimes the measure's version_url isn't guessable. When that happens
         # have to get the url from the source page.
-        version_resp = self.get(version_url)
-        if version_resp.status_code != 200:
-            webpage = self.get(fake_source).text
-            webdoc = lxml.html.fromstring(webpage)
-            version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
-            if version_url.lower().endswith('.pdf'):
-                mimetype = 'application/pdf'
+        try:
+            version_resp = self.get(version_url)
+            if version_resp.status_code != 200:
+                webpage = self.get(fake_source).text
+                webdoc = lxml.html.fromstring(webpage)
+                version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
+                if version_url.lower().endswith('.pdf'):
+                    mimetype = 'application/pdf'
+        except scrapelib.HTTPError:
+            pass
 
         bill.add_version(bill_id, version_url, mimetype=mimetype)
 
