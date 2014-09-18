@@ -33,8 +33,7 @@ metadata = dict(
          'sessions': ['76']
         },
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['77', '2013Special27']
-        }
+         'sessions': ['77', '2013Special27', '2014Special28']}
     ],
     session_details={
         '2010Special26': {'type':'special',
@@ -62,6 +61,11 @@ metadata = dict(
                           '_scraped_name': u'27th (2013) Special Session\xa0\xa0(click to close)',
                           '_committee_session': '77th2013',
                           'slug': '27th2013Special'},
+        '2014Special28': {'type': 'special',
+                          'display_name': '28th Special Session (2014)',
+                          '_scraped_name': u'28th (2014) Special Session\xa0\xa0(click to close)',
+                          '_committee_session': '28th2014Special',
+                          'slug': '28th2014Special'},
     },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
