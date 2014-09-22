@@ -6,6 +6,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 from .common import BackoffScraper
 
+import requests.exceptions
 import lxml.html
 
 
@@ -148,12 +149,19 @@ class LAEventScraper(EventScraper):
                                    type='consideration')
         self.save_event(event)
 
-    def scrape_house_weekly_schedule(self, session):
-        url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
+    def lxmlize(self, url):
+        try:
+            page = self.urlopen(url)
+        except requests.exceptions.Timeout:
+            return self.lxmlize(url)
 
-        page = self.urlopen(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
+        return page
+
+    def scrape_house_weekly_schedule(self, session):
+        url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
+        page = self.lxmlize(url)
 
         for link in page.xpath("//img[@alt = 'See Agenda in pdf']/.."):
             try:
