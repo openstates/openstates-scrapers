@@ -2,6 +2,7 @@ import re
 import datetime
 
 from billy.scrape.committees import CommitteeScraper, Committee
+from billy.scrape import NoDataForPeriod
 
 import lxml.html
 
@@ -33,6 +34,8 @@ class NVCommitteeScraper(CommitteeScraper):
 
         url = 'http://www.leg.state.nv.us/Session/%s/Committees/%s_Committees/' % (
             insert, chamber_letter)
+        if insert in ['28th2014Special']:
+            raise NoDataForPeriod(insert)
 
         page = self.urlopen(url)
         root = lxml.html.fromstring(page)

@@ -25,7 +25,10 @@ class LABillScraper(BillScraper, BackoffScraper):
     jurisdiction = 'la'
 
     def lxmlize(self, url):
-        page = self.urlopen(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            return self.lxmlize(url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page

@@ -86,7 +86,8 @@ metadata = dict(
         '1998 General Session',
         '1997 2nd Special Session',
         '1997 1st Special Session',
-        '1997 General Session']
+        '1997 General Session',
+        '1990-1996',]
 
 )
 
