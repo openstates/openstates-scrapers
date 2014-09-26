@@ -115,4 +115,7 @@ class MIEventScraper(EventScraper):
             return
         events = span.xpath("//a[contains(@href, 'committeemeeting')]")
         for event in events:
-            self.scrape_event_page(event.attrib['href'], chamber, session)
+            url = event.attrib['href']
+            if 'doPostBack' in url:
+                continue
+            self.scrape_event_page(url, chamber, session)
