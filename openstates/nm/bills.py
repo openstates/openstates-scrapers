@@ -445,18 +445,20 @@ class NMBillScraper(BillScraper):
                 bill.add_document('%s Floor Amendment %s' %
                                   (a_chamber, num),
                                   doc_path + fname)
-
             # committee substitutes
             elif suffix.endswith('S'):
                 committee_name = suffix[:-1]
                 bill.add_version('%s substitute' % committee_name,
                                  doc_path + fname, mimetype='text/html')
-
             # votes
             elif 'SVOTE' in suffix:
                 vote = self.parse_senate_vote(doc_path + fname)
                 if vote:
                     bill.add_vote(vote)
+
+                # if "154" in bill_id:
+                #     raise Exception
+
             elif 'HVOTE' in suffix:
                 vote = self.parse_house_vote(doc_path + fname)
                 if vote:
@@ -473,7 +475,7 @@ class NMBillScraper(BillScraper):
                 pass
             else:
                 # warn about unknown suffix
-                self.warning('unknown document suffix %s' % (fname))
+                self.warning('unknown document suffix %s (%s)' % (suffix, fname))
 
     def parse_senate_vote(self, url):
         """ senate PDFs -> garbled text -> good text -> Vote """
@@ -485,37 +487,65 @@ class NMBillScraper(BillScraper):
         sv_text = convert_sv_text(convert_pdf(fname, 'text'))
         os.remove(fname)
         in_votes = False
+        flag = None
+        overrides = {"ONEILL": "O'NEILL"}
+
+        vote_override = {("SB0112SVOTE.PDF", "RYAN"): vote.other,    # Recused
+                         ("HB0144SVOTE.PDF", "SOULES"): vote.other,  # Recused
+                         ("HJR15SVOTE.PDF", "KELLER"): vote.other,   # Recused
+                        }
 
         # use in_votes as a sort of state machine
         for line in sv_text:
-
             # not 'in_votes', get date or passage
+
+            if "bT" in line:  # Whatever generates this text renders the cross
+                # in the table as a bT
+                continue
+
+            # GARBAGE_SPECIAL = ["'", "%", "$", "&"]
+            # for x in GARBAGE_SPECIAL:
+            #     for y in [" {} ", "{} ", " {}"]:
+            #         line = line.replace(y.format(x), " ")
+
             if not in_votes:
                 dmatch = re.search('DATE:(\d{2}-\d{2}-\d{2})', line)
                 if dmatch:
                     date = dmatch.groups()[0]
                     vote['date'] = datetime.strptime(date, '%m-%d-%y')
 
-                if 'YES NO ABS EXC' in line:
+                els = re.findall("YES.*NO.*ABS.*EXC", line)
+                if els != []:
+                    flag = line[0]
                     in_votes = True
-                elif 'PASSED' in line:
+
+                if 'PASSED' in line:
                     vote['passed'] = True
 
             # in_votes: totals & votes
             else:
+                line = line.replace(flag, "|")
                 # totals
                 if 'TOTALS' in line:
-
                     # Lt. Governor voted
                     if 'GOVERNOR' in line:
-                        rgx = ' ((?:LT\. )?[A-Z,.]+)(\s+)X(.*)'
-                        name, spaces, line = re.match(rgx, line).groups()
-                        if len(spaces) == 1:
+                        _, name, y, n, a, e = [
+                            x.strip() for x in line.split("|")
+                        ][:6]
+                        assert name == "LT. GOVERNOR"
+                        if y == "X":
                             vote.yes(name)
-                        else:
+                        elif n == "X":
                             vote.no(name)
+                        elif a == "X" or e == "X":
+                            vote.other(name)
+                        else:
+                            raise ValueError("Bad parse")
 
-                    _, yes, no, abs, exc = line.split()
+                    name, yes, no, abs, exc = [
+                        x.strip() for x in line.split("|")
+                    ][6:-1]
+
                     vote['yes_count'] = int(yes)
                     vote['no_count'] = int(no)
                     vote['other_count'] = int(abs) + int(exc)
@@ -527,27 +557,35 @@ class NMBillScraper(BillScraper):
                 matches = re.match(
                     ' ([A-Z,\'\-.]+)(\s+)X\s+([A-Z,\'\-.]+)(\s+)X', line)
 
-                if matches is not None:
-                    matches = matches.groups()
-                    name1, spaces1, name2, spaces2 = matches
+                votes = [x.strip() for x in line.split("|")][1:-1]
+                vote1 = votes[:5]
+                vote2 = votes[5:]
 
-                    if "District" in name1 or "District" in name2:
+                for voted in [vote1, vote2]:
+                    name = "".join(voted[:2])
+                    if name in overrides:
+                        name = overrides[name]
+                        voted.pop(0)
+                        voted[0] = name
+
+                    name, yes, no, abs, exc = voted
+
+                    if "District" in name:
                         continue
 
-                    # vote can be determined by # of spaces
-                    if len(spaces1) == 1:
-                        vote.yes(name1)
-                    elif len(spaces1) == 2:
-                        vote.no(name1)
+                    if yes == "X":
+                        vote.yes(name)
+                    elif no == "X":
+                        vote.no(name)
+                    elif abs == "X" or exc == "X":
+                        vote.other(name)
                     else:
-                        vote.other(name1)
+                        key = (os.path.basename(url), name)
+                        if key in vote_override:
+                            vote_override[key](name)
+                        else:
+                            raise ValueError("Bad parse")
 
-                    if len(spaces2) == 1:
-                        vote.yes(name2)
-                    elif len(spaces2) == 2:
-                        vote.no(name2)
-                    else:
-                        vote.other(name2)
 
         if not isinstance(vote['date'], datetime):
             return None
