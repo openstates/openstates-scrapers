@@ -455,9 +455,8 @@ class NMBillScraper(BillScraper):
                 vote = self.parse_senate_vote(doc_path + fname)
                 if vote:
                     bill.add_vote(vote)
-
-                # if "154" in bill_id:
-                #     raise Exception
+                else:
+                    raise ValueError("Bad parse on the vote")
 
             elif 'HVOTE' in suffix:
                 vote = self.parse_house_vote(doc_path + fname)
@@ -509,7 +508,7 @@ class NMBillScraper(BillScraper):
             #         line = line.replace(y.format(x), " ")
 
             if not in_votes:
-                dmatch = re.search('DATE:(\d{2}-\d{2}-\d{2})', line)
+                dmatch = re.search('DATE: (\d{2}-\d{2}-\d{2})', line)
                 if dmatch:
                     date = dmatch.groups()[0]
                     vote['date'] = datetime.strptime(date, '%m-%d-%y')
