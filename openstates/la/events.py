@@ -29,7 +29,7 @@ def parse_datetime(s, year):
 
     if dt is None:
         if s.endswith(","):
-            s = s[:-1]
+            s, _ = s.rsplit(" ", 1)
         dt = datetime.datetime.strptime(s, "%b %d, %Y, %I:%M %p")
         return dt
 
