@@ -75,6 +75,8 @@ class COLegislatorScraper(LegislatorScraper):
         image = ""
         html = self.urlopen(hp_url)
         page = lxml.html.fromstring(html)
+        page.make_links_absolute(hp_url)
+
         try:
             email = page.xpath("//a[contains(@href, 'mailto')]")[0]
             email = email.attrib['href']
@@ -106,7 +108,7 @@ class COLegislatorScraper(LegislatorScraper):
         ctty_apptmts = filter(lambda x: x.strip() != "" and
                               x not in CTTY_BLACKLIST, new)
 
-        image = hp_url[:-3] + "jpg"
+        (image,) = page.xpath("//img[contains(@src, '.jpg')]/@src")
         obj.update({
             "ctty"  : ctty_apptmts,
             "photo" : image
