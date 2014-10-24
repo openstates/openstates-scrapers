@@ -37,16 +37,18 @@ class KSLegislatorScraper(LegislatorScraper):
                                )
 
         # just do office address for now, can get others from api
-        if content['OFFICENUM']:
-            address = ('Kansas House of Representatives\n'
-                       'Docking State Office Building\n'
-                       '901 SW Harrison Street\n'
-                       'Topeka, KS 66612')
-        else:
-            address = ('Room %s\n'
-                       'Kansas State Capitol Building\n'
-                       '300 SW 10th St.\n'
-                       'Topeka, KS 66612') % content['OFFICENUM']
+        # if content['OFFICENUM']:
+        #     address = ('Kansas House of Representatives\n'
+        #                'Docking State Office Building\n'
+        #                '901 SW Harrison Street\n'
+        #                'Topeka, KS 66612')
+        # else:
+
+        address = ('Room %s\n'
+                   'Kansas State Capitol Building\n'
+                   '300 SW 10th St.\n'
+                   'Topeka, KS 66612') % content['OFFICENUM']
+
         legislator.add_office('capitol', 'Capitol Office',
                               phone=content['OFFPH'] or None,
                               address=address)
