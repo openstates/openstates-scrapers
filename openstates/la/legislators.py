@@ -12,7 +12,7 @@ import lxml.html
 def xpath_one(el, expr):
     ret = el.xpath(expr)
     if len(ret) != 1:
-        print ret
+        print(ret, expr)
         raise Exception
     return ret[0]
 
@@ -108,8 +108,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper):
     def scrape_lower_legislator(self, url, leg_info, term):
         page = self.lxmlize(url)
         photo = xpath_one(page, '//img[@rel="lightbox"]').attrib['src']
-        infoblk = xpath_one(page,
-                         '//font/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
+        infoblk = xpath_one(page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
         infoblk = infoblk.getparent()
         info = infoblk.text_content()
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
