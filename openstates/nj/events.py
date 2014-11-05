@@ -26,6 +26,7 @@ class NJEventScraper(EventScraper, MDBMixin):
             'A': 'Assembly on the Whole',
             'S': 'Senate on the Whole',
             'J': 'Joint Legislature on the Whole',
+            'TED': "First Legislative District Economic Development Task Force",
             'ABUB': 'Assembly Budget Committee',
             'JBOC': 'Joint Budget Oversight',
             'JPS': 'Joint Committee on the Public Schools',
