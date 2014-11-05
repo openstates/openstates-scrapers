@@ -152,7 +152,7 @@ class ORBillScraper(BillScraper):
                 if nodes == []:
                     continue
 
-                pdf_href, date, committee, adopted = nodes
+                pdf_href, date, committee, adopted, when = nodes
                 pdf_href, = pdf_href.xpath("./a")
                 pdf_link = pdf_href.attrib['href']
 
