@@ -1,3 +1,4 @@
+import scrapelib
 import datetime
 import os
 import re
@@ -264,7 +265,11 @@ class SCBillScraper(BillScraper):
         # visit each day and extract bill ids
         days = doc.xpath('//div/b/a/@href')
         for day_url in days:
-            data = self.urlopen(day_url)
+            try:
+                data = self.urlopen(day_url)
+            except scrapelib.HTTPError:
+                continue
+
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(day_url)
 
