@@ -19,9 +19,16 @@ metadata = {
         {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
          'sessions': ['2011_12', '2011_ss']},
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013_14']}
+         'sessions': ['2013_14']},
+        {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
+         'sessions': ['2015_16']}
      ],
     'session_details': {
+        '2015_16': {
+            'display_name': '2015-2016 Regular Session',
+            '_scraped_name': '2015-2016 Regular Session',
+            '_guid': 24
+        },
         '2013_14': {
             'display_name': '2013-2014 Regular Session',
             '_scraped_name': '2013-2014 Regular Session',
@@ -53,6 +60,11 @@ metadata = {
 
 def session_list():
     sessions = get_client("Session").service
+
+    # sessions = [x for x in backoff(sessions.GetSessions)['Session']]
+    # import pdb; pdb.set_trace()
+    # sessions <-- check the Id for the _guid
+
     sessions = [x['Description'].strip()
                 for x in backoff(sessions.GetSessions)['Session']]
     return sessions
