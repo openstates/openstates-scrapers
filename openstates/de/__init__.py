@@ -22,6 +22,10 @@ metadata = dict(
         {'name': '2013-2014',
          'sessions': ['147'],
          'start_year': 2013, 'end_year': 2014},
+
+        {'name': '2014-2015',
+         'sessions': ['148'],
+         'start_year': 2014, 'end_year': 2015},
     ],
     session_details={
         '146': {'display_name': '146th General Assembly (2011-2012)',
@@ -29,6 +33,9 @@ metadata = dict(
                },
         '147': {'display_name': '147th General Assembly (2013-2014)',
                 '_scraped_name': 'GA 147',
+               },
+        '148': {'display_name': '148th General Assembly (2014-2014)',
+                '_scraped_name': 'GA 148',
                },
     },
     feature_flags=['events', 'influenceexplorer'],
