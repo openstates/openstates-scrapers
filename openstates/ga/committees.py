@@ -24,6 +24,9 @@ class GACommitteeScraper(CommitteeScraper):
         #    return  # If we get here, it's a problem.
         # Commenting this out for future debugging. - PRT
 
+        if committees.strip() == "":
+            raise ValueError("Error: No committee data for sid: %s" % (sid))
+
         committees = committees['CommitteeListing']
         for committee in committees:
             cid = committee['Id']
