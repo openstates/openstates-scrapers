@@ -23,6 +23,9 @@ class ALLegislatorScraper(LegislatorScraper):
 
             # if the name column contains a link it isn't vacant
             link = name.xpath('a')
+            if link[0].text is None:
+                continue  # Or if the name is blank, sigh.
+
             if link and link[0].text.lower() != 'vacant':
                 name = name.text_content().strip()
 
