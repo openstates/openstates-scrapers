@@ -7,7 +7,8 @@ class DCCommitteeScraper(CommitteeScraper):
     jurisdiction = 'dc'
 
     def scrape(self, term, chambers):
-        com_url = 'http://www.dccouncil.washington.dc.us/committees'
+        # com_url = 'http://www.dccouncil.washington.dc.us/committees'
+        com_url = 'http://dccouncil.us/committees'
         data = self.urlopen(com_url)
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(com_url)

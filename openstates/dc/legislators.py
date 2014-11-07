@@ -15,7 +15,7 @@ class DCLegislatorScraper(LegislatorScraper):
 
     def scrape(self, term, chambers):
         # council_url = 'http://www.dccouncil.washington.dc.us/council'
-        council_url = 'http://dccouncil.us/'
+        council_url = 'http://dccouncil.us/council'
         data = self.urlopen(council_url)
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
