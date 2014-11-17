@@ -23,7 +23,11 @@ metadata = dict(
         {'name': '2013-2014',
          'start_year': 2013,
          'end_year': 2014,
-         'sessions': ['2013', '2013S1', '2014', '2014F', '2014S2']}
+         'sessions': ['2013', '2013S1', '2014', '2014F', '2014S2']},
+        {'name': '2015-2016',
+         'start_year': 2015,
+         'end_year': 2016,
+         'sessions': ['2015']},
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -68,7 +72,13 @@ metadata = dict(
                  '_scraped_name': 'Second Extraordinary Session, 2014',
                  'type': 'special',
                  'slug': '2014S2',
-                }
+                },
+        '2015': {'start_date': datetime.date(2015, 2, 10),
+                 'display_name': '2015 Regular Session',
+                 '_scraped_name': 'Regular Session, 2015',
+                 'type': 'primary',
+                 'slug': '2015R',
+                },
         },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['Regular Session, 2009',
