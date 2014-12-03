@@ -22,7 +22,7 @@ class NDVoteScraper(VoteScraper):
 
     def scrape(self, chamber, session):
         chamber_name = 'senate' if chamber == 'lower' else 'house'
-        session_slug = {'62': '62-2011', '63': '63-2013'}[session]
+        session_slug = {'62': '62-2011', '63': '63-2013', '64': '64-2015'}[session]
 
         url = "http://www.legis.nd.gov/assembly/%s/journals/%s-journal.html" % (
             session_slug, chamber_name)
@@ -32,7 +32,6 @@ class NDVoteScraper(VoteScraper):
 
             bill_id = None
             results = {}
-            in_vote = False
             cur_date = None
             in_motion = False
             cur_vote = None
@@ -65,7 +64,6 @@ class NDVoteScraper(VoteScraper):
                     if bills == [] or cur_motion.strip() == "":
                         bill_id = None
                         results = {}
-                        in_vote = False
                         in_motion = False
                         cur_vote = None
                         in_vote = False
@@ -129,7 +127,6 @@ class NDVoteScraper(VoteScraper):
 
                     bill_id = None
                     results = {}
-                    in_vote = False
                     in_motion = False
                     cur_vote = None
                     in_vote = False
@@ -143,7 +140,7 @@ class NDVoteScraper(VoteScraper):
                     in_vote = False
                     continue
 
-                if 'ABSET' in line:
+                if 'ABSENT' in line:
                     if in_motion:
                         in_vote = True
                     in_motion = False
