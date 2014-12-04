@@ -2,7 +2,6 @@ import requests.exceptions
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 import datetime
-import subprocess
 import lxml
 import os
 import re
@@ -67,7 +66,7 @@ class NDVoteScraper(VoteScraper):
 
                 # If the line regards the conclusion of a vote, process it specially
                 if True in [x in line.lower() for x in
-                        ['passed', 'lost', 'failed']] and in_vote:
+                        ['passed', 'adopted', 'lost', 'failed']] and in_vote:
                     in_vote = False
 
                     # Pull the bill's name from the passage status
@@ -111,7 +110,7 @@ class NDVoteScraper(VoteScraper):
                         "J": "joint"
                     }
 
-                    # ???
+                    # Identify the source chamber for the bill
                     try:
                         bc = chambers[cur_bill_id[0]]
                     except KeyError:
@@ -156,7 +155,7 @@ class NDVoteScraper(VoteScraper):
                     # print bills
                     # print "VOTE TAKEN"
 
-                # ???
+                # VOTES FOR indicates the end of a motion and vote
                 if 'VOTES FOR' in line:
                     in_motion = False
                     in_vote = False
