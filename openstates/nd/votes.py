@@ -72,7 +72,9 @@ class NDVoteScraper(VoteScraper):
                             )
 
                 # Ignore lines with no information
-                if re.search(chamber_re, line) or line.strip() == "":
+                if re.search(chamber_re, line) or \
+                        re.search(date_re, line) or \
+                        line.strip() == "":
                     pass
 
                 # Capture motion names, which are found after ROLL CALL headers
@@ -87,7 +89,7 @@ class NDVoteScraper(VoteScraper):
 
                     # ABSENT AND NOT VOTING marks the end of each motion name
                     # In this case, prepare to capture votes
-                    if 'NOT VOTING.' in line or line.startswith("VOTING."):
+                    if 'NOT VOTING' in line or line.startswith("VOTING"):
                         in_motion = False
                         in_vote = True
 
