@@ -6,8 +6,8 @@ import lxml
 import os
 import re
 
-fin_re = r"(?i).*(?P<bill_id>(S|H|J)(B|R|M) \d+).*(?P<passfail>(passed|lost)).*"
-date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY), .*\d{1,2},\s\d{4}).*"
+date_re = r"\n.*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY), .*\d{1,2},\s\d{4}).*\n"
+chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 
 class NDVoteScraper(VoteScraper):
     jurisdiction = 'nd'
@@ -32,7 +32,6 @@ class NDVoteScraper(VoteScraper):
 
             # Initialize information about the vote parsing
             results = {}
-            cur_date = None
             in_motion = False
             cur_vote = None
             in_vote = False
@@ -46,131 +45,147 @@ class NDVoteScraper(VoteScraper):
             except requests.exceptions.ConnectionError:
                 continue
 
-            # Convert the PDF to text, and check each line of that text
+            # Convert the PDF to text
             data = convert_pdf(path, type='text')
             os.unlink(path)
+
+            # Determine the date of the document
+            date = re.findall(date_re, data)
+            if date:
+                date = date[0][0]
+                cur_date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+            else:
+                # If no date is found anywhere, do not process the document
+                self.warning("No date was found for the document. Passing.")
+                continue
+
+            # Check each line of the text for motion and vote information
             lines = data.splitlines()
             for line in lines:
 
-                # Determine the date of the document
-                date = re.findall(date_re, line)
-                if date != [] and not cur_date:
-                    date = date[0][0]
-                    cur_date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+                # Ensure that motion and vote capturing are not _both_ active
+                if in_motion and in_vote:
+                    raise AssertionError(
+                            "Scraper should not be simultaneously processing " +
+                            "motion name and votes, as it is for this motion: " +
+                            cur_motion
+                            )
 
-                # If the line contains a motion name, capture it
-                if "question being" in line:
+                # Ignore lines with no information
+                if re.search(chamber_re, line) or line.strip() == "":
+                    pass
+
+                # Capture motion names, which are found after ROLL CALL headers
+                elif line.strip() == "ROLL CALL":
                     in_motion = True
-                    cur_motion = line.strip()
+
                 elif in_motion:
-                    cur_motion += line.strip()
+                    if cur_motion == "":
+                        cur_motion = line.strip()
+                    else:
+                        cur_motion = cur_motion + " " + line.strip()
 
-                # If a vote is indicated, prepare to capture it
-                elif line.strip() == 'ROLL CALL':
-                    in_vote = True
-
-                # If votes are being processed, record the voting members
-                elif in_vote and ":" in line:
-                    cur_vote, who = line.split(":", 1)
-                    who = [x.strip() for x in who.split(';')]
-                    results[cur_vote] = who
-                elif in_vote and cur_vote is not None:
-                    who = [x.strip() for x in line.split(";")]
-                    # print cur_vote
-                    results[cur_vote].extend(who)
-
-                # Empty lines should be skipped
-                elif line.strip() == "":
-                    in_motion = False
-
-                # Likewise, VOTES FOR indicates the end of a motion and vote
-                elif 'VOTES FOR' in line:
-                    in_motion = False
-                    in_vote = False
-
-                # If the line regards the conclusion of a vote, process it specially
-                elif True in [x in line.lower() for x in
-                        ['passed', 'adopted', 'lost', 'failed']] and in_vote:
-                    in_vote = False
-
-                    # Pull the bill's name from the passage status
-                    # If there appears to be no bill in processing, then disregard this
-                    bills = re.findall(r"(?i)(H|S|J)(B|R|M) (\d+)", line)
-                    if bills == [] or cur_motion.strip() == "":
-                        results = {}
+                    # ABSENT AND NOT VOTING marks the end of each motion name
+                    # In this case, prepare to capture votes
+                    if 'NOT VOTING.' in line or line.startswith("VOTING."):
                         in_motion = False
+                        in_vote = True
+
+                elif in_vote:
+                    # Ignore appointments and confirmations
+                    if "The Senate advises and consents to the appointment of" in line:
+                        in_vote = False
                         cur_vote = None
-                        continue
+                        results = {}
+                        cur_motion = ""
 
-                    print "CM: ", cur_motion
+                    # If votes are being processed, record the voting members
+                    elif ":" in line:
+                        cur_vote, who = line.split(":", 1)
+                        who = [x.strip() for x in who.split(';')]
+                        results[cur_vote] = who
+                    
+                    elif cur_vote is not None and \
+                            not any(x in line.lower() for x in
+                            ['passed', 'adopted', 'prevailed', 'lost', 'failed']):
+                        who = [x.strip() for x in line.split(";")]
+                        # print cur_vote
+                        results[cur_vote].extend(who)
 
-                    cur_bill_id = "%s%s %s" % (bills[-1])
+                    # If the line regards the conclusion of a vote, then save that vote's data
+                    elif any(x in line.lower() for x in
+                            ['passed', 'adopted', 'prevailed', 'lost', 'failed']):
 
-                    # Use the collected results to determine who voted which way
-                    keys = {
-                        "YEAS": "yes",
-                        "NAYS": "no",
-                        "ABSENT AND NOT VOTING": "other"
-                    }
-                    res = {}
-                    for key in keys:
-                        if key in results:
-                            res[keys[key]] = filter(lambda a: a != "",
-                                                    results[key])
-                        else:
-                            res[keys[key]] = []
+                        in_vote = False
+                        cur_vote = None
 
-                    # results
-                    results = {}
+                        # Pull the bill's name from the passage status
+                        # If there appears to be no bill in processing, then disregard this
+                        bills = re.findall(r"(?i)(H|S|J)(B|R|M) (\d+)", line)
+                        if bills == [] or cur_motion.strip() == "":
+                            results = {}
+                            cur_motion = ""
+                            continue
 
-                    # Count the number of members voting each way
-                    yes, no, other = len(res['yes']), len(res['no']), \
-                                        len(res['other'])
-                    chambers = {
-                        "H": "lower",
-                        "S": "upper",
-                        "J": "joint"
-                    }
+                        print "CM: ", cur_motion
 
-                    # Identify the source chamber for the bill
-                    try:
-                        bc = chambers[cur_bill_id[0]]
-                    except KeyError:
-                        bc = 'other'
+                        cur_bill_id = "%s%s %s" % (bills[-1])
 
-                    # If no date is found, do not process the vote
-                    if cur_date is None:
-                        self.warning("Cur-date is None. Passing.")
-                        continue
+                        # Use the collected results to determine who voted which way
+                        keys = {
+                            "YEAS": "yes",
+                            "NAYS": "no",
+                            "ABSENT AND NOT VOTING": "other"
+                        }
+                        res = {}
+                        for key in keys:
+                            if key in results:
+                                res[keys[key]] = filter(lambda a: a != "",
+                                                        results[key])
+                            else:
+                                res[keys[key]] = []
 
-                    # Create a Vote object based on the information collected
-                    vote = Vote(chamber,
-                                cur_date,
-                                cur_motion,
-                                (yes > no),
-                                yes,
-                                no,
-                                other,
-                                session=session,
-                                bill_id=cur_bill_id,
-                                bill_chamber=bc)
+                        # Count the number of members voting each way
+                        yes, no, other = len(res['yes']), len(res['no']), \
+                                            len(res['other'])
+                        chambers = {
+                            "H": "lower",
+                            "S": "upper",
+                            "J": "joint"
+                        }
 
-                    vote.add_source(pdf_url)
-                    vote.add_source(url)
+                        # Identify the source chamber for the bill
+                        try:
+                            bc = chambers[cur_bill_id[0]]
+                        except KeyError:
+                            bc = 'other'
 
-                    # For each category of voting members, add the individuals to the Vote object
-                    for key in res:
-                        obj = getattr(vote, key)
-                        for person in res[key]:
-                            obj(person)
+                        # Create a Vote object based on the information collected
+                        vote = Vote(chamber,
+                                    cur_date,
+                                    cur_motion,
+                                    (yes > no),
+                                    yes,
+                                    no,
+                                    other,
+                                    session=session,
+                                    bill_id=cur_bill_id,
+                                    bill_chamber=bc)
 
-                    self.save_vote(vote)
+                        vote.add_source(pdf_url)
+                        vote.add_source(url)
 
-                    # With the vote successfully processed, wipe its data and continue to the next one
-                    results = {}
-                    in_motion = False
-                    cur_vote = None
-                    cur_motion = ""
+                        # For each category of voting members, add the individuals to the Vote object
+                        for key in res:
+                            obj = getattr(vote, key)
+                            for person in res[key]:
+                                obj(person)
 
-                    # print bills
-                    # print "VOTE TAKEN"
+                        self.save_vote(vote)
+
+                        # With the vote successfully processed, wipe its data and continue to the next one
+                        results = {}
+                        cur_motion = ""
+
+                        # print bills
+                        # print "VOTE TAKEN"
