@@ -58,13 +58,38 @@ class NDVoteScraper(VoteScraper):
                     date = date[0][0]
                     cur_date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
 
-                # If the line is blank, ignore it, and set the motion status to negative
-                if line.strip() == "":
+                # If the line contains a motion name, capture it
+                if "question being" in line:
+                    in_motion = True
+                    cur_motion = line.strip()
+                elif in_motion:
+                    cur_motion += line.strip()
+
+                # If a vote is indicated, prepare to capture it
+                elif line.strip() == 'ROLL CALL':
+                    in_vote = True
+
+                # If votes are being processed, record the voting members
+                elif in_vote and ":" in line:
+                    cur_vote, who = line.split(":", 1)
+                    who = [x.strip() for x in who.split(';')]
+                    results[cur_vote] = who
+                elif in_vote and cur_vote is not None:
+                    who = [x.strip() for x in line.split(";")]
+                    # print cur_vote
+                    results[cur_vote].extend(who)
+
+                # Empty lines should be skipped
+                elif line.strip() == "":
                     in_motion = False
-                    continue
+
+                # Likewise, VOTES FOR indicates the end of a motion and vote
+                elif 'VOTES FOR' in line:
+                    in_motion = False
+                    in_vote = False
 
                 # If the line regards the conclusion of a vote, process it specially
-                if True in [x in line.lower() for x in
+                elif True in [x in line.lower() for x in
                         ['passed', 'adopted', 'lost', 'failed']] and in_vote:
                     in_vote = False
 
@@ -149,49 +174,3 @@ class NDVoteScraper(VoteScraper):
 
                     # print bills
                     # print "VOTE TAKEN"
-
-                # VOTES FOR indicates the end of a motion and vote
-                if 'VOTES FOR' in line:
-                    in_motion = False
-                    in_vote = False
-                    continue
-
-                # ABSENT AND NOT VOTING marks the end of each motion name
-                # In this case, prepare for yes, no, and other vote lists
-                if 'ABSENT' in line and in_motion:
-                    in_vote = True
-                    in_motion = False
-
-                # If vote lists are being processed and a YEA:, NAY:, or ABSENT...: is found,
-                # record the voting members
-                if ":" in line and in_vote:
-                    cur_vote, who = line.split(":", 1)
-                    who = [x.strip() for x in who.split(';')]
-                    results[cur_vote] = who
-                    continue
-
-                # If vote lists are still being processed, continue collecting names
-                if in_vote:
-                    if cur_vote is None:
-                        continue
-
-                    who = [x.strip() for x in line.split(";")]
-                    for person in who:
-                        # print cur_vote
-                        results[cur_vote].append(person)
-                    continue
-
-                # If the line contains a motion name, capture it
-                if "question being" in line:
-                    cur_motion = line.strip()
-                    in_motion = True
-                    continue
-
-                # If still processing a motion name, continue to capture the text
-                if in_motion:
-                    cur_motion += line.strip()
-                    continue
-
-                # If a vote is indicated, prepare to capture it
-                if line.strip() == 'ROLL CALL':
-                    in_vote = True
