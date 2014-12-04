@@ -31,7 +31,7 @@ metadata = dict(
                '_scraped_name': '19' },
         '20': {'display_name': '20th Council Period (2013-2014)',
                '_scraped_name': '20' },
-        '21': {'display_name': '20th Council Period (2015-2016)',
+        '21': {'display_name': '21st Council Period (2015-2016)',
                '_scraped_name': '21' },
     },
     feature_flags=[],
