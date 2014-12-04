@@ -31,7 +31,6 @@ class NDVoteScraper(VoteScraper):
         for pdf in pdfs:
 
             # Initialize information about the vote parsing
-            bill_id = None
             results = {}
             cur_date = None
             in_motion = False
@@ -39,7 +38,7 @@ class NDVoteScraper(VoteScraper):
             in_vote = False
             cur_motion = ""
 
-            # Determine which URL the information was pulled from
+            # Determine which URLs the information was pulled from
             pdf_url = pdf.attrib['href']
 
             try:
@@ -73,11 +72,9 @@ class NDVoteScraper(VoteScraper):
                     # If there appears to be no bill in processing, then disregard this
                     bills = re.findall(r"(?i)(H|S|J)(B|R|M) (\d+)", line)
                     if bills == [] or cur_motion.strip() == "":
-                        bill_id = None
                         results = {}
                         in_motion = False
                         cur_vote = None
-                        in_vote = False
                         continue
 
                     print "CM: ", cur_motion
@@ -145,11 +142,9 @@ class NDVoteScraper(VoteScraper):
                     self.save_vote(vote)
 
                     # With the vote successfully processed, wipe its data and continue to the next one
-                    bill_id = None
                     results = {}
                     in_motion = False
                     cur_vote = None
-                    in_vote = False
                     cur_motion = ""
 
                     # print bills
@@ -163,9 +158,8 @@ class NDVoteScraper(VoteScraper):
 
                 # ABSENT AND NOT VOTING marks the end of each motion name
                 # In this case, prepare for yes, no, and other vote lists
-                if 'ABSENT' in line:
-                    if in_motion:
-                        in_vote = True
+                if 'ABSENT' in line and in_motion:
+                    in_vote = True
                     in_motion = False
 
                 # If vote lists are being processed and a YEA:, NAY:, or ABSENT...: is found,
