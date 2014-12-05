@@ -6,8 +6,10 @@ import lxml
 import os
 import re
 
-date_re = r"\n.*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY), .*\d{1,2},\s\d{4}).*\n"
+
+date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
 chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
+
 
 class NDVoteScraper(VoteScraper):
     jurisdiction = 'nd'
@@ -18,12 +20,15 @@ class NDVoteScraper(VoteScraper):
         page.make_links_absolute(url)
         return page
 
-
     def scrape(self, chamber, session):
         chamber_name = 'house' if chamber == 'lower' else 'senate'
-        session_slug = {'62': '62-2011', '63': '63-2013', '64': '64-2015'}[session]
+        session_slug = {
+                '62': '62-2011',
+                '63': '63-2013',
+                '64': '64-2015'
+                }[session]
 
-        # Open the web page that contains all of the session's PDFs, and open each
+        # Open the index page of the session's Registers, and open each
         url = "http://www.legis.nd.gov/assembly/%s/journals/%s-journal.html" % (
             session_slug, chamber_name)
         page = self.lxmlize(url)
@@ -56,7 +61,7 @@ class NDVoteScraper(VoteScraper):
                 cur_date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
             else:
                 # If no date is found anywhere, do not process the document
-                self.warning("No date was found for the document. Passing.")
+                self.warning("No date was found for the document; skipping.")
                 continue
 
             # Check each line of the text for motion and vote information
@@ -89,13 +94,15 @@ class NDVoteScraper(VoteScraper):
 
                     # ABSENT AND NOT VOTING marks the end of each motion name
                     # In this case, prepare to capture votes
-                    if 'NOT VOTING' in line or line.startswith("VOTING"):
+                    if line.strip().endswith("VOTING") or \
+                            line.strip().endswith("VOTING."):
                         in_motion = False
                         in_vote = True
 
                 elif in_vote:
                     # Ignore appointments and confirmations
-                    if "The Senate advises and consents to the appointment of" in line:
+                    if "The Senate advises and consents to the appointment" \
+                            in line:
                         in_vote = False
                         cur_vote = None
                         results = {}
@@ -109,31 +116,39 @@ class NDVoteScraper(VoteScraper):
                     
                     elif cur_vote is not None and \
                             not any(x in line.lower() for x in
-                            ['passed', 'adopted', 'prevailed', 'lost', 'failed']):
+                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
                         who = [x.strip() for x in line.split(";")]
                         # print cur_vote
                         results[cur_vote].extend(who)
 
-                    # If the line regards the conclusion of a vote, then save that vote's data
+                    # At the conclusion of a vote, save its data
                     elif any(x in line.lower() for x in
-                            ['passed', 'adopted', 'prevailed', 'lost', 'failed']):
+                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
 
                         in_vote = False
                         cur_vote = None
 
-                        # Pull the bill's name from the passage status
-                        # If there appears to be no bill in processing, then disregard this
-                        bills = re.findall(r"(?i)(H|S|J)(B|R|M) (\d+)", line)
+                        # Throw a warning if impropper informaiton found
+                        bills = re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line)
                         if bills == [] or cur_motion.strip() == "":
                             results = {}
                             cur_motion = ""
+                            self.warning(
+                                    "No motion or bill name found: " +
+                                    "motion name: " + cur_motion + "; " +
+                                    "decision text: " + line.strip()
+                                    )
                             continue
 
-                        print "CM: ", cur_motion
+                        if "YEAS:" in cur_motion or "NAYS:" in cur_motion:
+                            raise AssertionError(
+                                    "Vote data found in motion name: " +
+                                    cur_motion
+                                    )
 
-                        cur_bill_id = "%s%s %s" % (bills[-1])
+                        cur_bill_id = "%s%s%s %s" % (bills[-1])
 
-                        # Use the collected results to determine who voted which way
+                        # Use the collected results to determine who voted how
                         keys = {
                             "YEAS": "yes",
                             "NAYS": "no",
@@ -148,8 +163,11 @@ class NDVoteScraper(VoteScraper):
                                 res[keys[key]] = []
 
                         # Count the number of members voting each way
-                        yes, no, other = len(res['yes']), len(res['no']), \
-                                            len(res['other'])
+                        yes, no, other = len(
+                                res['yes']), \
+                                len(res['no']), \
+                                len(res['other']
+                                )
                         chambers = {
                             "H": "lower",
                             "S": "upper",
@@ -162,11 +180,17 @@ class NDVoteScraper(VoteScraper):
                         except KeyError:
                             bc = 'other'
 
-                        # Create a Vote object based on the information collected
+                        # Determine whether or not the vote passed
+                        if "over the governor's veto" in cur_motion.lower():
+                            passed = (yes * 2 > no * 3)
+                        else:
+                            passed = (yes > no)
+
+                        # Create a Vote object based on the scraped information
                         vote = Vote(chamber,
                                     cur_date,
                                     cur_motion,
-                                    (yes > no),
+                                    passed,
                                     yes,
                                     no,
                                     other,
@@ -177,17 +201,17 @@ class NDVoteScraper(VoteScraper):
                         vote.add_source(pdf_url)
                         vote.add_source(url)
 
-                        # For each category of voting members, add the individuals to the Vote object
+                        # For each category of voting members,
+                        # add the individuals to the Vote object
                         for key in res:
                             obj = getattr(vote, key)
                             for person in res[key]:
                                 obj(person)
 
+                        print("***")
                         self.save_vote(vote)
 
-                        # With the vote successfully processed, wipe its data and continue to the next one
+                        # With the vote successfully processed,
+                        # wipe its data and continue to the next one
                         results = {}
                         cur_motion = ""
-
-                        # print bills
-                        # print "VOTE TAKEN"
