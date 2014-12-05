@@ -9,6 +9,7 @@ import re
 
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
 chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
+page_re = r"Page\s\d+"
 
 
 class NDVoteScraper(VoteScraper):
@@ -71,6 +72,7 @@ class NDVoteScraper(VoteScraper):
                 # Ignore lines with no information
                 if re.search(chamber_re, line) or \
                         re.search(date_re, line) or \
+                        re.search(page_re, line) or \
                         line.strip() == "":
                     pass
 
@@ -111,14 +113,14 @@ class NDVoteScraper(VoteScraper):
 
                     # If votes are being processed, record the voting members
                     elif ":" in line:
-                        cur_vote, who = line.split(":", 1)
-                        who = [x.strip() for x in who.split(';')]
+                        cur_vote, who = (x.strip() for x in line.split(":", 1))
+                        who = [x.strip() for x in who.split(';') if x.strip() != ""]
                         results[cur_vote] = who
                     
                     elif cur_vote is not None and \
                             not any(x in line.lower() for x in
                             ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
-                        who = [x.strip() for x in line.split(";")]
+                        who = [x.strip() for x in line.split(";") if x.strip() != ""]
                         # print cur_vote
                         results[cur_vote].extend(who)
 
@@ -143,13 +145,14 @@ class NDVoteScraper(VoteScraper):
                                     )
                             continue
 
+                        cur_bill_id = "%s%s%s %s" % (bills[-1])
+
+                        # If votes are found in the motion name, throw an error
                         if "YEAS:" in cur_motion or "NAYS:" in cur_motion:
                             raise AssertionError(
                                     "Vote data found in motion name: " +
                                     cur_motion
                                     )
-
-                        cur_bill_id = "%s%s%s %s" % (bills[-1])
 
                         # Use the collected results to determine who voted how
                         keys = {
@@ -160,17 +163,15 @@ class NDVoteScraper(VoteScraper):
                         res = {}
                         for key in keys:
                             if key in results:
-                                res[keys[key]] = filter(lambda a: a != "",
-                                                        results[key])
+                                res[keys[key]] = filter(lambda a: a != "", results[key])
                             else:
                                 res[keys[key]] = []
 
                         # Count the number of members voting each way
-                        yes, no, other = len(
-                                res['yes']), \
+                        yes, no, other = \
+                                len(res['yes']), \
                                 len(res['no']), \
-                                len(res['other']
-                                )
+                                len(res['other'])
                         chambers = {
                             "H": "lower",
                             "S": "upper",
@@ -185,7 +186,8 @@ class NDVoteScraper(VoteScraper):
 
                         # Determine whether or not the vote passed
                         if "over the governor's veto" in cur_motion.lower():
-                            passed = (yes * 2 > no * 3)
+                            VETO_SUPERMAJORITY = 2 / 3
+                            passed = (yes * VETO_SUPERMAJORITY > no)
                         else:
                             passed = (yes > no)
 
@@ -210,6 +212,22 @@ class NDVoteScraper(VoteScraper):
                             obj = getattr(vote, key)
                             for person in res[key]:
                                 obj(person)
+
+                        # Check the vote counts in the motion text against
+                        # the parsed results
+                        for category_name in keys.keys():
+                            vote_re = r"(\d+)\s{}".format(category_name)
+                            motion_count = int(re.findall(vote_re, cur_motion)[0])
+                            vote_count = vote[keys[category_name] + "_count"]
+
+                            if motion_count != vote_count:
+                                from pprint import pprint
+                                pprint(vote)
+                                raise AssertionError(
+                                        "Motion text vote counts ({}) ".format(motion_count) +
+                                        "differed from roll call counts ({}) ".format(vote_count) +
+                                        "for {0} votes on {1}".format(category_name, cur_bill_id)
+                                        )
 
                         print("***")
                         self.save_vote(vote)
