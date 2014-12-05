@@ -116,12 +116,22 @@ class NDVoteScraper(VoteScraper):
                         cur_vote, who = (x.strip() for x in line.split(":", 1))
                         who = [x.strip() for x in who.split(';') if x.strip() != ""]
                         results[cur_vote] = who
+
+                        name_may_be_continued = False if line.endswith(";") \
+                                else True
                     
                     elif cur_vote is not None and \
                             not any(x in line.lower() for x in
                             ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
                         who = [x.strip() for x in line.split(";") if x.strip() != ""]
-                        # print cur_vote
+
+                        if name_may_be_continued:
+                            results[cur_vote][-1] = results[cur_vote][-1] + \
+                                    " " + who.pop(0)
+
+                        name_may_be_continued = False if line.endswith(";") \
+                                else True
+
                         results[cur_vote].extend(who)
 
                     # At the conclusion of a vote, save its data
@@ -187,7 +197,7 @@ class NDVoteScraper(VoteScraper):
                         # Determine whether or not the vote passed
                         if "over the governor's veto" in cur_motion.lower():
                             VETO_SUPERMAJORITY = 2 / 3
-                            passed = (yes * VETO_SUPERMAJORITY > no)
+                            passed = (yes / (yes + no) > VETO_SUPERMAJORITY)
                         else:
                             passed = (yes > no)
 
@@ -216,13 +226,13 @@ class NDVoteScraper(VoteScraper):
                         # Check the vote counts in the motion text against
                         # the parsed results
                         for category_name in keys.keys():
-                            vote_re = r"(\d+)\s{}".format(category_name)
+                            # Need to search for the singular, not plural, in the text
+                            # so it can find, for example,  " 1 NAY "
+                            vote_re = r"(\d+)\s{}".format(category_name[:-1])
                             motion_count = int(re.findall(vote_re, cur_motion)[0])
                             vote_count = vote[keys[category_name] + "_count"]
 
                             if motion_count != vote_count:
-                                from pprint import pprint
-                                pprint(vote)
                                 raise AssertionError(
                                         "Motion text vote counts ({}) ".format(motion_count) +
                                         "differed from roll call counts ({}) ".format(vote_count) +
