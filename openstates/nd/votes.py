@@ -68,25 +68,26 @@ class NDVoteScraper(VoteScraper):
             lines = data.splitlines()
             for line in lines:
 
-                # Ensure that motion and vote capturing are not _both_ active
-                if in_motion and in_vote:
-                    raise AssertionError(
-                            "Scraper should not be simultaneously processing " +
-                            "motion name and votes, as it is for this motion: " +
-                            cur_motion
-                            )
-
                 # Ignore lines with no information
                 if re.search(chamber_re, line) or \
                         re.search(date_re, line) or \
                         line.strip() == "":
                     pass
 
-                # Capture motion names, which are found after ROLL CALL headers
-                elif line.strip() == "ROLL CALL":
-                    in_motion = True
+                # Ensure that motion and vote capturing are not _both_ active
+                elif in_motion and in_vote:
+                    raise AssertionError(
+                            "Scraper should not be simultaneously processing " +
+                            "motion name and votes, as it is for this motion: " +
+                            cur_motion
+                            )
 
-                elif in_motion:
+                # Start capturing motion text after a ROLL CALL header
+                elif not in_motion and not in_vote:
+                    if line.strip() == "ROLL CALL":
+                        in_motion = True
+
+                elif in_motion and not in_vote:
                     if cur_motion == "":
                         cur_motion = line.strip()
                     else:
@@ -99,7 +100,7 @@ class NDVoteScraper(VoteScraper):
                         in_motion = False
                         in_vote = True
 
-                elif in_vote:
+                elif not in_motion and in_vote:
                     # Ignore appointments and confirmations
                     if "The Senate advises and consents to the appointment" \
                             in line:
@@ -128,8 +129,10 @@ class NDVoteScraper(VoteScraper):
                         in_vote = False
                         cur_vote = None
 
+                        # Identify what is being voted on
                         # Throw a warning if impropper informaiton found
                         bills = re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line)
+
                         if bills == [] or cur_motion.strip() == "":
                             results = {}
                             cur_motion = ""
