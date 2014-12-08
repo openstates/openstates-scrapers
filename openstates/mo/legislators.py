@@ -20,7 +20,7 @@ class MOLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         sessions = term.split('-')
         for session in sessions:
-            if int(session) > int(dt.datetime.now().year):
+            if int(session) > 2015:  # int(dt.datetime.now().year):
                 self.log("Not running session %s, it's in the future." % (
                     session
                 ))
@@ -75,32 +75,33 @@ class MOLegislatorScraper(LegislatorScraper):
             details_page = self.urlopen(url)
             leg.add_source(url)
             page = lxml.html.fromstring(details_page)
-            address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
-            emails = page.xpath('/html/body/p/span[2]/a/@href')
-            email = None
-            # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
-            # then there is only a webform. So...no email?
-            # TODO a lot of these have fax numbers. Include?
+            if page.xpath("//body/*") != []:
+                address = page.xpath('/html/body//span[2]')[0].text_content().split('\n')
+                emails = page.xpath('/html/body/p/span[2]/a/@href')
+                email = None
+                # TODO This is only true if the href doesn't contain 'mail_form'. If it does,
+                # then there is only a webform. So...no email?
+                # TODO a lot of these have fax numbers. Include?
 
-            for email in emails:
-                if 'Contact.aspx' in email:
-                    email = None
+                for email in emails:
+                    if 'Contact.aspx' in email:
+                        email = None
+                    if email:
+                        break
+
+                kwargs = {
+                    "address": "%s%s" % (address[0],address[1]),
+                    "email": email,
+                }
+
                 if email:
-                    break
+                    leg['email'] = email
 
-            kwargs = {
-                "address": "%s%s" % (address[0],address[1]),
-                "email": email,
-            }
+                if phone.strip() != "":
+                    kwargs['phone'] = phone
 
-            if email:
-                leg['email'] = email
-
-            if phone.strip() != "":
-                kwargs['phone'] = phone
-
-            leg.add_office("capitol", "Capitol Office",
-                           **kwargs)
+                leg.add_office("capitol", "Capitol Office",
+                               **kwargs)
 
             leg['photo_url'] = photo_url
             self.save_legislator(leg)
@@ -123,6 +124,10 @@ class MOLegislatorScraper(LegislatorScraper):
             party = tds[3].text_content().strip()
             if party == 'Democrat':
                 party = 'Democratic'
+
+            if party.strip() == "":  # Workaround for now.
+                party = "Other"
+
             phone = tds[4].text_content().strip()
             room = tds[5].text_content().strip()
             address = self.assumed_address_fmt % (room if room else '')
