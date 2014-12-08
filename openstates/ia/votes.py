@@ -37,34 +37,18 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                 except ValueError:
                     msg = "%s doesn't smell like a date. Skipping."
                     self.logger.info(msg % filename)
+                print(url, chamber, session, date)
                 self.scrape_journal(url, chamber, session, date)
-
-    def _journal_lines(self, etree):
-        '''A generator of text lines. Skip crap.
-        '''
-        for page in etree:
-            for text in page.xpath('text')[3:]:
-                yield text
 
     def scrape_journal(self, url, chamber, session, date):
 
         filename, response = self.urlretrieve(url)
         self.logger.info('Saved journal to %r' % filename)
-        xml = convert_pdf(filename)
-        try:
-            et = lxml.etree.fromstring(xml)
-        except lxml.etree.XMLSyntaxError:
-            self.logger.warning('Skipping invalid pdf: %r' % filename)
-            return
+        lines = convert_pdf(filename, type="text")
 
-        lines = self._journal_lines(et)
-        while True:
-            try:
-                line = next(lines)
-            except StopIteration:
-                break
+        for line in lines:
 
-            text = gettext(line)
+            text = line.strip()
 
             # Go through with vote parse if any of
             # these conditions match.
