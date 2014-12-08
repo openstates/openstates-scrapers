@@ -14,38 +14,30 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
     jurisdiction = 'ia'
 
     def scrape(self, chamber, session):
+        # Each PDF index page contains just one year, not a whole session
+        # Therefore, we need to iterate over both years in the session
+        session_years = [int(year) for year in session.split("-")]
+        for year in session_years:
 
-        getattr(self, 'scrape_%s' % chamber)(session)
+            chamber_name = self.metadata["chambers"][chamber]["name"].lower()
+            url = 'https://www.legis.iowa.gov/chambers/journals/index/{}'.\
+                format(chamber_name)
+            params = {"year": year}
+            html = self.urlopen(url, params=params)
 
-    def scrape_lower(self, session):
-        url = 'https://www.legis.iowa.gov/Legislation/journalIndex_House.aspx'
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        urls = doc.xpath('//a[contains(@href, "DOCS")]/@href')[::-1]
-        for url in urls:
-            _, filename = url.rsplit('/', 1)
-            try:
-                date = datetime.strptime(filename, '%m-%d-%Y.pdf')
-            except ValueError:
-                msg = "%s doesn't smell like a date. Skipping."
-                self.logger.info(msg % filename)
-            self.scrape_journal(url, 'lower', session, date)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
+            urls = doc.xpath('//a[contains(@href, "DOCS")]/@href')[::-1]
+            print(urls)
 
-    def scrape_upper(self, session):
-        url = 'https://www.legis.iowa.gov/Legislation/journalIndex_Senate.aspx'
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        urls = doc.xpath('//a[contains(@href, "DOCS")]/@href')[::-1]
-        for url in urls:
-            _, filename = url.rsplit('/', 1)
-            try:
-                date = datetime.strptime(filename, '%m-%d-%Y.pdf')
-            except ValueError:
-                msg = "%s doesn't smell like a date. Skipping."
-                self.logger.info(msg % filename)
-            self.scrape_journal(url, 'upper', session, date)
+            for url in urls:
+                _, filename = url.rsplit('/', 1)
+                try:
+                    date = datetime.strptime(filename, '%m-%d-%Y.pdf')
+                except ValueError:
+                    msg = "%s doesn't smell like a date. Skipping."
+                    self.logger.info(msg % filename)
+                self.scrape_journal(url, chamber, session, date)
 
     def _journal_lines(self, etree):
         '''A generator of text lines. Skip crap.
@@ -92,7 +84,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             bill_id = None
             for line in lines:
                 text += gettext(line)
-                m = re.search(r'\(\s*([A-Z\.]+\s+\d+)\s*\)',  text)
+                m = re.search(r'\(\s*([A-Z\.]+\s+\d+)\s*\)', text)
                 if m:
                     bill_id = m.group(1)
                     break
