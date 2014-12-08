@@ -27,8 +27,8 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(url)
-            urls = doc.xpath('//a[contains(@href, "DOCS")]/@href')[::-1]
-            print(urls)
+            urls = [x for x in doc.xpath('//a[@href]/@href') if
+                    x.endswith(".pdf")][::-1]
 
             for url in urls:
                 _, filename = url.rsplit('/', 1)
