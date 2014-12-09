@@ -37,6 +37,8 @@ class WALegislatorScraper(LegislatorScraper):
                 continue
 
             name = xpath(member, "string(wa:Name)").strip()
+            if name == "":
+                continue
 
             # if the legislator isn't in the listing, skip them
             if name not in cur_members:
