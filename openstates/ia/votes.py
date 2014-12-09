@@ -44,7 +44,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         filename, response = self.urlretrieve(url)
         self.logger.info('Saved journal to %r' % filename)
         all_text = convert_pdf(filename, type="text")
-        lines = [line.strip().replace("\xad", "")
+        lines = [line.strip().replace("\xad", "-")
                  for line in all_text.split("\n")]
 
         # Do not process headers or completely empty lines
@@ -58,14 +58,21 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         for line in lines:
             # Go through with vote parse if any of
             # these conditions match.
-            motion_start_re = r'On the motion "?Shall'
-            if re.match(motion_start_re, line, re.IGNORECASE):
+            if not line.startswith("On the question") or \
+                    "shall" not in line.lower():
                 continue
 
             # Get the bill_id
             bill_id = None
-            bill_re = r'\(\s*([A-Z\.]+\s+\d+)\s*\)'
-            end_of_motion_re = r'.* the vote was:\s*'
+            bill_re = r'\(\s*([A-Z\.]+\s\d+)\s*\)'
+
+            # The Senate ends its motion text with a vote announcement
+            if chamber == "upper":
+                end_of_motion_re = r'.* the vote was:\s*'
+            # The House may or may not end motion text with a bill name
+            elif chamber == "lower":
+                end_of_motion_re = r'.*Shall.*\?"?(\s{})?\s*'.format(bill_re)
+
             while not re.match(end_of_motion_re, line):
                 line += " " + lines.next()
 
@@ -78,13 +85,15 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
             # Get the motion text
             motion_re = r'''
+                    ^
                     On\sthe\squestion\s  # Precedes any motion
                     "?  # Vote sometimes preceded by a quote mark
-                    (Shall\s.*?)  # The motion text begins with "Shall"
-                    "?  # Vote sometimes followed by a quote mark
-                    (\s\(.*\))?  #  If it regards a bill, that number is listed
-                    ,?\sthe\svote\swas:\s*  # Trailing text before vote lists
-                    '''
+                    (Shall\s.*?\?)  # The motion text begins with "Shall"
+                    \s*"?\s*  # Vote sometimes followed by a quote mark
+                    ({})?  # If the vote regards a bill, its number is listed
+                    (,?\sthe\svote\swas:)?  # Senate has trailing text
+                    \s*$
+                    '''.format(bill_re)
             try:
                 motion = re.search(motion_re,
                                    line,
