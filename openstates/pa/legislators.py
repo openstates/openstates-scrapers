@@ -53,7 +53,11 @@ class PALegislatorScraper(LegislatorScraper):
             legislator['email'] = '%s@%s%s' % tuple(vals)
 
     def scrape_offices(self, url, doc, legislator):
-        el = doc.xpath('//h4[contains(., "Contact")]/..')[0]
+        el = doc.xpath('//h4[contains(., "Contact")]/..')
+        if el == []:
+            return
+        el, = el
+
         for office in Offices(el, self):
             legislator.add_office(**office)
         legislator.add_source(url)

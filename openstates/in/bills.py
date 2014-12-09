@@ -178,7 +178,7 @@ class INBillScraper(BillScraper):
             'co-sponsor': 'cosponsor',
             }
         for div in doc.xpath('//div[contains(@class, "bill-author-info")]'):
-            name = div.xpath('string(b)').strip()
+            name = div.xpath('string(em)').strip()
             sp_type = sponsor_map[div.xpath('string(p)').strip().lower()]
             bill.add_sponsor(sp_type, name)
 
