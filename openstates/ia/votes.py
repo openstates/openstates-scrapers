@@ -37,53 +37,61 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                 except ValueError:
                     msg = "%s doesn't smell like a date. Skipping."
                     self.logger.info(msg % filename)
-                print(url, chamber, session, date)
                 self.scrape_journal(url, chamber, session, date)
 
     def scrape_journal(self, url, chamber, session, date):
 
         filename, response = self.urlretrieve(url)
         self.logger.info('Saved journal to %r' % filename)
-        lines = convert_pdf(filename, type="text")
+        all_text = convert_pdf(filename, type="text")
+        lines = [line.strip().replace("\xad", "")
+                 for line in all_text.split("\n")]
+
+        # Do not process headers or completely empty lines
+        header_date_re = r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+"
+        header_journal_re = r"\d+\s+JOURNAL OF THE \w+\s+\d+\w{2} Day"
+        lines = iter([line for line in lines if not(
+                     line == "" or
+                     re.match(header_date_re, line) or
+                     re.match(header_journal_re, line))])
 
         for line in lines:
-
-            text = line.strip()
-
             # Go through with vote parse if any of
             # these conditions match.
-            if 'Shall' in text:
-                if 'bill pass?' in text:
-                    pass
-                elif 'resolution' in text:
-                    pass
-                elif 'amendment' in text:
-                    pass
-                else:
-                    continue
-            else:
+            motion_start_re = r'On the motion "?Shall'
+            if re.match(motion_start_re, line, re.IGNORECASE):
                 continue
 
-            # Get the bill_id.
+            # Get the bill_id
             bill_id = None
-            for line in lines:
-                text += gettext(line)
-                m = re.search(r'\(\s*([A-Z\.]+\s+\d+)\s*\)', text)
-                if m:
-                    bill_id = m.group(1)
-                    break
+            bill_re = r'\(\s*([A-Z\.]+\s+\d+)\s*\)'
+            end_of_motion_re = r'.* the vote was:\s*'
+            while not re.match(end_of_motion_re, line):
+                line += " " + lines.next()
 
-            motion = text.strip()
-            motion = re.sub(r'\s+', ' ', motion)
-            if "(" in motion:
-                motion, _ = motion.rsplit('(', 1)
-            motion = motion.replace('"', '')
-            motion = motion.replace(u'“', '')
-            motion = motion.replace(u'\u201d', '')
-            motion = motion.replace(u' ,', ',')
-            motion = motion.strip()
-            motion = re.sub(r'[SH].\d+', lambda m: ' %s ' % m.group(), motion)
-            motion = re.sub(r'On the question\s*', '', motion, flags=re.I)
+            try:
+                bill_id = re.search(bill_re, line).group(1)
+            except AttributeError:
+                self.warning("This motion did not pertain to legislation: {}".
+                             format(line))
+                continue
+
+            # Get the motion text
+            motion_re = r'''
+                    On\sthe\squestion\s  # Precedes any motion
+                    "?  # Vote sometimes preceded by a quote mark
+                    (Shall\s.*?)  # The motion text begins with "Shall"
+                    "?  # Vote sometimes followed by a quote mark
+                    (\s\(.*\))?  #  If it regards a bill, that number is listed
+                    ,?\sthe\svote\swas:\s*  # Trailing text before vote lists
+                    '''
+            try:
+                motion = re.search(motion_re,
+                                   line,
+                                   re.VERBOSE | re.IGNORECASE).group(1)
+            except AttributeError:
+                print("___\n" + line + "\n___")
+                raise AttributeError
 
             for word, letter in (('Senate', 'S'),
                                  ('House', 'H'),
@@ -97,8 +105,9 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             bill_chamber = dict(h='lower', s='upper')[bill_id.lower()[0]]
             self.current_id = bill_id
             votes = self.parse_votes(lines)
-            totals = filter(lambda x: isinstance(x, int), votes.values())
-            passed = (1.0 * votes['yes_count'] / sum(totals)) >= 0.5
+            passed = (votes['yes_count'] /
+                      (votes['yes_count'] + votes['no_count'])
+                      > 0.5)
             vote = Vote(motion=motion,
                         passed=passed,
                         chamber=chamber, date=date,
@@ -107,6 +116,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                         **votes)
             vote.update(votes)
             vote.add_source(url)
+
             self.save_vote(vote)
 
     def parse_votes(self, lines):
@@ -134,7 +144,8 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             ('The resolution', DONE),
             ('The motion', DONE),
             ('The joint resolution', DONE),
-            ('Under the', DONE)]
+            ('Under the', DONE)
+        ]
 
         def is_boundary(text, patterns={}):
             for blurb, key in boundaries:
@@ -142,8 +153,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                     return key
 
         while True:
-            line = next(lines)
-            text = gettext(line)
+            text = next(lines)
             if is_boundary(text):
                 break
 
@@ -164,8 +174,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
             # Get the voter names.
             while True:
-                line = next(lines)
-                text = gettext(line)
+                text = next(lines)
                 if is_boundary(text):
                     break
                 elif not text.strip() or text.strip().isdigit():
@@ -203,31 +212,3 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         elif name and (name not in names) and (name not in junk):
             names.append(name)
         return names
-
-
-def _get_chunks(el, buff=None, until=None):
-    tagmap = {'br': '\n'}
-    buff = buff or []
-
-    # Tag, text, tail, recur...
-    yield tagmap.get(el.tag, '')
-    yield el.text or ''
-    if el.text == until:
-        return
-    for kid in el:
-        for text in _get_chunks(kid, until=until):
-            yield text
-            if text == until:
-                return
-    if el.tail:
-        yield el.tail
-        if el.tail == until:
-            return
-    if el.tag == 'text':
-        yield '\n'
-
-
-def gettext(el):
-    '''Join the chunks, then split and rejoin to normalize the whitespace.
-    '''
-    return ' '.join(''.join(_get_chunks(el)).split())
