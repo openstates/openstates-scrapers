@@ -11,7 +11,6 @@ import lxml.html
 import scrapelib
 
 
-
 class ORBillScraper(BillScraper):
     jurisdiction = 'or'
 
@@ -166,3 +165,14 @@ class ORBillScraper(BillScraper):
             bill.add_source(a.get('href'))
             self.save_bill(bill)
 
+    def _scrape_vote(bill_id, bill_html):
+        ''' Scrape the vote information for each bill'''
+        # Load the Measure History text from
+
+        # Identify the non-committee vote IDs within the Measure History page
+
+        # Load each vote page
+
+            # Parse the Aye/Nay/Excused/Absent list for each vote
+
+            # Instantiate and save the vote
