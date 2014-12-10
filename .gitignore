@@ -3,6 +3,7 @@ cache
 *.pyc
 *.DS_Store
 *~
+.ropeproject
 docs/_build/*
 local_settings.*py
 errors/*

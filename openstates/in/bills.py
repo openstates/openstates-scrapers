@@ -1,19 +1,7 @@
-import os
 import re
 import datetime
-import urlparse
-import operator
-import itertools
-from collections import defaultdict
-from contextlib import contextmanager
-from StringIO import StringIO
 
-import scrapelib
-import requests
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
-from billy.importers.bills import fix_bill_id
 
 import pytz
 import lxml.html
@@ -62,7 +50,7 @@ class INBillScraper(BillScraper):
         seen_bill_ids = set()
 
         # Get resolutions.
-        url = 'http://iga.in.gov/legislative/2014/resolutions'
+        url = 'http://iga.in.gov/legislative/{}/resolutions'.format(term)
         self.logger.info('GET ' + url)
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -72,8 +60,7 @@ class INBillScraper(BillScraper):
             bill_chamber = ('upper' if bill_id[0] in 'SJ' else 'lower')
             bill_url = a.attrib['href']
             bill_title = a.xpath('string(./following-sibling::em)').strip()
-            bill = self.scrape_bill(
-                bill_chamber, term, bill_id, bill_url, bill_title)
+            self.scrape_bill(bill_chamber, term, bill_id, bill_url, bill_title)
 
         url = 'http://iga.in.gov/legislative/%s/bills/' % term
         self.logger.info('GET ' + url)
@@ -83,7 +70,7 @@ class INBillScraper(BillScraper):
 
 
         # First scrape subjects and any bills found on those pages.
-        for subject_url, subject in self.generate_subjects():
+        for subject_url, subject in self.generate_subjects(term):
             subject_bills = self.generate_subject_bills(subject_url)
             for bill_id, bill_url, bill_title in subject_bills:
                 chamber = 'upper' if bill_id[0] == 'S' else 'lower'
@@ -104,11 +91,10 @@ class INBillScraper(BillScraper):
                     bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
                 except IndexError:
                     continue
-                bill = self.scrape_bill(
-                    chamber, term, bill_id, bill_url, bill_title)
+                self.scrape_bill(chamber, term, bill_id, bill_url, bill_title)
 
-    def generate_subjects(self):
-        url = 'http://iga.in.gov/legislative/2014/bysubject/'
+    def generate_subjects(self, term):
+        url = 'http://iga.in.gov/legislative/{}/bysubject/'.format(term)
         self.logger.info('GET ' + url)
         resp = self.get(url)
         html = resp.text
