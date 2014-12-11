@@ -44,8 +44,16 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         filename, response = self.urlretrieve(url)
         self.logger.info('Saved journal to %r' % filename)
         all_text = convert_pdf(filename, type="text")
-        lines = [line.strip().replace("\xad", "-")
-                 for line in all_text.split("\n")]
+
+        lines = all_text.split("\n")
+        lines = [line.
+                 strip().
+                 replace("–", "-").
+                 replace("―", '"').
+                 replace("‖", '"').
+                 replace('“', '"').
+                 replace('”', '"')
+                 for line in lines]
 
         # Do not process headers or completely empty lines
         header_date_re = r"\d+\w{2} Day\s+\w+DAY, \w+ \d{1,2}, \d{4}\s+\d+"
@@ -73,7 +81,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             elif chamber == "lower":
                 end_of_motion_re = r'.*Shall.*\?"?(\s{})?\s*'.format(bill_re)
 
-            while not re.match(end_of_motion_re, line):
+            while not re.match(end_of_motion_re, line, re.IGNORECASE):
                 line += " " + lines.next()
 
             try:
@@ -91,16 +99,12 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                     (Shall\s.*?\?)  # The motion text begins with "Shall"
                     \s*"?\s*  # Vote sometimes followed by a quote mark
                     ({})?  # If the vote regards a bill, its number is listed
-                    (,?\sthe\svote\swas:)?  # Senate has trailing text
+                    (,?.*?the\svote\swas:)?  # Senate has trailing text
                     \s*$
                     '''.format(bill_re)
-            try:
-                motion = re.search(motion_re,
-                                   line,
-                                   re.VERBOSE | re.IGNORECASE).group(1)
-            except AttributeError:
-                print("___\n" + line + "\n___")
-                raise AttributeError
+            motion = re.search(motion_re,
+                               line,
+                               re.VERBOSE | re.IGNORECASE).group(1)
 
             for word, letter in (('Senate', 'S'),
                                  ('House', 'H'),

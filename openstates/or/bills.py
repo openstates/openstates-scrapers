@@ -1,6 +1,6 @@
 from billy.scrape.utils import convert_pdf
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from billy.scrape.votes import VoteScraper, Vote
 from .utils import year_from_session
 
 from collections import defaultdict
@@ -165,14 +165,56 @@ class ORBillScraper(BillScraper):
             bill.add_source(a.get('href'))
             self.save_bill(bill)
 
-    def _scrape_vote(bill_id, bill_html):
-        ''' Scrape the vote information for each bill'''
-        # Load the Measure History text from
+    def _scrape_vote(self, bill_url, **vote_info):
+        ''' Scrape the vote information for each bill '''
+
+        # Load the Measure History text from the bill page
+        bill_url = re.search(r'(.*)(#.+)?', bill_url).group(1)
+        # measure_history_url = re.sub(r'/overview/', r'/overview/gethistory/',
+        #         bill_url, flags=re.IGNORECASE)
+        # measure_history = self.lxmlize(measure_history_url)
 
         # Identify the non-committee vote IDs within the Measure History page
+        vote_id_names = measure_history.xpath('//a[contains(@href, "votes-")]/@href')
+        vote_ids = [x.split("-")[-1] for x in vote_id_names]
 
         # Load each vote page
+        bill_id = bill_url.split("/")[-1].upper()
+        for vote_id in vote_ids:
+            vote_url = re.sub(
+                    r'/Overview/{}'.format(bill_id),
+                    r'/MeasureVotes\?id={}'.format(vote_id),
+                    bill_url
+                    )
+            vote_info = self.lxmlize(vote_url)
 
             # Parse the Aye/Nay/Excused/Absent list for each vote
+            vote_info = vote_info.xpath('/ul/li')
+            VOTE_CATEGORIES = {
+                    "Aye": "yes",
+                    "Nay": "no",
+                    "Excused": "other",
+                    "Absent": "other"
+                    }
+            votes = {}
+
+            for category in VOTE_CATEGORIES.keys():
+                votes["{}_votes".format(VOTE_CATEGORIES[category])] = \
+                        votes.get("{}_votes".format(VOTE_CATEGORIES[category]), [])
+                for vote in vote_info:
+                    if vote.xpath('/span[2]/text()') == category:
+                        votes["{}_votes".format(VOTE_CATEGORIES[category])].\
+                                append(vote.xpath('/span[1]/text()'))
+
+                votes["{}_count".format(VOTE_CATEGORIES[category])] = \
+                        len(votes["{}_votes".format(VOTE_CATEGORIES[category])]) + \
+                        votes.get("{}_count".format(VOTE_CATEGORIES[category]), 0)
+
 
             # Instantiate and save the vote
+            vote = Vote()
+            vote.update(vote_info)
+            vote.update(votes)
+            vote.add_source(bill_url)
+
+            VoteScraper.save_vote(vote)
