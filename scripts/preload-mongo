@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+URL="http://static.openstates.org.s3.amazonaws.com/mongo/latest-mongo-dump.tar.gz"
+POPDIR=$(pwd)
+WORKDIR=$(mktemp -d)
+cd ${WORKDIR}
+wget ${URL}
+tar -zxvf latest-mongo-dump.tar.gz
+mongorestore -drop dump/
+cd ${POPDIR}
+rm -rf ${WORKDIR}
