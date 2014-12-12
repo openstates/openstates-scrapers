@@ -1,5 +1,5 @@
 from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import VoteScraper, Vote
+from billy.scrape.votes import Vote
 
 import datetime as dt
 import re
@@ -84,10 +84,14 @@ class ORBillScraper(BillScraper):
                 measure_info[key] = value
 
             for sponsor in measure_info['Chief Sponsors'].xpath("./a"):
-                bill.add_sponsor(type='primary', name=sponsor.text_content())
+                if sponsor.text_content().strip():
+                    bill.add_sponsor(
+                            type='primary', name=sponsor.text_content())
 
             for sponsor in measure_info['Regular Sponsors'].xpath("./a"):
-                bill.add_sponsor(type='cosponsor', name=sponsor.text_content())
+                if sponsor.text_content().strip():
+                    bill.add_sponsor(
+                            type='cosponsor', name=sponsor.text_content())
 
             title = _clean_ws(measure_info['Bill Title'].text_content())
             # some bill titles need to be added manually
@@ -105,11 +109,14 @@ class ORBillScraper(BillScraper):
                 bill.add_version(name=name, url=link,
                                  mimetype='application/pdf')
 
-            self.history_url = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
-            history = self.lxmlize(self.history_url).xpath("//table/tr")
+            history_url = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
+            history = self.lxmlize(history_url).xpath("//table/tr")
             for entry in history:
                 wwhere, action = [_clean_ws(x.text_content())
                                   for x in entry.xpath("*")]
+                vote_cleaning_re = r'(.*?)((Ayes)|(Nays),\s.*)'
+                if re.match(vote_cleaning_re, action):
+                    action = re.search(vote_cleaning_re, action).groups()[0]
                 wwhere = re.match(
                     r"(?P<when>.*) \((?P<where>.*)\)", wwhere).groupdict()
 
@@ -126,23 +133,24 @@ class ORBillScraper(BillScraper):
                 if types == []:
                     types = ['other']
 
-                #if types == ['other']:
-                #    print(action)
-
                 # actor, action, date, type, committees, legislators
                 bill.add_action(action_chamber, action, when, type=types)
 
                 # Parse and store Vote information
-                try:
-                    vote_id = entry.xpath(
-                            '//a[contains(@href, "otes-")]/@href')[1]. \
-                            split("-")[-1]
-                except:
+                vote_id = entry.xpath('./td/a[contains(@href, "otes-")]/@href')
+                if not vote_id:
                     continue
+                elif "#measureVotes-" in vote_id[0]:
+                    vote_id = vote_id[0].split("-")[-1]
+                    vote_url = "https://olis.leg.state.or.us/liz/" + \
+                            "{0}/Measures/MeasureVotes?id={1}". \
+                            format(self.slug, vote_id)
+                else:
+                    vote_id = vote_id[0].split("-")[-1]
+                    vote_url = "https://olis.leg.state.or.us/liz/" + \
+                            "{0}/CommitteeReports/MajorityReport/{1}". \
+                            format(self.slug, vote_id)
 
-                vote_url = "https://olis.leg.state.or.us/liz/" + \
-                        "{0}/Measures/MeasureVotes?id={1}". \
-                        format(self.slug, vote_id)
                 votes = self._get_votes(vote_url)
                 if not any(len(x) for x in votes.values()):
                     self.warning("The votes webpage was empty for " +
@@ -174,13 +182,12 @@ class ORBillScraper(BillScraper):
                         "{0}/Measures/Overview/{1}".format(self.slug, bid)
                 vote.add_source(bill_url)
 
-                print(vote)
-                self.save_bill(vote)
+                bill.add_vote(vote)
 
-            amendments = self.create_url(
-                'Measures/ProposedAmendments/{bill}', bid)
-            amendments = self.lxmlize(amendments).xpath(
-                "//div[@id='amendments']/table//tr")
+            amendments_url = self.create_url(
+                    'Measures/ProposedAmendments/{bill}', bid)
+            amendments = self.lxmlize(amendments_url).xpath(
+                    "//div[@id='amendments']/table//tr")
 
             for amendment in amendments:
                 nodes = amendment.xpath("./td")
@@ -204,13 +211,22 @@ class ORBillScraper(BillScraper):
 
     def _get_votes(self, vote_url):
         # Load the vote list page
-        vote_info = self.lxmlize(vote_url).xpath('./ul/li')
+        vote_info = self.lxmlize(vote_url)
+        if any("Committee Vote" in x for
+                x in self.lxmlize(vote_url).xpath('//text()')):
+            vote_info = vote_info.xpath('./tbody/tr[4]/td/div')
+            member_xpath = './div[1]/text()'
+            vote_xpath = './div[2]/text()'
+        else:
+            vote_info = self.lxmlize(vote_url).xpath('./ul/li')
+            member_xpath = './span[1]/text()'
+            vote_xpath = './span[2]/text()'
 
         VOTE_CATEGORIES = {
                 "Aye": "yes",
                 "Nay": "no",
-                "Excused": "other",
-                "Absent": "other"
+                "Exc": "other",
+                "Abs": "other"
                 }
         votes = {}
 
@@ -221,8 +237,8 @@ class ORBillScraper(BillScraper):
         for category in VOTE_CATEGORIES.keys():
             # Collect the Aye/Nay/Excused/Absent names
             for vote_cast in vote_info:
-                if vote_cast.xpath('./span[2]/text()')[0] == category:
+                if vote_cast.xpath(vote_xpath)[0].startswith(category):
                     votes["{}_votes".format(VOTE_CATEGORIES[category])]. \
-                            append(vote_cast.xpath('./span[1]/text()')[0])
+                            append(vote_cast.xpath(member_xpath)[0])
 
         return votes

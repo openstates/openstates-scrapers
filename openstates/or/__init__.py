@@ -32,17 +32,17 @@ metadata = dict(
         '2011 Regular Session': {
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011 Regular Session',
-            'slug': '11reg',
+            'slug': '2011R1',
         },
         '2012 Regular Session': {
             'display_name': '2012 Regular Session',
             '_scraped_name': '2012 Regular Session',
-            'slug': '12reg',
+            'slug': '2012R1',
         },
         '2012 Special Session' : {
             'display_name': '2012 Speical Session',
             '_scraped_name': '2012 Special Session',
-            'slug': '12ss1',
+            'slug': '2012S1',
         },
         '2013 Regular Session': {
             'display_name': '2013 Regular Session',
