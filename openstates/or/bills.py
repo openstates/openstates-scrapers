@@ -73,8 +73,8 @@ class ORBillScraper(BillScraper):
             bill = Bill(session, chamber, bid, title='', summary=bill_summary)
 
             page = self.lxmlize(a.get('href'))
-            versions = page.xpath(
-                "//ul[@class='dropdown-menu']/li/a[contains(@href, 'Text')]")
+            versions = page.xpath('//ul[@class="dropdown-menu"]/li/span/' +
+                    'a[contains(@title, "Get the Pdf")]/@href')
 
             measure_info = {}
             info = page.xpath("//table[@id='measureOverviewTable']/tr")
@@ -101,12 +101,8 @@ class ORBillScraper(BillScraper):
             bill['title'] = title
 
             for version in versions:
-                name = version.text
-
-                link = self.create_url(
-                    'Downloads/MeasureDocument/{bill}/%s' % (name), bid)
-
-                bill.add_version(name=name, url=link,
+                name = version.split("/")[-1]
+                bill.add_version(name=name, url=version,
                                  mimetype='application/pdf')
 
             history_url = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
