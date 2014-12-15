@@ -197,12 +197,15 @@ class HIBillScraper(BillScraper):
         self.save_bill(b)
 
     def parse_vote(self, action):
-        pattern = (r"(?P<n_yes>\d+) Aye\(?s\)?(:\s+(?P<yes>.*?))?;\s+"
-                   "Aye\(?s\)? with reservations:\s+(?P<yes_resv>.*?);?"
-                   "(?P<n_no>\d*) No\(?es\)?:\s+(?P<no>.*?);?"
-                   "(\s+and\s+)?"
-                   "(?P<n_excused>\d*) Excused: (?P<excused>.*)")
-        result = re.search(pattern, action)
+        vote_re = (r'''
+                (?P<n_yes>\d+)\sAye\(?s\)?  # Yes vote count
+                (:\s+(?P<yes>.*?))?;\s+  # Yes members
+                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?  # Yes with reservations members
+                (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
+                (\s+and\s+)?
+                (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
+                ''')
+        result = re.search(vote_re, action, re.VERBOSE)
         if result is None:
             return None
         result = result.groupdict()
