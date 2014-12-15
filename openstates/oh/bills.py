@@ -99,8 +99,8 @@ class OHBillScraper(BillScraper):
                             date, "(%Y, %m, %d, %H, %M, %S)")
                         bill.add_action(actor, action, date, type=atype)
 
-                self.scrape_votes(bill, bill_prefix, rownum, session)
-                self.scrape_versions(bill, bill_prefix, rownum, session)
+                self.scrape_votes(bill, bill_prefix, bill_no, session)
+                self.scrape_versions(bill, bill_prefix, bill_no, session)
                 self.save_bill(bill)
 
     def scrape_versions(self, bill, prefix, number, session):
