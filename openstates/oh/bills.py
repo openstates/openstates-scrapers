@@ -1,5 +1,4 @@
 import os
-import urlparse
 import datetime
 
 from billy.scrape import ScrapeError
@@ -16,16 +15,16 @@ class OHBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
         if int(session) < 128:
-            raise NoDataForPeriod(session)
+            raise AssertionError("No data for period {}".format(session))
 
         base_url = 'http://www.lsc.state.oh.us/status%s/' % session
 
-        bill_types = {'lower': [('hb','bill'),
-                                ('hjr','joint resolution'),
-                                ('hcr','concurrent resolution')],
-                      'upper': [('sb','bill'),
-                                ('sjr','joint resolution'),
-                                ('scr','concurrent resolution')]}
+        bill_types = {'lower': [('hb', 'bill'),
+                                ('hjr', 'joint resolution'),
+                                ('hcr', 'concurrent resolution')],
+                      'upper': [('sb', 'bill'),
+                                ('sjr', 'joint resolution'),
+                                ('scr', 'concurrent resolution')]}
 
         for bill_prefix, bill_type in bill_types[chamber]:
             url = base_url + '%s.xlsx' % bill_prefix
@@ -108,7 +107,7 @@ class OHBillScraper(BillScraper):
 
         if 'r' in prefix:
             piece = '/res.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
-                                                number)
+                                              number)
         else:
             piece = '/bills.cfm?ID=%s_%s_%s' % (session, prefix.upper(),
                                                 number)
