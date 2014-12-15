@@ -143,9 +143,6 @@ class MTBillScraper(BillScraper):
 
         self.add_other_versions(bill)
 
-        # Add html.
-        bill.add_version(version_name, bill_url, mimetype='text/html')
-
         # Add pdf.
         url = set(bill_page.xpath('//a/@href[contains(., "BillPdf")]')).pop()
         bill.add_version(version_name, url, mimetype='application/pdf')
@@ -178,10 +175,12 @@ class MTBillScraper(BillScraper):
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
         status_page = lxml.html.fromstring(self.urlopen(status_url))
         # see 2007 HB 2... weird.
-        try:
-            bill_id = status_page.xpath("//tr[2]/td[2]")[0].text_content()
-        except IndexError:
-            bill_id = status_page.xpath('//tr[1]/td[2]')[0].text_content()
+        bill_re = r'.*?/([A-Z]+)0*(\d+)\.pdf'
+        bill_xpath = '//a[contains(@href, ".pdf") and ' + \
+                'contains(@href, "billpdf")]/@href'
+        bill_id = re.search(bill_re, status_page.xpath(bill_xpath)[0],
+                re.IGNORECASE).groups()
+        bill_id = "{0} {1}".format(bill_id[0], int(bill_id[1]))
 
         try:
             xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
@@ -289,8 +288,8 @@ class MTBillScraper(BillScraper):
             doc = url2lxml(url)
             for fn in doc.xpath('//a/@href')[1:]:
                 _url = urljoin(url, fn)
-                _, _, fn = fn.rpartition('/')
-                m = re.search(r'([A-Z]+)0*(\d+)_?([^.]+)', fn)
+                fn = fn.split('/')[-1]
+                m = re.search(r'([A-Z]+)0*(\d+)_?(.*?)\.pdf', fn)
                 if m:
                     type_, id_, version = m.groups()
                     res[(type_, id_)][version] = _url
