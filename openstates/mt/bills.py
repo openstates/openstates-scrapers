@@ -418,6 +418,9 @@ class MTBillScraper(BillScraper):
             # Some of them mysteriously have no motion listed.
             motion = vote['action']
 
+        if not motion:
+            motion = vote['action']
+
         vote['motion'] = motion
 
         # Add placeholder for passed (see below)
