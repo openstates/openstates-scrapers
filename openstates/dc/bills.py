@@ -138,10 +138,19 @@ class DCBillScraper(BillScraper):
         vote_date = convert_date(doc.get_element_by_id('VoteDate').text)
 
         # check if voice vote / approved boxes have an 'x'
-        voice = (doc.xpath('//span[@id="VoteTypeVoice"]/b/text()')[0] ==
-                 'x')
-        passed = (doc.xpath('//span[@id="VoteResultApproved"]/b/text()')[0]
-                  == 'x')
+        voice = (doc.xpath('//span[@id="VoteTypeVoice"]//text()') == ['x'])
+        roll = (doc.xpath('//span[@id="VoteTypeRoll"]//text()') == ['x'])
+        if (not voice and not roll) or (voice and roll):
+            raise AssertionError(
+                    "Not clear whether vote is voice or roll call: {}".
+                    format(bill['bill_id']))
+
+        passed = (doc.xpath('//span[@id="VoteResultApproved"]//text()') == ['x'])
+        failed = (doc.xpath('//span[@id="VoteResultDisapproved"]//text()') == ['x'])
+        if (not passed and not failed) or (passed and failed):
+            raise AssertionError(
+                    "Not clear whether vote passed or failed: {}".
+                    format(bill['bill_id']))
 
         yes_count = extract_int(doc.xpath(
             '//span[@id="VoteCount1"]/b/text()')[0])
