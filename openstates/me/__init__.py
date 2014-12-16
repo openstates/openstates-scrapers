@@ -42,8 +42,8 @@ metadata = dict(
                 '_scraped_name': '125th Legislature'},
         '126': {'display_name':  '126th Legislature (2013-2014)',
                 '_scraped_name': '126th Legislature'},
-        '127': {'display_name':  '126th Legislature (2015-2016)',
-                '_scraped_name': '127th Legislature'}
+        '127': {'display_name':  '127th Legislature (2015-2016)',
+                '_scraped_name': '127th Legislature'},
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[]

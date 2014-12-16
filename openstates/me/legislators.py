@@ -235,32 +235,25 @@ class MELegislatorScraper(LegislatorScraper):
         session = ((int(term[0:4]) - 2009) / 2) + 124
 
         mapping = {
-            'district': 1,
-            'first_name': 2,
-            'middle_name': 3,
-            'last_name': 4,
-            # 'suffix': 6,
-            'party': 6,
-            'resident_county': 5,
-            'street_addr': 7,
-            'city': 8,
-            'state': 9,
-            'zip_code': 10,
-            'phone1': 12,
-            'phone2': 13,
-            'email': 11,
+                'district': 0,
+                'first_name': 2,
+                'middle_name': 3,
+                'last_name': 4,
+                'suffixes': 5,
+                'party': 1,
+                'street_addr': 6,
+                'city': 7,
+                'state': 8,
+                'zip_code': 9,
+                'phone1': 10,
+                'phone2': 11,
+                'email': 12
         }
 
-        url = (
-            'http://legisweb1.mainelegislature.org/wp/senate/'
-            'wp-content/uploads/sites/2/2013/09/%sthSenatorsList.xlsx' % session)
-
-        try:
-            fn, result = self.urlretrieve(url)
-        except scrapelib.HTTPError:
-            url = 'http://www.maine.gov/legis/senate/%dthSenatorsList.xls'
-            url = url % session
-            fn, result = self.urlretrieve(url)
+        list_location = '2014/12/127th-Senate-Members2'
+        url = ('http://legisweb1.mainelegislature.org/wp/senate/'
+                'wp-content/uploads/sites/2/{}.xlsx'.format(list_location))
+        fn, result = self.urlretrieve(url)
 
         wb = xlrd.open_workbook(fn)
         sh = wb.sheet_by_index(0)
@@ -270,7 +263,7 @@ class MELegislatorScraper(LegislatorScraper):
             d = {}
             for field, col_num in mapping.iteritems():
                 try:
-                    d[field] = str(sh.cell(rownum, col_num).value)
+                    d[field] = str(sh.cell(rownum, col_num).value).strip()
                 except IndexError:
                     # This col_num doesn't exist in the sheet.
                     pass
@@ -285,18 +278,21 @@ class MELegislatorScraper(LegislatorScraper):
             district_name = d['city']
 
             phone = d['phone1']
+            if not phone:
+                phone = d['phone2']
+            if not phone:
+                phone = None
 
             district = d['district'].split('.')[0]
 
             leg_url = 'http://www.maine.gov/legis/senate/bio%02ds.htm' % int(district)
 
             leg = Legislator(term, chamber, district, full_name,
-                             d['first_name'], d['middle_name'], d['last_name'],
-                             _party_map[d['party']],
-                             resident_county=d['resident_county'],
-                             office_address=address,
-                             office_phone=phone,
-                             email=None,
+                             first_name=d['first_name'],
+                             middle_name=d['middle_name'],
+                             last_name=d['last_name'],
+                             party=d['party'],
+                             suffixes=d['suffixes'],
                              district_name=district_name,
                              url=leg_url)
             leg.add_source(url)
@@ -314,9 +310,13 @@ class MELegislatorScraper(LegislatorScraper):
                 photo_url = None
 
             office = dict(
-                name='District Office', type='district',
-                fax=None, email=None,
-                address=''.join(address))
+                name='District Office',
+                type='district',
+                phone=phone,
+                fax=None,
+                email=d['email'],
+                address=address
+                )
 
             leg['email'] = d['email']
             leg.add_office(**office)
