@@ -45,6 +45,10 @@ metadata = dict(
          'start_year': 2013, 'end_year': 2014,
          # 'start_date': datetime.date(2013, ??, ?),
          },
+         {'name': '20152016',
+         'sessions': ['20152016',],
+         'start_year': 2015, 'end_year': 2016,
+         },
         ],
     session_details={
         '20092010': {
@@ -107,6 +111,12 @@ metadata = dict(
             # 'start_date': datetime.date(2013, ?, ?),
             'display_name': '2013-2014, 2nd Special Session',
             'type': 'special'
+        },
+        '20152016': {
+            # 'start_date': datetime.date(2013, ?, ?),
+            'display_name': '2015-2016 Regular Session',
+            '_scraped_name': "2015-2016",
+            'type': 'primary'
         },
     },
     feature_flags=['subjects', 'influenceexplorer'],
