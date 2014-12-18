@@ -3,6 +3,7 @@ import socket
 import datetime
 from operator import methodcaller
 import htmlentitydefs
+import requests
 
 import lxml.html
 
@@ -12,145 +13,99 @@ from billy.scrape.votes import Vote
 from .actions import Categorizer
 
 
-strip = methodcaller('strip')
-
-
-def unescape(text):
-    '''Removes HTML or XML character references and entities
-    from a text string.
-
-    @param text The HTML (or XML) source text.
-    @return The plain text, as a Unicode string, if necessary.
-
-    Source: http://effbot.org/zone/re-sub.htm#unescape-html'''
-
-    def fixup(m):
-        text = m.group(0)
-        if text[:2] == "&#":
-            # character reference
-            try:
-                if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
-                else:
-                    return unichr(int(text[2:-1]))
-            except ValueError:
-                pass
-        else:
-            # named entity
-            try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
-            except KeyError:
-                pass
-        return text  # leave as is
-    return re.sub("&#?\w+;", fixup, text)
-
-
-class BillNotFound(Exception):
-    'Raised if bill is not found on their site.'
-
-
 class MEBillScraper(BillScraper):
     jurisdiction = 'me'
     categorizer = Categorizer()
 
     def scrape(self, chamber, session):
-        if session[-1] == "1":
-            session_abbr = session + "st"
-        elif session[-1] == "2":
-            session_abbr = session + "nd"
-        elif session[-1] == "3":
-            session_abbr = session + "rd"
+        # Create a Bill for each Paper of the chamber's session
+        request_session = requests.Session()
+        search_url = 'http://legislature.maine.gov/LawMakerWeb/doadvancedsearch.asp'
+        session_number = str(int(session) - 116)
+        paper_type = "HP" if chamber == 'lower' else "SP"
+        form_data = {
+                "PaperType": paper_type,
+                "LegSession": session_number,
+                "LRType": "None",
+                "Sponsor": "None",
+                "Introducer": "None",
+                "Committee": "None",
+                "AmdFilingChamber": "None",
+                "RollcallChamber": "None",
+                "Action": "None",
+                "ActionChamber": "None",
+                "GovernorAction": "None",
+                "FinalLawType": "None"
+                }
+        r = request_session.post(url=search_url, data=form_data)
+        r.raise_for_status()
+
+        for bill in self._bill_generator(
+                request_session=request_session,
+                chamber=chamber,
+                session=session
+                ):
+
+            # Scrape all information for the Bill from its page
+            self.scrape_bill(bill)
+            self.save_bill(bill)
+
+    def _bill_generator(self, request_session, chamber, session, first_item=1):
+        '''
+        Once a search has been initiated, this generator will return
+        a Bill object for every Paper from the given chamber
+        '''
+
+        url = 'http://legislature.maine.gov/LawMakerWeb/searchresults.asp'
+        r = request_session.get(url, params={'StartWith': first_item})
+        r.raise_for_status()
+
+        bills = lxml.html.fromstring(r.text).xpath('//tr/td/b/a')
+        if bills:
+            for bill in bills:
+                bill_id_slug = bill.xpath('./@href')[0]
+                bill_url = 'http://legislature.maine.gov/LawMakerWeb/{}'.\
+                        format(bill_id_slug)
+                bill_id = bill.text[:2] + " " + bill.text[2:]
+
+                bill = Bill(
+                        session=session,
+                        chamber=chamber,
+                        bill_id=bill_id,
+                        title=""
+                        )
+                bill.add_source(bill_url)
+                yield bill
+
+            # Make a recursive call to this function, for the next page
+            PAGE_SIZE = 25
+            self._bill_generator(
+                    request_session=request_session,
+                    chamber=chamber,
+                    session=session,
+                    first_item=first_item + PAGE_SIZE
+                    )
+
+        # If there are no more Papers left, exit the function
         else:
-            session_abbr = session + "th"
+            pass
 
-        self.scrape_session(session, session_abbr, chamber)
-
-    def scrape_session(self, session, session_abbr, chamber):
-        url = ('http://www.mainelegislature.org/legis/bills/bills_%s'
-               '/billtexts/' % session_abbr)
-
-        page = self.urlopen(url, retry_on_404=True)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath('//a[contains(@href, "contents")]/@href'):
-            self.scrape_session_directory(session, chamber, link)
-
-    def scrape_session_directory(self, session, chamber, url):
-        is_old_session = int(session) <= 122
-        if not is_old_session:
-            # decide xpath based on upper/lower
-            link_xpath = {'lower': '//big/a[starts-with(text(), "HP")]',
-                          'upper': '//big/a[starts-with(text(), "SP")]'}[chamber]
-        else:
-            # cannot tell bill chamber from directory listing only,
-            # need to make separate http request for this info, see below
-            link_xpath = '//dl/dt/a'
-
-        page = self.urlopen(url, retry_on_404=True)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath(link_xpath):
-            if not is_old_session:
-                bill_id = link.text
-                title = link.xpath("string(../../following-sibling::dd[1])")
-            else:
-                # fetch info about bill to determine chamber and paper number
-                html = self.urlopen(link.get('href'))
-                bill_id = get_maine_paper_number(html)
-                if bill_id is None:
-                    msg = 'Could not determine bill id for {0} (skipping).'
-                    self.warning(msg.format(link.text_content()))
-                    continue
-                if bill_id[0] == 'H':
-                    bill_chamber = 'lower'
-                elif bill_id[0] == 'S':
-                    bill_chamber = 'upper'
-                else:
-                    # ignore citizen initiated bills and convention orders
-                    # TODO: this is a bug that affects all sessions; these
-                    #       important bills never get scraped
-                    bill_chamber = ''
-                # only continue if this bill is from desired chamber
-                if bill_chamber != chamber:
-                    continue
-                title = link.xpath("string(../following-sibling::dd[1])")
-
-            # A temporary hack to add one particular title that's missing
-            # on the directory page.
-            if len(title) == 0:
-                if session == '125' and bill_id == 'SP0681':
-                    msg = 'Adding hard-coded title for bill_id %r'
-                    self.warning(msg % bill_id)
-                    title = ('An Act To Simplify the Certificate of Need '
-                             'Process and Lessen the Regulatory Burden on'
-                             ' Providers')
-
-            if not title:
-                title = '[Title not available]'
-
-            if (title.lower().startswith('joint order') or
-                    title.lower().startswith('joint resolution')):
-                bill_type = 'joint resolution'
-            else:
-                bill_type = 'bill'
-
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
-            try:
-                self.scrape_bill(bill, link.attrib['href'])
-            except BillNotFound:
-                continue
-            else:
-                self.save_bill(bill)
-
-    def scrape_bill(self, bill, url):
-        session_id = (int(bill['session']) - 124) + 8
-        url = ("http://www.mainelegislature.org/LawMakerWeb/summary.asp"
-               "?paper=%s&SessionID=%d" % (bill['bill_id'], session_id))
-        html = self.urlopen(url, retry_on_404=True)
+    def scrape_bill(self, bill):
+        url = bill['sources'][0]['url']
+        html = self.urlopen(url)
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
+
+        # Get and apply the bill title
+        bill_title = page.xpath('./body/table/td/table/td/b/text()')[0]
+        bill_title = bill_title[1:-1].title()
+        bill['title'] = bill_title
+
+        if bill_title.startswith('Joint Order') or \
+                bill_title.startswith('Joint Resolution'):
+            bill['bill_type'] = 'joint resolution'
+        else:
+            bill['bill_type'] = 'bill'
 
         # Add the LD number in.
         for ld_num in page.xpath("//b[contains(text(), 'LD ')]/text()"):
@@ -158,10 +113,8 @@ class MEBillScraper(BillScraper):
                 bill['ld_number'] = ld_num
 
         if 'Bill not found.' in html:
-            self.warning('%s returned "Bill not found." page' % url)
-            raise BillNotFound
-
-        bill.add_source(url)
+            raise AssertionError(
+                    '%s returned "Bill not found." page' % url)
 
         # Add bill sponsors.
         try:
@@ -196,7 +149,7 @@ class MEBillScraper(BillScraper):
                 continue
 
             for match in re.finditer(rgx, text):
-                chamber_title, name = map(strip, match.groups())
+                chamber_title, name = map(methodcaller('strip'), match.groups())
                 if chamber_title in ['President', 'Speaker']:
                     chamber = bill['chamber']
                 else:
@@ -380,22 +333,37 @@ def _get_chunks(el, buff=None, until=None):
         yield '\n'
 
 
-def get_maine_paper_number(html):
-    """Takes HTML from legislative document page and finds the paper
-       number. This is necessary for sessions 121 and 122 because
-       the bill directory started listed paper numbers only for
-       sessions 123 onwards.
-    """
-    page = lxml.html.fromstring(html)
-    # legislature, paper, and LD numbers for the bill
-    numbers = page.xpath('//span[@class="field_head"]/span/text()')
-    if len(numbers) == 3:
-        # second number is paper number
-        return numbers[1].replace(' ', '')
-    return None
-
-
 def gettext(el):
     '''Join the chunks, then split and rejoin to normalize the whitespace.
     '''
     return ''.join(_get_chunks(el))
+
+
+def unescape(text):
+    '''Removes HTML or XML character references and entities
+    from a text string.
+
+    @param text The HTML (or XML) source text.
+    @return The plain text, as a Unicode string, if necessary.
+
+    Source: http://effbot.org/zone/re-sub.htm#unescape-html'''
+
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text  # leave as is
+    return re.sub("&#?\w+;", fixup, text)
