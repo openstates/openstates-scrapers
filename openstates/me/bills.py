@@ -39,20 +39,17 @@ class MEBillScraper(BillScraper):
         r = request_session.post(url=search_url, data=form_data)
         r.raise_for_status()
 
-        for bill in self._bill_generator(
+        self._recursively_process_bills(
                 request_session=request_session,
                 chamber=chamber,
                 session=session
-                ):
+                )
 
-            # Scrape all information for the Bill from its page
-            self.scrape_bill(bill)
-            self.save_bill(bill)
-
-    def _bill_generator(self, request_session, chamber, session, first_item=1):
+    def _recursively_process_bills(
+            self, request_session, chamber, session, first_item=1):
         '''
-        Once a search has been initiated, this generator will return
-        a Bill object for every Paper from the given chamber
+        Once a search has been initiated, this function will save a
+        Bill object for every Paper from the given chamber
         '''
 
         url = 'http://legislature.maine.gov/LawMakerWeb/searchresults.asp'
@@ -74,11 +71,13 @@ class MEBillScraper(BillScraper):
                         title=""
                         )
                 bill.add_source(bill_url)
-                yield bill
+                
+                self.scrape_bill(bill)
+                self.save_bill(bill)
 
             # Make a recursive call to this function, for the next page
             PAGE_SIZE = 25
-            self._bill_generator(
+            self._recursively_process_bills(
                     request_session=request_session,
                     chamber=chamber,
                     session=session,
