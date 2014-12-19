@@ -1,7 +1,6 @@
 import re
 import socket
 import datetime
-from operator import methodcaller
 import htmlentitydefs
 import requests
 
@@ -128,11 +127,10 @@ class MEBillScraper(BillScraper):
         sponsors_page = lxml.html.fromstring(sponsors_html)
         sponsors_page.make_links_absolute(sponsors_url)
 
-        tr_text = sponsors_page.xpath('//tr')
-        tr_text = [tr.text_content() for tr in tr_text]
-        rgx = '(Speaker|President|Senator|Representative) ([A-Z ]+)'
-        for text in tr_text:
+        tr_text = sponsors_page.xpath('./body/table/td/table/tr/td//text()')
+        rgx = r'^\s*(Speaker|President|Senator|Representative) ([\w\s]+?)( of .+)\s*$'
 
+        for text in tr_text:
             if 'the Majority' in text:
                 # At least one bill was sponsored by 'the Majority'.
                 bill.add_sponsor('primary', 'the Majority',
@@ -145,11 +143,10 @@ class MEBillScraper(BillScraper):
                 type_ = 'primary'
             elif text.lower().startswith('cosponsored by:'):
                 type_ = 'cosponsor'
-            else:
-                continue
 
-            for match in re.finditer(rgx, text):
-                chamber_title, name = map(methodcaller('strip'), match.groups())
+            elif re.match(rgx, text):
+                chamber_title, name = [x.strip() for x in
+                        re.search(rgx, text).groups()[:2]]
                 if chamber_title in ['President', 'Speaker']:
                     chamber = bill['chamber']
                 else:
@@ -157,6 +154,9 @@ class MEBillScraper(BillScraper):
                                'Representative': 'lower'}
                     chamber = chamber[chamber_title]
                 bill.add_sponsor(type_.lower(), name.strip(), chamber=chamber)
+
+            else:
+                continue
 
         bill.add_source(sponsors_url)
 
