@@ -82,6 +82,17 @@ class SCEventScraper(EventScraper):
             else:
                 continue
 
+            # If a event is in the next calendar year, the date_string
+            # will have a year in it
+            if date_string.count(",") == 2:
+                event_year = date_string[-4:]
+                date_string = date_string[:-6]
+            elif date_string.count(",") == 1:
+                event_year = meeting_year
+            else:
+                raise AssertionError("This is not a valid date: '{}'").\
+                        format(date_string)
+
             for meeting in date.xpath('li'):
                 time_string = meeting.xpath('span')[0].text_content()
 
@@ -92,7 +103,7 @@ class SCEventScraper(EventScraper):
 
                 time_string = self.normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
-                    meeting_year + ' ' + date_string
+                    event_year + ' ' + date_string
                     + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
 
                 date_time = self._tz.localize(date_time)
