@@ -185,7 +185,16 @@ class MELegislatorScraper(LegislatorScraper):
 
             district = d['district'].split('.')[0]
 
-            leg_url = 'http://www.maine.gov/legis/senate/bio%02ds.htm' % int(district)
+            # Determine legislator's URL to get their photo
+            LEGISLATOR_ROSTER_URL = \
+                    'http://legisweb1.mainelegislature.org/wp/senate/senators/'
+            html = self.urlopen(LEGISLATOR_ROSTER_URL)
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
+
+            URL_XPATH = '//address[contains(text(), "(District {})")]/a/@href'. \
+                    format(district)
+            (leg_url, ) = doc.xpath(URL_XPATH)
 
             leg = Legislator(term, chamber, district, full_name,
                              first_name=d['first_name'],
@@ -201,7 +210,7 @@ class MELegislatorScraper(LegislatorScraper):
             html = self.urlopen(leg_url)
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(leg_url)
-            xpath = '//td[@class="XSP_MAIN_PANEL"]/descendant::img/@src'
+            xpath = '//img[contains(@src, ".png")]/@src'
             photo_url = doc.xpath(xpath)
             if photo_url:
                 photo_url = photo_url.pop()
