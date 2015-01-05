@@ -49,6 +49,8 @@ class MTCommitteeScraper(CommitteeScraper):
         csv file, scrape the committee page and use the names listed there
         instead.
         '''
+        raise ValueError("No data yet. Needs slug update")
+
         for tdata in self.metadata['terms']:
             if term == tdata['name']:
                 year = tdata['start_year']
