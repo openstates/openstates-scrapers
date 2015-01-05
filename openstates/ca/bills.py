@@ -249,7 +249,7 @@ class CABillScraper(BillScraper):
 
         if user is None:
             user = os.environ.get('MYSQL_USER',
-                                  getattr(settings, 'MYSQL_USER', ''))
+                                  getattr(settings, 'MYSQL_USER', 'root'))
         if pw is None:
             pw = os.environ.get('MYSQL_PASSWORD',
                                 getattr(settings, 'MYSQL_PASSWORD', ''))
