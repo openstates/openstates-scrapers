@@ -142,21 +142,21 @@ class MTLegislatorScraper(LegislatorScraper):
         url = doc.xpath('//a[contains(@href, "roster.asp")]/@href')[0]
 
         # Fetch it.
-        # self.raise_errors = False
-        # html = self.urlopen(url)
-        # doc = lxml.html.fromstring(html)
-        # self.raise_errors = True
-        try:
-            with open('mt_hotgarbage.txt') as f:
-                html = f.read()
-                doc = lxml.html.fromstring(html)
-        except IOError:
-            self.raise_errors = False
-            html = self.urlopen(url)
-            doc = lxml.html.fromstring(html)
-            self.raise_errors = True
-            with open('mt_hotgarbage.txt', 'w') as f:
-                f.write(html)
+        self.raise_errors = False
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        self.raise_errors = True
+        # try:
+        #     with open('mt_hotgarbage.txt') as f:
+        #         html = f.read()
+        #         doc = lxml.html.fromstring(html)
+        # except IOError:
+        #     self.raise_errors = False
+        #     html = self.urlopen(url)
+        #     doc = lxml.html.fromstring(html)
+        #     self.raise_errors = True
+        #     with open('mt_hotgarbage.txt', 'w') as f:
+        #         f.write(html)
 
         # Get the new baseurl, like 'http://leg.mt.gov/css/Sessions/62nd/'
         parts = urlparse.urlparse(url)
