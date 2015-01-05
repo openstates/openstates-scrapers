@@ -23,7 +23,7 @@ class CAEventScraper(EventScraper):
 
         if not user:
             user = os.environ.get('MYSQL_USER',
-                                  getattr(settings, 'MYSQL_USER', ''))
+                                  getattr(settings, 'MYSQL_USER', 'root'))
         if not pw:
             pw = os.environ.get('MYSQL_PASSWORD',
                                 getattr(settings, 'MYSQL_PASSWORD', ''))
