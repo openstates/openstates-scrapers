@@ -33,8 +33,20 @@ metadata = dict(
             'start_year' : 2013,
             'end_year'   : 2014
         },
+        {
+            'name': '2015-2016',
+            'sessions': [
+                '2015 Regular Session',
+            ],
+            'start_year' : 2015,
+            'end_year'   : 2016
+        },
      ],
     session_details={
+        '2015 Regular Session' : {
+            'display_name'  : '2015-2016 Regular Session',
+            '_scraped_name' : '2015'
+        },
         '2014 Regular Session' : {
             'display_name'  : '2013-2014 Regular Session',
             '_scraped_name' : '2014'
@@ -48,7 +60,6 @@ metadata = dict(
             # was 2011, now 2012 to make scraper keep working for 2011-2012
             '_scraped_name' : '2012'
         },
-        # name next session 2013-2014 instead of following pattern
     },
     feature_flags=['subjects', 'events', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[

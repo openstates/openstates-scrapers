@@ -31,6 +31,8 @@ class CACommitteeScraper(CommitteeScraper):
                  'lower': 'http://assembly.ca.gov/'}
 
     def scrape(self, chamber, term):
+        raise Exception("CA Committees aren't in place yet")
+
         if chamber == 'lower':
             self.scrape_lower(chamber, term)
         elif chamber == 'upper':
