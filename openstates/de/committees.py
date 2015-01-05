@@ -15,7 +15,7 @@ class DECommitteeScraper(CommitteeScraper):
         }
 
         # Mapping of term names to session numbers (see metatdata).
-        term2session = {"2014-2015": "148", "2013-2014": "147",
+        term2session = {"2015-2016": "148", "2013-2014": "147",
                         "2011-2012": "146"}
 
         session = term2session[term]

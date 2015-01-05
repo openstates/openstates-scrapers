@@ -64,7 +64,7 @@ class CALegislatorScraper(LegislatorScraper):
             self.save_legislator(legislator)
 
     def parse_senate(self, div, term, chamber):
-        name = div.xpath('.//h2/text()')[0]
+        name = div.xpath('.//h3/text()')[0]
         if name.endswith(' (R)'):
             party = 'Republican'
         elif name.endswith(' (D)'):
@@ -74,7 +74,9 @@ class CALegislatorScraper(LegislatorScraper):
             return None
         name = name.split(' (')[0]
 
-        district = div.xpath('.//span[@class="district-number"]/text()')[0].split()[1].lstrip('0')
+        district = div.xpath(
+            './/div[contains(@class, "senator-district")]/div/text()'
+        )[0].strip().lstrip('0')
         photo_url = div.xpath('.//img/@src')[0]
         url = div.xpath('.//a/@href')[0]
 
