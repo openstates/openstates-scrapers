@@ -101,8 +101,10 @@ class MNLegislatorScraper(LegislatorScraper):
                              last_name=row['Last Name'],
                              **leg_data[name]
                             )
+
+            row['Rm Number'] = row['Rm. Number']  # .format issue with "."
             leg.add_office('capitol', 'Capitol Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                           address='{Office Building}\n{Office Address}\nRoom {Rm Number}\n{City}, {State} {Zipcode}'.format(**row)
                            )
 
 
