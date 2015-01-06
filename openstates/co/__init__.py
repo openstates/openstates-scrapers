@@ -22,6 +22,9 @@ metadata = dict(
         {'name': '2013-2014',
          'sessions': ['2013A', '2014A'],
          'start_year': 2013, 'end_year': 2014},
+        {'name': '2015-2016',
+         'sessions': ['2015A',],
+         'start_year': 2015, 'end_year': 2016},
         ],
     session_details={
         '2011A': {
@@ -48,9 +51,15 @@ metadata = dict(
             'type'         : 'primary',
              'display_name': '2014 Regular Session',
          },
+        '2015A': {
+            'type'         : 'primary',
+             'display_name': '2015 Regular Session',
+            '_scraped_name': "2015 Regular Session",
+         },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions = [
+        '2013 Regular/Special Session',
         '2010 Legislative Session',
         '2009 Legislative Session',
         '2008 Legislative Session',
@@ -83,7 +92,7 @@ def session_list():
         for session in sess:
             sessions.append( session )
 
-    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2011A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
+    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2015A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
         "//font/text()")
     for tag in tags:
         sess = re.findall(regex, tag)

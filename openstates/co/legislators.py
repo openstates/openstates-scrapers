@@ -108,7 +108,11 @@ class COLegislatorScraper(LegislatorScraper):
         ctty_apptmts = filter(lambda x: x.strip() != "" and
                               x not in CTTY_BLACKLIST, new)
 
-        (image,) = page.xpath("//img[contains(@src, '.jpg')]/@src")
+        try:
+            (image,) = page.xpath("//img[contains(@src, '.jpg')]/@src")
+        except ValueError:
+            (image,) = page.xpath("//img[contains(@src, '.png')]/@src")
+
         obj.update({
             "ctty"  : ctty_apptmts,
             "photo" : image
