@@ -28,6 +28,8 @@ rules = (
          'committee:referred'),
     Rule(r'VETO was NOT SUSTAINED', 'bill:veto_override:passed'),
     Rule(r'VETO was SUSTAINED', 'bill:veto_override:failed'),
+    Rule(r'(?<![Aa]mendment)READ and (PASSED|ADOPTED)(, in concurrence)?\.$',
+            'bill:passed')
     )
 
 
