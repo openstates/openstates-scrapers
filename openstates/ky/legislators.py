@@ -113,7 +113,10 @@ class KYLegislatorScraper(LegislatorScraper):
             if num.startswith('Annex: '):
                 phone = num.replace('Annex: ', '')
 
-        leg.add_office('capitol', 'Capitol Office', address=address,
-                       phone=phone)
+        if address.strip() == "":
+            self.warning("Missing Capitol Office!!")
+        else:
+            leg.add_office('capitol', 'Capitol Office', address=address,
+                           phone=phone)
 
         self.save_legislator(leg)

@@ -28,6 +28,12 @@ metadata = dict(
                 '2013RS', '2013SS', '2014RS',
             ]
         ),
+        dict(
+            name='2015-2016', start_year=2015, end_year=2016,
+            sessions=[
+                '2015RS',
+            ]
+        ),
     ],
     session_details={
         '2011 Regular Session': {'type': 'primary',
@@ -54,6 +60,10 @@ metadata = dict(
         '2014RS': {'type': 'primary',
                    'display_name': '2014 Regular Session',
                    '_scraped_name': '2014 Regular Session ',
+                  },
+        '2015RS': {'type': 'primary',
+                   'display_name': '2015 Regular Session',
+                   '_scraped_name': '2015 Regular Session ',
                   },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
