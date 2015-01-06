@@ -43,13 +43,16 @@ class NHLegislatorScraper(LegislatorScraper):
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5, com6, com7) = line.split('*')
+             com4, com5) = line.split('\t')
 
             chamber = chamber_map[chamber]
 
             # skip legislators from a chamber we aren't scraping
             if chamber not in chambers:
                 continue
+
+            middle = middle.strip()
+            last = last.strip('"')
 
             if middle:
                 full = '%s %s %s' % (first, middle, last)
@@ -80,7 +83,7 @@ class NHLegislatorScraper(LegislatorScraper):
                     leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
 
             romans = r'(?i)\s([IXV]+)(?:\s|$)'
-            for com in (com1, com2, com3, com4, com5, com6, com7):
+            for com in (com1, com2, com3, com4, com5):
                 com = com.strip('"')
                 if com:
                     com_name = com.title()
