@@ -190,10 +190,14 @@ class NYLegislatorScraper(LegislatorScraper):
 
             party = party_by_district[district]
 
+            photo_url = "http://assembly.state.ny.us/mem/pic/%03d.jpg" % \
+                    int(district)
             leg_url = link.get('href')
+            
             legislator = Legislator(term, 'lower', district, name,
                                     party=party,
-                                    url=leg_url)
+                                    url=leg_url,
+                                    photo_url=photo_url)
             legislator.add_source(url)
 
             # Legislator
