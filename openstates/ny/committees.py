@@ -81,10 +81,9 @@ class NYCommitteeScraper(CommitteeScraper):
                 role = 'chair'
             else:
                 role = 'member'
-            print(role)
 
             if name not in seen:
-                comm.add_member(name)
+                comm.add_member(name, role)
                 seen.add(name)
 
         if comm['members']:

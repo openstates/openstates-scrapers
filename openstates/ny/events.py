@@ -108,7 +108,6 @@ class NYEventScraper(EventScraper):
             title_key = list(title_key).pop()
             title = metainf[title_key]
 
-            print(title)
             title = re.sub(
                     r"\*\*Click here to view public hearing notice\*\*",
                     "",
