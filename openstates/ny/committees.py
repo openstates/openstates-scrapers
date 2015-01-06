@@ -76,10 +76,12 @@ class NYCommitteeScraper(CommitteeScraper):
             name, role = parse_name(member)
 
             # Figure out if this person is the chair.
-            if 'Chair' in link.xpath('../../preceding-sibling::div[1]/text()'):
+            role_type = link.xpath('../../preceding-sibling::div[1]/text()')
+            if role_type in (['Chair'], ['Co-Chair']):
                 role = 'chair'
             else:
                 role = 'member'
+            print(role)
 
             if name not in seen:
                 comm.add_member(name)
