@@ -12,19 +12,12 @@ class KYEventScraper(EventScraper):
 
     _tz = pytz.timezone('US/Eastern')
 
-    def scrape(self, chamber, session):
+    def scrape(self, session, chambers):
         url = "http://www.lrc.ky.gov/legislative_calendar/index.aspx"
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
 
         for div in page.xpath("//div[@style = 'MARGIN-LEFT: 20px']"):
-            raise NotImplementedError(
-                    "Events are getting scraped multiple times, "
-                    "twice for each chamber and twice more for an "
-                    "'other' chamber. We'll need more 2015RS events listed "
-                    "in order to diagnose and fix this."
-                    )
-
             date = div.xpath("string(../../span[1])").strip()
 
             try:
@@ -55,7 +48,6 @@ class KYEventScraper(EventScraper):
             event.add_source(url)
 
             # desc is actually the ctty name.
-            event.add_participant('host', desc, 'committee',
-                                  chamber=chamber)
+            event.add_participant('host', desc, 'committee')
 
             self.save_event(event)
