@@ -143,6 +143,8 @@ class NEBillScraper(BillScraper):
             action_type = 'governor:vetoed'
         elif 'Failed' in action:
             action_type = 'bill:failed'
+        elif 'Bill withdrawn' in action:
+            action_type = 'bill:withdrawn'
         else:
             action_type = ''
         return action_type
