@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import itertools
+import datetime
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -147,8 +148,12 @@ class NYLegislatorScraper(LegislatorScraper):
                 else:
                     data.append(entry)
 
-        for row in _split_list_on_tag(page.xpath("//div[@id='mememailwrap']/*"),
-                                      "emailclear"):
+        party_by_district = self._identify_lower_party()
+
+        for row in _split_list_on_tag(page.xpath(
+                "//div[@id='maincontainer']/div[contains(@class, 'email')]"),
+                "emailclear"
+                ):
 
             try:
                 name, district, email = row
@@ -183,15 +188,11 @@ class NYLegislatorScraper(LegislatorScraper):
                                   "div[@class = 'email2'][1])")
             district = district.rstrip('rthnds')
 
-            # unicodedata.normalize didn't help here.
-            if name == u'Sep\xfalveda, Luis':
-                party_name = party_dict['Sepulveda, Luis']
-            else:
-                party_name = party_dict[name]
+            party = party_by_district[district]
 
             leg_url = link.get('href')
             legislator = Legislator(term, 'lower', district, name,
-                                    party=party_name,
+                                    party=party,
                                     url=leg_url)
             legislator.add_source(url)
 
@@ -274,163 +275,69 @@ class NYLegislatorScraper(LegislatorScraper):
 
                 legislator.add_office(**office)
 
-# Map ID's to party affiliation. Has to be an id-to-party mapping, because
-# full_name gets normalized on import and may be different at scrape time
-# than at the time get_parties_dict.py is run (which uses post-import data).
-party_dict = {
-
-    'Abinanti, Thomas': 'Democratic',        'Skoufis, James': 'Democratic',
-
-    'Magnarelli, William': 'Democratic',     'McDonough, David': 'Republican',
-
-    'Hevesi, Andrew': 'Democratic',          'Hooper, Earlene': 'Democratic',
-
-    'Blankenbush, Ken': 'Republican',        'Kellner, Micah': 'Democratic',
-
-    'Camara, Karim': 'Democratic',           'Gottfried, Richard': 'Democratic',
-
-    u'Rivera, Jos\xe9': 'Democratic',        'Otis, Steven': 'Democratic',
-
-    'Graf, Al': 'Republican',                'Stirpe, Al': 'Democratic',
-
-    'Crespo, Marcos': 'Democratic',          'Rodriguez, Robert': 'Democratic',
-
-    'Raia, Andrew': 'Republican',            'Thiele, Jr., Fred': 'Democratic',
-
-    'Moya, Francisco': 'Democratic',         'Titone, Matthew': 'Democratic',
-
-    'McDonald, III, John': 'Democratic',     'Saladino, Joseph': 'Republican',
-
-    'Crouch, Clifford': 'Republican',        'Rabbitt, Annie': 'Republican',
-
-    'Steck, Phil': 'Democratic',             'Stevenson, Eric': 'Democratic',
-
-    'Cusick, Michael': 'Democratic',         'Rosa, Gabriela': 'Democratic',
-
-    'Roberts, Samuel': 'Democratic',         'Aubry, Jeffrion': 'Democratic',
-
-    'Brindisi, Anthony': 'Democratic',       'Galef, Sandy': 'Democratic',
-
-    'Lentol, Joseph': 'Democratic',          'Curran, Brian': 'Republican',
-
-    'Perry, N. Nick': 'Democratic',          'Tedisco, James': 'Republican',
-
-    'Lifton, Barbara': 'Democratic',         'Ramos, Phil': 'Democratic',
-
-    'Oaks, Bob': 'Republican',               'Lupinacci, Chad': 'Republican',
-
-    'Pretlow, J. Gary': 'Democratic',        'Miller, Michael': 'Democratic',
-
-    'Rozic, Nily': 'Democratic',             'Walter, Raymond': 'Republican',
-
-    'Brennan, James': 'Democratic',          'Skartados, Frank': 'Democratic',
-
-    'Espinal, Jr., Rafael': 'Democratic',    'Gibson, Vanessa': 'Democratic',
-
-    'Butler, Marc': 'Republican',            'Farrell, Jr., Herman': 'Democratic',
-
-    'Mayer, Shelley': 'Democratic',          'Lupardo, Donna': 'Democratic',
-
-    'Sepulveda, Luis': 'Democratic',         'Titus, Michele': 'Democratic',
-
-    'Garbarino, Andrew': 'Republican',       'Finch, Gary': 'Republican',
-
-    'Borelli, Joseph': 'Republican',         'Millman, Joan': 'Democratic',
-
-    'Barron, Inez': 'Democratic',            'Malliotakis, Nicole': 'Republican',
-
-    'Kolb, Brian M.': 'Republican',          'Wright, Keith L.T.': 'Democratic',
-
-    'Weinstein, Helene': 'Democratic',       'Tenney, Claudia': 'Republican',
-
-    'Englebright, Steve': 'Democratic',      'Fahy, Patricia': 'Democratic',
-
-    'Maisel, Alan': 'Democratic',            'Kavanagh, Brian': 'Democratic',
-
-    'Peoples-Stokes, Crystal': 'Democratic', 'Goldfeder, Phillip': 'Democratic',
-
-    'Solages, Michaelle': 'Democratic',      'Braunstein, Edward': 'Democratic',
-
-    'Simanowitz, Michael': 'Democratic',     'Rosenthal, Linda': 'Democratic',
-
-    'Glick, Deborah': 'Democratic',          'Lavine, Charles': 'Democratic',
-
-    'Giglio, Joseph': 'Republican',          'Buchwald, David': 'Democratic',
-
-    'Magee, William': 'Democratic',          'Jordan, Tony': 'Republican',
-
-    'Duprey, Janet': 'Republican',           'Schimminger, Robin': 'Democratic',
-
-    'Friend, Christopher': 'Republican',     'Reilich, Bill': 'Republican',
-
-    'Stec, Dan': 'Republican',               'Barrett, Didi': 'Democratic',
-
-    'Gjonaj, Mark': 'Democratic',            'Ceretto, John': 'Republican',
-
-    u'Ortiz, F\xe9lix': 'Democratic',        'Morelle, Joseph': 'Democratic',
-
-    'Nojay, Bill': 'Republican',             'Heastie, Carl': 'Democratic',
-
-    'Arroyo, Carmen': 'Democratic',          'Cook, Vivian': 'Democratic',
-
-    'Cahill, Kevin': 'Democratic',           'Zebrowski, Kenneth': 'Democratic',
-
-    'DiPietro, David': 'Republican',         'Quart, Dan': 'Democratic',
-
-    'Hikind, Dov': 'Democratic',             'Hennessey, Edward': 'Democratic',
-
-    'Johns, Mark': 'Republican',             'Kim, Ron': 'Democratic',
-
-    'McLaughlin, Steven': 'Republican',      'Montesano, Michael': 'Republican',
-
-    'Losquadro, Dan': 'Republican',          'Sweeney, Robert': 'Democratic',
-
-    'Robinson, Annette': 'Democratic',       'Bronson, Harry': 'Democratic',
-
-    'Cymbrowitz, Steven': 'Democratic',      'Palmesano, Philip': 'Republican',
-
-    'Corwin, Jane': 'Republican',            'Markey, Margaret': 'Democratic',
-
-    'Dinowitz, Jeffrey': 'Democratic',       'Gunther, Aileen': 'Democratic',
-
-    'Castro, Nelson': 'Democratic',          'Scarborough, William': 'Democratic',
-
-    'Lopez, Vito': 'Democratic',             'Goodell, Andy': 'Republican',
-
-    'Russell, Addie': 'Democratic',          'Mosley, Walter': 'Democratic',
-
-    'Ra, Edward': 'Republican',              'Weisenberg, Harvey': 'Democratic',
-
-    'Gantt, David': 'Democratic',            'Jaffee, Ellen': 'Democratic',
-
-    'Santabarbara, Angelo': 'Democratic',    'Brook-Krasny, Alec': 'Democratic',
-
-    'Katz, Steve': 'Republican',             'Barclay, William': 'Republican',
-
-    'Weprin, David': 'Democratic',           'Gabryszak, Dennis': 'Democratic',
-
-    'Silver, Sheldon': 'Democratic',         'Lalor, Kieran Michael': 'Republican',
-
-    "O'Donnell, Daniel": 'Democratic',       'Colton, William': 'Democratic',
-
-    'Abbate, Jr., Peter': 'Democratic',      'Simotas, Aravella': 'Democratic',
-
-    'Boyland, Jr., William': 'Democratic',   'Jacobs, Rhoda': 'Democratic',
-
-    'Fitzpatrick, Michael': 'Republican',    'DenDekker, Michael': 'Democratic',
-
-    'Paulin, Amy': 'Democratic',             'Schimel, Michelle': 'Democratic',
-
-    'Benedetto, Michael': 'Democratic',      'Ryan, Sean': 'Democratic',
-
-    'Kearns, Michael': 'Democratic',         'Hawley, Stephen': 'Republican',
-
-    'McKevitt, Tom': 'Republican',           'Lopez, Peter': 'Republican',
-
-    'Clark, Barbara': 'Democratic',          'Nolan, Catherine': 'Democratic',
-
-    'Davila, Maritza': 'Democratic',         'Pichardo, Victor': 'Democratic',
-
-    'Palumbo, Anthony H.': 'Republican',
-    }
-
+    def _identify_lower_party(self):
+        '''
+        Get the best available information on NY State Assembly
+        party affiliations. Returns a dict mapping district to party.
+        '''
+
+        # Download the page and ingest using lxml
+        MEMBER_LIST_URL = \
+                'http://www.elections.ny.gov:8080/reports/rwservlet?cmdkey=nysboe_incumbnt'
+        html = self.urlopen(MEMBER_LIST_URL)
+        doc = lxml.html.fromstring(html)
+
+        # Map district to party affiliation
+        party_affiliations = {}
+        district = None
+        party = None
+        capture_district = False
+        capture_party = False
+        affiliation_text = \
+                doc.xpath('/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
+        for affiliation in affiliation_text:
+
+            if capture_district and capture_party:
+                raise AssertionError(
+                        "Assembly party parsing simultaneously looking for "
+                        "both district number and party name"
+                        )
+            
+            affiliation = re.sub("\xa0", " ", affiliation)
+
+            # Ignore the header text when parsing
+            try:
+                datetime.datetime.strptime(affiliation, "%B %d, %Y")
+                is_date = True
+            except ValueError:
+                is_date = False
+            if is_date or \
+                    affiliation == "Elected Representatives for New York State by Office and District":
+                pass
+
+            # Otherwise, check to see if a District or Party is indicated
+            elif affiliation == u'District : ':
+                capture_district = True
+            elif affiliation == u'Party : ':
+                capture_party = True
+
+            # If a search has been initiated for District or Party, then capture them
+            elif capture_district:
+                district = affiliation
+                # Effectively reset the party affiliation tracking for each body
+                # The State Assembly is the last one in the document, so only
+                # they will be preserved
+                if district == 1:
+                    party_affiliations = {}
+                capture_district = False
+            elif capture_party:
+                party_affiliations[district] = affiliation
+                capture_party = False
+
+            else:
+                raise AssertionError(
+                        "Assembly party parsing found inappropriate text: "
+                        "'{}'".format(affiliation)
+                        )
+
+        return party_affiliations
