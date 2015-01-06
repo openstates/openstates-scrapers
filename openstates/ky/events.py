@@ -18,6 +18,13 @@ class KYEventScraper(EventScraper):
         page = lxml.html.fromstring(page)
 
         for div in page.xpath("//div[@style = 'MARGIN-LEFT: 20px']"):
+            raise NotImplementedError(
+                    "Events are getting scraped multiple times, "
+                    "twice for each chamber and twice more for an "
+                    "'other' chamber. We'll need more 2015RS events listed "
+                    "in order to diagnose and fix this."
+                    )
+
             date = div.xpath("string(../../span[1])").strip()
 
             try:
@@ -25,6 +32,9 @@ class KYEventScraper(EventScraper):
             except ValueError:
                 # No meetings
                 continue
+
+            if time == "Noon":
+                time = "12:00pm"
 
             if ':' not in time:
                 self.warning('skipping event with invalid time: %s', time)
