@@ -25,10 +25,10 @@ metadata = dict(
           'start_year': 2013,
           'end_year': 2014,
           'sessions': ['2013-2014', '2013SS1']},
-         {'name': '2014-2015',
-          'start_year': 2014,
-          'end_year': 2015,
-          'sessions': ['2014-2015']},
+         {'name': '2015-2016',
+          'start_year': 2015,
+          'end_year': 2016,
+          'sessions': ['2015']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -55,7 +55,7 @@ metadata = dict(
              'session_id': '1400',
              '_scraped_name': '2014 Regular Session',
             },
-         '2014-2015':
+         '2015':
             {'display_name': '2015 Regular Session',
              'session_id': '1500',
              '_scraped_name': '2015 Regular Session',
@@ -63,7 +63,6 @@ metadata = dict(
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
-        '2015 Regular Session',
         '2013 Regular Session',
         '2011 Regular Session', '2010 Regular Session',
         '2009 Regular Session', '2008 Regular Session',
