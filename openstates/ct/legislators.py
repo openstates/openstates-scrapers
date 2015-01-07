@@ -46,7 +46,7 @@ class CTLegislatorScraper(LegislatorScraper):
                              middle_name=row['middle initial'],
                              suffixes=row['suffix'],
                              party=party,
-                             email=row['email'],
+                             email=row['email'].strip(),
                              url=row['URL'],
                              office_phone=row['capitol phone'])
 
