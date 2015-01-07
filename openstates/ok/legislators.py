@@ -28,7 +28,6 @@ class OKLegislatorScraper(LegislatorScraper):
         url = "http://www.okhouse.gov/Members/Default.aspx"
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
-
         for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
             district = tr.xpath('.//td[3]')[0].text_content().strip()
@@ -36,7 +35,7 @@ class OKLegislatorScraper(LegislatorScraper):
             party = {'R': 'Republican', 'D': 'Democratic'}[party]
 
             leg_url = 'http://www.okhouse.gov/District.aspx?District=' + district
-            leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_doc = lxml.html.fromstring(self.urlopen(leg_url,headers={'referer': leg_url}))
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
 
