@@ -32,6 +32,10 @@ metadata = dict(
          'start_year': 2014,
          'end_year': 2015,
          'sessions': ['2014']},
+        {'name': '2015',
+         'start_year': 2015,
+         'end_year': 2016,
+         'sessions': ['2015']},
     ],
     feature_flags=['subjects', 'events', 'influenceexplorer'],
     session_details={
@@ -48,6 +52,10 @@ metadata = dict(
         '2014': {'type': 'primary',
                  '_scraped_name': '2014',
                  'display_name': '2014 Regular Session'},
+
+        '2015': {'type': 'primary',
+                 '_scraped_name': '2015',
+                 'display_name': '2015 Regular Session'},
     },
     _ignored_scraped_sessions=['2011', '2010', '2009', '2008', '2007']
 )

@@ -46,10 +46,12 @@ metadata = dict(
         '2013A': {
             'type'         : 'primary',
              'display_name': '2013 Regular Session',
+             '_scraped_name': '2013 Regular/Special Session',
          },
         '2014A': {
             'type'         : 'primary',
              'display_name': '2014 Regular Session',
+             '_scraped_name': '2014 Regular/Special Session',
          },
         '2015A': {
             'type'         : 'primary',
@@ -59,7 +61,6 @@ metadata = dict(
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions = [
-        '2013 Regular/Special Session',
         '2010 Legislative Session',
         '2009 Legislative Session',
         '2008 Legislative Session',

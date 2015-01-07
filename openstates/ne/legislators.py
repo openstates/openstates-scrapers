@@ -30,12 +30,18 @@ class NELegislatorScraper(LegislatorScraper):
                     phone = phone[1] + ' ' + phone[2]
                 else:
                     phone = None
-                email = page.xpath('//div[@id="sidebar"]/ul[1]/li[7]/a')[0].text or ''
+                mailto = page.xpath('//div[@id="sidebar"]/ul[1]/li[contains(text(), "Email:")]/a/@href')[0]
+                email = mailto[7:]
+
+                photo_url = \
+                        "http://www.nebraskalegislature.gov/media/images/blogs/dist%d02.jpg" \
+                        % district
 
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
                 leg = Legislator(term, 'upper', str(district), full_name,
-                                 party=party, email=email, url=rep_url)
+                                 party=party, email=email, url=rep_url,
+                                 photo_url=photo_url)
                 leg.add_source(rep_url)
                 leg.add_office('capitol', 'Capitol Office', address=address,
                                phone=phone)
