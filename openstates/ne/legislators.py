@@ -34,7 +34,7 @@ class NELegislatorScraper(LegislatorScraper):
                 email = mailto[7:]
 
                 photo_url = \
-                        "http://www.nebraskalegislature.gov/media/images/blogs/dist%d02.jpg" \
+                        "http://www.nebraskalegislature.gov/media/images/blogs/dist%02d.jpg" \
                         % district
 
                 #Nebraska is offically nonpartisan
