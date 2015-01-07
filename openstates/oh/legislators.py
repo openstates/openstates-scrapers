@@ -74,6 +74,15 @@ class OHLegislatorScraper(LegislatorScraper):
             bio = bio[0]
             leg['biography'] = bio
 
+        fax_line = [
+                x.strip() for x in
+                page.xpath("//div[@class='contactModule']/div[@class='data']/text()")
+                if "Fax" in x
+                ]
+        if fax_line:
+            fax_number = re.search(r'(\(\d{3}\)\s\d{3}\-\d{4})', fax_line[0]).group(1)
+            leg['offices'][0]['fax'] = fax_number
+
         ctties = page.xpath("//div[@class='committeeList']//a")
         for a in ctties:
             entry = a.text_content()
