@@ -20,6 +20,8 @@ metadata = dict(
         'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014', 'sessions': ['103'],
         'start_year': 2013, 'end_year': 2014},
+        {'name': '2015-2016', 'sessions': ['104'],
+        'start_year': 2015, 'end_year': 2016},
     ],
     session_details={
         '102': {
@@ -39,6 +41,13 @@ metadata = dict(
             'end_date': datetime.date(2014, 5, 30),
             'display_name': '103rd Legislature (2013-2014)',
             '_scraped_name': '103rd Legislature 1st and 2nd Sessions',
+               },
+        '104': {
+            'start_date': datetime.date(2015, 1, 7),
+            # Placeholder end date for now
+            'end_date': datetime.date(2016, 12, 31),
+            'display_name': '104th Legislature (2015-2016)',
+            '_scraped_name': '104th Legislature 1st and 2nd Sessions',
                },
         },
     feature_flags=['influenceexplorer'],
