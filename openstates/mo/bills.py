@@ -311,6 +311,7 @@ class MOBillScraper(BillScraper):
 
         bill_page = self.urlopen(url)
         bill_page = lxml.html.fromstring(bill_page)
+        bill_page.make_links_absolute(url)
 
         bill_id = bill_page.xpath('//*[@class="entry-title"]')
         if len(bill_id) == 0:
@@ -398,17 +399,20 @@ class MOBillScraper(BillScraper):
                                          self.senate_base_url,
                                          cosponsor.attrib['href']
                                      ))
-                    self.parse_cosponsors_from_bill(bill,'%s/%s' % (
-                        self.senate_base_url,
-                        table_rows[2][1][1].attrib['href']))
+                    sponsors_url, = bill_page.xpath(
+                        "//a[contains(@href, 'CoSponsors.aspx')]/@href")
+                    self.parse_cosponsors_from_bill(bill, sponsors_url)
                 except scrapelib.HTTPError as e:
                     self.log("WARNING: " + str(e))
                     self.bad_urls.append(url)
                     self.log( "WARNING: no bill summary page (%s)" % url )
 
-        actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
-        actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
-        actions_link = re.sub("content", "print", actions_link)
+        # actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
+        # actions_link = '%s/%s' % (self.senate_base_url,actions_link_tag.attrib['href'])
+        # actions_link = re.sub("content", "print", actions_link)
+
+        actions_link, = bill_page.xpath(
+            "//a[contains(@href, 'BillActions.aspx')]/@href")
         self.parse_house_actions(bill, actions_link)
 
         # get bill versions
@@ -426,14 +430,13 @@ class MOBillScraper(BillScraper):
         version_tags = bill_page.xpath('//div[@class="BillDocsSection"][2]/span')
         for version_tag in reversed(version_tags):
             version = clean_text(version_tag.text_content())
-            text_url = '%s%s' % (self.senate_base_url,version_tag[0].attrib['href'])
-            pdf_url = '%s%s' % (self.senate_base_url,version_tag[1].attrib['href'])
-            if text_url.endswith('htm'):
-                mimetype = 'text/html'
-            elif text_url.endswith('pdf'):
-                mimetype = 'application/pdf'
-            bill.add_version(version, text_url, pdf_url=pdf_url,
-                             on_duplicate='use_new', mimetype=mimetype)
+            for vurl in version_tag.xpath(".//a"):
+                if vurl.text == 'PDF':
+                    mimetype = 'application/pdf'
+                else:
+                    mimetype = 'text/html'
+                bill.add_version(version, vurl.attrib['href'],
+                                 on_duplicate='use_new', mimetype=mimetype)
         self.save_bill(bill)
 
     def parse_cosponsors_from_bill(self, bill, url):
