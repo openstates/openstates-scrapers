@@ -1,5 +1,4 @@
 from billy.scrape.legislators import Legislator, LegislatorScraper
-from billy.scrape.utils import url_xpath
 from openstates.utils import LXMLMixin
 
 
@@ -54,13 +53,20 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
                 './dt[text()="Party"]/following-sibling::dd[1]/text()')[0]
         bio = info.xpath(
                 './dt[text()="Biography"]/following-sibling::dd[1]/text()')[0]
+
+        leg = Legislator(
+                term=term, chamber=chamber, district=district, full_name=name,
+                party=party, biography=bio, photo_url=photo_url
+                )
+        leg.add_source(legislator_url)
+        
+        # Identify their offices
         if info.xpath('./dt[text()="Email"]'):
             email = info.xpath(
                     './dt[text()="Email"]/following-sibling::dd[1]/a/text()')[0]
         else:
             email = None
-        
-        # Identify their offices
+
         if info.xpath('./dt[text()="Home Address"]'):
             personal_address = info.xpath(
                     './dt[text()="Home Address"]/following-sibling::dd[1]/text()')[0]
@@ -71,6 +77,7 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
                     './dt[text()="Home Phone"]/following-sibling::dd[1]/text()')[0]
         else:
             personal_phone = None
+
         if info.xpath('./dt[text()="Work Address"]'):
             work_address = info.xpath(
                     './dt[text()="Work Address"]/following-sibling::dd[1]/text()')[0]
@@ -81,13 +88,6 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
                     './dt[text()="Work Phone"]/following-sibling::dd[1]/text()')[0]
         else:
             work_phone = None
-
-        # Save the legislator
-        leg = Legislator(
-                term=term, chamber=chamber, district=district, full_name=name,
-                party=party, biography=bio, photo_url=photo_url
-                )
-        leg.add_source(legislator_url)
 
         if personal_address and personal_phone:
             leg.add_office(
@@ -105,9 +105,56 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
                         address=personal_address, phone=personal_phone,
                         email=email
                         )
-
         else:
             raise AssertionError(
                     "No address-phone information found for {}".format(name))
-        
+
+        # Capture their committee positions
+        if info.xpath('./dt[text()="Committees"]'):
+            committee_elements = info.xpath(
+                    './dt[text()="Committees"]/following-sibling::dd[1]/ul/li//text()')
+            self._scrape_committees(leg, committee_elements)
+
+        # Save the legislator
         self.save_legislator(leg)
+
+    def _scrape_committees(self, leg, committee_elements):
+        name = ''
+        for text in committee_elements:
+            text = text.strip()
+
+            if not text:
+                pass
+
+            elif text.startswith(", "):
+                role = text[2: ]
+
+            elif "Committee" in text or "Council" in text:
+                # If there is already a committee scraped, save that one
+                if name:
+                    leg.add_role(
+                            role='committee member',
+                            term=leg['roles'][0]['term'],
+                            chamber=chamber, committee=name, position=role
+                            )
+
+                role = 'member'
+                name = text
+
+                if text.startswith("House Committee "):
+                    chamber = 'lower'
+                elif text.startswith("Senate Committee "):
+                    chamber = 'upper'
+                else:
+                    chamber = 'joint'
+            else:
+                raise AssertionError(
+                        "Committee parsing found unexpected text: '{}'".\
+                        format(text)
+                        )
+
+        if name:
+            leg.add_role(
+                    role='committee member', term=leg['roles'][0]['term'],
+                    chamber=chamber, committee=name, position=role
+                    )
