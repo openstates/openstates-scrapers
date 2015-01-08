@@ -49,20 +49,15 @@ metadata = dict(
                                   },
                      },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions=['2009 Special Session', '2007-2008 Session',
-                               '2005-2006 Session', '2005 Special Session',
-                               '2003-2004 Session', '2001-2002 Session',
-                               '1999-2000 Session', '1997-1998 Session',
-                               '1995-1996 Session', '1993-1994 Session',
-                               '1991-1992 Session', '1989-1990 Session',
-                               '1987-1988 Session', '1985-1986 Session']
+    _ignored_scraped_sessions= ['2009 Special Session']
 
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://www.leg.state.vt.us/ResearchMain.cfm',
-        "//div[@id='ddsidebarmenu01']/ul/li/a/text()")
+    return url_xpath(
+            'http://legislature.vermont.gov/bill/search/2016',
+            '//fieldset/div[@id="selected_session"]/div/select/option/text()')
 
 def extract_text(doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
