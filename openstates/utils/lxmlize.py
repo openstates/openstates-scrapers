@@ -2,6 +2,11 @@
 
 class LXMLMixin(object):
     """
+    Mixin for adding in LXML helper functions throughout Open States' code.
+
+      - lxmlize
+         Take a URL, load the URL into an LXML object, and make links
+         absolute.
     """
 
     def lxmlize(self, url):
