@@ -1,89 +1,113 @@
-import re
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
-import lxml.html
+from billy.scrape.legislators import Legislator, LegislatorScraper
+from billy.scrape.utils import url_xpath
+from openstates.utils import LXMLMixin
 
 
-class VTLegislatorScraper(LegislatorScraper):
+class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'vt'
     latest_only = True
 
-    def scrape(self, chamber, term):
-        # What Vermont claims are Word and Excel files are actually
-        # just HTML tables
-        # What Vermont claims is a CSV file is actually one row of comma
-        # separated values followed by a ColdFusion error.
-        url = ("http://www.leg.state.vt.us/legdir/"
-               "memberdata.cfm/memberdata.doc?FileType=W")
+    def scrape(self, term, chambers):
+        # Identify all legislators to scrape
+        SEARCH_URL = 'http://legislature.vermont.gov/people/search/2016'
+        LEGISLATOR_ID_XPATH = \
+                '//select[starts-with(@data-placeholder, "Select Legislator")]/option/@value'
 
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
+        doc = self.lxmlize(SEARCH_URL)
+        legislator_ids = doc.xpath(LEGISLATOR_ID_XPATH)
+        legislator_ids.remove('0')
 
-        for tr in page.xpath("//tr")[1:]:
-            row_chamber = tr.xpath("string(td[4])")
-            if row_chamber == 'S' and chamber == 'lower':
-                continue
-            elif row_chamber == 'H' and chamber == 'upper':
-                continue
+        for legislator_id in legislator_ids:
+            self._scrape_legislator_page(term, legislator_id)
 
-            district = tr.xpath("string(td[7])")
-            district = district.replace('District', '').strip()
-            if not district:
-                continue
+    def _scrape_legislator_page(self, term, legislator_id):
+        # Load the legislator's homepage
+        legislator_url = \
+                'http://legislature.vermont.gov/people/single/2016/{}'.\
+                format(legislator_id)
+        doc = self.lxmlize(legislator_url)
 
-            first_name = tr.xpath("string(td[8])")
-            middle_name = tr.xpath("string(td[9])")
-            last_name = tr.xpath("string(td[10])")
+        # Gather information on the legislator
+        NULL_PHOTO_URL = \
+                'http://legislature.vermont.gov/mysite/images/profile.png'
+        (photo_url, ) = doc.xpath('//img[@class="profile-photo"]/@src')
+        if photo_url == NULL_PHOTO_URL:
+            photo_url = ''
 
-            if first_name.endswith(" %s." % middle_name):
-                first_name = first_name.split(" %s." % middle_name)[0]
+        (name, ) = doc.xpath('//div/h1/text()')
+        if name.startswith("Representative "):
+            chamber = 'lower'
+            name = name[len("Representative "): ]
+        elif name.startswith("Senator "):
+            chamber = 'upper'
+            name = name[len("Senator "): ]
+        else:
+            raise AssertionError(
+                    "Name indicates neither a senator nor a representative")
 
-            if middle_name:
-                full_name = "%s %s. %s" % (first_name, middle_name,
-                                          last_name)
-            else:
-                full_name = "%s %s" % (first_name, last_name)
+        (info, ) = doc.xpath('//dl[@class="summary-table profile-summary"]')
+        district = info.xpath(
+                './dt[text()="District"]/following-sibling::dd[1]/a/text()')[0]
+        if district.endswith(" District"):
+            district = district[ :(len(district) - len(" District"))]
+        party = info.xpath(
+                './dt[text()="Party"]/following-sibling::dd[1]/text()')[0]
+        bio = info.xpath(
+                './dt[text()="Biography"]/following-sibling::dd[1]/text()')[0]
+        if info.xpath('./dt[text()="Email"]'):
+            email = info.xpath(
+                    './dt[text()="Email"]/following-sibling::dd[1]/a/text()')[0]
+        else:
+            email = None
+        
+        # Identify their offices
+        if info.xpath('./dt[text()="Home Address"]'):
+            personal_address = info.xpath(
+                    './dt[text()="Home Address"]/following-sibling::dd[1]/text()')[0]
+        else:
+            personal_address = None
+        if info.xpath('./dt[text()="Home Phone"]'):
+            personal_phone = info.xpath(
+                    './dt[text()="Home Phone"]/following-sibling::dd[1]/text()')[0]
+        else:
+            personal_phone = None
+        if info.xpath('./dt[text()="Work Address"]'):
+            work_address = info.xpath(
+                    './dt[text()="Work Address"]/following-sibling::dd[1]/text()')[0]
+        else:
+            work_address = None
+        if info.xpath('./dt[text()="Work Phone"]'):
+            work_phone = info.xpath(
+                    './dt[text()="Work Phone"]/following-sibling::dd[1]/text()')[0]
+        else:
+            work_phone = None
 
-            email = tr.xpath("string(td[11])")
+        # Save the legislator
+        leg = Legislator(
+                term=term, chamber=chamber, district=district, full_name=name,
+                party=party, biography=bio, photo_url=photo_url
+                )
+        leg.add_source(legislator_url)
 
-            party = tr.xpath("string(td[6])")
-            party = re.sub(r'Democrat\b', 'Democratic', party)
-            parties = party.split('/')
-            if 'Republican' in parties and 'Democratic' in parties:
-                pass
-            else:
-                party = parties.pop(0)
+        if personal_address and personal_phone:
+            leg.add_office(
+                    type='district', name='District Office',
+                    address=personal_address, phone=personal_phone, email=email
+                    )
+        elif work_address and work_phone:
+            leg.add_office(
+                        type='district', name='District Office',
+                        address=work_address, phone=work_phone, email=email
+                        )
+        elif (personal_address or personal_phone):
+            leg.add_office(
+                        type='district', name='District Office',
+                        address=personal_address, phone=personal_phone,
+                        email=email
+                        )
 
-            leg = Legislator(term, chamber, district, full_name,
-                             first_name=first_name,
-                             middle_name=middle_name,
-                             last_name=last_name,
-                             party=party,
-                             email=email,
-            # closest thing we have to a page for legislators, not ideal
-            url='http://www.leg.state.vt.us/legdir/LegDirMain.cfm'
-                            )
-            leg['roles'][0]['other_parties'] = parties
-            leg.add_source(url)
-
-            # 12-16: MailingAddress: 1,2,City,State,ZIP
-            mail = '%s\n%s\n%s, %s %s' % (tr.xpath('string(td[12])'),
-                                          tr.xpath('string(td[13])'),
-                                          tr.xpath('string(td[14])'),
-                                          tr.xpath('string(td[15])'),
-                                          tr.xpath('string(td[16])'))
-            leg.add_office('district', 'Mailing Address', address=mail)
-            # 17-21: HomeAddress: 1,2,City,State,ZIP, Email, Phone
-            home = '%s\n%s\n%s, %s %s' % (tr.xpath('string(td[17])'),
-                                          tr.xpath('string(td[18])'),
-                                          tr.xpath('string(td[19])'),
-                                          tr.xpath('string(td[20])'),
-                                          tr.xpath('string(td[21])'))
-            home_email = tr.xpath('string(td[22])') or None
-            home_phone = tr.xpath('string(td[23])') or None
-            leg.add_office('district', 'Home Address', address=home,
-                            email=home_email, phone=home_phone)
-
-            self.save_legislator(leg)
+        else:
+            raise AssertionError(
+                    "No address-phone information found for {}".format(name))
+        
+        self.save_legislator(leg)
