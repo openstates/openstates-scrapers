@@ -1,3 +1,4 @@
+import lxml.html
 
 
 class LXMLMixin(object):
