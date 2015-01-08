@@ -119,7 +119,8 @@ metadata = {
                                  '_scraped_name': '2015 Regular Session',
                                 },
     },
-    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
+    'feature_flags': ['subjects',
+    'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2007 Regular Session', 'April 2008 Special Session',
         'March 2008 Special Session', 'December 2007 Special Session',
