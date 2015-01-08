@@ -28,7 +28,7 @@ metadata = dict(
          {'name': '2015-2016',
           'start_year': 2015,
           'end_year': 2016,
-          'sessions': ['2015']},
+          'sessions': ['2015-2016']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -55,7 +55,7 @@ metadata = dict(
              'session_id': '1400',
              '_scraped_name': '2014 Regular Session',
             },
-         '2015':
+         '2015-2016':
             {'display_name': '2015 Regular Session',
              'session_id': '1500',
              '_scraped_name': '2015 Regular Session',
