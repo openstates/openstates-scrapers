@@ -11,7 +11,7 @@ class WICommitteeScraper(CommitteeScraper):
         data = self.urlopen(url)
         doc = lxml.html.fromstring(data)
 
-        for leg in doc.xpath('//a[contains(@href, "leg-info")]/text()'):
+        for leg in doc.xpath('//p/a[contains(@href, "2015/legislators")]/text()'):
             leg = leg.replace('Representative ', '')
             leg = leg.replace('Senator ', '')
             leg = leg.strip()
@@ -33,19 +33,17 @@ class WICommitteeScraper(CommitteeScraper):
 
 
     def scrape(self, term, chambers):
-        for chamber in chambers:
-            url = 'http://legis.wisconsin.gov/Pages/comm-list.aspx?h='
-            url += 's' if chamber == 'upper' else 'a'
+        for chamber in chambers+["joint"]:
+            url = 'http://docs.legis.wisconsin.gov/2015/committees/'
+            if chamber == 'joint':
+                url += "joint"
+            elif chamber == 'upper':
+                url += 'senate'
+            else:
+                url += 'assembly'
             data = self.urlopen(url)
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 
-            table = doc.xpath('//table[@class="commList"]')[0]
-            for a in table.xpath('.//a[contains(@href, "comm-info")]'):
+            for a in doc.xpath('.//div[starts-with(@id,"committee-")]/h5/a'):
                 self.scrape_committee(a.text, a.get('href'), chamber)
-
-            # also scrape joint committees (once, only on upper)
-            if chamber == 'upper':
-                table = doc.xpath('//table[@class="commList"]')[1]
-                for a in table.xpath('.//a[contains(@href, "comm-info")]'):
-                    self.scrape_committee(a.text, a.get('href'), 'joint')
