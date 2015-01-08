@@ -1,7 +1,6 @@
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import VTBillScraper
 from .legislators import VTLegislatorScraper
-from .committees import VTCommitteeScraper
 from .events import VTEventScraper
 
 metadata = dict(
