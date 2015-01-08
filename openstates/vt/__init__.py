@@ -9,7 +9,7 @@ metadata = dict(
     abbreviation='vt',
     capitol_timezone='America/New_York',
     legislature_name='Vermont General Assembly',
-    legislature_url='http://www.leg.state.vt.us/',
+    legislature_url='http://legislature.vermont.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator', 'term': 2},
         'lower': {'name': 'House', 'title': 'Representative', 'term': 2},
