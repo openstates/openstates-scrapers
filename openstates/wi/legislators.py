@@ -22,48 +22,58 @@ class WILegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(body)
         page.make_links_absolute(url)
 
-        for row in page.xpath("//table[@class='legis-list']/tr")[1:]:
-            if row.xpath(".//a/@href"):
-                rep_url = row.xpath(".//a/@href")[0]
+        for row in page.xpath("//div[@class='box-content']/div[starts-with(@id,'district')]"):
+
+            if row.xpath(".//a/@href") and not row.xpath(".//a[text()='Vacant']"):
+                rep_url = row.xpath(".//a[text()='Details']/@href")[0].strip("https://")
+                rep_url = "https://docs."+rep_url
                 rep_doc = lxml.html.fromstring(self.urlopen(rep_url))
                 rep_doc.make_links_absolute(rep_url)
 
-                first_name = rep_doc.xpath('//h2[@class="given-name"]/text()')[0]
-                last_name = rep_doc.xpath('//h2[@class="family-name"]/text()')[0]
-                full_name = '%s %s' % (first_name, last_name)
-                party = rep_doc.xpath('//div[@class="party"]/text()')[0]
-                if party == 'Democrat':
-                    party = 'Democratic'
+                full_name = rep_doc.xpath('//div[@id="district"]/h1/text()')[0].strip("Senator ").strip("Representative ")
+                print full_name
 
-                district = str(int(row.getchildren()[2].text_content()))
+                party = rep_doc.xpath('//div[@id="district"]/h3/small/text()')
+                if len(party) > 0:
+                    party = PARTY_DICT[party[0].split("-")[0].strip("(").strip()]
+                else:
+                    party = None
+                district = rep_doc.xpath('//div[@id="district"]/h3/a/@href')[1]
+                district = district.split("/")[-1]
+                district = str(int(district))
 
                 # email
-                email = rep_doc.xpath('//a[starts-with(@href, "mailto")]/text()')
+                email = rep_doc.xpath('//span[@class="info email"]/a/text()')
                 if email:
                     email = email[0]
                 else:
                     email = ''
 
                 leg = Legislator(term, chamber, district, full_name,
-                                 first_name=first_name, last_name=last_name,
                                  party=party, url=rep_url, email=email)
 
-                img = rep_doc.xpath('//img[@class="photo"]/@src')
+                img = rep_doc.xpath('//img/@src')
                 if img:
                     leg['photo_url'] = img[0]
 
+
+
                 # office ####
-                address = '\n'.join(rep_doc.xpath('//dt[text()="Madison Office"]/following-sibling::dd/div/text()'))
-                phone = rep_doc.xpath('//dt[text()="Telephone"]/following-sibling::dd/div/text()')
+                address_lines = rep_doc.xpath('//span[@class="info office"]/text()')
+                address = '\n'.join([line.strip() for line in address_lines if line.strip() != ""])
+
+                phone = rep_doc.xpath('//span[@class="info telephone"]/text()')
                 if phone:
-                    phone = re.sub('\s+', ' ', phone[0]).strip()
+                    phone = re.sub('\s+', ' ', phone[1]).strip()
                 else:
                     phone = None
-                fax = rep_doc.xpath('//dt[text()="Fax"]/following-sibling::dd/div/text()')
+
+                fax = rep_doc.xpath('//span[@class="info fax"]/text()')
                 if fax:
-                    fax = re.sub('\s+', ' ', fax[0]).strip()
+                    fax = re.sub('\s+', ' ', fax[1]).strip()
                 else:
                     fax = None
+
 
                 leg.add_office('capitol', 'Madison Office', address=address,
                                phone=phone, fax=fax)
