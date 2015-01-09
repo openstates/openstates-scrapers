@@ -11,7 +11,7 @@ class WICommitteeScraper(CommitteeScraper):
         data = self.urlopen(url)
         doc = lxml.html.fromstring(data)
 
-        for leg in doc.xpath('//p/a[contains(@href, "2015/legislators")]/text()'):
+        for leg in doc.xpath('//div[@id="members"]/div[@id="members"]/p/a/text()'):
             leg = leg.replace('Representative ', '')
             leg = leg.replace('Senator ', '')
             leg = leg.strip()
