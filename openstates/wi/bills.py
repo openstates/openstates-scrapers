@@ -316,7 +316,7 @@ class WIBillScraper(BillScraper):
                         vote.no(name.strip())
             elif 'NOT VOTING -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip():
+                    if name.strip() and "NOT VOTING" not in name:
                         vote.other(name.strip())
             elif text.strip():
                 raise ValueError('unexpected block in vote')
