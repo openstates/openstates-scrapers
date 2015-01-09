@@ -50,7 +50,7 @@ class WILegislatorScraper(LegislatorScraper):
                     email = ''
 
                 leg = Legislator(term, chamber, district, full_name,
-                                 party=party, url=rep_url, email=email)
+                                 party=party, url=rep_url)
 
                 img = rep_doc.xpath('.//div[@id="district"]/img/@src')
                 if img:
@@ -77,7 +77,7 @@ class WILegislatorScraper(LegislatorScraper):
 
 
                 leg.add_office('capitol', 'Madison Office', address=address,
-                               phone=phone, fax=fax)
+                               phone=phone, fax=fax, email=email)
 
                 # save legislator
                 leg.add_source(rep_url)
