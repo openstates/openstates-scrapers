@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 import re
 import datetime as dt
 
@@ -8,14 +9,9 @@ import pytz
 import lxml.html
 
 
-class TXEventScraper(EventScraper):
+class TXEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'tx'
     _tz = pytz.timezone('US/Central')
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape(self, chamber, session):
         if not session.startswith('83'):  # XXX: Fixme

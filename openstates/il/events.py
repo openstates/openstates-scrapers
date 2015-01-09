@@ -1,6 +1,7 @@
 import datetime as dt
 import re
 
+from openstates.utils import LXMLMixin
 from billy.scrape.events import Event, EventScraper
 
 import lxml.html
@@ -12,15 +13,9 @@ urls = {
 }
 
 
-class ILEventScraper(EventScraper):
+class ILEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'il'
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_page(self, url, session, chamber):
         page = self.lxmlize(url)

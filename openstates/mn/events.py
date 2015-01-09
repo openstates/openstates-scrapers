@@ -3,13 +3,14 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import pytz
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
-class MNEventScraper(EventScraper):
+class MNEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'mn'
     date_formats = (
         '%A, %B %d, %Y %I:%M %p',
@@ -29,12 +30,6 @@ class MNEventScraper(EventScraper):
 
         senate_meetings = page.xpath("//div[@class='senate_item']")
         self.scrape_meetings(senate_meetings, 'senate')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_meetings(self, meetings, group):
         """

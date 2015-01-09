@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 import datetime as dt
 import re
 
@@ -8,16 +9,10 @@ import pytz
 
 mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
 
-class MIEventScraper(EventScraper):
+class MIEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'mi'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_event_page(self, url, chamber, session):
         page = self.lxmlize(url)

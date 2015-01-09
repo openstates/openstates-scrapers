@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 from datetime import timedelta
 import datetime as dt
 
@@ -12,17 +13,11 @@ event_page = "http://www.leg.wa.gov/legislature/pages/showagendas.aspx?chamber=%
 # 2ed arg: start date (5/1/2012)
 # 3ed arg: end date (5/31/2012)
 
-class WAEventScraper(EventScraper):
+class WAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'wa'
 
     _tz = pytz.timezone('US/Pacific')
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_agenda(self, ols):
         if len(ols) == 0:

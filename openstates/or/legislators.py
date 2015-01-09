@@ -1,4 +1,5 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 import lxml.html
 import re
 
@@ -15,19 +16,13 @@ def itergraphs(elements, break_):
         yield buf
 
 
-class ORLegislatorScraper(LegislatorScraper):
+class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'or'
 
     URLs = {
         "lower": "http://www.oregonlegislature.gov/house/Pages/RepresentativesAll.aspx",
         "upper": "http://www.oregonlegislature.gov/senate/Pages/SenatorsAll.aspx",
     }
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape(self, chamber, term):
         url = self.URLs[chamber]

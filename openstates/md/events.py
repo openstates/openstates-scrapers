@@ -1,10 +1,12 @@
 import datetime as dt
 
+from openstates.utils import LXMLMixin
 from billy.scrape.events import Event, EventScraper
 
 import re
 import pytz
 import lxml.html
+
 
 def last_space(string):
     # this is a big hack.
@@ -13,14 +15,10 @@ def last_space(string):
             return x
     return None
 
-class MDEventScraper(EventScraper):
+
+class MDEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'md'
     _tz = pytz.timezone('US/Eastern')
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape(self, chamber, session):
         if chamber != 'other':

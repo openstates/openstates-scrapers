@@ -2,6 +2,7 @@ import datetime as dt
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import pytz
@@ -31,16 +32,10 @@ replace = {
     "SUB A as amended": ""
 }
 
-class RIEventScraper(EventScraper):
+class RIEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'ri'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_agenda(self, url, session):
         page = self.lxmlize(url)
