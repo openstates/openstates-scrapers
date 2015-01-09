@@ -2,6 +2,12 @@ import os
 
 from os.path import abspath, dirname, join
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# This shims around folks that have openstates/ on virtualenv's .pth, but
+# not the root. This throws openstates.utils off, and isn't worth fiddling
+# that much with.
+
 SCRAPER_PATHS=[os.path.join(os.getcwd(), 'openstates')]
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
