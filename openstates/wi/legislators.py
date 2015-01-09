@@ -44,7 +44,6 @@ class WILegislatorScraper(LegislatorScraper):
 
                 # email
                 email = rep_doc.xpath("//span[@class='info email']/a/text()")
-                print email
                 if email:
                     email = email[0]
                 else:
