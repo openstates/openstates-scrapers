@@ -1,5 +1,4 @@
 import json
-import urllib
 
 from billy.scrape.legislators import Legislator, LegislatorScraper
 
@@ -12,7 +11,7 @@ class VTLegislatorScraper(LegislatorScraper):
         # Load all members via the private API
         LEGISLATOR_DUMP_URL = \
                 'http://legislature.vermont.gov/people/loadAll/2016'
-        json_data = urllib.urlopen(LEGISLATOR_DUMP_URL).read()
+        json_data = self.urlopen(LEGISLATOR_DUMP_URL)
         legislators = json.loads(json_data)['data']
 
         # Parse the information from each legislator
