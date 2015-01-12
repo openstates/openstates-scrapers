@@ -97,7 +97,12 @@ class WALegislatorScraper(LegislatorScraper):
                         obj['address'] = address
 
                     scraped_offices.append(obj)
-            except scrapelib.HTTPError, requests.exceptions.ConnectionError:
+
+            except scrapelib.HTTPError:
+                # Sometimes the API and website are out of sync
+                # with respect to legislator resignations/appointments
+                pass
+            except requests.exceptions.ConnectionError:
                 # Sometimes the API and website are out of sync
                 # with respect to legislator resignations/appointments
                 pass
