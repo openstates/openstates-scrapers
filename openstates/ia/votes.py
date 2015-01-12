@@ -19,25 +19,27 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         session_years = [int(year) for year in session.split("-")]
         for year in session_years:
 
-            chamber_name = self.metadata["chambers"][chamber]["name"].lower()
-            url = 'https://www.legis.iowa.gov/chambers/journals/index/{}'.\
-                format(chamber_name)
-            params = {"year": year}
-            html = self.urlopen(url, params=params)
+            if year <= datetime.today().year:
 
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
-            urls = [x for x in doc.xpath('//a[@href]/@href') if
-                    x.endswith(".pdf")][::-1]
+                chamber_name = self.metadata["chambers"][chamber]["name"].lower()
+                url = 'https://www.legis.iowa.gov/chambers/journals/index/{}'.\
+                    format(chamber_name)
+                params = {"year": year}
+                html = self.urlopen(url, params=params)
 
-            for url in urls:
-                _, filename = url.rsplit('/', 1)
-                try:
-                    date = datetime.strptime(filename, '%m-%d-%Y.pdf')
-                except ValueError:
-                    msg = "%s doesn't smell like a date. Skipping."
-                    self.logger.info(msg % filename)
-                self.scrape_journal(url, chamber, session, date)
+                doc = lxml.html.fromstring(html)
+                doc.make_links_absolute(url)
+                urls = [x for x in doc.xpath('//a[@href]/@href') if
+                        x.endswith(".pdf")][::-1]
+
+                for url in urls:
+                    _, filename = url.rsplit('/', 1)
+                    try:
+                        date = datetime.strptime(filename, '%m-%d-%Y.pdf')
+                    except ValueError:
+                        msg = "%s doesn't smell like a date. Skipping."
+                        self.logger.info(msg % filename)
+                    self.scrape_journal(url, chamber, session, date)
 
     def scrape_journal(self, url, chamber, session, date):
 
