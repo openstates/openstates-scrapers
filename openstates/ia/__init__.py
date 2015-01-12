@@ -9,8 +9,8 @@ from .votes import IAVoteScraper
 
 #IA is https but we're getting InsecureRequestWarning on every page
 #probably due to an issue with urllib3, so shutting them up for now:
-import urllib3
-urllib3.disable_warnings()
+# import urllib3
+# urllib3.disable_warnings()
 
 
 settings = dict(SCRAPELIB_TIMEOUT=240)
