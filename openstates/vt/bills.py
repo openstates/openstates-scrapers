@@ -1,242 +1,216 @@
-import re
 import datetime
+import json
+import re
 
-from billy.scrape import NoDataForPeriod, ScrapeError
-from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
-
-import lxml.html
-
-from .utils import DOUBLED_NAMES
-from .actions import Categorizer
+from openstates.utils import LXMLMixin
 
 
-def parse_exec_date(date_str):
-    """
-    Parse dates for executive actions.
-    """
-    match = re.search(r'((\w+) (\d{1,2}),\s?(\d{4,4}))', date_str)
-    if match:
-        date_str = "%s %s, %s" % (match.group(2), match.group(3), match.group(4))
-        return datetime.datetime.strptime(date_str, "%B %d, %Y")
-
-    match = re.search(r'((\w+), (\d{1,2}),\s?(\d{4,4}))', date_str)
-    if match:
-        date_str = "%s, %s, %s" % (match.group(2), match.group(3), match.group(4))
-        return datetime.datetime.strptime(date_str, "%B, %d, %Y")
-
-    match = re.search(r'(\d{1,2}/\d{1,2}/\d{4,4})', date_str)
-    if match:
-        return datetime.datetime.strptime(match.group(1), "%m/%d/%Y")
-
-    match = re.search(r'(\d{1,2}/\d{1,2}/\d{2,2})', date_str)
-    if match:
-        return datetime.datetime.strptime(match.group(1), "%m/%d/%y")
-    return datetime.datetime.strptime(date_str, r'%B %d, %y')
-
-    raise ScrapeError("Invalid executive action date: %s" % date_str)
-
-
-def clean_action(action):
-    action = action.strip()
-
-    # collapse multiple whitespace
-    action = ' '.join([w for w in action.split() if w])
-
-    # floating punctuation
-    action = re.sub(r'\s([,.;:])(\s)', r'\1\2', action)
-
-    return action
-
-
-class VTBillScraper(BillScraper):
+class VTBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'vt'
-    categorizer = Categorizer()
 
-    def scrape(self, chamber, session, only_bills=None):
-        if chamber == 'lower':
-            bill_abbr = "H."
-        else:
-            bill_abbr = "S."
+    def scrape(self, session, chambers):
+        HTML_TAGS_RE = r'<.*?>'
 
+        year_slug = session[5: ]
+        
+        # Load all bills via the private API
+        bill_dump_url = \
+                'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
+                format(year_slug)
+        json_data = self.urlopen(bill_dump_url)
+        bills = json.loads(json_data)['data']
 
-        urls = [
-            "http://www.leg.state.vt.us/docs/bills.cfm?Session=%s&Body=%s",
-            "http://www.leg.state.vt.us/docs/resolutn.cfm?Session=%s&Body=%s"
-        ]
+        # Parse the information from each bill
+        for info in bills:
+            # Strip whitespace from strings
+            info = { k:v.strip() for k, v in info.iteritems() }
 
-        bill_ids = []
+            # Create the bill using its basic information
+            bill = Bill(
+                    session=session,
+                    bill_id=info['BillNumber'],
+                    title=info['Title'],
+                    chamber=(
+                            'lower' if info['BillNumber'].startswith('H')
+                            else 'upper'
+                            ),
+                    type='bill'
+                    )
+            bill.add_source(bill_dump_url)
 
-        for url in urls:
-            url = url % (session.split('-')[1], bill_abbr[0])
-            page = self.urlopen(url)
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+            # Load the bill's information page to access its metadata
+            bill_url = \
+                    'http://legislature.vermont.gov/bill/status/{0}/{1}'.\
+                    format(year_slug, info['BillNumber'])
+            doc = self.lxmlize(bill_url)
+            bill.add_source(bill_url)
 
-            for link in page.xpath("//a[contains(@href, 'summary.cfm')]"):
-                bill_id = link.text
-                if only_bills is not None and bill_id not in only_bills:
-                    self.log("Skipping bill we are not interested in %s" % bill_id)
+            # Capture sponsors
+            sponsors = doc.xpath(
+                    '//dl[@class="summary-table"]/dt[text()="Sponsor(s)"]/'
+                    'following-sibling::dd[1]/ul/li'
+                    )
+            sponsor_type = 'primary'
+            for sponsor in sponsors:
+                if sponsor.xpath('span/text()') == ['Additional Sponsors']:
+                    sponsor_type = 'cosponsor'
+                else:
+                    sponsor_name = sponsor.xpath('a/text()')[0]
+
+                if sponsor_name.startswith("Less") and len(sponsor_name) == 5:
                     continue
 
-                if bill_id.startswith('JR'):
-                    bill_type = 'joint resolution'
-                elif bill_id[1:3] == 'CR':
-                    bill_type = 'concurrent resolution'
-                elif bill_id[0:2] in ['HR', 'SR']:
-                    bill_type = 'resolution'
-                else:
-                    bill_type = 'bill'
+                if sponsor_name.startswith("Rep. "):
+                    sponsor_name = sponsor_name[len("Rep. "): ]
+                elif sponsor_name.startswith("Sen. "):
+                    sponsor_name = sponsor_name[len("Sen. "): ]
 
-                title = link.xpath("string(../../td[2])")
+                if sponsor_name.strip():
+                    bill.add_sponsor(sponsor_type, sponsor_name)
 
-                bill = Bill(session, chamber, bill_id, title,
-                            type=bill_type)
-                if self.scrape_bill(bill, link.attrib['href']):
-                    bill_ids.append(bill_id)
-        return bill_ids
+            # Capture bill text versions
+            versions = doc.xpath(
+                    '//dl[@class="summary-table"]/dt[text()="Bill/Resolution Text"]/'
+                    'following-sibling::dd[1]/ul/li/a'
+                    )
+            for version in versions:
+                bill.add_version(
+                        name=version.xpath('@href')[0],
+                        url=version.xpath('text()')[0],
+                        mimetype='application/pdf'
+                        )
 
-    def scrape_bill(self, bill, url):
-        page = self.urlopen(url)
-        page.replace('&nbsp;', ' ')
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        bill.add_source(url)
+            # Identify the internal bill ID, used for actions and votes
+            internal_bill_id = re.search(
+                    r'"bill/loadBillDetailedStatus/{}/(\d+)"'.format(year_slug),
+                    self.urlopen(bill_url)
+                    ).group(1)
 
-        for link in page.xpath("//b[text()='Bill Text:']/"
-                               "following-sibling::blockquote[1]//a"):
-            if link.attrib['href'].endswith('pdf'):
-                mimetype = 'application/pdf'
-            elif link.attrib['href'].endswith('htm'):
-                mimetype = 'text/html'
-            bill.add_version(link.text, link.attrib['href'], mimetype=mimetype)
+            # Capture actions
+            actions_json = self.urlopen(
+                    'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.
+                    format(year_slug, internal_bill_id)
+                    )
+            actions = json.loads(actions_json)['data']
+            chambers_passed = ""
+            for action in actions:
+                action = { k:v.strip() for k, v in action.iteritems() }
 
-        more_sponsor_link = page.xpath("//a[contains(.,'More Sponsors')]")
-        if more_sponsor_link:
-            sponsor_url = more_sponsor_link[0].attrib['href']
-            self.scrape_sponsors(bill, sponsor_url)
-        else:
-            for b in page.xpath("//td[text()='Sponsor(s):']/../td[2]/a|b"):
-                bill.add_sponsor("primary", b.text)
-
-        for tr in page.xpath("""
-        //b[text()='Detailed Status:']/
-        following-sibling::blockquote[1]/table/tr""")[1:]:
-            action = tr.xpath("string(td[3])").strip()
-
-            match = re.search('(to|by) Governor on (.*)', action)
-            if match:
-                date = parse_exec_date(match.group(2).strip()).date()
-                actor = 'executive'
-            else:
-                if tr.attrib['bgcolor'] == 'Salmon':
+                if "Signed by Governor" in action['FullStatus']:
+                    actor = 'governor'
+                elif action['ChamberCode'] == 'H':
                     actor = 'lower'
-                elif tr.attrib['bgcolor'] == 'LightGreen':
+                elif action['ChamberCode'] == 'S':
                     actor = 'upper'
                 else:
-                    raise ScrapeError("Invalid row color: %s" %
-                                      tr.attrib['bgcolor'])
+                    raise AssertionError("Unknown actor for bill action")
 
-                date = tr.xpath("string(td[1])")
-                try:
-                    date = re.search(
-                        r"\d\d?/\d\d?/\d{4,4}", date).group(0)
-                except AttributeError:
-                    # No date, skip
-                    self.warning("skipping action '%s -- %s'" % (
-                        date, action))
-                    continue
+                # Categorize action
+                if "Signed by Governor" in action['FullStatus']:
+                    assert (
+                            "H" in chambers_passed and
+                            "S" in chambers_passed and
+                            len(chambers_passed) == 2
+                            )
+                    action_type = 'governor:signed'
+                elif actor == 'lower' and \
+                        action['FullStatus'] in ("Passed", "Read Third time and Passed"):
+                    action_type = 'bill:passed'
+                    chambers_passed += "H"
+                elif actor == 'upper' and \
+                        action['FullStatus'].startswith("Read 3rd time & passed"):
+                    action_type = 'bill:passed'
+                    chambers_passed += "S"
+                else:
+                    action_type = 'other'
 
-                date = datetime.datetime.strptime(date, "%m/%d/%Y")
-                date = date.date()
+                bill.add_action(
+                        actor=actor,
+                        action=re.sub(HTML_TAGS_RE, "", action['FullStatus']),
+                        date=datetime.datetime.strptime(action['StatusDate'], '%m/%d/%Y'),
+                        type=action_type
+                        )
 
-            types, attrs = self.categorizer.categorize(action)
-            action = dict(actor=actor, action=action,
-                          date=date, type=types)
-            action.update(**attrs)
-            bill.add_action(**action)
+            # Capture votes
+            vote_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
+                    format(year_slug, internal_bill_id)
+            vote_json = self.urlopen(vote_url)
+            votes = json.loads(vote_json)['data']
+            for vote in votes:
+                
+                roll_call_id = vote['VoteHeaderID']
+                roll_call_url = 'http://legislature.vermont.gov/bill/loadBillRollCallDetails/{0}/{1}'.\
+                        format(year_slug, roll_call_id)
+                roll_call_json = self.urlopen(roll_call_url)
+                roll_call = json.loads(roll_call_json)['data']
 
-            for vote_link in tr.xpath("td[4]/a"):
-                self.scrape_vote(bill, actor, vote_link.attrib['href'])
+                roll_call_yea = []
+                roll_call_nay = []
+                roll_call_other = []
+                for member in roll_call:
+                    (member_name, _district) = member['MemberName'].split("of")
+                    member_name = member_name.strip()
+                    
+                    if member['MemberVote'] == "Yea":
+                        roll_call_yea.append(member_name)
+                    elif member['MemberVote'] == "Nay":
+                        roll_call_nay.append(member_name)
+                    else:
+                        roll_call_other.append(member_name)
 
-        # If nearly all of the bill attributes but the title are blank, this is a bad bill.
-        # See Issue #166.
-        if all(len(bill[x]) == 0 for x in ('votes', 'alternate_titles', 'sponsors',
-            'actions', 'versions', 'documents')):
-            return False
+                if "Passed -- " in vote['FullStatus']:
+                    did_pass = True
+                elif "Failed -- " in vote['FullStatus']:
+                    did_pass = False
+                else:
+                    raise AssertionError("Roll call vote result is unclear")
 
-        # Get subjects.
-        subjects = []
-        for subject in page.xpath('//font')[-1].text_content().splitlines():
-            subject = subject.strip()
-            if subject:
-                subjects.append(subject)
-        bill['subjects'] = subjects
+                # Check vote counts
+                yea_count = \
+                        int(re.search(r'Yeas = (\d+)', vote['FullStatus']).group(1))
+                nay_count = \
+                        int(re.search(r'Nays = (\d+)', vote['FullStatus']).group(1))
+                if yea_count != len(roll_call_yea) or \
+                        nay_count != len(roll_call_nay):
+                    raise AssertionError(
+                            "Yea and/or nay counts incongruous:\n" +
+                            "Yeas from vote text: {}\n".format(yea_count) +
+                            "Yeas from number of members: {}\n".format(len(roll_call_yea)) +
+                            "Nays from vote text: {}\n".format(nay_count) +
+                            "Nays from number of members: {}".format(len(roll_call_nay))
+                            )
 
-        self.save_bill(bill)
-        return True
+                vote_to_add = Vote(
+                        chamber=(
+                                'lower' if vote['ChamberCode'] == 'H'
+                                else 'upper'
+                                ),
+                        date=datetime.datetime.strptime(vote['StatusDate'], '%m/%d/%Y'),
+                        motion=re.sub(HTML_TAGS_RE, "", vote['FullStatus']).strip(),
+                        passed=did_pass,
+                        yes_count=yea_count,
+                        no_count=nay_count,
+                        other_count=len(roll_call_other)
+                        )
+                vote_to_add.add_source(vote_url)
+                vote_to_add.add_source(roll_call_url)
 
-    def scrape_sponsors(self, bill, url):
-        bill.add_source(url)
-        self.log('Scraping sponsors page {0}'.format(url))
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
+                for member in roll_call_yea:
+                    vote_to_add.yes(member)
+                for member in roll_call_nay:
+                    vote_to_add.no(member)
+                for member in roll_call_other:
+                    vote_to_add.other(member)
 
-        for td in page.xpath("//h3/following-sibling::"
-                             "blockquote/table/tr/td"):
-            name = td.xpath("string()").strip()
-            if name:
-                bill.add_sponsor("primary", name)
+                bill.add_vote(vote_to_add)
 
-    def scrape_vote(self, bill, chamber, url):
-        page = self.urlopen(url)
-        if 'There are no details available for this roll call' in page:
-            return
-        page = page.replace('&nbsp;', ' ')
-        page = lxml.html.fromstring(page)
+            # Capture extra information
+            # This is not in the OpenStates spec, but is available
+            # Not yet implemented
+            # Witnesses: http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
+            # Conference committee members: http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
+            # Committee meetings: http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
 
-        info_row = page.xpath("//table[1]/tr[2]")[0]
-
-        date = info_row.xpath("string(td[1])")
-        date = datetime.datetime.strptime(date, "%m/%d/%Y")
-
-        motion = info_row.xpath("string(td[2])")
-        yes_count = int(info_row.xpath("string(td[3])"))
-        no_count = int(info_row.xpath("string(td[4])"))
-        other_count = int(info_row.xpath("string(td[5])"))
-        passed = info_row.xpath("string(td[6])") == 'Pass'
-
-        if motion == 'Shall the bill pass?':
-            type = 'passage'
-        elif motion == 'Shall the bill be read the third time?':
-            type = 'reading:3'
-        elif 'be amended as' in motion:
-            type = 'amendment'
-        else:
-            type = 'other'
-
-        vote = Vote(chamber, date, motion, passed,
-                    yes_count, no_count, other_count)
-        vote.add_source(url)
-
-        for tr in page.xpath("//table[1]/tr")[3:]:
-            if len(tr.xpath("td")) != 2:
-                continue
-
-
-            # avoid splitting duplicate names
-            name = tr.xpath("string(td[1])").strip()
-            if not name.startswith(DOUBLED_NAMES):
-                name = name.split(' of')[0]
-
-            type = tr.xpath("string(td[2])").strip()
-            if type.startswith('Yea'):
-                vote.yes(name)
-            elif type.startswith('Nay'):
-                vote.no(name)
-            elif type.startswith('Not Voting'):
-                pass
-            else:
-                vote.other(name)
-
-        bill.add_vote(vote)
+            self.save_bill(bill)

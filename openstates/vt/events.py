@@ -1,42 +1,51 @@
-import datetime as dt
+import datetime
+import json
 
 from billy.scrape.events import Event, EventScraper
 
-import pytz
-import lxml.html
 
 class VTEventScraper(EventScraper):
     jurisdiction = 'vt'
 
-    _tz = pytz.timezone('US/Eastern')
+    def scrape(self, session, chambers):
+        year_slug = session[5: ]
+        url = 'http://legislature.vermont.gov/committee/loadAllMeetings/{}'.\
+                format(year_slug)
 
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
+        json_data = self.urlopen(url)
+        events = json.loads(json_data)['data']
+        for info in events:
 
-    def scrape(self, chamber, session):
-        if chamber != "other":
-            return
-        url = "http://www.leg.state.vt.us/HighlightsMain.cfm"
-        page = self.lxmlize(url)
-        ps = page.xpath(
-            "//p[@class='HighlightsNote' or @class='HighlightsDate']")
-        events = {}
-        event_set = []
-        for p in ps:
-            if p.attrib['class'] == "HighlightsNote":
-                event_set.append(p)
+            # Determine when the committee meets
+            if info['TimeSlot'] == '1':
+                when = datetime.datetime.strptime(info['MeetingDate'], '%A, %B %d, %Y')
+                all_day = True
             else:
-                date_time = p.text[len("Posted "):]
-                events[date_time] = event_set
-                event_set = []
-        for date in events:
-            date_time = dt.datetime.strptime(date, "%m/%d/%Y")
-            for event in events[date]:
-                descr = event.text_content()
-                e = Event(session, date_time, "other", descr,
-                          location="state house")
-                e.add_source(url)
-                self.save_event(e)
+                try:
+                    when = datetime.datetime.strptime(
+                            info['MeetingDate'] + ', ' + info['TimeSlot'],
+                            '%A, %B %d, %Y, %I:%M %p'
+                            )
+                except ValueError:
+                    when = datetime.datetime.strptime(
+                            info['MeetingDate'] + ', ' + info['StartTime'],
+                            '%A, %B %d, %Y, %I:%M %p'
+                            )
+                all_day = False
+
+            event = Event(
+                    session=session,
+                    when=when,
+                    all_day=all_day,
+                    type='committee:meeting',
+                    description="Meeting of the {}".format(info['LongName']),
+                    location="{0}, Room {1}".format(info['BuildingName'], info['RoomNbr'])
+                    )
+            event.add_source(url)
+            event.add_participant(
+                    type='host',
+                    participant=info['LongName'],
+                    participant_type='committee'
+                    )
+
+            self.save_event(event)

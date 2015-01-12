@@ -90,7 +90,7 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
                                **cap_args)
 
 
-            comm_path = "//a[contains(@href, 'committee')]"
+            comm_path = "//a[contains(@href, 'committee?')]"
             for comm_link in leg_page.xpath(comm_path):
                 comm = comm_link.text.strip()
 

@@ -9,7 +9,7 @@ metadata = dict(
     abbreviation='vt',
     capitol_timezone='America/New_York',
     legislature_name='Vermont General Assembly',
-    legislature_url='http://www.leg.state.vt.us/',
+    legislature_url='http://legislature.vermont.gov/',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator', 'term': 2},
         'lower': {'name': 'House', 'title': 'Representative', 'term': 2},
@@ -26,6 +26,10 @@ metadata = dict(
             'start_year': 2013,
             'end_year': 2014,
             'sessions': ['2013-2014']},
+           {'name': '2015-2016',
+            'start_year': 2015,
+            'end_year': 2016,
+            'sessions': ['2015-2016']},
            ],
     session_details={'2009-2010': {'type': 'primary',
                                    'display_name': '2009-2010 Regular Session',
@@ -39,22 +43,21 @@ metadata = dict(
                                    'display_name': '2013-2014 Regular Session',
                                    '_scraped_name': '2013-2014 Session',
                                   },
+                     '2015-2016': {'type': 'primary',
+                                   'display_name': '2015-2016 Regular Session',
+                                   '_scraped_name': '2015-2016 Session',
+                                  },
                      },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions=['2009 Special Session', '2007-2008 Session',
-                               '2005-2006 Session', '2005 Special Session',
-                               '2003-2004 Session', '2001-2002 Session',
-                               '1999-2000 Session', '1997-1998 Session',
-                               '1995-1996 Session', '1993-1994 Session',
-                               '1991-1992 Session', '1989-1990 Session',
-                               '1987-1988 Session', '1985-1986 Session']
+    _ignored_scraped_sessions= ['2009 Special Session']
 
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://www.leg.state.vt.us/ResearchMain.cfm',
-        "//div[@id='ddsidebarmenu01']/ul/li/a/text()")
+    return url_xpath(
+            'http://legislature.vermont.gov/bill/search/2016',
+            '//fieldset/div[@id="selected_session"]/div/select/option/text()')
 
 def extract_text(doc, data):
     return text_after_line_numbers(pdfdata_to_text(data))
