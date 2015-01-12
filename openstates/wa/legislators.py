@@ -45,7 +45,11 @@ class WALegislatorScraper(LegislatorScraper):
                 self.warning('%s is no longer in office' % name)
                 continue
             else:
-                leg_url = cur_members_doc.xpath('//a[text()="%s"]/@href' % name)[0]
+                leg_url, = set(cur_members_doc.xpath(
+                    '//span[contains(text(), "%s")]/../..//'
+                    'a[text()="Home Page"]/@href' % (
+                        name
+                    )))
 
             party = xpath(member, "string(wa:Party)")
             party = {'R': 'Republican', 'D': 'Democratic'}.get(
@@ -64,6 +68,7 @@ class WALegislatorScraper(LegislatorScraper):
             last = last.lower().replace(' ', '')
 
             scraped_offices = []
+            photo_url = ""
 
             try:
                 leg_page = self.urlopen(leg_url)
@@ -94,7 +99,7 @@ class WALegislatorScraper(LegislatorScraper):
             except scrapelib.HTTPError:
                 # Sometimes the API and website are out of sync
                 # with respect to legislator resignations/appointments
-                photo_url = ''
+                pass
 
             leg = Legislator(term, chamber, district,
                              name, '', '', '', party,
