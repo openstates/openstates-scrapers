@@ -64,8 +64,22 @@ class SDLegislatorScraper(LegislatorScraper):
         if office_phone.strip() != "":
             kwargs['phone'] = office_phone
 
-        legislator.add_office('capitol', 'Capitol Office',
-                              **kwargs)
+        if kwargs:
+            legislator.add_office('capitol', 'Capitol Office', **kwargs)
+
+        home_address = [
+                x.strip() for x in
+                page.xpath('//td/span[contains(@id, "HomeAddress")]/text()')
+                if x.strip()
+                ]
+        if home_address:
+            home_address = "\n".join(home_address)
+            legislator.add_office(
+                    'district',
+                    'District Office',
+                    address=home_address
+                    )
+
         legislator.add_source(url)
 
         comm_url = page.xpath("//a[. = 'Committees']")[0].attrib['href']
