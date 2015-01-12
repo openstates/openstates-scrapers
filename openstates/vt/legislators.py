@@ -8,10 +8,13 @@ class VTLegislatorScraper(LegislatorScraper):
     latest_only = True
 
     def scrape(self, term, chambers):
+        year_slug = term[5: ]
+
         # Load all members via the private API
-        LEGISLATOR_DUMP_URL = \
-                'http://legislature.vermont.gov/people/loadAll/2016'
-        json_data = self.urlopen(LEGISLATOR_DUMP_URL)
+        legislator_dump_url = \
+                'http://legislature.vermont.gov/people/loadAll/{}'.\
+                format(year_slug)
+        json_data = self.urlopen(legislator_dump_url)
         legislators = json.loads(json_data)['data']
 
         # Parse the information from each legislator
@@ -35,10 +38,7 @@ class VTLegislatorScraper(LegislatorScraper):
                             format(info['Email'][ :-(len("@leg.state.vt.us"))]
                             )
                     )
-            leg.add_source(
-                    'http://legislature.vermont.gov/people/single/2016/{}'.
-                    format(info['PersonID'])
-                    )
+            leg.add_source(legislator_dump_url)
             leg.add_office(
                     type='district',
                     name='District Office',

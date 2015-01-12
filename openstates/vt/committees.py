@@ -9,10 +9,13 @@ class VTCommitteeScraper(CommitteeScraper):
     latest_only = True
 
     def scrape(self, session, chambers):
+        year_slug = session[5: ]
+
         # Load all committees via the private API
-        COMMITTEE_DUMP_URL = \
-                'http://legislature.vermont.gov/committee/loadList/2016/'
-        json_data = self.urlopen(COMMITTEE_DUMP_URL)
+        committee_dump_url = \
+                'http://legislature.vermont.gov/committee/loadList/{}/'.\
+                format(year_slug)
+        json_data = self.urlopen(committee_dump_url)
         committees = json.loads(json_data)['data']
 
         # Parse the information from each committee
@@ -77,6 +80,6 @@ class VTCommitteeScraper(CommitteeScraper):
                         role=role
                         )
 
-            comm.add_source(COMMITTEE_DUMP_URL)
+            comm.add_source(committee_dump_url)
 
             self.save_committee(comm)

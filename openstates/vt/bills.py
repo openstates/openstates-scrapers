@@ -16,10 +16,10 @@ class VTBillScraper(BillScraper, LXMLMixin):
         year_slug = session[5: ]
         
         # Load all bills via the private API
-        BILL_DUMP_URL = \
+        bill_dump_url = \
                 'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
                 format(year_slug)
-        json_data = self.urlopen(BILL_DUMP_URL)
+        json_data = self.urlopen(bill_dump_url)
         bills = json.loads(json_data)['data']
 
         # Parse the information from each bill
@@ -38,7 +38,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                             ),
                     type='bill'
                     )
-            bill.add_source(BILL_DUMP_URL)
+            bill.add_source(bill_dump_url)
 
             # Load the bill's information page to access its metadata
             bill_url = \
