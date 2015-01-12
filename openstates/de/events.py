@@ -1,5 +1,6 @@
 import datetime as dt
 
+from openstates.utils import LXMLMixin
 from billy.scrape.events import Event, EventScraper
 
 import pytz
@@ -16,16 +17,10 @@ chambers = {
     "Joint"  : "joint"
 }
 
-class DEEventScraper(EventScraper):
+class DEEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'de'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_meeting_notice(self, chamber, session, url):
         page = self.lxmlize(url)

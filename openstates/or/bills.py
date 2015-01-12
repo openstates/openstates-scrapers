@@ -1,12 +1,13 @@
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from openstates.utils import LXMLMixin
 
 import datetime as dt
 import re
 import lxml.html
 
 
-class ORBillScraper(BillScraper):
+class ORBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'or'
 
     bill_directory_url = ("https://olis.leg.state.or.us/liz/{0}"
@@ -38,12 +39,6 @@ class ORBillScraper(BillScraper):
     )
 
     all_bills = {}
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def create_url(self, url, bill_id):
         return "https://olis.leg.state.or.us/liz/{session}/{url}".format(

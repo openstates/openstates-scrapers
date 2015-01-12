@@ -35,7 +35,9 @@ class OKLegislatorScraper(LegislatorScraper):
             party = {'R': 'Republican', 'D': 'Democratic'}[party]
 
             leg_url = 'http://www.okhouse.gov/District.aspx?District=' + district
-            leg_doc = lxml.html.fromstring(self.urlopen(leg_url,headers={'referer': leg_url}))
+            leg_doc = lxml.html.fromstring(self.get(leg_url, headers={
+                'referer': leg_url
+            }).content)
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
 

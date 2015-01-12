@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 import requests.exceptions
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
@@ -12,14 +13,8 @@ chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 page_re = r"Page\s\d+"
 
 
-class NDVoteScraper(VoteScraper):
+class NDVoteScraper(VoteScraper, LXMLMixin):
     jurisdiction = 'nd'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape(self, chamber, session):
         chamber_name = 'house' if chamber == 'lower' else 'senate'

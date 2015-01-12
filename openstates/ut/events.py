@@ -3,6 +3,7 @@ import requests
 import datetime as dt
 import scrapelib
 
+from openstates.utils import LXMLMixin
 from billy.scrape.events import EventScraper, Event
 
 import pytz
@@ -11,14 +12,9 @@ import lxml.html
 
 url = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
 
-class UTEventScraper(EventScraper):
+class UTEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'ut'
     _tz = pytz.timezone('US/Mountain')
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_page(self, url, session, chamber):
         try:

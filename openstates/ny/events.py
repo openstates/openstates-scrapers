@@ -2,6 +2,7 @@ import re
 import datetime as dt
 
 from billy.scrape.events import EventScraper, Event
+from openstates.utils import LXMLMixin
 
 import pytz
 import lxml.html
@@ -9,15 +10,9 @@ import lxml.html
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 
 
-class NYEventScraper(EventScraper):
+class NYEventScraper(EventScraper, LXMLMixin):
     _tz = pytz.timezone('US/Eastern')
     jurisdiction = 'ny'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def lower_parse_page(self, url, session):
         page = self.lxmlize(url)

@@ -123,12 +123,12 @@ class WIBillScraper(BillScraper):
             return
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
-        links = doc.xpath('//li//a')
-        for link in links:
-            bill_url = link.get('href')
+        bill_list = doc.xpath('//ul[@class="infoLinks"]/li/div[@class="row-fluid"]')
+        for b in bill_list:
+            bill_url = b.xpath('./div[@class="span3"]/a/@href')[0]
             bill_id = bill_url.rsplit('/', 1)[-1]
 
-            title = link.tail.replace(' - Relating to: ', '').strip()
+            title = b.xpath('./div[@class="span6"]/text()')[0].replace(' - Relating to: ', '').strip()
 
             bill = Bill(session, chamber, bill_id, title,
                         type=bill_type)
@@ -316,7 +316,7 @@ class WIBillScraper(BillScraper):
                         vote.no(name.strip())
             elif 'NOT VOTING -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip():
+                    if name.strip() and "NOT VOTING" not in name:
                         vote.other(name.strip())
             elif text.strip():
                 raise ValueError('unexpected block in vote')

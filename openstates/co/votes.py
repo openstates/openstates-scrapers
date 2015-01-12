@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 import datetime
@@ -20,14 +21,8 @@ vote_re = re.compile((r"\s*"
            "ABSENT\s*(?P<abs_count>\d+).*"))
 votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
-class COVoteScraper(VoteScraper):
+class COVoteScraper(VoteScraper, LXMLMixin):
     jurisdiction = 'co'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_house(self, session):
         url = journals % (session, 'House')

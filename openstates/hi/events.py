@@ -1,3 +1,4 @@
+from openstates.utils import LXMLMixin
 import datetime as dt
 
 from billy.scrape import NoDataForPeriod
@@ -13,14 +14,8 @@ import pytz
 URL = "http://www.capitol.hawaii.gov/upcominghearings.aspx"
 
 
-class HIEventScraper(EventScraper):
+class HIEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'hi'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def get_related_bills(self, href):
         ret = []

@@ -3,6 +3,7 @@ import datetime as dt
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
+from openstates.utils import LXMLMixin
 
 import pytz
 import lxml.html
@@ -15,16 +16,10 @@ pages = {
                 urls % "Hearings", urls % "SpecialEvents" ]
 }
 
-class MAEventScraper(EventScraper):
+class MAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'ma'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def add_agenda(self, event, url):
         event.add_source(url)

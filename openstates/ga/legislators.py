@@ -1,5 +1,6 @@
 import time
 
+from openstates.utils import LXMLMixin
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .util import get_client, get_url, backoff
 
@@ -14,7 +15,7 @@ HOMEPAGE_URLS = {
 }
 
 
-class GALegislatorScraper(LegislatorScraper):
+class GALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ga'
     sservice = get_client("Members").service
     ssource = get_url("Members")
@@ -27,12 +28,6 @@ class GALegislatorScraper(LegislatorScraper):
             else:
                 new_list.append(x.strip())
         return new_list
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_homepage(self, url, kwargs):
         url = url.format(**kwargs)

@@ -51,6 +51,9 @@ metadata = {
          'sessions': ['2013 Regular Session', 'October 2013 Special Session',
                       'December 2013 Special Session', 'January 2014 Special Session' ],
          'start_year': 2013, 'end_year': 2014},
+         {'name': '2015-2016',
+         'sessions': ['2015 Regular Session'],
+         'start_year': 2015, 'end_year': 2016},
     ],
     'session_details': {
         '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
@@ -108,9 +111,16 @@ metadata = {
             'display_name': 'Jan 2014 Special Session',
             '_scraped_name': 'January 2014 Special Session',
             'site_id': 'jr4'
-        }
+        },
+        '2015 Regular Session': {'start_date': datetime.date(2015,1,5),
+                                 'end_date': datetime.date(2016,1,11),
+                                 'type': 'primary',
+                                 'display_name': '2015 Regular Session',
+                                 '_scraped_name': '2015 Regular Session',
+                                },
     },
-    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
+    'feature_flags': ['subjects',
+    'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2007 Regular Session', 'April 2008 Special Session',
         'March 2008 Special Session', 'December 2007 Special Session',
@@ -130,7 +140,7 @@ metadata = {
 def session_list():
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://docs.legis.wisconsin.gov/search',
-                         "//select[@id='sessionNumber']/option/text()")
+                         "//select[@name='sessionNumber']/option/text()")
     return [session.strip(' -') for session in sessions]
 
 def extract_text(doc, data):

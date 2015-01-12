@@ -2,6 +2,7 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 from .common import BackoffScraper
 
@@ -17,15 +18,9 @@ def xpath_one(el, expr):
     return ret[0]
 
 
-class LALegislatorScraper(LegislatorScraper, BackoffScraper):
+class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
     jurisdiction = 'la'
     latest_only = True
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_upper_leg_page(self, term, url, who):
         page = self.lxmlize(url)

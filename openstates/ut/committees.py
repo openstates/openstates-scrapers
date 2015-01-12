@@ -2,19 +2,13 @@ import re
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.utils import LXMLMixin
 
 import lxml.html
 
 
-class UTCommitteeScraper(CommitteeScraper):
+class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'ut'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
-
 
     def scrape(self, term, chambers):
         self.validate_term(term, latest_only=True)
