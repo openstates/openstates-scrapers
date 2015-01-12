@@ -1,67 +1,85 @@
+import json
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
-
-import lxml.html
-
-from .utils import DOUBLED_NAMES
+from billy.scrape.committees import Committee, CommitteeScraper
 
 
 class VTCommitteeScraper(CommitteeScraper):
     jurisdiction = 'vt'
+    latest_only = True
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, session, chambers):
+        year_slug = session[5: ]
 
-        chamber_abbr = {'upper': 'S', 'lower': 'H'}[chamber]
+        # Load all committees via the private API
+        committee_dump_url = \
+                'http://legislature.vermont.gov/committee/loadList/{}/'.\
+                format(year_slug)
+        json_data = self.urlopen(committee_dump_url)
+        committees = json.loads(json_data)['data']
 
-        url = ('http://www.leg.state.vt.us/legdir/comms.cfm?Body=%s&Session=2014' %
-               chamber_abbr)
-        html = self.urlopen(url)
-        page = lxml.html.fromstring(html)
-        comm = None
-        for tr in page.xpath('//table')[3].xpath('tr')[1:]:
+        # Parse the information from each committee
+        for info in committees:
+            # Strip whitespace from strings
+            info = { k:v.strip() for k, v in info.iteritems() }
 
-            tds = list(tr)
-            if len(tds) < 2:
-                continue
-
-            if 'COMMITTEE' in tds[1].text_content():
-                # Save the current committee.
-                if (comm or {}).get('members', []):
-                    self.save_committee(comm)
-                # Start a new one.
-                comm = self.parse_committee_name(tds[1], chamber)
-                comm.add_source(url)
-                continue
-
-            name = tds[1].text_content().strip()
-            match = re.search(
-                '^([\w\s\.]+),\s+'
-                '(Chair|Vice Chair|Vice-Chair|Ranking Member|Clerk)$',
-                name)
-            if match:
-                name = match.group(1)
-                mtype = match.group(2).lower()
+            # Determine the chamber
+            if info['CommitteeType'] == 'House Standing':
+                chamber = 'lower'
+            elif info['CommitteeType'] == 'Senate Standing':
+                chamber = 'upper'
+            elif info['CommitteeType'] == 'Joint Committee':
+                chamber = 'joint'
+            elif info['CommitteeType'] in ('Study Committee', 'Commissions'):
+                if info['CommitteeName'].startswith("House"):
+                    chamber = 'lower'
+                elif info['CommitteeName'].startswith("Senate"):
+                    chamber = 'upper'
+                else:
+                    chamber = 'joint'
             else:
-                mtype = 'member'
+                raise AssertionError(
+                        "Unknown committee type found: '{}'".
+                        format(info['CommitteeType'])
+                        )
+            comm = Committee(
+                    chamber=chamber,
+                    committee=info['CommitteeName']
+                    )
 
-            # if not name.startswith(DOUBLED_NAMES):
-            name = re.sub(r'of [\w\s\.]+$', '', name)
-            comm.add_member(name, mtype)
+            # Determine membership and member roles
+            # First, parse the member list and make sure it isn't a placeholder
+            REMOVE_TAGS_RE = r'<.*?>'
+            members = [
+                    re.sub(REMOVE_TAGS_RE, '', x)
+                    for x
+                    in info['Members'].split('</br>')
+                    ]
+            members = [x.strip() for x in members if x.strip()]
 
-        # And save the last committee.
-        self.save_committee(comm)
+            for member in members:
+                # Strip out titles, and exclude committee assistants
+                if member.startswith("Rep. "):
+                    member = member[len("Rep. "): ]
+                elif member.startswith("Sen. "):
+                    member = member[len("Sen. "): ]
+                else:
+                    self.info("Non-legislator member found: {}".format(member))
 
+                # Determine the member's role in the committee
+                if ',' in member:
+                    (member, role) = [x.strip() for x in member.split(',')]
+                    if 'jr' in role.lower() or 'sr' in role.lower():
+                        raise AssertionError(
+                                "Name suffix confused for a committee role")
+                else:
+                    role = 'member'
 
-    def parse_committee_name(self, td, chamber):
-        # Strip the room number from the committee name
-        comm_name = re.match(r'[^\(]+', td.text_content()).group(0).strip()
+                comm.add_member(
+                        legislator=member,
+                        role=role
+                        )
 
-        # Strip chamber from beginning of committee name
-        comm_name = re.sub(r'^(HOUSE|SENATE) COMMITTEE ON ', '',
-                           comm_name)
-        # normalize case of committee name
-        comm_name = comm_name.title()
+            comm.add_source(committee_dump_url)
 
-        return Committee(chamber, comm_name)
+            self.save_committee(comm)
