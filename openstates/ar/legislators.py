@@ -47,6 +47,10 @@ class ARLegislatorScraper(LegislatorScraper):
         full_name = ' '.join(name_and_party[1:-1])
 
         party = name_and_party[-1]
+        if party == "()":
+            self.warning("Uch, bad party. Ducking")
+            return
+
         if party == '(R)':
             party = 'Republican'
         elif party == '(D)':
@@ -56,8 +60,13 @@ class ARLegislatorScraper(LegislatorScraper):
         else:
             raise Exception('unknown party: %s' % party)
 
-        img = root.xpath('//img[@class="SitePhotos"]')[0]
-        photo_url = img.attrib['src']
+        try:
+            img = root.xpath('//img[@class="SitePhotos"]')[0]
+            photo_url = img.attrib['src']
+        except IndexError:
+            """ Fix me after ?member=Boyd is fixed """
+            self.warning("Uch, bad photo. Ducking")
+            photo_url = ""
 
         # Need to figure out a cleaner method for this later
         info_box = root.xpath('string(//table[@class="InfoTable"])')
