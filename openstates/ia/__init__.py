@@ -7,6 +7,12 @@ from .events import IAEventScraper
 from .votes import IAVoteScraper
 
 
+#IA is https but we're getting InsecureRequestWarning on every page
+#probably due to an issue with urllib3, so shutting them up for now:
+import urllib3
+urllib3.disable_warnings()
+
+
 settings = dict(SCRAPELIB_TIMEOUT=240)
 
 metadata = dict(
@@ -32,6 +38,12 @@ metadata = dict(
             'end_year': 2014,
             'sessions': ['2013-2014'],
         },
+        {
+            'name': '2015-2016',
+            'start_year': 2013,
+            'end_year': 2014,
+            'sessions': ['2015-2016'],
+        },
     ],
     session_details={
         '2011-2012': {'display_name': '2011-2012 Regular Session',
@@ -43,6 +55,9 @@ metadata = dict(
         '2013-2014': {'display_name': '2013-2014 Regular Session',
                       '_scraped_name': 'General Assembly: 85',
                       'number': '85', },
+        '2015-2016': {'display_name': '2015-2016 Regular Session',
+                      '_scraped_name': 'General Assembly: 86',
+                      'number': '86', },
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=['General Assembly: 83', 'General Assembly: 82',
