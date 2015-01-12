@@ -9,6 +9,41 @@ import lxml.html
 
 phone_re = re.compile('\(\d{3}\) \d{3}-\d{4}')
 
+
+VACANT_IN_2015 = [
+    "John Carona",
+    "Wendy Davis",
+    "Bob Deuell",
+    "Dan Patrick",
+    "Ken Paxton",
+
+    "Brandon Creighton",
+    "Charles Perry",
+    "Cecil Bell",
+    "Dan Branch",
+    "Lon Burnam",
+    "William Callegari",
+    "Stefani Carter",
+    "Philip Cortez",
+    "John Davis",
+    "Craig Eiland",
+    "Naomi Gonzalez",
+    "Lance Gooden",
+    "Linda Harper-Brown",
+    "Harvey Hilderbran",
+    "George Lavender",
+    "Tryon Lewis",
+    "Rob Orr",
+    "Diane Patrick",
+    "Jim Pitts",
+    "Bennett Ratliff",
+    "Allan Ritter",
+    "Ralph Sheffield",
+    "Van Taylor",
+    "Steve Toth",
+]
+
+
 class TXLegislatorScraper(LegislatorScraper):
     jurisdiction = 'tx'
 
@@ -49,7 +84,13 @@ class TXLegislatorScraper(LegislatorScraper):
 
         full_name = td.xpath('//div/strong/text()')
         full_name = [re.sub(r'\s+', ' ', x).strip() for x in full_name]
+        if full_name == []:
+            self.warning("ERROR: CAN'T GET FULL NAME")
+            return
+
         full_name = full_name[-1]
+        if full_name in VACANT_IN_2015:
+            return
 
         district = td.xpath('string(//div[3])').strip()
         district = district.replace('District ', '')

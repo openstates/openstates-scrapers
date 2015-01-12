@@ -8,7 +8,7 @@ from .bills import MABillScraper
 from .legislators import MALegislatorScraper
 from .committees import MACommitteeScraper
 from .events import MAEventScraper
-from .votes import MAVoteScraper
+# from .votes import MAVoteScraper
 
 
 settings = dict(
@@ -36,6 +36,12 @@ metadata = {
             'start_year': 2014,
             'name': '188',
             'sessions': ['188th']
+        },
+        {
+            'end_year': 2015,
+            'start_year': 2016,
+            'name': '189',
+            'sessions': ['189th']
         }
     ],
     'name': 'Massachusetts',
@@ -56,7 +62,12 @@ metadata = {
             'type': 'primary',
             'display_name': '188th Legislature (2013-2014)',
             '_scraped_name': '188th',
-        }
+        },
+        '189th': {
+            'type': 'primary',
+            'display_name': '189th Legislature (2015-2016)',
+            '_scraped_name': '189th',
+        },
     },
     'legislature_name': 'Massachusetts General Court',
     'chambers': {

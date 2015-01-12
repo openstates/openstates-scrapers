@@ -22,6 +22,8 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014', 'sessions': ['130'],
          'start_year': 2013, 'end_year': 2014},
+        {'name': '2015-2016', 'sessions': ['131'],
+         'start_year': 2015, 'end_year': 2016},
     ],
     session_details={
         '128': { 'display_name': '128th Legislature (2009-2010)',
@@ -34,6 +36,9 @@ metadata = dict(
         '130': { 'display_name': '130th Legislature (2013-2014)',
                 '_scraped_name': '130',
                },
+        '131': { 'display_name': '131st Legislature (2015-2016)',
+                '_scraped_name': '131',
+               },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
@@ -42,8 +47,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legislature.state.oh.us/search.cfm',
+    sessions = url_xpath('http://archives.legislature.state.oh.us',
                      '//form[@action="bill_search.cfm"]//input[@type="radio" and @name="SESSION"]/@value')
+    # Archive does not include current session
+    sessions.append('131')
+    return sessions
 
 
 def extract_text(doc, data):

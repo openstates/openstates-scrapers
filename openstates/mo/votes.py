@@ -1,6 +1,7 @@
 from billy.scrape.votes import VoteScraper, Vote
 from billy.scrape.utils import convert_pdf
 
+from openstates.utils import LXMLMixin
 import datetime as dt
 import lxml
 import re
@@ -26,14 +27,8 @@ def _clean_line(obj):
     return obj
 
 
-class MOVoteScraper(VoteScraper):
+class MOVoteScraper(VoteScraper, LXMLMixin):
     jurisdiction = 'mo'
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def get_pdf(self, url):
         (path, response) = self.urlretrieve(url)

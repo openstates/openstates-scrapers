@@ -2,6 +2,7 @@ import datetime as dt
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import pytz
@@ -13,16 +14,10 @@ cal_chamber_text = {
     "other" : "Joint"
 }
 
-class TNEventScraper(EventScraper):
+class TNEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'tn'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def url_xpath(self, url, xpath):
         page = self.lxmlize(url)

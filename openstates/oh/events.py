@@ -2,6 +2,7 @@ import re
 import datetime as dt
 
 from billy.scrape.events import EventScraper, Event
+from openstates.utils import LXMLMixin
 
 import pytz
 import lxml.html
@@ -10,16 +11,10 @@ pages = {
     "lower" : "http://www.legislature.state.oh.us/house_committee_schedule.cfm"
 }
 
-class OHEventScraper(EventScraper):
+class OHEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'oh'
 
     _tz = pytz.timezone('US/Eastern')
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_page(self, chamber, session):
         url = pages[chamber]

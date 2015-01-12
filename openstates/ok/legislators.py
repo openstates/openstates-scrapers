@@ -28,7 +28,6 @@ class OKLegislatorScraper(LegislatorScraper):
         url = "http://www.okhouse.gov/Members/Default.aspx"
         page = lxml.html.fromstring(self.urlopen(url))
         page.make_links_absolute(url)
-
         for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
             district = tr.xpath('.//td[3]')[0].text_content().strip()
