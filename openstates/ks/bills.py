@@ -91,7 +91,8 @@ class KSBillScraper(BillScraper):
             self.save_bill(bill)
 
     def scrape_html(self, bill):
-        slug = {'2013-2014': 'b2013_14'}[bill['session']]
+        slug = {'2013-2014': 'b2013_14',
+                '2015-2016': 'b2015_16'}[bill['session']]
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/%s/measures/' % slug
         if 'resolution' in bill['type']:
