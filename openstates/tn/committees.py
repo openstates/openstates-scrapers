@@ -45,90 +45,74 @@ class TNCommitteeScraper(CommitteeScraper):
         else:
             self.scrape_house_committees(url)
 
-    #Scrapes all the Senate committees
     def scrape_senate_committees(self, url):
-
         page = self.urlopen(url)
-        # Find individual committee urls
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        find_expr = "//dl[@class='senateCommittees']/dt/a"
+        find_expr = 'body/div/div/h1[text()="Senate Committees"]/' \
+                'following-sibling::div/div/div/div//a'
         links = [(a.text_content(), a.attrib['href']) for a in
                  page.xpath(find_expr)]
 
-        # title, url
         for committee_name, link in links:
-            self.scrape_senate_committee(committee_name, link)
+            self._scrape_committee(committee_name, link, 'upper')
 
-    #Scrapes the individual Senate committee
-    def scrape_senate_committee(self, committee_name, link):
+    def scrape_house_committees(self, url):
+        html = self.urlopen(url)
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        links = doc.xpath(
+                'body/div/div/h1[text()="House Committees"]/'
+                'following-sibling::div/div/div/div//a'
+                )
+
+        for a in links:
+            self._scrape_committee(a.text.strip(), a.get('href'), 'lower')
+
+    def _scrape_committee(self, committee_name, link, chamber):
         """Scrape individual committee page and add members"""
-
-        com = Committee('upper', committee_name)
 
         page = self.urlopen(link)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(link)
 
-        # Find individual committee urls
-        find_expr = ('//h3[contains(., "Committee Officers")]/'
-                     'following-sibling::ul/li/a')
-        for a in page.xpath(find_expr):
-            if not a.text:
-                continue
-            member_name = a.text
-            role = (a.tail or 'member').strip(', ')
+        is_subcommittee = bool(page.xpath('//li/a[text()="Committee"]'))
+        if is_subcommittee:
+            com = Committee(
+                    chamber,
+                    re.sub(r'\s*Subcommittee\s*', '', committee_name),
+                    committee_name
+                    )
+        else:
+            com = Committee(chamber, committee_name)
+
+        OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
+                     'following-sibling::div/ul/li/a'
+        MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
+                     'following-sibling::div/ul/li/a'
+        HOUSE_SEARCH = '//h2[contains(text(), "House Members")]/' \
+                     'following-sibling::div/ul/li/a'
+        SENATE_SEARCH = '//h2[contains(text(), "House Members")]/' \
+                     'following-sibling::div/ul/li/a'
+        for a in (page.xpath(OFFICER_SEARCH) + page.xpath(MEMBER_SEARCH)):
+
+            member_name = ' '.join([
+                    x.strip() for x in
+                    a.xpath('text()') + a.xpath('span/text()')
+                    if x.strip()
+                    ])
+            role = a.xpath('small')
+            if role:
+                role = role[0].xpath('text()')[0].strip()
+            else:
+                role = 'member'
+
             com.add_member(member_name, role)
 
         com.add_source(link)
-        if com['members']:
-            self.save_committee(com)
-
-    #Scrapes all the House Committees
-    def scrape_house_committees(self, url):
-        # Committees are listed in h3 w/ no attributes.
-        # Only indicator is a div w/ 2 classes
-        # self.headers['user-agent'] = 'cow'
-
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        # Committee urls.
-        links = doc.xpath('//div[contains(@class, "committeelist")]//a')
-
-        for a in links:
-            self.scrape_house_committee(a.text.strip(), a.get('href'))
-
-    #Scrapes the individual House Committee
-    def scrape_house_committee(self, committee_name, link):
-        """Scrape individual committee page and add members"""
-
-        html = self.urlopen(link)
-        doc = lxml.html.fromstring(html)
-
-        subcommittee = False
-        for h1 in doc.xpath('//h1/text()'):
-            if 'subcommittee' in h1.lower():
-                subcommittee = True
-
-        subcomm_name = ('Subcommittee' if subcommittee else None)
-
-        if subcommittee:
-            committee_name = committee_name.replace(' Subcommittee', '')
-        com = Committee('lower', committee_name, subcomm_name)
-
-        find_expr = "//div[@class='col1']/ul[position()<3]/li/a"
-        for a in doc.xpath(find_expr):
-            name = a.text
-            role = (a.tail or '').strip(', ') or 'member'
-            if name:
-                com.add_member(name, role)
-
-        com.add_source(link)
-        if com['members']:
-            self.save_committee(com)
+        self.save_committee(com)
 
     #Scrapes joint committees
     def scrape_joint_committees(self):
@@ -136,60 +120,79 @@ class TNCommitteeScraper(CommitteeScraper):
 
         page = self.urlopen(main_url)
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(main_url)
 
-        for el in page.xpath("//div[@class='col2']/ul/li/a"):
+        for el in page.xpath(
+                '//div/h2[text()="Committees"]/'
+                'following-sibling::div/div//a'
+                ):
             com_name = el.text
             com_link = el.attrib["href"]
-            #cleaning up links
-            if '..' in com_link:
-                com_link = self.base_href + com_link[2:len(com_link)]
             self.scrape_joint_committee(com_name, com_link)
 
     #Scrapes the individual joint committee - most of it is special case
     def scrape_joint_committee(self, committee_name, url):
-        com = Committee('joint', 'Joint ' + committee_name)
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-
         if 'state.tn.us' in url:
-            for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]/a"):
-                member_name = el.text
+            com = Committee('joint', committee_name)
+            page = self.urlopen(url)
+            page = lxml.html.fromstring(page)
+
+            for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"):
+                if el.xpath('text()') == ['Vacant']:
+                    continue
+
+                (member_name, ) = el.xpath('a/text()')
+                if el.xpath('text()'):
+                    role = el.xpath('text()')[0].strip(' ,')
+                else:
+                    role = 'member'
+
                 if 'Senator' in member_name:
                     member_name = member_name[8:len(member_name)]
                 elif 'Representative' in member_name:
                     member_name = member_name[15:len(member_name)]
                 else:
                     member_name = member_name[17: len(member_name)]
-                com.add_member(member_name, 'member')
+                com.add_member(member_name, role)
+
+            com.add_source(url)
+            self.save_committee(com)
 
         elif 'gov-opps' in url:
+            com = Committee('joint', committee_name)
+            page = self.urlopen(url)
+            page = lxml.html.fromstring(page)
+
             links = ['senate', 'house']
             for link in links:
                 chamber_link = self.base_href + '/' + link + '/committees/gov-opps.html'
                 chamber_page = self.urlopen(chamber_link)
                 chamber_page = lxml.html.fromstring(chamber_page)
-                for mem in chamber_page.xpath("//div[@class='col1']/ul[position() <= 2]/li/a"):
-                    member = [item.strip() for item in mem.text_content().split(',', 1)]
-                    if len(member) > 1:
-                        member_name, role = member
+                
+                OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
+                             'following-sibling::div/ul/li/a'
+                MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
+                             'following-sibling::div/ul/li/a'
+                for a in (
+                        chamber_page.xpath(OFFICER_SEARCH) + 
+                        chamber_page.xpath(MEMBER_SEARCH)
+                        ):
+                    member_name = ' '.join([
+                            x.strip() for x in
+                            a.xpath('//text()')
+                            if x.strip()
+                            ])
+                    role = a.xpath('small')
+                    if role:
+                        role = role[0].xpath('text()')[0].strip()
                     else:
-                        member_name, role = member[0], 'member'
-                    if member_name != "":
-                        com.add_member(member_name, role)
-                com.add_source(chamber_link)
-        else:
-            # If the member sections all state "TBA", skip saving this committee.
-            li_text = page.xpath("//div[@class='col1']/ul[position() <= 3]/li/text()")
-            if set(li_text) == set(['TBA']):
-                return
-            for el in page.xpath("//div[@class='col1']/ul[position() <= 3]/li/a"):
-                member = [item.strip() for item in el.text_content().split(',', 1)]
-                if len(member) > 1:
-                    member_name, role = member
-                else:
-                    member_name, role = member[0], 'member'
-                if member_name != "":
+                        role = 'member'
                     com.add_member(member_name, role)
-        com.add_source(url)
-        if com['members']:
+
+                com.add_source(chamber_link)
+
+            com.add_source(url)
             self.save_committee(com)
+
+        else:
+            self._scrape_committee(committee_name, url, 'joint')
