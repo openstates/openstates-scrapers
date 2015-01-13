@@ -83,15 +83,16 @@ class INLegislatorScraper(LegislatorScraper):
         leg.add_source(url)
 
         # Scrape committees.
-        for tr in doc.xpath('//table//tr'):
-            committee, role = tr
+        for tr in doc.xpath('//div[@class="legislator-committees-container"]//table//tr'):
+            committee, committee_type, role = tr
             committee = committee.text_content().strip()
             role = role.text_content().strip()
             if 'member' in role.lower():
                 role = 'committee member'
             elif 'chair' in role.lower():
                 role = 'chair'
-            leg.add_role(role, term, chamber=chamber, committee=committee)
+            if committee != "Committee Name":
+                leg.add_role(role, term, chamber=chamber, committee=committee)
 
         # Scrape offices.
         dist_office, phone = doc.xpath('//address')
