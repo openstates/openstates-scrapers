@@ -63,7 +63,7 @@ metadata = dict(
                   },
         '2015RS': {'type': 'primary',
                    'display_name': '2015 Regular Session',
-                   '_scraped_name': '2015 Regular Session ',
+                   '_scraped_name': '2015 Regular Session',
                   },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
