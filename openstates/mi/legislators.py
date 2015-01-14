@@ -38,7 +38,6 @@ class MILegislatorScraper(LegislatorScraper):
                 metainf[table[i]] = tds[i]
             district = str(int(metainf['district'].text_content().strip()))
             party = metainf['party'].text_content().strip()
-            office = metainf['location'].text_content().strip()
             phone = metainf['phone'].text_content().strip()
             email = metainf['email'].text_content().strip()
             leg_url = metainf['website'].xpath("./a")[0].attrib['href']
@@ -46,6 +45,19 @@ class MILegislatorScraper(LegislatorScraper):
             if name == 'Vacant':
                 self.info('district %s is vacant', district)
                 continue
+
+            office = metainf['location'].text_content().strip()
+            office = re.sub(
+                    ' HOB',
+                    ' Anderson House Office Building\n124 North Capitol Avenue\nLansing, MI 48933',
+                    office
+                    )
+            office = re.sub(
+                    ' CB',
+                    ' State Capitol Building\nLansing, MI 48909',
+                    office
+                    )
+
             leg = Legislator(term=term,
                              chamber=chamber,
                              full_name=name,
@@ -87,7 +99,19 @@ class MILegislatorScraper(LegislatorScraper):
             leg_url = member.xpath('a/@href')[0]
             office_phone = phone.text
             office_fax = fax.text
+            
             office_loc = loc.text
+            office_loc = re.sub(
+                    ' Farnum Bldg',
+                    ' Farnum Office Building\n125 West Allegan Street\nLansing, MI 48933',
+                    office_loc
+                    )
+            office_loc = re.sub(
+                    ' Capitol Bldg',
+                    ' State Capitol Building\nLansing, MI 48909',
+                    office_loc
+                    )
+
             leg = Legislator(term=term, chamber=chamber,
                              district=district,
                              full_name=name,
