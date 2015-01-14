@@ -1,6 +1,7 @@
 import re
 import datetime
 
+import scrapelib
 from billy.scrape.bills import BillScraper, Bill
 
 import pytz
@@ -140,7 +141,11 @@ class INBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, term, bill_id, url, title, subject=None):
         self.logger.info('GET ' + url)
-        resp = self.get(url)
+        try:
+            resp = self.get(url)
+        except scrapelib.HTTPError:
+            return
+
         html = resp.text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
