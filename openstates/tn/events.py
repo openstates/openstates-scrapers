@@ -89,7 +89,8 @@ class TNEventScraper(EventScraper, LXMLMixin):
                     continue
 
                 time = metainf['time'].text_content()
-                datetime_string = "%s %s" % (date, time)
+                datetime_string = "%s %s" % \
+                        (date.strip(' \r\n'), time.strip(' \r\n'))
                 location = metainf['location'].text_content()
                 description = metainf['type'].text_content()
 
@@ -101,7 +102,6 @@ class TNEventScraper(EventScraper, LXMLMixin):
                     if ' Immediately follows' in datetime_string:
                         datetime_string, _ = datetime_string.split(
                             'Immediately follows')
-                        datetime_string = datetime_string.strip()
                         dtfmt = "%A, %B %d, %Y"
 
                     when = dt.datetime.strptime(datetime_string, dtfmt)

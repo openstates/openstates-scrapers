@@ -92,6 +92,9 @@ class TXLegislatorScraper(LegislatorScraper):
         if full_name in VACANT_IN_2015:
             return
 
+        if full_name == "Lois Kolkhorst" and chamber == "lower":
+            return
+
         district = td.xpath('string(//div[3])').strip()
         district = district.replace('District ', '')
 

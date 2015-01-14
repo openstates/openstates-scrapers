@@ -189,17 +189,11 @@ def actions_from_table(bill, actions_table):
 class TNBillScraper(BillScraper):
     jurisdiction = 'tn'
 
-    def scrape(self, chamber, term):
-
-        if chamber == 'lower':
-            self.warning("skipping bills for lower")
-            return
-
+    def scrape(self, term, chambers):
         #types of bills
         abbrs = ['HB', 'HJR', 'HR', 'SB', 'SJR', 'SR']
 
         for abbr in abbrs:
-
             if 'B' in abbr:
                 bill_type = 'bill'
             elif 'JR' in abbr:
@@ -207,18 +201,16 @@ class TNBillScraper(BillScraper):
             else:
                 bill_type = 'resolution'
 
-            #Checks if current term
-            if term == self.metadata["terms"][-1]["sessions"][0]:
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
-            else:
-                bill_listing = 'http://wapp.capitol.tn.gov/apps/archives/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999&Year=%s' % (abbr, abbr, term)
+            bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
 
             bill_list_page = self.urlopen(bill_listing)
             bill_list_page = lxml.html.fromstring(bill_list_page)
-            for bill_links in bill_list_page.xpath('////div[@id="open"]//a'):
-                bill_link = bill_links.attrib['href']
-                if '..' in bill_link:
-                    bill_link = 'http://wapp.capitol.tn.gov/apps' + bill_link[2:len(bill_link)]
+            bill_list_page.make_links_absolute(bill_listing)
+
+            for bill_link in bill_list_page.xpath(
+                    '//h1[text()="Legislation"]/following-sibling::div/'
+                    'div/div/div/label//a/@href'
+                    ):
                 self.scrape_bill(term, bill_link, bill_type)
 
     def scrape_bill(self, term, bill_url, bill_type):
@@ -227,8 +219,8 @@ class TNBillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(bill_url)
 
-        bill_id = page.xpath('//span[@id="lblBillSponsor"]/a[1]')[0].text
-        secondary_bill_id = page.xpath('//span[@id="lblCoBillSponsor"]/a[1]')
+        bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+        secondary_bill_id = page.xpath('//span[@id="lblCompNumber"]/a[1]')
 
         # checking if there is a matching bill
         if secondary_bill_id:
@@ -262,13 +254,13 @@ class TNBillScraper(BillScraper):
         bill.add_source(bill_url)
 
         # Primary Sponsor
-        sponsor = page.xpath("//span[@id='lblBillSponsor']")[0].text_content().split("by")[-1]
+        sponsor = page.xpath("//span[@id='lblBillPrimeSponsor']")[0].text_content().split("by")[-1]
         sponsor = sponsor.replace('*', '').strip()
         if sponsor:
             bill.add_sponsor('primary', sponsor)
 
         # bill text
-        btext = page.xpath("//span[@id='lblBillSponsor']/a")[0]
+        btext = page.xpath("//span[@id='lblBillNumber']/a")[0]
         bill.add_version('Current Version', btext.get('href'),
                          mimetype='application/pdf')
 
@@ -289,20 +281,20 @@ class TNBillScraper(BillScraper):
             bill.add_document(afn.get('alt'), afn.getparent().get('href'))
 
         # actions
-        atable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvBillActionHistory']")[0]
+        atable = page.xpath("//table[@id='gvBillActionHistory']")[0]
         actions_from_table(bill, atable)
 
         # if there is a matching bill
         if secondary_bill_id:
             # secondary sponsor
-            secondary_sponsor = page.xpath("//span[@id='lblCoBillSponsor']")[0].text_content().split("by")[-1]
+            secondary_sponsor = page.xpath("//span[@id='lblCompPrimeSponsor']")[0].text_content().split("by")[-1]
             secondary_sponsor = secondary_sponsor.replace('*', '').replace(')', '').strip()
             # Skip black-name sponsors.
             if secondary_sponsor:
                 bill.add_sponsor('primary', secondary_sponsor)
 
             # secondary actions
-            cotable = page.xpath("//table[@id='tabHistoryAmendments_tabHistory_gvCoActionHistory']")[0]
+            cotable = page.xpath("//table[@id='gvCoActionHistory']")[0]
             actions_from_table(bill, cotable)
 
         # votes
