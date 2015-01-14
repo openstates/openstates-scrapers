@@ -29,7 +29,7 @@ class WVLegislatorScraper(LegislatorScraper):
             leg_url = urlescape(link.attrib['href'])
 
             if name in ['Members', 'Senate Members', 'House Members',
-                        'Vacancy', 'VACANT', 'Vacant']:
+                        'Vacancy', 'VACANT', 'Vacant', "To Be Announced"]:
                 continue
 
             self.scrape_legislator(chamber, term, name, leg_url)
@@ -53,17 +53,17 @@ class WVLegislatorScraper(LegislatorScraper):
         photo_url = page.xpath(
             "//img[contains(@src, 'images/members/')]")[0].attrib['src']
 
-        email = page.xpath(
-            "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
-            'mailto:')[1]
 
         leg = Legislator(term, chamber, district, name, party=party,
-                         photo_url=photo_url, email=email, url=url)
+                         photo_url=photo_url, url=url)
         leg.add_source(url)
         self.scrape_offices(leg, page)
         self.save_legislator(leg)
 
     def scrape_offices(self, legislator, doc):
+        email = doc.xpath(
+            "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
+            'mailto:')[1]
         text = doc.xpath('//b[contains(., "Capitol Office:")]')[0]
         text = text.getparent().itertext()
         text = filter(None, [t.strip() for t in text])
@@ -88,6 +88,7 @@ class WVLegislatorScraper(LegislatorScraper):
             type='capitol',
             phone=(officedata['Capitol Phone:'] or [None]).pop(),
             fax=None,
+            email=email,
             address='\n'.join(officedata['Capitol Office:']))
 
         legislator.add_office(**office)
