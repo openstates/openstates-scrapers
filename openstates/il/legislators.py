@@ -25,6 +25,11 @@ class ILLegislatorScraper(LegislatorScraper):
         for row in doc.xpath('//table')[4].xpath('tr')[2:]:
             name, _, _, district, party = row.xpath('td')
             district = district.text
+
+            if party.text_content().strip() == "":
+                self.warning("Garbage party: Skipping!")
+                continue
+
             party = {'D':'Democratic', 'R': 'Republican',
                      'I': 'Independent'}[party.text]
             leg_url = name.xpath('a/@href')[0]
