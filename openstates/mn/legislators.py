@@ -6,6 +6,7 @@ from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
 
 import lxml.html
+import xlrd
 
 class MNLegislatorScraper(LegislatorScraper):
     jurisdiction = 'mn'
@@ -21,49 +22,48 @@ class MNLegislatorScraper(LegislatorScraper):
             self.scrape_senate(term)
 
     def scrape_house(self, term):
-        url = 'http://www.house.leg.state.mn.us/members/housemembers.asp'
+        URL = 'http://www.house.leg.state.mn.us/members/meminfo.xls'
+        xls, _ = self.urlretrieve(URL)
+        wb = xlrd.open_workbook(xls)
+        sh = wb.sheet_by_index(0)
 
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
+        headers = [x.value for x in sh.row(0)]
+        assert headers == [
+                'district_id', 'party',
+                'first name', 'last name', 'longname',
+                'SOB_room', 'SOB_city_state_ZIP', 'SOB_office_phone',
+                'perfered_interim_mailing_address', 'perfered__interimmailing_city', 'state', 'perfered__interim_mailing_zip',
+                'emailalias'
+                ]
 
-        # skip first header row
-        for row in doc.xpath('//tr')[1:]:
-            tds = [td.text_content().strip() for td in row.xpath('td')]
-            if len(tds) == 5:
-                district = tds[0].lstrip('0')
-                name, party = tds[1].rsplit(' ', 1)
-                if party == '(R)':
-                    party = 'Republican'
-                elif party == '(DFL)':
-                    party = 'Democratic-Farmer-Labor'
-                leg_url = row.xpath('td[2]/p/a/@href')[0]
-                addr = tds[2]
-                phone = tds[3]
-                email = tds[4]
+        for row_num in range(1, sh.nrows):
+            leg = Legislator(
+                    term=term,
+                    chamber='lower',
+                    district=sh.cell_value(row_num, 0),
+                    full_name=sh.cell_value(row_num, 4)[len("Rep. "): ],
+                    party=self._parties[sh.cell_value(row_num, 1)]
+                    )
+            leg.add_source(URL)
 
-            leg = Legislator(term, 'lower', district, name,
-                             party=party, email=email, url=leg_url)
+            leg.add_office(
+                    type='capitol',
+                    name="Capitol Office",
+                    address="{0}\n{1}".format(sh.cell_value(row_num, 5), sh.cell_value(row_num, 6)),
+                    phone=sh.cell_value(row_num, 7),
+                    email=sh.cell_value(row_num, 12) + "@house.mn"
+                    )
+            if sh.cell_value(row_num, 5) != sh.cell_value(row_num, 8):
+                assert sh.cell_value(row_num, 10) == "Minnesota"
+                leg.add_office(
+                        type='district',
+                        name="District Office",
+                        address="{0}\n{1}, MN {2}".format(sh.cell_value(row_num, 8), sh.cell_value(row_num, 9), sh.cell_value(row_num, 11))
+                        )
 
-            addr = ('{0} State Office Building\n'
-                    '100 Rev. Dr. Martin Luther King Jr. Blvd.\n'
-                    'St. Paul, MN 55155').format(addr)
-            leg.add_office('capitol', 'Capitol Office', address=addr,
-                           phone=phone)
-
-            # add photo_url
-            leg_html = self.urlopen(leg_url)
-            leg_doc = lxml.html.fromstring(leg_html)
-            img_src = leg_doc.xpath('//img[contains(@src, "memberimg")]/@src')
-            if img_src:
-                leg['photo_url'] = img_src[0]
-
-            leg.add_source(url)
-            leg.add_source(leg_url)
             self.save_legislator(leg)
 
     def scrape_senate(self, term):
-
         index_url = 'http://www.senate.mn/members/index.php'
         doc = lxml.html.fromstring(self.urlopen(index_url))
         doc.make_links_absolute(index_url)

@@ -8,6 +8,8 @@ from billy.scrape.votes import Vote
 
 import lxml.html
 
+import scrapelib
+
 
 def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
     # csv.py doesn't do Unicode; encode temporarily as UTF-8:
@@ -181,7 +183,11 @@ class ARBillScraper(BillScraper):
             self.scrape_vote(bill, date, motion, link.attrib['href'])
 
     def scrape_vote(self, bill, date, motion, url):
-        page = self.urlopen(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            #sometiems the link is there but is dead
+            return
 
         if 'not yet official' in page:
             # Sometimes they link to vote pages before they go live

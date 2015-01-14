@@ -108,7 +108,7 @@ class MIEventScraper(EventScraper, LXMLMixin):
             span = span[0]
         else:
             return
-        events = span.xpath("//a[contains(@href, 'committeemeeting')]")
+        events = span.xpath(".//a[contains(@href, 'committeemeeting')]")
         for event in events:
             url = event.attrib['href']
             if 'doPostBack' in url:
