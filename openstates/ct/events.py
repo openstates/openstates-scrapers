@@ -1,14 +1,13 @@
-import unicodecsv
 import datetime
-import chardet
+import json
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
 import pytz
 import lxml.html
 
 from .utils import open_csv
+
 
 class CTEventScraper(EventScraper):
     jurisdiction = 'ct'
@@ -18,57 +17,30 @@ class CTEventScraper(EventScraper):
     def __init__(self, *args, **kwargs):
         super(CTEventScraper, self).__init__(*args, **kwargs)
 
-    def scrape(self, chamber, session):
-        if chamber != 'other':
-            # All CT committees are joint
-            return
-
+    def scrape(self, session, chambers):
         for (code, name) in self.get_comm_codes():
             self.scrape_committee_events(session, code, name)
 
     def scrape_committee_events(self, session, code, name):
-        url = ("http://www.cga.ct.gov/asp/menu/"
-               "CGACommCal.asp?comm_code=%s" % code)
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        events_url = \
+                'http://www.cga.ct.gov/basin/fullcalendar/commevents.php?' \
+                'comm_code={}'.format(code)
+        events_data = self.urlopen(events_url)
+        events = json.loads(events_data)
 
-        cal_table = page.xpath(
-            "//table[contains(@summary, 'Calendar')]")[0]
+        DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+        for info in events:
+            event = Event(
+                    session=session,
+                    when=datetime.datetime.strptime(info['start'], DATETIME_FORMAT),
+                    end=datetime.datetime.strptime(info['end'], DATETIME_FORMAT),
+                    type='committee:meeting',
+                    description=info['title'],
+                    location="{0} {1}".format(info['building'].strip(), info['location'].strip())
+                    )
+            event.add_source(events_url)
 
-        date_str = None
-        for row in cal_table.xpath("tr[2]//tr"):
-            col1 = row.xpath("string(td[1])").strip()
-            col2 = row.xpath("string(td[2])").strip()
-
-            if not col1:
-                if col2 == "No Meetings Scheduled":
-                    return
-                # If col1 is empty then this is a date header
-                date_str = col2
-            else:
-                # Otherwise, this is a committee event row
-                ical_feed = row.xpath(".//a[contains(@href, 'newcal')]")[0]
-                when = date_str + " " + col1
-                when = datetime.datetime.strptime(
-                    when, "%A, %B %d, %Y %I:%M %p")
-                when = self._tz.localize(when)
-
-                location = row.xpath("string(td[3])").strip()
-                guid = row.xpath("td/a")[0].attrib['href']
-
-                event = Event(session,
-                              when,
-                              'committee meeting',
-                              col2,
-                              location,
-                              _guid=guid,
-                              _ical_feed=ical_feed.attrib['href'])
-                event.add_source(url)
-                event.add_participant('host', name, 'committee',
-                                      chamber='joint')
-
-                self.save_event(event)
+            self.save_event(event)
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
