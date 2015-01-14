@@ -3,7 +3,10 @@ import lxml.html
 
 party_map = {'Dem': 'Democratic',
              'Rep': 'Republican',
-             'Una': 'Unaffiliated'}
+             'Una': 'Unaffiliated',
+             'D': 'Democratic',
+             'R': 'Republican',
+             'U': 'Unaffiliated'}
 
 def get_table_item(doc, name):
     # get span w/ item
@@ -25,7 +28,7 @@ class NCLegislatorScraper(LegislatorScraper):
 
     def scrape_chamber(self, chamber, term):
         url = "http://www.ncga.state.nc.us/gascripts/members/"\
-            "memberList.pl?sChamber="
+            "memberListNoPic.pl?sChamber="
 
         if chamber == 'lower':
             url += 'House'
@@ -40,10 +43,10 @@ class NCLegislatorScraper(LegislatorScraper):
         for row in rows[1:]:
             party, district, full_name, counties = row.getchildren()
 
-            party = party.text_content()
+            party = party.text_content().strip("()")
             party = party_map[party]
 
-            district = district.text_content()
+            district = district.text_content().replace("District","").strip()
 
             notice = full_name.xpath('span')
             if notice:
@@ -62,8 +65,8 @@ class NCLegislatorScraper(LegislatorScraper):
             ldoc = lxml.html.fromstring(lhtml)
             ldoc.make_links_absolute('http://www.ncga.state.nc.us')
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
-            phone = get_table_item(ldoc, 'Phone:')
-            address = get_table_item(ldoc, 'Legislative Mailing Address:') or None
+            phone = get_table_item(ldoc, 'Phone:') or None
+            address = get_table_item(ldoc, 'Address:') or None
             email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0].text or ''
 
             # save legislator
