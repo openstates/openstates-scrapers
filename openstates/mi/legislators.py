@@ -65,7 +65,7 @@ class MILegislatorScraper(LegislatorScraper):
         url = 'http://www.senate.michigan.gov/senatorinfo.html'
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
-        for row in doc.xpath("//table[@class='auto-style2']/tr")[4:]:
+        for row in doc.xpath('//table[not(@id="calendar")]//tr')[3:]:
             if len(row) != 6:
                 continue
 
@@ -78,6 +78,7 @@ class MILegislatorScraper(LegislatorScraper):
             party = abbr[party.text]
             district = dist.text_content().strip()
             name = member.text_content().strip()
+            name = re.sub(r'\s+', " ", name)
 
             if name == 'Vacant':
                 self.info('district %s is vacant', district)
