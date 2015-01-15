@@ -50,7 +50,11 @@ class MDLegislatorScraper(LegislatorScraper):
                 else:
                     phone = line
             address = '\n'.join(address)
-            phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', phone)[0]
+            try:
+                phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', phone)[0]
+            except IndexError:
+                self.warning("Missing phone!")
+                phone = None
 
             email = ldoc.xpath('//a[contains(@href, "mailto:")]/@href')
             if email:

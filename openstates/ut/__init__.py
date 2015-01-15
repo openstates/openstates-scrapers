@@ -1,4 +1,5 @@
 import datetime
+import re
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import UTBillScraper
 from .legislators import UTLegislatorScraper
@@ -22,6 +23,8 @@ metadata = dict(
         dict(name='2013-2014', sessions=['2013', '2013h1', '2013s1', '2013s2',
                                          '2014'],
              start_year=2013, end_year=2014),
+        dict(name='2015-2016', sessions=['2015'],
+             start_year=2015, end_year=2016),
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 24),
@@ -48,10 +51,12 @@ metadata = dict(
                    '_scraped_name': '2013 2nd Special Session', },
         '2014': { 'display_name': '2014 General Session',
                   '_scraped_name': '2014 General Session', },
+        '2015': { 'display_name': '2015 General Session',
+                  '_scraped_name': '2015 General Session', },
     },
     feature_flags=['events', 'subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
-        'All',
+        '2011 Veto Override Session',
         '2010 2nd Special Session',
         '2010 General Session',
         '2009 1st Special Session',
@@ -73,6 +78,7 @@ metadata = dict(
         '2003 2nd Special Session',
         '2003 1st Special Session',
         '2003 General Session',
+        '2002 Veto Override Session',
         '2002 6th Special Session',
         '2002 5th Special Session',
         '2002 4th Special Session',
@@ -93,9 +99,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    sessions = url_xpath( 'http://le.utah.gov/',
-        "//select[@name='Sess']/option/text()" )
-    return [ session.strip() for session in sessions ]
+    sessions = url_xpath(
+            'http://le.utah.gov/Documents/bills.htm',
+            '//p/a[contains(@href, "session")]/text()'
+            )
+    return [ re.sub(r'\s+', ' ', session.strip()) for session in sessions ]
 
 def extract_text(doc, data):
     if doc['mimetype'] == 'application/pdf':

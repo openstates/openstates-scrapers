@@ -13,7 +13,7 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
     def scrape(self, term, chambers):
         self.validate_term(term, latest_only=True)
 
-        url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2014&List=2#Results"
+        url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
         page = self.lxmlize(url)
 
         for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
@@ -21,7 +21,7 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
 
             if "House" in comm_name:
                 chamber = "lower"
-            if "Senate" in comm_name:
+            elif "Senate" in comm_name:
                 chamber = "upper"
             else:
                 chamber = "joint"
@@ -37,6 +37,10 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
                     "//table[@class='memberstable']//a"):
 
                 name = mbr_link.text.strip()
+                name = re.sub(r' \([A-Z]\)$', "", name)
+                name = re.sub(r'^Sen. ', "", name)
+                name = re.sub(r'^Rep. ', "", name)
+
                 role = mbr_link.tail.strip().strip(",").strip()
                 type = "member"
                 if role:

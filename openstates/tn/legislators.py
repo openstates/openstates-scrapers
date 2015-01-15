@@ -1,3 +1,5 @@
+import HTMLParser
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
@@ -28,43 +30,52 @@ class TNLegislatorScraper(LegislatorScraper):
         page = self.urlopen(chamber_url)
         page = lxml.html.fromstring(page)
 
-        for row in page.xpath("//tr")[1:]:
+        for row in page.xpath("//tr"):
 
             # Skip any a header row.
             if set(child.tag for child in row) == set(['th']):
                 continue
 
-            partyInit = row.xpath('td[2]')[0].text.split()[0]
+            partyInit = row.xpath('td[3]')[0].text.split()[0]
             party = parties[partyInit]
-            district = row.xpath('td[4]/a')[0].text.split()[1]
-            address = row.xpath('td[5]')[0].text_content()
+            district = row.xpath('td[5]/a')[0].text.split()[1]
+            address = row.xpath('td[6]')[0].text_content()
             # 301 6th Avenue North Suite
             address = address.replace('LP',
                               'Legislative Plaza\nNashville, TN 37243')
             address = address.replace('WMB',
                               'War Memorial Building\nNashville, TN 37243')
             address = '301 6th Avenue North\nSuite ' + address
-            phone = row.xpath('td[6]')[0].text
-            #special case for Karen D. Camper
-            if phone == None:
-                phone = row.xpath('td[6]/div')[0].text
-            phone = '615-' + phone.split()[0]
-            email = row.xpath('td[7]/a')[0].text
+            phone = [
+                    x.strip() for x in
+                    row.xpath('td[7]//text()')
+                    if x.strip()
+                    ][0]
+
+            email = HTMLParser.HTMLParser().unescape(
+                    row.xpath('td[1]/a/@href')[0][len("mailto:"): ])
             member_url = (root_url + url_chamber_name + '/members/'
                           + abbr + district + '.html')
             member_photo_url = (root_url + url_chamber_name +
                                 '/members/images/' + abbr + district +
                                 '.jpg')
 
-            member_page = self.urlopen(member_url)
+            try:
+                member_page = self.get(member_url, follow_redirects=False).text
+            except TypeError:
+                member_page = self.get(member_url).text
             member_page = lxml.html.fromstring(member_page)
-            name = member_page.xpath('//div[@id="membertitle"]/h2')[0].text
+            try:
+                name = member_page.xpath('body/div/div/h1/text()')[0]
+            except IndexError:
+                name = member_page.xpath('//div[@id="membertitle"]/h2/text()')[0]
+            
             if 'Speaker' in name:
                 full_name = name[8:len(name)]
             elif 'Lt.' in name:
                 full_name = name[13:len(name)]
             elif abbr == 'h':
-                full_name = name[5: len(name)]
+                full_name = name[len("Representative "): len(name)]
             else:
                 full_name = name[8:len(name)]
 
