@@ -3,6 +3,7 @@ import datetime
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import scrapelib
@@ -25,7 +26,7 @@ SUB_BLACKLIST = [
 
 
 
-class UTBillScraper(BillScraper):
+class UTBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'ut'
 
     def accept_response(self, response):
@@ -40,41 +41,47 @@ class UTBillScraper(BillScraper):
         # will backoff and retry if their site has an issue. Seems to happen
         # often enough.
 
-    def scrape(self, chamber, session):
+    def scrape(self, session, chambers):
         self.validate_session(session)
 
-        if chamber == 'lower':
-            bill_abbrs = r'HB|HCR|HJ|HR'
-        else:
-            bill_abbrs = r'SB|SCR|SJR|SR'
+        # Identify the index page for the given session
+        sessions = self.lxmlize(
+                'http://le.utah.gov:443/Documents/bills.htm')
+        sessions = sessions.xpath('//p/a[contains(text(), {})]'.format(session))
+        
+        session_url = ''
+        for elem in sessions:
+            if re.sub(r'\s+', " ", elem.xpath('text()')[0]) == \
+                    self.metadata['session_details'][session]['_scraped_name']:
+                session_url = elem.xpath('@href')[0]
+        assert session_url != ''
 
-        bill_list_re = r'(%s).*ht\.htm' % bill_abbrs
+        # Identify all the bill lists linked from a given session's page
+        bill_indices = [
+                re.sub(r'^r', "", x) for x in
+                self.lxmlize(session_url).xpath('//div[contains(@id, "0")]/@id')
+                ]
 
-        bill_list_url = "http://www.le.state.ut.us/~%s/bills.htm" % (
-            session.replace(' ', ''))
+        # Capture the bills from each of the bill lists
+        for bill_index in bill_indices:
+            if bill_index.startswith("H"):
+                chamber = 'lower'
+            elif bill_index.startswith("S"):
+                chamber = 'upper'
+            else:
+                raise AssertionError(
+                        "Unknown bill type found: {}".format(bill_index))
 
-        page = self.urlopen(bill_list_url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(bill_list_url)
+            bill_index = self.lxmlize(session_url + "&bills=" + bill_index)
+            bills = bill_index.xpath('//a[contains(@href, "/bills/static/")]')
 
-        for link in page.xpath('//a'):
-            if "href" not in link.attrib:
-                continue  # XXX: There are some funky <a> tags here.
-
-            if re.search(bill_list_re, link.attrib['href']):
-                self.scrape_bill_list(chamber, session,
-                                      link.attrib['href'])
-
-    def scrape_bill_list(self, chamber, session, url):
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath('//a[contains(@href, "billhtm")]'):
-            bill_id = link.xpath('string()').strip()
-
-            self.scrape_bill(chamber, session, bill_id,
-                             link.attrib['href'])
+            for bill in bills:
+                self.scrape_bill(
+                        chamber=chamber,
+                        session=session,
+                        bill_id=bill.xpath('text()')[0],
+                        url=bill.xpath('@href')[0]
+                        )
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
@@ -89,13 +96,13 @@ class UTBillScraper(BillScraper):
         title, primary_sponsor = header.split(' -- ')
 
         if bill_id.startswith('H.B.') or bill_id.startswith('S.B.'):
-            bill_type = ['bill']
+            bill_type = 'bill'
         elif bill_id.startswith('H.R.') or bill_id.startswith('S.R.'):
-            bill_type = ['resolution']
+            bill_type = 'resolution'
         elif bill_id.startswith('H.C.R.') or bill_id.startswith('S.C.R.'):
-            bill_type = ['concurrent resolution']
+            bill_type = 'concurrent resolution'
         elif bill_id.startswith('H.J.R.') or bill_id.startswith('S.J.R.'):
-            bill_type = ['joint resolution']
+            bill_type = 'joint resolution'
 
         for flag in SUB_BLACKLIST:
             if flag in bill_id:
