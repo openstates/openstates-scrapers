@@ -169,24 +169,34 @@ class INBillScraper(BillScraper):
             bill.add_sponsor(sp_type, name)
 
         # Actions
-        for li in doc.xpath('//div[@id="bill-actions"]//li')[::-1]:
+        for li in doc.xpath('//table[contains(@class,"actions-table")]//dd')[::-1]:
             if li.text_content() == 'None currently available.':
                 continue
-            chamber_str = li.xpath('string(strong)').strip()
-            action_chamber = dict(H='lower', S='upper')[chamber_str]
-            action_date = li.xpath('string(span[@class="document-date"])')
+            chamber_str, action_date = li.xpath('./b/span/text()')
+            chambers = dict(H='lower', S='upper', G='executive')
+            if chamber_str not in chambers:
+                action_chamber = chamber
+            else:
+                action_chamber = chambers[chamber_str]
+
+
             # Some resolution actions have no dates.
             if not action_date.strip():
                 continue
             action_date = datetime.datetime.strptime(action_date.strip(), '%m/%d/%Y')
-            action_text = li.xpath('string(span[2])').strip()
+            action_text = li.xpath('./text()')[1].strip()
+
             if not action_text.strip():
                 continue
-            kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
-            kwargs.update(**self.categorizer.categorize(action_text))
-            bill.add_action(**kwargs)
+            if not "referred to the house" in action_text.lower() and "referred to the senate" not in action_text.lower():
+                #removing bills being referred to house/senate because they were being treated like committees
+                #should prob be fixed in the regexes in actions.py someday
+                kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
+                kwargs.update(**self.categorizer.categorize(action_text))
+                bill.add_action(**kwargs)
 
         # Documents (including votes)
+        print doc.xpath("./@href")
         for doc_type, doc_meta in BillDocuments(self, doc):
             if doc_type == 'version':
                 bill.add_version(
