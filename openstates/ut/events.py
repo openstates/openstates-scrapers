@@ -1,108 +1,53 @@
 import re
-import requests
-import datetime as dt
-import scrapelib
+import datetime
 
 from openstates.utils import LXMLMixin
 from billy.scrape.events import EventScraper, Event
 
-import pytz
-import lxml.etree
-import lxml.html
-
-url = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
 
 class UTEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'ut'
-    _tz = pytz.timezone('US/Mountain')
 
-    def scrape_page(self, url, session, chamber):
-        try:
-            try:
-                page = self.lxmlize(url)
-            except requests.exceptions.Timeout:
-                self.warning("Erm, we got a timeout here. Bailing")
-                return
+    def scrape(self, session, chambers):
+        URL = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
+        doc = self.lxmlize(URL)
+        events = doc.xpath('//item')
 
-        except lxml.etree.XMLSyntaxError:
-            self.warning("Ugh. Invalid HTML")
-            return  # Ugh, invalid HTML.
-        agendas = page.xpath("//td[@class='numberspace']")
-
-        spans = page.xpath("//center/span")
-        ctty = None
-        date = None
-        time = None
-        if len(spans) >= 4:
-            ctty = spans[0].text_content().strip()
-            date = spans[2].text_content().strip()
-            time = spans[3].text_content().strip()
-
-        bills = []
-        for agenda in agendas:
-            number = agenda.text_content()
-            string = agenda.getnext().text_content().strip()
-            re_bills = re.findall("(S|H)\.?(B|R|M)\. (\d+)", string)
-            for bill in re_bills:
-                bill_id = '%s%s %s' % bill
-                bills.append({
-                    'name': bill_id,
-                    'desc': string
-                })
-
-        if ctty is None or date is None or time is None:
-            return
-
-        datetime = "%s %s" % (
-            date.strip(),
-            time.strip()
-        )
-        datetime = re.sub("AGENDA", "", datetime).strip()
-        datetime = [ x.strip() for x in datetime.split("\r\n") ]
-
-        if "" in datetime:
-            datetime.remove("")
-
-        if len(datetime) == 1:
-            datetime.append("state house")
-
-        where = datetime[1]
-        translate = {
-            "a.m.": "AM",
-            "p.m.": "PM"
-        }
-        for t in translate:
-            datetime[0] = datetime[0].replace(t, translate[t])
-        datetime = dt.datetime.strptime(datetime[0], "%A, %B %d, %Y %I:%M %p")
-
-        chamber = 'other'
-        cLow = ctty.lower()
-        if "seante" in cLow:
-            chamber = 'upper'
-        elif "house" in cLow:
-            chamber = 'lower'
-        elif "joint" in cLow:
-            chamber = 'joint'
-
-        event = Event(session, datetime, 'committee:meeting',
-                      ctty, location=where)
-        event.add_source(url)
-        event.add_participant('host', ctty, 'committee', chamber=chamber)
-        for bill in bills:
-            event.add_related_bill(bill['name'],
-                                   description=bill['desc'],
-                                   type='consideration')
-        self.save_event(event)
-
-    def scrape(self, chamber, session):
-        if chamber != 'other':
-            return
-
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page)
-
-        for p in page.xpath("//link"):
-            try:
-                self.scrape_page(p.text, session, chamber)
-            except scrapelib.HTTPError:
+        for info in events:
+            (title, when) = info.xpath('title/text()')[0].split(" - ")
+            if not when.endswith(session[ :len("20XX")]):
                 continue
+
+            event = Event(
+                    session=session,
+                    when=datetime.datetime.strptime(when, '%b %d, %Y'),
+                    type='committee:meeting',
+                    description=title,
+                    location='State Capitol'
+                    )
+            event.add_source(URL)
+
+            url = re.search(r'(http://.*?)\s', info.text_content()).group(1)
+            doc = self.lxmlize(url)
+            event.add_source(url)
+
+            committee = doc.xpath('//a[text()="View committee page"]/@href')
+            if committee:
+                committee_doc = self.lxmlize(committee[0])
+                committee_name = committee_doc.xpath(
+                        '//h3[@class="heading committee"]/text()')[0].strip()
+                event.add_participant(
+                        type='host',
+                        participant=committee_name,
+                        participant_type='committee'
+                        )
+
+            documents = doc.xpath('.//td')
+            for document in documents:
+                event.add_document(
+                        name=document.xpath('text()')[0],
+                        url=re.search(r'(http://.*?pdf)', document.xpath('@onclick')[0]).group(1),
+                        mimetype='application/pdf'
+                        )
+
+            self.save_event(event)
