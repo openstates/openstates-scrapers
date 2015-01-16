@@ -59,6 +59,10 @@ class NCBillScraper(BillScraper):
                 if td.get('style') == 'font-weight: bold;':
                     cur_subject = td.text_content()
                 else:
+
+                    if cur_subject is None:
+                        continue
+
                     bill_link = td.xpath('a/text()')
                     if bill_link:
                         self.subject_map[bill_link[0]].append(cur_subject)
