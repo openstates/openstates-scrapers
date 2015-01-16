@@ -34,7 +34,7 @@ metadata = {
     'feature_flags': [ 'events', 'influenceexplorer' ],
     'session_details': {
         '99th': {'display_name': '99th Regular Session (2015-2016)',
-                 '_scraped_name': '',
+                 '_scraped_name': '98   (2013-2014)',
                  'speaker': 'Madigan',
                  'president': 'Cullerton',
                  'params': { 'GA': '99', 'SessionId': '86' },
