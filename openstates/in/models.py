@@ -132,16 +132,18 @@ class DocumentMeta(object):
         text = self.el.text_content()
         text = re.sub(r'\s+', ' ', text).strip()
         api_meta = self.get_doc_api_meta(self.el.attrib)
-        if api_meta is None:
-            msg = 'No data recieved from the API for %r' % self.el.attrib
-            raise BogusDocument(msg)
+        #if api_meta is None:
+            #msg = 'No data recieved from the API for %r' % self.el.attrib
+            #raise BogusDocument(msg)
+        version_id = self.el.attrib['data-myiga-actiondata']
+        url = 'http://iga.in.gov/documents/' + version_id
         return self.DocMeta(
             a=self.el,
             text=text,
             href=self.el.attrib['href'],
             uid=self.el.attrib['data-myiga-actiondata'],
             title=self.el.attrib.get('title'),
-            url=self.get_document_url(api_meta))
+            url=url)
 
     def get_doc_api_meta(self, attrib):
         '''The document link gives you json if you hit with the right
