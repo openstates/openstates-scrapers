@@ -303,7 +303,7 @@ class MNBillScraper(BillScraper):
                 bill_actions.append(bill_action)
 
                 # Try to extract vote
-                bill = self.extract_vote_from_action(bill, bill_action, current_chamber, row)
+                # bill = self.extract_vote_from_action(bill, bill_action, current_chamber, row)
 
             # if there's a second table, toggle the current chamber
             if current_chamber == 'upper':
@@ -367,42 +367,42 @@ class MNBillScraper(BillScraper):
       return bill
 
 
-    def extract_vote_from_action(self, bill, action, chamber, action_row):
-        """
-        Gets vote data.  For the Senate, we can only get yes and no
-        counts, but for the House, we can get details on who voted
-        what.
+    # def extract_vote_from_action(self, bill, action, chamber, action_row):
+    #     """
+    #     Gets vote data.  For the Senate, we can only get yes and no
+    #     counts, but for the House, we can get details on who voted
+    #     what.
 
-        TODO: Follow links for Houses and get votes for individuals.
+    #     TODO: Follow links for Houses and get votes for individuals.
 
-        About votes:
-        https://billy.readthedocs.org/en/latest/scrapers.html#billy.scrape.votes.Vote
-        """
+    #     About votes:
+    #     https://billy.readthedocs.org/en/latest/scrapers.html#billy.scrape.votes.Vote
+    #     """
 
-        # Check if there is vote at all
-        has_vote = action_row.xpath('td/span[contains(text(), "vote:")]')
-        if len(has_vote) > 0:
-            vote_element = has_vote[0]
-            parts = re.match(r'vote:\s+([0-9]*)-([0-9]*)', vote_element.text_content())
-            if parts is not None:
-                yeas = int(parts.group(1))
-                nays = int(parts.group(2))
+    #     # Check if there is vote at all
+    #     has_vote = action_row.xpath('td/span[contains(text(), "vote:")]')
+    #     if len(has_vote) > 0:
+    #         vote_element = has_vote[0]
+    #         parts = re.match(r'vote:\s+([0-9]*)-([0-9]*)', vote_element.text_content())
+    #         if parts is not None:
+    #             yeas = int(parts.group(1))
+    #             nays = int(parts.group(2))
 
-                # Check for URL
-                vote_url = None
-                if len(vote_element.xpath('a[@href]')) > 0:
-                    vote_url = vote_element.xpath('a[@href]')[0].get('href')
+    #             # Check for URL
+    #             vote_url = None
+    #             if len(vote_element.xpath('a[@href]')) > 0:
+    #                 vote_url = vote_element.xpath('a[@href]')[0].get('href')
 
-                # Vote found
-                vote = Vote(chamber, action['action_date'],
-                    action['action_text'], yeas > nays, yeas, nays, 0)
-                # Add source
-                if vote_url is not None:
-                    vote.add_source(vote_url)
-                # Attach to bill
-                bill.add_vote(vote)
+    #             # Vote found
+    #             # vote = Vote(chamber, action['action_date'],
+    #             #     action['action_text'], yeas > nays, yeas, nays, 0)
+    #             # # Add source
+    #             # if vote_url is not None:
+    #             #     vote.add_source(vote_url)
+    #             # # Attach to bill
+    #             # bill.add_vote(vote)
 
-        return bill
+    #     return bill
 
 
     def make_bill_id(self, bill):
