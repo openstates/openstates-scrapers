@@ -100,7 +100,7 @@ class NVBillScraper(BillScraper):
                 root = lxml.html.fromstring(page)
 
                 bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+                title = root.xpath('string(/html/body/div[@id="content"]/table[2]/tr[4]/td)')
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
@@ -154,7 +154,7 @@ class NVBillScraper(BillScraper):
                 root = lxml.html.fromstring(page)
 
                 bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                title = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[5]/td)')
+                title = root.xpath('string(/html/body/div[@id="content"]/table[2]/tr[4]/td)')
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
@@ -204,7 +204,7 @@ class NVBillScraper(BillScraper):
         primary = []
         sponsors = []
         doc = lxml.html.fromstring(page)
-        for b in doc.xpath('//div[@id="content"]/table[1]/tr[4]/td/b'):
+        for b in doc.xpath('//div[@id="content"]/table[2]/tr[3]/td/b'):
             name = b.text.strip()
             # add these as sponsors (excluding junk text)
             if name not in ('By:', 'Bolded'):

@@ -127,6 +127,7 @@ class WIBillScraper(BillScraper):
         for b in bill_list:
             bill_url = b.xpath('./div[@class="span3"]/a/@href')[0]
             bill_id = bill_url.rsplit('/', 1)[-1]
+            bill_id = bill_id.upper()
 
             title = b.xpath('./div[@class="span6"]/text()')[0].replace(' - Relating to: ', '').strip()
 
@@ -161,10 +162,14 @@ class WIBillScraper(BillScraper):
                   'Engrossed Resolution' in a.text or
                   'Text as Enrolled' in a.text
                  ):
-                bill.add_version(a.text, a.get('href'), mimetype="text/html")
+
+                bill.add_version(a.text, a.get('href'),
+                                 on_duplicate="ingore", mimetype="text/html")
 
                 pdf = a.xpath('following-sibling::span/a/@href')[0]
-                bill.add_version(a.text, pdf, mimetype="application/pdf")
+                bill.add_version(a.text, pdf,
+                                 on_duplicate="ignore",
+                                 mimetype="application/pdf")
 
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
