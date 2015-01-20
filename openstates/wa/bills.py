@@ -174,13 +174,13 @@ class WABillScraper(BillScraper):
             bill_num,
             biennium
         )
-        
+
         try:
             page = self.urlopen(url)
         except scrapelib.HTTPError, e:
             self.warning(e)
             return
-        
+
         if "Bill Not Found" in page:
             return
 
