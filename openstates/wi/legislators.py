@@ -50,6 +50,9 @@ class WILegislatorScraper(LegislatorScraper):
                     email = ''
 
                 if party is None:
+                    self.warning(
+                        "OH GOD SOMETHING'S REALLY BROKEN WITH THIS PERSON")
+                    continue  # Remove once new data is up - 1/20/2015
                     raise Exception("Oh god, something is really broken")
 
                 leg = Legislator(term, chamber, district, full_name,
@@ -58,9 +61,6 @@ class WILegislatorScraper(LegislatorScraper):
                 img = rep_doc.xpath('.//div[@id="district"]/img/@src')
                 if img:
                     leg['photo_url'] = img[0]
-
-
-
 
                 # office ####
                 address_lines = rep_doc.xpath('.//span[@class="info office"]/text()')
