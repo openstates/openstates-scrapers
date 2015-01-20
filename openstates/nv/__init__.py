@@ -34,10 +34,9 @@ metadata = dict(
         },
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
          'sessions': ['77', '2013Special27', '2014Special28']
-		},
-		{'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
-         'sessions': ['78']
-		}
+        },
+        {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
+         'sessions': ['78']}
     ],
     session_details={
         '2010Special26': {'type':'special',
