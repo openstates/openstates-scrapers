@@ -30,7 +30,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
 
         # Identify the index page for the given session
         sessions = self.lxmlize(
-                'http://le.utah.gov:443/Documents/bills.htm')
+                'http://le.utah.gov/Documents/bills.htm')
         sessions = sessions.xpath(
                 '//p/a[contains(text(), {})]'.format(session))
         
@@ -101,11 +101,11 @@ class UTBillScraper(BillScraper, LXMLMixin):
 
         floor_info = page.xpath('//div[@id="floorsponsordiv"]//text()')
         floor_info = [ x.strip() for x in floor_info if x.strip() ]
-        assert floor_info[0] == "Floor Sponsor:"
-        if len(floor_info) == 1:
+        if len(floor_info) in (0, 1):
             # This indicates that no floor sponsor was found
             pass
         elif len(floor_info) == 2:
+            assert floor_info[0] == "Floor Sponsor:"
             floor_sponsor = floor_info[1].\
                     replace("Sen. ", "").replace("Rep. ", "")
             bill.add_sponsor('cosponsor', floor_sponsor)
@@ -113,7 +113,9 @@ class UTBillScraper(BillScraper, LXMLMixin):
             raise AssertionError("Unexpected floor sponsor HTML found")
 
         versions =  page.xpath(
-                '//b[text()="Bill Text"]/following-sibling::ul/li/a[text()]')
+                '//b[text()="Bill Text"]/following-sibling::ul/li/'
+                'a[text() and not(text()=" ")]'
+                )
         for version in versions:
             bill.add_version(
                     version.xpath('text()')[0].strip(),
@@ -130,23 +132,16 @@ class UTBillScraper(BillScraper, LXMLMixin):
             subjects.append(link.text.strip())
         bill['subjects'] = subjects
 
-        status_links = page.xpath('//input[@type="Radio"]/@value')
-        status_link = [
-                x for x in status_links
-                if x.startswith('http://le.utah.gov/DynaBill/status.jsp?')
-                ][0]
-        self.parse_status(bill, status_link)
+        status_table = page.xpath('//div[@id="billStatus"]//table')[0]
+        self.parse_status(bill, status_table)
 
         self.save_bill(bill)
 
-    def parse_status(self, bill, url):
-        page = self.urlopen(url)
-        bill.add_source(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+    def parse_status(self, bill, status_table):
+        page = status_table
         uniqid = 0
 
-        for row in page.xpath('//table/tr')[1:]:
+        for row in page.xpath('tr')[1:]:
             uniqid += 1
             date = row.xpath('string(td[1])')
             date = datetime.datetime.strptime(date.strip(), "%m/%d/%Y").date()
@@ -181,10 +176,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
             elif action.startswith('passed 2nd & 3rd readings'):
                 type = 'bill:passed'
             elif action == 'to standing committee':
-                comm_link = row.xpath("td[3]/font/font/a")[0]
-                comm = re.match(
-                    r"writetxt\('(.*)'\)",
-                    comm_link.attrib['onmouseover']).group(1)
+                comm = row.xpath("td[3]/font/text()")[0]
                 action = "to " + comm
                 type = 'committee:referred'
             elif action.startswith('2nd reading'):
@@ -242,14 +234,13 @@ class UTBillScraper(BillScraper, LXMLMixin):
                 }
 
             typ = obj.xpath("./b")[0].text_content()
-            count = obj.xpath(".//b")[0].tail.replace("-", "").strip()
-            count = int(count)
             votes = []
             for vote in obj.xpath(".//br"):
                 if vote.tail:
                     vote = vote.tail.strip()
                     if vote:
                         votes.append(vote)
+            count = len(votes)
             return {
                 "type": typ,
                 "count": count,
@@ -345,7 +336,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
         for person in vdict['Absent or not voting']['people']:
             vote.other(person)
 
-        self.info(vote)
+        self.info("Adding vote to bill")
         bill.add_vote(vote)
 
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
