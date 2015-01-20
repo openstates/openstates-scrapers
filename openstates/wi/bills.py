@@ -127,6 +127,7 @@ class WIBillScraper(BillScraper):
         for b in bill_list:
             bill_url = b.xpath('./div[@class="span3"]/a/@href')[0]
             bill_id = bill_url.rsplit('/', 1)[-1]
+            bill_id = bill_id.upper()
 
             title = b.xpath('./div[@class="span6"]/text()')[0].replace(' - Relating to: ', '').strip()
 
