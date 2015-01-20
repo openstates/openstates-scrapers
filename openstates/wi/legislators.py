@@ -49,6 +49,9 @@ class WILegislatorScraper(LegislatorScraper):
                 else:
                     email = ''
 
+                if party is None:
+                    raise Exception("Oh god, something is really broken")
+
                 leg = Legislator(term, chamber, district, full_name,
                                  party=party, url=rep_url)
 
