@@ -85,18 +85,19 @@ class RollCallVote(object):
         raise Exception("Couldn't determine vote passage status.")
 
     def vote_values(self):
-        chunks = re.split(r'(YEA|NAY|EXCUSED|NOT VOTING)\s+\d+', self.text)[1:]
-        data = dict(zip(chunks[::2], chunks[1::2]))
-        votekeys = dict(YEA='yes', NAY='no')
-        for key, data in data.items():
-            garbage = re.split(r'(\s{4,}|\n)', data)
-            for name in [name.strip() for name in garbage if name.strip()]:
-                yield votekeys.get(key, 'other'), name
+        try:
+            yeas = self.text.split("YEA")[1].split("NAY")[0].replace(", ",",").split()[2:]
+            nays = self.text.split("NAY")[1].split("EXCUSED")[0].replace(", ",",").split()[2:]
+            excused = self.text.split("EXCUSED")[1].split("NOT VOTING")[0].replace(", ",",").split()[2:]
+            not_voting = excused = self.text.split("NOT VOTING")[1].replace(", ",",").split()[2:]
+        except:
+            raise Exception("Could not figure out how legislators voted.")
+        return {"yes":yeas,"no":nays,"other":excused+not_voting}
 
     def vote(self):
         '''Return a billy vote.
         '''
-        actual_vote_dict = collections.defaultdict(list)
+        actual_vote_dict = self.vote_values()
         date = self.date()
         motion = self.motion()
         passed = self.passed()
@@ -105,11 +106,19 @@ class RollCallVote(object):
         no_count = sum(int(counts.get(key, 0)) for key in ('Nay', 'Nays'))
         vote = Vote(self.chamber, date, motion,
                     passed, yes_count, no_count,
-                    sum(map(int, counts.values())) - (yes_count + no_count),
-                    actual_vote=dict(actual_vote_dict))
+                    sum(map(int, counts.values())) - (yes_count + no_count))
 
-        for vote_val, voter in self.vote_values():
-            getattr(vote, vote_val)(voter)
+        for k,v in actual_vote_dict.items():
+            if k == "yes":
+                for l in v:
+                    vote.yes(l)
+            elif k == "no":
+                for l in v:
+                    vote.no(l)
+            elif k == "other":
+                for l in v:
+                    vote.other(l)
+
         vote.add_source(self.url)
         return vote
 
