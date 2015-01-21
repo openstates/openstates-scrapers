@@ -2,6 +2,7 @@ import re
 import os
 import datetime
 import collections
+import json
 from StringIO import StringIO
 
 import requests
@@ -67,7 +68,6 @@ class RollCallVote(object):
             return 'upper'
 
     def passed(self):
-
         result_types = {
             'FAILED': False,
             'DEFEATED': False,
@@ -132,23 +132,23 @@ class DocumentMeta(object):
         text = self.el.text_content()
         text = re.sub(r'\s+', ' ', text).strip()
         api_meta = self.get_doc_api_meta(self.el.attrib)
-        #if api_meta is None:
-            #msg = 'No data recieved from the API for %r' % self.el.attrib
-            #raise BogusDocument(msg)
-        version_id = self.el.attrib['data-myiga-actiondata']
-        url = 'http://iga.in.gov/documents/' + version_id
+        if api_meta is None:
+            msg = 'No data recieved from the API for %r' % self.el.attrib
+            raise BogusDocument(msg)
+        static_url = self.get_document_url(api_meta)
         return self.DocMeta(
             a=self.el,
             text=text,
             href=self.el.attrib['href'],
             uid=self.el.attrib['data-myiga-actiondata'],
             title=self.el.attrib.get('title'),
-            url=url)
+            url=static_url)
 
     def get_doc_api_meta(self, attrib):
         '''The document link gives you json if you hit with the right
         Accept header.
         '''
+
         headers = dict(accept="application/json, text/javascript, */*")
         version_id = attrib['data-myiga-actiondata']
         if not version_id.strip():
@@ -156,16 +156,17 @@ class DocumentMeta(object):
         if version_id in 'None':
             return
         png_url = 'http://iga.in.gov/documents/' + version_id
+
         self.scraper.logger.info('GET ' + png_url)
         try:
-            resp = self.scraper.get(png_url, headers=headers)
+            resp = requests.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
             self.warning('Connection error. Skipping doc metadata.')
             return
         try:
             data = resp.json()
-            self.warning('Sigh. Skipping doc metadata.')
         except:
+            self.warning('Sigh. Skipping doc metadata.')
             return
         return data
 
@@ -231,7 +232,7 @@ class BillDocuments(object):
         for k, v in grouped.items():
             if 1 < len(v):
                 for data in list(v):
-                    if not data.title:
+                    if not data.text:
                         v.remove(data)
                     if not v:
                         v.add(data)
