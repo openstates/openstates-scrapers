@@ -107,18 +107,11 @@ class VTBillScraper(BillScraper, LXMLMixin):
             for sponsor in sponsors:
                 if sponsor.xpath('span/text()') == ['Additional Sponsors']:
                     sponsor_type = 'cosponsor'
-                else:
-                    sponsor_name = sponsor.xpath('a/text()')[0]
-
-                if sponsor_name.startswith("Less") and len(sponsor_name) == 5:
                     continue
 
-                if sponsor_name.startswith("Rep. "):
-                    sponsor_name = sponsor_name[len("Rep. "): ]
-                elif sponsor_name.startswith("Sen. "):
-                    sponsor_name = sponsor_name[len("Sen. "): ]
-
-                if sponsor_name.strip():
+                sponsor_name = sponsor.xpath('a/text()')[0].\
+                        replace("Rep.", "").replace("Sen.", "").strip()
+                if sponsor_name not in ("", "Less"):
                     bill.add_sponsor(sponsor_type, sponsor_name)
 
             # Capture bill text versions
@@ -147,11 +140,11 @@ class VTBillScraper(BillScraper, LXMLMixin):
                 continue
 
             # Capture actions
-            actions_json = self.urlopen(
-                    'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.
+            actions_url = 'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-                    )
+            actions_json = self.urlopen(actions_url)
             actions = json.loads(actions_json)['data']
+            bill.add_source(actions_url)
 
             chambers_passed = set()
             for action in actions:
@@ -196,10 +189,11 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         )
 
             # Capture votes
-            vote_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
+            votes_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-            vote_json = self.urlopen(vote_url)
-            votes = json.loads(vote_json)['data']
+            votes_json = self.urlopen(votes_url)
+            votes = json.loads(votes_json)['data']
+            bill.add_source(votes_url)
 
             for vote in votes:
                 roll_call_id = vote['VoteHeaderID']
