@@ -15,30 +15,79 @@ class VTBillScraper(BillScraper, LXMLMixin):
 
         year_slug = session[5: ]
         
-        # Load all bills via the private API
-        bill_dump_url = \
+        # Load all bills and resolutions via the private API
+        bills_url = \
                 'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
                 format(year_slug)
-        json_data = self.urlopen(bill_dump_url)
-        bills = json.loads(json_data)['data']
+        bills_json = self.urlopen(bills_url)
+        bills = json.loads(bills_json)['data']
+
+        resolutions_url = \
+                'http://legislature.vermont.gov/bill/loadAllResolutionsByChamber/{}/both'.\
+                format(year_slug)
+        resolutions_json = self.urlopen(resolutions_url)
+        bills.extend(json.loads(resolutions_json)['data'])
 
         # Parse the information from each bill
         for info in bills:
             # Strip whitespace from strings
             info = { k:v.strip() for k, v in info.iteritems() }
 
+            # Identify the bill type and chamber
+            if info['BillNumber'].startswith('J.R.H.'):
+                bill_type = 'joint resolution'
+                bill_chamber = 'lower'
+            elif info['BillNumber'].startswith('J.R.S.'):
+                bill_type = 'joint resolution'
+                bill_chamber = 'upper'
+
+            elif info['BillNumber'].startswith('H.C.R.'):
+                bill_type = 'concurrent resolution'
+                bill_chamber = 'lower'
+            elif info['BillNumber'].startswith('S.C.R.'):
+                bill_type = 'concurrent resolution'
+                bill_chamber = 'upper'
+
+            elif info['BillNumber'].startswith('H.R.'):
+                bill_type = 'resolution'
+                bill_chamber = 'lower'
+            elif info['BillNumber'].startswith('S.R.'):
+                bill_type = 'resolution'
+                bill_chamber = 'upper'
+
+            elif info['BillNumber'].startswith('PR.'):
+                bill_type = 'constitutional amendment'
+                if info['Body'] == 'H':
+                    bill_chamber = 'lower'
+                elif info['Body'] == 'S':
+                    bill_chamber = 'upper'
+                else:
+                    raise AssertionError("Amendment not tied to chamber")
+
+            elif info['BillNumber'].startswith('H.'):
+                bill_type = 'bill'
+                bill_chamber = 'lower'
+            elif info['BillNumber'].startswith('S.'):
+                bill_type = 'bill'
+                bill_chamber = 'upper'
+
+            else:
+                raise AssertionError(
+                        "Unknown bill type found: '{}'".
+                        format(info['BillNumber']))
+
             # Create the bill using its basic information
             bill = Bill(
                     session=session,
                     bill_id=info['BillNumber'],
                     title=info['Title'],
-                    chamber=(
-                            'lower' if info['BillNumber'].startswith('H')
-                            else 'upper'
-                            ),
-                    type='bill'
+                    chamber=bill_chamber,
+                    type=bill_type
                     )
-            bill.add_source(bill_dump_url)
+            if 'resolution' in bill_type:
+                bill.add_source(resolutions_url)
+            else:
+                bill.add_source(bills_url)
 
             # Load the bill's information page to access its metadata
             bill_url = \
@@ -94,7 +143,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     format(year_slug, internal_bill_id)
                     )
             actions = json.loads(actions_json)['data']
-            chambers_passed = ""
+            chambers_passed = set()
             for action in actions:
                 action = { k:v.strip() for k, v in action.iteritems() }
 
@@ -109,20 +158,23 @@ class VTBillScraper(BillScraper, LXMLMixin):
 
                 # Categorize action
                 if "Signed by Governor" in action['FullStatus']:
-                    assert (
-                            "H" in chambers_passed and
-                            "S" in chambers_passed and
-                            len(chambers_passed) == 2
-                            )
+                    assert chambers_passed == set("HS")
                     action_type = 'governor:signed'
                 elif actor == 'lower' and \
-                        action['FullStatus'] in ("Passed", "Read Third time and Passed"):
+                        action['FullStatus'] in (
+                        "Passed", "Read Third time and Passed",
+                        "Read and Adopted in Concurrence", "Read and Adopted",
+                        "Adopted", "Adopted in Concurrence"):
                     action_type = 'bill:passed'
-                    chambers_passed += "H"
+                    assert "H" not in chambers_passed
+                    chambers_passed.add("H")
                 elif actor == 'upper' and \
-                        action['FullStatus'].startswith("Read 3rd time & passed"):
+                        any(action['FullStatus'].startswith(x) for x in (
+                        "Read 3rd time & passed",
+                        "Read & adopted", "Adopted")):
                     action_type = 'bill:passed'
-                    chambers_passed += "S"
+                    assert "S" not in chambers_passed
+                    chambers_passed.add("S")
                 else:
                     action_type = 'other'
 
