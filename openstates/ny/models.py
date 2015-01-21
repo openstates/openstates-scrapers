@@ -85,7 +85,7 @@ class AssemblyBillPage(BasePageyThing):
         chunks = summary.split('\n\n')
         for chunk in chunks:
             if chunk.startswith('SAME AS'):
-                companions = chunk.replace('SAME AS    ', '')
+                companions = chunk.replace('SAME AS    ', '').strip()
                 if companions != 'No same as':
                     for companion in re.split(r'\s*[\,\\]\s*', companions):
                         companion = re.sub(r'^(?i)Same as ', '', companion)
