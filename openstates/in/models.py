@@ -168,6 +168,8 @@ class DocumentMeta(object):
 
         self.scraper.logger.info('GET ' + png_url)
         try:
+            #there seems to be a header-passing bug in scrapelib
+            #so using requests for now. RES 1/21/15
             resp = requests.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
             self.scraper.logger.warning('Connection error. Skipping doc metadata.')
