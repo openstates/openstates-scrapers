@@ -148,7 +148,7 @@ class NYBillScraper(BillScraper):
                 index += 1
                 url = (
                     'http://open.nysenate.gov/legislation/2.0/search.json'
-                    '?term=otype:bill AND year:2013&pageSize=20&pageIdx=%d'
+                    '?term=otype:bill AND year:2015&pageSize=20&pageIdx=%d'
                     )
                 url = url % index
                 self.logger.info('GET ' + url)
