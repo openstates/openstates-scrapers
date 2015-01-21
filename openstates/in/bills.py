@@ -61,6 +61,9 @@ class INBillScraper(BillScraper):
             bill_chamber = ('upper' if bill_id[0] in 'SJ' else 'lower')
             bill_url = a.attrib['href']
             bill_title = a.xpath('string(./following-sibling::em)').strip()
+            if bill_title == "":
+                self.logger.warning("Bill %s has no title" % bill_id)
+                continue
             self.scrape_bill(bill_chamber, term, bill_id, bill_url, bill_title)
 
         url = 'http://iga.in.gov/legislative/%s/bills/' % term
@@ -201,7 +204,6 @@ class INBillScraper(BillScraper):
                 bill.add_action(**kwargs)
 
         # Documents (including votes)
-        print doc.xpath("./@href")
         for doc_type, doc_meta in BillDocuments(self, doc):
             if doc_type == 'version':
                 bill.add_version(
@@ -219,6 +221,7 @@ class INBillScraper(BillScraper):
         try:
             vote = parse_vote(self, chamber, doc_meta)
             bill.add_vote(vote)
+            self.save_bill(bill)
         except VoteParseError:
             # It was a scanned, hand-written document, most likely.
             return

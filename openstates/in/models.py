@@ -170,12 +170,12 @@ class DocumentMeta(object):
         try:
             resp = requests.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
-            self.warning('Connection error. Skipping doc metadata.')
+            self.scraper.logger.warning('Connection error. Skipping doc metadata.')
             return
         try:
             data = resp.json()
         except:
-            self.warning('Sigh. Skipping doc metadata.')
+            self.scraper.logger.warning('Sigh. Skipping doc metadata.')
             return
         return data
 
@@ -211,9 +211,14 @@ class BillDocuments(object):
         title = (meta.title or meta.text).lower()
         if 'bill' in title:
             return 'version'
+        if 'resolution' in title:
+            return 'version'
         if 'roll call' in title:
             return 'rollcall'
+        if "fiscal note" in title:
+            return 'document'
 
+        #not sure if this is really doing anything
         textbits = meta.text.split('.')
         lastbit = textbits[-1]
         # Fiscal note, amendment, committee report
