@@ -72,8 +72,7 @@ class NMLegislatorScraper(LegislatorScraper):
         # image & email are a bit different
         properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
         email = doc.get_element_by_id('ctl00_mainCopy_formViewLegislator_linkEmail').text
-        if email:
-            properties['email'] = email.strip()
+        
 
         properties['url'] = url
 
@@ -82,7 +81,7 @@ class NMLegislatorScraper(LegislatorScraper):
 
         full_name, party = properties['header'].rsplit("-", 1)
 
-        properties['full_name'] = full_name
+        properties['full_name'] = full_name.strip()
         properties['party'] = party
 
         if '(D)' in properties['party']:
@@ -103,8 +102,14 @@ class NMLegislatorScraper(LegislatorScraper):
         leg = Legislator(**properties)
         leg.add_source(url)
 
+        if email:
+            properties['email'] = email.strip()
+        else:
+            print "no email"
+            email = None
+
         leg.add_office('district', 'District Address', address=address,
-                       phone=phone)
+                       phone=phone, email=email)
 
         # committees
         # skip first header row
