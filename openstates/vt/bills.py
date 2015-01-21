@@ -2,6 +2,8 @@ import datetime
 import json
 import re
 
+import lxml.etree
+
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 from openstates.utils import LXMLMixin
@@ -132,10 +134,17 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         )
 
             # Identify the internal bill ID, used for actions and votes
-            internal_bill_id = re.search(
-                    r'"bill/loadBillDetailedStatus/{}/(\d+)"'.format(year_slug),
-                    self.urlopen(bill_url)
-                    ).group(1)
+            # If there is no internal bill ID, then it has no extra information
+            try:
+                internal_bill_id = re.search(
+                        r'"bill/loadBillDetailedStatus/{}/(\d+)"'.format(year_slug),
+                        lxml.etree.tostring(doc)
+                        ).group(1)
+            except AttributeError:
+                self.warning("Bill {} appears to have no activity".\
+                        format(info['BillNumber']))
+                self.save_bill(bill)
+                continue
 
             # Capture actions
             actions_json = self.urlopen(
@@ -143,6 +152,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     format(year_slug, internal_bill_id)
                     )
             actions = json.loads(actions_json)['data']
+
             chambers_passed = set()
             for action in actions:
                 action = { k:v.strip() for k, v in action.iteritems() }
@@ -190,8 +200,8 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     format(year_slug, internal_bill_id)
             vote_json = self.urlopen(vote_url)
             votes = json.loads(vote_json)['data']
+
             for vote in votes:
-                
                 roll_call_id = vote['VoteHeaderID']
                 roll_call_url = 'http://legislature.vermont.gov/bill/loadBillRollCallDetails/{0}/{1}'.\
                         format(year_slug, roll_call_id)
