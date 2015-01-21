@@ -111,7 +111,8 @@ class VTBillScraper(BillScraper, LXMLMixin):
 
                 sponsor_name = sponsor.xpath('a/text()')[0].\
                         replace("Rep.", "").replace("Sen.", "").strip()
-                if sponsor_name not in ("", "Less"):
+                if sponsor_name and not \
+                        (sponsor_name[ :5] == "Less" and len(sponsor_name) == 5):
                     bill.add_sponsor(sponsor_type, sponsor_name)
 
             # Capture bill text versions
@@ -122,7 +123,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
             for version in versions:
                 bill.add_version(
                         name=version.xpath('text()')[0],
-                        url=version.xpath('@href')[0],
+                        url=version.xpath('@href')[0].replace(' ', '%20'),
                         mimetype='application/pdf'
                         )
 
