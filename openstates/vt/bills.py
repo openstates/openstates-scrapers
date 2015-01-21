@@ -128,8 +128,8 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     )
             for version in versions:
                 bill.add_version(
-                        name=version.xpath('@href')[0],
-                        url=version.xpath('text()')[0],
+                        name=version.xpath('text()')[0],
+                        url=version.xpath('@href')[0],
                         mimetype='application/pdf'
                         )
 
