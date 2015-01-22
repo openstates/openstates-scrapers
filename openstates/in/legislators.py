@@ -64,7 +64,6 @@ class INLegislatorScraper(LegislatorScraper):
             self.logger.warning(msg, name)
             return
         leg = Legislator(term, chamber, district, name, party=party)
-        leg.add_source(self.url)
 
         # Scrape leg page.
         try:
