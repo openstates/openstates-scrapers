@@ -181,7 +181,7 @@ class DocumentMeta(object):
         Accept header.
         '''
 
-        headers = dict(accept="application/json, text/javascript, */*")
+        headers = {"Accept":"application/json, text/javascript, */*"}
         version_id = attrib['data-myiga-actiondata']
         if not version_id.strip():
             self.scraper.logger.warning("No document version id found.")
@@ -239,19 +239,16 @@ class BillDocuments(object):
         title = (meta.title or meta.text).lower()
         if 'bill' in title:
             return 'version'
-        if 'resolution' in title:
+        elif 'resolution' in title:
             return 'version'
-        if 'roll call' in title:
+        elif 'roll call' in title:
             return 'rollcall'
-        if "fiscal note" in title:
+        elif "vote sheet" in title:
+            #these are committee votes, we haven't got code to deal w them yet RES 1/22/15
+            return
+        else:
             return 'document'
 
-        #not sure if this is really doing anything
-        textbits = meta.url.split('.')
-        lastbit = textbits[-2]
-        # Fiscal note, amendment, committee report
-        if lastbit.startswith(('FN', 'AMS', 'CR')):
-            return 'document'
 
     def iter_doc_meta(self):
         xpath = '//*[@data-myiga-actiondata]'
@@ -261,8 +258,10 @@ class BillDocuments(object):
             text = re.sub(r'\s+', ' ', text).strip()
             title = a.attrib.get('title')
             if title is not None and title.lower() == "open document in full screen":
+                #every doc has a second link with this title, it is garbage
                 continue
             if text.lower().startswith("latest"):
+                #every bill has "latest" versions that are identical to some other version
                 continue
             try:
                 data = DocumentMeta(self.scraper, a).get_doc_meta()
