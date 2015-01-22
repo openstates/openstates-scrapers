@@ -104,8 +104,8 @@ class INLegislatorScraper(LegislatorScraper):
 
         leg.update(email=email, photo_url=photo_url)
         leg.add_office(
-            address=dist_office, name='District Office',
-            type='district', phone=phone)
+            address=dist_office, name='Capitol Office',
+            type='capitol', phone=phone)
 
         self.save_legislator(leg)
 
