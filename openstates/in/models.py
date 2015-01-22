@@ -7,6 +7,7 @@ from StringIO import StringIO
 
 import requests
 import scrapelib
+import time
 
 from billy.scrape.utils import convert_pdf, PlaintextColumns
 from billy.scrape.votes import Vote
@@ -89,7 +90,7 @@ class RollCallVote(object):
             yeas = self.text.split("YEA")[1].split("NAY")[0].replace(", ",",").split()[2:]
             nays = self.text.split("NAY")[1].split("EXCUSED")[0].replace(", ",",").split()[2:]
             excused = self.text.split("EXCUSED")[1].split("NOT VOTING")[0].replace(", ",",").split()[2:]
-            not_voting = excused = self.text.split("NOT VOTING")[1].replace(", ",",").split()[2:]
+            not_voting = self.text.split("NOT VOTING")[1].replace(", ",",").split()[2:]
         except:
             raise Exception("Could not figure out how legislators voted.")
         return {"yes":yeas,"no":nays,"other":excused+not_voting}
@@ -140,17 +141,39 @@ class DocumentMeta(object):
     def get_doc_meta(self):
         text = self.el.text_content()
         text = re.sub(r'\s+', ' ', text).strip()
-        api_meta = self.get_doc_api_meta(self.el.attrib)
+        title = self.el.attrib.get('title')
+
+
+        if title is not None and title.lower() == "open document in full screen":
+            raise BogusDocument()
+        if text.lower() == "latest version":
+            raise BogusDocument()
+
+
+        api_meta = None
+        for i in range(3):
+            api_meta = self.get_doc_api_meta(self.el.attrib)
+            if api_meta is not None:
+                break
+            if i < 2:
+                self.scraper.logger.warning('Metadata not found on try {}, waiting 5 seconds and trying again.'.format(i+1))
+                time.sleep(5)
+            else:
+                self.scraper.logger.warning('Metadata failed 3 times, skipping doc.')
         if api_meta is None:
             msg = 'No data recieved from the API for %r' % self.el.attrib
             raise BogusDocument(msg)
-        static_url = self.get_document_url(api_meta)
+        try:
+            static_url = self.get_document_url(api_meta)
+        except KeyError:
+            msg = "No document id available for %r" % self.el.attrib
+            raise BogusDocument(msg)
         return self.DocMeta(
             a=self.el,
             text=text,
             href=self.el.attrib['href'],
             uid=self.el.attrib['data-myiga-actiondata'],
-            title=self.el.attrib.get('title'),
+            title=title,
             url=static_url)
 
     def get_doc_api_meta(self, attrib):
@@ -161,23 +184,26 @@ class DocumentMeta(object):
         headers = dict(accept="application/json, text/javascript, */*")
         version_id = attrib['data-myiga-actiondata']
         if not version_id.strip():
+            self.scraper.logger.warning("No document version id found.")
             return
         if version_id in 'None':
             return
         png_url = 'http://iga.in.gov/documents/' + version_id
 
         self.scraper.logger.info('GET ' + png_url)
+
+
+        #there seems to be a header-passing bug in scrapelib
+        #so using requests for now. RES 1/21/15
         try:
-            #there seems to be a header-passing bug in scrapelib
-            #so using requests for now. RES 1/21/15
             resp = requests.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
-            self.scraper.logger.warning('Connection error. Skipping doc metadata.')
+            self.scraper.logger.warning('Connection error.')
             return
         try:
             data = resp.json()
         except:
-            self.scraper.logger.warning('Sigh. Skipping doc metadata.')
+            self.scraper.logger.warning('No JSON found.')
             return
         return data
 
@@ -221,8 +247,8 @@ class BillDocuments(object):
             return 'document'
 
         #not sure if this is really doing anything
-        textbits = meta.text.split('.')
-        lastbit = textbits[-1]
+        textbits = meta.url.split('.')
+        lastbit = textbits[-2]
         # Fiscal note, amendment, committee report
         if lastbit.startswith(('FN', 'AMS', 'CR')):
             return 'document'
@@ -231,6 +257,13 @@ class BillDocuments(object):
         xpath = '//*[@data-myiga-actiondata]'
         meta = []
         for a in self.doc.xpath(xpath):
+            text = a.text_content()
+            text = re.sub(r'\s+', ' ', text).strip()
+            title = a.attrib.get('title')
+            if title is not None and title.lower() == "open document in full screen":
+                continue
+            if text.lower().startswith("latest"):
+                continue
             try:
                 data = DocumentMeta(self.scraper, a).get_doc_meta()
             except BogusDocument as exc:
