@@ -26,11 +26,13 @@ committee_urls = {
     'lower': {
         2011: 'http://leg.mt.gov/css/House/house-committees-2011.asp',
         2013: 'http://leg.mt.gov/content/Committees/Session/2013%20house%20committees%20-%20columns.pdf',
+        2015: 'http://leg.mt.gov/content/Sessions/64th/2015-house-committees.pdf',
         },
 
     'upper': {
         2011: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
         2013: 'http://leg.mt.gov/content/Committees/Session/2013%20senate%20committees%20-%20columns.pdf',
+        2015: 'http://leg.mt.gov/content/Sessions/64th/2015-senate-committees.pdf',
         },
 
     'joint': {
@@ -49,8 +51,6 @@ class MTCommitteeScraper(CommitteeScraper):
         csv file, scrape the committee page and use the names listed there
         instead.
         '''
-        raise ValueError("No data yet. Needs slug update")
-
         for tdata in self.metadata['terms']:
             if term == tdata['name']:
                 year = tdata['start_year']

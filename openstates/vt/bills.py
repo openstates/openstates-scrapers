@@ -2,6 +2,8 @@ import datetime
 import json
 import re
 
+import lxml.etree
+
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 from openstates.utils import LXMLMixin
@@ -105,18 +107,12 @@ class VTBillScraper(BillScraper, LXMLMixin):
             for sponsor in sponsors:
                 if sponsor.xpath('span/text()') == ['Additional Sponsors']:
                     sponsor_type = 'cosponsor'
-                else:
-                    sponsor_name = sponsor.xpath('a/text()')[0]
-
-                if sponsor_name.startswith("Less") and len(sponsor_name) == 5:
                     continue
 
-                if sponsor_name.startswith("Rep. "):
-                    sponsor_name = sponsor_name[len("Rep. "): ]
-                elif sponsor_name.startswith("Sen. "):
-                    sponsor_name = sponsor_name[len("Sen. "): ]
-
-                if sponsor_name.strip():
+                sponsor_name = sponsor.xpath('a/text()')[0].\
+                        replace("Rep.", "").replace("Sen.", "").strip()
+                if sponsor_name and not \
+                        (sponsor_name[ :5] == "Less" and len(sponsor_name) == 5):
                     bill.add_sponsor(sponsor_type, sponsor_name)
 
             # Capture bill text versions
@@ -126,23 +122,31 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     )
             for version in versions:
                 bill.add_version(
-                        name=version.xpath('@href')[0],
-                        url=version.xpath('text()')[0],
+                        name=version.xpath('text()')[0],
+                        url=version.xpath('@href')[0].replace(' ', '%20'),
                         mimetype='application/pdf'
                         )
 
             # Identify the internal bill ID, used for actions and votes
-            internal_bill_id = re.search(
-                    r'"bill/loadBillDetailedStatus/{}/(\d+)"'.format(year_slug),
-                    self.urlopen(bill_url)
-                    ).group(1)
+            # If there is no internal bill ID, then it has no extra information
+            try:
+                internal_bill_id = re.search(
+                        r'"bill/loadBillDetailedStatus/{}/(\d+)"'.format(year_slug),
+                        lxml.etree.tostring(doc)
+                        ).group(1)
+            except AttributeError:
+                self.warning("Bill {} appears to have no activity".\
+                        format(info['BillNumber']))
+                self.save_bill(bill)
+                continue
 
             # Capture actions
-            actions_json = self.urlopen(
-                    'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.
+            actions_url = 'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-                    )
+            actions_json = self.urlopen(actions_url)
             actions = json.loads(actions_json)['data']
+            bill.add_source(actions_url)
+
             chambers_passed = set()
             for action in actions:
                 action = { k:v.strip() for k, v in action.iteritems() }
@@ -186,12 +190,13 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         )
 
             # Capture votes
-            vote_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
+            votes_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-            vote_json = self.urlopen(vote_url)
-            votes = json.loads(vote_json)['data']
+            votes_json = self.urlopen(votes_url)
+            votes = json.loads(votes_json)['data']
+            bill.add_source(votes_url)
+
             for vote in votes:
-                
                 roll_call_id = vote['VoteHeaderID']
                 roll_call_url = 'http://legislature.vermont.gov/bill/loadBillRollCallDetails/{0}/{1}'.\
                         format(year_slug, roll_call_id)
