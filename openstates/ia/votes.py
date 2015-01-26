@@ -25,7 +25,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                 url = 'https://www.legis.iowa.gov/chambers/journals/index/{}'.\
                     format(chamber_name)
                 params = {"year": year}
-                html = self.urlopen(url, params=params)
+                html = self.get(url, params=params).content
 
                 doc = lxml.html.fromstring(html)
                 doc.make_links_absolute(url)
