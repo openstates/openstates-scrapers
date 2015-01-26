@@ -2,10 +2,12 @@ import re
 import os
 import datetime
 import collections
+import json
 from StringIO import StringIO
 
 import requests
 import scrapelib
+import time
 
 from billy.scrape.utils import convert_pdf, PlaintextColumns
 from billy.scrape.votes import Vote
@@ -67,7 +69,6 @@ class RollCallVote(object):
             return 'upper'
 
     def passed(self):
-
         result_types = {
             'FAILED': False,
             'DEFEATED': False,
@@ -85,18 +86,19 @@ class RollCallVote(object):
         raise Exception("Couldn't determine vote passage status.")
 
     def vote_values(self):
-        chunks = re.split(r'(YEA|NAY|EXCUSED|NOT VOTING)\s+\d+', self.text)[1:]
-        data = dict(zip(chunks[::2], chunks[1::2]))
-        votekeys = dict(YEA='yes', NAY='no')
-        for key, data in data.items():
-            garbage = re.split(r'(\s{4,}|\n)', data)
-            for name in [name.strip() for name in garbage if name.strip()]:
-                yield votekeys.get(key, 'other'), name
+        try:
+            yeas = self.text.split("YEA")[1].split("NAY")[0].replace(", ",",").split()[2:]
+            nays = self.text.split("NAY")[1].split("EXCUSED")[0].replace(", ",",").split()[2:]
+            excused = self.text.split("EXCUSED")[1].split("NOT VOTING")[0].replace(", ",",").split()[2:]
+            not_voting = self.text.split("NOT VOTING")[1].replace(", ",",").split()[2:]
+        except:
+            raise Exception("Could not figure out how legislators voted.")
+        return {"yes":yeas,"no":nays,"other":excused+not_voting}
 
     def vote(self):
         '''Return a billy vote.
         '''
-        actual_vote_dict = collections.defaultdict(list)
+        actual_vote_dict = self.vote_values()
         date = self.date()
         motion = self.motion()
         passed = self.passed()
@@ -105,11 +107,19 @@ class RollCallVote(object):
         no_count = sum(int(counts.get(key, 0)) for key in ('Nay', 'Nays'))
         vote = Vote(self.chamber, date, motion,
                     passed, yes_count, no_count,
-                    sum(map(int, counts.values())) - (yes_count + no_count),
-                    actual_vote=dict(actual_vote_dict))
+                    sum(map(int, counts.values())) - (yes_count + no_count))
 
-        for vote_val, voter in self.vote_values():
-            getattr(vote, vote_val)(voter)
+        for k,v in actual_vote_dict.items():
+            if k == "yes":
+                for l in v:
+                    vote.yes(l)
+            elif k == "no":
+                for l in v:
+                    vote.no(l)
+            elif k == "other":
+                for l in v:
+                    vote.other(l)
+
         vote.add_source(self.url)
         return vote
 
@@ -131,39 +141,69 @@ class DocumentMeta(object):
     def get_doc_meta(self):
         text = self.el.text_content()
         text = re.sub(r'\s+', ' ', text).strip()
-        api_meta = self.get_doc_api_meta(self.el.attrib)
+        title = self.el.attrib.get('title')
+
+
+        if title is not None and title.lower() == "open document in full screen":
+            raise BogusDocument()
+        if text.lower() == "latest version":
+            raise BogusDocument()
+
+
+        api_meta = None
+        for i in range(3):
+            api_meta = self.get_doc_api_meta(self.el.attrib)
+            if api_meta is not None:
+                break
+            if i < 2:
+                self.scraper.logger.warning('Metadata not found on try {}, waiting 5 seconds and trying again.'.format(i+1))
+                time.sleep(5)
+            else:
+                self.scraper.logger.warning('Metadata failed 3 times, skipping doc.')
         if api_meta is None:
             msg = 'No data recieved from the API for %r' % self.el.attrib
+            raise BogusDocument(msg)
+        try:
+            static_url = self.get_document_url(api_meta)
+        except KeyError:
+            msg = "No document id available for %r" % self.el.attrib
             raise BogusDocument(msg)
         return self.DocMeta(
             a=self.el,
             text=text,
             href=self.el.attrib['href'],
             uid=self.el.attrib['data-myiga-actiondata'],
-            title=self.el.attrib.get('title'),
-            url=self.get_document_url(api_meta))
+            title=title,
+            url=static_url)
 
     def get_doc_api_meta(self, attrib):
         '''The document link gives you json if you hit with the right
         Accept header.
         '''
-        headers = dict(accept="application/json, text/javascript, */*")
+
+        headers = {"Accept":"application/json, text/javascript, */*"}
         version_id = attrib['data-myiga-actiondata']
         if not version_id.strip():
+            self.scraper.logger.warning("No document version id found.")
             return
         if version_id in 'None':
             return
         png_url = 'http://iga.in.gov/documents/' + version_id
+
         self.scraper.logger.info('GET ' + png_url)
+
+
+        #there seems to be a header-passing bug in scrapelib
+        #so using requests for now. RES 1/21/15
         try:
-            resp = self.scraper.get(png_url, headers=headers)
+            resp = requests.get(png_url, headers=headers)
         except requests.exceptions.ConnectionError:
-            self.warning('Connection error. Skipping doc metadata.')
+            self.scraper.logger.warning('Connection error.')
             return
         try:
             data = resp.json()
-            self.warning('Sigh. Skipping doc metadata.')
         except:
+            self.scraper.logger.warning('No JSON found.')
             return
         return data
 
@@ -199,19 +239,30 @@ class BillDocuments(object):
         title = (meta.title or meta.text).lower()
         if 'bill' in title:
             return 'version'
-        if 'roll call' in title:
+        elif 'resolution' in title:
+            return 'version'
+        elif 'roll call' in title:
             return 'rollcall'
-
-        textbits = meta.text.split('.')
-        lastbit = textbits[-1]
-        # Fiscal note, amendment, committee report
-        if lastbit.startswith(('FN', 'AMS', 'CR')):
+        elif "vote sheet" in title:
+            #these are committee votes, we haven't got code to deal w them yet RES 1/22/15
+            return
+        else:
             return 'document'
+
 
     def iter_doc_meta(self):
         xpath = '//*[@data-myiga-actiondata]'
         meta = []
         for a in self.doc.xpath(xpath):
+            text = a.text_content()
+            text = re.sub(r'\s+', ' ', text).strip()
+            title = a.attrib.get('title')
+            if title is not None and title.lower() == "open document in full screen":
+                #every doc has a second link with this title, it is garbage
+                continue
+            if text.lower().startswith("latest"):
+                #every bill has "latest" versions that are identical to some other version
+                continue
             try:
                 data = DocumentMeta(self.scraper, a).get_doc_meta()
             except BogusDocument as exc:
@@ -229,7 +280,7 @@ class BillDocuments(object):
         for k, v in grouped.items():
             if 1 < len(v):
                 for data in list(v):
-                    if not data.title:
+                    if not data.text:
                         v.remove(data)
                     if not v:
                         v.add(data)
