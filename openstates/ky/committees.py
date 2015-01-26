@@ -59,6 +59,7 @@ class KYCommitteeScraper(CommitteeScraper):
 
         for link in page.xpath("//a[contains(@href, 'Legislator')]"):
             name = re.sub(r'^(Rep\.|Sen\.) ', '', link.text).strip()
+            name = name.replace("  "," ")
             if not link.tail or not link.tail.strip():
                 role = 'member'
             elif link.tail.strip() == '[Chair]':
