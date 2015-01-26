@@ -16,12 +16,10 @@ class NJEventScraper(EventScraper, MDBMixin):
         com_csv = self.access_to_csv('Committee')
 
         self._committees = {}
+        
         # There are some IDs that are missing. I'm going to add them
         # before we load the DBF, in case they include them, we'll just
         # override with their data.
-        #
-        # This data is from:
-        # http://www.njleg.state.nj.us/media/archive_audio2.asp?KEY=<KEY>&SESSION=2012
         overlay = {
             'A': 'Assembly on the Whole',
             'S': 'Senate on the Whole',
@@ -38,6 +36,9 @@ class NJEventScraper(EventScraper, MDBMixin):
             'SUTC': 'Sales and Use Tax Review Commission',
             'SPLS': 'Special Session',
             'JCES': 'Joint Committee on Ethical Standards',
+            'JEJ': 'Joint Committee on Economic Justice and Equal Employment Opportunity',
+            'LSC': 'Legislative Services Commission',
+            'THIE': 'Senate Task Force on Health Insurance Exchange Implementation Committee',
         }
         self._committees = overlay
 
