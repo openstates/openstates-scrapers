@@ -25,7 +25,7 @@ class VTLegislatorScraper(LegislatorScraper):
             leg = Legislator(
                     term=term,
                     chamber=('upper' if info['Title'] == 'Senator' else 'lower'),
-                    district=info['District'],
+                    district=info['District'].replace(" District", ""),
                     party=info['Party'],
                     email=info['Email'],
                     full_name="{0}{1} {2}".format(

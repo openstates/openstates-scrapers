@@ -95,6 +95,10 @@ class INBillScraper(BillScraper):
                     bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
                 except IndexError:
                     continue
+
+                if bill_title.strip() == "":
+                    continue
+
                 self.scrape_bill(chamber, term, bill_id, bill_url, bill_title)
 
     def generate_subjects(self, term):

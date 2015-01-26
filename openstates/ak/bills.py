@@ -50,7 +50,7 @@ class AKBillScraper(BillScraper):
         'STA': 'State Affairs',
         'TRA': 'Transportation',
         'EDT': 'Economic Development, Trade & Tourism',
-        'ENE': 'Energy',
+        'NRG': 'Energy',
         'FSH': 'Fisheries',
         'MLV': 'Military & Veterans',
         'WTR': 'World Trade',
@@ -61,6 +61,8 @@ class AKBillScraper(BillScraper):
         'EFF': 'Education Fuding District Cost Factor Committee',
         'ETH': 'Select Committee on Legislative Ethics',
         'LEC': 'Legislative Council',
+        'ARC': 'Special Committee on the Arctic',
+        'EDA': 'Economic Development, Trade, Tourism & Arctic Policy',
     }
 
     _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
@@ -95,7 +97,7 @@ class AKBillScraper(BillScraper):
 
         title = doc.xpath('//b[text()="TITLE:"]')
         if title:
-            title = title[0].tail.strip()
+            title = title[0].tail.strip().strip('"')
         else:
             self.warning("skipping bill %s, no information" % url)
             return
@@ -192,7 +194,8 @@ class AKBillScraper(BillScraper):
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
             h_name = href.text_content()
             h_href = href.attrib['href']
-            bill.add_document(h_name, h_href)
+            if h_name.strip():
+                bill.add_document(h_name, h_href)
 
 
         self.save_bill(bill)
