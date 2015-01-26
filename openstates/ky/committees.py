@@ -13,38 +13,43 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
-            url = "http://www.lrc.ky.gov/committee/standing_senate.htm"
+            urls = ["http://www.lrc.ky.gov/committee/standing_senate.htm"]
             # also invoke joint scraper
             self.scrape('joint', term)
         elif chamber == 'lower':
-            url = "http://www.lrc.ky.gov/committee/standing_house.htm"
+            urls = ["http://www.lrc.ky.gov/committee/standing_house.htm"]
         else:
-            url = "http://www.lrc.ky.gov/committee/interim.htm"
+            urls = ["http://www.lrc.ky.gov/committee/interim.htm",
+                    "http://www.lrc.ky.gov/committee/statutory.htm"]
+
             chamber = 'joint'
 
-        page = self.urlopen(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        for url in urls:
+            page = self.urlopen(url)
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(url)
 
-        links = []
+            links = []
 
-        cttypages = [
-            "//a[contains(@href, 'standing/')]",
-            "//a[contains(@href, 'interim')]"
-        ]
+            cttypages = [
+                "//a[contains(@href, 'standing/')]",
+                "//a[contains(@href, 'interim')]",
+                "//a[contains(@href, 'statutory')]"
+            ]
 
-        for exp in cttypages:
-            linkz = page.xpath(exp)
-            links = links + linkz
+            for exp in cttypages:
+                linkz = page.xpath(exp)
+                links = links + linkz
 
-        for link in links:
-            name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
-            comm = Committee(chamber, name)
-            comm_url = link.attrib['href'].replace(
-                'home.htm', 'members.htm')
-            self.scrape_members(comm, comm_url)
-            if comm['members']:
-                self.save_committee(comm)
+            for link in links:
+                name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
+                name = name.replace(".","")
+                comm = Committee(chamber, name)
+                comm_url = link.attrib['href'].replace(
+                    'home.htm', 'members.htm')
+                self.scrape_members(comm, comm_url)
+                if comm['members']:
+                    self.save_committee(comm)
 
     def scrape_members(self, comm, url):
         page = self.urlopen(url)
