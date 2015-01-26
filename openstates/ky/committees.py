@@ -13,13 +13,13 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
-            url = "http://www.lrc.ky.gov/org_adm/committe/standing_senate.htm"
+            url = "http://www.lrc.ky.gov/committee/standing_senate.htm"
             # also invoke joint scraper
             self.scrape('joint', term)
         elif chamber == 'lower':
-            url = "http://www.lrc.ky.gov/org_adm/committe/standing_house.htm"
+            url = "http://www.lrc.ky.gov/committee/standing_house.htm"
         else:
-            url = "http://www.lrc.ky.gov/org_adm/committe/interim.htm"
+            url = "http://www.lrc.ky.gov/committee/interim.htm"
             chamber = 'joint'
 
         page = self.urlopen(url)
