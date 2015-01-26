@@ -31,7 +31,8 @@ class CACommitteeScraper(CommitteeScraper):
                  'lower': 'http://assembly.ca.gov/'}
 
     def scrape(self, chamber, term):
-        raise Exception("CA Committees aren't in place yet")
+        #as of 1/26, committees seem to be in place!
+        #raise Exception("CA Committees aren't in place yet")
 
         if chamber == 'lower':
             self.scrape_lower(chamber, term)
@@ -337,10 +338,10 @@ class SenateCommitteeGroup(object):
         self.div = div
 
     def get_type(self):
-        return self.div.xpath('./h2/text()').pop()
+        return self.div.xpath('./div/h2/text()').pop()
 
     def __iter__(self):
-        xpath = 'div[@class="content"]//li[contains(@class, "views-row")]'
+        xpath = 'div[@class="content"]//div[contains(@class, "block-views")]'
         type_ = self.get_type()
 
         # Join committees currently get scraped in the Assembly scraper.
