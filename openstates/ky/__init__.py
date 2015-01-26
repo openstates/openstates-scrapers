@@ -5,6 +5,7 @@ from .committees import KYCommitteeScraper
 from .events import KYEventScraper
 from .votes import KYVoteScraper
 
+
 metadata = dict(
     name='Kentucky',
     abbreviation='ky',
@@ -59,7 +60,7 @@ metadata = dict(
                    '_scraped_name': '2013 Extraordinary Session'},
         '2014RS': {'type': 'primary',
                    'display_name': '2014 Regular Session',
-                   '_scraped_name': '2014 Regular Session ',
+                   '_scraped_name': '2014 Regular Session',
                   },
         '2015RS': {'type': 'primary',
                    'display_name': '2015 Regular Session',
@@ -73,7 +74,8 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://www.lrc.ky.gov/legislation.htm',
-                     '//a[contains(@href, "record.htm")]/img/@alt')
+                     '//a[contains(@href, "record.htm")]/text()')
 
 def extract_text(doc, data):
     return worddata_to_text(data)
+
