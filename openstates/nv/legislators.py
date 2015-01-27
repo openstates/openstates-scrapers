@@ -31,29 +31,33 @@ class NVLegislatorScraper(LegislatorScraper):
             # empty district
             if 'District No' in item['FullName']:
                 continue
+            last, first = item['FullName'].split(",", 1)
+            item['FullName'] = "{first} {last}".format(last=last,
+                                                       first=first).strip()
             leg = Legislator(term_name, chamber, item['DistrictNbr'],
                              item['FullName'], party=item['Party'],
                              photo_url=item['PhotoURL'])
             leg_url = leg_base_url + item['DistrictNbr']
 
-            # fetch office from legislator page
-            try:
-                doc = lxml.html.fromstring(self.urlopen(leg_url))
-                if not doc.xpath('//div'):
-                    self.warning('invalid page, maybe a weird PDF?')
-                else:
-                    address = doc.xpath('//div[@class="contactAddress"]')[0].text_content()
-                    address2 = doc.xpath('//div[@class="contactAddress2"]')
-                    if address2:
-                        address += ' ' + address2[0].text_content()
-                    address += '\n' + doc.xpath('//div[@class="contactCityStateZip"]')[0].text_content()
-                    phone = doc.xpath('//div[@class="contactPhone"]')[0].text_content()
+            # hack to get the legislator ID
+            html = self.urlopen(leg_url)
+            for l in html.split('\n'):
+                if 'GetLegislatorDetails' in l:
+                    leg_id = l.split(',')[1].split("'")[1]
 
-                    leg.add_office('district', 'District Address', address=address,
-                                   phone=phone)
-            except scrapelib.HTTPError:
-                self.warning('could not fetch %s' % leg_url)
-                pass
+            # fetch the json used by the page
+            leg_details_url = 'https://www.leg.state.nv.us/App/Legislator/A/api/78th2015/Legislator?id=' + leg_id
+            leg_resp = json.loads(self.urlopen(leg_details_url))
+            details = leg_resp['legislatorDetails']
 
-            leg.add_source(leg_url)
+            address = details['Address1']
+            address2 = details['Address2']
+            if address2:
+                address += ' ' + address2
+            phone = details['LCBPhone']
+            email = details['LCBEmail']
+
+            leg.add_office('district', 'District Address', address=address,
+                                   phone=phone,email=email)
+            leg.add_source(leg_details_url)
             self.save_legislator(leg)
