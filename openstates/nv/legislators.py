@@ -41,19 +41,19 @@ class NVLegislatorScraper(LegislatorScraper):
             for l in html.split('\n'):
                 if 'GetLegislatorDetails' in l:
                     leg_id = l.split(',')[1].split("'")[1]
-            
+
             # fetch the json used by the page
             leg_details_url = 'https://www.leg.state.nv.us/App/Legislator/A/api/78th2015/Legislator?id=' + leg_id
             leg_resp = json.loads(self.urlopen(leg_details_url))
             details = leg_resp['legislatorDetails']
-            
+
             address = details['Address1']
             address2 = details['Address2']
             if address2:
                 address += ' ' + address2
             phone = details['LCBPhone']
             email = details['LCBEmail']
-            
+
             leg.add_office('district', 'District Address', address=address,
                                    phone=phone,email=email)
             leg.add_source(leg_details_url)
