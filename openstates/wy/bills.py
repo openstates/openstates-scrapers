@@ -102,6 +102,12 @@ class WYBillScraper(BillScraper, LXMLMixin):
         except scrapelib.HTTPError:
             self.warning('no digest for %s' % bill['bill_id'])
             return
+        if all_text.strip() == "":
+            self.warning(
+                    'Non-functional digest for bill {}'.
+                    format(bill['bill_id'])
+                    )
+            return
 
         # Split the digest's text into sponsors, description, and actions
         SPONSOR_RE = r'(?sm)Sponsored By:\s+(.*?)\n\n'
