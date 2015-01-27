@@ -32,7 +32,7 @@ class GACommitteeScraper(CommitteeScraper):
             cid = committee['Id']
             committee = backoff(self.cservice.GetCommittee, cid)
             subctty_cache = {}
-            
+
             comname, typ, guid, code, description = [committee[x] for x in [
                 'Name', 'Type', 'Id', 'Code', 'Description'
             ]]
@@ -88,8 +88,9 @@ class GACommitteeScraper(CommitteeScraper):
                                 "cttie": guid,
                             }))
                             subctty_cache[subcommittee] = subctty
-                        subctty.add_member(name, role, _guid=member['Member']['Id'])
-                        
+                        subctty.add_member(
+                            name, role, _guid=member['Member']['Id'])
+
             for subctty in subctty_cache.values():
                 self.save_committee(subctty)
 
