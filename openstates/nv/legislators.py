@@ -31,6 +31,9 @@ class NVLegislatorScraper(LegislatorScraper):
             # empty district
             if 'District No' in item['FullName']:
                 continue
+            last, first = item['FullName'].split(",", 1)
+            item['FullName'] = "{first} {last}".format(last=last,
+                                                       first=first).strip()
             leg = Legislator(term_name, chamber, item['DistrictNbr'],
                              item['FullName'], party=item['Party'],
                              photo_url=item['PhotoURL'])
