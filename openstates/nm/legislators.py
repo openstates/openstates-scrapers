@@ -81,7 +81,7 @@ class NMLegislatorScraper(LegislatorScraper):
 
         full_name, party = properties['header'].rsplit("-", 1)
 
-        properties['full_name'] = full_name.strip()
+        properties['full_name'] = full_name.replace("Representative","").replace("Senator","").strip()
         properties['party'] = party
 
         if '(D)' in properties['party']:
