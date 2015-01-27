@@ -28,6 +28,13 @@ SUBCOMMITTEES = {
     "Primary and Secondary Education Subcommittee": "Education",
     "Tax Reform Ways and Means Subcommittee":
             "Ways and Means",
+    "Finance Subcommittee on Health and Human Services":"Finance",
+    "Finance Subcommittee on Primary and Secondary Education":"Finance",
+    "Finance Subcommittee on Higher Education":"Finance",
+    "Finance Subcommittee on Transportation":"Finance",
+    "Finance Subcommittee on Agriculture, Development, and Natural Resources":"Finance",
+    "Community and Family Advancement Subcommittee on Minority Affairs":"Community and Family Affairs",
+
 }
 
 committee_cache = {}

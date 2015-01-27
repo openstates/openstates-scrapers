@@ -61,6 +61,9 @@ class INBillScraper(BillScraper):
             bill_chamber = ('upper' if bill_id[0] in 'SJ' else 'lower')
             bill_url = a.attrib['href']
             bill_title = a.xpath('string(./following-sibling::em)').strip()
+            if bill_title == "":
+                self.logger.warning("Bill %s has no title" % bill_id)
+                continue
             self.scrape_bill(bill_chamber, term, bill_id, bill_url, bill_title)
 
         url = 'http://iga.in.gov/legislative/%s/bills/' % term
@@ -92,6 +95,10 @@ class INBillScraper(BillScraper):
                     bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
                 except IndexError:
                     continue
+
+                if bill_title.strip() == "":
+                    continue
+
                 self.scrape_bill(chamber, term, bill_id, bill_url, bill_title)
 
     def generate_subjects(self, term):
@@ -174,22 +181,42 @@ class INBillScraper(BillScraper):
             bill.add_sponsor(sp_type, name)
 
         # Actions
-        for li in doc.xpath('//div[@id="bill-actions"]//li')[::-1]:
+        action_count = 0
+        for li in doc.xpath('//table[contains(@class,"actions-table")]//dd')[::-1]:
+            action_count += 1
             if li.text_content() == 'None currently available.':
                 continue
-            chamber_str = li.xpath('string(strong)').strip()
-            action_chamber = dict(H='lower', S='upper')[chamber_str]
-            action_date = li.xpath('string(span[@class="document-date"])')
+
+            #this one time, they forgot to put a date on an action
+            #error handling below built to be as fragile as possible
+            chamber_and_date = li.xpath('./b/span/text()')
+            try:
+                chamber_str = chamber_and_date[0]
+                action_date = chamber_and_date[1]
+            except IndexError:
+                self.logger.warning("Missing chamber or date for action %d at %s; skipping" % (action_count, url))
+                continue
+            chambers = dict(H='lower', S='upper', G='executive')
+            if chamber_str not in chambers:
+                action_chamber = chamber
+            else:
+                action_chamber = chambers[chamber_str]
+
+
             # Some resolution actions have no dates.
             if not action_date.strip():
                 continue
             action_date = datetime.datetime.strptime(action_date.strip(), '%m/%d/%Y')
-            action_text = li.xpath('string(span[2])').strip()
+            action_text = li.xpath('./text()')[1].strip()
+
             if not action_text.strip():
                 continue
-            kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
-            kwargs.update(**self.categorizer.categorize(action_text))
-            bill.add_action(**kwargs)
+            if not "referred to the house" in action_text.lower() and "referred to the senate" not in action_text.lower():
+                #removing bills being referred to house/senate because they were being treated like committees
+                #should prob be fixed in the regexes in actions.py someday
+                kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
+                kwargs.update(**self.categorizer.categorize(action_text))
+                bill.add_action(**kwargs)
 
         # Documents (including votes)
         for doc_type, doc_meta in BillDocuments(self, doc):
@@ -209,6 +236,7 @@ class INBillScraper(BillScraper):
         try:
             vote = parse_vote(self, chamber, doc_meta)
             bill.add_vote(vote)
+            self.save_bill(bill)
         except VoteParseError:
             # It was a scanned, hand-written document, most likely.
             return

@@ -132,10 +132,12 @@ class WABillScraper(BillScraper):
                 version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
                 if version_url.lower().endswith('.pdf'):
                     mimetype = 'application/pdf'
+            bill.add_version(bill_id, version_url, mimetype=mimetype)
         except scrapelib.HTTPError:
             pass
+        except IndexError:
+            pass
 
-        bill.add_version(bill_id, version_url, mimetype=mimetype)
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
