@@ -24,13 +24,12 @@ class MECommitteeScraper(CommitteeScraper):
             self.scrape_joint_comm()
 
     def scrape_reps_comm(self):
+        #As of 1/27/15, the committee page has the wrong
+        #session number (126th) at the top, but
+        #has newly elected people, so we're rolling with it.
 
-        url = 'http://www.maine.gov/legis/house/hcomlist.htm'
-        raise NotImplementedError(
-                "This House committee page is different from the last session; "
-                "the parsing code will need to be tweaked"
-                )
 
+        url = 'http://legislature.maine.gov/house/hsecoms.htm'
         page = self.urlopen(url)
         root = lxml.html.fromstring(page)
 
