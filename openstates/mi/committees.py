@@ -81,6 +81,10 @@ class MICommitteeScraper(CommitteeScraper):
             if member_name == 'Committee Clerk':
                 continue
 
+            # skip phone links
+            if member.get("href").startswith("tel:"):
+                continue
+
             if 'Committee Chair' in member.tail:
                 role = 'chair'
             elif 'Majority Vice' in member.tail:

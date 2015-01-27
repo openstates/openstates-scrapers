@@ -98,9 +98,9 @@ class NMBillScraper(BillScraper):
 
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        if session == '2014':
-            fname = 'LegInfo14'
-            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo14.*zip)'
+        if session == '2015':
+            fname = 'LegInfo15'
+            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo15.*zip)'
         else:
             raise ValueError('no zip file present for %s' % session)
 
@@ -129,6 +129,8 @@ class NMBillScraper(BillScraper):
     def access_to_csv(self, table):
         """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
+        #if you're getting an error around here while running locally
+        #make sure mdbtools is installed
         pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
                                 close_fds=True).stdout
         csvfile = csv.DictReader(pipe)
@@ -231,17 +233,18 @@ class NMBillScraper(BillScraper):
                 match = re.match('([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
-                    bill_id = bill_type.replace('B', '') + bill_num
-                    try:
-                        bill = self.bills[bill_id]
-                    except KeyError:
-                        self.warning('document for unknown bill %s' % fname)
-                    else:
-                        if doc_type == 'Final Version':
-                            bill.add_version(
-                                'Final Version', url + fname, mimetype='text/html')
+                    if (chamber == "upper" and bill_type[0] == "S") or (chamber == "lower" and bill_type[0] == "H"):
+                        bill_id = bill_type.replace('B', '') + bill_num
+                        try:
+                            bill = self.bills[bill_id]
+                        except KeyError:
+                            self.warning('document for unknown bill %s' % fname)
                         else:
-                            bill.add_document(doc_type, url + fname)
+                            if doc_type == 'Final Version':
+                                bill.add_version(
+                                    'Final Version', url + fname, mimetype='text/html')
+                            else:
+                                bill.add_document(doc_type, url + fname)
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
@@ -474,6 +477,7 @@ class NMBillScraper(BillScraper):
                 pass
             else:
                 # warn about unknown suffix
+                #we're getting some "E" suffixes, but I think those are duplicates
                 self.warning('unknown document suffix %s (%s)' % (suffix, fname))
 
     def parse_senate_vote(self, url):
@@ -489,10 +493,15 @@ class NMBillScraper(BillScraper):
         flag = None
         overrides = {"ONEILL": "O'NEILL"}
 
+        """ #this was 2014's vote_override, adding a new one so it breaks
+        #when this comes up in the future
         vote_override = {("SB0112SVOTE.PDF", "RYAN"): vote.other,    # Recused
                          ("HB0144SVOTE.PDF", "SOULES"): vote.other,  # Recused
                          ("HJR15SVOTE.PDF", "KELLER"): vote.other,   # Recused
                         }
+        """
+
+        vote_override_2015 = {}
 
         # use in_votes as a sort of state machine
         for line in sv_text:
@@ -580,8 +589,8 @@ class NMBillScraper(BillScraper):
                         vote.other(name)
                     else:
                         key = (os.path.basename(url), name)
-                        if key in vote_override:
-                            vote_override[key](name)
+                        if key in vote_override_2015:
+                            vote_override_2015[key](name)
                         else:
                             raise ValueError("Bad parse")
 
