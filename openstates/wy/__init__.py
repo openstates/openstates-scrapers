@@ -44,7 +44,7 @@ metadata = dict(
                  '_scraped_name': '2015 General Session'
                 },
     },
-    feature_flags=['influenceexplorer'],
+    feature_flags=['influenceexplorer', 'events'],
 
     # The reason the Budget sessions are in ignore is because the budget
     # session is just for the budget bill, which is HB 1
