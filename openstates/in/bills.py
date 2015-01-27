@@ -181,10 +181,21 @@ class INBillScraper(BillScraper):
             bill.add_sponsor(sp_type, name)
 
         # Actions
+        action_count = 0
         for li in doc.xpath('//table[contains(@class,"actions-table")]//dd')[::-1]:
+            action_count += 1
             if li.text_content() == 'None currently available.':
                 continue
-            chamber_str, action_date = li.xpath('./b/span/text()')
+
+            #this one time, they forgot to put a date on an action
+            #error handling below built to be as fragile as possible
+            chamber_and_date = li.xpath('./b/span/text()')
+            try:
+                chamber_str = chamber_and_date[0]
+                action_date = chamber_and_date[1]
+            except IndexError:
+                self.logger.warning("Missing chamber or date for action %d at %s; skipping" % (action_count, url))
+                continue
             chambers = dict(H='lower', S='upper', G='executive')
             if chamber_str not in chambers:
                 action_chamber = chamber
