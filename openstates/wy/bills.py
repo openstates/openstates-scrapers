@@ -4,37 +4,43 @@ import re
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
+from openstates.utils import LXMLMixin
 
 import scrapelib
-import lxml.html
 
 
 def split_names(voters):
     """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""
-    voters = voters.split(')',1)[-1]
-    # split on comma space as long as it isn't followed by an initial (\w+\.)
-    # or split on 'and '
-    voters = [x.strip() for x in re.split('(?:, (?!\w+(?:\.|$)))|(?:and )', voters)]
+    voters = voters.split(':', 1)[-1]
+    voters = re.sub(r'(Senator|Representative)(\(s\))?', "", voters)
+    voters = re.sub(r'\s+', " ", voters)
+    # Split on a comma or "and" except when there's a following initial
+    voters = [
+            x.strip() for x in
+            re.split(r'(?:,\s(?![A-Z]\.))|(?:\sand\s)', voters)
+            ]
     return voters
 
-
 def clean_line(line):
-    return line.replace(u'\xa0', '').replace('\r\n', ' '
-                                            ).replace(u'\u2011', "-").strip()
+    return line.\
+            replace('\n', ' ').\
+            decode('utf-8').\
+            strip()
 
 def categorize_action(action):
     categorizers = (
         ('Introduced and Referred', ('bill:introduced', 'committee:referred')),
-        ('Rereferred to', 'committee:referred'),
+        ('Rerefer to', 'committee:referred'),
         ('Do Pass Failed', 'committee:failed'),
-        ('Passed 2nd Reading', 'bill:reading:2'),
-        ('Passed 3rd Reading', ('bill:reading:3', 'bill:passed')),
+        ('2nd Reading:Passed', 'bill:reading:2'),
+        ('3rd Reading:Passed', ('bill:reading:3', 'bill:passed')),
         ('Failed 3rd Reading', ('bill:reading:3', 'bill:failed')),
         ('Did Not Adopt', 'amendment:failed'),
         ('Withdrawn by Sponsor', 'bill:withdrawn'),
         ('Governor Signed', 'governor:signed'),
-        ('Recommended (Amend and )?Do Pass', 'committee:passed:favorable'),
-        ('Recommended (Amend and )?Do NotPass', 'committee:passed:unfavorable'),
+        ('Recommend (Amend and )?Do Pass', 'committee:passed:favorable'),
+        ('Recommend (Amend and )?Do Not Pass', 'committee:passed:unfavorable'),
     )
 
     for pattern, types in categorizers:
@@ -43,17 +49,17 @@ def categorize_action(action):
     return 'other'
 
 
-class WYBillScraper(BillScraper):
+class WYBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'wy'
 
     def scrape(self, chamber, session):
         chamber_abbrev = {'upper': 'SF', 'lower': 'HB'}[chamber]
 
-        url = ("http://legisweb.state.wy.us/%s/billindex/"
-               "BillCrossRef.aspx?type=%s" % (session, chamber_abbrev))
-        page = lxml.html.fromstring(self.urlopen(url))
+        url = ("http://legisweb.state.wy.us/%s/billreference/"
+               "BillReference.aspx?type=%s" % (session, chamber_abbrev))
+        page = self.lxmlize(url)
 
-        for tr in page.xpath("//tr[@valign='middle']")[1:]:
+        for tr in page.xpath("//table[@id='ctl00_cphContent_gvBills']//tr")[1:]:
             bill_id = tr.xpath("string(td[1])").strip()
             title = tr.xpath("string(td[2])").strip()
 
@@ -67,8 +73,8 @@ class WYBillScraper(BillScraper):
             self.scrape_digest(bill)
 
             # versions
-            for a in (tr.xpath('td[6]//a') + tr.xpath('td[9]//a') +
-                      tr.xpath('td[10]//a')):
+            for a in (tr.xpath('td[8]//a') + tr.xpath('td[11]//a') +
+                      tr.xpath('td[12]//a')):
                 # skip references to other bills
                 if a.text.startswith('See'):
                     continue
@@ -76,10 +82,10 @@ class WYBillScraper(BillScraper):
                                  mimetype='application/pdf')
 
             # documents
-            fnote = tr.xpath('td[7]//a')
+            fnote = tr.xpath('td[9]//a')
             if fnote:
                 bill.add_document('Fiscal Note', fnote[0].get('href'))
-            summary = tr.xpath('td[12]//a')
+            summary = tr.xpath('td[14]//a')
             if summary:
                 bill.add_document('Summary', summary[0].get('href'))
 
@@ -87,31 +93,27 @@ class WYBillScraper(BillScraper):
             self.save_bill(bill)
 
     def scrape_digest(self, bill):
-        digest_url = 'http://legisweb.state.wy.us/%(session)s/Digest/%(bill_id)s.htm' % bill
-
+        digest_url = 'http://legisweb.state.wy.us/%(session)s/Digest/%(bill_id)s.pdf' % bill
         bill.add_source(digest_url)
 
         try:
-            html = self.urlopen(digest_url)
+            (filename, response) = self.urlretrieve(digest_url)
+            all_text = convert_pdf(filename, type='text')
         except scrapelib.HTTPError:
             self.warning('no digest for %s' % bill['bill_id'])
             return
 
-        doc = lxml.html.fromstring(html)
+        # Split the digest's text into sponsors, description, and actions
+        SPONSOR_RE = r'(?sm)Sponsored By:\s+(.*?)\n\n'
+        DESCRIPTION_RE = r'(?sm)\n\n((?:AN ACT|A JOINT RESOLUTION) .*?)\n\n'
+        ACTIONS_RE = r'(?sm)\n\n(\d{1,2}/\d{1,2}/\d{4}.*)'
 
-        ext_title = doc.xpath('//span[@class="billtitle"]')
-        if ext_title:
-            bill['description'] = ext_title[0].text_content().replace(
-                '\r\n', ' ')
+        ext_title = re.search(DESCRIPTION_RE, all_text).group(1)
+        bill['description'] = ext_title.replace('\n', ' ')
 
-        sponsor_span = doc.xpath('//span[@class="sponsors"]')
+        sponsor_span = re.search(SPONSOR_RE, all_text).group(1)
         sponsors = ''
-        if sponsor_span:
-            sponsors = sponsor_span[0].text_content().replace('\r\n', ' ')
-        else:
-            for p in doc.xpath('//p'):
-                if p.text_content().lower().startswith('sponsored by'):
-                    sponsors = p.text_content().replace('\r\n', ' ')
+        sponsors = sponsor_span.replace('\n', ' ')
         if sponsors:
             if 'Committee' in sponsors:
                 bill.add_sponsor('primary', sponsors)
@@ -129,25 +131,12 @@ class WYBillScraper(BillScraper):
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
         vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
 
-        actions_text = [x.text_content() for x in
-                        doc.xpath('//p')]
-        actions = []
-        pastHeader = False
-        for action in actions_text:
-            action = action.replace(u'\xa0', ' ').replace(u'\xc2', '')
-            # XXX: Fix the above, that's a rowdy mess. -- PRT
-
-            if not pastHeader and action_re.match(action):
-                pastHeader = True
-            if pastHeader:
-                actions.append(action)
-
         # initial actor is bill chamber
         actor = bill['chamber']
-
-
-        aiter = iter(actions)
-        for line in aiter:
+        actions = []
+        action_lines = re.search(ACTIONS_RE, all_text).group(1).split('\n')
+        action_lines = iter(action_lines)
+        for line in action_lines:
             line = clean_line(line)
 
             # skip blank lines
@@ -165,7 +154,7 @@ class WYBillScraper(BillScraper):
                     actor = 'upper'
 
                 date = datetime.datetime.strptime(date, '%m/%d/%Y')
-                bill.add_action(actor, action, date,
+                bill.add_action(actor, action.strip(), date,
                                 type=categorize_action(action))
             elif line == 'ROLL CALL':
                 voters = defaultdict(str)
@@ -175,7 +164,7 @@ class WYBillScraper(BillScraper):
                 # : (Senators|Representatives): ... - voters
                 # \d+ Nays \d+ Excused ... - totals
                 voters_type = None
-                for ainext in aiter:
+                for ainext in action_lines:
                     nextline = clean_line(ainext)
                     if not nextline:
                         continue
