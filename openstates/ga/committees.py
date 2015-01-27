@@ -31,7 +31,9 @@ class GACommitteeScraper(CommitteeScraper):
         for committee in committees:
             cid = committee['Id']
             committee = backoff(self.cservice.GetCommittee, cid)
-            name, typ, guid, code, description = [committee[x] for x in [
+            subctty_cache = {}
+            
+            comname, typ, guid, code, description = [committee[x] for x in [
                 'Name', 'Type', 'Id', 'Code', 'Description'
             ]]
             chamber = {
@@ -51,7 +53,7 @@ class GACommitteeScraper(CommitteeScraper):
             if ctty is None:
                 ctty = Committee(
                     chamber,
-                    name,
+                    comname,
                     code=code,
                     _guid=guid,
                     description=description
@@ -63,6 +65,33 @@ class GACommitteeScraper(CommitteeScraper):
                 name = "{First} {Last}".format(**dict(member['Member']['Name']))
                 role = member['Role']
                 ctty.add_member(name, role, _guid=member['Member']['Id'])
+                subcoms = member['SubCommittees']
+                if subcoms != None:
+                    for subcom in subcoms:
+                        subcom = subcom[1][0]
+                        subguid = subcom['Id']
+                        subcommittee = subcom['Name']
+                        if subcommittee in subctty_cache:
+                            # Add member to existing subcommittee.
+                            subctty = subctty_cache[subcommittee]
+                        else:
+                            # Create subcommittee.
+                            subctty = Committee(
+                                chamber,
+                                comname,
+                                _guid=subguid,
+                                subcommittee=subcommittee
+                            )
+                            subctty.add_source(self.csource)
+                            subctty.add_source(CTTIE_URL.format(**{
+                                "sid": sid,
+                                "cttie": guid,
+                            }))
+                            subctty_cache[subcommittee] = subctty
+                        subctty.add_member(name, role, _guid=member['Member']['Id'])
+                        
+            for subctty in subctty_cache.values():
+                self.save_committee(subctty)
 
             ctty.add_source(self.csource)
             ctty.add_source(CTTIE_URL.format(**{
