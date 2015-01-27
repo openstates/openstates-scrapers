@@ -18,6 +18,8 @@ class WYLegislatorScraper(LegislatorScraper):
 
         for link in page.xpath("//a[contains(@href, 'LegDetail')]"):
             name = link.text.strip()
+            # Remove district number from member names
+            name = re.sub(r'\s\([HS]D\d{2}\)$', "", name)
             leg_url = link.get('href')
 
             email_address = link.xpath("../../../td[1]//a")[0].attrib['href']
