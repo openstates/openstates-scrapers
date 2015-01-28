@@ -32,11 +32,21 @@ class MIEventScraper(EventScraper, LXMLMixin):
         if metainf == {}:
             return
 
+        mtg_time = metainf['Time']['txt']
+        try:
+            #they put some crap after the time.
+            #this deals with formats like "2:00 p.m. or later"
+            mtg_time = " ".join(mtg_time.split(" ")[0:2])
+        except IndexError:
+            pass
+
         # Wednesday, 5/16/2012 3:00 pm
         datetime = "%s %s" % (
             metainf['Date']['txt'],
-            metainf['Time']['txt']
+            mtg_time
         )
+
+        print datetime
         if "Cancelled" in datetime:
             return
 
