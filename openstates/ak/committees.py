@@ -18,6 +18,7 @@ class AKCommitteeScraper(CommitteeScraper):
 
         for link in page.xpath("//a[contains(@href, 'comm=')]"):
             name = link.text.strip().title()
+            print name
 
             if name.startswith('Conference Committee'):
                 continue
@@ -33,7 +34,7 @@ class AKCommitteeScraper(CommitteeScraper):
         if page.xpath("//h3[. = 'Joint Committee']"):
             chamber = 'joint'
 
-        subcommittee = page.xpath("//h3[@align='center']/text()")[0]
+        subcommittee = page.xpath("//h3[@align='center']/text()")[0].replace("Subcommittee","").strip()
         if not "Subcommittee" in subcommittee:
             subcommittee = None
 
