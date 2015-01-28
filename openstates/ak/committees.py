@@ -34,7 +34,7 @@ class AKCommitteeScraper(CommitteeScraper):
         if page.xpath("//h3[. = 'Joint Committee']"):
             chamber = 'joint'
 
-        subcommittee = page.xpath("//h3[@align='center']/text()")[0].replace("Subcommittee","").strip()
+        subcommittee = page.xpath("//h3[@align='center']/text()")[0]
         if not "Subcommittee" in subcommittee:
             subcommittee = None
 
