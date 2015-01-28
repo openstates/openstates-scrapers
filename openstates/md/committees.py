@@ -47,11 +47,14 @@ class MDCommitteeScraper(CommitteeScraper):
             for row in rows[1:]:
                 name = row.getchildren()[0].text_content()
                 if name.endswith(' (Chair)'):
-                    name = name.strip(' (Chair)')
+                    name = name.replace(' (Chair)','')
                     role = 'chair'
                 elif name.endswith(' (Vice Chair)'):
-                    name = name.strip(' (Vice Chair)')
+                    name = name.replace(' (Vice Chair)','')
                     role = 'vice chair'
+                elif name.endswith(' (Co-Chair)'):
+                    name = name.replace(' (Co-Chair)','')
+                    role = 'co-chair'
                 else:
                     role = 'member'
                 com.add_member(name, role)
