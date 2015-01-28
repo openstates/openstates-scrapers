@@ -18,7 +18,6 @@ class AKCommitteeScraper(CommitteeScraper):
 
         for link in page.xpath("//a[contains(@href, 'comm=')]"):
             name = link.text.strip().title()
-            print name
 
             if name.startswith('Conference Committee'):
                 continue
