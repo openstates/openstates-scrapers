@@ -2,7 +2,7 @@ from billy.utils.fulltext import worddata_to_text
 from .bills import KYBillScraper
 from .legislators import KYLegislatorScraper
 from .committees import KYCommitteeScraper
-from .events import KYEventScraper
+# from .events import KYEventScraper
 from .votes import KYVoteScraper
 
 
