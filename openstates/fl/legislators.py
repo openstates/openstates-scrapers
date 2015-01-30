@@ -79,21 +79,14 @@ class FLLegislatorScraper(LegislatorScraper):
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'Senators/s')]"):
-            name = link.text.strip()
-            name = re.sub(r'\s+', ' ', name)
+            name = " ".join(link.xpath('.//text()'))
+            name = re.sub(r'\s+', " ", name).replace(" ,", ",").strip()
             leg_url = link.get('href')
             leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
             leg_doc.make_links_absolute(leg_url)
 
             if 'Vacant' in name:
                 continue
-
-            # Special case - name_tools gets confused
-            # by 'JD', thinking it is a suffix instead of a first name
-            if name == 'Alexander, JD':
-                name = 'JD Alexander'
-            elif name == 'Vacant':
-                name = 'Vacant Seat'
 
             district = link.xpath("string(../../td[1])")
             party = link.xpath("string(../../td[2])")
@@ -153,18 +146,26 @@ class FLLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for div in page.xpath('//div[@id="rep_icondocks2"]'):
-            link = div.xpath('.//div[@class="membername"]/a')[0]
+        for div in page.xpath('//div[@class="rep_listing1"]'):
+            link = div.xpath('.//div[@class="rep_style"]/a')[0]
             name = link.text_content().strip()
 
-            if 'Vacant' in name or 'Resigned' in name:
+            if 'Vacant' in name or \
+                    'Resigned' in name or \
+                    'Pending' in name:
                 continue
 
-            party = div.xpath('.//div[@class="partyname"]/text()')[0].strip()
-            if party == 'Democrat':
+            party = div.xpath('.//div[@class="party_style"]/text()')[0].strip()
+            if party == 'D':
                 party = 'Democratic'
+            elif party == 'R':
+                party = 'Republican'
+            else:
+                raise NotImplementedError(
+                        "Unknown party found: {}".format(party))
 
-            district = div.xpath('.//div[@class="districtnumber"]/text()')[0].strip()
+            district = div.xpath(
+                    './/div[@class="district_style"]/text()')[0].strip()
 
             leg_url = link.get('href')
             split_url = urlparse.urlsplit(leg_url)
