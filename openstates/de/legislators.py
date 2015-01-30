@@ -34,7 +34,6 @@ class DELegislatorScraper(LegislatorScraper):
 
             bio_url = tr.xpath('descendant::a/@href')[0]
             name, _, district = map(text, tr.xpath("td"))
-            print name
             if name.strip() == ".":
                 continue
             name = ' '.join(re_spaces.split(name))
