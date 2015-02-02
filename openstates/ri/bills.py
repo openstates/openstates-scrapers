@@ -9,25 +9,24 @@ from billy.scrape.utils import url_xpath
 subjects      = None
 bill_subjects = None
 
-HB_START_BILLNO=7000
-SB_START_BILLNO=2000
-# This was 2012 and 2014's list.
-#   (The second half of a term.)
-# XXX: Change this for the 2015 session.
-
-#HB_START_BILLNO=5000
-#SB_START_BILLNO=1
-# This was 2013's list.
-#   (The first half of a term.)
-# XXX: Change this for the 2015 session.
-
-START_IDEX = {
-    "lower" : HB_START_BILLNO,
-    "upper" : SB_START_BILLNO
-}
 
 MAXQUERY=250 # What a silly low number. This is just putting more load on the
 # server, not even helping with that. Sheesh.
+
+def bill_start_numbers(session):
+    #differs by first/second session in term
+    if int(session) % 2 == 0:
+        return {
+            "lower" : 7000,
+            "upper" : 2000
+        }
+    else:
+        return {
+            "lower" : 5000,
+            "upper" : 1
+        }
+
+
 
 def get_postable_subjects():
     global subjects
@@ -230,7 +229,7 @@ class RIBillScraper(BillScraper):
         return "other"
 
     def scrape_bills(self, chamber, session, subjects):
-        idex = START_IDEX[chamber]
+        idex = bill_start_numbers(session)[chamber]
         FROM="ctl00$rilinContent$txtBillFrom"
         TO="ctl00$rilinContent$txtBillTo"
         YEAR="ctl00$rilinContent$cbYear"
