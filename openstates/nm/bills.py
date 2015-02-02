@@ -278,6 +278,7 @@ class NMBillScraper(BillScraper):
             '7611': ('withdrawn from committee', 'bill:withdrawn'),
             '7612': ('withdrawn from all committees', 'bill:withdrawn'),
             '7613': ('withdrawn and tabled', 'bill:withdrawn'),
+            '7614': ('withdrawn printed germane prefile', 'bill:withdrawn'),
             '7615': ('germane', 'other'),
             '7616': ('germane & printed', 'other'),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
