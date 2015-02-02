@@ -310,7 +310,11 @@ class TXVoteScraper(VoteScraper):
         else:
             session_num = session
         year = tx.metadata['session_details'][session_num]['start_year']
-        page = self.urlopen(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            return
+
         root = lxml.html.fromstring(page)
         clean_journal(root)
 
