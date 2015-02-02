@@ -278,6 +278,7 @@ class NMBillScraper(BillScraper):
             '7611': ('withdrawn from committee', 'bill:withdrawn'),
             '7612': ('withdrawn from all committees', 'bill:withdrawn'),
             '7613': ('withdrawn and tabled', 'bill:withdrawn'),
+            '7614': ('withdrawn printed germane prefile', 'bill:withdrawn'),
             '7615': ('germane', 'other'),
             '7616': ('germane & printed', 'other'),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
@@ -459,7 +460,7 @@ class NMBillScraper(BillScraper):
                 if vote:
                     bill.add_vote(vote)
                 else:
-                    raise ValueError("Bad parse on the vote")
+                    self.warning("Bad parse on the vote")
 
             elif 'HVOTE' in suffix:
                 vote = self.parse_house_vote(doc_path + fname)
@@ -532,7 +533,10 @@ class NMBillScraper(BillScraper):
 
             # in_votes: totals & votes
             else:
-                line = line.replace(flag, "|")
+                if "|" not in line:
+                    self.warning("NO DELIM!!! %s", line)
+                    continue
+
                 # totals
                 if 'TOTALS' in line:
                     # Lt. Governor voted
@@ -565,7 +569,7 @@ class NMBillScraper(BillScraper):
                 matches = re.match(
                     ' ([A-Z,\'\-.]+)(\s+)X\s+([A-Z,\'\-.]+)(\s+)X', line)
 
-                votes = [x.strip() for x in line.split("|")][1:-1]
+                votes = [x.strip() for x in line.split("|")]
                 vote1 = votes[:5]
                 vote2 = votes[5:]
 
