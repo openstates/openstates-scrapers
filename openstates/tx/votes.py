@@ -3,6 +3,9 @@ import re
 import uuid
 import urlparse
 import datetime
+import scrapelib
+
+import tx
 
 from billy.scrape.votes import VoteScraper, Vote
 from .utils import parse_ftp_listing
@@ -240,7 +243,11 @@ def viva_voce_votes(root, session):
 
 class TXVoteScraper(VoteScraper):
     jurisdiction = 'tx'
+    #the 84th session doesn't seem to be putting journals on the ftp
+
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
+
+
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -252,6 +259,9 @@ class TXVoteScraper(VoteScraper):
         if len(session) == 2:
             session = "%sR" % session
 
+
+        #As of 1/30/15, the 84th session does not have journals on the ftp
+        """
         journal_root = urlparse.urljoin(self._ftp_root, ("/journals/" +
                                                          session +
                                                          "/html/"),
@@ -268,21 +278,51 @@ class TXVoteScraper(VoteScraper):
                 continue
             url = urlparse.urljoin(journal_root, name)
             self.scrape_journal(url, chamber, session)
+        """
+        #we're going to go through every day this year before today
+        #and see if there were any journals that day
+        today = datetime.datetime.today()
+        today = datetime.datetime(today.year,today.month,today.day)
+        journal_day = datetime.datetime(today.year,1,1)
+        day_num = 1
+        while journal_day <= today:
+            if chamber == 'lower':
+                journal_root = "http://www.journals.house.state.tx.us/HJRNL/%s/HTML/" % session
+                journal_url = journal_root + session + "DAY" + str(day_num).zfill(2)+"FINAL.HTM"
+            else:
+                journal_root = "http://www.journals.senate.state.tx.us/SJRNL/%s/HTML/" % session
+                journal_url = journal_root + "%sSJ%s-%s-F.HTM" % (session,str(journal_day.month).zfill(2), str(journal_day.day).zfill(2))
+            journal_day += datetime.timedelta(days=1)
+            day_num += 1
+
+            try:
+                self.get(journal_url)
+            except scrapelib.HTTPError:
+                continue
+            else:
+                self.scrape_journal(journal_url, chamber, session)
+
+
 
     def scrape_journal(self, url, chamber, session):
-        year = metadata['session_details'][session]['start_date'].year
+        if "R" in session:
+            session_num = session.strip("R")
+        else:
+            session_num = session
+        year = tx.metadata['session_details'][session_num]['start_year']
         page = self.urlopen(url)
         root = lxml.html.fromstring(page)
         clean_journal(root)
 
+
         if chamber == 'lower':
             div = root.xpath("//div[@class = 'textpara']")[0]
-            date_str = div.text.split('---')[1].strip()
+            date_str = " ".join(div.text.split()[-4:]).strip()
             date = datetime.datetime.strptime(
                 date_str, "%A, %B %d, %Y").date()
         else:
             fname = os.path.split(urlparse.urlparse(url).path)[-1]
-            date_str = re.match(r'%sSJ(\d\d-\d\d).*\.htm' % session,
+            date_str = re.match(r'%sSJ(\d\d-\d\d).*\.HTM' % session,
                             fname).group(1) + " %s" % year
             date = datetime.datetime.strptime(date_str,
                                               "%m-%d %Y").date()
