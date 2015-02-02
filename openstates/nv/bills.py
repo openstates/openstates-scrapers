@@ -253,7 +253,7 @@ class NVBillScraper(BillScraper):
         if len(trs) == 1:
             # no vote info
             return
-        
+
         for tr in trs[1:]:
             link = tr.xpath('td/a[contains(text(), "Passage")]')[0]
             motion = link.text
@@ -261,7 +261,7 @@ class NVBillScraper(BillScraper):
                 chamber = 'lower'
             else:
                 chamber = 'upper'
-                
+
             votes = {}
             tds = tr.xpath('td')
             for td in tds:
@@ -273,7 +273,7 @@ class NVBillScraper(BillScraper):
                         vote_date = datetime.strptime(text, '%b %d, %Y')
                     elif count:
                         votes[count.group('category')] = int(count.group('votes'))
-            
+
             yes = votes['Yea']
             no = votes['Nay']
             excused = votes['Excused']
@@ -281,11 +281,11 @@ class NVBillScraper(BillScraper):
             absent = votes['Absent']
             other = excused + not_voting + absent
             passed = yes > no
-            
+
             vote = Vote(chamber, vote_date, motion, passed, yes, no,
                         other, not_voting=not_voting, absent=absent)
             vote.add_source(page_url)
-            
+
             # try to get vote details
             try:
                 vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
@@ -294,20 +294,20 @@ class NVBillScraper(BillScraper):
                 page = self.urlopen(vote_url)
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
-                
+
                 for el in root.xpath('//table[2]/tr'):
                     tds = el.xpath('td')
                     name = tds[1].text_content().strip()
                     vote_result = tds[2].text_content().strip()
-    
+
                     if vote_result == 'Yea':
                         vote.yes(name)
                     elif vote_result == 'Nay':
                         vote.no(name)
                     else:
                         vote.other(name)
-                vote.add_source(page_url)    
+                vote.add_source(page_url)
             except scrapelib.HTTPError:
                 self.warning("failed to fetch vote page, adding vote without details")
-                
+
             bill.add_vote(vote)
