@@ -63,6 +63,9 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                             value = re.sub("\s+", " ", value).strip()
                     elif len(kvpair) == 2:
                         key, value = kvpair
+                        if value.text_content().strip() == "arty:":
+                            key = value
+                            value = value.tail
                     elif len(kvpair) == 3:
                         k1, k2, value = kvpair
                         # As seen with a <stong><strong>Email:</strong></strong>
@@ -82,6 +85,9 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                         key, value = (x.strip() for x in key.rsplit(":", 1))
 
                     key = re.sub("\s+", " ", key).strip()
+                    key = key.replace(":", "")
+                    if key == "arty":
+                        key = "Party"
 
                     info[key] = value
 
