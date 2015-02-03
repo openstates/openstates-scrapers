@@ -57,12 +57,10 @@ class RICommitteeScraper(CommitteeScraper):
             "email" : 2
         }
 
-        prefix = "Senator"
 
         for member in members:
             name = member[order['name']].text_content().strip()
-            if name[:len(prefix)] == prefix:
-                name = name[len(prefix):].strip()
+            name = name.replace("Senator","").replace("Representative","").strip()
             appt = member[order['appt']].text_content().strip()
             self.log("name "+ name +" role " + appt)
             comm.add_member(name, appt)
