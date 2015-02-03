@@ -216,7 +216,14 @@ class AZBillScraper(BillScraper):
                     vote_url = row[0].xpath('string(a/@href)')
                     if vote_url:
                         date = utils.get_date(row[3])
-                        act = row[5].text_content().strip()
+                        try:
+                            act = row[5].text_content().strip()
+                        except IndexError:
+                            #not sure what to do if action is not specified
+                            #skipping and throwing a warning for now
+                            self.logger.warning("Vote has no action, skipping.")
+                            continue
+
                         a_type = get_action_type(act, 'COMMITTEES:')
                         act = get_verbose_action(act)
                         bill.add_action(actor,
