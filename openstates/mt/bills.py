@@ -536,6 +536,8 @@ class PDFCommitteeVote(object):
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
         chamber = re.search(r'(HOUSE|SENATE|JOINT)', self.text)
+        if chamber is None:
+            raise PDFCommitteeVoteParseError("PDF didn't have chamber on it")
         return chamber_dict[chamber.group(1)]
 
     def date(self):

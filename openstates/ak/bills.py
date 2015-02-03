@@ -63,6 +63,7 @@ class AKBillScraper(BillScraper):
         'LEC': 'Legislative Council',
         'ARC': 'Special Committee on the Arctic',
         'EDA': 'Economic Development, Trade, Tourism & Arctic Policy',
+        'ENE': 'Energy',
     }
 
     _comm_re = re.compile(r'^(%s)\s' % '|'.join(_comm_mapping.keys()))
