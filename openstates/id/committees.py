@@ -71,16 +71,23 @@ class IDCommitteeScraper(CommitteeScraper):
         committee = Committee('joint', name)
         table = html.xpath('//table')[2]
         for row in table.xpath('tbody/tr'):
-            senate, house = [ td.text.replace('\r\n', ' ').replace(u'\xa0', ' ') \
-                              for td in row.xpath('td') ]
+            for td in row.xpath('td'):
+                member_text = td.text
+                if member_text is None:
+                    continue
+                if "Sen." in member_text:
+                    chamber = "upper"
+                else:
+                    chamber = "lower"
+                member_text = member_text.replace('\r\n', ' ').replace(u'\xa0', ' ').replace("Sen.","").replace("Rep.","").strip()
+                member = member_text.split(",")
+                if len(member) > 1:
+                    committee.add_member(member[0].strip(),role=member[1].strip(), chamber = chamber)
+                else:
+                    committee.add_member(member[0].strip(), chamber = chamber)
 
-            sen_data = senate.strip('Sen.').strip().split(',')
-            hou_data = house.strip('Rep.').strip().split(',')
 
-            if len(sen_data) > 1 and sen_data[1].strip() != "":
-                committee.add_member(*sen_data)
-            if len(hou_data) > 1 and hou_data[1].strip() != "":
-                committee.add_member(*hou_data)
+
 
         committee.add_source(url)
         self.save_committee(committee)
@@ -138,7 +145,7 @@ class IDCommitteeScraper(CommitteeScraper):
             elif name == 'Economic Outlook and Revenue Assessment Committee':
                 committee = Committee('joint', name)
                 committee.add_source(url)
-                # no membership available
+                #need to write a committee-specific scraper
                 #self.save_committee(committee)
             else:
                 self.log('Unknown committee: %s %s' % (name, url))
