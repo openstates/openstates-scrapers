@@ -12,7 +12,8 @@ bill_type_map = {'B': 'bill',
                  'R': 'resolution',
                  'CR': 'concurrent resolution',
                  'JR': 'joint resolution',
-                 'CO': 'concurrent order'
+                 'CO': 'concurrent order',
+                 'A': "address"
                 }
 action_classifiers = [
     ('Ought to Pass', ['bill:passed']),

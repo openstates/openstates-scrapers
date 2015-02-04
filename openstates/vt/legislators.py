@@ -28,11 +28,7 @@ class VTLegislatorScraper(LegislatorScraper):
                     district=info['District'].replace(" District", ""),
                     party=info['Party'],
                     email=info['Email'],
-                    full_name="{0}{1} {2}".format(
-                            info['FirstName'],
-                            (" " + info['MI'] if info['MI'] else ""),
-                            info['LastName']
-                            ),
+                    full_name="{0} {1}".format(info['FirstName'], info['LastName']),
                     photo_url=
                             'http://legislature.vermont.gov/assets/Documents/Legislators/{}.jpg'.
                             format(info['Email'][ :-(len("@leg.state.vt.us"))]
