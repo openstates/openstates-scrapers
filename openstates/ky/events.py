@@ -60,7 +60,7 @@ class KYEventScraper(EventScraper):
             else:
                 self.logger.warning("Event %s chamber is unknown, skipping" % desc)
                 continue
-                
+
             event.add_participant('host', desc, 'committee', chamber = chamber)
 
             self.save_event(event)
