@@ -19,58 +19,40 @@ class FLLegislatorScraper(LegislatorScraper):
     def scrape_sen_offices(self, leg, leg_url):
         doc = lxml.html.fromstring(self.urlopen(leg_url))
         email = doc.xpath('//a[contains(@href, "mailto:")]')[0].get('href').split(':')[-1]
-        leg['email'] = email
+        PHONE_RE = r'\(\d{3}\)\s\d{3}\-\d{4}'
 
-        # order of this page is
-        # h3 - District Offices
-        # p - office info
-        # h4 - Legislative Assistant
-        # p - legislative assistant
-        # (repeat)
-        # h3 - Tallahassee Office
-        # p - office info
-        skip_next_p = False
-        office_type = 'district'
-        office_name = 'District Office'
-        els = iter(doc.xpath('//h4[contains(text(), "District Office")]/following-sibling::*'))
+        offices = doc.xpath('//h4[contains(text(), "Office")]')
+        for office in offices:
 
-        while True:
-            try:
-                elem = next(els)
-            except StopIteration:
-                break
+            (name, ) = office.xpath('text()')
+            if name == "Tallahassee Office":
+                type_ = 'capitol'
+            else:
+                type_ = 'district'
 
-            # Skip legislative assistants and secretaries.
-            if elem.tag == 'h5':
-                while elem.tag != 'h4':
-                    try:
-                        elem = next(els)
-                    except StopIteration:
-                        break
+            address_lines = [
+                    x.strip() for x in
+                    office.xpath('following-sibling::div[1]/text()')
+                    if x.strip()
+                    ]
 
-            if elem.tag == 'p' and elem.text_content().strip():
-                # not skipping, parse the office
-                address = []
+            if re.search(PHONE_RE, address_lines[-1]):
+                phone = address_lines.pop()
+            else:
                 phone = None
-                fax = None
-                for line in elem.xpath('text()'):
-                    line = line.strip()
-                    if line.startswith('('):
-                        phone = line
-                    elif line.startswith('FAX '):
-                        fax = line[4:]
-                    elif line.startswith(('Senate VOIP', 'Statewide')):
-                        continue
-                    else:
-                        address.append(line)
-                # done parsing address
-                leg.add_office(office_type, office_name,
-                               address='\n'.join(address), phone=phone,
-                               fax=fax)
+            if re.search(r'(?i)open\s+\w+day', address_lines[0]):
+                address_lines = address_lines[1: ]
+            assert ", FL" in address_lines[-1]
+            address = "\n".join(address_lines)
+            address = re.sub(r'\s{2,}', " ", address)
 
-            elif elem.tag == 'h4' and 'Tallahassee Office' in elem.text:
-                office_type = 'capitol'
-                office_name = 'Tallahassee Office'
+            leg.add_office(
+                    type=type_,
+                    name=name,
+                    address=address,
+                    phone=phone,
+                    email=email if type_ == 'capitol' else None
+                    )
 
     def scrape_senators(self, term):
         url = "http://www.flsenate.gov/Senators/"
