@@ -32,6 +32,8 @@ class MDLegislatorScraper(LegislatorScraper):
             leg_a, district, _, _ = row.xpath('td')
             district = district.text
             name = leg_a.text_content().strip()
+            if name.lower() == "to be announced":
+                continue
             leg_url = leg_a.xpath('a/@href')[0]
 
             # get details

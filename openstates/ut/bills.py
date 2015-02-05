@@ -144,6 +144,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
         for row in page.xpath('tr')[1:]:
             uniqid += 1
             date = row.xpath('string(td[1])')
+            date = date.split("(")[0]
             date = datetime.datetime.strptime(date.strip(), "%m/%d/%Y").date()
 
             action = row.xpath('string(td[2])').strip()

@@ -16,15 +16,21 @@ class MDCommitteeScraper(CommitteeScraper):
         for a in doc.xpath('//a[contains(@href, "cmtepage")]'):
             url = a.get('href').replace('stab=01', 'stab=04')
             chamber = a.xpath('../../..//th/text()')[0]
+            com_name = a.text
+            if com_name is None:
+                continue
+            com_name = com_name.strip()
             if 'Senate' in chamber and 'upper' in chambers:
                 chamber = 'upper'
-                self.scrape_committee(chamber, a.text, url)
             elif 'House' in chamber and 'Delegation' not in chamber and 'lower' in chambers:
                 chamber = 'lower'
-                self.scrape_committee(chamber, a.text, url)
-            elif chamber in ('Joint', 'Statutory', 'Special Joint'):
+            elif chamber in ('Joint', 'Statutory', 'Special Joint', 'Other'):
                 chamber = 'joint'
-                self.scrape_committee(chamber, a.text, url)
+            else:
+                self.logger.warning("No committee chamber available for committee '%s'" % com_name)
+                continue
+
+            self.scrape_committee(chamber, com_name, url)
 
 
     def scrape_committee(self, chamber, com_name, url):
@@ -37,7 +43,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
         for table in doc.xpath('//table[@class="grid"]'):
             rows = table.xpath('tr')
-            sub_name = rows[0].getchildren()[0].text
+            sub_name = rows[0].getchildren()[0].text.strip()
 
             # new table - subcommittee
             if sub_name != 'Full Committee':
@@ -45,7 +51,7 @@ class MDCommitteeScraper(CommitteeScraper):
                 com.add_source(url)
 
             for row in rows[1:]:
-                name = row.getchildren()[0].text_content()
+                name = row.getchildren()[0].text_content().strip()
                 if name.endswith(' (Chair)'):
                     name = name.replace(' (Chair)','')
                     role = 'chair'

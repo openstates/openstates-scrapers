@@ -86,16 +86,15 @@ class WVLegislatorScraper(LegislatorScraper):
         office = dict(
             name='Capitol Office',
             type='capitol',
-            phone=(officedata['Capitol Phone:'] or [None]).pop(),
+            phone=officedata['Capitol Phone:'][0] if officedata['Capitol Phone:'][0] not in ('', 'NA') else '',
             fax=None,
             email=email,
             address='\n'.join(officedata['Capitol Office:']))
 
         legislator.add_office(**office)
 
-        if officedata['Business Phone:']:
+        if officedata.get('Business Phone:', '') not in ([], ['NA']):
             legislator.add_office(
                 name='Business Office',
                 type='district',
-                phone=officedata['Business Phone:'].pop())
-
+                phone=officedata['Business Phone:'][0])

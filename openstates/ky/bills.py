@@ -35,8 +35,8 @@ class KYBillScraper(BillScraper):
             if re.match('\d{4}', subj_link):
                 subj_html = self.urlopen(session_url(session) + subj_link)
                 sdoc = lxml.html.fromstring(subj_html)
-                subject = sdoc.xpath('//a[@name="TopOfPage"]/text()')[0]
-                for bill in sdoc.xpath('//table[@id="table2"]//a/text()'):
+                subject = sdoc.xpath('//p[@class="PageHeader"]/text()')[0]
+                for bill in sdoc.xpath('//div[@id="bul"]/a/text()'):
                     self._subjects[bill.replace(' ', '')].append(subject)
 
 
