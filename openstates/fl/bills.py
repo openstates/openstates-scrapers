@@ -180,6 +180,7 @@ class FLBillScraper(BillScraper):
             for tr in analysis_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 name += " -- " + tr.xpath("string(td[3])").strip()
+                name = re.sub(r'\s+', " ", name)
                 date = tr.xpath("string(td[4])").strip()
                 if date:
                     name += " (%s)" % date
