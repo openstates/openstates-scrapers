@@ -94,22 +94,19 @@ class FLBillScraper(BillScraper):
             hist_table = hist_page.xpath(
                 "//div[@id = 'tabBodyBillHistory']//table")[0]
 
-        # now try and get second h1
-        bill_type_h2 = page.xpath('//h2/text()')[-1]
-        if re.findall('[SH]B', bill_type_h2):
+        if bill_id.startswith('SB ') or \
+                bill_id.startswith('HB ') or \
+                bill_id.startswith('SPB ') or \
+                bill_id.startswith('HPB '):
             bill_type = 'bill'
-        elif re.findall('[SH]PB', bill_type_h2):
-            bill_type = 'proposed bill'
-        elif re.findall('[SH]R', bill_type_h2):
+        elif bill_id.startswith('HR ') or bill_id.startswith('SR '):
             bill_type = 'resolution'
-        elif re.findall('[SH]JR', bill_type_h2):
+        elif bill_id.startswith('HJR ') or bill_id.startswith('SJR '):
             bill_type = 'joint resolution'
-        elif re.findall('[SH]CR', bill_type_h2):
+        elif bill_id.startswith('SCR ') or bill_id.startswith('HCR '):
             bill_type = 'concurrent resolution'
-        elif re.findall('[SH]M', bill_type_h2):
+        elif bill_id.startswith('SM ') or bill_id.startswith('HM '):
             bill_type = 'memorial'
-        elif re.findall('\s+Senate \d+', bill_type_h2):
-            bill_type = 'bill'
         else:
             raise Exception('Failed to identify bill type.')
 
