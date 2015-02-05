@@ -64,7 +64,7 @@ class UTEventScraper(EventScraper, LXMLMixin):
                         )
                 bills = document.xpath('@onclick')
                 for bill in bills:
-                    if "2015/bills/static" in bill:
+                    if "bills/static" in bill:
                         bill_name = bill.split("/")[-1].split(".")[0]
                         event.add_related_bill(bill_name,
                             type='consideration',
