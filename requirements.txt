@@ -10,6 +10,7 @@ SQLAlchemy>=0.5.3
 MySQL-python
 # GA
 suds
+chardet
 
 # Massachussetts votes
 sh
