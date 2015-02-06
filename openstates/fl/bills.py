@@ -60,7 +60,7 @@ class FLBillScraper(BillScraper):
                 bill_check and
                 text_check)
         if not valid:
-            raise Exception('Response was invalid. Timsucks.')
+            raise Exception('Response was invalid')
         return valid
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
