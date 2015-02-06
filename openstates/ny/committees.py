@@ -38,7 +38,7 @@ def parse_name(name):
 
     name = name.replace("Sen.","").replace("Rep.","").strip()
 
-    
+
     return (name, role)
 
 
