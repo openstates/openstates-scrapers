@@ -36,10 +36,9 @@ class PRLegislatorScraper(LegislatorScraper):
             leg_page_html = self.urlopen(url)
             doc = lxml.html.fromstring(leg_page_html)
             doc.make_links_absolute(url)
-            table = doc.xpath('//table[@summary="Senadores 2013-2016"]')[0]
+            rows = doc.xpath('//table[@summary="Senadores 2013-2016"]/tr[not(@class="ms-viewheadertr")]')
 
-            # skip first row
-            for row in table.xpath('tr')[1:]:
+            for row in rows:
                 tds = row.xpath('td')
 
                 name = tds[0].text_content().title().replace('Hon.','',1).strip()
@@ -57,23 +56,24 @@ class PRLegislatorScraper(LegislatorScraper):
                     lastname = nameparts[1]
 
                 # Construct the photo url
-                picture_filename = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + (nameparts[0][0] + lastname).lower() + '.jpg'
-
+                photo_url = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + (nameparts[0][0] + lastname).lower() + '.jpg'
                 try:
-                    picture_data = self.urlopen(picture_filename)  # Checking to see if the file is there
-                    leg = Legislator(term, 'upper', district, name,
-                                     party=party,
-                                     email=email, url=url,
-                                     photo_url=picture_filename)
-
+                    picture_data = self.urlopen(photo_url)  # Checking to see if the file is there
                 except scrapelib.HTTPError:         # If not, leave out the photo_url
-                    leg = Legislator(term, 'upper', district, name,
-                                     party=party, phone=phone, email=email,
-                                     url=url)
+                    photo_url = ''
 
+                leg = Legislator(
+                        term=term,
+                        chamber='upper',
+                        district=district,
+                        full_name=name,
+                        party=party,
+                        photo_url=photo_url
+                        )
                 leg.add_office('capitol', 'Oficina del Capitolio',
-                               phone=phone)
+                               phone=phone, email=email)
                 leg.add_source(url)
+
                 self.save_legislator(leg)
 
     def scrape_house(self, term):
