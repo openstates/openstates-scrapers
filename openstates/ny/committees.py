@@ -19,6 +19,10 @@ def parse_name(name):
     >>> parse_name('Owen H.\\r\\nJohnson (Vice Chairperson)')
     ('Owen H. Johnson', 'vice chairperson')
     """
+
+    if name in ("Contact", "RSS", "Flickr", "Twitter", "Facebook", "YouTube"):
+        return (None,None)
+
     name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
     name = re.sub(r'\s+', ' ', name)
 
@@ -28,11 +32,16 @@ def parse_name(name):
         r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
         name)
 
+    role = "member"
     if match:
         name = match.group(1).strip(' ,')
         role = match.group(2).lower()
-        return (name, role)
-    return (name, 'member')
+
+
+    name = name.replace("Sen.","").replace("Rep.","").strip()
+
+    
+    return (name, role)
 
 
 class NYCommitteeScraper(CommitteeScraper):
@@ -74,6 +83,8 @@ class NYCommitteeScraper(CommitteeScraper):
             member = re.sub(r'\s+', ' ', member)
 
             name, role = parse_name(member)
+            if name is None:
+                continue
 
             # Figure out if this person is the chair.
             role_type = link.xpath('../../preceding-sibling::div[1]/text()')
@@ -126,7 +137,7 @@ class NYCommitteeScraper(CommitteeScraper):
         xpath = '//label[contains(., "Chair:")]/following-sibling::a/text()'
         chair = page.xpath(xpath)
         if chair:
-            comm.add_member(chair.pop().strip(), 'chair')
+            comm.add_member(chair.pop().replace("Sen.","").strip(), 'chair')
 
         seen = set([member['name'] for member in comm['members']])
         for link in member_div.xpath(".//a"):
@@ -153,8 +164,10 @@ class NYCommitteeScraper(CommitteeScraper):
                 continue
             seen.add(member)
 
-            name, role = parse_name(member)
-            comm.add_member(name, role)
+            member_name, role = parse_name(member)
+            if member_name is None:
+                continue
+            comm.add_member(member_name, role)
 
         if comm['members']:
             self.save_committee(comm)
