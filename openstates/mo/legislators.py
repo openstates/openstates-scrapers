@@ -87,10 +87,14 @@ class MOLegislatorScraper(LegislatorScraper):
                     if 'Contact.aspx' in email:
                         email = None
                     if email:
+                        email = email.replace("Mailto:","").replace("mailto:","")
                         break
 
+                address = "%s%s" % (address[0],address[1])
+                address = address.replace(u'\u00a0\u00a0',"\n").strip()
+
                 kwargs = {
-                    "address": "%s%s" % (address[0],address[1]),
+                    "address": address,
                     "email": email,
                 }
 
@@ -171,7 +175,7 @@ class MOLegislatorScraper(LegislatorScraper):
                 terms = page.xpath('//*[@id="ContentPlaceHolder1_lblElected"]')
                 committees = page.xpath('//*[@id="ContentPlaceHolder1_lblCommittees"]/li/a')
                 # TODO home address?
-                if len(email) > 0 and email[0] != 'mailto:':
+                if len(email) > 0 and email[0].lower() != 'mailto:':
                     #print "Found email : %s" % email[0]
                     leg['email'] = email[0].split(':')[1]
                 if len(picture) > 0:

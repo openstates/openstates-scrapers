@@ -268,7 +268,15 @@ class ILBillScraper(BillScraper):
             else:
                 self.warning('unknown chamber %s' % chamber)
 
-            date = datetime.datetime.strptime(date, "%A, %B %d, %Y")
+            for date_format in ["%b %d, %Y", "%A, %B %d, %Y"]:
+                try:
+                    date = datetime.datetime.strptime(date, date_format)
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise AssertionError(
+                        "Date '{}' does not follow a format".format(date))
 
             vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
 
@@ -287,7 +295,7 @@ class ILBillScraper(BillScraper):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
-        COUNT_RE = re.compile('^(\d+) YEAS?\s+(\d+) NAYS?\s+(\d+) PRESENT$')
+        COUNT_RE = re.compile(r'^(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$')
         PASS_FAIL_WORDS = {
             'PASSED': True,
             'PREVAILED': True,
@@ -310,16 +318,23 @@ class ILBillScraper(BillScraper):
         for line in pdflines:
             # consider pass/fail as a document property instead of a result of the vote count
             # extract the vote count from the document instead of just using counts of names
-            if line.strip() in PASS_FAIL_WORDS:
+            if not line.strip():
+                continue
+            elif line.strip() in PASS_FAIL_WORDS:
                 if passed is not None:
                     raise Exception("Duplicate pass/fail matches in [%s]" % href)
                 passed = PASS_FAIL_WORDS[line.strip()]
             elif COUNT_RE.match(line):
-                yes_count, no_count, present_count = map(int, COUNT_RE.match(line).groups())
+                yes_count, no_count, present_count, not_voting_count = COUNT_RE.match(line).groups()
+                yes_count = int(yes_count)
+                no_count = int(no_count)
+                present_count = int(present_count)
                 counts_found = True
             elif counts_found:
-                if line and not line[0].isspace():
-                    vote_lines.append(line)
+                for value in VOTE_VALUES:
+                    if re.search(r'^\s*({})\s+\w'.format(value), line):
+                        vote_lines.append(line)
+                        break
 
         votes = find_columns_and_parse(vote_lines)
         for name, vcode in votes.items():
@@ -411,8 +426,7 @@ def find_columns_and_parse(vote_lines):
 
 def _is_potential_column(line, i):
     for val in VOTE_VALUES:
-        test_val = val + ' '
-        if line[i:i+len(test_val)] == test_val:
+        if re.search(r'^{}\s+\w.*'.format(val), line[i: ]):
             return True
     return False
 
