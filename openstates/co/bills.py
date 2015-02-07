@@ -244,6 +244,9 @@ class COBillScraper(BillScraper):
 
         nodes = bill_history_page.xpath('//form/b/font')
 
+        if len(nodes) == 0:
+            return
+
         actions = nodes[3].text_content()
 
         for action in actions.split('\n'):
@@ -343,6 +346,9 @@ class COBillScraper(BillScraper):
             bill_history_href = bill[index["history"]][0][0].attrib['href']
 
             history = self.parse_history(bill_history_href)
+            if history is None:
+                self.logger.warning("Bill history for %s is not correctly formatted" % bill_id)
+                continue
             b.add_source(bill_history_href)
 
             chamber_map = dict(Senate='upper', House='lower')
