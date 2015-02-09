@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import re
@@ -8,7 +10,7 @@ import scrapelib
 
 PHONE_RE = re.compile('\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
 
-class PRLegislatorScraper(LegislatorScraper):
+class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'pr'
 
     def scrape(self, chamber, term):
@@ -77,80 +79,92 @@ class PRLegislatorScraper(LegislatorScraper):
                 self.save_legislator(leg)
 
     def scrape_house(self, term):
-        url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
-
         party_map = {'PNP': 'Partido Nuevo Progresista',
                      'PPD': u'Partido Popular Democr\xe1tico'}
 
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        tables = doc.xpath('//table[@width="90%"]')
+        url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
+        doc = self.lxmlize(url)
 
-        # first table is district-based, second is at-large
-        for table, at_large in zip(tables, [False, True]):
+        members = doc.xpath('//table[@class="img_news"]/tr/td[*]')
+        for member in members:
 
-            for tr in table.xpath('.//tr')[1:]:
-                tds = tr.getchildren()
-                if not at_large:
-                    # tds: name, district, addr, phone, office, email
-                    name = tds[0]
-                    district = tds[1].text_content().lstrip('0')
-                    capitol_office = tds[2]
-                    phone = tds[3]
-                    email = tds[5]
-                    # district offices
-                    district_office = tds[4]
-                    district_addr = []
-                    district_phone  = None
-                    district_fax = None
-                    pieces = district_office.xpath('.//text()')
-                    for piece in pieces:
-                        if piece.startswith('Tel'):
-                            district_phone = PHONE_RE.findall(piece)[0]
-                        elif piece.startswith('Fax'):
-                            district_fax = PHONE_RE.findall(piece)[0]
-                        else:
-                            district_addr.append(piece)
-                    if district_addr:
-                        district_addr = ' '.join(district_addr)
-                else:
-                    # name, addr, phone, email
-                    name = tds[0]
+            (member_url, ) = member.xpath('a/@href')
+            (name, ) = member.xpath('font/b/text()[1]')
+            name = " ".join(name.split())
+            (photo_url, ) = member.xpath('a/img/@src')
+            party = party_map[member.xpath('font//font/text()')[0]]
+
+            member_text = member.text_content()
+            missing_district_on_index_page = False
+            try:
+                district = re.search(r'0?(\d{1,2})', member_text).group(1)
+            except AttributeError:
+                if "Distrito" not in member_text:
                     district = 'At-Large'
-                    capitol_office = tds[1]
-                    phone = tds[2]
-                    email = tds[3]
-                    district_addr = None
+                else:
+                    self.warning(u"{} represents a district, but it is not listed".
+                            format(name))
+                    missing_district_on_index_page = True
 
-                # cleanup is same for both tables
-                name = re.sub('\s+', ' ',
-                              name.text_content().strip().replace(u'\xa0', ' '))
-                email = email.xpath('.//a/@href')[0].strip('mailto:')
+                    # Special-case one member, whose page only displays a SQL error
+                    if name == u"Yashira M. Lebrón Rodríguez":
+                        leg = Legislator(
+                                term=term,
+                                chamber='lower',
+                                district='8',
+                                full_name=name,
+                                party=party
+                                )
+                        leg.add_source(url)
+                        self.save_legislator(leg)
 
-                numbers = {}
-                for b in phone.xpath('b'):
-                    numbers[b.text] = b.tail.strip()
+                        special_case_still_needed = True
+                        continue
 
-                # capitol_office as provided is junk
-                # things like 'Basement', and '2nd Floor'
+            # Parse the member's webpage for contact information
+            member_doc = self.lxmlize(member_url)
 
-                # urls @ http://www.camaraderepresentantes.org/legs2.asp?r=BOKCADHRTZ
-                # where random chars are tr's id
-                leg_url = 'http://www.camaraderepresentantes.org/legs2.asp?r=' + tr.get('id')
+            (email, ) = member_doc.xpath('//a[starts-with(@href, "mailto:")]/text()')
+            phone_and_fax = [
+                    x.strip() for x in
+                    member_doc.xpath(u'//b[contains(text(), "Teléfono(s):")]/..//text()')
+                    if x.strip()
+                    ]
+            try:
+                phone_index = phone_and_fax.index(u"Teléfono(s):") + 1
+                phone = phone_and_fax[phone_index]
+            except IndexError:
+                phone = None
+            try:
+                fax_index = phone_and_fax.index(u"Fax:") + 1
+                fax = phone_and_fax[fax_index]
+            except ValueError:
+                fax = None
 
-                leg = Legislator(term, 'lower', district, name,
-                                 party='unknown', email=email, url=url)
-                leg.add_office('capitol', 'Oficina del Capitolio',
-                               phone=numbers.get('Tel:') or None,
-                               # could also add TTY
-                               #tty=numbers.get('TTY:') or None,
-                               fax=numbers.get('Fax:') or None)
-                if district_addr:
-                    leg.add_office('district', 'Oficina de Distrito',
-                                   address=district_addr,
-                                   phone=district_phone,
-                                   fax=district_fax)
+            if missing_district_on_index_page:
+                (district, ) = member_doc.xpath('//div[@class="tbrown"]/span/b/text()')
+                district = re.search(r'Distrito 0?(\d{1,2})', district).group(1)
 
-                leg.add_source(url)
-                self.save_legislator(leg)
+            leg = Legislator(
+                    term=term,
+                    chamber='lower',
+                    district=district,
+                    full_name=name,
+                    party=party,
+                    photo_url=photo_url
+                    )
+
+            leg.add_source(url)
+            leg.add_source(member_url)
+            leg.add_office(
+                    type='capitol',
+                    name='Oficina del Capitolio',
+                    phone=phone,
+                    fax=fax,
+                    email=email
+                    )
+
+            self.save_legislator(leg)
+
+        # If this `assert` breaks, then remove the special-casing code
+        assert special_case_still_needed
