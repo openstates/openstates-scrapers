@@ -1,10 +1,11 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 from . import ksapi
 import json
 
 
-class KSLegislatorScraper(LegislatorScraper):
+class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ks'
 
     def scrape(self, term, chambers):
@@ -28,22 +29,15 @@ class KSLegislatorScraper(LegislatorScraper):
         slug = {'2013-2014': 'b2013_14',
                 '2015-2016': 'b2015_16'}[term]
         leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
-        photo_url = 'http://www.kslegislature.org/li/m/images/pics/%s.jpg' % kpid
-        #photo = legislator_page.xpath('//img[@class="profile-picture"]/@src')[0]
+        legislator_page = self.lxmlize(leg_url)
+        (photo_url, ) = legislator_page.xpath(
+                '//img[@class="profile-picture"]/@src')
 
         legislator = Legislator(term, chamber, str(content['DISTRICT']),
                                 content['FULLNAME'], email=content['EMAIL'],
                                 party=party, url=leg_url, photo_url=photo_url,
                                 occupation=content['OCCUPATION'],
                                )
-
-        # just do office address for now, can get others from api
-        # if content['OFFICENUM']:
-        #     address = ('Kansas House of Representatives\n'
-        #                'Docking State Office Building\n'
-        #                '901 SW Harrison Street\n'
-        #                'Topeka, KS 66612')
-        # else:
 
         address = ('Room %s\n'
                    'Kansas State Capitol Building\n'
