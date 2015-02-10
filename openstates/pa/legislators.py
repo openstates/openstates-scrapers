@@ -53,132 +53,55 @@ class PALegislatorScraper(LegislatorScraper):
             legislator['email'] = '%s@%s%s' % tuple(vals)
 
     def scrape_offices(self, url, doc, legislator):
-        el = doc.xpath('//h4[contains(., "Contact")]/..')
-        if el == []:
-            return
-        el, = el
+        account_types = ["facebook","twitter","youtube","instagram","pintrest"]
+        soc_media_accounts = doc.xpath("//div[contains(@class,'MemberBio-SocialLinks')]/a/@href")
+        for acct in soc_media_accounts:
+            for sm_site in account_types: 
+                if sm_site in acct.lower():
+                    legislator[sm_site] = acct        
 
-        for office in Offices(el, self):
-            legislator.add_office(**office)
+
+
+        contact_chunks = doc.xpath('//address')
+        if contact_chunks == []:
+            return
+        for contact_chunk in contact_chunks:
+            address = []
+            office = {}
+            for line in contact_chunk.text_content().split("\n"):
+                line = line.strip()
+
+                #sometimes office hours are on the same line as the address
+                line = line.split("Office Hours")
+                if len(line) > 1:
+                    office["hours"] = line[1].replace(":","").strip()
+                line = line[0]
+
+                #sometimes phone and fax are on the same line:
+                if "fax" in line.lower() and not line.lower().startswith("fax"):
+                    line, fax = line.lower().split("fax")
+                    office["fax"] = fax.lower().replace(":","").strip()
+
+                if line.lower().startswith(("hon","senator","rep","sen.")):
+                    pass
+                elif line.lower().startswith("fax"):
+                    office["fax"] = line.lower().replace("fax:","").strip()
+                elif line.startswith("("):
+                    office["phone"] = line.strip()
+                elif line.strip() == "":
+                    pass
+                else:
+                    address.append(line.strip())
+
+            if address != []:
+                address = "\n".join(address)
+                if "17120" in address:
+                    office["type"] = "capitol"
+                else:
+                    office["type"] = "district"
+                office["address"] = address
+                office["name"] = office["type"].title() + " Office"
+                legislator.add_office(**office)
         legislator.add_source(url)
 
 
-class Offices(object):
-    '''Terrible. That's what PA's offices are.
-    '''
-
-    class ParseError(Exception):
-        pass
-
-    def __init__(self, el, scraper):
-        self.el = el
-        self.scraper = scraper
-        lines = list(el.itertext())[5:]
-        lines = [x.strip() for x in lines]
-        lines = filter(None, lines)
-        self.lines = lines
-
-    def __iter__(self):
-        try:
-            for lines in self.offices_lines():
-                yield Office(lines).parsed()
-        except self.ParseError:
-            self.scraper.logger.warning("Couldn't parse offices.")
-            return
-
-    def break_at(self):
-        '''The first line of the address, usually his/her name.'''
-        lines = self.lines[::-1]
-
-        # The legr's full name is the first line in each address.
-        junk = set('contact district capitol information'.split())
-        while True:
-            try:
-                break_at = lines.pop()
-            except IndexError:
-                raise self.ParseError
-
-            # Skip lines that are like "Contact" instead of
-            # the legislator's full name.
-            if junk & set(break_at.lower().split()):
-                continue
-            else:
-                break
-        return break_at
-
-    def offices_lines(self):
-        office = []
-        lines = self.lines
-        break_at = self.break_at()
-        while lines and True:
-            line = lines.pop()
-            if line == break_at:
-                yield office
-                office = []
-            else:
-                office.append(re.sub(r'\s+', ' ', line))
-
-
-class Office(object):
-    '''They're really quite bad.'''
-
-    re_phone = re.compile(r' \d{3}\-\d{4}')
-    re_fax = re.compile(r'^\s*fax:\s*', re.I)
-
-    def __init__(self, lines):
-        junk = ['Capitol', 'District']
-        self.lines = [x for x in lines if x not in junk]
-
-    def phone(self):
-        '''Return the first thing that looks like a phone number.'''
-        lines = filter(self.re_phone.search, self.lines)
-        for line in lines:
-            if not line.strip().lower().startswith('fax:'):
-                return line.strip()
-
-    def fax(self):
-        lines = filter(self.re_fax.search, self.lines)
-        if lines:
-            return self.re_fax.sub('', lines.pop()) or None
-
-    def type_(self):
-        for line in self.lines:
-            if 'capitol' in line.lower():
-                return 'capitol'
-            elif 'east wing' in line.lower():
-                return 'capitol'
-        return 'district'
-
-    def name(self):
-        return self.type_().title() + ' Office'
-
-    def address(self):
-        lines = itertools.ifilterfalse(self.re_phone.search, self.lines)
-        lines = itertools.ifilterfalse(self.re_fax.search, lines)
-        lines = list(lines)
-        for i, line in enumerate(lines):
-            if re.search('PA \d{5}', line):
-                break
-
-        # If address lines are backwards, fix.
-        if i <= 2:
-            lines = lines[::-1]
-
-        # Make extra sure "PA 12345" line is last.
-        count = 0
-        while not re.search(', PA( \d{5})?', lines[-1]):
-            lines = lines[-1:] + lines[:-1]
-            count += 1
-            if count > 1000:
-                # If we're here, this address is badly hosed; skip.
-                return
-        address = '\n'.join(lines)
-        return address
-
-    def parsed(self):
-        return dict(
-            phone=self.phone(),
-            fax=self.fax(),
-            address=self.address(),
-            type=self.type_(),
-            name=self.name())
