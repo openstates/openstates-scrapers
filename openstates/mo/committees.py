@@ -16,13 +16,14 @@ class MOCommitteeScraper(CommitteeScraper):
         session = None
         if chamber == 'upper':
             self.scrape_senate_committees(term_name, chamber)
+        
         elif chamber == 'lower':
+            #joint committees scraped as part of lower
             self.validate_term(term_name, latest_only=True)
             self.scrape_reps_committees(term_name, chamber)
-
+        
     def scrape_senate_committees(self, term_name, chamber):
         years = [ t[2:] for t in term_name.split('-') ]
-
         for year in years:
             if int(year) > int(str(dt.datetime.now().year)[2:]):
                 self.log("Not running session %s, it's in the future." % (
@@ -33,33 +34,47 @@ class MOCommitteeScraper(CommitteeScraper):
                                             base=self.senate_url_base, year=year)
             page_string = self.urlopen(url)
             page = lxml.html.fromstring(page_string)
-            ps = page.xpath('id("mainContent")/table/*[3]/p')
-            for p in ps:
-                links = p.xpath('a[1]')
-                if not links:
+            comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
+
+            for comm_link in comm_links:
+                if "Assigned bills" in comm_link.text_content():
                     continue
-                a = links[0]
-                committee_name = a.text_content().strip()
-                committee_url = a.attrib.get('href')
 
-                if 'joint' in committee_name.lower():
-                    c = "joint"
-                else:
-                    c = chamber
 
-                committee = Committee(c, committee_name)
-                committee_page_string = self.urlopen(committee_url)
-                committee_page = lxml.html.fromstring(
-                                                    committee_page_string)
-                lis = committee_page.xpath(
-                    "//div[@id='mainContent']/ul/ul[1]/li")
-                if len(lis) == 0:
-                    lis = committee_page.xpath(
-                        "//div[@id='mainContent']//li")
-                    # This MIGHT cause issues.
-                for li in lis:
-                    mem_parts = li.text_content().strip().split(',')
+                comm_link = comm_link.attrib['href']
+                
+                if not "comm" in comm_link:
+                    continue
+
+                comm_page = lxml.html.fromstring(self.urlopen(comm_link))
+                comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
+
+                committee = Committee(chamber, comm_name)
+
+                members = comm_page.xpath("//div[@id='mainContent']//li/a")
+                for member in members:
+                    mem_link = member.attrib["href"]
+                    if not "members" in mem_link:
+                        continue
+                    mem_parts = member.text_content().strip().split(',')
                     mem_name = mem_parts[0]
+
+                    #this one time, MO forgot the comma between
+                    #the member and his district. Very rarely relevant
+                    try:
+                        int(mem_name[-4:-2]) #the district's # is in this position
+                    except ValueError:
+                        pass
+                    else:
+                        mem_name = " ".join(mem_name.split(" ")[0:-1]) #member name fixed
+
+                        #ok, so this next line. We don't care about
+                        #the first 2 elements of mem_parts anymore
+                        #so whatever. But if the member as a role, we want
+                        #to make sure there are 3 elements in mem_parts and
+                        #the last one is actually the role. This sucks, sorry.
+                        mem_parts.append(mem_parts[-1])
+
                     mem_role = 'member'
                     if len(mem_parts) > 2:
                         mem_role = mem_parts[2].lower()
@@ -69,7 +84,7 @@ class MOCommitteeScraper(CommitteeScraper):
 
                     committee.add_member(mem_name, role=mem_role)
                 committee.add_source(url)
-                committee.add_source(committee_url)
+                committee.add_source(comm_link)
                 self.save_committee(committee)
 
 
