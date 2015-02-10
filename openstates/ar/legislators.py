@@ -47,9 +47,6 @@ class ARLegislatorScraper(LegislatorScraper):
         full_name = ' '.join(name_and_party[1:-1])
 
         party = name_and_party[-1]
-        if party == "()":
-            self.warning("Uch, bad party. Ducking")
-            return
 
         if party == '(R)':
             party = 'Republican'
@@ -58,7 +55,8 @@ class ARLegislatorScraper(LegislatorScraper):
         elif party == '(G)':
             party = 'Green'
         else:
-            raise Exception('unknown party: %s' % party)
+            self.logger.warning("Unknown party {}, saving legislator with party of 'Unknown'".format(party))
+            party = "Unknown"
 
         try:
             img = root.xpath('//img[@class="SitePhotos"]')[0]
