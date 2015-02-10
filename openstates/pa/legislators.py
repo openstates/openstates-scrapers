@@ -56,9 +56,9 @@ class PALegislatorScraper(LegislatorScraper):
         account_types = ["facebook","twitter","youtube","instagram","pintrest"]
         soc_media_accounts = doc.xpath("//div[contains(@class,'MemberBio-SocialLinks')]/a/@href")
         for acct in soc_media_accounts:
-            for sm_site in account_types: 
+            for sm_site in account_types:
                 if sm_site in acct.lower():
-                    legislator[sm_site] = acct        
+                    legislator[sm_site] = acct
 
 
 
@@ -103,5 +103,3 @@ class PALegislatorScraper(LegislatorScraper):
                 office["name"] = office["type"].title() + " Office"
                 legislator.add_office(**office)
         legislator.add_source(url)
-
-
