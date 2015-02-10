@@ -18,10 +18,10 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'pr'
     latest_only = True
 
-    def scrape(self, term, chambers):
-        if 'upper' in chambers:
+    def scrape(self, chamber, term):
+        if chamber == 'upper':
             self.scrape_upper()
-        elif 'lower' in chambers:
+        elif chamber == 'lower':
             self.scrape_lower()
 
     def scrape_upper(self):
@@ -50,6 +50,15 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                     comm = None
                     comm_name = ''
                 comm_name = line
+
+                # Remove "Committee" from committee names
+                comm_name = comm_name.\
+                        replace(u"Comisión de ", "").\
+                        replace(u"Comisión Conjunta sobre ", "").\
+                        replace(u"Comisión Especial para el Estudio de ", "").\
+                        replace(u"Comisión Especial para ", "")
+                comm_name = re.sub(r'(?u)^(las?|el|los)\s', "", comm_name)
+                comm_name = comm_name[0].upper() + comm_name[1: ]
 
             # Committee president is always listed right after committee name
             elif not comm and comm_name and not line.startswith("President"):
