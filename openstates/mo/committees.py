@@ -16,12 +16,12 @@ class MOCommitteeScraper(CommitteeScraper):
         session = None
         if chamber == 'upper':
             self.scrape_senate_committees(term_name, chamber)
-        
+
         elif chamber == 'lower':
             #joint committees scraped as part of lower
             self.validate_term(term_name, latest_only=True)
             self.scrape_reps_committees(term_name, chamber)
-        
+
     def scrape_senate_committees(self, term_name, chamber):
         years = [ t[2:] for t in term_name.split('-') ]
         for year in years:
@@ -42,7 +42,7 @@ class MOCommitteeScraper(CommitteeScraper):
 
 
                 comm_link = comm_link.attrib['href']
-                
+
                 if not "comm" in comm_link:
                     continue
 
