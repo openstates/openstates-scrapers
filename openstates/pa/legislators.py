@@ -82,7 +82,7 @@ class PALegislatorScraper(LegislatorScraper):
                     line, fax = line.lower().split("fax")
                     office["fax"] = fax.lower().replace(":","").strip()
 
-                if line.lower().startswith(("hon","senator","rep","sen.")):
+                if line.lower().startswith(("hon.","senator","rep","sen.")):
                     pass
                 elif line.lower().startswith("fax"):
                     office["fax"] = line.lower().replace("fax:","").strip()
