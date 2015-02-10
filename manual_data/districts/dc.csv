@@ -1,4 +1,4 @@
-abbr,chamber,name,num_seats,boundary_id
+abbr,chamber,name,num_seats,boundary_id,division_id
 dc,upper,Ward 1,1,sldu/dc-1,ocd-division/country:us/district:dc/ward:1
 dc,upper,Ward 2,1,sldu/dc-2,ocd-division/country:us/district:dc/ward:2
 dc,upper,Ward 3,1,sldu/dc-3,ocd-division/country:us/district:dc/ward:3

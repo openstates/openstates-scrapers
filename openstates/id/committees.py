@@ -56,10 +56,15 @@ class IDCommitteeScraper(CommitteeScraper):
         member_path = '//h3[contains(text(), "%s")]/following-sibling::p[1]'
         for chamber in ('Senate', 'House'):
             members = html.xpath(member_path % chamber)[0]\
-                          .text_content().split('\r\n')
+                          .text_content().replace(",\r\n",", ")
+            #that replace is because one guy had his position on the next line
+            #and this is the best I could think of.
+            members = members.split('\r\n')
             for member in members:
-                if member.strip():
-                    committee.add_member(*member.replace(u'\xa0', ' ').split(','),
+                print member
+                if member.strip() == "":
+                    continue
+                committee.add_member(*member.replace(u'\xa0', ' ').split(','),
                                      chamber=_REV_CHAMBERS[chamber.lower()])
         committee.add_source(url)
         self.save_committee(committee)
