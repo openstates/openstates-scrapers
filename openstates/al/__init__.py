@@ -29,6 +29,11 @@ metadata =  {
                       '2013rs', '2014rs'],
          'start_year': 2011,
          'end_year': 2014,
+        },
+        {'name': '2015-2018',
+         'sessions': ['2015os','2015rs'],
+         'start_year': 2015,
+         'end_year': 2018,
         }
     ],
     'feature_flags': ['subjects', 'influenceexplorer'],
@@ -104,6 +109,18 @@ metadata =  {
             'internal_id': '1062',
             'type': 'primary',
             '_scraped_name': 'Regular Session 2014',
+        },
+        '2015os': {
+            'display_name': '2015 Organizational Session',
+            'internal_id': '1062',
+            'type': 'primary',
+            '_scraped_name': 'Organizational Session 2015',
+        },
+        '2015rs': {
+            'display_name': '2015 Regular Session',
+            'internal_id': '1062',
+            'type': 'primary',
+            '_scraped_name': 'Regular Session 2015',
         },
     },
     '_ignored_scraped_sessions': [
