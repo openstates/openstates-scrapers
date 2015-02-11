@@ -166,5 +166,4 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             self.save_legislator(leg)
 
-        # If this `assert` breaks, then remove the special-casing code
-        assert special_case_still_needed
+        assert special_case_still_needed, "Lebrón Rodríguez's page is no longer broken; remove special-casing"
