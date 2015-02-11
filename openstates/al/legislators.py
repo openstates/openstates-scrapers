@@ -60,7 +60,7 @@ class ALLegislatorScraper(LegislatorScraper):
     def scrape_rep_info(self, url, sponsor_ids, term):
         html = self.urlopen(url)
         page = lxml.html.fromstring(html)
-        reps = page.xpath("//table[contains(@id,'HseMainContent')]//tr")
+        reps = page.xpath("//table[contains(@id,'HseMainContent_tabByName_TabPanel')]//tr")
         for rep in reps:
             #get basic rep info
             info = rep.xpath(".//td")
@@ -72,6 +72,7 @@ class ALLegislatorScraper(LegislatorScraper):
             rep_name = rep_name.strip()
 
             #match rep to sponsor_id if possible
+            
             ln,fn = rep_name.split(",")
             last_fi_key = "{ln} ({fi})".format(ln=ln.strip(), fi=fn.strip()[0])
             leg = Legislator(term,
@@ -92,27 +93,28 @@ class ALLegislatorScraper(LegislatorScraper):
                 #can't find rep's sponsor_id, do what we can and get out!
                 self.logger.warning("Legislator {name} does not match any sponsor_id and thus will not be linked to bills or committees".format(name=rep_name))
                 self.save_legislator(leg)
-                return
+                continue
 
             #scrape rep's additional info from sponsor page
             rep_sponsor_url = "http://www.legislature.state.al.us/aliswww/Representative.aspx?OID_SPONSOR={}".format(sponsor_id)
             rep_html = self.urlopen(rep_sponsor_url)
             rep_page = lxml.html.fromstring(rep_html)
-            rows = rep_page.xpath("//table[contains(@id,'tabCommittees')]//tr")
+
+            rows = rep_page.xpath("//table[contains(@id,'TabCommittees')]//tr")
             for row in rows:
-                tds = row.xpath("//td/text()")
+                tds = [r.text_content() for r in row.xpath(".//td")]
                 if len(tds) == 0:
                     continue
                 role = "member"
-                comm_name = td[0].lower().strip()
-                if td[1].strip().lower() in ["chairperson", "ranking minority member", "vice chairperson"]:
-                    role = td[1].strip().lower()
+                comm_name = tds[1].lower().strip()
+                if tds[2].strip().lower() in ["chairperson", "ranking minority member", "vice chairperson"]:
+                    role = tds[2].strip().lower()
                 leg.add_role('committee member',
                             term=term,
                             chamber="lower",
                             committee=comm_name,
                             position=role)
-                leg.add_source(rep_sponsor_url)
+            leg.add_source(rep_sponsor_url)
             self.save_legislator(leg)
 
 
