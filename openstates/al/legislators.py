@@ -72,7 +72,7 @@ class ALLegislatorScraper(LegislatorScraper):
             rep_name = rep_name.strip()
 
             #match rep to sponsor_id if possible
-            
+
             ln,fn = rep_name.split(",")
             last_fi_key = "{ln} ({fi})".format(ln=ln.strip(), fi=fn.strip()[0])
             leg = Legislator(term,
@@ -100,6 +100,7 @@ class ALLegislatorScraper(LegislatorScraper):
             rep_html = self.urlopen(rep_sponsor_url)
             rep_page = lxml.html.fromstring(rep_html)
 
+            leg["photo_url"] = rep_page.xpath("//input[contains(@id,'imgLEG')]/@src")[0]
             rows = rep_page.xpath("//table[contains(@id,'TabCommittees')]//tr")
             for row in rows:
                 tds = [r.text_content() for r in row.xpath(".//td")]
@@ -119,52 +120,3 @@ class ALLegislatorScraper(LegislatorScraper):
 
 
 
-
-
-
-    def get_details(self, leg, term, url):
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        photo = doc.xpath('//img[@height="250"]/@src')
-        if photo:
-            leg['photo_url'] = photo[0]
-        email = doc.xpath('//a[starts-with(@href, "mailto")]/@href')
-        if email:
-            leg['email'] = email[0].strip('mailto:')
-
-        seen_coms = set()
-
-        # find lis after the strong (or p) containing Committees
-        coms = doc.xpath('//strong[contains(text(), "Committees")]/following::li')
-        if not coms:
-            coms = doc.xpath('//p[contains(text(), "Committees")]/following::li')
-        if not coms:
-            self.warning('no committees?')
-        for com in coms:
-            com = com.text_content()
-            if '(' in com:
-                com, position = com.split('(')
-                position = position.replace(')', '').lower().strip()
-            else:
-                position = 'member'
-            com = com.replace('Committee', '')
-            # fix their nonsense
-            com = com.replace(" No.","")
-            com = com.replace("Veterans Affairs", "Veterans' Affairs")
-            com = com.replace("Boards, Agencies, and", "Boards, Agencies and")
-            com = com.replace("Means / Education", "Means Education")
-            com = com.replace("Ethics, and Elections", "Ethics and Elections")
-            com = com.replace("Taxation, ", "Taxation ")
-            com = com.replace("Municiple ", "Municipal ")
-            com = com.strip()
-
-            if com not in seen_coms:
-                leg.add_role('committee member', term=leg['roles'][0]['term'],
-                             chamber=leg['roles'][0]['chamber'], committee=com,
-                             position=position)
-                seen_coms.add(com)
-            else:
-                self.warning('skipping second occurence of ' + com)
-        leg.add_source(url)
