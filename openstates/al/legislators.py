@@ -74,9 +74,7 @@ class ALLegislatorScraper(LegislatorScraper):
             office_address = '{}\n11 S. Union Street\nMontgomery, AL 36130'.format(suite)
             rep_name = rep_name.strip()
 
-            #match rep to sponsor_id if possible
-            ln,fn = rep_name.split(",")
-            last_fi_key = "{ln} ({fi})".format(ln=ln.strip(), fi=fn.strip()[0])
+            #add basic leg info and main office
             leg = Legislator(term,
                             "lower",
                             district,
@@ -86,6 +84,12 @@ class ALLegislatorScraper(LegislatorScraper):
                             'Capitol Office',
                             address=office_address,
                             phone=phone.strip())
+
+            #match rep to sponsor_id if possible
+            ln,fn = rep_name.split(",")
+            last_fi_key = "{ln} ({fi})".format(ln=ln.strip(), fi=fn.strip()[0])
+
+            
             leg.add_source(url)
             if ln.strip() in sponsor_ids:
                 sponsor_id = sponsor_ids[ln]
@@ -124,21 +128,32 @@ class ALLegislatorScraper(LegislatorScraper):
         base_senator_url = "http://www.legislature.state.al.us/aliswww/Senator.aspx?OID_SPONSOR={sponsor_id}&OID_PERSON={person_id}&SESSNAME="
         html = self.urlopen(url)
         page = lxml.html.fromstring(html)
+        
         senators = page.xpath("//input[contains(@id,'SenMainContent_Img')]") + page.xpath("//input[contains(@id,'SenMainContent_img')]")
         for senator in senators:
+            #the 2 ids needed to generate the url are in alt and longdesc. awesome.
             person_id = senator.attrib["alt"]
             sponsor_id = senator.attrib["longdesc"]
+            
             senator_link = base_senator_url.format(person_id = person_id, sponsor_id = sponsor_id)
             sen_html = self.urlopen(senator_link)
             sen_page = lxml.html.fromstring(sen_html)
+            
+            #stuff that's easy to grab
             photo_url = sen_page.xpath("//input[contains(@id,'imgLEG')]/@src")[0]
             sen_name = sen_page.xpath("//span[@id = 'SenMainContent_lblMember']")[0].text_content().replace("SENATOR","").strip()
             sen_trs = sen_page.xpath("//table[@id='SenMainContent_TabSenator_TabPanel1_gvLEG']//tr")
             district_trs = sen_page.xpath("//table[@id='SenMainContent_TabSenator_TabBIO_gvBIO']//tr")
+            
+            #putting the stuff in the table in a dictionary
+            #with the first td as the key and the 2nd as the value
             info_dict = {}
             for tr in sen_trs:
                 key,value = tr.xpath(".//td")
                 info_dict[key.text_content().replace(":","").lower().strip()] = value.text_content().strip()
+            
+            #the district table has similar info. Sometimes they use the same names.
+            #throwing " district" on the end of those keys to avoid overwriting
             for tr in district_trs:
                 key,value = tr.xpath(".//td")
                 info_dict[key.text_content().replace(":","").lower().strip()+" district"] = value.text_content().strip()
@@ -150,11 +165,13 @@ class ALLegislatorScraper(LegislatorScraper):
                             party = party_dict[info_dict["affiliation"].strip()]
                             )
 
+            #putting addresses together, skipping empty fields
             address_parts = ["street","office","city","state","postal code"]
             cap_address = [info_dict[a].strip() for a in address_parts if info_dict[a].strip() != ""]
             dist_address = [info_dict[a+" district"].strip() for a in address_parts if info_dict[a+" district"].strip() != ""]
 
 
+            #turning empties to nones
             for k,v in info_dict.items():
                 if v.strip() == "":
                     info_dict[k] = None
@@ -171,6 +188,7 @@ class ALLegislatorScraper(LegislatorScraper):
                             email=info_dict["email"],
                             fax=info_dict["fax"])
 
+            #sometimes there is no district office
             if len(dist_address) > 0:
                 leg.add_office('district',
                                 "District Office",
@@ -187,6 +205,7 @@ class ALLegislatorScraper(LegislatorScraper):
 
 
     def add_committees(self,leg_page,leg,chamber,term):
+        #as of today, both chambers do committees the same way! Yay!
         rows = leg_page.xpath("//table[contains(@id,'TabCommittees')]//tr")
         for row in rows:
             tds = [r.text_content() for r in row.xpath(".//td")]
