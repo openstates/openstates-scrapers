@@ -112,13 +112,13 @@ metadata =  {
         },
         '2015os': {
             'display_name': '2015 Organizational Session',
-            'internal_id': '1062',
+            'internal_id': '1063',
             'type': 'primary',
             '_scraped_name': 'Organizational Session 2015',
         },
         '2015rs': {
             'display_name': '2015 Regular Session',
-            'internal_id': '1062',
+            'internal_id': '1064',
             'type': 'primary',
             '_scraped_name': 'Regular Session 2015',
         },
