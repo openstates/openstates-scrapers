@@ -89,6 +89,13 @@ class ALLegislatorScraper(LegislatorScraper):
                 sponsor_id = sponsor_ids[ln]
             elif last_fi_key in sponsor_ids:
                 sponsor_id = sponsor_ids[last_fi_key]
+
+            #custom logic for people with the same first AND last names. arg.
+            elif rep_name == "Williams, Jack J. D.":
+                sponsor_id = sponsor_ids["Williams (JD)"]
+            elif rep_name == "Williams, Jack W.":
+                sponsor_id = sponsor_ids["Williams (JW)"]
+
             else:
                 #can't find rep's sponsor_id, do what we can and get out!
                 self.logger.warning("Legislator {name} does not match any sponsor_id and thus will not be linked to bills or committees".format(name=rep_name))
