@@ -81,7 +81,8 @@ class OHEventScraper(EventScraper):
                         event.add_participant(
                                 type='host',
                                 participant=comm,
-                                participant_type='committee'
+                                participant_type='committee',
+                                chamber='lower'
                                 )
                         for line in description.split('\n'):
                             related_bill = re.search(r'(H\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$', line)
@@ -164,7 +165,8 @@ class OHEventScraper(EventScraper):
                         event.add_participant(
                                 type='host',
                                 participant=comm,
-                                participant_type='committee'
+                                participant_type='committee',
+                                chamber='upper'
                                 )
                         for line in description.split('\n'):
                             related_bill = re.search(r'(S\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$', line)
