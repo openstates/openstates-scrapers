@@ -103,7 +103,8 @@ class TNEventScraper(EventScraper, LXMLMixin):
                         datetime_string, _ = datetime_string.split(
                             'Immediately follows')
                         dtfmt = "%A, %B %d, %Y"
-
+                    if "canceled" in datetime_string.lower():
+                        continue
                     when = dt.datetime.strptime(datetime_string, dtfmt)
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
