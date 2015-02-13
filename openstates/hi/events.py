@@ -71,7 +71,8 @@ class HIEventScraper(EventScraper, LXMLMixin):
 
             for committee in committees:
                 if "INFO" not in committee:
-                    committee = self.short_ids[committee]
+                    committee = self.short_ids.get("committee",{"chamber":"unknown", "name":committee})
+
                 else:
                     committee = {
                         "chamber": "joint",
