@@ -72,14 +72,23 @@ class ALLegislatorScraper(LegislatorScraper):
             rep_name,party,district,suite,phone = [i.text_content() for i in info]
             district = district.replace("House District","").strip()
             office_address = '{}\n11 S. Union Street\nMontgomery, AL 36130'.format(suite)
-            rep_name = rep_name.strip()
+
+            assert rep_name.count(",") == 1, "Unable to parse representative's name: {}".format(rep_name)
+            full_name_parts = [x.strip() for x in rep_name.split(",")]
+            full_name = "{0} {1}".format(full_name_parts[1], full_name_parts[0])
+
+            PARTIES = {
+                    'R': "Republican",
+                    'D': "Democratic"
+                    }
+            party = PARTIES[party.strip()]
 
             #add basic leg info and main office
             leg = Legislator(term,
                             "lower",
                             district,
-                            rep_name,
-                            party= party.strip())
+                            full_name,
+                            party=party)
             leg.add_office('capitol',
                             'Capitol Office',
                             address=office_address,
@@ -145,6 +154,10 @@ class ALLegislatorScraper(LegislatorScraper):
             sen_trs = sen_page.xpath("//table[@id='SenMainContent_TabSenator_TabPanel1_gvLEG']//tr")
             district_trs = sen_page.xpath("//table[@id='SenMainContent_TabSenator_TabBIO_gvBIO']//tr")
             
+            assert sen_name.count(",") == 1, "Unable to parse representative's name: {}".format(sen_name)
+            full_name_parts = [x.strip() for x in sen_name.split(",")]
+            full_name = "{0} {1}".format(full_name_parts[1], full_name_parts[0])
+
             #putting the stuff in the table in a dictionary
             #with the first td as the key and the 2nd as the value
             info_dict = {}
@@ -161,7 +174,7 @@ class ALLegislatorScraper(LegislatorScraper):
             leg = Legislator(term,
                             "upper",
                             info_dict["district"].replace("Senate District","").strip(),
-                            sen_name,
+                            full_name,
                             party = party_dict[info_dict["affiliation"].strip()]
                             )
 
