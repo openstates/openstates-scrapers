@@ -7,6 +7,7 @@ def clean_district(district):
 
     # Ugh.
     if district.startswith('Consisting of'):
+        print(district)
         return district.split().pop().strip('., ')
 
     mappings = (
@@ -35,6 +36,8 @@ def clean_district(district):
         ('yninth', 'y-Ninth'),
         (' And ', ' and '),
         ('\s*-+\s*$', ''),
+        ('Thirty First', 'Thirty-First'),
+        ('Thirty Third', 'Thirty-Third')
     )
     district = district.title()
     for pattern, repl in mappings:
