@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.votes import Vote
 from billy.scrape.bills import BillScraper, Bill
-from .utils import grouper, doc_link_url, year_from_session
 
 import lxml.html
 import datetime
@@ -11,6 +9,7 @@ import subprocess
 import shutil
 import os
 import re
+
 
 class NoSuchBill(Exception):
     pass
@@ -70,11 +69,6 @@ class PRBillScraper(BillScraper):
         return name
 
     def scrape(self, chamber, session):
-        # check for abiword
-        if os.system('which abiword') != 0:
-            raise ScrapeError('abiword is required for PR scraping')
-
-
         year = session[0:4]
         self.base_url = 'http://www.oslpr.org/legislatura/tl%s/tl_medida_print2.asp' % year
         chamber_letter = {'lower':'C','upper':'S'}[chamber]
@@ -106,6 +100,7 @@ class PRBillScraper(BillScraper):
                    isVersion = True;
             if isVersion:
                 # versions are mentioned several times, lets use original name
+                erroneous_filename = False
                 action_url = action_url.lower().strip()
                 if action_url.endswith('.doc'):
                     mimetype = 'application/msword'
@@ -115,10 +110,14 @@ class PRBillScraper(BillScraper):
                     mimetype = 'application/pdf'
                 elif action_url.endswith('docx'):
                     mimetype = 'application/octet-stream'
+                elif action_url.endswith('docm'):
+                    self.warning("Erroneous filename found: {}".format(action_url))
+                    erroneous_filename = True
                 else:
                     raise Exception('unknown version type: %s' % action_url)
-                bill.add_version(action, action_url, on_duplicate='use_old',
-                                 mimetype=mimetype)
+                if not erroneous_filename:
+                    bill.add_version(action, action_url, on_duplicate='use_old',
+                                     mimetype=mimetype)
             else:
                 bill.add_document(action, action_url)
             for pattern, action_actor,atype in _classifiers:
@@ -171,120 +170,73 @@ class PRBillScraper(BillScraper):
                 date = datetime.datetime.strptime(tds[0].text_content(), "%m/%d/%Y")
             action = tds[1].text_content().strip()
             #parse the text to see if it's a new version or a unrelated document
-            #if has - let's *shrug* assume it's a vote document
+            #if has a hyphen let's assume it's a vote document
 
             #get url of action
             action_url = tds[1].xpath('a/@href')
             atype,action = self.parse_action(chamber,bill,action,action_url,date)
-            if atype == 'bill:passed' and action_url:
-                vote_chamber  = None
-                for pattern, vote_chamber in _voteChambers:
-                   if re.match(pattern,action):
-                       break
+
+            # Some lower-house roll calls could be parsed, but finnicky
+            # Most roll lists are just images embedded within a document,
+            # and offer no alt text to scrape
+            # Instead, just scrape the vote counts
+            vote_info = re.search(r'(?u)^(.*),\s([\s\d]{2})-([\s\d]{2})-([\s\d]{2})-([\s\d]{0,2})$', action)
+            if vote_info and re.search(r'\d{1,2}', action):
+                vote_name = vote_info.group(1)
+
+                if u"Votación Final" in vote_name:
+                    (vote_chamber, vote_name) = re.search(
+                            r'(?u)^\w+ por (.*?) en (.*)$', vote_name).groups()
+                    if "Senado" in vote_chamber:
+                        vote_chamber = 'upper'
+                    else:
+                        vote_chamber = 'lower'
+
+                elif "Cuerpo de Origen" in vote_name:
+                    vote_name = re.search(
+                            r'(?u)^Cuerpo de Origen (.*)$', vote_name).group(1)
+                    vote_chamber = chamber
+
+                elif u"informe de Comisión de Conferencia" in vote_name:
+                    (vote_chamber, vote_name) = re.search(
+                            r'(?u)^(\w+) (\w+ informe de Comisi\wn de Conferencia)$',
+                            vote_name).groups()
+                    if vote_chamber == "Senado":
+                        vote_chamber = 'upper'
+                    else:
+                        vote_chamber = 'lower'
+
+                elif u"Se reconsideró" in vote_name:
+                    if bill['votes']:
+                        vote_chamber = bill['votes'][-1]['chamber']
+                    else:
+                        vote_chamber = chamber
 
                 else:
-                   self.warning('coudnt find voteChamber pattern')
+                    raise AssertionError(
+                            u"Unknown vote text found: {}".format(vote_name))
 
-                if vote_chamber == 'lower' and len(action_url) > 0:
-                    vote = self.scrape_votes(action_url[0], action,date,
-                                             vote_chamber)
-                    if not vote[0] == None:
-                        vote[0].add_source(action_url[0])
-                        bill.add_vote(vote[0])
-                    else:
-                        self.warning('Problem Reading vote: %s,%s' %
-                                     (vote[1], bill_id))
+                vote_name = vote_name.title()
+
+                yes = int(vote_info.group(2))
+                no = int(vote_info.group(3))
+                other = 0
+                if vote_info.group(4).strip():
+                    other += int(vote_info.group(4))
+                if vote_info.group(5).strip():
+                    other += int(vote_info.group(5))
+
+                vote = Vote(
+                        chamber=vote_chamber,
+                        date=date,
+                        motion=vote_name,
+                        passed=(yes > no),
+                        yes_count=yes,
+                        no_count=no,
+                        other_count=other
+                        )
+                vote.add_source(url)
+                bill.add_vote(vote)
 
         bill.add_source(url)
         self.save_bill(bill)
-
-    def get_filename_parts_from_url(self,url):
-        fullname = url.split('/')[-1].split('#')[0].split('?')[0]
-        t = list(os.path.splitext(fullname))
-        if t[1]:
-            t[1] = t[1][1:]
-            return t
-
-    def scrape_votes(self, url, motion, date, bill_chamber):
-        if isinstance(url,basestring):
-            filename1, extension = self.get_filename_parts_from_url(url)
-        else:
-            return None, 'No url'
-        if extension == 'pdf':
-            return None,'Vote on PDF'
-
-        vote_doc, resp = self.urlretrieve(url)
-
-        # use abiword to convert document
-        html_name = vote_doc + '.html'
-        subprocess.check_call('abiword --to=%s %s' % (html_name, vote_doc),
-                              shell=True, cwd='/tmp/')
-        text = open(html_name).read()
-        os.remove(html_name)
-        try:
-            # try and remove files too
-            shutil.rmtree(html_name + '_files')
-        except OSError:
-            pass
-        os.remove(vote_doc)
-
-        yes_votes = []
-        no_votes = []
-        other_votes = []
-
-        doc = lxml.html.fromstring(text)
-
-#           header = doc.xpath('/html/body/div/table[1]/tbody/tr[1]/td[2]')
-#           header_txt = header[0][0][0].text_content();
-#           assembly_number = header[0][0][1].text_content();
-#           bill_id = header[0][0][3].text_content().lstrip().rstrip();
-        #show legislator,party,yes,no,abstention,observations
-
-        table = doc.xpath('/html/body/div/table[2]/tbody')
-        if len(table) == 0:
-            return None,'Table body Problem'
-
-        # they have documents(PC0600') that have the action name as vote but in
-        # reality the actual content is the bill text which breaks the parser
-        try:
-            table[0].xpath('tr')[::-1][0].xpath('td')[1]
-        except IndexError:
-            table = doc.xpath('/html/body/div/table[3]/tbody')
-
-        #loop thru table and skip first one
-        vote = None
-        for row in table[0].xpath('tr')[::-1]:
-            tds = row.xpath('td')
-            party = tds[1].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','');
-            yes_td =  tds[2].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','')
-            nays_td =  tds[3].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','')
-            abstent_td =  tds[4].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','')
-            if party != 'Total':
-                name_td = self.clean_name(tds[0].text_content().replace('\n', ' ').replace('','',1)).strip();
-                split_name = name_td.split(',')
-                if len(split_name) > 1:
-                   name_td = split_name[1].strip() + ' ' + split_name[0].strip()
-
-                if yes_td == 'r':
-                    yes_votes.append(name_td)
-                if nays_td == 'r':
-                    no_votes.append(name_td)
-                if abstent_td == 'r':
-                    other_votes.append(name_td)
-                #observations
-#                   observations_td =  tds[5].text_content().replace('\n', ' ').replace(' ','').replace('&nbsp;','')
-#                   print observations_td
-
-
-        # return vote object
-        yes_count = len(yes_votes)
-        no_count = len(no_votes)
-        other_count = len(other_votes)
-        #FIXME: Since i am searching for the word passed it means that passed
-        # will always be true.
-        vote = Vote(bill_chamber, date, motion, True, yes_count, no_count,
-                    other_count)
-        vote['yes_votes'] = yes_votes
-        vote['no_votes'] = no_votes
-        vote['other_votes'] = other_votes
-        return vote,'Good'
