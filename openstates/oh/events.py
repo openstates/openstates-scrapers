@@ -1,173 +1,183 @@
+import datetime
+import os
 import re
-import datetime as dt
-
-from billy.scrape.events import EventScraper, Event
-from openstates.utils import LXMLMixin
 
 import pytz
-import lxml.html
 
-pages = {
-    "lower" : "http://www.legislature.state.oh.us/house_committee_schedule.cfm"
-}
+from billy.scrape.events import EventScraper, Event
+from billy.scrape.utils import convert_pdf
 
-class OHEventScraper(EventScraper, LXMLMixin):
+
+class OHEventScraper(EventScraper):
     jurisdiction = 'oh'
-
     _tz = pytz.timezone('US/Eastern')
 
-    def scrape_page(self, chamber, session):
-        url = pages[chamber]
-        page = self.lxmlize(url)
+    def scrape(self, chamber, session):
+        if chamber == "lower":
+            self.scrape_lower(session)
+        elif chamber == 'upper':
+            self.scrape_upper(session)
 
-        rows = page.xpath("//table[@class='MsoNormalTable']/tr")
-        header = rows[0]
-        rows = rows[1:]
+    def scrape_lower(self, session):
+        PDF_URL = 'http://www.ohiohouse.gov/Assets/CommitteeSchedule/calendar.pdf'
+        (path, _response) = self.urlretrieve(PDF_URL)
+        text = convert_pdf(path, type='text')
+        os.remove(path)
 
-        week_of = page.xpath("//h3[@align='center']/b/text()")[0]
-        match = re.match(
-            "(?i)Week of (?P<month>.*) (?P<day>\d+), (?P<year>\d{4})",
-            week_of)
-        day_info = match.groupdict()
-        monday_dom = int(day_info['day'])
-        days = ["monday", "tuesday", "wednesday", "thursday",
-                "friday", "saturday", "sunday"]
-
-        dates = {}
-        dIdex = 0
-        for row in header.xpath(".//td")[1:]:
-            date = row.text_content()
-            date = re.sub("\s+", " ", date).strip()
-            dates[dIdex] = date
-            dIdex += 1
-
-        def _parse_time_block(block):
-            if block.strip() == "No Meeting":
-                return None, None, []
-            bills = []
-            room = None
-
-            blocks = [ x.strip() for x in block.split("\n") ]
-
-            hour = re.sub("\(.*\)", "", blocks[1])
-            bills = blocks[2]
-            bills = bills.encode('ascii', errors='ignore')
-
-            if "after" in hour or "after" in bills:
-                return None, None, []
-
-            # Extra time cleanup
-            # "Rm"
-            if "Rm" in hour:
-                inf = hour.split("Rm")
-                assert len(inf) == 2
-                room = inf[1]
-                hour = inf[0]
-
-            # "and"
-            hour = [ x.strip() for x in hour.split('and') ]
-
-            # We'll pass over this twice.
-            single_bill = re.search("(H|S)(C?)(B|R) \d+", bills)
-            if single_bill is not None:
-                start, end = single_bill.regs[0]
-                description = bills
-                bills = bills[start:end]
-                bills = [{
-                    "bill_id": bills,
-                    "description": description
-                }]
+        days = re.split(r'(\w+day, \w+ \d{1,2}, 20\d{2})', text)
+        date = None
+        for day in enumerate(days[1: ]):
+            if day[0] % 2 == 0:
+                date = day[1]
             else:
-                multi_bills = re.search("(H|S)(B|R|M)s (\d+((;,) )?)+",
-                                        bills)
-                if multi_bills is not None:
-                    # parse away.
-                    bill_array = bills.split()
-                    type = bill_array[0]
-                    bill_array = bill_array[1:]
 
-                    def _c(f):
-                        for thing in [";", ",", "&", "*"]:
-                            f = f.replace(thing, "")
-                        return re.sub("\s+", " ", f).strip()
+                events = re.split(r'\n((?:\w+\s?)+)\n', day[1])
+                comm = ''
+                for event in enumerate(events[1: ]):
+                    if event[0] % 2 == 0:
+                        comm = event[1].strip()
+                    else:
 
-                    bill_array = [_c(x) for x in bill_array]
-                    type = type.replace("s", "")
-                    bill_array = [
-                        { "bill_id": "%s %s" % ( type, x ),
-                          "description": bills } for x in bill_array ]
-                    bills = bill_array
-
-                else:
-                    self.warning("Unknwon bill thing: %s" % (bills))
-                    bills = []
-
-            return hour, room, bills
-
-        for row in rows:
-            tds = row.xpath(".//td")
-            ctty = re.sub("\s+", " ", tds[0].text_content().strip())
-            times = tds[1:]
-            for i in range(0, len(times)):
-                hours, room, bills = _parse_time_block(times[i].text_content())
-                if hours is None or bills == []:
-                    continue
-
-                for hour in hours:
-                    datetime = "%s %s" % ( dates[i], hour )
-                    datetime = datetime.encode("ascii", "ignore")
-
-                    # DAY_OF_WEEK MONTH/DAY/YY %I:%M %p"
-                    dow, time = datetime.split()
-                    month = day_info['month']
-                    year = day_info['year']
-                    day = monday_dom + days.index(dow.lower())
-
-                    datetime = "%s %s %s, %s %s" % (
-                        dow, month, day, year, time
-                    )
-
-                    formats = [
-                        "%A %B %d, %Y %I:%M %p",
-                        "%A %B %d, %Y %I:%M%p",
-                        "%A %B %d, %Y %I %p",
-                        "%A %B %d, %Y %I%p",
-                    ]
-
-                    dtobj = None
-                    for fmt in formats:
                         try:
-                            dtobj = dt.datetime.strptime(datetime, fmt)
-                        except ValueError as e:
+                            (time, location, description) = re.search(
+                                    r'''(?mxs)
+                                    (\d{1,2}:\d{2}\s[ap]\.m\.)  # Meeting time
+                                    .*?,\s  # Potential extra text for meeting time
+                                    (.*?),\s  # Location, usually a room
+                                    .*?\n  # Chairman of committee holding event
+                                    (.*)  # Description of event
+                                    ''',
+                                    event[1]).groups()
+                        except AttributeError:
                             continue
 
-                    if dtobj is None:
-                        self.warning("Unknown guy: %s" % (datetime))
-                        raise Exception
+                        time = time.replace(".", "").upper()
+                        time = datetime.datetime.strptime(
+                                time + "_" + date,
+                                '%I:%M %p_%A, %B %d, %Y'
+                                )
+                        time = self._tz.localize(time)
 
-                    datetime = dtobj
+                        location = location.strip()
 
-                    event = Event(session,
-                                  datetime,
-                                  'committee:meeting',
-                                  'Meeting Notice',
-                                  "Room %s" % (room))
-                    event.add_source(url)
+                        description = '\n'.join([
+                                x.strip() for x in
+                                description.split('\n')
+                                if x.strip() and not x.strip()[0].isdigit()
+                                ]).decode('ascii', 'ignore')
 
-                    for bill in bills:
-                        event.add_related_bill(
-                            bill['bill_id'],
-                            description=bill['description'],
-                            type='consideration'
-                        )
+                        if not description:
+                            description = '[No description provided by state]'
 
-                    event.add_participant("host",
-                                          ctty, 'committee', chamber=chamber)
-                    self.save_event(event)
+                        event = Event(
+                                session=session,
+                                when=time,
+                                type='committee:meeting',
+                                description=description,
+                                location=location
+                                )
 
-    def scrape(self, chamber, session):
-        if chamber != "lower":
-            self.warning("Sorry, we can't scrape !(lower) ATM. Skipping.")
-            return
+                        event.add_source(PDF_URL)
+                        event.add_participant(
+                                type='host',
+                                participant=comm,
+                                participant_type='committee',
+                                chamber='lower'
+                                )
+                        for line in description.split('\n'):
+                            related_bill = re.search(r'(H\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$', line)
+                            if related_bill:
+                                (related_bill, relation) = related_bill.groups()
+                                relation = relation.strip()
+                                related_bill = related_bill.replace(".", "")
+                                event.add_related_bill(
+                                        bill_id=related_bill,
+                                        type='consideration',
+                                        description=relation
+                                        )
 
-        self.scrape_page(chamber, session)
+                        self.save_event(event)
+
+    def scrape_upper(self, session):
+        PDF_URL = 'http://www.ohiosenate.gov/Assets/CommitteeSchedule/calendar.pdf'
+        (path, _response) = self.urlretrieve(PDF_URL)
+        text = convert_pdf(path, type='text')
+        os.remove(path)
+
+        days = re.split(r'(\w+day, \w+ \d{1,2})', text)
+        date = None
+        for day in enumerate(days[1: ]):
+            if day[0] % 2 == 0:
+                # Calendar is put out for the current week, so use that year
+                date = day[1] + ", " + str(datetime.datetime.now().year)
+            else:
+
+                events = re.split(r'\n\n((?:\w+\s?)+),\s', day[1])
+                comm = ''
+                for event in enumerate(events[1: ]):
+                    if event[0] % 2 == 0:
+                        comm = event[1].strip()
+                    else:
+
+                        try:
+                            (time, location, description) = re.search(
+                                    r'''(?mxs)
+                                    (\d{1,2}:\d{2}\s[AP]M)  # Meeting time
+                                    .*?,\s  # Potential extra text for meeting time
+                                    (.*?)\n  # Location, usually a room
+                                    .*?\n  # Chairman of committee holding event
+                                    (.*)  # Description of event
+                                    ''',
+                                    event[1]).groups()
+                        except AttributeError:
+                            continue
+
+                        time = datetime.datetime.strptime(
+                                time + "_" + date,
+                                '%I:%M %p_%A, %B %d, %Y'
+                                )
+                        time = self._tz.localize(time)
+
+                        location = location.strip()
+
+                        description = '\n'.join([
+                                x.strip() for x in
+                                description.split('\n')
+                                if 
+                                        x.strip() and
+                                        not x.strip().startswith("Page ") and
+                                        not x.strip().startswith("*Possible Vote") and
+                                        not x.strip() == "NO OTHER COMMITTEES WILL MEET"
+                                ]).decode('ascii', 'ignore')
+
+                        if not description:
+                            description = '[No description provided by state]'
+
+                        event = Event(
+                                session=session,
+                                when=time,
+                                type='committee:meeting',
+                                description=description,
+                                location=location
+                                )
+
+                        event.add_source(PDF_URL)
+                        event.add_participant(
+                                type='host',
+                                participant=comm,
+                                participant_type='committee',
+                                chamber='upper'
+                                )
+                        for line in description.split('\n'):
+                            related_bill = re.search(r'(S\.?(?:[JC]\.?)?[BR]\.?\s+\d+)\s+(.*)$', line)
+                            if related_bill:
+                                (related_bill, relation) = related_bill.groups()
+                                relation = relation.strip()
+                                related_bill = related_bill.replace(".", "")
+                                event.add_related_bill(
+                                        bill_id=related_bill,
+                                        type='consideration',
+                                        description=relation
+                                        )
+
+                        self.save_event(event)

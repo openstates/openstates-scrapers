@@ -34,9 +34,10 @@ class DELegislatorScraper(LegislatorScraper):
 
             bio_url = tr.xpath('descendant::a/@href')[0]
             name, _, district = map(text, tr.xpath("td"))
-            if name.strip() == ".":
+            if name.strip() == "." or name.strip() == "":
                 continue
             name = ' '.join(re_spaces.split(name))
+
 
             leg = self.scrape_bio(term, chamber, district, name, bio_url)
             leg.add_source(bio_url, page="legislator detail page")
@@ -99,8 +100,14 @@ class DELegislatorScraper(LegislatorScraper):
                     # It's just phone numbers with no actual address.
                     numbers = [chunks[0]]
                     office['address'] = None
+                elif chunks[0].strip().startswith("("):
+                    numbers = [chunks[0]]
+                    office['address'] = None
                 else:
                     office['address'] = chunks[0]
+                    numbers = []
+                    offices.append(office)
+                    continue
             else:
                 if not chunks:
                     # This office has no data.
