@@ -212,7 +212,7 @@ class ALLegislatorScraper(LegislatorScraper):
             if len(tds) == 0:
                 continue
             role = "member"
-            comm_name = tds[1].lower().strip()
+            comm_name = tds[1].strip()
             if tds[2].strip().lower() in ["chairperson", "ranking minority member", "vice chairperson"]:
                 role = tds[2].strip().lower()
             
