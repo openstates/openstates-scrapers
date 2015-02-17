@@ -13,28 +13,20 @@ JOINT_COMMITTEE_OVERRIDE = [  # without Joint" in the name.
 ]
 
 SUBCOMMITTEES = {
-    "Education Finance Subcommittee": "Education",
-    "Medicaid Finance Subcommittee": "Medicaid, Health And Human Services",
-    "General Government Finance Subcommittee":
-            "State Government Oversight And Reform",
-    "Shared Services and Government Efficiency Subcommittee":
-            "Public Safety, Local Government And Veterans Affairs",
-    "Higher Education Subcommittee": "Education",
-    "Health and Human Services Subcommittee":
-            "Medicaid, Health And Human Services",
-    "Transportation Subcommittee": "Transportation",
-    "Agriculture and Development Subcommittee":
-            "Agriculture And Natural Resources",
-    "Primary and Secondary Education Subcommittee": "Education",
-    "Tax Reform Ways and Means Subcommittee":
-            "Ways and Means",
-    "Finance Subcommittee on Health and Human Services":"Finance",
-    "Finance Subcommittee on Primary and Secondary Education":"Finance",
-    "Finance Subcommittee on Higher Education":"Finance",
-    "Finance Subcommittee on Transportation":"Finance",
-    "Finance Subcommittee on Agriculture, Development, and Natural Resources":"Finance",
-    "Community and Family Advancement Subcommittee on Minority Affairs":"Community and Family Affairs",
+    # The Senate only has Finance subcommittees
+    "Finance - Corrections Subcommittee": "Finance",
+    "Finance - Education Subcommittee": "Finance",
+    "Finance - General Government Subcommittee": "Finance",
+    "Finance - Higher Ed  Subcommittee": "Finance",
+    "Finance - Workforce Subcommittee": "Finance",
 
+    # The House has mostly Finance, but also one more
+    "Community and Family Advancement Subcommittee on Minority Affairs": "Community and Family Advancement",
+    "Finance Subcommittee on Agriculture, Development, and Natural Resources": "Finance",
+    "Finance Subcommittee on Health and Human Services": "Finance",
+    "Finance Subcommittee on Higher Education": "Finance",
+    "Finance Subcommittee on Primary and Secondary Education": "Finance",
+    "Finance Subcommittee on Transportation": "Finance"
 }
 
 committee_cache = {}
@@ -116,7 +108,7 @@ class OHLegislatorScraper(LegislatorScraper):
                     kwargs['subcommittee'] = entry
                     entry = SUBCOMMITTEES[entry]
                 else:
-                    self.warning("No subcommittee known - %s" % (entry))
+                    self.warning("No subcommittee known: '%s'" % (entry))
                     raise Exception
 
             leg.add_role('committee member',

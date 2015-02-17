@@ -40,7 +40,7 @@ class MNLegislatorScraper(LegislatorScraper):
             leg = Legislator(
                     term=term,
                     chamber='lower',
-                    district=sh.cell_value(row_num, 0),
+                    district=sh.cell_value(row_num, 0).lstrip("0"),
                     full_name=sh.cell_value(row_num, 4)[len("Rep. "): ],
                     party=self._parties[sh.cell_value(row_num, 1)]
                     )

@@ -8,10 +8,10 @@ import re
 
 from billy.scrape.events import EventScraper, Event
 
-event_page = "http://www.leg.wa.gov/legislature/pages/showagendas.aspx?chamber=%s&start=%s&end=%s"
-# 1st arg: [joint|house|senate]
-# 2ed arg: start date (5/1/2012)
-# 3ed arg: end date (5/31/2012)
+event_page = "http://app.leg.wa.gov/mobile/MeetingSchedules/Committees?AgencyId=%s&StartDate=%s&EndDate=%s&ScheduleType=2"
+#arg1: committee type (house=3, joint=4, senate=7)
+#arg2: start date (format 2/1/2015)
+#arg3: end date
 
 class WAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'wa'
@@ -43,97 +43,53 @@ class WAEventScraper(EventScraper, LXMLMixin):
         return ret
 
     def scrape(self, chamber, session):
-
-        cha = {
-            "upper" : "senate",
-            "lower" : "house",
-            "other" : "joint"
-        }[chamber]
+        cha = {"upper":"7","lower":"3","other":"4"}[chamber]
 
         print_format = "%m/%d/%Y"
-
         now = dt.datetime.now()
+
         start = now.strftime(print_format)
-        then = now + timedelta(weeks=4)
-        end = then.strftime(print_format)
-        url = event_page % (
-            cha,
-            start,
-            end
-        )
+        end = (now+timedelta(days=30)).strftime(print_format)
+        url = event_page % (cha,start,end)
 
         page = self.lxmlize(url)
 
-        def _split_tr(trs):
-            ret = []
-            cur = []
-            for tr in trs:
-                if len(tr.xpath(".//hr")) > 0:
-                    ret.append(cur)
-                    cur = []
-                    continue
-                cur.append(tr)
-            if cur != []:
-                ret.append(cur)
-            return ret
+        committees = page.xpath("//a[contains(@href,'Agendas?CommitteeId')]/@href")
+        for comm in committees:
+            comm_page = self.lxmlize(comm)
+            meetings = comm_page.xpath("//li[contains(@class, 'partialagendaitems')]")
+            for meeting in meetings:
+                heading,content = meeting.xpath("./ul/li")
+                who,when = heading.text.split(" - ")
+                meeting_title = "Scheduled meeting of %s" % who.strip()
+                where_lines = content.text_content().split("\r\n")
+                where = "\r\n".join([l.strip() for l in where_lines[6:9]])
 
-        tables = page.xpath("//table[@class='AgendaCommittee']")
-        for table in tables:
-            # grab agenda, etc
-            trs = table.xpath(".//tr")
-            events = _split_tr(trs)
-            for event in events:
-                assert len(event) == 2
-                header = event[0]
-                body = event[1]
-                whowhen = header.xpath(".//h2")[0].text_content()
-                blocks = [ x.strip() for x in whowhen.rsplit("-", 1) ]
-                who = blocks[0]
-                when = blocks[1].replace(u'\xa0', ' ')
-                if "TBA" in when:
-                    continue  # XXX: Fixme
-
-                cancel = \
-                    body.xpath(".//span[@style='color:red;font-weight:bold']")
-
-                if len(cancel) > 0:
-                    cancel = True
-                else:
-                    cancel = False
-
-
-                descr = body.xpath(".//*")
-                flush = False
-                where = body.xpath(".//br")[1].tail
+                when = dt.datetime.strptime(when.strip(), "%m/%d/%Y %I:%M:%S %p")
+                
 
                 kwargs = {
                     "location": (where or '').strip() or "unknown"
                 }
 
-                if cancel:
-                    kwargs['cancelled'] = cancel
-
-                when = dt.datetime.strptime(when, "%m/%d/%y  %I:%M %p")
-
-                meeting_title = "Scheduled Meeting of " + who
-
-                agenda = self.scrape_agenda(body.xpath(".//ol"))
                 event = Event(session, when, 'committee:meeting',
                               meeting_title, **kwargs)
+            
                 event.add_participant(
-                    "host",
-                    who,
-                    'committee',
-                    chamber=chamber
-                )
+                        "host",
+                        who.strip(),
+                        'committee',
+                        chamber=chamber
+                    )
                 event.add_source(url)
 
-                for item in agenda:
-                    bill = item['bill']
-                    descr = item['descr']
+                #only scraping public hearing bills for now.
+                bills = meeting.xpath(".//div[text() = 'Public Hearing']/following-sibling::li[contains(@class, 'visible-lg')]")
+                for bill in bills:
+                    bill_id, descr = bill.xpath("./a/text()")[0].split(" - ")
                     event.add_related_bill(
-                        bill,
-                        description=descr,
+                        bill_id.strip(),
+                        description=descr.strip(),
                         type="consideration"
                     )
 
