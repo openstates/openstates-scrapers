@@ -48,15 +48,24 @@ class ARLegislatorScraper(LegislatorScraper):
 
         party = name_and_party[-1]
 
-        if party == '(R)':
+        # Special-case members who are missing party alignment
+        if full_name == "Scott Flippo":
+            assert party == "()", "Remove special-casing for Scott Flippo"
+            party = "Republican"
+        elif full_name == "Blake Johnson":
+            assert party == "()", "Remove special-casing for Blake Johnson"
+            party = "Republican"
+
+        elif party == '(R)':
             party = 'Republican'
         elif party == '(D)':
             party = 'Democratic'
         elif party == '(G)':
             party = 'Green'
+
         else:
-            self.logger.warning("Unknown party {}, saving legislator with party of 'Unknown'".format(party))
-            party = "Unknown"
+            raise AssertionError(
+                    "Unknown party ({0}) for {1}".format(party, full_name))
 
         try:
             img = root.xpath('//img[@class="SitePhotos"]')[0]
