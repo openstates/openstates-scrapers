@@ -117,6 +117,8 @@ class AZBillScraper(BillScraper):
             tds = row.xpath('td')
             amendment_title = tds[1].text_content().strip()
             amendment_link = tds[2].xpath('string(font/a/@href)')
+            if amendment_link == "": #if there's no html link, take the pdf one which is next
+                amendment_link = tds[3].xpath('string(font/a/@href)')
             bill.add_document(amendment_title, amendment_link,
                               type='amendment')
 
@@ -149,7 +151,6 @@ class AZBillScraper(BillScraper):
             # isn't the thing to do.
             self.save_bill(bill)
             return
-
         bill.add_source(action_url)
         root = html.fromstring(action_page)
         base_table = root.xpath('//table[@class="ContentAreaBackground"]')[0]
