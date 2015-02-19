@@ -183,6 +183,9 @@ class WVBillScraper(BillScraper):
                 line)
             if match:
                 motion = lines[idx - 2].strip()
+                if not motion:
+                    self.warning("No motion text found for vote")
+                    motion = "PASSAGE"
                 yes_count, no_count, other_count = [
                     int(g) for g in match.groups()]
 
