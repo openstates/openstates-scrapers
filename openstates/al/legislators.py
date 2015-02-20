@@ -1,15 +1,13 @@
-import re
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
 import lxml.html
 import requests
-from lxml import etree
+
+from billy.scrape.legislators import LegislatorScraper, Legislator
+
 
 class ALLegislatorScraper(LegislatorScraper):
     jurisdiction = 'al'
 
     def scrape(self, chamber, term):
-
 
         #the url for each rep is unfindable (by me)
         #and the parts needed to make it up do not appear in the html or js.
@@ -23,7 +21,6 @@ class ALLegislatorScraper(LegislatorScraper):
         #so we just do that.
 
         #basically, here goes nothing.
-
         
 
         urls = {
@@ -31,34 +28,35 @@ class ALLegislatorScraper(LegislatorScraper):
             "lower":"http://www.legislature.state.al.us/aliswww/Representatives.aspx"
         }
 
-        sponsor_ids = None
         if chamber == "lower":
-            sponsor_ids = self.get_sponsor_ids()
-            self.scrape_rep_info(urls["lower"],sponsor_ids,term)
+            self.scrape_rep_info(urls["lower"],term)
         else:
             self.scrape_senate_info(urls["upper"], term)
 
 
-
     def get_sponsor_ids(self):
-        #this is only going to work for the current session
+        ''' Map member's district to a member's sponsor ID '''
+
         #TODO make it possible to do different terms/sessions?
-        sponsor_id_url = "http://alisondb.legislature.state.al.us/acas/SESSBillsBySponsorSelection.asp"
+        sponsor_id_url = "http://alisondb.legislature.state.al.us/alison/SESSBillsByHouseSponsorSelect.aspx"
         request_session = requests.Session()
 
         #need to visit main alison page to start session
-        request_session.get("http://alisondb.legislature.state.al.us/acas/acasloginFire.asp")
+        request_session.get("http://alisondb.legislature.state.al.us/alison/alisonlogin.aspx")
     
-        #now we can hit the menu we care about
         html = request_session.get(sponsor_id_url).text
         doc = lxml.html.fromstring(html)
-        name_to_sponsor = {}
-        sponsor_ids = doc.xpath("//select[@id='Representatives']/option")
-        for sponsor in sponsor_ids:
-            name_to_sponsor[sponsor.text.strip()] = sponsor.attrib["value"].strip()
-        return name_to_sponsor
 
-    def scrape_rep_info(self, url, sponsor_ids, term):
+        district_to_sponsor_id = {}
+        sponsors = doc.xpath('//div[@class="housesponsors"]//td/input')
+        for sponsor in sponsors:
+            district = sponsor.attrib['title'].replace("House District", "").strip()
+            district_to_sponsor_id[district] = sponsor.attrib["alt"]
+        return district_to_sponsor_id
+
+
+    def scrape_rep_info(self, url, term):
+        district_to_sponsor_id = self.get_sponsor_ids()
 
         #get reps
         html = self.urlopen(url)
@@ -98,20 +96,11 @@ class ALLegislatorScraper(LegislatorScraper):
             ln,fn = rep_name.split(",")
             last_fi_key = "{ln} ({fi})".format(ln=ln.strip(), fi=fn.strip()[0])
 
-            
             leg.add_source(url)
-            if ln.strip() in sponsor_ids:
-                sponsor_id = sponsor_ids[ln]
-            elif last_fi_key in sponsor_ids:
-                sponsor_id = sponsor_ids[last_fi_key]
 
-            #custom logic for people with the same first AND last names. arg.
-            elif rep_name == "Williams, Jack J. D.":
-                sponsor_id = sponsor_ids["Williams (JD)"]
-            elif rep_name == "Williams, Jack W.":
-                sponsor_id = sponsor_ids["Williams (JW)"]
-
-            else:
+            try:
+                sponsor_id = district_to_sponsor_id[district]
+            except KeyError:
                 #can't find rep's sponsor_id, do what we can and get out!
                 self.logger.warning("Legislator {name} does not match any sponsor_id and thus will not be linked to bills or committees".format(name=rep_name))
                 self.save_legislator(leg)
@@ -126,7 +115,6 @@ class ALLegislatorScraper(LegislatorScraper):
             self.add_committees(rep_page,leg,"lower",term)
             leg.add_source(rep_sponsor_url)
             self.save_legislator(leg)
-
 
 
     def scrape_senate_info(self, url, term):
@@ -234,4 +222,3 @@ class ALLegislatorScraper(LegislatorScraper):
                         chamber=chamber,
                         committee=comm_name,
                         position=role)
-
