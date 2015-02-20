@@ -1,212 +1,206 @@
 import re
 import datetime
 import lxml.html
+import json
 
 import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
-def extract_int(text):
-    return int(text.replace(u'\xc2', '').strip())
-
-def convert_date(text):
-    long_date = re.findall('\d{1,2}-\d{1,2}-\d{4}', text)
-    try:
-        if long_date:
-            return datetime.datetime.strptime(long_date[0], '%m-%d-%Y')
-        short_date = re.findall('\d{1,2}-\d{1,2}-\d{2}', text)
-        if short_date:
-            return datetime.datetime.strptime(short_date[0], '%m-%d-%y')
-
-        return datetime.datetime.strptime(text, '%A, %B %d, %Y')
-    except ValueError:
-        return None
-
 
 class DCBillScraper(BillScraper):
     jurisdiction = 'dc'
 
-    def scrape_bill(self, bill):
-        bill_url = 'http://dcclims1.dccouncil.us/lims/legislation.aspx?LegNo=' + bill['bill_id']
+    #TODO: 1) sources
+        #2) poke around for other kinds of actions (incl congress)
+        #3) poke around for other kinds of documents
+        #4) figure out how to deal with "deemed approved" etc statuses
+        #5) probably a bunch of other stuff
 
-        bill.add_source(bill_url)
+    def decode_json(self,stringy_json):
+        #the "json" they send is recursively string-encoded.
+        if type(stringy_json) == dict:
+            for key in stringy_json:
+                stringy_json[key] = self.decode_json(stringy_json[key])
 
-        bill_html = self.urlopen(bill_url)
-        doc = lxml.html.fromstring(bill_html)
-        doc.make_links_absolute(bill_url)
+        elif type(stringy_json) == list:
+            for i in range(len(stringy_json)):
+                stringy_json[i] = self.decode_json(stringy_json[i])
 
-        # get versions
-        for link in doc.xpath('//a[starts-with(@id, "DocumentRepeater")]'):
-            try:
-                bill.add_version(link.text, link.get('href'),
-                                 mimetype='application/pdf')
-            except ValueError as e:
-                self.warning('duplicate version on %s' % bill_url)
-
-        # sponsors
-        introduced_by = doc.get_element_by_id('IntroducedBy').text
-        if introduced_by:
-            for sponsor in introduced_by.split(', '):
-                bill.add_sponsor('primary', sponsor.strip())
-
-        requested_by = doc.get_element_by_id('RequestedBy').text
-        if requested_by:
-            stype = 'primary' if not introduced_by else 'cosponsor'
-            bill.add_sponsor(stype, requested_by.strip(),
-                             official_type='requestor')
-
-        cosponsored_by = doc.get_element_by_id('CoSponsoredBy').text
-        if cosponsored_by:
-            for cosponsor in cosponsored_by.split(','):
-                bill.add_sponsor('cosponsor', cosponsor.strip())
-
-        # actions
-        actions = (
-            ('Introduction', 'DateIntroduction', 'bill:introduced'),
-            ('Committee Action', 'DateCommitteeAction', 'other'),
-            ('First Vote', 'DateFirstVote', 'bill:reading:1'),
-            ('Final Vote', 'DateFinalVote', 'bill:reading:3'),
-            ('Third Vote', 'DateThirdVote', ['bill:reading:3']),
-            ('Reconsideration', 'DateReconsideration', 'other'),
-            ('Transmitted to Mayor', 'DateTransmittedMayor', 'governor:received'),
-            ('Signed by Mayor', 'DateSigned', 'governor:signed'),
-            ('Returned by Mayor', 'DateReturned', 'other'),
-            ('Veto Override', 'DateOverride', 'bill:veto_override:passed'),
-            ('Enacted', 'DateEnactment', 'other'),
-            ('Vetoed by Mayor', 'DateVeto', 'governor:vetoed'),
-            ('Transmitted to Congress', 'DateTransmittedCongress', 'other'),
-            ('Re-transmitted to Congress', 'DateReTransmitted', 'other'),
-        )
-
-        subactions = (
-            ('WITHDRAWN BY', 'Withdrawn', 'bill:withdrawn'),
-            ('TABLED', 'Tabled', 'other'),
-            ('DEEMED APPROVED', 'Deemed approved without council action', 'bill:passed'),
-            ('DEEMED DISAPPROVED', 'Deemed disapproved without council action', 'bill:failed'),
-        )
-
-        for action, elem_id, atype in actions:
-            date = doc.get_element_by_id(elem_id).text
-            if date:
-
-                # check if the action starts with a subaction prefix
-                for prefix, sub_action, subatype in subactions:
-                    if date.startswith(prefix):
-                        date = convert_date(date)
-                        if date:
-                            bill.add_action('upper', sub_action, date,
-                                            type=subatype)
-                        break
-
-                # actions that mean nothing happened
-                else:
-                    if date not in ('Not Signed', 'NOT CONSIDERED',
-                                  'NOTCONSIDERED'):
-                        actor = ('mayor' if action.endswith('by Mayor')
-                                 else 'upper')
-                        date = convert_date(date)
-                        if not isinstance(date, datetime.datetime):
-                            self.warning('could not convert %s %s [%s]' %
-                                         (action, date, bill['bill_id']))
-                        else:
-                            bill.add_action(actor, action, date, type=atype)
-
-        # votes
-        vote_tds = doc.xpath('//td[starts-with(@id, "VoteTypeRepeater")]')
-        for td in vote_tds:
-            vote_type = td.text
-            vote_type_id = re.search(r"LoadVotingInfo\(this\.id, '(\d+)'",
-                                     td.get('onclick')).groups()[0]
-            # some votes randomly break
-            try:
-                self.scrape_vote(bill, vote_type_id, vote_type)
-            except scrapelib.HTTPError as e:
-                self.warning(str(e))
-
-        bill['actions'] = sorted(bill['actions'], key=lambda b:b['date'])
-        self.save_bill(bill)
+        elif type(stringy_json) in (str,unicode):
+            if len(stringy_json) > 0 and stringy_json[0] in ["[","{",u"[",u"{"]:
+                return self.decode_json(json.loads(stringy_json))
+        return stringy_json
 
 
-    def scrape_vote(self, bill, vote_type_id, vote_type):
-        base_url = 'http://dcclims1.dccouncil.us/lims/voting.aspx?VoteTypeID=%s&LegID=%s'
-        url = base_url % (vote_type_id, bill['bill_id'])
-
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-
-        vote_date = convert_date(doc.get_element_by_id('VoteDate').text)
-
-        # check if voice vote / approved boxes have an 'x'
-        voice = (doc.xpath('//span[@id="VoteTypeVoice"]//text()') == ['x'])
-        roll = (doc.xpath('//span[@id="VoteTypeRoll"]//text()') == ['x'])
-        if (not voice and not roll) or (voice and roll):
-            raise AssertionError(
-                    "Not clear whether vote is voice or roll call: {}".
-                    format(bill['bill_id']))
-
-        passed = (doc.xpath('//span[@id="VoteResultApproved"]//text()') == ['x'])
-        failed = (doc.xpath('//span[@id="VoteResultDisapproved"]//text()') == ['x'])
-        if (not passed and not failed) or (passed and failed):
-            raise AssertionError(
-                    "Not clear whether vote passed or failed: {}".
-                    format(bill['bill_id']))
-
-        yes_count = extract_int(doc.xpath(
-            '//span[@id="VoteCount1"]/b/text()')[0])
-        no_count = extract_int(doc.xpath(
-            '//span[@id="VoteCount2"]/b/text()')[0])
-
-        other_count = 0
-        for n in xrange(3, 9):
-            other_count += extract_int(doc.xpath(
-                '//span[@id="VoteCount%s"]/b/text()' % n)[0])
-
-        vote = Vote('upper', vote_date, vote_type, passed, yes_count,
-                    no_count, other_count, voice_vote=voice)
-
-        vote.add_source(url)
-
-        # members are only text on page in a <u> tag
-        for member_u in doc.xpath('//u'):
-            member = member_u.text
-            # normalize case
-            vote_text = member_u.xpath('../../i/text()')[0].upper()
-            if 'YES' in vote_text:
-                vote.yes(member)
-            elif 'NO' in vote_text:
-                vote.no(member)
-            else:
-                vote.other(member)
-        bill.add_vote(vote)
 
     def scrape(self, session, chambers):
-        url = 'http://dcclims1.dccouncil.us/lims/print/list.aspx?FullPage=True&Period=' + session
+        #get member id matching for vote parsing
+        member_ids = self.get_member_ids()[session]
 
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        rows = doc.xpath('//table/tr')
-        # skip first row
-        for row in rows[1:]:
-            bill_id, title, _ = row.xpath('td/text()')
-            title = title.replace(u'\xe2\x80\x99', "'")  # smart apostrophe
 
-            if bill_id.startswith('B'):
-                type = 'bill'
-            elif bill_id.startswith('CER'):
-                type = 'resolution'
-            elif bill_id.startswith('CA'):
-                type = 'contract'
-            elif bill_id.startswith('PR'):
-                type = 'resolution'
-            # don't collect these
-            elif (bill_id.startswith('GBM') or
-                  bill_id.startswith('HFA') or
-                  bill_id.startswith('IG')):
-                continue
+        base_url = "http://lims.dccouncil.us/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
+        headers = {"Content-Type":"application/json"}
+        url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
+        bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
+        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":10,"iDisplayLength":10,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","ComitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        param_json = json.dumps(params)
+        response = self.post(url,headers=headers,data=param_json)
+        #the response is a terrible string-of-nested-json-strings. Yuck.
+        response = self.decode_json(response.json()["d"])
+        num_records = response["iTotalRecords"]
+        data = response["aaData"]
+
+        for bill in data:
+            bill_id = bill["Title"]
+            bill_params = {"legislationId":bill_id}
+            bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
+            bill_info = self.decode_json(bill_info.json()["d"])["data"]
+            
+            legislation_info = bill_info["Legislation"][0]
+            title = legislation_info["ShortTitle"]
+            print title
+            
+            docs = bill_info["OtherDocuments"]
+            
+            
+            #dc has no chambers. calling it all upper
+            bill = Bill(session,"upper", bill_id, title)
+
+            introducers = legislation_info["Introducer"]
+            try:
+                cosponsors = legislation_info["CoSponsor"]
+            except KeyError:
+                cosponsors = []
+            for i in introducers:
+                sponsor_name = i["Name"]
+                bill.add_sponsor(name=sponsor_name,type="primary")
+            for s in cosponsors:
+                sponsor_name = s["Name"]
+                bill.add_sponsor(name=sponsor_name,type="cosponsor")
+
+            #deal with actions involving the mayor
+            mayor = bill_info["MayorReview"]
+            if mayor != []:
+                mayor = mayor[0]
+                if "TransmittedDate" in mayor:
+                    transmitted_date = mayor["TransmittedDate"].split(" ")[0]
+                    transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
+
+                    bill.add_action("mayor",
+                                "transmitted to mayor",
+                                transmitted_date)
+
+                if 'EnactedDate' in mayor:
+                    enacted_date = mayor["EnactedDate"].split(" ")[0]
+                    enacted_date = datetime.datetime.strptime(enacted_date,"%Y/%m/%d")
+
+                    bill.add_action("mayor",
+                                    "enacted",
+                                    enacted_date)
+
+
+            #deal with committee actions
+            reading_date = legislation_info["DateRead"].split(" ")[0] #time is always 0
+            reading_date = datetime.datetime.strptime(reading_date,"%Y/%m/%d")
+            if "ComitteeReferral" in legislation_info: #their typo, not mine
+                committees = []
+                for committee in legislation_info["ComitteeReferral"]:
+                    if committee["Name"] == "Retained by the council":
+                        committees = []
+                        break
+                    else:
+                        committees.append(committee["Name"])
+                if committees != []:
+                    bill.add_action("committee",
+                                "referred to committee",
+                                reading_date,
+                                committees=committees)
+
+            if "CommitteeReferralComments" in legislation_info:
+                committees = []
+                for committee in legislation_info["CommitteeReferralComments"]:
+                    committees.append(committee["Name"])
+                bill.add_action("committee",
+                                "retained by council with comments from committees",
+                                reading_date,
+                                committees=committees)
+
+            
+
+            #deal with documents
+
+            memos = []
+            for doc_type in ["MemoLink","AttachmentPath"]:
+                if doc_type in legislation_info:
+                    for d in legislation_info[doc_type]:
+                        memos.append(d)
+            if "OtherDocuments" in legislation_info: #dealing with documents hiding in "other documents", see PR21-0040
+                for d in legislation_info["OtherDocuments"]:
+                    if "AttachmentPath" in d:
+                        memos.append(d["AttachmentPath"])
+            for memo in memos:
+                memo_name = memo["Name"]
+                memo_url = base_url+"Download/"+memo["RelativePath"]+"/"+memo_name
+                bill.add_document(memo_name,
+                                memo_url,
+                                "pdf")
+
+            votes = bill_info["VotingSummary"]
+            for vote in votes:
+                self.process_vote(vote, bill, member_ids)
+
+            #self.save_bill(bill)
+    
+    def get_member_ids(self):
+        member_dict = {} #three levels: from session to member_id to name
+        search_data_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicSearchData"
+        response = self.post(search_data_url,headers={"Content-Type":"application/json"})
+        member_data = self.decode_json(response.json()['d'])["Members"]
+        for session_id, members in member_data.items():
+            member_dict[session_id] = {}
+            for member in members:
+                member_id = member["ID"]
+                member_name = member["MemberName"]
+                member_dict[session_id][member_id] = member_name
+
+        return member_dict
+
+
+    def process_vote(self, vote, bill, member_ids):
+        result = vote["VoteResult"]
+        motion = vote["ReadingDescription"]
+
+        try:
+            status = {"approved":True,"disapproved":False}[result.strip().lower()]
+        except KeyError:
+            self.logger.warning("Unexpected vote result {result}, skipping vote.".format(result=result))
+            return
+
+        date = datetime.datetime.strptime(vote["DateOfVote"].split()[0],"%Y/%m/%d")
+
+        leg_votes = vote["MappedJASON"] #their typo, not mine
+        v = Vote('upper',date,motion,status,0,0,0,
+                yes_votes=[],no_votes=[],other_votes=[])
+        for leg_vote in leg_votes:
+            mem_name = member_ids[leg_vote["MemberId"]]
+            if leg_vote["Vote"] == "1":
+                v['yes_count'] += 1
+                v['yes_votes'].append(mem_name)
+            elif leg_vote["Vote"] == "0":
+                v['no_count'] += 1
+                v['no_votes'].append(mem_name)
             else:
-                # will break if type isn't known
-                raise ValueError('unknown bill type: %s' % bill_id)
+                v['other_count'] += 1
+                v['other_votes'].append(mem_name)
 
-            bill = Bill(session, 'upper', bill_id, title, type=type)
-            self.scrape_bill(bill)
+
+
+        bill.add_vote(v)
+
+
+        
+
+
+
