@@ -89,7 +89,7 @@ metadata = dict(
         },
         '2012s1': {
             'site_id': '1872012', 'type': 'special',
-            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
             'display_name': '2012, 1st Special Session',
             '_scraped_name': '87th Legislature, 2012 1st Special Session',
         },
@@ -98,11 +98,11 @@ metadata = dict(
             'type': "primary",
             'display_name': '2013-2014 Regular Session',
             '_scraped_name': '88th Legislature, 2013-2014',
-            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
         },
         '2013s1': {
             'site_id': '1882013', 'type': 'special',
-            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
             'display_name': '2013, 1st Special Session',
             '_scraped_name': '88th Legislature, 2013 1st Special Session',
         },
@@ -111,7 +111,7 @@ metadata = dict(
             'type': "primary",
             'display_name': '2015-2016 Regular Session',
             '_scraped_name': '89th Legislature, 2015-2016',
-            #'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
         },
 
 

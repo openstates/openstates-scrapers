@@ -7,6 +7,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 
 import lxml.html
+import scrapelib
 
 class NVBillScraper(BillScraper):
     jurisdiction = 'nv'
@@ -132,7 +133,7 @@ class NVBillScraper(BillScraper):
                     minutes_count = minutes_count + 1
 
                 self.scrape_actions(root, bill, "upper")
-                self.scrape_votes(page, bill, insert, year)
+                self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
                 self.save_bill(bill)
 
@@ -183,7 +184,7 @@ class NVBillScraper(BillScraper):
 
 
                 self.scrape_actions(root, bill, "lower")
-                self.scrape_votes(page, bill, insert, year)
+                self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
                 self.save_bill(bill)
 
@@ -246,46 +247,67 @@ class NVBillScraper(BillScraper):
 
                 bill.add_action(actor, action, date, type=action_type)
 
-    def scrape_votes(self, bill_page, bill, insert, year):
+    def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
-        for link in root.xpath('//a[contains(text(), "Passage")]'):
+        trs = root.xpath('//table[6]//tr')
+        if len(trs) == 1:
+            # no vote info
+            return
+
+        for tr in trs[1:]:
+            link = tr.xpath('td/a[contains(text(), "Passage")]')[0]
             motion = link.text
             if 'Assembly' in motion:
                 chamber = 'lower'
             else:
                 chamber = 'upper'
-            vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
-                insert, link.get('href'))
-            bill.add_source(vote_url)
-            page = self.urlopen(vote_url)
-            page = page.replace(u"\xa0", " ")
-            root = lxml.html.fromstring(page)
 
-            date = root.xpath('//h1/text()')[-1].strip()
-            if not date:
-                date = root.xpath('//h1/text()')[-2].strip()
-            date = datetime.strptime(date, "%B %d, %Y at %H:%M %p")
-            top_block_text = root.xpath('//div[@align="center"]')[0].text_content()
-            yes_count = int(re.findall("(\d+) Yea", top_block_text)[0])
-            no_count = int(re.findall("(\d+) Nay", top_block_text)[0])
-            excused = int(re.findall("(\d+) Excused", top_block_text)[0])
-            not_voting = int(re.findall("(\d+) Not Voting", top_block_text)[0])
-            absent = int(re.findall("(\d+) Absent", top_block_text)[0])
-            other_count = excused + not_voting + absent
-            passed = yes_count > no_count
+            votes = {}
+            tds = tr.xpath('td')
+            for td in tds:
+                if td.text:
+                    text = td.text.strip()
+                    date = re.match('... .*?, ....',text)
+                    count = re.match('(?P<category>.*?) (?P<votes>[0-9]+)[,]?',text)
+                    if date:
+                        vote_date = datetime.strptime(text, '%b %d, %Y')
+                    elif count:
+                        votes[count.group('category')] = int(count.group('votes'))
 
-            vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                        other_count, not_voting=not_voting, absent=absent)
+            yes = votes['Yea']
+            no = votes['Nay']
+            excused = votes['Excused']
+            not_voting = votes['Not Voting']
+            absent = votes['Absent']
+            other = excused + not_voting + absent
+            passed = yes > no
 
-            for el in root.xpath('//table[2]/tr'):
-                tds = el.xpath('td')
-                name = tds[1].text_content().strip()
-                vote_result = tds[2].text_content().strip()
+            vote = Vote(chamber, vote_date, motion, passed, yes, no,
+                        other, not_voting=not_voting, absent=absent)
+            vote.add_source(page_url)
 
-                if vote_result == 'Yea':
-                    vote.yes(name)
-                elif vote_result == 'Nay':
-                    vote.no(name)
-                else:
-                    vote.other(name)
+            # try to get vote details
+            try:
+                vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
+                    insert, link.get('href'))
+
+                page = self.urlopen(vote_url)
+                page = page.replace(u"\xa0", " ")
+                root = lxml.html.fromstring(page)
+
+                for el in root.xpath('//table[2]/tr'):
+                    tds = el.xpath('td')
+                    name = tds[1].text_content().strip()
+                    vote_result = tds[2].text_content().strip()
+
+                    if vote_result == 'Yea':
+                        vote.yes(name)
+                    elif vote_result == 'Nay':
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+                vote.add_source(page_url)
+            except scrapelib.HTTPError:
+                self.warning("failed to fetch vote page, adding vote without details")
+
             bill.add_vote(vote)

@@ -117,6 +117,8 @@ class AZBillScraper(BillScraper):
             tds = row.xpath('td')
             amendment_title = tds[1].text_content().strip()
             amendment_link = tds[2].xpath('string(font/a/@href)')
+            if amendment_link == "": #if there's no html link, take the pdf one which is next
+                amendment_link = tds[3].xpath('string(font/a/@href)')
             bill.add_document(amendment_title, amendment_link,
                               type='amendment')
 
@@ -149,7 +151,6 @@ class AZBillScraper(BillScraper):
             # isn't the thing to do.
             self.save_bill(bill)
             return
-
         bill.add_source(action_url)
         root = html.fromstring(action_page)
         base_table = root.xpath('//table[@class="ContentAreaBackground"]')[0]
@@ -216,7 +217,14 @@ class AZBillScraper(BillScraper):
                     vote_url = row[0].xpath('string(a/@href)')
                     if vote_url:
                         date = utils.get_date(row[3])
-                        act = row[5].text_content().strip()
+                        try:
+                            act = row[5].text_content().strip()
+                        except IndexError:
+                            #not sure what to do if action is not specified
+                            #skipping and throwing a warning for now
+                            self.logger.warning("Vote has no action, skipping.")
+                            continue
+
                         a_type = get_action_type(act, 'COMMITTEES:')
                         act = get_verbose_action(act)
                         bill.add_action(actor,

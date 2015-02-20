@@ -15,6 +15,14 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
+        {'name': '2007-2008',
+         'sessions': ['2007 Regular Session',
+                      '2008 Special Session' ],
+         'start_year': 2007, 'end_year': 2008},
+        {'name': '2009-2010',
+         'sessions': ['2009 Regular Session',
+                      '2010 Special Session' ],
+         'start_year': 2009, 'end_year': 2010},
         {'name': '2011-2012',
          'sessions': ['2011 Regular Session',
                       '2012 Regular Session',
@@ -22,6 +30,7 @@ metadata = dict(
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014',
          'sessions': ['2013 Regular Session',
+                      '2013 Special Session',
                       '2014 Regular Session'],
          'start_year': 2013, 'end_year': 2014},
         {'name': '2015-2016',
@@ -29,6 +38,26 @@ metadata = dict(
          'start_year': 2015, 'end_year': 2016},
     ],
     session_details={
+        '2007 Regular Session': {
+            'display_name': '2007 Regular Session',
+            '_scraped_name': '2007 Regular Session',
+            'slug': '2007R1',
+        },
+        '2008 Special Session': {
+            'display_name': '2008 Special Session',
+            '_scraped_name': '2008 Special Session',
+            'slug': '2008S1',
+        },
+        '2009 Regular Session': {
+            'display_name': '2009 Regular Session',
+            '_scraped_name': '2009 Regular Session',
+            'slug': '2009R1',
+        },
+        '2010 Special Session': {
+            'display_name': '2010 Special Session',
+            '_scraped_name': '2010 Special Session',
+            'slug': '2010S1',
+        },
         '2011 Regular Session': {
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011 Regular Session',
@@ -49,6 +78,11 @@ metadata = dict(
             '_scraped_name': '2013 Regular Session',
             'slug': '2013R1',
         },
+        '2013 Special Session': {
+            'display_name': '2013 Special Session',
+            '_scraped_name': '2013 Special Session',
+            'slug': '2013S1',
+        },
         '2014 Regular Session': {
             'display_name': '2014 Regular Session',
             '_scraped_name': '2014 Regular Session',
@@ -64,10 +98,6 @@ metadata = dict(
     _ignored_scraped_sessions=['Today',
                                '2013 1st Special Session',
                                '2012 1st Special Session',
-                               '2010 Special Session',
-                               '2009 Regular Session',
-                               '2008 Special Session',
-                               '2007 Regular Session',
                                '2013 - 2014 Interim',
                                '2011 - 2012 Interim',
                                '2009 - 2010 Interim',

@@ -207,7 +207,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                 roll_call_nay = []
                 roll_call_other = []
                 for member in roll_call:
-                    (member_name, _district) = member['MemberName'].split("of")
+                    (member_name, _district) = member['MemberName'].split(" of ")
                     member_name = member_name.strip()
                     
                     if member['MemberVote'] == "Yea":
@@ -251,7 +251,6 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         no_count=nay_count,
                         other_count=len(roll_call_other)
                         )
-                vote_to_add.add_source(vote_url)
                 vote_to_add.add_source(roll_call_url)
 
                 for member in roll_call_yea:

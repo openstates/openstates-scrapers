@@ -19,6 +19,8 @@ class NYLegislatorScraper(LegislatorScraper):
             self.scrape_lower(term)
 
     def scrape_upper(self, term):
+        party_by_district = self._identify_party('upper')
+
         url = "http://www.nysenate.gov/senators"
         page = self.urlopen(url)
         page = lxml.html.fromstring(page)
@@ -38,11 +40,13 @@ class NYLegislatorScraper(LegislatorScraper):
             district = link.xpath("string(../../../div[3]/span[1])")
             district = re.match(r"District (\d+)", district).group(1)
 
+            party = party_by_district[district]
+
             photo_link = link.xpath("../../../div[1]/span/a/img")[0]
             photo_url = photo_link.attrib['src']
 
             legislator = Legislator(term, 'upper', district,
-                                    name, party="Unknown",
+                                    name, party=party,
                                     photo_url=photo_url)
             legislator.add_source(url)
 
@@ -69,29 +73,10 @@ class NYLegislatorScraper(LegislatorScraper):
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
             legislator['email'] = email
 
-        dist_str = page.xpath("string(//div[@class = 'district'])")
-        match = re.findall(r'\(([A-Za-z,\s]+)\)', dist_str)
-        if match:
-            match = match[0].split(', ')
-            party_map = {'D': 'Democratic', 'R': 'Republican',
-                         'WF': 'Working Families',
-                         'C': 'Conservative',
-                         'IP': 'Independence',
-                        }
-            parties = [party_map.get(p.strip(), p.strip()) for p in match
-                       if p.strip()]
-            if 'Republican' in parties:
-                party = 'Republican'
-                parties.remove('Republican')
-            elif 'Democratic' in parties:
-                party = 'Democratic'
-                parties.remove('Democratic')
-            legislator['roles'][0]['party'] = party
-            legislator['roles'][0]['other_parties'] = parties
-
         try:
             span = page.xpath("//span[. = 'Albany Office']/..")[0]
             address = span.xpath("string(div[1])").strip()
+            address = re.sub(r'[ ]{2,}', "", address)
             address += "\nAlbany, NY 12247"
 
             phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
@@ -117,6 +102,7 @@ class NYLegislatorScraper(LegislatorScraper):
                 "string(span[@class='region'])").strip() + " "
             address += span.xpath(
                 "string(span[@class='postal-code'])").strip()
+            address = re.sub(r'[ ]{2,}', "", address)
 
             phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
             phone = phone.text.strip()
@@ -148,7 +134,7 @@ class NYLegislatorScraper(LegislatorScraper):
                 else:
                     data.append(entry)
 
-        party_by_district = self._identify_lower_party()
+        party_by_district = self._identify_party('lower')
 
         for row in _split_list_on_tag(page.xpath(
                 "//div[@id='maincontainer']/div[contains(@class, 'email')]"),
@@ -211,79 +197,56 @@ class NYLegislatorScraper(LegislatorScraper):
             self.save_legislator(legislator)
 
     def scrape_lower_offices(self, url, legislator):
+        legislator.add_source(url)
+
         html = self.urlopen(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        try:
-            contact = doc.xpath('//div[@id="addrinfo"]')[0]
-        except:
-            contact = doc
-        email = None
+        for data in doc.xpath('//div[@class="officehdg"]'):
+            data = (data.xpath('text()'),
+                    data.xpath('following-sibling::div[1]/text()'))
+            ((office_name,), address) = data
 
-        # Sometimes class is "addrcol1", others "addrcola"
-        col_generators = [
+            if 'district' in office_name.lower():
+                office_type = 'district'
+            else:
+                office_type = 'capitol'
 
-            # Try alpha second.
-            iter('abcedef'),
+            address = [x.strip() for x in address if x.strip()]
 
-            # Try '' first, then digits.
-            itertools.chain(iter(['']), iter(xrange(1, 5)))
-            ]
+            fax = None
+            if address[-1].startswith("Fax: "):
+                fax = address.pop().replace("Fax: ", "")
 
-        cols = col_generators.pop()
-        while True:
+            phone = None
+            if re.search(r'\d{3}[-\s]?\d{3}[-\s]?\d{4}', address[-1]):
+                phone = address.pop()
 
-            # Get the column value.
-            try:
-                col = cols.next()
-            except StopIteration:
-                try:
-                    cols = col_generators.pop()
-                except IndexError:
-                    break
-                else:
-                    continue
+            address = '\n'.join(address)
 
-            xpath = 'div[@class="addrcol%s"]' % str(col)
-            address_data = contact.xpath(xpath)
-            if not address_data:
-                continue
+            legislator.add_office(
+                    name=office_name,
+                    type=office_type,
+                    phone=phone,
+                    fax=fax,
+                    address=address
+                    )
 
-            for data in address_data:
-                data = (data.xpath('div[@class="officehdg"]/text()'),
-                        data.xpath('div[@class="officeaddr"]/text()'))
-                ((office_name,), address) = data
-
-                if 'district' in office_name:
-                    office_type = 'district'
-                else:
-                    office_type = 'capitol'
-
-                # Phone can't be blank.
-                phone = address.pop().strip()
-                if not phone:
-                    phone = None
-
-                office = dict(
-                    name=office_name, type=office_type, phone=phone,
-                    fax=None, email=email,
-                    address=''.join(address).strip())
-
-                if not office['address']:
-                    # Congrat's Maritza Davila, you have your own special
-                    # exception in the code for people who have magical
-                    # district offices with no mailing address.
-                    # http://assembly.state.ny.us/mem/Maritza-Davila
-                    continue
-
-                legislator.add_office(**office)
-
-    def _identify_lower_party(self):
+    def _identify_party(self, chamber):
         '''
-        Get the best available information on NY State Assembly
-        party affiliations. Returns a dict mapping district to party.
+        Get the best available information on New York political party
+        affiliations. Returns a dict mapping district to party for the
+        given chamber.
+
+        The formatting of this page is pretty abysmal, so apologies
+        about the dirtiness of this method.
         '''
+
+        # These may need to be changed, but should be mostly constant
+        NY_SEATS_IN_US_HOUSE = 27
+        NY_STATE_SENATE_SEATS = 63
+        NY_STATE_ASSEMBLY_SEATS = 150
 
         # Download the page and ingest using lxml
         MEMBER_LIST_URL = \
@@ -292,9 +255,10 @@ class NYLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(html)
 
         # Map district to party affiliation
-        party_affiliations = {}
+        _congressional_affiliations = {}
+        senate_affiliations = {}
+        assembly_affiliations = {}
         district = None
-        party = None
         capture_district = False
         capture_party = False
         affiliation_text = \
@@ -307,6 +271,7 @@ class NYLegislatorScraper(LegislatorScraper):
                         "both district number and party name"
                         )
             
+            # Remove non-breaking space characters
             affiliation = re.sub("\xa0", " ", affiliation)
 
             # Ignore the header text when parsing
@@ -328,14 +293,36 @@ class NYLegislatorScraper(LegislatorScraper):
             # If a search has been initiated for District or Party, then capture them
             elif capture_district:
                 district = affiliation
-                # Effectively reset the party affiliation tracking for each body
-                # The State Assembly is the last one in the document, so only
-                # they will be preserved
-                if district == 1:
-                    party_affiliations = {}
+                assert district, "No district found"
                 capture_district = False
             elif capture_party:
-                party_affiliations[district] = affiliation
+                # Skip capturing of members who are at-large, such as governor
+                if not district:
+                    capture_party = False
+                    continue
+
+                assert affiliation, "No party is indicated for district {}".format(district)
+
+                # Congressional districts are listed first, then state
+                # senate, then assembly
+                # If a repeat district is seen, assume it's from the
+                # next body in that list
+                if (not _congressional_affiliations.get(district) and 
+                        int(district) <= NY_SEATS_IN_US_HOUSE):
+                    _congressional_affiliations[district] = affiliation.title()
+                elif (not senate_affiliations.get(district) and 
+                        int(district) <= NY_STATE_SENATE_SEATS):
+                    senate_affiliations[district] = affiliation.title()
+                elif (not assembly_affiliations.get(district) and
+                        int(district) <= NY_STATE_ASSEMBLY_SEATS):
+                    assembly_affiliations[district] = affiliation.title()
+                else:
+                    raise AssertionError(
+                            "District {} appears too many times in party document".
+                            format(district)
+                            )
+
+                district = None
                 capture_party = False
 
             else:
@@ -344,4 +331,9 @@ class NYLegislatorScraper(LegislatorScraper):
                         "'{}'".format(affiliation)
                         )
 
-        return party_affiliations
+        if chamber == 'upper':
+            return senate_affiliations
+        elif chamber == 'lower':
+            return assembly_affiliations
+        else:
+            raise AssertionError("Unknown chamber passed to party parser")

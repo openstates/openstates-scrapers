@@ -50,10 +50,6 @@ class WVBillScraper(BillScraper):
         else:
             orig = 's'
 
-        # Scrape the legislature's FTP server to figure out the filenames
-        # of bill version documents.
-        self._get_version_filenames(session, chamber)
-
         # scrape bills
         url = ("http://www.legis.state.wv.us/Bill_Status/"
                "Bills_all_bills.cfm?year=%s&sessiontype=RS"
@@ -121,18 +117,19 @@ class WVBillScraper(BillScraper):
             bill.add_sponsor('primary', primary)
 
         # Add cosponsors.
-        sponsors = strip_sponsors('', values['SPONSORS:'])
-        sponsors = re.split(', (?![A-Z]\.)', sponsors)
-        for name in sponsors:
-            name = name.strip(', \n\r')
-            if name:
-                # Fix name splitting bug where "Neale, D. Hall"
-                match = re.search('(.+?), ([DM]\. Hall)', name)
-                if match:
-                    for name in match.groups():
+        if values.get('SPONSORS:'):
+            sponsors = strip_sponsors('', values['SPONSORS:'])
+            sponsors = re.split(', (?![A-Z]\.)', sponsors)
+            for name in sponsors:
+                name = name.strip(', \n\r')
+                if name:
+                    # Fix name splitting bug where "Neale, D. Hall"
+                    match = re.search('(.+?), ([DM]\. Hall)', name)
+                    if match:
+                        for name in match.groups():
+                            bill.add_sponsor('cosponsor', name)
+                    else:
                         bill.add_sponsor('cosponsor', name)
-                else:
-                    bill.add_sponsor('cosponsor', name)
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
             self.scrape_house_vote(bill, link.attrib['href'])
@@ -186,6 +183,9 @@ class WVBillScraper(BillScraper):
                 line)
             if match:
                 motion = lines[idx - 2].strip()
+                if not motion:
+                    self.warning("No motion text found for vote")
+                    motion = "PASSAGE"
                 yes_count, no_count, other_count = [
                     int(g) for g in match.groups()]
 
@@ -263,7 +263,7 @@ class WVBillScraper(BillScraper):
 
         data = re.split(r'(Yea|Nay|Absent)s?:', text)[::-1]
         data = filter(None, data)
-        keymap = dict(yeas='yes', nays='no')
+        keymap = dict(yea='yes', nay='no')
         actual_vote = collections.defaultdict(int)
         while True:
             if not data:
@@ -274,14 +274,16 @@ class WVBillScraper(BillScraper):
             for name in re.split(r'(?:[\s,]+and\s|[\s,]{2,})', values):
                 if name.lower().strip() == 'none.':
                     continue
-                name = name.replace('..', '').strip('-1234567890 \n')
+                name = name.replace('..', '')
+                name = re.sub(r'\.$', '', name)
+                name = name.strip('-1234567890 \n')
                 if not name:
                     continue
                 getattr(vote, key)(name)
                 actual_vote[vote_val] += 1
                 vote[key + '_count'] += 1
+            assert actual_vote[vote_val] == vote[key + '_count']
 
-        vote['actual_vote'] = actual_vote
         vote['passed'] = vote['no_count'] < vote['yes_count']
         bill.add_vote(vote)
 
@@ -316,49 +318,6 @@ class WVBillScraper(BillScraper):
         assert vote['other_count'] == int(counts['Absent'])
         bill.add_vote(vote)
 
-    def _get_version_filenames(self, session, chamber):
-        '''All bills have "versions", but for those lacking html documents,
-        the .wpd file is available via ftp. Create a dict of those links
-        in advance; any bills lacking html versions will get version info
-        from this dict.'''
-
-        chamber_name = {'upper': 'senate', 'lower': 'House'}[chamber]
-        ftp_url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS/%s/'
-        ftp_url = ftp_url % (session, chamber_name)
-
-        try:
-            html = self.urlopen(ftp_url)
-        except scrapelib.FTPError:
-            # The url doesn't exist. Just set _version_filenames
-            # to an empty dict.
-            self._version_filenames = {}
-            return
-
-        dirs = [' '.join(x.split()[3:]) for x in html.splitlines()]
-
-        split = re.compile(r'\s+').split
-        matchwpd = re.compile(r'\.wpd$', re.I).search
-        splitext = os.path.splitext
-        version_filenames = collections.defaultdict(list)
-        for d in dirs:
-            url = ('%s%s/' % (ftp_url, d)).replace(' ', '%20')
-            html = self.urlopen(url)
-            filenames = [split(x, 3)[-1] for x in html.splitlines()]
-            filenames = filter(matchwpd, filenames)
-            for fn in filenames:
-                fn, ext = splitext(fn)
-                if ' ' in fn:
-                    bill_id, _ = fn.split(' ', 1)
-                else:
-                    # One bill during 2011 had no spaces
-                    # in the filename. Probably a fluke.
-                    digits = re.search(r'\d+', fn)
-                    bill_id = fn[:digits.end()]
-
-                version_filenames[bill_id.lower()].append((d, fn))
-
-        self._version_filenames = version_filenames
-
     def _scrape_versions_normally(self, session, chamber, page, bill_id,
                                   get_name=re.compile(r'\"(.+)"').search):
         '''This first method assumes the bills versions are hyperlinked
@@ -366,42 +325,9 @@ class WVBillScraper(BillScraper):
         '''
         for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
             # split name out of HTML - Introduced Version - SB 1
-            name = link.getparent().text.strip(' -\r\n|')
-            if not name:
-                name = link.getprevious().tail.strip(' -\r\n|')
+            name = link.xpath('@title')[0].split('-')[1].strip()
             yield {'name': name, 'url': link.get('href'),
                    'mimetype': 'text/html'}
-
-        for link in page.xpath("//a[contains(@title, 'WordPerfect')]"):
-            name = link.getparent().text.strip(' -\r\n|')
-            if not name:
-                name = link.getprevious().tail.strip(' -\r\n|')
-            if not name:
-                name = link.getprevious().getprevious().tail.strip(' -\r\n|')
-            yield {'name': name, 'url': link.get('href'),
-                   'mimetype': 'application/vnd.wordperfect'}
-
-    def _scrape_versions_wpd(self, session, chamber, page, bill_id):
-        '''This third method scrapes the .wpd document from the legislature's
-        ftp server.
-        '''
-        chamber_name = {'upper': 'senate', 'lower': 'House'}[chamber]
-        _bill_id = bill_id.replace(' ', '').lower()
-        url = 'ftp://www.legis.state.wv.us/publicdocs/%s/RS' % session
-
-        try:
-            filenames = self._version_filenames[_bill_id]
-        except KeyError:
-            # There are no filenames in the dict for this bill_id.
-            # Skip.
-            return
-
-        for folder, filename in filenames:
-            _filename = quote(filename + '.wpd')
-            _url = '/'.join([url, chamber_name, folder, _filename])
-
-            yield {'name': filename, 'url': _url,
-                   'mimetype': 'application/vnd.wordperfect'}
 
     def scrape_versions(self, session, chamber, page, bill_id):
         '''
@@ -413,14 +339,6 @@ class WVBillScraper(BillScraper):
         # Scrape .htm and .wpd versions listed in the detail page.
         for data in self._scrape_versions_normally(session, chamber, page,
                                                    bill_id):
-            _url = _Url(data['url'])
-            if _url not in cache:
-                cache.add(_url)
-                res.append(data)
-
-        # For each .wpd version not already scraped, add a version.
-        for data in self._scrape_versions_wpd(session, chamber, page,
-                                              bill_id):
             _url = _Url(data['url'])
             if _url not in cache:
                 cache.add(_url)

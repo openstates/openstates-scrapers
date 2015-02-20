@@ -19,6 +19,8 @@ def parse_name(name):
     >>> parse_name('Owen H.\\r\\nJohnson (Vice Chairperson)')
     ('Owen H. Johnson', 'vice chairperson')
     """
+
+
     name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
     name = re.sub(r'\s+', ' ', name)
 
@@ -28,11 +30,16 @@ def parse_name(name):
         r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
         name)
 
+    role = "member"
     if match:
         name = match.group(1).strip(' ,')
         role = match.group(2).lower()
-        return (name, role)
-    return (name, 'member')
+
+
+    name = name.replace("Sen.","").replace("Rep.","").strip()
+
+
+    return (name, role)
 
 
 class NYCommitteeScraper(CommitteeScraper):
@@ -74,6 +81,8 @@ class NYCommitteeScraper(CommitteeScraper):
             member = re.sub(r'\s+', ' ', member)
 
             name, role = parse_name(member)
+            if name is None:
+                continue
 
             # Figure out if this person is the chair.
             role_type = link.xpath('../../preceding-sibling::div[1]/text()')
@@ -121,40 +130,17 @@ class NYCommitteeScraper(CommitteeScraper):
         comm = Committee('upper', name)
         comm.add_source(url)
 
-        member_div = page.xpath("//div[@class = 'committee-members']")[0]
+        chair_div = page.xpath("//div[@class = 'committee-chair']")
+        for chair in chair_div:
+            role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
+            member_name = chair.xpath("./a/text()")[0].replace("Sen.","").strip()
+            print member_name
+            comm.add_member(member_name, role)
 
-        xpath = '//label[contains(., "Chair:")]/following-sibling::a/text()'
-        chair = page.xpath(xpath)
-        if chair:
-            comm.add_member(chair.pop().strip(), 'chair')
-
-        seen = set([member['name'] for member in comm['members']])
-        for link in member_div.xpath(".//a"):
-            if not link.text:
-                try:
-                    # On one vice chair, the text was nested differently.
-                    member = link[0].tail.strip()
-                except (IndexError, AttributeError):
-                    continue
-            else:
-                member = link.text.strip()
-
-            next_elem = link.getnext()
-            if (next_elem is not None and
-                next_elem.tag == 'a' and
-                next_elem.attrib['href'] == link.attrib['href']):
-                # Sometimes NY is cool and splits names across a
-                # couple links
-                member = "%s %s" % (member, next_elem.text.strip())
-
-            member = re.sub(r'\s+', ' ', member)
-
-            if member in seen or not member:
-                continue
-            seen.add(member)
-
-            name, role = parse_name(member)
-            comm.add_member(name, role)
+        member_list = page.xpath("//div[contains(@class, 'view-committee-members')]//li[contains(@class, 'views-row')]")
+        for member in member_list:
+            member_name = " ".join(member.text_content().split()) #remove arbitrary stupid random whitespace
+            comm.add_member(member_name, "member")
 
         if comm['members']:
             self.save_committee(comm)

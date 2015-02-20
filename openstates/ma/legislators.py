@@ -4,10 +4,7 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 def clean_district(district):
-
-    # Ugh.
-    if district.startswith('Consisting of'):
-        return district.split().pop().strip('., ')
+    assert not district.startswith('Consisting of'), "Bad district text"
 
     mappings = (
         ('\s+', ' '),
@@ -35,6 +32,8 @@ def clean_district(district):
         ('yninth', 'y-Ninth'),
         (' And ', ' and '),
         ('\s*-+\s*$', ''),
+        ('Thirty First', 'Thirty-First'),
+        ('Thirty Third', 'Thirty-Third')
     )
     district = district.title()
     for pattern, repl in mappings:
@@ -72,22 +71,30 @@ class MALegislatorScraper(LegislatorScraper):
         photo_url = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@src')[0]
         full_name = root.xpath('//div[starts-with(@class,"bioPicContainer")]/img/@alt')[0]
 
-
         email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
         email = email.replace('mailto:','')
-        # if full_name == 'Frank A. Moran':
 
         district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
-        if len(district):
+        # Rady Mom has a malformed, empty legislator page, so special-case him
+        if full_name == "Rady Mom":
+            assert len(district) == 0, "Remove the special-casing code for Rady Mom"
+            district = "Eighteenth Middlesex"
+            district_dirty = district
+        # Joseph McGonagle has bad district text, so special-case him as well
+        elif full_name == "Joseph W. McGonagle, Jr.":
+            assert district[0].text_content().strip() ==\
+                    "Consisting of the city of Everett, in the county of Middlesex",\
+                    "Remove the special-casing code for Joseph McGonagle"
+            district = "Twenty-Eighth Middlesex"
+            district_dirty = district
+        elif len(district):
             district_dirty = district[0].text_content().strip()
             district = clean_district(district_dirty)
         else:
-            self.logger.warning('No district tab found for this hot garbage. Skipping.')
-            return
+            raise AssertionError('No district tab found for this legislator.')
         if district_dirty and not district:
             self.logger.critical('clean_district wiped out all district text.')
             assert False
-            return
 
         party = root.xpath('//span[@class="legislatorAffiliation"]/text()')[0]
 

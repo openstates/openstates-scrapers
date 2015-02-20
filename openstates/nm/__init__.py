@@ -30,6 +30,10 @@ metadata = {
         {'name': '2013-2014',
          'sessions': ['2013', '2014'],
          'start_year': 2013, 'end_year': 2014,
+        },
+        {'name': '2015-2016',
+         'sessions': ['2015'],
+         'start_year': 2015, 'end_year': 2016,
         }
     ],
     'session_details': {
@@ -52,6 +56,10 @@ metadata = {
         '2014': {'display_name': '2014 Regular Session',
                  'slug': '14%20Regular',
                  '_scraped_name': '2014 Regular',
+                },
+        '2015': {'display_name': '2015 Regular Session',
+                 'slug': '15%20Regular',
+                 '_scraped_name': '2015 Regular',
                 },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],

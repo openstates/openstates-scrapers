@@ -43,21 +43,30 @@ class MNVoteScraper(VoteScraper):
             return
 
         doc = lxml.html.fromstring(html)
-        paragraphs = doc.xpath('//h1/following-sibling::p')
+        try:
+            motion = doc.xpath("//div[@id='leg_PageContent']/div/h2/text()")[0]
+        except IndexError:
+            self.logger.warning("Bill was missing a motion number, skipping")
+            return
 
-        # first paragraph has motion and vote total
-        top_par = paragraphs[0].text_content()
-        lines = top_par.splitlines()
-        # 3rd line is the motion except in cases where first line is gone
-        motion = lines[2] or lines[1]
-        # last line is "__ YEA and __ Nay"
-        yeas, nays = self.yeanay_re.match(lines[-1]).groups()
-        yeas = int(yeas)
-        nays = int(nays)
+
+        vote_count = doc.xpath(".//div[@id='leg_PageContent']/div/h3/text()")[1].split()
+        yeas = int(vote_count[0])
+        nays = int(vote_count[3])
 
         # second paragraph has date
-        date = self.date_re.match(paragraphs[1].text_content()).groups()[0]
-        date = datetime.datetime.strptime(date, '%m/%d/%Y')
+        paragraphs = doc.xpath(".//div[@id='leg_PageContent']/div/p/text()")
+        date = None
+        for p in paragraphs:
+            try:
+                date = datetime.datetime.strptime(p.strip(), '%m/%d/%Y')
+                break
+            except ValueError:
+                pass
+        if date is None:
+            self.logger.warning("No date could be found for vote on %s" % motion)
+            return
+
 
         vote = Vote('lower', date, motion, yeas>nays, yeas, nays, 0,
                     session=session, bill_id=bill_id, bill_chamber=chamber)

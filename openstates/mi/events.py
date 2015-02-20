@@ -52,12 +52,14 @@ class MIEventScraper(EventScraper, LXMLMixin):
 
         datetime = re.sub("\s+", " ", datetime)
 
-        flag = "or after committees are given leave"
-
-        if flag in datetime:
-            datetime = datetime[:datetime.find(flag)].strip()
+        for text_to_remove in [
+                "or after committees are given leave",
+                "or later immediately after committees are given leave"
+                ]:
+            datetime = datetime.split(text_to_remove)[0].strip()
 
         datetime = datetime.replace('p.m.', 'pm')
+        datetime = datetime.replace('Noon',"pm")
         datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title

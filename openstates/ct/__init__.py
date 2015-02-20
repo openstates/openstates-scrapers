@@ -59,7 +59,7 @@ def session_list():
     text = scrapelib.urlopen('ftp://ftp.cga.ct.gov')
     sessions = [line.split()[-1] for line in text.splitlines()]
     
-    for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL'):
+    for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac"):
         sessions.remove(not_session_name)
     return sessions
 

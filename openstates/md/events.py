@@ -21,6 +21,11 @@ class MDEventScraper(EventScraper, LXMLMixin):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber, session):
+        self.logger.warning("MD's events schedule is a blob of hand-indented text and has changed from last year. Skipping for now.")
+        return
+
+
+
         if chamber != 'other':
             return None  # We're going to do it all on one shot.
 

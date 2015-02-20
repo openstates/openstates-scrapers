@@ -40,8 +40,8 @@ metadata = dict(
         },
         {
             'name': '2015-2016',
-            'start_year': 2013,
-            'end_year': 2014,
+            'start_year': 2015,
+            'end_year': 2016,
             'sessions': ['2015-2016'],
         },
     ],

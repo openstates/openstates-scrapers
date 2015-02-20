@@ -3,6 +3,8 @@ MAINTAINER  Paul R. Tagliamonte <paultag@sunlightfoundation.com>
 
 RUN mkdir -p /opt/sunlightfoundation.com/
 ADD . /opt/sunlightfoundation.com/openstates/
+RUN apt-get update && apt-get install -y \
+    poppler-utils
 RUN pip install xlrd lxml pytz feedparser suds
 RUN pip install -e /opt/sunlightfoundation.com/openstates/
 

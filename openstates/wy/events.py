@@ -1,19 +1,13 @@
 import re
 import pytz
 import datetime
-import lxml.html
 
 from billy.scrape.events import EventScraper, Event
+from openstates.utils import LXMLMixin
 
-class WYEventScraper(EventScraper):
+class WYEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'wy'
     _tz = pytz.timezone('US/Mountain')
-
-    def get_page_from_url(self, url):
-        with self.urlopen(url) as page:
-            page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def normalize_time(self, time_string):
 
@@ -144,7 +138,7 @@ class WYEventScraper(EventScraper):
         calendar_url = ("http://legisweb.state.wy.us/%s/Calendar/"
             "CalendarMenu/CommitteeMenu.aspx" % str(session))
 
-        page = self.get_page_from_url(calendar_url)
+        page = self.lxmlize(calendar_url)
 
         rows = page.xpath('//table[@id="ctl00_cphContent_gvCalendars"]/tr')
 
@@ -165,8 +159,16 @@ class WYEventScraper(EventScraper):
 
             if (len(meeting_url) == 1 and
                     meeting_url[0].text_content().strip() != ''):
-                meeting_url = meeting_url[0].attrib['href']
-                meeting_page = self.get_page_from_url(meeting_url)
+                try:
+                    meeting_url = meeting_url[0].attrib['href']
+                except KeyError:
+                    self.warning(
+                            "Alleged meeting date has no URL: " +
+                            meeting_url[0].text_content().strip()
+                            )
+                    continue
+
+                meeting_page = self.lxmlize(meeting_url)
                 meetings = meeting_page.xpath(
                     './/table[@class="MsoNormalTable"]/tr')
                 meeting_idents = []

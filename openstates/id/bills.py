@@ -88,7 +88,7 @@ _ACTIONS = (
 def get_action(actor, text):
     # the biggest issue with actions is that some lines seem to indicate more
     # than one action
-    print text
+    
 
     for pattern, action in _ACTIONS:
         match = re.match(pattern, text, re.I)

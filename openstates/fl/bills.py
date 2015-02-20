@@ -60,13 +60,13 @@ class FLBillScraper(BillScraper):
                 bill_check and
                 text_check)
         if not valid:
-            raise TimSucksError('Response was invalid. Timsucks.')
+            raise Exception('Response was invalid')
         return valid
 
     def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
         try:
             html = self.urlopen(url)
-        except TimSucksError:
+        except:
             return
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
@@ -94,22 +94,19 @@ class FLBillScraper(BillScraper):
             hist_table = hist_page.xpath(
                 "//div[@id = 'tabBodyBillHistory']//table")[0]
 
-        # now try and get second h1
-        bill_type_h2 = page.xpath('//h2/text()')[-1]
-        if re.findall('[SH]B', bill_type_h2):
+        if bill_id.startswith('SB ') or \
+                bill_id.startswith('HB ') or \
+                bill_id.startswith('SPB ') or \
+                bill_id.startswith('HPB '):
             bill_type = 'bill'
-        elif re.findall('[SH]PB', bill_type_h2):
-            bill_type = 'proposed bill'
-        elif re.findall('[SH]R', bill_type_h2):
+        elif bill_id.startswith('HR ') or bill_id.startswith('SR '):
             bill_type = 'resolution'
-        elif re.findall('[SH]JR', bill_type_h2):
+        elif bill_id.startswith('HJR ') or bill_id.startswith('SJR '):
             bill_type = 'joint resolution'
-        elif re.findall('[SH]CR', bill_type_h2):
+        elif bill_id.startswith('SCR ') or bill_id.startswith('HCR '):
             bill_type = 'concurrent resolution'
-        elif re.findall('[SH]M', bill_type_h2):
+        elif bill_id.startswith('SM ') or bill_id.startswith('HM '):
             bill_type = 'memorial'
-        elif re.findall('\s+Senate \d+', bill_type_h2):
-            bill_type = 'bill'
         else:
             raise Exception('Failed to identify bill type.')
 
@@ -180,6 +177,7 @@ class FLBillScraper(BillScraper):
             for tr in analysis_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 name += " -- " + tr.xpath("string(td[3])").strip()
+                name = re.sub(r'\s+', " ", name)
                 date = tr.xpath("string(td[4])").strip()
                 if date:
                     name += " (%s)" % date
@@ -221,73 +219,73 @@ class FLBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_vote(self, bill, chamber, date, url):
-
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
+        lines = text.split("\n")
         os.remove(path)
 
-        try:
-            motion = text.split('\n')[4].strip()
-        except IndexError:
+        (_, motion) = lines[5].split("FINAL ACTION:")
+        motion = motion.strip()
+        if not motion:
+            self.warning("Vote appears to be empty")
             return
 
-        try:
-            yes_count = int(re.search(r'Yeas - (\d+)', text).group(1))
-        except AttributeError:
-            return
+        vote_top_row = [
+                lines.index(x) for x in lines if 
+                re.search(r'^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$', x)
+                ][0]
+        yea_columns_end = lines[vote_top_row].index("Yea") + len("Yea")
+        nay_columns_begin = lines[vote_top_row].index("Nay")
 
-        no_count = int(re.search(r'Nays - (\d+)', text).group(1))
-        other_count = int(re.search(r'Not Voting - (\d+)', text).group(1))
-        passed = yes_count > (no_count + other_count)
+        votes = {'yes': [], 'no': [], 'other': []}
+        for line in lines[(vote_top_row + 1): ]:
+            if line.strip():
+                member = re.search(r'''(?x)
+                        ^\s+(?:[A-Z\-]+)?\s+  # Possible vote indicator
+                        ([A-Z][a-z]+  # Name must have lower-case characters
+                        [\w\-\s]+)  # Continue looking for the rest of the name
+                        (?:,[A-Z\s]+?)?  # Leadership has an all-caps title
+                        (?:\s{2,}.*)?  # Name ends when many spaces are seen
+                        ''', line).group(1)
+                # Usually non-voting members won't even have a code listed
+                did_vote = bool(re.search(r'^\s+([A-Z\-]+)\s+[A-Z][a-z]', line))
+                if did_vote:
+                    # Check where the "X" or vote code is on the page
+                    vote_column = len(line) - len(line.lstrip())
+                    if vote_column <= yea_columns_end:
+                        votes['yes'].append(member)
+                    elif vote_column >= nay_columns_begin:
+                        votes['no'].append(member)
+                    else:
+                        raise AssertionError(
+                                "Unparseable vote found for {0} in {1}:\n{2}".
+                                format(member, url, line)
+                                )
+                else:
+                    votes['other'].append(member)
+
+            # End loop as soon as no more members are found
+            else:
+                break
+
+        totals = re.search(r'(?ms)\s+(\d+)\s+(\d+)\s+.*?TOTALS', text).groups()
+        yes_count = int(totals[0])
+        no_count = int(totals[1])
+        if yes_count != len(votes['yes']) or no_count != len(votes['no']):
+            raise AssertionError(
+                    "Should have {0} yes votes: {1}\n".
+                    format(yes_count, votes['yes']) +
+                    "and {0} no votes: {1}".
+                    format(no_count, votes['no'])
+                    )
+        passed = (yes_count > no_count)
+        other_count = len(votes['other'])
 
         vote = Vote(chamber, date, motion, passed, yes_count, no_count,
                     other_count)
         vote.add_source(url)
-
-        y, n, o = 0, 0, 0
-        break_outter = False
-
-        for line in text.split('\n')[9:]:
-            if break_outter:
-                break
-
-            if 'after roll call' in line:
-                break
-            if 'Indication of Vote' in line:
-                break
-            if 'Presiding' in line:
-                continue
-
-            for col in re.split(r'-\d+', line):
-                col = col.strip()
-                if not col:
-                    continue
-
-                match = re.match(r'(Y|N|EX|\*)\s+(.+)$', col)
-
-                if match:
-                    name = match.group(2)
-                    if '=' in name:
-                        continue
-                    if match.group(1) == 'Y':
-                        vote.yes(name)
-                    elif match.group(1) == 'N':
-                        vote.no(name)
-                    else:
-                        vote.other(name)
-                else:
-                    if "PAIR" in line:
-                        break_outter = True
-                        break
-                    vote.other(col.strip())
-
-        # vote.validate()
-        if not vote['motion']:
-            vote['motion'] = '[No motion given.]'
+        vote['yes_votes'] = votes['yes']
+        vote['no_votes'] = votes['no']
+        vote['other_votes'] = votes['other']
 
         bill.add_vote(vote)
-
-
-class TimSucksError(Exception):
-    '''Raise if response is invalid.
-    '''

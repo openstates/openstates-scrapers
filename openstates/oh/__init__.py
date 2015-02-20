@@ -3,7 +3,7 @@ import lxml.html
 from billy.utils.fulltext import text_after_line_numbers
 from .bills import OHBillScraper
 from .legislators import OHLegislatorScraper
-# from .events import OHEventScraper
+from .events import OHEventScraper
 
 metadata = dict(
     name='Ohio',
@@ -40,7 +40,7 @@ metadata = dict(
                 '_scraped_name': '131',
                },
     },
-    feature_flags=['influenceexplorer'],
+    feature_flags=['influenceexplorer', 'events'],
     _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
 
 )
