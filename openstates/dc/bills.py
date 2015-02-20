@@ -38,120 +38,144 @@ class DCBillScraper(BillScraper):
     def scrape(self, session, chambers):
         #get member id matching for vote parsing
         member_ids = self.get_member_ids()[session]
-
+        per_page = 10 #seems like it gives me 10 no matter what.
+        start_record = 0
 
         base_url = "http://lims.dccouncil.us/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
-        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":10,"iDisplayLength":10,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","ComitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","ComitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
         param_json = json.dumps(params)
         response = self.post(url,headers=headers,data=param_json)
         #the response is a terrible string-of-nested-json-strings. Yuck.
         response = self.decode_json(response.json()["d"])
-        num_records = response["iTotalRecords"]
         data = response["aaData"]
+        
+        while len(data) > 0:
 
-        for bill in data:
-            bill_id = bill["Title"]
-            bill_params = {"legislationId":bill_id}
-            bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
-            bill_info = self.decode_json(bill_info.json()["d"])["data"]
-            
-            legislation_info = bill_info["Legislation"][0]
-            title = legislation_info["ShortTitle"]
-            print title
-            
-            docs = bill_info["OtherDocuments"]
-            
-            
-            #dc has no chambers. calling it all upper
-            bill = Bill(session,"upper", bill_id, title)
+            for bill in data:
+                bill_id = bill["Title"]
+                if bill_id.startswith("AG"):
+                    #actually an agenda, skip
+                    continue
+                bill_params = {"legislationId":bill_id}
+                bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
+                bill_info = self.decode_json(bill_info.json()["d"])["data"]
+                
+                legislation_info = bill_info["Legislation"][0]
+                title = legislation_info["ShortTitle"]
+                print title
+                
+                docs = bill_info["OtherDocuments"]
+                
+                
+                #dc has no chambers. calling it all upper
+                bill = Bill(session,"upper", bill_id, title)
 
-            introducers = legislation_info["Introducer"]
-            try:
-                cosponsors = legislation_info["CoSponsor"]
-            except KeyError:
-                cosponsors = []
-            for i in introducers:
-                sponsor_name = i["Name"]
-                bill.add_sponsor(name=sponsor_name,type="primary")
-            for s in cosponsors:
-                sponsor_name = s["Name"]
-                bill.add_sponsor(name=sponsor_name,type="cosponsor")
+                introducers = legislation_info["Introducer"]
+                try:
+                    cosponsors = legislation_info["CoSponsor"]
+                except KeyError:
+                    cosponsors = []
+                for i in introducers:
+                    sponsor_name = i["Name"]
+                    bill.add_sponsor(name=sponsor_name,type="primary")
+                for s in cosponsors:
+                    sponsor_name = s["Name"]
+                    bill.add_sponsor(name=sponsor_name,type="cosponsor")
 
-            #deal with actions involving the mayor
-            mayor = bill_info["MayorReview"]
-            if mayor != []:
-                mayor = mayor[0]
-                if "TransmittedDate" in mayor:
-                    transmitted_date = mayor["TransmittedDate"].split(" ")[0]
-                    transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
+                #deal with actions involving the mayor
+                mayor = bill_info["MayorReview"]
+                if mayor != []:
+                    mayor = mayor[0]
+                    if "TransmittedDate" in mayor:
+                        transmitted_date = mayor["TransmittedDate"].split(" ")[0]
+                        transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
 
-                    bill.add_action("mayor",
-                                "transmitted to mayor",
-                                transmitted_date)
+                        bill.add_action("mayor",
+                                    "transmitted to mayor",
+                                    transmitted_date)
 
-                if 'EnactedDate' in mayor:
-                    enacted_date = mayor["EnactedDate"].split(" ")[0]
-                    enacted_date = datetime.datetime.strptime(enacted_date,"%Y/%m/%d")
+                    if 'EnactedDate' in mayor:
+                        enacted_date = mayor["EnactedDate"].split(" ")[0]
+                        enacted_date = datetime.datetime.strptime(enacted_date,"%Y/%m/%d")
 
-                    bill.add_action("mayor",
-                                    "enacted",
-                                    enacted_date)
+                        bill.add_action("mayor",
+                                        "enacted",
+                                        enacted_date)
 
 
-            #deal with committee actions
-            reading_date = legislation_info["DateRead"].split(" ")[0] #time is always 0
-            reading_date = datetime.datetime.strptime(reading_date,"%Y/%m/%d")
-            if "ComitteeReferral" in legislation_info: #their typo, not mine
-                committees = []
-                for committee in legislation_info["ComitteeReferral"]:
-                    if committee["Name"] == "Retained by the council":
-                        committees = []
-                        break
-                    else:
+                #deal with committee actions
+                if "DateRead" in legislation_info:
+                    date = legislation_info["DateRead"].split(" ")[0] #time is always 0
+                elif "IntroductionDate" in legislation_info:
+                    date = legislation_info["IntroductionDate"].split(" ")[0]
+                else:
+                    self.logger.warning("Crap, we can't find anything that looks like an action date. Skipping")
+                    continue
+                date = datetime.datetime.strptime(date,"%Y/%m/%d")
+                if "ComitteeReferral" in legislation_info: #their typo, not mine
+                    committees = []
+                    for committee in legislation_info["ComitteeReferral"]:
+                        if committee["Name"] == "Retained by the council":
+                            committees = []
+                            break
+                        else:
+                            committees.append(committee["Name"])
+                    if committees != []:
+                        bill.add_action("committee",
+                                    "referred to committee",
+                                    date,
+                                    committees=committees)
+
+                if "CommitteeReferralComments" in legislation_info:
+                    committees = []
+                    for committee in legislation_info["CommitteeReferralComments"]:
                         committees.append(committee["Name"])
-                if committees != []:
                     bill.add_action("committee",
-                                "referred to committee",
-                                reading_date,
-                                committees=committees)
+                                    "retained by council with comments from committees",
+                                    date,
+                                    committees=committees)
 
-            if "CommitteeReferralComments" in legislation_info:
-                committees = []
-                for committee in legislation_info["CommitteeReferralComments"]:
-                    committees.append(committee["Name"])
-                bill.add_action("committee",
-                                "retained by council with comments from committees",
-                                reading_date,
-                                committees=committees)
+                
 
+                #deal with documents
+
+                memos = []
+                for doc_type in ["MemoLink","AttachmentPath"]:
+                    if doc_type in legislation_info:
+                        for d in legislation_info[doc_type]:
+                            memos.append(d)
+                if "OtherDocuments" in legislation_info: #dealing with documents hiding in "other documents", see PR21-0040
+                    for d in legislation_info["OtherDocuments"]:
+                        if "AttachmentPath" in d:
+                            memos.append(d["AttachmentPath"])
+                for memo in memos:
+                    memo_name = memo["Name"]
+                    memo_url = base_url+"Download/"+memo["RelativePath"]+"/"+memo_name
+                    bill.add_document(memo_name,
+                                    memo_url,
+                                    "pdf")
+
+                votes = bill_info["VotingSummary"]
+                for vote in votes:
+                    self.process_vote(vote, bill, member_ids)
+
+                #don't know if it makes sense to pass these extra arguments
+                #but these urls are totally worthless without them
+                bill.add_source(url,headers=headers,json_payload=param_json)
+                bill.add_source(bill_url,headers=headers,json_payload=json.dumps(bill_params))
+
+                self.save_bill(bill)
             
-
-            #deal with documents
-
-            memos = []
-            for doc_type in ["MemoLink","AttachmentPath"]:
-                if doc_type in legislation_info:
-                    for d in legislation_info[doc_type]:
-                        memos.append(d)
-            if "OtherDocuments" in legislation_info: #dealing with documents hiding in "other documents", see PR21-0040
-                for d in legislation_info["OtherDocuments"]:
-                    if "AttachmentPath" in d:
-                        memos.append(d["AttachmentPath"])
-            for memo in memos:
-                memo_name = memo["Name"]
-                memo_url = base_url+"Download/"+memo["RelativePath"]+"/"+memo_name
-                bill.add_document(memo_name,
-                                memo_url,
-                                "pdf")
-
-            votes = bill_info["VotingSummary"]
-            for vote in votes:
-                self.process_vote(vote, bill, member_ids)
-
-            #self.save_bill(bill)
+            #get next page
+            start_record += per_page
+            params["request"]["iDisplayStart"] = start_record
+            param_json = json.dumps(params)
+            response = self.post(url,headers=headers,data=param_json)
+            response = self.decode_json(response.json()["d"])
+            data = response["aaData"]
     
     def get_member_ids(self):
         member_dict = {} #three levels: from session to member_id to name
