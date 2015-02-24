@@ -99,17 +99,29 @@ class DCBillScraper(BillScraper):
                     if law_num:
                         bill.add_title(law_num)
 
+                #sometimes AdditionalInformation has a previous bill name
+                if "AdditionalInformation" in legislation_info:
+                    if "previously" in legislation_info["AdditionalInformation"].lower():
+                        prev_title = legislation_info["AdditionalInformation"].lower().replace("previously","").strip().replace(" ","")
+                        bill.add_title(prev_title.upper())
 
+                if "WithDrawnDate" in legislation_info:
+                    withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
+                    withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"]
+
+                    bill.add_action(withdrawn_by,
+                                    "withdrawn",
+                                    withdrawn_date,
+                                    "bill:withdrawn")
 
                 #deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
                 if mayor != []:
                     mayor = mayor[0]
 
-                    #in dc, mayor == governor
+                    #in dc, mayor == governor because openstates schema
                     if "TransmittedDate" in mayor:
-                        transmitted_date = mayor["TransmittedDate"].split(" ")[0]
-                        transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
+                        transmitted_date = self.date_format(mayor["TransmittedDate"])
 
                         bill.add_action("mayor",
                                     "transmitted to mayor",
@@ -117,8 +129,7 @@ class DCBillScraper(BillScraper):
                                     type = "governor:received")
 
                     if 'SignedDate' in mayor:
-                        signed_date = mayor["SignedDate"].split(" ")[0]
-                        signed_date = datetime.datetime.strptime(signed_date,"%Y/%m/%d")
+                        signed_date = self.date_format(mayor["SignedDate"])
 
                         bill.add_action("mayor",
                                         "signed",
@@ -126,10 +137,8 @@ class DCBillScraper(BillScraper):
                                         type="governor:signed")
 
 
-
                     elif 'ReturnedDate' in mayor: #if returned but not signed, it was vetoed
-                        veto_date = mayor["ReturnedDate"].split(" ")[0]
-                        veto_date = datetime.datetime.strptime(veto_date,"%Y/%m/%d")
+                        veto_date = self.date_format(mayor["ReturnedDate"])
 
                         bill.add_action("mayor",
                                         "vetoed",
@@ -137,8 +146,7 @@ class DCBillScraper(BillScraper):
                                         type="governor:vetoed")
 
                         if 'EnactedDate' in mayor: #if it was returned and enacted but not signed, there was a veto override
-                            override_date = mayor["EnactedDate"].split(" ")[0]
-                            override_date = datetime.datetime.strptime(override_date,"%Y/%m/%d")
+                            override_date = self.date_format(mayor["EnactedDate"])
 
                             bill.add_action("upper",
                                         "veto override",
@@ -153,8 +161,7 @@ class DCBillScraper(BillScraper):
                 if len(congress) > 0:
                     congress = congress[0]
                     if "TransmittedDate" in congress:
-                        transmitted_date = congress["TransmittedDate"].split()[0]
-                        transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
+                        transmitted_date = self.date_format(congress["TransmittedDate"])
                         bill.add_action("US Congress",
                                     "Transmitted to Congress for review",
                                     transmitted_date)
@@ -162,13 +169,13 @@ class DCBillScraper(BillScraper):
 
                 #deal with committee actions
                 if "DateRead" in legislation_info:
-                    date = legislation_info["DateRead"].split(" ")[0] #time is always 0
+                    date = legislation_info["DateRead"]
                 elif "IntroductionDate" in legislation_info:
-                    date = legislation_info["IntroductionDate"].split(" ")[0]
+                    date = legislation_info["IntroductionDate"]
                 else:
                     self.logger.warning("Crap, we can't find anything that looks like an action date. Skipping")
                     continue
-                date = datetime.datetime.strptime(date,"%Y/%m/%d")
+                date = self.date_format(date)
                 if "ComitteeReferral" in legislation_info: #their typo, not mine
                     committees = []
                     for committee in legislation_info["ComitteeReferral"]:
@@ -194,10 +201,7 @@ class DCBillScraper(BillScraper):
                                     committees=committees,
                                     type="other")
 
-                
-
                 #deal with random docs floating around
-
                 docs = bill_info["OtherDocuments"]
                 for d in docs:
                     if "AttachmentPath" in d:
@@ -212,11 +216,11 @@ class DCBillScraper(BillScraper):
                     self.add_documents(legislation_info["AttachmentPath"],bill)
 
 
+                #full council votes
                 votes = bill_info["VotingSummary"]
                 for vote in votes:
                     self.process_vote(vote, bill, member_ids)
-
-                    
+     
 
                 #deal with committee votes
                 if "ComiteeMarkup" in bill_info: #their typo, not mine
@@ -227,9 +231,6 @@ class DCBillScraper(BillScraper):
                         if "AttachmentPath" in committee_info:
                             self.add_documents(vote["AttachmentPath"],bill,is_version)
 
-
-                #don't know if it makes sense to pass these extra arguments
-                #but these urls are totally worthless without them
                 bill.add_source(bill_source_url)
                 self.save_bill(bill)
             
@@ -289,7 +290,7 @@ class DCBillScraper(BillScraper):
                 self.logger.warning("Unexpected vote result '{result},' skipping vote.".format(result=result))
                 return
 
-        date = datetime.datetime.strptime(vote["DateOfVote"].split()[0],"%Y/%m/%d")
+        date = self.date_format(vote["DateOfVote"])
 
         leg_votes = vote["MappedJASON"] #their typo, not mine
         v = Vote('upper',date,motion,status,0,0,0,
@@ -312,14 +313,13 @@ class DCBillScraper(BillScraper):
         #level in the json, so we'll deal with them here
         #and also add relevant actions
 
-
         if "amendment" in motion.lower():
             if status:
                 t = "amendment:passed"
             elif result in ["Tabled","Postponed"]:
                 t = "amendment:tabled"
             else:
-                t = "amendment:passed"
+                t = "amendment:failed"
         elif result in ["Tabled","Postponed"]:
                 t = "other" #we don't really have a thing for postponed bills
         elif "first reading" in motion.lower():
@@ -350,7 +350,6 @@ class DCBillScraper(BillScraper):
             vote["type"] = t.replace("bill:","")
 
         #some documents/versions are hiding in votes.
-
         if "AttachmentPath" in vote:
             is_version = False
             try:
@@ -376,7 +375,7 @@ class DCBillScraper(BillScraper):
         except KeyError:
             self.logger.warning("Committee vote has no data. Skipping.")
             return
-        date = datetime.datetime.strptime(date.split()[0],"%Y/%m/%d")
+        date = self.date_format(date)
 
         other_count = 0
         for v in vote_info:
@@ -414,9 +413,12 @@ class DCBillScraper(BillScraper):
             #figure out if it's a version from type/name
             possible_version_types = ["SignedAct","Introduction","Enrollment","Engrossment"]
             for vt in possible_version_types:
-                if vt.lower() in doc_type.lower():
+                if vt.lower() in doc_name.lower():
                     is_version = True
                     doc_type = vt 
+
+            if "amendment" in doc_name.lower():
+                doc_type = "Amendment"
 
             if is_version:
                 bill.add_version(doc_type,doc_url,mimetype=mimetype)
@@ -424,3 +426,6 @@ class DCBillScraper(BillScraper):
 
             bill.add_document(doc_type,doc_url,mimetype=mimetype)
 
+    def date_format(self,d):
+        #the time seems to be 00:00:00 all the time, so ditching it with split
+        return datetime.datetime.strptime(d.split()[0],"%Y/%m/%d")
