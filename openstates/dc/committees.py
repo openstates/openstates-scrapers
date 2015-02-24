@@ -30,11 +30,15 @@ class DCCommitteeScraper(CommitteeScraper):
 
             com = Committee('upper', name)
 
+            chairs = []
+
             for chair in doc.xpath('//h3[text()="Committee Chair"]/following-sibling::p'):
                 com.add_member(chair.text_content(), role='chairperson')
+                chairs.append(chair.text_content())
 
             for member in doc.xpath('//h3[text()="Councilmembers"]/following-sibling::ul//a'):
-                com.add_member(member.text_content(), role='member')
+                if member.text_content() not in chairs:
+                    com.add_member(member.text_content(), role='member')
 
             com.add_source(url)
             self.save_committee(com)
