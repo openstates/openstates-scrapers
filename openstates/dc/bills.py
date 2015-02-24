@@ -12,9 +12,6 @@ from billy.scrape.votes import Vote
 class DCBillScraper(BillScraper):
     jurisdiction = 'dc'
 
-    #TODO: 
-        #2) poke around for other kinds of actions (incl congress)
-
     def decode_json(self,stringy_json):
         #the "json" they send is recursively string-encoded.
         if type(stringy_json) == dict:
@@ -257,8 +254,6 @@ class DCBillScraper(BillScraper):
 
                 #don't know if it makes sense to pass these extra arguments
                 #but these urls are totally worthless without them
-                bill.add_source(url,headers=headers,json_payload=param_json)
-                bill.add_source(bill_url,headers=headers,json_payload=json.dumps(bill_params))
                 bill.add_source(base_url+"Legislation/"+bill_id)
                 self.save_bill(bill)
             
