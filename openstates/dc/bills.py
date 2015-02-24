@@ -107,7 +107,7 @@ class DCBillScraper(BillScraper):
 
                 if "WithDrawnDate" in legislation_info:
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
-                    withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"]
+                    withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
 
                     bill.add_action(withdrawn_by,
                                     "withdrawn",
