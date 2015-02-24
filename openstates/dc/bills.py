@@ -65,7 +65,7 @@ class DCBillScraper(BillScraper):
                 
                 
                 
-                if bill_id.startswith("R"):
+                if bill_id.startswith("R") or bill_id.startswith("CER"):
                     bill_type = "resolution"
                 else:
                     bill_type = "bill"
