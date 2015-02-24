@@ -35,7 +35,6 @@ class DCBillScraper(BillScraper):
         per_page = 10 #seems like it gives me 10 no matter what.
         start_record = 0
 
-        base_url = "http://lims.dccouncil.us/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
@@ -58,33 +57,49 @@ class DCBillScraper(BillScraper):
                 bill_params = {"legislationId":bill_id}
                 bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
                 bill_info = self.decode_json(bill_info.json()["d"])["data"]
-                filename = "/home/rachel/dc_json_temps/{}.txt".format(bill_id)
-                with open(filename, "w") as f:
-
-                    f.write(json.dumps(bill_info))
+                bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
 
 
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
-                print title
                 
-                docs = bill_info["OtherDocuments"]
                 
+                
+                if bill_id.startswith("R"):
+                    bill_type = "resolution"
+                else:
+                    bill_type = "bill"
                 
                 #dc has no chambers. calling it all upper
-                bill = Bill(session,"upper", bill_id, title)
+                bill = Bill(session,"upper", bill_id, title, type=bill_type)
 
+                #sponsors and cosponsors
                 introducers = legislation_info["Introducer"]
                 try:
+                    #sometimes there are cosponsors, sometimes not.
                     cosponsors = legislation_info["CoSponsor"]
                 except KeyError:
                     cosponsors = []
                 for i in introducers:
                     sponsor_name = i["Name"]
+                    #they messed up Phil Mendelson's name
+                    if sponsor_name == "Phil Pmendelson":
+                        sponsor_name = "Phil Mendelson"
                     bill.add_sponsor(name=sponsor_name,type="primary")
                 for s in cosponsors:
                     sponsor_name = s["Name"]
+                    if sponsor_name == "Phil Pmendelson":
+                        sponsor_name = "Phil Mendelson"
                     bill.add_sponsor(name=sponsor_name,type="cosponsor")
+
+
+                #if it's become law, add the law number as an alternate title
+                if "LawNumber" in legislation_info:
+                    law_num = legislation_info["LawNumber"]
+                    if law_num:
+                        bill.add_title(law_num)
+
+
 
                 #deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
@@ -131,19 +146,8 @@ class DCBillScraper(BillScraper):
                                         type="bill:veto_override:passed")
 
                     if 'AttachmentPath' in mayor:
-                        for a in mayor["AttachmentPath"]:
-                            for a in mayor["AttachmentPath"]:
-                                doc_type = a["Type"]
-                                doc_name = a["Name"]
-                                rel_path = a["RelativePath"]
-                                doc_url = base_url+"Download/"+rel_path+"/"+doc_name
-                                if doc_type == "SignedAct":
-                                    if not doc_url in bill_versions:
-                                        bill_versions.append(doc_url)
-                                        bill.add_version(doc_type,doc_url,mimetype="application/pdf")
-                                        
-                                else:
-                                    bill.add_document(doc_type,doc_url,mimetype="application/pdf")
+                        #documents relating to the mayor's review
+                        self.add_documents(mayor["AttachmentPath"],bill)
 
                 congress = bill_info["CongressReview"]
                 if len(congress) > 0:
@@ -153,7 +157,7 @@ class DCBillScraper(BillScraper):
                         transmitted_date = datetime.datetime.strptime(transmitted_date,"%Y/%m/%d")
                         bill.add_action("US Congress",
                                     "Transmitted to Congress for review",
-                                    date)
+                                    transmitted_date)
 
 
                 #deal with committee actions
@@ -168,7 +172,7 @@ class DCBillScraper(BillScraper):
                 if "ComitteeReferral" in legislation_info: #their typo, not mine
                     committees = []
                     for committee in legislation_info["ComitteeReferral"]:
-                        if committee["Name"] == "Retained by the council":
+                        if committee["Name"].lower() == "Retained by the council":
                             committees = []
                             break
                         else:
@@ -185,56 +189,34 @@ class DCBillScraper(BillScraper):
                     for committee in legislation_info["CommitteeReferralComments"]:
                         committees.append(committee["Name"])
                     bill.add_action("committee",
-                                    "retained by council with comments from committees",
+                                    "comments from committee",
                                     date,
                                     committees=committees,
                                     type="other")
 
                 
 
-                #deal with documents
+                #deal with random docs floating around
 
-                memos = []
-                for doc_type in ["MemoLink","AttachmentPath"]:
-                    if doc_type in legislation_info:
-                        for d in legislation_info[doc_type]:
-                            memos.append(d)
-                if "OtherDocuments" in legislation_info: #dealing with documents hiding in "other documents", see PR21-0040
-                    for d in legislation_info["OtherDocuments"]:
-                        if "AttachmentPath" in d:
-                            memos.append(d["AttachmentPath"])
-                for memo in memos:
-                    memo_name = memo["Name"]
-                    memo_url = base_url+"Download/"+memo["RelativePath"]+"/"+memo_name
-                    bill.add_document(memo_name,
-                                    memo_url,
-                                    "pdf")
+                docs = bill_info["OtherDocuments"]
+                for d in docs:
+                    if "AttachmentPath" in d:
+                        self.add_documents(d["AttachmentPath"],bill)
+                    else:
+                        self.logger.warning("Document path missing from 'Other Documents'")
+
+                if "MemoLink" in legislation_info:
+                    self.add_documents(legislation_info["MemoLink"],bill)
+
+                if "AttachmentPath" in legislation_info:
+                    self.add_documents(legislation_info["AttachmentPath"],bill)
+
 
                 votes = bill_info["VotingSummary"]
                 for vote in votes:
                     self.process_vote(vote, bill, member_ids)
 
-                    #some documents/versions are hiding in votes.
-                    #deal with them here.
-
-                    if "AttachmentPath" in vote:
-                        
-                        try:
-                            doc_type = vote["DocumentType"]
-                        except KeyError:
-                            doc_type = "Other"
-
-                        doc_name = vote["ReadingDescription"]
-                        for a in vote["AttachmentPath"]:
-                            doc = a["Name"]
-                            rel_path = a["RelativePath"]
-                            doc_url = base_url+"Download/"+rel_path+"/"+doc 
-                            if doc_type.lower() in ["enrollment","engrossment"]:
-                                if not doc_url in bill_versions:
-                                    bill_versions.append(doc_url)
-                                    bill.add_version(doc_name,doc_url,mimetype="application/pdf")
-                            else:
-                                bill.add_document(doc_name,doc_url,mimetype="application/pdf")
+                    
 
                 #deal with committee votes
                 if "ComiteeMarkup" in bill_info: #their typo, not mine
@@ -243,18 +225,12 @@ class DCBillScraper(BillScraper):
                         for committee_action in committee_info:
                             self.process_committee_vote(committee_action,bill)
                         if "AttachmentPath" in committee_info:
-                            for a in committee_info["AttachmentPath"]:
-                                doc_type = a["Type"]
-                                doc_name = a["Name"]
-                                rel_path = a["RelativePath"]
-                                doc_url = base_url+"Download/"+rel_path+"/"+doc_name 
-                                bill.add_document(doc_type,doc_url,mimetype="application/pdf")
-
+                            self.add_documents(vote["AttachmentPath"],bill,is_version)
 
 
                 #don't know if it makes sense to pass these extra arguments
                 #but these urls are totally worthless without them
-                bill.add_source(base_url+"Legislation/"+bill_id)
+                bill.add_source(bill_source_url)
                 self.save_bill(bill)
             
             #get next page
@@ -348,9 +324,15 @@ class DCBillScraper(BillScraper):
                 t = "other" #we don't really have a thing for postponed bills
         elif "first reading" in motion.lower():
             t = "bill:reading:1"
+        elif "1st reading" in motion.lower():
+            t = "bill:reading:1"
         elif "second reading" in motion.lower():
             t = "bill:reading:2"
+        elif "2nd reading" in motion.lower():
+            t = "bill:reading:2"
         elif "third reading" in motion.lower():
+            t = "bill:reading:3"
+        elif "3rd reading" in motion.lower():
             t = "bill:reading:3"
         elif "final reading" in motion.lower():
             t = "bill:reading:3"
@@ -366,6 +348,22 @@ class DCBillScraper(BillScraper):
             vote["type"] = "amendment"
         elif "reading" in t:
             vote["type"] = t.replace("bill:","")
+
+        #some documents/versions are hiding in votes.
+
+        if "AttachmentPath" in vote:
+            is_version = False
+            try:
+                if vote["DocumentType"] in ["enrollment","engrossment","introduction"]:
+                    is_version = True
+            except KeyError:
+                pass
+
+            if motion in ["enrollment","engrossment","introduction"]:
+                is_version = True
+
+            self.add_documents(vote["AttachmentPath"],bill,is_version)
+
         bill.add_vote(v)
 
         
@@ -397,4 +395,32 @@ class DCBillScraper(BillScraper):
 
         vote = Vote("upper",date,"Committee Vote",passed,yes_count,no_count,other_count)
         bill.add_vote(vote)
+
+
+    def add_documents(self,attachment_path,bill,is_version=False):
+        base_url = "http://lims.dccouncil.us/Download/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
+        for a in attachment_path:
+            doc_type = a["Type"]
+            doc_name = a["Name"]
+            rel_path = a["RelativePath"]
+            if doc_type and doc_name and rel_path:  
+                doc_url = base_url+rel_path+"/"+doc_name
+            else:
+                self.logger.warning("Bad link for document {}".format(doc_name))
+                return
+
+            mimetype = "application/pdf" if doc_name.endswith("pdf") else None
+
+            #figure out if it's a version from type/name
+            possible_version_types = ["SignedAct","Introduction","Enrollment","Engrossment"]
+            for vt in possible_version_types:
+                if vt.lower() in doc_type.lower():
+                    is_version = True
+                    doc_type = vt 
+
+            if is_version:
+                bill.add_version(doc_type,doc_url,mimetype=mimetype)
+                return
+
+            bill.add_document(doc_type,doc_url,mimetype=mimetype)
 
