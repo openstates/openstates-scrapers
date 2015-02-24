@@ -45,11 +45,13 @@ class DCBillScraper(BillScraper):
         response = self.decode_json(response.json()["d"])
         data = response["aaData"]
         
-        bill_versions = [] #sometimes they're in there more than once, so we'll keep track
+        global bill_versions
 
         while len(data) > 0:
 
             for bill in data:
+                bill_versions = [] #sometimes they're in there more than once, so we'll keep track
+
                 bill_id = bill["Title"]
                 if bill_id.startswith("AG"):
                     #actually an agenda, skip
@@ -99,11 +101,20 @@ class DCBillScraper(BillScraper):
                     if law_num:
                         bill.add_title(law_num)
 
+                #also sometimes it's got an act number
+                if "ActNumber" in legislation_info:
+                    act_num = legislation_info["ActNumber"]
+                    if act_num:
+                        bill.add_title(act_num)
+
                 #sometimes AdditionalInformation has a previous bill name
                 if "AdditionalInformation" in legislation_info:
-                    if "previously" in legislation_info["AdditionalInformation"].lower():
-                        prev_title = legislation_info["AdditionalInformation"].lower().replace("previously","").strip().replace(" ","")
+                    add_info = legislation_info["AdditionalInformation"]
+                    if "previously" in add_info.lower():
+                        prev_title = add_info.lower().replace("previously","").strip().replace(" ","")
                         bill.add_title(prev_title.upper())
+                    elif add_info:
+                        bill["additional_information"] = add_info
 
                 if "WithDrawnDate" in legislation_info:
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
@@ -113,6 +124,7 @@ class DCBillScraper(BillScraper):
                                     "withdrawn",
                                     withdrawn_date,
                                     "bill:withdrawn")
+
 
                 #deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
@@ -179,7 +191,7 @@ class DCBillScraper(BillScraper):
                 if "ComitteeReferral" in legislation_info: #their typo, not mine
                     committees = []
                     for committee in legislation_info["ComitteeReferral"]:
-                        if committee["Name"].lower() == "Retained by the council":
+                        if committee["Name"].lower() == "retained by the council":
                             committees = []
                             break
                         else:
@@ -397,6 +409,7 @@ class DCBillScraper(BillScraper):
 
 
     def add_documents(self,attachment_path,bill,is_version=False):
+        global bill_versions
         base_url = "http://lims.dccouncil.us/Download/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
         for a in attachment_path:
             doc_type = a["Type"]
@@ -421,8 +434,13 @@ class DCBillScraper(BillScraper):
                 doc_type = "Amendment"
 
             if is_version:
-                bill.add_version(doc_type,doc_url,mimetype=mimetype)
-                return
+                if doc_url in bill_versions:
+                    self.logger.warning("Version {} has been seen multiple times. Keeping first version seen".format(doc_url))
+                else:
+                    bill.add_version(doc_type,doc_url,mimetype=mimetype)
+                    bill_versions.append(doc_url)
+                continue
+                    
 
             bill.add_document(doc_type,doc_url,mimetype=mimetype)
 
