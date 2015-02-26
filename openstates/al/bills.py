@@ -28,6 +28,7 @@ _action_re = (
     ('Third Reading Passed', 'bill:passed'),
     ('Reported from', 'committee:passed'),
     ('Indefinitely Postponed', 'bill:failed'),
+    ('Passed by House of Origin', 'bill:passed'),
     ('Passed Second House', 'bill:passed'),
     # memorial resolutions can pass w/o debate
     ('Joint Rule 11', ['bill:introduced', 'bill:passed']),
@@ -57,7 +58,7 @@ class ALBillScraper(BillScraper):
         RETRIES = 5
         while retry_counter < RETRIES:
             retry_counter += 1
-            time.sleep(retry_counter)
+            time.sleep(retry_counter ** 2)
             r = self.s.get(**request_args)
             if lxml.html.fromstring(r.text).xpath('//input[@id="__VIEWSTATE"]/@value'):
                 break
@@ -73,21 +74,29 @@ class ALBillScraper(BillScraper):
         self.log('Special POST request to {}'.format(request_args['url']))
         return self.s.post(**request_args)
 
-    def scrape(self, session, chambers):
-        # self.session = session
-        self.session = '2014rs'
-        self.session_name = self.metadata['session_details'][self.session]['_scraped_name']
-        self.session_id = self.metadata['session_details'][self.session]['internal_id']
+    def _set_session(self, session):
+        ''' Activate an ASP.NET session, and set the legislative session '''
 
         SESSION_SET_URL = 'http://alisondb.legislature.state.al.us/Alison/ALISONLogin.aspx'
-        RESOLUTION_TYPE_URL = ''
-        RESOLUTION_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
-        BILL_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsBySelectedStatus.aspx'
-        BILL_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
 
-        # self.scrape_for_bill_type(session, res_url)
+        # If the legislative session is the default (ie, current) one,
+        # then the scraper must switch away and then return to it
+        doc = lxml.html.fromstring(self.sget(url=SESSION_SET_URL).text)
+        (current_session, ) = doc.xpath('//option[@selected]/text()')
+        if self.session_name == current_session:
+            another_session_name = doc.xpath('//option[not(@selected)]/text()')[0]
+            (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
+            (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+            form = {
+                    '__EVENTTARGET': 'ctl00$cboSession',
+                    '__EVENTARGUMENT': '',
+                    '__LASTFOCUS': '',
+                    '__VIEWSTATE': viewstate,
+                    '__VIEWSTATEGENERATOR': viewstategenerator,
+                    'ctl00$cboSession': another_session_name
+                    }
+            self.spost(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
-        # Activate an ASP.NET session, and set the legislative session
         doc = lxml.html.fromstring(self.sget(url=SESSION_SET_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -101,7 +110,17 @@ class ALBillScraper(BillScraper):
                 }
         self.spost(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
-        # With the ASP.NET session activated, acquire a list of bills
+    def scrape(self, session, chambers):
+        self.session = session
+        self.session_name = self.metadata['session_details'][self.session]['_scraped_name']
+        self.session_id = self.metadata['session_details'][self.session]['internal_id']
+
+        self._set_session(session)
+
+        # Acquire and process a list of all bills
+        BILL_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsBySelectedStatus.aspx'
+        BILL_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
+
         doc = lxml.html.fromstring(self.sget(url=BILL_TYPE_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -116,23 +135,44 @@ class ALBillScraper(BillScraper):
         }
         self.spost(url=BILL_TYPE_URL, data=form, allow_redirects=False)
 
-        self.scrape_for_bill_type(BILL_LIST_URL)
+        self.scrape_bill_list(BILL_LIST_URL)
 
-    def scrape_for_bill_type(self, url):
+        # Acquire and process a list of all resolutions
+        RESOLUTION_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResBySelectedStatus.aspx'
+        RESOLUTION_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
+
+        doc = lxml.html.fromstring(self.sget(url=RESOLUTION_TYPE_URL).text)
+        (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
+        (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        form = {
+                '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
+                '__EVENTARGUMENT': 'Select$0',
+                '__LASTFOCUS': '',
+                '__VIEWSTATE': viewstate,
+                '__VIEWSTATEGENERATOR': viewstategenerator,
+                'ctl00$cboSession': self.session_name,
+                'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$MainDefaultContent$gvStatus$ctl02$ctl00'
+        }
+        self.spost(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=False)
+
+        self.scrape_bill_list(RESOLUTION_LIST_URL)
+
+    def scrape_bill_list(self, url):
         html = self.sget(url=url).text
         doc = lxml.html.fromstring(html)
         bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1: ]
-        for bill_info in bills:
+        resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1: ]
+        for bill_info in bills + resolutions:
 
             (bill_id, ) = bill_info.xpath('td[1]/font/input/@value')
             (sponsor, ) = bill_info.xpath('td[2]/font/input/@value')
             subject = bill_info.xpath('td[3]/font/text()')[0].strip()
-            description = bill_info.xpath('td[4]/font/text()')[0].strip()
-            if not description:
-                description = "[No title given]"
-                self.warning("No title found for bill {}".format(bill_id))
-
             chamber = self.CHAMBERS[bill_id[0]]
+
+            # If the sponsor is missing, the bill's webpage is probably empty
+            if not sponsor.strip():
+                self.warning("Bill {} is missing sponsor, and probably doesn't have a webpage".format(bill_id))
+                continue
             
             if 'B' in bill_id:
                 bill_type = 'bill'
@@ -148,7 +188,7 @@ class ALBillScraper(BillScraper):
                     session=self.session,
                     chamber=chamber,
                     bill_id=bill_id,
-                    title=description,
+                    title='',
                     type=bill_type
                     )
             if subject:
@@ -159,8 +199,17 @@ class ALBillScraper(BillScraper):
 
             bill_url = 'http://alisondb.legislature.state.al.us/Alison/SESSBillResult.aspx?BILL={}'.format(bill_id)
             bill.add_source(bill_url)
-            bill_html = self.sget(url=bill_url).text
+            try:
+                bill_html = self.sget(url=bill_url).text
+            except AssertionError:
+                self.warning("The webpage for bill {} isn't loading, so it won't be saved".format(bill_id))
+                continue
             bill_doc = lxml.html.fromstring(bill_html)
+
+            title = bill_doc.xpath('//div[@class="shorttitle"]')[0].text_content().strip()
+            if not title:
+                title = "[No title given by state]"
+            bill['title'] = title
 
             (viewstate, ) = bill_doc.xpath('//input[@id="__VIEWSTATE"]/@value')
             (viewstategenerator, ) = bill_doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -205,7 +254,7 @@ class ALBillScraper(BillScraper):
                 bir_type = bir.xpath('td[1]/font/text()')[0].split(" ")[0]
                 bir_chamber = self.CHAMBERS[bir_type[0]]
                 bir_text = "{0}: {1}".format(
-                        bir_type, bir.xpath('td[3]/font/text()')[0])
+                        bir_type, bir.xpath('td[3]/font/text()')[0].strip())
 
                 bill.add_action(
                         actor=bir_chamber,
@@ -219,6 +268,7 @@ class ALBillScraper(BillScraper):
                 except ValueError:
                     bir_vote_id = ''
 
+                bir_vote_id = bir_vote_id.strip()
                 if bir_vote_id.startswith("Roll "):
                     bir_vote_id = bir_vote_id.split(" ")[-1]
 
@@ -272,8 +322,8 @@ class ALBillScraper(BillScraper):
                 try:
                     vote_button = action.xpath('td[9]//text()')[0].strip()
                 except:
-                    vote_button = None
-                if vote_button:
+                    vote_button = ''
+                if vote_button.startswith("Roll "):
                     vote_id = vote_button.split(" ")[-1]
 
                     eventtarget = action.xpath('@onclick')[0].split("'")[1]
@@ -296,14 +346,13 @@ class ALBillScraper(BillScraper):
                     form['__EVENTARGUMENT'] = ''
                     form['__EVENTTARGET'] = ''
 
-            print(bill)
             self.save_bill(bill)
 
     def scrape_vote(self, bill, vote_chamber, bill_id, vote_id, vote_date, action_text):
         url = 'http://alisondb.legislature.state.al.us/Alison/GetRollCallVoteResults.aspx?VOTE={0}&BODY={1}&INST={2}&SESS={3}'.format(
                 vote_id, vote_chamber, bill_id, self.session_id)
         doc = lxml.html.fromstring(self.sget(url=url).text)
-
+        print("HI!!!")
         voters = {'Y': [], 'N': [], 'P': [], 'A': []}
 
         voters_and_votes = doc.xpath('//table/tr/td/font/text()')
