@@ -47,12 +47,27 @@ class ALBillScraper(BillScraper):
     DATE_FORMAT = '%m/%d/%Y'
 
     # Due to a scrapelib bug, a requests Session is necessary to maintain cookies
+    # Retries are also required since the server periodically returns errors
     # Once this is fixed, roll back to vanilla scrapelib GETs and POSTs
     s = requests.Session()
+
     def sget(self, **request_args):
-        time.sleep(1)
         self.log('Special GET request to {}'.format(request_args['url']))
-        return self.s.get(**request_args)
+        retry_counter = 0
+        RETRIES = 5
+        while retry_counter < RETRIES:
+            retry_counter += 1
+            time.sleep(retry_counter)
+            r = self.s.get(**request_args)
+            if lxml.html.fromstring(r.text).xpath('//input[@id="__VIEWSTATE"]/@value'):
+                break
+            else:
+                self.log('Server returned an error; retrying the GET (up to {} times)'.format(RETRIES))
+        if retry_counter >= RETRIES:
+            raise AssertionError("Alabama server returned only errors")
+        else:
+            return r
+
     def spost(self, **request_args):
         time.sleep(1)
         self.log('Special POST request to {}'.format(request_args['url']))
@@ -60,7 +75,7 @@ class ALBillScraper(BillScraper):
 
     def scrape(self, session, chambers):
         # self.session = session
-        self.session = '2011rs'
+        self.session = '2014rs'
         self.session_name = self.metadata['session_details'][self.session]['_scraped_name']
         self.session_id = self.metadata['session_details'][self.session]['internal_id']
 
@@ -115,6 +130,7 @@ class ALBillScraper(BillScraper):
             description = bill_info.xpath('td[4]/font/text()')[0].strip()
             if not description:
                 description = "[No title given]"
+                self.warning("No title found for bill {}".format(bill_id))
 
             chamber = self.CHAMBERS[bill_id[0]]
             
@@ -213,7 +229,7 @@ class ALBillScraper(BillScraper):
 
                     self.scrape_vote(
                             bill=bill,
-                            vote_chamber=bir_chamber,
+                            vote_chamber=bir_type[0],
                             bill_id="{0}%20for%20{1}".format(bir_type, bill_id),
                             vote_id=bir_vote_id,
                             vote_date=bir_date,
@@ -239,7 +255,7 @@ class ALBillScraper(BillScraper):
                 actor = self.CHAMBERS[action_chamber]
                 try:
                     action_committee = re.search(
-                            r'.*? referred to the (.*? committee on .*?)$',
+                            r'.*? referred to the .*? committee on (.*?)$',
                             action_text
                             ).group(1).strip()
                 except AttributeError:
@@ -269,7 +285,7 @@ class ALBillScraper(BillScraper):
 
                     self.scrape_vote(
                             bill=bill,
-                            vote_chamber=actor,
+                            vote_chamber=action_chamber,
                             bill_id=bill_id,
                             vote_id=vote_id,
                             vote_date=action_date,
@@ -301,14 +317,34 @@ class ALBillScraper(BillScraper):
             else:
                 capture_vote = True
                 name = item
-                if name.endswith(", Vacant") or not name.strip():
+                if (name.endswith(", Vacant") or
+                        name.startswith("Total ") or
+                        not name.strip()
+                        ):
                     name = ''
 
-        total_yea = len(voters['Y'])
-        total_nay = len(voters['N'])
+        # Check name counts against totals listed on the site
+        total_yea = doc.xpath('//*[starts-with(text(), "Total Yea")]/text()')
+        if total_yea:
+            total_yea = int(total_yea[0].split(":")[-1])
+            assert total_yea == len(voters['Y']), "Yea count incorrect"
+        else:
+            total_yea = len(voters['Y'])
+
+        total_nay = doc.xpath('//*[starts-with(text(), "Total Nay")]/text()')
+        if total_nay:
+            total_nay = int(total_nay[0].split(":")[-1])
+            assert total_nay == len(voters['N']), "Nay count incorrect"
+        else:
+            total_nay = len(voters['N'])
+
+        total_absent = doc.xpath('//*[starts-with(text(), "Total Absent")]/text()')
+        if total_absent:
+            total_absent = int(total_absent[0].split(":")[-1])
+            assert total_absent == len(voters['A']), "Absent count incorrect"
         total_other = len(voters['P']) + len(voters['A'])
 
-        vote = Vote(vote_chamber, vote_date, action_text, total_yea > total_nay,
+        vote = Vote(self.CHAMBERS[vote_chamber[0]], vote_date, action_text, total_yea > total_nay,
                     total_yea, total_nay, total_other)
         vote.add_source(url)
         for member in voters['Y']:
