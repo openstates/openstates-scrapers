@@ -24,3 +24,4 @@ openstates.sqlite3
 dump/
 venv
 .idea/
+extra/
