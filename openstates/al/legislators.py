@@ -203,8 +203,11 @@ class ALLegislatorScraper(LegislatorScraper):
             #putting addresses together, skipping empty fields
             address_parts = ["street","office","city","state","postal code"]
             cap_address = [info_dict[a].strip() for a in address_parts if info_dict[a].strip() != ""]
+            cap_address_text = '\n'.join(cap_address)
+            cap_address_text = cap_address_text.replace("\nAL", ", AL").replace("AL\n", "AL ")
             dist_address = [info_dict[a+" district"].strip() for a in address_parts if info_dict[a+" district"].strip() != ""]
-
+            dist_address_text = '\n'.join(dist_address)
+            dist_address_text = dist_address_text.replace("\nAL", ", AL").replace("AL\n", "AL ")
 
             #turning empties to nones
             for k,v in info_dict.items():
@@ -218,7 +221,7 @@ class ALLegislatorScraper(LegislatorScraper):
 
             leg.add_office('capitol',
                             'Capitol Office',
-                            address=" ".join(cap_address),
+                            address=cap_address_text,
                             phone=info_dict["phone number"],
                             email=info_dict["email"],
                             fax=info_dict["fax"])
@@ -227,7 +230,7 @@ class ALLegislatorScraper(LegislatorScraper):
             if len(dist_address) > 0:
                 leg.add_office('district',
                                 "District Office",
-                                address=" ".join(dist_address),
+                                address=dist_address_text,
                                 phone=info_dict["district phone district"],
                                 fax=info_dict["district fax district"])
 
