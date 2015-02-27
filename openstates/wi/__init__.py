@@ -52,7 +52,7 @@ metadata = {
                       'December 2013 Special Session', 'January 2014 Special Session' ],
          'start_year': 2013, 'end_year': 2014},
          {'name': '2015-2016',
-         'sessions': ['2015 Regular Session'],
+         'sessions': ['February 2015 Extraordinary Session', '2015 Regular Session'],
          'start_year': 2015, 'end_year': 2016},
     ],
     'session_details': {
@@ -112,6 +112,12 @@ metadata = {
             '_scraped_name': 'January 2014 Special Session',
             'site_id': 'jr4'
         },
+        'February 2015 Extraordinary Session': {
+            'type': 'special',
+            'display_name': 'Feb 2015 Extraordinary Session',
+            '_scraped_name': 'February 2015 Extraordinary Session',
+            'site_id': 'eFE5'
+        },
         '2015 Regular Session': {'start_date': datetime.date(2015,1,5),
                                  'end_date': datetime.date(2016,1,11),
                                  'type': 'primary',
@@ -134,7 +140,6 @@ metadata = {
         'October 1999 Special Session', '1997 Regular Session',
         'April 1998 Special Session', '1995 Regular Session',
         'January 1995 Special Session', 'September 1995 Special Session']
-
 }
 
 def session_list():
