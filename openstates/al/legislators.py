@@ -246,10 +246,8 @@ class ALLegislatorScraper(LegislatorScraper):
             tds = [r.text_content() for r in row.xpath(".//td")]
             if len(tds) == 0:
                 continue
-            role = "member"
             comm_name = tds[1].strip()
-            if tds[2].strip().lower() in ["chairperson", "ranking minority member", "vice chairperson"]:
-                role = tds[2].strip().lower()
+            role = tds[2].strip()
             
             leg.add_role('committee member',
                         term=term,
