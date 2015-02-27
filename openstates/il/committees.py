@@ -33,12 +33,19 @@ class ILCommitteeScraper(CommitteeScraper):
 
         for a in doc.xpath('//a[contains(@href, "members.asp")]'):
             name = a.text.strip()
-            code = a.getparent().getnext().text_content().strip()
-            if 'Sub' in name:
-                com = Committee(chamber, top_level_com, name, code=code)
+            code = a.getparent().getnext()
+            if code is None:
+                #committee doesn't have a code, maybe it's a taskforce?
+                com = Committee(chamber, top_level_com, name)
+
             else:
-                top_level_com = name
-                com = Committee(chamber, name, code=code)
+                code = code.text_content().strip()
+
+                if 'Sub' in name:
+                    com = Committee(chamber, top_level_com, name, code=code)
+                else:
+                    top_level_com = name
+                    com = Committee(chamber, name, code=code)
 
             com_url = a.get('href')
             self.scrape_members(com, com_url)
