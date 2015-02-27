@@ -36,7 +36,7 @@ class ILCommitteeScraper(CommitteeScraper):
             code = a.getparent().getnext()
             if code is None:
                 #committee doesn't have a code, maybe it's a taskforce?
-                com = Committee(chamber, top_level_com, name)
+                com = Committee(chamber, name)
 
             else:
                 code = code.text_content().strip()
