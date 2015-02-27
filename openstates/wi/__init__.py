@@ -52,7 +52,7 @@ metadata = {
                       'December 2013 Special Session', 'January 2014 Special Session' ],
          'start_year': 2013, 'end_year': 2014},
          {'name': '2015-2016',
-         'sessions': ['February 2015 Extraordinary Session', '2015 Regular Session'],
+         'sessions': ['2015 Regular Session'],
          'start_year': 2015, 'end_year': 2016},
     ],
     'session_details': {
@@ -112,12 +112,6 @@ metadata = {
             '_scraped_name': 'January 2014 Special Session',
             'site_id': 'jr4'
         },
-        'February 2015 Extraordinary Session': {
-            'type': 'special',
-            'display_name': 'Feb 2015 Extraordinary Session',
-            '_scraped_name': 'February 2015 Extraordinary Session',
-            'site_id': 'eFE5'
-        },
         '2015 Regular Session': {'start_date': datetime.date(2015,1,5),
                                  'end_date': datetime.date(2016,1,11),
                                  'type': 'primary',
@@ -128,6 +122,7 @@ metadata = {
     'feature_flags': ['subjects',
     'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
+        'February 2015 Extraordinary Session',
         '2007 Regular Session', 'April 2008 Special Session',
         'March 2008 Special Session', 'December 2007 Special Session',
         'October 2007 Special Session', 'January 2007 Special Session',
