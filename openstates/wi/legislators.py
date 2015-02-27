@@ -49,11 +49,14 @@ class WILegislatorScraper(LegislatorScraper):
                 else:
                     email = ''
 
-                if party is None:
-                    self.warning(
-                        "OH GOD SOMETHING'S REALLY BROKEN WITH THIS PERSON")
-                    continue  # Remove once new data is up - 1/20/2015
-                    raise Exception("Oh god, something is really broken")
+                if full_name in ('Devin LeMahieu', 'Roger Roth'):
+                    assert party is None, "Remove special-casing code for {}".format(full_name)
+                    if full_name == 'Devin LeMahieu':
+                        party = "Republican"
+                    if full_name == 'Roger Roth':
+                        party = "Republican"
+                else:
+                    assert party is not None, "{} is missing party".format(full_name)
 
                 leg = Legislator(term, chamber, district, full_name,
                                  party=party, url=rep_url)
