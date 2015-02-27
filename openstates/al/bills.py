@@ -352,7 +352,7 @@ class ALBillScraper(BillScraper):
         url = 'http://alisondb.legislature.state.al.us/Alison/GetRollCallVoteResults.aspx?VOTE={0}&BODY={1}&INST={2}&SESS={3}'.format(
                 vote_id, vote_chamber, bill_id, self.session_id)
         doc = lxml.html.fromstring(self.sget(url=url).text)
-        print("HI!!!")
+
         voters = {'Y': [], 'N': [], 'P': [], 'A': []}
 
         voters_and_votes = doc.xpath('//table/tr/td/font/text()')
