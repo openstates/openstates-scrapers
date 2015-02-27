@@ -22,6 +22,10 @@ class ALLegislatorScraper(LegislatorScraper):
 
         #basically, here goes nothing.
         
+        # Need to use legislative session instead of term to interact with the LIS
+        (term_index, ) = [self.metadata['terms'].index(x) for x in self.metadata['terms'] if x['name'] == term]
+        self.session = self.metadata['terms'][term_index]['sessions'][-1]
+        self.log('Equating session {0} with term {1}'.format(self.session, term))
 
         urls = {
             "upper":"http://www.legislature.state.al.us/aliswww/SenatorsPicture.aspx",
@@ -37,18 +41,48 @@ class ALLegislatorScraper(LegislatorScraper):
     def get_sponsor_ids(self):
         ''' Map member's district to a member's sponsor ID '''
 
-        #TODO make it possible to do different terms/sessions?
-        sponsor_id_url = "http://alisondb.legislature.state.al.us/alison/SESSBillsByHouseSponsorSelect.aspx"
-        request_session = requests.Session()
+        SPONSOR_ID_URL = "http://alisondb.legislature.state.al.us/alison/SESSBillsByHouseSponsorSelect.aspx"
+        s = requests.Session()
 
-        #need to visit main alison page to start session
-        request_session.get("http://alisondb.legislature.state.al.us/alison/alisonlogin.aspx")
-    
-        html = request_session.get(sponsor_id_url).text
+        # Activate an ASP.NET session, and set the legislative session
+        SESSION_SET_URL = 'http://alisondb.legislature.state.al.us/Alison/ALISONLogin.aspx'
+        session_name = self.metadata['session_details'][self.session]['_scraped_name']
+
+        # If the legislative session is the default (ie, current) one,
+        # then the scraper must switch away and then return to it
+        doc = lxml.html.fromstring(s.get(url=SESSION_SET_URL).text)
+        (current_session, ) = doc.xpath('//option[@selected]/text()')
+        if session_name == current_session:
+            another_session_name = doc.xpath('//option[not(@selected)]/text()')[0]
+            (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
+            (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+            form = {
+                    '__EVENTTARGET': 'ctl00$cboSession',
+                    '__EVENTARGUMENT': '',
+                    '__LASTFOCUS': '',
+                    '__VIEWSTATE': viewstate,
+                    '__VIEWSTATEGENERATOR': viewstategenerator,
+                    'ctl00$cboSession': another_session_name
+                    }
+            s.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
+
+        doc = lxml.html.fromstring(s.get(url=SESSION_SET_URL).text)
+        (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
+        (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        form = {
+                '__EVENTTARGET': 'ctl00$cboSession',
+                '__EVENTARGUMENT': '',
+                '__LASTFOCUS': '',
+                '__VIEWSTATE': viewstate,
+                '__VIEWSTATEGENERATOR': viewstategenerator,
+                'ctl00$cboSession': session_name
+                }
+        s.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
+
+        html = s.get(SPONSOR_ID_URL).text
         doc = lxml.html.fromstring(html)
-
         district_to_sponsor_id = {}
-        sponsors = doc.xpath('//div[@class="housesponsors"]//td/input')
+        sponsors = doc.xpath('//div[@class="housesponsors"]//input')
         for sponsor in sponsors:
             district = sponsor.attrib['title'].replace("House District", "").strip()
             district_to_sponsor_id[district] = sponsor.attrib["alt"]
