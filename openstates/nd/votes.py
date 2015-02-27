@@ -234,7 +234,6 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                         "for {0} votes on {1}".format(category_name, cur_bill_id)
                                         )
 
-                        print("***")
                         self.save_vote(vote)
 
                         # With the vote successfully processed,
