@@ -25,23 +25,48 @@ class MOEventScraper(EventScraper, LXMLMixin):
 
 #   # A generator to return keyword/value pairs from the scraped data
     def next_kv(self, list_of_td):
-        extra_note = ""
+        status = "scheduled"
         current_kw = ""
         for item in list_of_td:
             s = item.text_content().strip()
             if current_kw == "":
                 if s[0:3] == "***":
-                    extra_note = s
-                    extra_note += " "
+                    status = s[3:]
+                    end = s.find(" ")
+                    yield "Status", status[:end]
 
                 elif s in self.keywords:
                     current_kw = s
             else:
-                if current_kw == "Note:" and extra_note != "":
-                    yield current_kw, extra_note + s
-                else:
-                    yield current_kw, s
+                yield current_kw, s
                 current_kw = ""
+
+    def bills(self, bill_data):
+        separator = " -- "
+        hearing_type = "unspecified"
+        bill_no = ""
+        bill_title = ""
+        sponsor = ""
+        for item in bill_data:
+            s = item.text_content().strip()
+            # line might be a bill or the type of hearing
+            if s.find("Public Hearing") == 0:
+                hearing_type = "Public Hearing"
+            elif s.find("Executive Session") == 0:
+                hearing_type = "Executive Session"
+            elif s.find("Sponsor") == 0:
+                sponsor = s
+            elif s.find("HB") == 0 or s.find("HCR") == 0:
+                sep = s.find(separator)
+                bill_no = s[0:sep]
+                bill_title = s[sep+len(separator):]
+            else:
+                # this is the description, which marks the end
+                # of the record
+                yield hearing_type, bill_no, bill_title, sponsor, s
+                bill_no = bill_title = sponsor = ""
+
+
 
 
     def scrape(self, session, chambers):
@@ -76,29 +101,28 @@ class MOEventScraper(EventScraper, LXMLMixin):
             brows = bills.xpath("./*/td")
             print "{0} hrows and {1} brows".format(len(hrows), len(brows))
 
+            status = ""
             for keyword, value in self.next_kv(hrows):
-                print "{0} / {1}".format(keyword, value)
+                if keyword == "Status":
+                    status = value
+                else:
+                    print "{0}: {1}".format(keyword, value)
 
+            if status != "Cancelled":
+                print "......"
+                for hearing_type, bill_no, bill_title, sponsor, text in self.bills(brows):
+                    print "hearing_type: {0}".format(hearing_type)
+                    print "bill: {0}".format(bill_no)
+                    print "title: {0}".format(bill_title)
+                    print "sponsor: {0}".format(sponsor)
+                    print "text: {0}".format(text)
 
-            for item in brows:
-                print "brow:{0}".format(item.text_content().strip())
-        #count = 0
-        #for agenda_item in agenda:
-        #    ++count
-        #    item =  agenda_item.xpath("tr[1]/td")
-        #    if len(item) > 0:
-        #       print "{0} {2}-> {1}".format(count, item[0].text_content().strip(), len(item))
+            print "---------------------"
 
-        #agenda = doc.xpath("/html/body/form[@id='form1']/span[@id='lblCmtInfo']/table[@id='cmtGroup'][1]/tr[1]/td")
-        #print "0: {0}".format( str[0].text_content().strip() )
-        #print "1: {0}".format( str[1].text_content().strip() )
-        #print "2: {0}".format( str[2].text_content().strip() )
-        #print "3: {0}".format( str[3].text_content().strip() )
+            #event = Event(session, when, 'committee:meeting', title,
+            #              location=room, link=link, details=description,
+            #              related_bills=related_bills)
 
-        event = Event(session, when, 'committee:meeting', title,
-                          location=room, link=link, details=description,
-                          related_bills=related_bills)
-
-        #self.save_event(event)
+            #self.save_event(event)
 
         print("Scraping events for Missouri")
