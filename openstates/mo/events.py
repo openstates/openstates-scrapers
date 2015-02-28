@@ -20,8 +20,28 @@ class MOEventScraper(EventScraper, LXMLMixin):
         while count < limit :
             header = tables[count]
             bills = tables[count+1]
-            count += 2
-            yield header, bills
+
+            # grab a couple of specific field from the next block
+            td1 = bills.xpath("tr[1]/td")
+            td2 = bills.xpath("tr[2]/td")
+            if len(td1) == 0 or len(td2) == 0:
+                count += 1
+                yield header, None
+                continue
+
+            s1 = td1[0].text_content().strip()
+            s2 = td2[0].text_content().strip()
+
+            # test the 'bills' block.  If it has the 'Committee:' field
+            # then it's really the next header.  There are no bills
+            # associated with this meeting
+            if s1.find("Committee") == 0 or s2.find("Committee") == 0:
+                count += 1
+                yield header, None
+            else:
+                bills = tables[count + 1]
+                count += 2
+                yield header, bills
 
 #   # A generator to return keyword/value pairs from the scraped data
     def next_kv(self, list_of_td):
@@ -98,8 +118,6 @@ class MOEventScraper(EventScraper, LXMLMixin):
 
         for header, bills in self.hearings( agenda ):
             hrows = header.xpath("./*/td")
-            brows = bills.xpath("./*/td")
-            print "{0} hrows and {1} brows".format(len(hrows), len(brows))
 
             status = ""
             for keyword, value in self.next_kv(hrows):
@@ -108,8 +126,10 @@ class MOEventScraper(EventScraper, LXMLMixin):
                 else:
                     print "{0}: {1}".format(keyword, value)
 
-            if status != "Cancelled":
+            if bills != None:
                 print "......"
+                brows = bills.xpath("./*/td")
+                print "{0} hrows and {1} brows".format(len(hrows), len(brows))
                 for hearing_type, bill_no, bill_title, sponsor, text in self.bills(brows):
                     print "hearing_type: {0}".format(hearing_type)
                     print "bill: {0}".format(bill_no)
