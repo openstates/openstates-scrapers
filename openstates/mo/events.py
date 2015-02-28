@@ -44,6 +44,7 @@ class MOEventScraper(EventScraper, LXMLMixin):
                 yield header, bills
 
 #   # A generator to return keyword/value pairs from the scraped data
+    # for the header for each bill.
     def next_kv(self, list_of_td):
         status = "scheduled"
         current_kw = ""
@@ -52,7 +53,7 @@ class MOEventScraper(EventScraper, LXMLMixin):
             if current_kw == "":
                 if s[0:3] == "***":
                     status = s[3:]
-                    end = s.find(" ")
+                    end = status.find("***")
                     yield "Status", status[:end]
 
                 elif s in self.keywords:
@@ -61,9 +62,17 @@ class MOEventScraper(EventScraper, LXMLMixin):
                 yield current_kw, s
                 current_kw = ""
 
+    # This routine process a table consisting of bills, where a bill is:
+    # - a line w/ the bill number and a title
+    # - a line w/ the sponsor
+    # - a line of descriptive text
+    #
+    # ... and there may be a leading line about the type of hearing, which is 'sticky'
+    # and holds until it is changes.  Initially, it's 'unspecified', but we assume that
+    # it's a public hearing
     def bills(self, bill_data):
         separator = " -- "
-        hearing_type = "unspecified"
+        hearing_type = "Public Hearing"
         bill_no = ""
         bill_title = ""
         sponsor = ""
@@ -91,12 +100,6 @@ class MOEventScraper(EventScraper, LXMLMixin):
 
     def scrape(self, session, chambers):
 
-        # Read from file -- keeps the data constant for debugging
-        # purposes since the actual pages changes every day
-        #f = open('/Users/pfcass/Dev/openstates/events.html')
-        #page = f.read()
-        #doc = html.fromstring(page)
-
         # Grab the page of meetings and convert to an html list document
         page = requests.get('http://house.mo.gov/HearingsPrint.aspx?DateOrder=true')
         doc = html.fromstring(page.text)
@@ -106,15 +109,11 @@ class MOEventScraper(EventScraper, LXMLMixin):
         # - first table is the 'header': personnel, location, etc
         # - second table are the bills
         agenda = doc.xpath("/html/body/form[@id='form1']/span[@id='lblCmtInfo']/table[@id='cmtGroup'][*]")
+        print "agenda consists of {0} tables".format(len(agenda))
 
         # here are the thing well need for the event
-        when = ""
-        title = ""
         related_bills = []
-        room = ""
-        link = ""
-        description = ""
-        additional_info =  { "+NOTE" : "" }
+        mtg = dict()
 
         for header, bills in self.hearings( agenda ):
             hrows = header.xpath("./*/td")
@@ -124,18 +123,26 @@ class MOEventScraper(EventScraper, LXMLMixin):
                 if keyword == "Status":
                     status = value
                 else:
-                    print "{0}: {1}".format(keyword, value)
+                    mtg[keyword] = value
+
+            if "Note:" in mtg:
+                mtg["Note:"] = "(" + status + ") " + mtg["Note:"]
+            else:
+                mtg["Note:"] = status
+
+            for k in mtg.keys():
+                print "{0} {1}".format( k, mtg[k])
 
             if bills != None:
-                print "......"
+                print "Bills considered:"
                 brows = bills.xpath("./*/td")
-                print "{0} hrows and {1} brows".format(len(hrows), len(brows))
                 for hearing_type, bill_no, bill_title, sponsor, text in self.bills(brows):
-                    print "hearing_type: {0}".format(hearing_type)
-                    print "bill: {0}".format(bill_no)
-                    print "title: {0}".format(bill_title)
-                    print "sponsor: {0}".format(sponsor)
-                    print "text: {0}".format(text)
+                    print " hearing_type: {0}".format(hearing_type)
+                    print " bill: {0}".format(bill_no)
+                    print " title: {0}".format(bill_title)
+                    print " sponsor: {0}".format(sponsor)
+                    print " text: {0}".format(text)
+                    print
 
             print "---------------------"
 
