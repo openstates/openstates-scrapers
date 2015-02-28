@@ -4,6 +4,7 @@ from .bills import MOBillScraper
 from .legislators import MOLegislatorScraper
 from .committees import MOCommitteeScraper
 from .votes import MOVoteScraper
+from .events import MOEventScraper
 
 metadata = dict(
     name='Missouri',
