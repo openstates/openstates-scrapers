@@ -5,7 +5,6 @@ import time
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import lxml.html
-import requests
 
 
 _action_re = (
@@ -47,32 +46,17 @@ class ALBillScraper(BillScraper):
     CHAMBERS = {'H': 'lower', 'S': 'upper'}
     DATE_FORMAT = '%m/%d/%Y'
 
-    # Due to a scrapelib bug, a requests Session is necessary to maintain cookies
-    # Retries are also required since the server periodically returns errors
-    # Once this is fixed, roll back to vanilla scrapelib GETs and POSTs
-    s = requests.Session()
-
-    def sget(self, **request_args):
-        self.log('Special GET request to {}'.format(request_args['url']))
-        retry_counter = 0
-        RETRIES = 5
-        while retry_counter < RETRIES:
-            retry_counter += 1
-            time.sleep(retry_counter ** 2)
-            r = self.s.get(**request_args)
-            if lxml.html.fromstring(r.text).xpath('//input[@id="__VIEWSTATE"]/@value'):
-                break
-            else:
-                self.log('Server returned an error; retrying the GET (up to {} times)'.format(RETRIES))
-        if retry_counter >= RETRIES:
-            raise AssertionError("Alabama server returned only errors")
+    def accept_response(self, response, **kwargs):
+        # Post requests that are redirected instead of rejected are fine
+        if response.status_code == 302:
+            return True
+        # Errored requests should be retried
+        elif response.status_code >= 400:
+            return False
+        # Standard responses are alright if they have an ASP.NET VIEWSTATE
+        # If they don't, it means the page is a trivial error message
         else:
-            return r
-
-    def spost(self, **request_args):
-        time.sleep(1)
-        self.log('Special POST request to {}'.format(request_args['url']))
-        return self.s.post(**request_args)
+            return bool(lxml.html.fromstring(response.text).xpath('//input[@id="__VIEWSTATE"]/@value'))
 
     def _set_session(self, session):
         ''' Activate an ASP.NET session, and set the legislative session '''
@@ -81,34 +65,22 @@ class ALBillScraper(BillScraper):
 
         # If the legislative session is the default (ie, current) one,
         # then the scraper must switch away and then return to it
-        doc = lxml.html.fromstring(self.sget(url=SESSION_SET_URL).text)
+        doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         (current_session, ) = doc.xpath('//option[@selected]/text()')
         if self.session_name == current_session:
             another_session_name = doc.xpath('//option[not(@selected)]/text()')[0]
-            (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-            (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
             form = {
                     '__EVENTTARGET': 'ctl00$cboSession',
-                    '__EVENTARGUMENT': '',
-                    '__LASTFOCUS': '',
-                    '__VIEWSTATE': viewstate,
-                    '__VIEWSTATEGENERATOR': viewstategenerator,
                     'ctl00$cboSession': another_session_name
                     }
-            self.spost(url=SESSION_SET_URL, data=form, allow_redirects=False)
+            self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
-        doc = lxml.html.fromstring(self.sget(url=SESSION_SET_URL).text)
-        (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-        (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         form = {
                 '__EVENTTARGET': 'ctl00$cboSession',
-                '__EVENTARGUMENT': '',
-                '__LASTFOCUS': '',
-                '__VIEWSTATE': viewstate,
-                '__VIEWSTATEGENERATOR': viewstategenerator,
                 'ctl00$cboSession': self.session_name
                 }
-        self.spost(url=SESSION_SET_URL, data=form, allow_redirects=False)
+        self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
     def scrape(self, session, chambers):
         self.session = session
@@ -121,7 +93,7 @@ class ALBillScraper(BillScraper):
         BILL_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsBySelectedStatus.aspx'
         BILL_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
 
-        doc = lxml.html.fromstring(self.sget(url=BILL_TYPE_URL).text)
+        doc = lxml.html.fromstring(self.get(url=BILL_TYPE_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         form = {
@@ -133,7 +105,7 @@ class ALBillScraper(BillScraper):
                 'ctl00$cboSession': self.session_name,
                 'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$MainDefaultContent$gvStatus$ctl02$ctl00'
         }
-        self.spost(url=BILL_TYPE_URL, data=form, allow_redirects=False)
+        self.post(url=BILL_TYPE_URL, data=form, allow_redirects=False)
 
         self.scrape_bill_list(BILL_LIST_URL)
 
@@ -141,7 +113,7 @@ class ALBillScraper(BillScraper):
         RESOLUTION_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResBySelectedStatus.aspx'
         RESOLUTION_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
 
-        doc = lxml.html.fromstring(self.sget(url=RESOLUTION_TYPE_URL).text)
+        doc = lxml.html.fromstring(self.get(url=RESOLUTION_TYPE_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
         form = {
@@ -153,12 +125,12 @@ class ALBillScraper(BillScraper):
                 'ctl00$cboSession': self.session_name,
                 'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$MainDefaultContent$gvStatus$ctl02$ctl00'
         }
-        self.spost(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=False)
+        self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=False)
 
         self.scrape_bill_list(RESOLUTION_LIST_URL)
 
     def scrape_bill_list(self, url):
-        html = self.sget(url=url).text
+        html = self.get(url=url).text
         doc = lxml.html.fromstring(html)
         bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1: ]
         resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1: ]
@@ -200,7 +172,7 @@ class ALBillScraper(BillScraper):
             bill_url = 'http://alisondb.legislature.state.al.us/Alison/SESSBillResult.aspx?BILL={}'.format(bill_id)
             bill.add_source(bill_url)
             try:
-                bill_html = self.sget(url=bill_url).text
+                bill_html = self.get(url=bill_url).text
             except AssertionError:
                 self.warning("The webpage for bill {} isn't loading, so it won't be saved".format(bill_id))
                 continue
@@ -275,7 +247,7 @@ class ALBillScraper(BillScraper):
                     (eventtarget, ) = bir.xpath('td[4]/font/input/@id')
                     form['ctl00$ScriptManager1'] = 'ctl00$UpdatePanel1|' + eventtarget
                     form[eventtarget] = "Roll " + bir_vote_id
-                    self.spost(url=bill_url, data=form, allow_redirects=False)
+                    self.post(url=bill_url, data=form, allow_redirects=False)
 
                     self.scrape_vote(
                             bill=bill,
@@ -331,7 +303,7 @@ class ALBillScraper(BillScraper):
                     form['__EVENTTARGET'] = eventtarget
                     form['__EVENTARGUMENT'] = eventargument
                     form['ctl00$ScriptManager1'] = 'ctl00$UpdatePanel1|' + eventtarget
-                    self.spost(url=bill_url, data=form, allow_redirects=False)
+                    self.post(url=bill_url, data=form, allow_redirects=False)
 
                     self.scrape_vote(
                             bill=bill,
@@ -351,7 +323,7 @@ class ALBillScraper(BillScraper):
     def scrape_vote(self, bill, vote_chamber, bill_id, vote_id, vote_date, action_text):
         url = 'http://alisondb.legislature.state.al.us/Alison/GetRollCallVoteResults.aspx?VOTE={0}&BODY={1}&INST={2}&SESS={3}'.format(
                 vote_id, vote_chamber, bill_id, self.session_id)
-        doc = lxml.html.fromstring(self.sget(url=url).text)
+        doc = lxml.html.fromstring(self.get(url=url).text)
 
         voters = {'Y': [], 'N': [], 'P': [], 'A': []}
 
