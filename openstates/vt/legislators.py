@@ -23,7 +23,7 @@ class VTLegislatorScraper(LegislatorScraper):
             info = { k:v.strip() for k, v in info.iteritems() }
 
             # First and last initials must be uppercased for the photo URL
-            photo_name = info['Email'][ :-(len("@leg.state.vt.us"))]
+            photo_name = info['Email'].replace("@leg.state.vt.us", "")
             photo_name = photo_name[ :2].upper() + photo_name[2: ]
 
             leg = Legislator(
