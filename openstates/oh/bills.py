@@ -19,7 +19,7 @@ class OHBillScraper(BillScraper):
 
         status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
 
-        #ssl verification off due to requests bug
+        #ssl verification off due Ohio not correctly implementing SSL
         doc = self.urlopen(status_report_url,verify=False)
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
@@ -50,10 +50,10 @@ class OHBillScraper(BillScraper):
 
             else:
                 bill_ids_found = []
-                self.new_bulk_scrape(chamber,session,sh,bill_ids_found,url)
+                self.new_bulk_scrape(session,sh,bill_ids_found,url)
                 if len(bill_ids_found) == 0:
                     self.logger.warning("No bills found in bulk data, check that it's up?")
-                self.new_site_scrape(chamber,session,bill_ids_found)
+                #self.new_site_scrape(chambers,session,bill_ids_found,url)
 
 
     def new_bulk_scrape(self,session,sh,bill_ids_found,url):
@@ -89,35 +89,115 @@ class OHBillScraper(BillScraper):
 
             introduced_date = sh.cell(rownum,5).value.strip()
             if introduced_date:
-                introduced_date = datetime.datetime.strptime(introduced_date,"%d/%m/%Y")
+                introduced_date = self.process_date(introduced_date)
                 bill.add_action(chamber,"Introduced",introduced_date,type="bill:introduced")
 
             refer_date = sh.cell(rownum,6).value.strip()
             committee = sh.cell(rownum,7).value.strip()
+
             if refer_date and committee:
-                refer_date = datetime.datetime.strptime(refer_date,"%d/%m/%Y")
+                refer_date = self.process_date(refer_date)
                 bill.add_action(chamber,"Referred to committee",refer_date,type="committee:referred",committees=committee)
 
             comm_rep_date = sh.cell(rownum,8).value.strip()
-            comm_report = sh.cell(rownum,9).value.strip()
-            if comm_rep_date and comm_report:
-                rep_date = datetime.datetime.strptime(comm_rep_date,"%d/%m/%Y")
-                committees = committee
-                if "recommends its re-referral" in report:
-                    act_type = ["committee:passed","committee:referred"]
-                    new_comm = sh.cell(rownum,11).value.strip()
-                    committees = [committee,new_comm]
-                #TODO: lots of possibilites here, get them all in.
-                elif "recommends its passage/adoption" in report:
-                    act_type = "committee:passed:favorable"
-                bill.add_action(chamber,"Committee Reports: '{}'".format(comm_report),rep_date,type="committee:referred",committees=[committee])
+            report = sh.cell(rownum,9).value.strip().lower()
+            new_comm = sh.cell(rownum,11).value.strip()
+            if comm_rep_date and report:
+                comms,actions,date = self.comm_actions(committee,comm_rep_date,report,new_comm)
+                bill.add_action(chamber,report,date,type=actions,committees=comms)
+                
+
+            if new_comm:
+                comm_rep_date = sh.cell(rownum,12).value.strip()
+                report = sh.cell(rownum,13).value.strip().lower()
+                if comm_rep_date and report:
+                    comms,actions,date = self.comm_actions(new_comm,com_rep_date,report)
+                    bill.add_action(chamber,report,date,type=actions,committees=comms)
 
 
-            re_refer_date = 
+
+
+            third_consider = sh.cell(rownum,15).value.strip()
+            if third_consider:
+                third_consider = self.process_date(third_consider)
+                bill.add_action(chamber,"Third Consideration",third_consider, type="bill:reading:3")
+
+            other_chamber_date = sh.cell(rownum,18).value.strip()
+            if other_chamber_date:
+                other_chamber = "upper" if chamber == "lower" else "lower"
+                bill.add_action(other_chamber,"Introduced",self.process_date(other_chamber_date),type="bill:introduced")
+
+                refer_date = sh.cell(rownum,19).value.strip()
+                refer_comm = sh.cell(rownum,20).value.strip()
+                if refer_date and refer_comm:
+                    refer_date = self.process_date(refer_date)
+                    bill.add_action(other_chamber,"Referred to committee",refer_date,type="committee:referred",committees=refer_comm)
+
+                comm_resp_date = sh.cell(rownum,21).value.strip()
+                comm_resp = sh.cell(rownum,22).value.strip()
+                new_comm = new_comm = sh.cell(rownum,24).value.strip()
+
+                if comm_resp_date and comm_resp:
+                    comms,actions,date = self.comm_actions(refer_comm,comm_resp_date,comm_resp,new_comm)
+                    bill.add_action(other_chamber,comm_resp,date,type=actions,committees=comms)
+
+                    
+                    if new_comm:
+                        comm_rep_date = sh.cell(rownum,25).value.strip()
+                        report = sh.cell(rownum,26).value.strip().lower()
+                        if comm_rep_date and report:
+                            comms,actions,date = self.comm_actions(new_comm,com_rep_date,report)
+                            bill.add_action(other_chamber,report,date,type=actions,committees=comms)
+
+                third_consider = sh.cell(rownum,28).value.strip()
+                if third_consider:
+                    third_consider = self.process_date(third_consider)
+                    bill.add_action(chamber,"Third Consideration",third_consider, type="bill:reading:3")
+
+
 
             self.save_bill(bill)
             bill_ids_found.append(bill_id)
 
+    def process_date(self,date):
+        return datetime.datetime.strptime(date,"%m/%d/%Y")
+
+    def comm_actions(self,comm,date,report,new_comm=None):
+        date = self.process_date(date)
+        committees = [comm]
+        act_type = []
+        if "re-referral" in report:
+            act_type.extend(["committee:passed","committee:referred"])
+            committees.append(new_comm)
+        if "substitute bill/resolution" in report:
+            act_type.append("bill:substituted")
+        #TODO: lots of possibilites here, get them all in.
+        if "recommends its passage/adoption" in report:
+            act_type.append("committee:passed:favorable")
+        if "following amendments" in report:
+            act_type.append("amendment:passed")
+
+        if len(act_type) == 0:
+            act_type = "committee:passed"
+        elif len(act_type) == 1:
+            act_type = act_type[0]
+        if len(committees) == 1:
+            committees = committees[0]
+        
+
+        return committees, act_type, date
+
+
+
+    def get_slg_id(self,session,bill_id):
+        for idx,char in enumerate(bill_id):
+            try:
+                int(char)
+            except ValueError:
+                continue
+            slg_id = bill_id[:idx]+"-"+bill_id[idx:]
+            break
+        return slg_id
 
     def new_site_scrape(self,session,bill_ids_found):
         #bulk data was missing some stuff
