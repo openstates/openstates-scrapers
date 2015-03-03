@@ -119,10 +119,19 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
             bill_chamber = dict(h='lower', s='upper')[bill_id.lower()[0]]
             self.current_id = bill_id
-            votes = self.parse_votes(lines)
-            passed = (votes['yes_count'] /
-                      (votes['yes_count'] + votes['no_count'])
-                      > 0.5)
+            votes, passed = self.parse_votes(lines)
+
+            #at the very least, there should be a majority
+            #for the bill to have passed, so check that,
+            #but if the bill didn't pass, it could still be OK if it got a majority
+            #eg constitutional amendments
+            assert (passed == (votes['yes_count'] > votes['no_count'])) or (not passed)
+            
+            #also throw a warning if the bill failed but got a majority
+            #it could be OK, but is probably something we'd want to check
+            if not passed and votes['yes_count'] > votes['no_count']:
+                self.logger.warning("The bill got a majority but did not pass. Could be worth confirming.")
+            
             vote = Vote(motion=motion,
                         passed=passed,
                         chamber=chamber, date=date,
@@ -162,6 +171,8 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             ('Under the', DONE)
         ]
 
+        passage_strings = ["passed","adopted","prevailed"]
+
         def is_boundary(text, patterns={}):
             for blurb, key in boundaries:
                 if text.strip().startswith(blurb):
@@ -175,6 +186,10 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         while True:
             key = is_boundary(text)
             if key is DONE:
+                passage_line = text+" "+next(lines)
+                passed = False
+                if any(p in passage_line for p in passage_strings):
+                    passed = True
                 break
 
             # Get the vote count.
@@ -198,7 +213,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                     for name in self.split_names(text):
                         counts['%s_votes' % key].append(name.strip())
 
-        return counts
+        return counts, passed
 
     def split_names(self, text):
         junk = ['Presiding', 'Mr. Speaker', 'Spkr.', '.']

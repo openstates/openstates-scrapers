@@ -228,13 +228,13 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                             vote_count = vote[keys[category_name] + "_count"]
 
                             if motion_count != vote_count:
-                                raise AssertionError(
+                                self.warning(
                                         "Motion text vote counts ({}) ".format(motion_count) +
                                         "differed from roll call counts ({}) ".format(vote_count) +
-                                        "for {0} votes on {1}".format(category_name, cur_bill_id)
+                                        "for {0} on {1}".format(category_name, cur_bill_id)
                                         )
+                                vote[keys[category_name] + "_count"] = motion_count
 
-                        print("***")
                         self.save_vote(vote)
 
                         # With the vote successfully processed,

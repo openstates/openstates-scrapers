@@ -54,7 +54,8 @@ class MIEventScraper(EventScraper, LXMLMixin):
 
         for text_to_remove in [
                 "or after committees are given leave",
-                "or later immediately after committees are given leave"
+                "or later immediately after committees are given leave",
+                "or later after committees are given leave by the House to meet"
                 ]:
             datetime = datetime.split(text_to_remove)[0].strip()
 
