@@ -11,6 +11,13 @@ class TXBillScraper(BillScraper):
     jurisdiction = 'tx'
     _FTP_ROOT = 'ftp.legis.state.tx.us'
     CHAMBERS = {'H': 'lower', 'S': 'lower'}
+    NAME_SLUGS = {
+        'I': 'Introduced',
+        'E': 'Engrossed',
+        'S': 'Senate Committee Report',
+        'H': 'House Committee Report',
+        'F': 'Enrolled'
+    }
 
     def _get_ftp_files(self, root, dir_):
         ''' Recursively traverse an FTP directory, returning all files '''
@@ -59,6 +66,36 @@ class TXBillScraper(BillScraper):
                                bill_id).groups())
             self.versions.append((bill_id, item))
 
+        self.analyses = []
+        analysis_files = self._get_ftp_files(self._FTP_ROOT,
+                                             'bills/{}/analysis/html'.
+                                             format(session_code))
+        for item in analysis_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.analyses.append((bill_id, item))
+
+        self.fiscal_notes = []
+        fiscal_note_files = self._get_ftp_files(self._FTP_ROOT,
+                                                'bills/{}/fiscalnotes/html'.
+                                                format(session_code))
+        for item in fiscal_note_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.fiscal_notes.append((bill_id, item))
+
+        self.witnesses = []
+        witness_files = self._get_ftp_files(self._FTP_ROOT,
+                                            'bills/{}/witlistbill/html'.
+                                            format(session_code))
+        for item in witness_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.witnesses.append((bill_id, item))
+
         history_files = self._get_ftp_files(self._FTP_ROOT,
                                             'bills/{}/billhistory'.
                                             format(session_code))
@@ -67,16 +104,12 @@ class TXBillScraper(BillScraper):
 
     def scrape_bill(self, session, history_url):
         history_xml = self.urlopen(history_url).encode('ascii', 'ignore')
-        try:
-            root = etree.fromstring(history_xml)
-        except:
-            self.warning("File {} is likely not a bill history".
-                         format(history_url))
-            return
+        root = etree.fromstring(history_xml)
 
         bill_title = root.findtext("caption")
         if (bill_title is None or
                 "Bill does not exist" in history_xml):
+            self.warning("Bill does not appear to exist")
             return
         bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
 
@@ -95,18 +128,43 @@ class TXBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
+        bill.add_source(history_url)
+
+        bill['subjects'] = []
+        for subject in root.iterfind('subjects/subject'):
+            bill['subjects'].append(subject.text.strip())
+
         versions = [x for x in self.versions if x[0] == bill_id]
         for version in versions:
-            version_names = {
-                'I': 'Introduced',
-                'E': 'Engrossed',
-                'S': 'Senate Committee Report',
-                'H': 'House Committee Report',
-                'F': 'Enrolled'
-            }
             bill.add_version(
-                name=version_names[version[1][-5]],
+                name=self.NAME_SLUGS[version[1][-5]],
                 url=version[1],
+                mimetype='text/html'
+            )
+
+        analyses = [x for x in self.analyses if x[0] == bill_id]
+        for analysis in analyses:
+            bill.add_document(
+                name="Analysis ({})".format(self.NAME_SLUGS[analysis[1][-5]]),
+                url=analysis[1],
+                mimetype='text/html'
+            )
+
+        fiscal_notes = [x for x in self.fiscal_notes if x[0] == bill_id]
+        for fiscal_note in fiscal_notes:
+            bill.add_document(
+                name="Fiscal Note ({})".format(self.NAME_SLUGS
+                                               [fiscal_note[1][-5]]),
+                url=fiscal_note[1],
+                mimetype='text/html'
+            )
+
+        witnesses = [x for x in self.witnesses if x[0] == bill_id]
+        for witness in witnesses:
+            bill.add_document(
+                name="Witness List ({})".format(self.NAME_SLUGS
+                                                [witness[1][-5]]),
+                url=witness[1],
                 mimetype='text/html'
             )
 
@@ -127,6 +185,7 @@ class TXBillScraper(BillScraper):
             desc = action.findtext('description').strip()
 
             if desc == 'Scheduled for public hearing on . . .':
+                self.warning("Skipping public hearing action with no date")
                 continue
 
             introduced = False
@@ -208,11 +267,5 @@ class TXBillScraper(BillScraper):
                 bill.add_sponsor('cosponsor',
                                  cosponsor,
                                  official_type='cosponsor')
-
-        bill['subjects'] = []
-        for subject in root.iterfind('subjects/subject'):
-            bill['subjects'].append(subject.text.strip())
-
-        bill.add_source(history_url)
 
         self.save_bill(bill)
