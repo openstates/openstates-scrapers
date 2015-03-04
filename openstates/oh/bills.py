@@ -18,14 +18,102 @@ class OHBillScraper(BillScraper):
             raise AssertionError("No data for period {}".format(session))
 
         elif int(session) < 131:
+            #they changed their data format starting in 131st and added
+            #an undocumented API
             self.old_scrape(session)
             
+        else:
+            base_url = "http://search-prod.lis.state.oh.us/"
+            first_page = base_url + "/solarapi/v1/general_assembly_{session}/".format(session=session)
+            doc_types = ["bills","resolutions"]
+            for doc_type in doc_types:
+                doc = self.get(first_page+doc_type)
+                doc = doc.json()
+                bill_versions = {}
+                while True:
+                    for v in doc["items"]:
+                        #bills is actually a list of versions
+                        #going to create a dictionary as follows:
+                        #key=bill_id
+                        #value = dict of all versions, where keys are versionids
+                        #and values are the bill data from the api.
+                        #then loop through that to avoid duplicate bills
+
+                        bill_id = v["number"]
+                        version_id = v["versionid"]
+                        if bill_id in bill_versions:
+                            if version_id in bill_versions[bill_id]:
+                                self.logger.warning("There are two bill versions called the same thing. Bad news bears!")
+                            else:
+                                bill_versions[bill_id][version_id] = v
+                        else:
+                            bill_versions[bill_id] = {}
+                            bill_versions[bill_id][version_id] = v
+                    try:
+                        nextpage = base_url+doc["nextLink"]
+                    except KeyError:
+                        break
+                    doc = self.get(nextpage)
+                    doc = doc.json()
+                    page_count = doc["pageCount"]
+                    page_num = doc["pageIndex"]
+
+            for b in bill_versions:
+                bill = None
+                for bill_version in bill_versions[b].values():
+                    if not bill:
+                        bill_id = bill_version["number"]
+                        print bill_id
+                        title = bill_version["shorttitle"] or bill_version["longtitle"]
+
+                        title = title.strip()
+
+                        chamber = "lower" if "h" in bill_id else "upper"
+
+                        subjects = []
+                        for subj in bill_version["subjectindexes"]:
+                            try:
+                                subjects.append(subj["primary"])
+                            except KeyError:
+                                pass
+
+
+                        bill = Bill(session,chamber,bill_id,title,subjects=subjects)
+
+                        #this stuff is the same for all versions
+
+                        bill.add_source(base_url+"bills/"+bill_id)
+
+
+    
+
+                        sponsors = bill_version["sponsors"]
+                        for sponsor in sponsors:
+                            sponsor_name = self.get_sponsor_name(sponsor)
+                            bill.add_sponsor("primary",sponsor_name)
+
+                        cosponsors = bill_version["cosponsors"]
+                        for sponsor in cosponsors:
+                            sponsor_name = self.get_sponsor_name(sponsor)
+                            bill.add_sponsor("cosponsor",sponsor_name)
+
+
+
+                        #todo: amendments, actions, cmtevotes, vvotes, veto, disapprove, analysis, synopsis, fiscals
+                    #this stuff is version-specific
+                    version_name = bill_version["version"]
+                    version_link = bill_version["pdfDownloadLink"]
+                    mimetype = "application/pdf" if version_link.endswith("pdf") else None
+                    bill.add_version(version_name,version_link,mimetype=mimetype)
+
+                self.save_bill(bill)
 
 
 
 
 
-
+    def get_sponsor_name(self,sponsor):
+        return " ".join([sponsor["firstname"],sponsor["lastname"]])
 
     def old_scrape(self,session):
         status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
