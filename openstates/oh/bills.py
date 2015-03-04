@@ -21,16 +21,42 @@ class OHBillScraper(BillScraper):
             #they changed their data format starting in 131st and added
             #an undocumented API
             self.old_scrape(session)
+
+
             
         else:
+            chamber_dict = {"Senate":"upper","House":"lower","House of Representatives":"lower"}
+
+            action_dict = {"ref_ctte_100":"committee:referred",
+                            "intro_100":"bill:introduced",
+                            "pass_300":"bill:passed",
+                            "intro_110":"bill:reading:1",
+                            "refer_210":"committee:referred",
+                            "crpt_301":"other",
+                            "crpt_317": "other",
+                            "intro_102":["bill:introduced","bill:passed"],
+                            "intro_105":["bill:introduced","bill:passed"],
+                            "intro_ref_ctte_100":"committee:referred",
+                            "refer_209":"other",
+                            "intro_108":["bill:introduced","bill:passed"],
+                            "intro_103": ["bill:introduced","bill:passed"],
+                            "msg_reso_503": "bill:passed",
+                            "intro_107": ["bill:introduced","bill:passed"],
+                            "imm_consid_360": "bill:passed"}
+
+            
+
             base_url = "http://search-prod.lis.state.oh.us/"
             first_page = base_url + "/solarapi/v1/general_assembly_{session}/".format(session=session)
+            legislators = self.get_legislator_ids(first_page)
+            all_amendments = self.get_other_data_source(first_page,base_url,"amendments")
+            all_fiscals = self.get_other_data_source(first_page,base_url,"fiscals")
+            all_synopsis = self.get_other_data_source(first_page,base_url,"synopsiss")
+            all_analysis = self.get_other_data_source(first_page,base_url,"analysiss")
             doc_types = ["bills","resolutions"]
             for doc_type in doc_types:
-                doc = self.get(first_page+doc_type)
-                doc = doc.json()
                 bill_versions = {}
-                while True:
+                for doc in self.pages(base_url,first_page+doc_type):
                     for v in doc["items"]:
                         #bills is actually a list of versions
                         #going to create a dictionary as follows:
@@ -43,73 +69,146 @@ class OHBillScraper(BillScraper):
                         version_id = v["versionid"]
                         if bill_id in bill_versions:
                             if version_id in bill_versions[bill_id]:
-                                self.logger.warning("There are two bill versions called the same thing. Bad news bears!")
+                                self.logger.warning("There are two versions of {bill_id} called the same thing. Bad news bears!".format(bill_id=bill_id))
                             else:
                                 bill_versions[bill_id][version_id] = v
                         else:
                             bill_versions[bill_id] = {}
                             bill_versions[bill_id][version_id] = v
-                    try:
-                        nextpage = base_url+doc["nextLink"]
-                    except KeyError:
-                        break
-                    doc = self.get(nextpage)
-                    doc = doc.json()
-                    page_count = doc["pageCount"]
-                    page_num = doc["pageIndex"]
 
-            for b in bill_versions:
-                bill = None
-                for bill_version in bill_versions[b].values():
-                    if not bill:
-                        bill_id = bill_version["number"]
-                        print bill_id
-                        title = bill_version["shorttitle"] or bill_version["longtitle"]
+                    
 
-                        title = title.strip()
+                for b in bill_versions:
+                    bill = None
+                    for bill_version in bill_versions[b].values():
+                        if not bill:
+                            bill_id = bill_version["number"]
+                            print bill_id
+                            title = bill_version["shorttitle"] or bill_version["longtitle"]
 
-                        chamber = "lower" if "h" in bill_id else "upper"
+                            title = title.strip()
 
-                        subjects = []
-                        for subj in bill_version["subjectindexes"]:
-                            try:
-                                subjects.append(subj["primary"])
-                            except KeyError:
-                                pass
+                            chamber = chamber_dict[bill_version["chamber"]]
+
+                            subjects = []
+                            for subj in bill_version["subjectindexes"]:
+                                try:
+                                    subjects.append(subj["primary"])
+                                except KeyError:
+                                    pass
 
 
-                        bill = Bill(session,chamber,bill_id,title,subjects=subjects)
+                            bill = Bill(session,chamber,bill_id,title,subjects=subjects,type=doc_type)
 
-                        #this stuff is the same for all versions
+                            #this stuff is the same for all versions
 
-                        bill.add_source(base_url+"bills/"+bill_id)
+                            bill.add_source(first_page+doc_type+bill_id)
+
+                            sponsors = bill_version["sponsors"]
+                            for sponsor in sponsors:
+                                sponsor_name = self.get_sponsor_name(sponsor)
+                                bill.add_sponsor("primary",sponsor_name)
+
+                            cosponsors = bill_version["cosponsors"]
+                            for sponsor in cosponsors:
+                                sponsor_name = self.get_sponsor_name(sponsor)
+                                bill.add_sponsor("cosponsor",sponsor_name)
+
+                            #actions
+                            blacklist = ["/solarapi/v1/general_assembly_131/resolutions/lr_131_0035-1/actions"]
+                            if bill_version["action"][0]["link"] not in blacklist:
+                                action_doc = self.get(base_url+bill_version["action"][0]["link"])
+
+                                actions = action_doc.json()
+                                for action in actions["items"]:
+                                    actor = chamber_dict[action["chamber"]]
+                                    action_desc = action["description"]
+                                    try:
+                                        action_type = action_dict[action["actioncode"]]
+                                    except KeyError:
+                                        self.logger.warning("Action code {code}: {desc} not seen before.".format(code = action["actioncode"],desc = action_desc))
+                                        action_type = "other"
+
+                                    date = datetime.datetime.strptime(action["datetime"],"%Y-%m-%dT%H:%M:%S")
+
+                                    committees = None
+                                    if "committee" in action:
+                                        committees = action["committee"]
+
+                                    bill.add_action(actor,
+                                                    action_desc,
+                                                    date,
+                                                    type = action_type,
+                                                    committees = committees)
+
+                            self.add_document(all_amendments, bill_id,"amendment",bill,first_page)
+                            self.add_document(all_fiscals,bill_id,"fiscal",bill,first_page)
+                            self.add_document(all_synopsis,bill_id,"synopsis",bill,first_page)
+                            self.add_document(all_analysis,bill_id,"analysis",bill,first_page)
 
 
-    
+                        #this stuff is version-specific
+                        version_name = bill_version["version"]
+                        version_link = base_url+bill_version["pdfDownloadLink"]
+                        mimetype = "application/pdf" if version_link.endswith("pdf") else None
+                        bill.add_version(version_name,version_link,mimetype=mimetype)
 
-                        sponsors = bill_version["sponsors"]
-                        for sponsor in sponsors:
-                            sponsor_name = self.get_sponsor_name(sponsor)
-                            bill.add_sponsor("primary",sponsor_name)
+                    self.save_bill(bill)
 
-                        cosponsors = bill_version["cosponsors"]
-                        for sponsor in cosponsors:
-                            sponsor_name = self.get_sponsor_name(sponsor)
-                            bill.add_sponsor("cosponsor",sponsor_name)
+    def pages(self,base_url, first_page):
+        page = self.get(first_page)
+        page = page.json()
+        yield page
+        while "nextLink" in page:
+            page = self.get(base_url+page["nextLink"])
+            page = page.json()
+            yield page
+
+    def get_other_data_source(self,first_page,base_url,source_name):
+        #produces a dictionary from bill_id to a list of
+        #one of the following:
+        #amendments, analysis, fiscals, synopsis
+        #could pull these by bill, but doing it in bulk
+        #and then matching on our end will get us by with way fewer
+        #api calls
+        
+        bill_dict = {}
+        for page in self.pages(base_url,first_page+source_name):
+            for item in page["items"]:
+                billno = item["billno"]
+                if billno not in bill_dict:
+                    bill_dict[billno] = []
+                bill_dict[billno].append(item)
+
+        return bill_dict
 
 
 
-                        #todo: amendments, actions, cmtevotes, vvotes, veto, disapprove, analysis, synopsis, fiscals
-                    #this stuff is version-specific
-                    version_name = bill_version["version"]
-                    version_link = bill_version["pdfDownloadLink"]
-                    mimetype = "application/pdf" if version_link.endswith("pdf") else None
-                    bill.add_version(version_name,version_link,mimetype=mimetype)
+    def add_document(self,documents,bill_id,type_of_document,bill,first_page):
+        try:
+            documents = documents[bill_id]
+            print bill_id
+            print type_of_document
+        except KeyError:
+            return
+        for item in documents:
+            if type_of_document == "amendment":
+                name = item["amendnum"] + " " + item["version"]
+            else:
+                name = item["name"] or type_of_document
+            link = first_page+item["link"]+"?format=pdf"
+            bill.add_document(name,link,mimetype="application/pdf")
 
-                self.save_bill(bill)
 
+    def get_legislator_ids(self,base_url):
+        legislators = {}
+        for chamber in ["House", "Senate"]:
+            doc = self.get(base_url+"chamber/{chamber}/legislators".format(chamber=chamber))
+            leg_json = doc.json()
+            for leg in leg_json["items"]:
+                legislators[leg["med_id"]] = leg["displayname"]
 
-
+        return legislators
 
 
     def get_sponsor_name(self,sponsor):
