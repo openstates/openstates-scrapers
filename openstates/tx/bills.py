@@ -1,9 +1,8 @@
-import os
 import re
 from urlparse import urljoin
 import datetime
+import ftplib
 
-from billy.utils import urlescape
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 
@@ -14,7 +13,28 @@ import lxml.etree
 
 class TXBillScraper(BillScraper):
     jurisdiction = 'tx'
-    _ftp_root = 'ftp://ftp.legis.state.tx.us/'
+    _ftp_root = 'ftp.legis.state.tx.us'
+
+    def _get_ftp_files(self, root, dir_):
+        '''
+        Walk an FTP directory and its subdirectories, and yield the
+        paths to all files therein
+        '''
+
+        ftp = ftplib.FTP(self._ftp_root)
+        ftp.login()
+        ftp.cwd(dir_)
+        self.log('Searching an FTP folder for files ({})'.format(dir_))
+
+        lines = []
+        ftp.retrlines('LIST', lines.append)
+        for line in lines:
+            name = line.split(' ')[-1]
+            if '<DIR>' in line:
+                for item in self._get_ftp_files(root, '/'.join([dir_, name])):
+                    yield item
+            else:
+                yield '/'.join(['ftp://' + root, dir_, name])
 
     def scrape(self, chamber, session):
         """Scrapes information on all bills for a given chamber and session."""
@@ -23,15 +43,20 @@ class TXBillScraper(BillScraper):
         if len(session) == 2:
             session = '%sR' % session
 
+        self.versions = []
+        version_files = self._get_ftp_files(self._ftp_root, 'bills/{}/billtext/html'.format(session))
+        for item in version_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)', bill_id).groups())
+            self.versions.append((bill_id, item))
+
         for bill_type in ['bills', 'concurrent_resolutions',
                           'joint_resolutions', 'resolutions']:
             # This is the billhistory directory for a particular type of bill
             # (e.g. senate resolutions).  It should contain subdirectories
             # with names like "SR00001_SR00099".
-            history_dir_url = urljoin(
-                self._ftp_root, '/bills/%s/billhistory/%s_%s/' % (
-                    session, chamber_name(chamber), bill_type))
-
+            history_dir_url = 'ftp://' + self._ftp_root + '/bills/%s/billhistory/%s_%s/' % (
+                    session, chamber_name(chamber), bill_type)
             history_groups_listing = self.urlopen(history_dir_url)
             # A group_dir has a name like "HJR00200_HJR00299" and contains
             # the files for a group of 100 bills.
@@ -73,30 +98,6 @@ class TXBillScraper(BillScraper):
         text_group_url = history_group_url.replace(
             '/billhistory/', '/billtext/html/')
         text_group_url = re.sub('([HS][CJ])R', '\\1', text_group_url)
-        version_urls = {}
-        # Get the list of all the bill versions in this group, and collect
-        # the filenames together by bill number.
-        versions_list = self.urlopen(text_group_url)
-        for version_file in parse_ftp_listing(versions_list):
-            url = urljoin(text_group_url, version_file)
-            bill_num = int(re.search(r'\d+', version_file).group(0))
-            version_urls.setdefault(bill_num, []).append(url)
-
-        if billno in version_urls:
-            version_urls = version_urls[billno] #  Sorry :(
-            # We need to get the versions from inside here because some bills
-            # have XML saying just "no such bill", so we hit an ftp error
-            # because there are no bill versions where we expect them.
-            #
-            # It's a good idea to somehow cache this list, but we need to make
-            # sure it exists first. FIXME(nice-to-have)
-
-            for version_url in version_urls:
-                bill.add_source(version_url)
-                version_name = version_url.split('/')[-1]
-                version_name = os.path.splitext(version_name)[0]  # omit '.htm'
-                bill.add_version(version_name, version_url,
-                                 mimetype='text/html')
 
         self.save_bill(bill)
 
@@ -123,13 +124,20 @@ class TXBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
-        versions = root.xpath("//versions")
+        versions = [x for x in self.versions if x[0] == bill_id]
         for version in versions:
-            versionz = version.xpath(".//version")
-            for v in versionz:
-                description = v.xpath(".//versionDescription")[0].text
-                html_url = v.xpath(".//WebHTMLURL")[0].text
-                bill.add_version(description, html_url, 'text/html')
+            version_names = {
+                    'I': 'Introduced',
+                    'E': 'Engrossed',
+                    'S': 'Senate Committee Report',
+                    'H': 'House Committee Report',
+                    'F': 'Enrolled'
+            }
+            bill.add_version(
+                    name=version_names[version[1][-5]],
+                    url=version[1],
+                    mimetype='text/html'
+            )
 
         for action in root.findall('actions/action'):
             act_date = datetime.datetime.strptime(action.findtext('date'),
