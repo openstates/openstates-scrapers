@@ -7,13 +7,14 @@ from .actions import Categorizer, committees_abbrs
 from .utils import xpath
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from openstates.utils import LXMLMixin
 
 import lxml.etree
 import lxml.html
 import feedparser
 
 
-class WABillScraper(BillScraper):
+class WABillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'wa'
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
     categorizer = Categorizer()
@@ -36,7 +37,65 @@ class WABillScraper(BillScraper):
                 if match:
                     self._subjects[match.group()].append(subject)
 
+    def _load_versions(self, chamber, session):
+        self.versions = {}
+        base_url = ('http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/'.
+                    format(self.biennium))
+        bill_types = {
+            'Bills': 'B',
+            'Resolutions': 'R',
+            'Concurrent Resolutions': 'CR',
+            'Joint Memorials': 'JM',
+            'Joint Resolutions': 'JR'
+        }
+        oddly_formed_types = ['Resolutions', 'Joint Memorials']
+        ordinals = {
+            '2': 'Second',
+            '3': 'Third'
+        }
+        chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
+
+        for bill_type in bill_types.keys():
+            doc = self.lxmlize(base_url + chamber + " " + bill_type)
+            documents = doc.xpath('//a')[1:]
+            for document in documents:
+                (link, ) = document.xpath('@href')
+
+                (text, ) = document.xpath('text()')
+                if bill_type in oddly_formed_types:
+                    is_substitute = False
+                    is_engrossed = False
+                    bill_num = re.search(r'^(\d+)-', text).group(1)
+                else:
+                    (bill_num, is_substitute, substitute_num, is_engrossed,
+                        engrossed_num) = re.search(
+                        r'^(\d+)(-S(\d?))?(\.E(\d?))?\.htm$', text).groups()
+
+                bill_id = chamber[0] + bill_types[bill_type] + " " + bill_num
+
+                name = bill_type[:-1]
+                if is_substitute:
+                    name = "Substitute " + name
+                    if substitute_num:
+                        name = " ".join([ordinals[substitute_num], name])
+                if is_engrossed:
+                    name = "Engrossed " + name
+                    if engrossed_num:
+                        name = " ".join([ordinals[engrossed_num], name])
+
+                if not self.versions.get(bill_id):
+                    self.versions[bill_id] = []
+                self.versions[bill_id].append({
+                    'name': name,
+                    'url': link,
+                    'mimetype': 'text/html'
+                })
+
     def scrape(self, chamber, session):
+        self.biennium = "%s-%s" % (session[0:4], session[7:9])
+
+        self._load_versions(chamber, session)
+
         bill_id_list = []
         year = int(session[0:4])
 
@@ -86,11 +145,10 @@ class WABillScraper(BillScraper):
             self.save_bill(bill)
 
     def scrape_bill(self, chamber, session, bill_id):
-        biennium = "%s-%s" % (session[0:4], session[7:9])
         bill_num = bill_id.split()[1]
 
         url = ("%s/GetLegislation?biennium=%s&billNumber"
-               "=%s" % (self._base_url, biennium, bill_num))
+               "=%s" % (self._base_url, self.biennium, bill_num))
 
         page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
@@ -114,30 +172,11 @@ class WABillScraper(BillScraper):
                            bill_num, session[0:4]))
         bill.add_source(fake_source)
 
-        chamber_name = {'lower': 'House', 'upper': 'Senate'}[chamber]
-        mimetype = 'text/html'
-        version_url = ("http://www.leg.wa.gov/pub/billinfo/%s/"
-                       "Htm/Bills/%s %ss/%s.htm" % (biennium,
-                                                    chamber_name,
-                                                    bill_type.title(),
-                                                    bill_num))
-
-        # Sometimes the measure's version_url isn't guessable. When that happens
-        # have to get the url from the source page.
         try:
-            version_resp = self.get(version_url)
-            if version_resp.status_code != 200:
-                webpage = self.get(fake_source).text
-                webdoc = lxml.html.fromstring(webpage)
-                version_url = webdoc.xpath('//a[contains(@href, "billdocs")]/@href')[-1]
-                if version_url.lower().endswith('.pdf'):
-                    mimetype = 'application/pdf'
-            bill.add_version(bill_id, version_url, mimetype=mimetype)
-        except scrapelib.HTTPError:
-            pass
-        except IndexError:
-            pass
-
+            bill['versions'] = self.versions[bill_id]
+        except KeyError:
+            bill['versions'] = []
+            self.warning("No versions were found for {}".format(bill_id))
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
@@ -148,11 +187,9 @@ class WABillScraper(BillScraper):
 
     def scrape_sponsors(self, bill):
         bill_id = bill['bill_id'].replace(' ', '%20')
-        session = bill['session']
-        biennium = "%s-%s" % (session[0:4], session[7:9])
 
         url = "%s/GetSponsors?biennium=%s&billId=%s" % (
-            self._base_url, biennium, bill_id)
+            self._base_url, self.biennium, bill_id)
 
         page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
@@ -164,18 +201,11 @@ class WABillScraper(BillScraper):
             first = False
 
     def scrape_actions(self, bill, bill_num):
-        bill_id = bill['bill_id'].replace(' ', '%20')
         session = bill['session']
-        biennium = "%s-%s" % (session[0:4], session[7:9])
-        begin_date = "%s-01-10T00:00:00" % session[0:4]
-        end_date = "%d-01-10T00:00:00" % (int(session[5:9]) + 1)
-
         chamber = bill['chamber']
 
-        url = "http://apps.leg.wa.gov/billinfo/summary.aspx?bill=%s&year=%s" % (
-            bill_num,
-            biennium
-        )
+        url = ("http://apps.leg.wa.gov/billinfo/summary.aspx?bill={}&year={}".
+               format(bill_num, self.biennium))
 
         try:
             page = self.urlopen(url)
@@ -272,13 +302,11 @@ class WABillScraper(BillScraper):
                     raise Exception(msg)
 
     def scrape_votes(self, bill):
-        session = bill['session']
-        biennium = "%s-%s" % (session[0:4], session[7:9])
         bill_num = bill['bill_id'].split()[1]
 
         url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
                "GetRollCalls?billNumber=%s&biennium=%s" % (
-                   bill_num, biennium))
+                   bill_num, self.biennium))
         page = self.urlopen(url)
         page = lxml.etree.fromstring(page.bytes)
 
