@@ -25,7 +25,18 @@ class OHBillScraper(BillScraper):
 
             
         else:
-            chamber_dict = {"Senate":"upper","House":"lower","House of Representatives":"lower"}
+            chamber_dict = {"Senate":"upper","House":"lower","House of Representatives":"lower","house":"lower","senate":"upper"}
+            
+            #so presumanbly not everything passes, but we haven't
+            #seen anything not pass yet, so we'll need to wait
+            #till it fails and get the right language in here
+            vote_results = {"approved":True,
+                            "passed":True,
+                            "adopted":True,
+                            "true":True,
+                            "false":False,
+                            True:True,
+                            False:False}
 
             action_dict = {"ref_ctte_100":"committee:referred",
                             "intro_100":"bill:introduced",
@@ -83,7 +94,6 @@ class OHBillScraper(BillScraper):
                     for bill_version in bill_versions[b].values():
                         if not bill:
                             bill_id = bill_version["number"]
-                            print bill_id
                             title = bill_version["shorttitle"] or bill_version["longtitle"]
 
                             title = title.strip()
@@ -116,6 +126,8 @@ class OHBillScraper(BillScraper):
 
                             #actions
                             blacklist = ["/solarapi/v1/general_assembly_131/resolutions/lr_131_0035-1/actions"]
+                            #the page in the blacklist just plain old failed to load
+                            #and everything got stuck
                             if bill_version["action"][0]["link"] not in blacklist:
                                 action_doc = self.get(base_url+bill_version["action"][0]["link"])
 
@@ -146,6 +158,17 @@ class OHBillScraper(BillScraper):
                             self.add_document(all_synopsis,bill_id,"synopsis",bill,first_page)
                             self.add_document(all_analysis,bill_id,"analysis",bill,first_page)
 
+                            #todo: votes, committee votes
+                            vote_url = base_url+bill_version["votes"][0]["link"]
+                            vote_doc = self.get(vote_url)
+                            votes = vote_doc.json()
+                            self.process_vote(votes,vote_url,bill,legislators,chamber_dict,vote_results)
+
+                            vote_url = base_url+bill_version["cmtevotes"][0]["link"]
+                            vote_doc = self.get(vote_url)
+                            votes = vote_doc.json()
+                            self.process_vote(votes,vote_url,bill,legislators,chamber_dict,vote_results)
+
 
                         #this stuff is version-specific
                         version_name = bill_version["version"]
@@ -163,6 +186,7 @@ class OHBillScraper(BillScraper):
             page = self.get(base_url+page["nextLink"])
             page = page.json()
             yield page
+
 
     def get_other_data_source(self,first_page,base_url,source_name):
         #produces a dictionary from bill_id to a list of
@@ -187,8 +211,6 @@ class OHBillScraper(BillScraper):
     def add_document(self,documents,bill_id,type_of_document,bill,first_page):
         try:
             documents = documents[bill_id]
-            print bill_id
-            print type_of_document
         except KeyError:
             return
         for item in documents:
@@ -203,7 +225,7 @@ class OHBillScraper(BillScraper):
     def get_legislator_ids(self,base_url):
         legislators = {}
         for chamber in ["House", "Senate"]:
-            doc = self.get(base_url+"chamber/{chamber}/legislators".format(chamber=chamber))
+            doc = self.get(base_url+"chamber/{chamber}/legislators?per_page=100".format(chamber=chamber))
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 legislators[leg["med_id"]] = leg["displayname"]
@@ -213,6 +235,60 @@ class OHBillScraper(BillScraper):
 
     def get_sponsor_name(self,sponsor):
         return " ".join([sponsor["firstname"],sponsor["lastname"]])
+
+    def process_vote(self,votes,url,bill,legislators,chamber_dict,vote_results):
+        for v in votes["items"]:
+            try:
+                chamber = chamber_dict[v["chamber"]]
+            except KeyError:
+                chamber = "lower" if "h" in v["assocdoc"] else "upper"
+            try:
+                date = datetime.datetime.strptime(v["date"],"%m/%d/%y")
+            except KeyError:
+                try:
+                    date = datetime.datetime.strptime(v["occurred"],"%m/%d/%y")
+                except KeyError:
+                    self.logger.warning("No date found for vote, skipping")
+                    continue
+            try:
+                motion = v["action"]
+            except KeyError:
+                motion = v["motiontype"]
+            try:
+                result = v["results"].lower()
+            except KeyError:
+                result = v["passed"]
+
+            passed = vote_results[result]
+            committee = None
+            if "committee" in v:
+                vote = Vote(chamber,date,motion,passed,0,0,0,yes_votes=[],no_votes=[],other_votes=[],committee=v["committee"])
+            else:
+                vote = Vote(chamber,date,motion,passed,0,0,0,yes_votes=[],no_votes=[],other_votes=[])
+            #the yea and nay counts are not displayed, but vote totals are
+            #and passage status is.
+            if not "yeas" in v:
+                self.logger.warning("there is no actual vote information, skipping")
+                continue
+            for voter_id in v["yeas"]:
+                vote["yes_votes"].append(legislators[voter_id])
+                vote["yes_count"] += 1
+            for voter_id in v["nays"]:
+                vote["no_votes"].append(legislators[voter_id])
+                vote["no_count"] += 1
+            if "absent" in v:
+                for voter_id in v["absent"]:
+                    vote["other_votes"].append(legislators[voter_id])
+                    vote["other_count"] += 1
+            if "excused" in v:
+                for voter_id in v["excused"]:
+                    vote["other_votes"].append(legislators[voter_id])
+                    vote["other_count"] += 1
+
+            vote.add_source(url)
+
+            bill.add_vote(vote)
+
 
     def old_scrape(self,session):
         status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
