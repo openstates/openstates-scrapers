@@ -37,7 +37,7 @@ class WABillScraper(BillScraper, LXMLMixin):
                 if match:
                     self._subjects[match.group()].append(subject)
 
-    def _load_versions(self, chamber, session):
+    def _load_versions(self, chamber):
         self.versions = {}
         base_url = ('http://lawfilesext.leg.wa.gov/Biennium/{}/Htm/Bills/'.
                     format(self.biennium))
@@ -91,10 +91,39 @@ class WABillScraper(BillScraper, LXMLMixin):
                     'mimetype': 'text/html'
                 })
 
+    def _load_amendments(self, chamber):
+        chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
+        url = ('http://lawfilesext.leg.wa.gov/Biennium/{}'
+               '/Htm/Amendments/{}/'.format(self.biennium, chamber))
+        self.amendments = {}
+
+        doc = self.lxmlize(url)
+        amendments = doc.xpath('//a')[1:]
+        for document in amendments:
+            (link, ) = document.xpath('@href')
+            (text, ) = document.xpath('text()')
+
+            (bill_number, amendment_title) = re.search(r'''(?x)
+                ^(\d+)  # Bill number
+                (?:-S\d?(?:\.E)?)?\s  # Substitution and engrossment indicators
+                (?:AM[HS])\s  # Body in which amendment took place
+                (.*?)  # Remainder of amendment name, usually sponsors and ID
+                \.htm$''',
+                text).groups()
+
+            if not self.amendments.get(bill_number):
+                self.amendments[bill_number] = []
+            self.amendments[bill_number].append({
+                'name': 'Amendment ({})'.format(amendment_title),
+                'url': link,
+                'mimetype': 'text/html'
+            })
+
     def scrape(self, chamber, session):
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
 
-        self._load_versions(chamber, session)
+        self._load_versions(chamber)
+        self._load_amendments(chamber)
 
         bill_id_list = []
         year = int(session[0:4])
@@ -177,6 +206,11 @@ class WABillScraper(BillScraper, LXMLMixin):
         except KeyError:
             bill['versions'] = []
             self.warning("No versions were found for {}".format(bill_id))
+
+        try:
+            bill['documents'] = self.amendments[bill_num]
+        except KeyError:
+            bill['documents'] = []
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
