@@ -128,6 +128,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
                     "of the House and the Senate": "",
                     "or upon final adjourn./recess": "",
                     "or 30 minutes upon adjournment": "",
+                    "30 minutes upon adjourn.": "",
                     "or the Senate Finance Committee": "",
                     "During reading and referral of bills": "",
                     "and House Chambers, whichever is later.": "",

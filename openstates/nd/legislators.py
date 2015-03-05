@@ -28,8 +28,8 @@ class NDLegislatorScraper(LegislatorScraper):
         page = self.urlopen(main_url)
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
-        for person in page.xpath("//div[contains(@class, 'all-members')]//a"):
-            self.scrape_legislator_page(term, person.attrib['href'])
+        for person_url in page.xpath('//div[contains(@class, "all-members")]/div[@class="name"]/a/@href'):
+            self.scrape_legislator_page(term, person_url)
 
 
     def scrape_legislator_page(self, term, url):

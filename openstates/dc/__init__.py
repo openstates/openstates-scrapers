@@ -4,6 +4,7 @@ from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import DCBillScraper
 from .legislators import DCLegislatorScraper
 from .committees import DCCommitteeScraper
+from .events import DCEventScraper
 
 metadata = dict(
     name='District of Columbia',

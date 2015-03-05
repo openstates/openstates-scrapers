@@ -62,7 +62,6 @@ class WALegislatorScraper(LegislatorScraper):
                 continue
 
             email = xpath(member, "string(wa:Email)")
-            leg_id = xpath(member, "string(wa:Id)")
             phone = xpath(member, "string(wa:Phone)")
 
             last = xpath(member, "string(wa:LastName)")
@@ -109,7 +108,6 @@ class WALegislatorScraper(LegislatorScraper):
 
             leg = Legislator(term, chamber, district,
                              name, '', '', '', party,
-                             _code=leg_id,
                              photo_url=photo_url, url=leg_url)
             leg.add_source(leg_url)
 

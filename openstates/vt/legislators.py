@@ -22,6 +22,10 @@ class VTLegislatorScraper(LegislatorScraper):
             # Strip whitespace from strings
             info = { k:v.strip() for k, v in info.iteritems() }
 
+            # First and last initials must be uppercased for the photo URL
+            photo_name = info['Email'].replace("@leg.state.vt.us", "")
+            photo_name = photo_name[ :2].upper() + photo_name[2: ]
+
             leg = Legislator(
                     term=term,
                     chamber=('upper' if info['Title'] == 'Senator' else 'lower'),
@@ -31,8 +35,7 @@ class VTLegislatorScraper(LegislatorScraper):
                     full_name="{0} {1}".format(info['FirstName'], info['LastName']),
                     photo_url=
                             'http://legislature.vermont.gov/assets/Documents/Legislators/{}.jpg'.
-                            format(info['Email'][ :-(len("@leg.state.vt.us"))]
-                            )
+                            format(photo_name)
                     )
             leg.add_source(legislator_dump_url)
             leg.add_office(

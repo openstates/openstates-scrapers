@@ -122,6 +122,7 @@ metadata = {
     'feature_flags': ['subjects',
     'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
+        'February 2015 Extraordinary Session',
         '2007 Regular Session', 'April 2008 Special Session',
         'March 2008 Special Session', 'December 2007 Special Session',
         'October 2007 Special Session', 'January 2007 Special Session',
@@ -134,7 +135,6 @@ metadata = {
         'October 1999 Special Session', '1997 Regular Session',
         'April 1998 Special Session', '1995 Regular Session',
         'January 1995 Special Session', 'September 1995 Special Session']
-
 }
 
 def session_list():

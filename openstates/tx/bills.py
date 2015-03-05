@@ -1,114 +1,119 @@
-import os
-import re
-from urlparse import urljoin
 import datetime
+import ftplib
+import re
+import xml.etree.cElementTree as etree
 
-from billy.utils import urlescape
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
-
-from .utils import chamber_name, parse_ftp_listing
-
-import lxml.etree
 
 
 class TXBillScraper(BillScraper):
     jurisdiction = 'tx'
-    _ftp_root = 'ftp://ftp.legis.state.tx.us/'
+    _FTP_ROOT = 'ftp.legis.state.tx.us'
+    CHAMBERS = {'H': 'lower', 'S': 'lower'}
+    NAME_SLUGS = {
+        'I': 'Introduced',
+        'E': 'Engrossed',
+        'S': 'Senate Committee Report',
+        'H': 'House Committee Report',
+        'F': 'Enrolled'
+    }
 
-    def scrape(self, chamber, session):
-        """Scrapes information on all bills for a given chamber and session."""
+    def _get_ftp_files(self, root, dir_):
+        ''' Recursively traverse an FTP directory, returning all files '''
+
+        ftp = ftplib.FTP(self._FTP_ROOT)
+        ftp.login()
+        for item in self._crawl_ftp(ftp, root, dir_):
+            yield item
+
+    def _crawl_ftp(self, ftp, root, dir_):
+        self.log('Searching an FTP folder for files ({})'.format(dir_))
+        ftp.cwd('/' + dir_)
+
+        lines = []
+        ftp.retrlines('LIST', lines.append)
+        for line in lines:
+            (_date, _time, is_dir, _file_size, name) = re.search(r'''(?x)
+                    ^(\d{2}-\d{2}-\d{2})\s+  # Date in mm-dd-yy
+                    (\d{2}:\d{2}[AP]M)\s+  # Time in hh:mmAM/PM
+                    (<DIR>)?\s+  # Directories will have an indicating flag
+                    (\d+)?\s+  # Files will have their size in bytes
+                    (.+?)\s*$  # Directory or file name is the remaining text
+                    ''', line).groups()
+            if is_dir:
+                for item in self._crawl_ftp(
+                        ftp, root, '/'.join([dir_, name])):
+                    yield item
+            else:
+                yield '/'.join(['ftp://' + root, dir_, name])
+
+    def scrape(self, session, chambers):
         self.validate_session(session)
 
-        if len(session) == 2:
-            session = '%sR' % session
+        session_code = session
+        if len(session_code) == 2:
+            session_code = session_code + 'R'
+        assert len(session_code) == 3, "Unable to handle the session name"
 
-        for bill_type in ['bills', 'concurrent_resolutions',
-                          'joint_resolutions', 'resolutions']:
-            # This is the billhistory directory for a particular type of bill
-            # (e.g. senate resolutions).  It should contain subdirectories
-            # with names like "SR00001_SR00099".
-            history_dir_url = urljoin(
-                self._ftp_root, '/bills/%s/billhistory/%s_%s/' % (
-                    session, chamber_name(chamber), bill_type))
+        self.versions = []
+        version_files = self._get_ftp_files(self._FTP_ROOT,
+                                            'bills/{}/billtext/html'.
+                                            format(session_code))
+        for item in version_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.versions.append((bill_id, item))
 
-            history_groups_listing = self.urlopen(history_dir_url)
-            # A group_dir has a name like "HJR00200_HJR00299" and contains
-            # the files for a group of 100 bills.
-            for group_dir in parse_ftp_listing(history_groups_listing):
-                self.scrape_group(
-                    chamber, session, history_dir_url, group_dir)
+        self.analyses = []
+        analysis_files = self._get_ftp_files(self._FTP_ROOT,
+                                             'bills/{}/analysis/html'.
+                                             format(session_code))
+        for item in analysis_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.analyses.append((bill_id, item))
 
-    def scrape_group(self, chamber, session, history_dir_url, group_dir):
-        """Scrapes information on all bills in a given group of 100 bills."""
-        # Under billhistory, each group dir has a name like HBnnnnn_HBnnnnn,
-        # HCRnnnnn_HCRnnnnn, HJRnnnnn_HJRnnnnn, HRnnnnn_HRnnnnn.
-        history_group_url = urljoin(history_dir_url, group_dir) + '/'
-        # For each group_dir under billhistory, there is a corresponding dir in
-        # billtext/html containing the bill versions (texts).  These dirs have
-        # similar names, except the prefix is "HC", "HJ", "SC", "SJ" for
-        # concurrent/joint resolutions instead of "HCR", "HJR", "SCR", "SJR".
+        self.fiscal_notes = []
+        fiscal_note_files = self._get_ftp_files(self._FTP_ROOT,
+                                                'bills/{}/fiscalnotes/html'.
+                                                format(session_code))
+        for item in fiscal_note_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.fiscal_notes.append((bill_id, item))
 
-        # Now get the history and version data for each bill.
-        histories_list = self.urlopen(history_group_url)
-        for history_file in parse_ftp_listing(histories_list):
-            url = urljoin(history_group_url, history_file)
-            bill_num = int(re.search(r'\d+', history_file).group(0))
-            self.scrape_bill(chamber, session, url, history_group_url,
-                             bill_num)
+        self.witnesses = []
+        witness_files = self._get_ftp_files(self._FTP_ROOT,
+                                            'bills/{}/witlistbill/html'.
+                                            format(session_code))
+        for item in witness_files:
+            bill_id = item.split('/')[-1].split('.')[0]
+            bill_id = ' '.join(re.search(r'([A-Z]{2})R?0+(\d+)',
+                               bill_id).groups())
+            self.witnesses.append((bill_id, item))
 
-    def scrape_bill(self, chamber, session, history_url, history_group_url,
-                   billno):
-        """Scrapes the information for a single bill."""
-        history_xml = self.urlopen(history_url)
-        if "Bill does not exist." in history_xml:
-            return
+        history_files = self._get_ftp_files(self._FTP_ROOT,
+                                            'bills/{}/billhistory'.
+                                            format(session_code))
+        for bill_url in history_files:
+            self.scrape_bill(session, bill_url)
 
-        bill = self.parse_bill_xml(chamber, session, history_xml)
-        if bill is None:
-            return
+    def scrape_bill(self, session, history_url):
+        history_xml = self.urlopen(history_url).encode('ascii', 'ignore')
+        root = etree.fromstring(history_xml)
 
-        bill.add_source(history_url)
-
-        text_group_url = history_group_url.replace(
-            '/billhistory/', '/billtext/html/')
-        text_group_url = re.sub('([HS][CJ])R', '\\1', text_group_url)
-        version_urls = {}
-        # Get the list of all the bill versions in this group, and collect
-        # the filenames together by bill number.
-        versions_list = self.urlopen(text_group_url)
-        for version_file in parse_ftp_listing(versions_list):
-            url = urljoin(text_group_url, version_file)
-            bill_num = int(re.search(r'\d+', version_file).group(0))
-            version_urls.setdefault(bill_num, []).append(url)
-
-        if billno in version_urls:
-            version_urls = version_urls[billno] #  Sorry :(
-            # We need to get the versions from inside here because some bills
-            # have XML saying just "no such bill", so we hit an ftp error
-            # because there are no bill versions where we expect them.
-            #
-            # It's a good idea to somehow cache this list, but we need to make
-            # sure it exists first. FIXME(nice-to-have)
-
-            for version_url in version_urls:
-                bill.add_source(version_url)
-                version_name = version_url.split('/')[-1]
-                version_name = os.path.splitext(version_name)[0]  # omit '.htm'
-                bill.add_version(version_name, version_url,
-                                 mimetype='text/html')
-
-        self.save_bill(bill)
-
-    def parse_bill_xml(self, chamber, session, txt):
-        root = lxml.etree.fromstring(txt.bytes)
-        bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
         bill_title = root.findtext("caption")
-        if bill_title is None:
-            return None
+        if (bill_title is None or
+                "Bill does not exist" in history_xml):
+            self.warning("Bill does not appear to exist")
+            return
+        bill_id = ' '.join(root.attrib['bill'].split(' ')[1:])
 
-        if session[2] == 'R':
-            session = session[0:2]
+        chamber = self.CHAMBERS[bill_id[0]]
 
         if bill_id[1] == 'B':
             bill_type = ['bill']
@@ -123,17 +128,49 @@ class TXBillScraper(BillScraper):
 
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
 
-        versions = root.xpath("//versions")
+        bill.add_source(history_url)
+
+        bill['subjects'] = []
+        for subject in root.iterfind('subjects/subject'):
+            bill['subjects'].append(subject.text.strip())
+
+        versions = [x for x in self.versions if x[0] == bill_id]
         for version in versions:
-            versionz = version.xpath(".//version")
-            for v in versionz:
-                description = v.xpath(".//versionDescription")[0].text
-                html_url = v.xpath(".//WebHTMLURL")[0].text
-                bill.add_version(description, html_url, 'text/html')
+            bill.add_version(
+                name=self.NAME_SLUGS[version[1][-5]],
+                url=version[1],
+                mimetype='text/html'
+            )
+
+        analyses = [x for x in self.analyses if x[0] == bill_id]
+        for analysis in analyses:
+            bill.add_document(
+                name="Analysis ({})".format(self.NAME_SLUGS[analysis[1][-5]]),
+                url=analysis[1],
+                mimetype='text/html'
+            )
+
+        fiscal_notes = [x for x in self.fiscal_notes if x[0] == bill_id]
+        for fiscal_note in fiscal_notes:
+            bill.add_document(
+                name="Fiscal Note ({})".format(self.NAME_SLUGS
+                                               [fiscal_note[1][-5]]),
+                url=fiscal_note[1],
+                mimetype='text/html'
+            )
+
+        witnesses = [x for x in self.witnesses if x[0] == bill_id]
+        for witness in witnesses:
+            bill.add_document(
+                name="Witness List ({})".format(self.NAME_SLUGS
+                                                [witness[1][-5]]),
+                url=witness[1],
+                mimetype='text/html'
+            )
 
         for action in root.findall('actions/action'):
             act_date = datetime.datetime.strptime(action.findtext('date'),
-                                            "%m/%d/%Y").date()
+                                                  "%m/%d/%Y").date()
 
             extra = {}
             extra['action_number'] = action.find('actionNumber').text
@@ -148,6 +185,7 @@ class TXBillScraper(BillScraper):
             desc = action.findtext('description').strip()
 
             if desc == 'Scheduled for public hearing on . . .':
+                self.warning("Skipping public hearing action with no date")
                 continue
 
             introduced = False
@@ -184,7 +222,8 @@ class TXBillScraper(BillScraper):
                     atype.append('bill:introduced')
             elif desc == "Passed as amended":
                 atype = 'bill:passed'
-            elif desc.startswith('Referred to') or desc.startswith("Recommended to be sent to "):
+            elif (desc.startswith('Referred to') or
+                    desc.startswith("Recommended to be sent to ")):
                 atype = 'committee:referred'
             elif desc == "Reported favorably w/o amendment(s)":
                 atype = 'committee:passed'
@@ -217,16 +256,16 @@ class TXBillScraper(BillScraper):
                 bill.add_sponsor('primary', author, official_type='author')
         for coauthor in root.findtext('coauthors').split(' | '):
             if coauthor != "":
-                bill.add_sponsor('cosponsor', coauthor, official_type='coauthor')
+                bill.add_sponsor('cosponsor',
+                                 coauthor,
+                                 official_type='coauthor')
         for sponsor in root.findtext('sponsors').split(' | '):
             if sponsor != "":
                 bill.add_sponsor('primary', sponsor, official_type='sponsor')
         for cosponsor in root.findtext('cosponsors').split(' | '):
             if cosponsor != "":
-                bill.add_sponsor('cosponsor', cosponsor, official_type='cosponsor')
+                bill.add_sponsor('cosponsor',
+                                 cosponsor,
+                                 official_type='cosponsor')
 
-        bill['subjects'] = []
-        for subject in root.iterfind('subjects/subject'):
-            bill['subjects'].append(subject.text.strip())
-
-        return bill
+        self.save_bill(bill)
