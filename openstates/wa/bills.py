@@ -20,6 +20,12 @@ class WABillScraper(BillScraper, LXMLMixin):
     categorizer = Categorizer()
     _subjects = defaultdict(list)
 
+    ORDINALS = {
+        '2': 'Second',
+        '3': 'Third',
+        '': ''
+    }
+
     def build_subject_mapping(self, year):
         url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s' % year
         html = self.urlopen(url)
@@ -49,10 +55,6 @@ class WABillScraper(BillScraper, LXMLMixin):
             'Joint Resolutions': 'JR'
         }
         oddly_formed_types = ['Resolutions', 'Joint Memorials']
-        ordinals = {
-            '2': 'Second',
-            '3': 'Third'
-        }
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
 
         for bill_type in bill_types.keys():
@@ -77,11 +79,11 @@ class WABillScraper(BillScraper, LXMLMixin):
                 if is_substitute:
                     name = "Substitute " + name
                     if substitute_num:
-                        name = " ".join([ordinals[substitute_num], name])
+                        name = " ".join([self.ORDINALS[substitute_num], name])
                 if is_engrossed:
                     name = "Engrossed " + name
                     if engrossed_num:
-                        name = " ".join([ordinals[engrossed_num], name])
+                        name = " ".join([self.ORDINALS[engrossed_num], name])
 
                 if not self.versions.get(bill_id):
                     self.versions[bill_id] = []
@@ -91,39 +93,71 @@ class WABillScraper(BillScraper, LXMLMixin):
                     'mimetype': 'text/html'
                 })
 
-    def _load_amendments(self, chamber):
+    def _load_documents(self, chamber):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-        url = ('http://lawfilesext.leg.wa.gov/Biennium/{}'
-               '/Htm/Amendments/{}/'.format(self.biennium, chamber))
-        self.amendments = {}
+        self.documents = {}
 
-        doc = self.lxmlize(url)
-        amendments = doc.xpath('//a')[1:]
-        for document in amendments:
-            (link, ) = document.xpath('@href')
-            (text, ) = document.xpath('text()')
+        document_types = ['Amendments', 'Bill Reports', 'Digests']
+        for document_type in document_types:
+            url = ('http://lawfilesext.leg.wa.gov/Biennium/{0}'
+                   '/Htm/{1}/{2}/'.format(self.biennium,
+                                          document_type,
+                                          chamber))
 
-            (bill_number, amendment_title) = re.search(r'''(?x)
-                ^(\d+)  # Bill number
-                (?:-S\d?(?:\.E)?)?\s  # Substitution and engrossment indicators
-                (?:AM[HS])\s  # Body in which amendment took place
-                (.*?)  # Remainder of amendment name, usually sponsors and ID
-                \.htm$''',
-                text).groups()
+            doc = self.lxmlize(url)
+            documents = doc.xpath('//a')[1:]
+            for document in documents:
 
-            if not self.amendments.get(bill_number):
-                self.amendments[bill_number] = []
-            self.amendments[bill_number].append({
-                'name': 'Amendment ({})'.format(amendment_title),
-                'url': link,
-                'mimetype': 'text/html'
-            })
+                (link, ) = document.xpath('@href')
+                (text, ) = document.xpath('text()')
+
+                (bill_number, is_substitute, substitute_num, is_engrossed,
+                    engrossed_num, document_title) = re.search(r'''(?x)
+                    ^(\d+)  # Bill number
+                    (-S(\d)?)?  # Substitution indicator
+                    (\.E(\d)?)?  # Engrossment indicator
+                    \s?(.*?)  # Document name
+                    \.htm$''',
+                    text).groups()
+
+                if document_type == "Amendments":
+                    name = "Amendment {}".format(document_title[4:])
+
+                elif document_type == "Bill Reports":
+                    name = " ".join([
+                        x for x in
+                        [
+                            "Report",
+                            "for" if (is_substitute or is_engrossed) else "",
+                            self.ORDINALS[engrossed_num] if engrossed_num else "",
+                            "Engrossed" if is_engrossed else "",
+                            self.ORDINALS[substitute_num] if substitute_num else "",
+                            "Substitute" if is_substitute else ""
+                        ]
+                        if x.strip()
+                    ])
+
+                elif document_type == "Digests":
+                    name = "Digest"
+                    if is_substitute:
+                        name = "Digest for Substitute"
+                        if substitute_num:
+                            name = "Digest for {} Substitute".format(
+                                self.ORDINALS[substitute_num])
+
+                if not self.documents.get(bill_number):
+                    self.documents[bill_number] = []
+                self.documents[bill_number].append({
+                    'name': name,
+                    'url': link,
+                    'mimetype': 'text/html'
+                })
 
     def scrape(self, chamber, session):
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
 
         self._load_versions(chamber)
-        self._load_amendments(chamber)
+        self._load_documents(chamber)
 
         bill_id_list = []
         year = int(session[0:4])
@@ -208,9 +242,9 @@ class WABillScraper(BillScraper, LXMLMixin):
             self.warning("No versions were found for {}".format(bill_id))
 
         try:
-            bill['documents'] = self.amendments[bill_num]
+            bill['documents'] = self.documents[bill_num]
         except KeyError:
-            bill['documents'] = []
+            pass
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
