@@ -112,7 +112,7 @@ class OHBillScraper(BillScraper):
 
                             #this stuff is the same for all versions
 
-                            bill.add_source(first_page+doc_type+bill_id)
+                            bill.add_source(first_page+doc_type+"/"+bill_id)
 
                             sponsors = bill_version["sponsors"]
                             for sponsor in sponsors:
@@ -138,8 +138,8 @@ class OHBillScraper(BillScraper):
                                     try:
                                         action_type = action_dict[action["actioncode"]]
                                     except KeyError:
-                                        self.logger.warning("Action code {code}: {desc} not seen before.".format(code = action["actioncode"],desc = action_desc))
-                                        action_type = "other"
+                                        raise AssertionError("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
+                                        
 
                                     date = datetime.datetime.strptime(action["datetime"],"%Y-%m-%dT%H:%M:%S")
 
@@ -168,6 +168,24 @@ class OHBillScraper(BillScraper):
                             vote_doc = self.get(vote_url)
                             votes = vote_doc.json()
                             self.process_vote(votes,vote_url,bill,legislators,chamber_dict,vote_results)
+
+
+                            #we have never seen a veto or a disapprove, but they seem important.
+                            #so we'll check and throw an error if we find one
+                            #life is fragile. so are our scrapers.
+                            if "veto" in bill_version:
+                                veto_url = base_url+bill_version["veto"][0]["link"]
+                                veto_json = self.get(veto_url).json()
+                                if len(veto_json["items"]) > 0:
+                                    raise AssertionError("Whoa, a veto! We've never gotten one before. Go write some code to deal with it: {}".format(veto_url))
+
+                            if "disapprove" in bill_version:
+                                disapprove_url = base_url+bill_version["disapprove"][0]["link"]
+                                disapprove_json = self.get(disapprove_url).json()
+                                if len(disapprove_json["items"]) > 0:
+                                    raise AssertionError("Whoa, a disapprove! We've never gotten one before. Go write some code to deal with it: {}".format(disapprove_url))
+
+
 
 
                         #this stuff is version-specific
