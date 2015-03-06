@@ -158,7 +158,6 @@ class OHBillScraper(BillScraper):
                             self.add_document(all_synopsis,bill_id,"synopsis",bill,first_page)
                             self.add_document(all_analysis,bill_id,"analysis",bill,first_page)
 
-                            #todo: votes, committee votes
                             vote_url = base_url+bill_version["votes"][0]["link"]
                             vote_doc = self.get(vote_url)
                             votes = vote_doc.json()
@@ -197,7 +196,7 @@ class OHBillScraper(BillScraper):
                     self.save_bill(bill)
 
     def pages(self,base_url, first_page):
-        page = self.get(first_page)
+        page = self.get(first_page+"?per_page=300")
         page = page.json()
         yield page
         while "nextLink" in page:
