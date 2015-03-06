@@ -56,7 +56,6 @@ class OHBillScraper(BillScraper):
                             "imm_consid_360": "bill:passed",
                             "refer_213":"other"}
 
-            
 
             base_url = "http://search-prod.lis.state.oh.us"
             first_page = base_url + "/solarapi/v1/general_assembly_{session}/".format(session=session)
@@ -254,6 +253,15 @@ class OHBillScraper(BillScraper):
             documents = documents[bill_id]
         except KeyError:
             return
+
+        leg_ver_types = {"IN":"Introduction",
+                            "RS": "Reported: Senate",
+                            "PS":"Passed: Senate",
+                            "RH": "Reported: House",
+                            "PH": "Passed: House",
+                            "":"",
+                            "ICS":""}
+
         for item in documents:
             if type_of_document == "amendment":
                 name = item["amendnum"] + " " + item["version"]
@@ -261,12 +269,14 @@ class OHBillScraper(BillScraper):
                 name = item["name"] or type_of_document
             link = base_url+item["link"]+"?format=pdf"
             try:
-                self.get(link)
+                self.head(link)
             except scrapelib.HTTPError:
                 self.logger.warning("The link to doc {name} does not exist, skipping".format(name=name))
                 continue
             if "legacyver" in item:
-                name = name+": "+item["legacyver"]
+                ver = leg_ver_types[item["legacyver"]]
+                if ver:
+                    name = name+": "+ver
             bill.add_document(name,link,mimetype="application/pdf")
 
 
