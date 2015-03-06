@@ -57,7 +57,7 @@ class OHBillScraper(BillScraper):
 
             
 
-            base_url = "http://search-prod.lis.state.oh.us/"
+            base_url = "http://search-prod.lis.state.oh.us"
             first_page = base_url + "/solarapi/v1/general_assembly_{session}/".format(session=session)
             legislators = self.get_legislator_ids(first_page)
             all_amendments = self.get_other_data_source(first_page,base_url,"amendments")
