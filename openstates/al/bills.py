@@ -49,14 +49,25 @@ class ALBillScraper(BillScraper):
     def accept_response(self, response, **kwargs):
         # Post requests that are redirected instead of rejected are fine
         if response.status_code == 302:
-            return True
+            # Also, don't allow redirects from bill information pages
+            if 'SESSBillResult.aspx?BILL=' in response.request.url:
+                return False
+            else:
+                return True
         # Errored requests should be retried
         elif response.status_code >= 400:
             return False
         # Standard responses are alright if they have an ASP.NET VIEWSTATE
         # If they don't, it means the page is a trivial error message
         else:
-            return bool(lxml.html.fromstring(response.text).xpath('//input[@id="__VIEWSTATE"]/@value'))
+            if not lxml.html.fromstring(response.text).xpath('//input[@id="__VIEWSTATE"]/@value'):
+                return False
+            # Also, for bill pages, ensure that they loaded fully
+            elif ('SESSBillResult.aspx?BILL=' in response.request.url and
+                    not lxml.html.fromstring(response.text).xpath('//div[@class="shorttitle"]')):
+                return False
+            else:
+                return True
 
     def _set_session(self, session):
         ''' Activate an ASP.NET session, and set the legislative session '''
@@ -83,6 +94,8 @@ class ALBillScraper(BillScraper):
         self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
     def scrape(self, session, chambers):
+        self.validate_session(session)
+
         self.session = session
         self.session_name = self.metadata['session_details'][self.session]['_scraped_name']
         self.session_id = self.metadata['session_details'][self.session]['internal_id']
@@ -171,11 +184,7 @@ class ALBillScraper(BillScraper):
 
             bill_url = 'http://alisondb.legislature.state.al.us/Alison/SESSBillResult.aspx?BILL={}'.format(bill_id)
             bill.add_source(bill_url)
-            try:
-                bill_html = self.get(url=bill_url).text
-            except AssertionError:
-                self.warning("The webpage for bill {} isn't loading, so it won't be saved".format(bill_id))
-                continue
+            bill_html = self.get(url=bill_url, allow_redirects=False).text
             bill_doc = lxml.html.fromstring(bill_html)
 
             title = bill_doc.xpath('//div[@class="shorttitle"]')[0].text_content().strip()
