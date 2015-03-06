@@ -99,7 +99,7 @@ class OHBillScraper(BillScraper):
 
                             title = title.strip()
 
-                            chamber = chamber_dict[bill_version["chamber"]]
+                            chamber = "lower" if "h" in bill_id else "upper"
 
                             subjects = []
                             for subj in bill_version["subjectindexes"]:
@@ -107,9 +107,29 @@ class OHBillScraper(BillScraper):
                                     subjects.append(subj["primary"])
                                 except KeyError:
                                     pass
+                                try:
+                                    secondary_subj = subj["secondary"]
+                                except KeyError:
+                                    secondary_subj = ""
+                                if secondary_subj:
+                                    subjects.append(secondary_subj)
 
 
-                            bill = Bill(session,chamber,bill_id,title,subjects=subjects,type=doc_type)
+
+                            #they use bill id of format HB 1 on the site
+                            #but hb1 in the API.
+    
+                            for idx,char in enumerate(bill_id):
+                                try:
+                                    int(char)
+                                except ValueError:
+                                    continue
+
+                                display_id = bill_id[:idx]+" "+bill_id[idx:]
+                                break
+
+
+                            bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
 
                             #this stuff is the same for all versions
 
@@ -157,10 +177,10 @@ class OHBillScraper(BillScraper):
                                                     type = action_type,
                                                     committees = committees)
 
-                            self.add_document(all_amendments, bill_id,"amendment",bill,first_page)
-                            self.add_document(all_fiscals,bill_id,"fiscal",bill,first_page)
-                            self.add_document(all_synopsis,bill_id,"synopsis",bill,first_page)
-                            self.add_document(all_analysis,bill_id,"analysis",bill,first_page)
+                            self.add_document(all_amendments, bill_id,"amendment",bill,base_url)
+                            self.add_document(all_fiscals,bill_id,"fiscal",bill,base_url)
+                            self.add_document(all_synopsis,bill_id,"synopsis",bill,base_url)
+                            self.add_document(all_analysis,bill_id,"analysis",bill,base_url)
 
                             vote_url = base_url+bill_version["votes"][0]["link"]
                             vote_doc = self.get(vote_url)
@@ -194,7 +214,7 @@ class OHBillScraper(BillScraper):
                         #this stuff is version-specific
                         version_name = bill_version["version"]
                         version_link = base_url+bill_version["pdfDownloadLink"]
-                        mimetype = "application/pdf" if version_link.endswith("pdf") else None
+                        mimetype = "application/pdf" if version_link.endswith("pdf") else "application/octet-stream"
                         bill.add_version(version_name,version_link,mimetype=mimetype)
 
                     self.save_bill(bill)
@@ -229,7 +249,7 @@ class OHBillScraper(BillScraper):
 
 
 
-    def add_document(self,documents,bill_id,type_of_document,bill,first_page):
+    def add_document(self,documents,bill_id,type_of_document,bill,base_url):
         try:
             documents = documents[bill_id]
         except KeyError:
@@ -239,7 +259,14 @@ class OHBillScraper(BillScraper):
                 name = item["amendnum"] + " " + item["version"]
             else:
                 name = item["name"] or type_of_document
-            link = first_page+item["link"]+"?format=pdf"
+            link = base_url+item["link"]+"?format=pdf"
+            try:
+                self.get(link)
+            except scrapelib.HTTPError:
+                self.logger.warning("The link to doc {name} does not exist, skipping".format(name=name))
+                continue
+            if "legacyver" in item:
+                name = name+": "+item["legacyver"]
             bill.add_document(name,link,mimetype="application/pdf")
 
 
