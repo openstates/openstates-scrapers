@@ -36,8 +36,20 @@ def parse(key):
     return (leader, val)
 
 
+def normalize(value):
+    for raw, new in (
+        ("\\n", "\n"),
+        ("\\r", "\r"),
+        ("\\t", "\t"),
+    ):
+        value = value.replace(raw, new)
+    return value
 
-def main(fpath):
+
+
+def main(fpath, force="false"):
+    force = True if force.lower() == "force" else False
+
     with open(fpath, 'r') as fd:
         for line in csv.DictReader(fd):
             id_ = line.pop("id").strip()
@@ -47,7 +59,7 @@ def main(fpath):
 
             leg = db.legislators.find_one({"_id": id_})
             locked = leg.get('_locked_fields', [])
-            if 'offices' in locked:
+            if 'offices' in locked and force is False:
                 print("{_id} is already locked - skipping. Please unlock".format(
                     **leg))
                 continue
@@ -56,13 +68,17 @@ def main(fpath):
             for k, v in line.items():
                 if not v.strip() or k in CRUFT:
                     continue
-
                 el, val = parse(k)
-                offices[el][val] = v
+
+                offices[el][val] = normalize(v)
 
             new_offices = []
             for type_, office in offices.items():
                 office['type'] = type_
+
+                if 'name' not in office:
+                    office['name'] = "{} Office".format(type_.title())
+
                 new_offices.append(office)
 
             leg['offices'] = new_offices
