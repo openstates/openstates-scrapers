@@ -53,7 +53,8 @@ class OHBillScraper(BillScraper):
                             "intro_103": ["bill:introduced","bill:passed"],
                             "msg_reso_503": "bill:passed",
                             "intro_107": ["bill:introduced","bill:passed"],
-                            "imm_consid_360": "bill:passed"}
+                            "imm_consid_360": "bill:passed",
+                            "refer_213":"other"}
 
             
 
@@ -128,8 +129,11 @@ class OHBillScraper(BillScraper):
                             blacklist = ["/solarapi/v1/general_assembly_131/resolutions/lr_131_0035-1/actions"]
                             #the page in the blacklist just plain old failed to load
                             #and everything got stuck
-                            if bill_version["action"][0]["link"] not in blacklist:
+                            try:
                                 action_doc = self.get(base_url+bill_version["action"][0]["link"])
+                            except scrapelib.HTTPError:
+                                pass
+                            else:
 
                                 actions = action_doc.json()
                                 for action in actions["items"]:
@@ -161,12 +165,12 @@ class OHBillScraper(BillScraper):
                             vote_url = base_url+bill_version["votes"][0]["link"]
                             vote_doc = self.get(vote_url)
                             votes = vote_doc.json()
-                            self.process_vote(votes,vote_url,bill,legislators,chamber_dict,vote_results)
+                            self.process_vote(votes,vote_url,base_url,bill,legislators,chamber_dict,vote_results)
 
                             vote_url = base_url+bill_version["cmtevotes"][0]["link"]
                             vote_doc = self.get(vote_url)
                             votes = vote_doc.json()
-                            self.process_vote(votes,vote_url,bill,legislators,chamber_dict,vote_results)
+                            self.process_vote(votes,vote_url,base_url,bill,legislators,chamber_dict,vote_results)
 
 
                             #we have never seen a veto or a disapprove, but they seem important.
@@ -253,8 +257,19 @@ class OHBillScraper(BillScraper):
     def get_sponsor_name(self,sponsor):
         return " ".join([sponsor["firstname"],sponsor["lastname"]])
 
-    def process_vote(self,votes,url,bill,legislators,chamber_dict,vote_results):
+    def process_vote(self,votes,url,base_url,bill,legislators,chamber_dict,vote_results):
         for v in votes["items"]:
+            try:
+                v["yeas"]
+            except KeyError:
+                #sometimes the actual vote is buried a second layer deep
+                v = self.get(base_url+v["link"]).json()
+                try:
+                    v["yeas"]
+                except KeyError:
+                    self.logger.warning("No vote info available, skipping")
+                    continue
+
             try:
                 chamber = chamber_dict[v["chamber"]]
             except KeyError:
@@ -284,9 +299,6 @@ class OHBillScraper(BillScraper):
                 vote = Vote(chamber,date,motion,passed,0,0,0,yes_votes=[],no_votes=[],other_votes=[])
             #the yea and nay counts are not displayed, but vote totals are
             #and passage status is.
-            if not "yeas" in v:
-                self.logger.warning("there is no actual vote information, skipping")
-                continue
             for voter_id in v["yeas"]:
                 vote["yes_votes"].append(legislators[voter_id])
                 vote["yes_count"] += 1
@@ -302,6 +314,12 @@ class OHBillScraper(BillScraper):
                     vote["other_votes"].append(legislators[voter_id])
                     vote["other_count"] += 1
 
+            #check to see if there are any other things that look
+            #like vote categories, throw a warning if so
+            for key,val in v.items():
+                if type(val) == list and len(val) > 0 and key not in ["yeas","nays","absent","excused"]:
+                    if val[0] in legislators:
+                        self.logger.warning("{k} looks like a vote type that's not being counted. Double check it?".format(k = key))
             vote.add_source(url)
 
             bill.add_vote(vote)
