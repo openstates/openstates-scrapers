@@ -88,6 +88,8 @@ def main(fpath, force="false"):
             leg['offices'] = new_offices
 
             locked.append("offices")
+            locked = list(set(locked))
+
             leg['_locked_fields'] = locked
             db.legislators.save(leg)
             print(id_)
