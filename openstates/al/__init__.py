@@ -1,5 +1,3 @@
-import datetime
-
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import ALBillScraper
 from .legislators import ALLegislatorScraper
@@ -110,11 +108,15 @@ metadata =  {
 
 
 def session_list():
-    from billy.scrape.utils import url_xpath
-    sessions = url_xpath(
-        'http://alisondb.legislature.state.al.us/alison/alisonlogin.aspx',
-        '//option/text()' )
-    return [s.strip() for s in sessions]
+    import lxml.html
+    import requests
+
+    s = requests.Session()
+    r = s.get('http://alisondb.legislature.state.al.us/alison/alisonlogin.aspx')
+    doc = lxml.html.fromstring(r.text)
+    options = doc.xpath('//option/text()')
+
+    return options
 
 
 def extract_text(doc, data):
