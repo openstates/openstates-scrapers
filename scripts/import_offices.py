@@ -57,7 +57,11 @@ def main(fpath, force="false"):
                 print("Error: Failure on {}".format(line))
                 raise ValueError
 
-            leg = db.legislators.find_one({"_id": id_})
+            leg = db.legislators.find_one({"_all_ids": id_})
+            if leg is None:
+                print("NO SUCH PERSON! {}".format(id_))
+                raise Exception
+
             locked = leg.get('_locked_fields', [])
             if 'offices' in locked and force is False:
                 print("{_id} is already locked - skipping. Please unlock".format(
