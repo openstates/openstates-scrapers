@@ -22,11 +22,12 @@ metadata = {
         {
             "name": "2012-2015",
             "start_year": 2012,
-            "end_year": 2015,
+            "end_year": 2016,
             "sessions": [
                 "2012",
                 "2013",
                 "2014",
+                "2015",
             ]
         }
     ],
@@ -74,6 +75,11 @@ metadata = {
             'display_name': '2014 Regular Session',
             '_scraped_name': '2014 Regular Session',
         },
+        "2015": {
+            "type": "primary",
+            'display_name': '2015 Regular Session',
+            '_scraped_name': '2015 Regular Session',
+        },
     },
     "legislature_name": "Louisiana Legislature",
     'chambers': {
@@ -82,6 +88,7 @@ metadata = {
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
+        '2015 Regular Legislative Session',
         '2014 Regular Legislative Session',  # In as 2014 Regular Session
         '2013 Regular Legislative Session',  # Samesies.
         '2013 Regular Legislative Session',  # Samesies.
@@ -93,6 +100,7 @@ metadata = {
         '2006 Regular Session',
         '2005 Regular Session',
         '2004 Regular Session',
+        '2004 First Extraordinary Session',
         '2004 1st Extraordinary Session',
         '2003 Regular Session',
         '2002 Regular Session',
