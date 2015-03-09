@@ -80,13 +80,7 @@ class MALegislatorScraper(LegislatorScraper):
             assert len(district) == 0, "Remove the special-casing code for Rady Mom"
             district = "Eighteenth Middlesex"
             district_dirty = district
-        # Joseph McGonagle has bad district text, so special-case him as well
-        elif full_name == "Joseph W. McGonagle, Jr.":
-            assert district[0].text_content().strip() ==\
-                    "Consisting of the city of Everett, in the county of Middlesex",\
-                    "Remove the special-casing code for Joseph McGonagle"
-            district = "Twenty-Eighth Middlesex"
-            district_dirty = district
+
         elif len(district):
             district_dirty = district[0].text_content().strip()
             district = clean_district(district_dirty)
