@@ -123,7 +123,7 @@ class IDLegislatorScraper(LegislatorScraper):
             for prop in pieces[:end]:
                 # phone numbers
                 if prop.lower()[0:3] in _PHONE_NUMBERS:
-                    leg[ _PHONE_NUMBERS[ prop.lower()[0:3] ] ] = prop.lower().replace("home","").replace("bus","").replace("fax","").strip()
+                    leg[ _PHONE_NUMBERS[ prop.lower()[0:3]]] = prop.lower().replace("home","").replace("bus","").replace("fax","").strip()
                 # profession
                 else:
                     leg['profession'] = prop
