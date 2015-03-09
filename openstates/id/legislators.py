@@ -71,6 +71,10 @@ class IDLegislatorScraper(LegislatorScraper):
             role = None
             if 'District' in pieces[0]:
                 district = pieces.pop(0)
+                if "term" in pieces[0].lower():
+                    pieces.pop(0)
+            elif "term" in pieces[1].lower():
+                pieces.pop(1)
             else:
                 role = pieces.pop(0)
                 district = pieces.pop(0)
@@ -98,7 +102,7 @@ class IDLegislatorScraper(LegislatorScraper):
             if "office" in metainf:
                 kwargs['address'] = metainf['office']
             if "fax" in metainf:
-                kwargs['fax'] = metainf['fax']
+                kwargs['fax'] = metainf['fax'].lower().replace("fax","").strip()
 
             leg.add_office('district',
                            'District Office',
@@ -119,7 +123,7 @@ class IDLegislatorScraper(LegislatorScraper):
             for prop in pieces[:end]:
                 # phone numbers
                 if prop.lower()[0:3] in _PHONE_NUMBERS:
-                    leg[ _PHONE_NUMBERS[ prop.lower()[0:3] ] ] = prop
+                    leg[ _PHONE_NUMBERS[ prop.lower()[0:3] ] ] = prop.lower().replace("home","").replace("bus","").replace("fax","").strip()
                 # profession
                 else:
                     leg['profession'] = prop
