@@ -59,13 +59,19 @@ class RIEventScraper(EventScraper, LXMLMixin):
             "%A, %B %d, %Y %I:%M",
         ]
 
+        kwargs = {}
         if time in all_day:
             datetime = date
         else:
             datetime = "%s %s" % ( date, time )
-        if "CANCELLED" in datetime or "Rise of the House" in datetime:
-            # XXX: Do something more advanced.
+        if "CANCELLED" in datetime:
             return
+
+        if "Rise of the" in datetime:
+            datetime = date
+            kwargs["all_day"] = True
+            kwargs["time_text"] = time
+
 
         transtable = {
             "P.M" : "PM",
@@ -89,7 +95,7 @@ class RIEventScraper(EventScraper, LXMLMixin):
                 continue
 
         event = Event(session, datetime, 'committee:meeting',
-                      'Meeting Notice', location=where)
+                      'Meeting Notice', location=where, **kwargs)
         event.add_source(url)
         # aight. Let's get us some bills!
         bills = page.xpath("//b/a")
