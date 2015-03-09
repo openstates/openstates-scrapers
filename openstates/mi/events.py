@@ -43,7 +43,9 @@ class MIEventScraper(EventScraper, LXMLMixin):
         translate = {
             "noon": " PM",
             "a.m.": " AM",
-            "am": " AM"  # This is due to a nasty line they had.
+            "am": " AM",  # This is due to a nasty line they had.
+            "a.m": "AM" #another weird one
+
         }
 
         for t in translate:
