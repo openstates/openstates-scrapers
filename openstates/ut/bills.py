@@ -91,13 +91,14 @@ class UTBillScraper(BillScraper, LXMLMixin):
         bill = Bill(session, chamber, bill_id, title, type=bill_type)
         bill.add_source(url)
 
-        primary_info = page.xpath('//div[@id="billsponsordiv"]//text()')
-        primary_info = [ x.strip() for x in primary_info if x.strip() ]
-        assert len(primary_info) == 2
-        assert primary_info[0] == "Bill Sponsor:"
-        primary_sponsor = primary_info[1].\
-                replace("Sen. ", "").replace("Rep. ", "")
-        bill.add_sponsor('primary', primary_sponsor)
+        primary_info = page.xpath('//div[@id="billsponsordiv"]')
+        for info in primary_info:
+            (title, name) = [x.strip() for x
+                             in info.xpath('.//text()')
+                             if x.strip()]
+            assert title == "Bill Sponsor:"
+            name = name.replace("Sen. ", "").replace("Rep. ", "")
+            bill.add_sponsor('primary', name)
 
         floor_info = page.xpath('//div[@id="floorsponsordiv"]//text()')
         floor_info = [ x.strip() for x in floor_info if x.strip() ]
