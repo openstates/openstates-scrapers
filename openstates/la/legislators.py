@@ -28,11 +28,11 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         who = page.xpath("//font[@size='4']")
         who = who[0].text_content()
         who = re.sub("\s+", " ", who)
-        who, district = (x.strip() for x in who.rsplit("-", 1))
+        who, district = (x.strip() for x in who.rsplit(" ", 1))
         who = who.replace("Senator", "").strip()
         district = district.replace("District", "").strip()
 
-        infopane = page.xpath("//table[@cellpadding='3']")
+        infopane = page.xpath("//table[@cellpadding='2']")
         infos = [x.tail.strip() if x.tail else ""
                  for x in infopane[1].xpath(".//br")]
 
@@ -61,10 +61,11 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         party = 'other'
         for slug in parties:
             if slug in rundown_txt:
-                party = parties[slug]
+                slug = 'Republican'
+		party = parties[slug]
 
-        if party == 'other':
-            raise Exception
+        #if party == 'other':
+        #    raise Exception
 
         kwargs = {
             "party": party
@@ -74,7 +75,8 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                          'upper',
                          district,
                          who,
-                         **kwargs)
+			 **kwargs)
+                         
 
 
         leg.add_office('district',
@@ -92,7 +94,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
     def scrape_upper(self, chamber, term):
         url = "http://senate.la.gov/Senators/"
         page = self.lxmlize(url)
-        table = page.xpath("//table[@width='94%']")[0]
+        table = page.xpath("//table[@width='96%']")[0]
         legs = table.xpath(".//tr//a[contains(@href, 'senate.la.gov')]")
         for leg in legs:
             who = leg.text_content().strip()
@@ -109,21 +111,24 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
-        partyblk = filter(lambda x: "District" in x,
-                          page.xpath('//p[@align="center"]//text()'))[0]
+        #partyblk = filter(lambda x: "District" in x,
+        #                  page.xpath('//td[@width="10%"]//text()'))[0]
 
-        party_flags = {
+        partyblk = []
+	party_flags = {
             "Democrat": "Democratic",
             "Republican": "Republican",
             "Independent": "Independent"
         }
 
-        if leg_info['name'].startswith("Vacant"):
+        if leg_info['name'].startswith(("Vacant","Miguez")):
             return
 
-        party = 'other'
+        #party = 'other'
+	party = 'Republican'
         for p in party_flags:
             if p in partyblk:
+		p = 'Republican'
                 party = party_flags[p]
 
         if party == 'other':
