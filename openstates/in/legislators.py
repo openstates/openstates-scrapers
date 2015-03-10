@@ -1,13 +1,7 @@
-import re
-import datetime
-import urlparse
-import collections
-import contextlib
 
 import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import scrapelib
 from apiclient import ApiClient
 from requests import exceptions
 
