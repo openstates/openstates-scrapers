@@ -8,6 +8,7 @@ import scrapelib
 import requests.exceptions
 
 from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.utils import LXMLMixin
 from .utils import Urls
 
 
@@ -20,7 +21,7 @@ def clean(s):
     return s.strip()
 
 
-class CACommitteeScraper(CommitteeScraper):
+class CACommitteeScraper(CommitteeScraper, LXMLMixin):
 
     jurisdiction = 'ca'
 
@@ -37,6 +38,7 @@ class CACommitteeScraper(CommitteeScraper):
         if chamber == 'lower':
             self.scrape_lower(chamber, term)
         elif chamber == 'upper':
+            # Also captures joint committees
             self.scrape_upper(chamber, term)
 
 
@@ -236,10 +238,73 @@ class CACommitteeScraper(CommitteeScraper):
         return Membernames.scrub(names)
 
     def scrape_upper(self, chamber, term):
-        for committee_type in SenateCommitteePage(self):
-            for senate_committee in committee_type:
-                comm = senate_committee.get_committee_obj()
-                self.save_committee(comm)
+        url = 'http://senate.ca.gov/committees'
+        doc = self.lxmlize(url)
+
+        standing_committees = doc.xpath(
+            '//h2[text()="Standing Committees"]/../following-sibling::div//a')
+        sub_committees = doc.xpath(
+            '//h2[text()="Sub Committees"]/../following-sibling::div//a')
+        joint_committees = doc.xpath(
+            '//h2[text()="Joint Committees"]/../following-sibling::div//a')
+        other_committees = doc.xpath(
+            '//h2[text()="Other"]/../following-sibling::div//a')
+
+        for committee in (standing_committees + sub_committees +
+                          joint_committees + other_committees):
+            (comm_name, ) = committee.xpath('text()')
+            comm = Committee(
+                chamber=chamber,
+                committee=comm_name
+            )
+
+            (comm_url, ) = committee.xpath('@href')
+            comm.add_source(comm_url)
+            comm_doc = self.lxmlize(comm_url)
+
+            if comm_name.startswith("Joint"):
+                comm['chamber'] = 'joint'
+                comm['committee'] = (comm_name.
+                                     replace("Joint ", "").
+                                     replace("Committee on ", "").
+                                     replace(" Committee", ""))
+
+            if comm_name.startswith("Subcommittee"):
+                (full_comm_name, ) = comm_doc.xpath(
+                    '//div[@class="banner-sitename"]/a/text()')
+                full_comm_name = re.search(
+                    r'^Senate (.*) Committee$', full_comm_name).group(1)
+                comm['committee'] = full_comm_name
+
+                comm_name = re.search(
+                    r'^Subcommittee.*?on (.*)$', comm_name).group(1)
+                comm['subcommittee'] = comm_name
+
+            members = comm_doc.xpath(
+                '//a[(contains(@href, "/sd") or '
+                'contains(@href, "assembly.ca.gov/a")) and '
+                '(starts-with(text(), "Senator") or '
+                'starts-with(text(), "Assembly Member"))]/text()')
+            for member in members:
+                if not member.strip():
+                    continue
+
+                (mem_name, mem_role) = re.search(r'''(?ux)
+                    ^(?:Senator|Assembly\sMember)\s  # Legislator title
+                    (.+?)  # Capture the senator's full name
+                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                    (?:\s\([RD]\))?  # There may be a party affiliation
+                    \s*$
+                    ''', member).groups()
+                comm.add_member(
+                    legislator=mem_name,
+                    role=mem_role if mem_role else 'member'
+                )
+
+            assert comm['members'], "No members found for committee {}".format(
+                comm_name)
+            self.save_committee(comm)
+
 
 class Membernames(object):
 
@@ -310,133 +375,3 @@ class Membernames(object):
                 res.append((name, role, kw))
 
         return res
-
-
-# -----------------------------------------------------------------------------
-# Senate classes.
-# -----------------------------------------------------------------------------
-class SenateCommitteePage(object):
-    '''The senate re-did their committee page in 2014. This class is an
-    iterator over each group of committees (Standing, Select, Sub, etc.)
-    '''
-    urls = dict(index='http://senate.ca.gov/committees')
-
-    def __init__(self, scraper):
-        self.urls = Urls(scraper, self.urls)
-
-    def __iter__(self):
-        xpath = '//div[contains(@class, "block-views")]'
-        for el in self.urls.index.xpath(xpath):
-            yield SenateCommitteeGroup(self.urls, el)
-
-
-class SenateCommitteeGroup(object):
-    '''An iterator of the committees within this group.
-    '''
-    def __init__(self, urls, div):
-        self.urls = urls
-        self.div = div
-
-    def get_type(self):
-        return self.div.xpath('./div/h2/text()').pop()
-
-    def __iter__(self):
-        xpath = 'div[@class="content"]//div[contains(@class, "block-views")]'
-        type_ = self.get_type()
-
-        # Join committees currently get scraped in the Assembly scraper.
-        if type_ == 'Joint Committees':
-            return
-
-        for li in self.div.xpath(xpath):
-            yield SenateCommittee(self.urls, type_, li)
-
-
-class SenateCommittee(object):
-    '''Helper to get info about a given committee.
-    '''
-    def __init__(self, urls, type_, li):
-        self.urls = urls
-        self.type_ = type_
-        self.li = li
-
-    def get_type(self):
-        return self.type_.replace(' Committees', '')
-
-    def get_name(self):
-        name = self.li.xpath(".//a")[0].text_content()
-        type_ = self.get_type()
-        if type_ == 'Sub-Committees':
-            return name
-        return '%s Committee on %s' % (self.get_type(), name)
-
-    def get_url(self):
-        return self.li.xpath(".//a")[0].attrib['href']
-
-    def get_parent_name(self):
-        '''Get the name of the parent committee if this is a subcommittee.
-        '''
-        parent = self.li.xpath("../../h3/text()")
-        if parent:
-           return 'Standing Committee on ' + parent[0]
-
-    def get_committee_obj(self):
-        name = self.get_name()
-        url = self.get_url()
-        parent_name = self.get_parent_name()
-
-        if parent_name is not None:
-            subcommittee = name
-            committee_name = parent_name
-        else:
-            subcommittee = None
-            committee_name = name
-
-        self.committee = Committee(
-            'upper', committee_name, subcommittee=subcommittee)
-
-        self.add_members()
-        self.add_sources()
-        return self.committee
-
-    def add_members(self):
-        url = self.get_url()
-        self.urls.add(detail=url)
-        for name, role in SenateMembers(self.urls):
-            if name.strip():
-                self.committee.add_member(name, role)
-
-    def add_sources(self):
-        for url in self.urls:
-            self.committee.add_source(url.url)
-
-
-class SenateMembers(object):
-
-    def __init__(self, urls):
-        self.urls = urls
-
-    def get_a_list(self):
-        xpath = '//h2/following-sibling::p//a'
-        a_list = self.urls.detail.xpath(xpath)
-        if a_list:
-            return a_list
-
-        xpath = '//div[@class="content"]'
-        a_list = self.urls.detail.xpath(xpath)[0].xpath('.//a')
-        return a_list
-
-    def get_name_role(self, text):
-        role = 'member'
-        rgxs = [r"\((.+?)\)", r"\((.+)"]
-        for rgx in rgxs:
-            role_match = re.search(rgx, text)
-            if role_match:
-                role = role_match.group(1)
-                text = re.sub(rgx, '', text).strip()
-        return text, role
-
-    def __iter__(self):
-        for a in self.get_a_list():
-            yield self.get_name_role(a.text_content())
-
