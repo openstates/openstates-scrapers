@@ -4,6 +4,7 @@ from .bills import INBillScraper
 from .legislators import INLegislatorScraper
 
 
+
 metadata = dict(
     name='Indiana',
     abbreviation='in',
@@ -15,26 +16,18 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
-        {'name': '2011-2012', 'start_year': 2011,
-         'end_year': 2012, 'sessions': ['2011', '2012']},
         {'name': '2013-2014', 'start_year': 2013,
          'end_year': 2014, 'sessions': ['2013', '2014']},
         {'name': '2015-2016', 'start_year': 2015,
          'end_year': 2016, 'sessions': ['2015']},
         ],
     session_details={
-        '2011': {'start_date': datetime.date(2011, 1, 5),
-                 'display_name': '2011 Regular Session',
-                 '_scraped_name': '2011 Regular Session',
-                },
-        '2012': {'display_name': '2012 Regular Session',
-                 '_scraped_name': '2012 Regular Session',},
         '2013': {'display_name': '2013 Regular Session',
-                 '_scraped_name': '2013 Regular Session'},
+                 '_scraped_name': 'First Regular Session 118th General Assembly (2013)'},
         '2014': {'display_name': '2014 Regular Session',
-                 '_scraped_name': '2014 Regular Session'},
+                 '_scraped_name': 'Second Regular Session 118th General Assembly (2014)'},
         '2015': {'display_name': '2015 Regular Session',
-                 '_scraped_name': '2015 Regular Session'},
+                 '_scraped_name': 'First Regular Session 119th General Assembly (2015)'},
         },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
@@ -52,6 +45,8 @@ metadata = dict(
         },
     ],
     _ignored_scraped_sessions=[
+        '2012 Regular Session',
+        '2011 Regular Session',
         '2010 Regular Session',
         '2009 Special Session',
         '2009 Regular Session',
@@ -71,9 +66,17 @@ metadata = dict(
 )
 
 def session_list():
-    from billy.scrape.utils import url_xpath
-    # cool URL bro
-    return url_xpath('http://www.in.gov/legislative/2414.htm', '//h3/text()')
+    import requests
+    import os
+    apikey = os.environ['INDIANA_API_KEY']
+    headers = {"Authorization":apikey,
+                "Accept":"application/json"}
+    session_json = requests.get("https://api.iga.in.gov/sessions",headers=headers,verify=False)
+    print session_json
+    session_json = session_json.json()
+    return [session["name"] for session in session_json["items"]]
+
+    
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
