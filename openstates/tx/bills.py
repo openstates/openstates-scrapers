@@ -29,6 +29,8 @@ class TXBillScraper(BillScraper):
                 break
             except (EOFError, ftplib.error_temp):
                 time.sleep(2 ** i)
+        else:
+            raise
         ftp.login()
         ftp.cwd('/' + dir_)
         self.log('Searching an FTP folder for files ({})'.format(dir_))
