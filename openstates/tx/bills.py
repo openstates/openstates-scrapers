@@ -1,6 +1,7 @@
 import datetime
 import ftplib
 import re
+import time
 import xml.etree.cElementTree as etree
 
 from billy.scrape import ScrapeError
@@ -22,14 +23,15 @@ class TXBillScraper(BillScraper):
     def _get_ftp_files(self, root, dir_):
         ''' Recursively traverse an FTP directory, returning all files '''
 
-        ftp = ftplib.FTP(self._FTP_ROOT)
+        for i in range(3):
+            try:
+                ftp = ftplib.FTP(root)
+                break
+            except (EOFError, ftplib.error_temp):
+                time.sleep(2 ** i)
         ftp.login()
-        for item in self._crawl_ftp(ftp, root, dir_):
-            yield item
-
-    def _crawl_ftp(self, ftp, root, dir_):
-        self.log('Searching an FTP folder for files ({})'.format(dir_))
         ftp.cwd('/' + dir_)
+        self.log('Searching an FTP folder for files ({})'.format(dir_))
 
         lines = []
         ftp.retrlines('LIST', lines.append)
@@ -42,11 +44,12 @@ class TXBillScraper(BillScraper):
                     (.+?)\s*$  # Directory or file name is the remaining text
                     ''', line).groups()
             if is_dir:
-                for item in self._crawl_ftp(
-                        ftp, root, '/'.join([dir_, name])):
+                for item in self._get_ftp_files(root, '/'.join([dir_, name])):
                     yield item
             else:
                 yield '/'.join(['ftp://' + root, dir_, name])
+
+        ftp.quit()
 
     def scrape(self, session, chambers):
         self.validate_session(session)
