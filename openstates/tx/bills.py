@@ -51,8 +51,6 @@ class TXBillScraper(BillScraper):
             else:
                 yield '/'.join(['ftp://' + root, dir_, name])
 
-        ftp.quit()
-
     def scrape(self, session, chambers):
         self.validate_session(session)
 
