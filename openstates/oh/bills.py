@@ -260,7 +260,8 @@ class OHBillScraper(BillScraper):
                             "RH": "Reported: House",
                             "PH": "Passed: House",
                             "":"",
-                            "ICS":""}
+                            "ICS":"",
+                            "RCS":""}
 
         for item in documents:
             if type_of_document == "amendment":
@@ -274,7 +275,11 @@ class OHBillScraper(BillScraper):
                 self.logger.warning("The link to doc {name} does not exist, skipping".format(name=name))
                 continue
             if "legacyver" in item:
-                ver = leg_ver_types[item["legacyver"]]
+                try:
+                    ver = leg_ver_types[item["legacyver"]]
+                except KeyError:
+                    self.logger.warning("New legacyver type {}, add it to the leg_ver_types dictionary".format(item["legacyver"]))
+                    ver = ""
                 if ver:
                     name = name+": "+ver
             bill.add_document(name,link,mimetype="application/pdf")
