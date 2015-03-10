@@ -3,7 +3,7 @@ import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from apiclient import ApiClient
-from requests import exceptions
+import requests
 
 
 class INLegislatorScraper(LegislatorScraper):
@@ -15,14 +15,14 @@ class INLegislatorScraper(LegislatorScraper):
         while timeout_length < 65 and html is None:
             try:
                 html = self.get(link,timeout=timeout_length,**kwargs)
-            except exceptions.ConnectTimeout:
+            except requests.exceptions.ConnectTimeout:
                 old_length = timeout_length
                 timeout_length **= 2
                 self.logger.debug("Timed out after {now} seconds, increasing to {next} and trying again".format(now=old_length,next=timeout_length))
             else:
                 return html
 
-            raise AssertionError("Link {} failed after waiting over a minute, giving up.")
+        raise AssertionError("Link failed after waiting over a minute, giving up.")
 
 
 
