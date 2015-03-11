@@ -1,9 +1,11 @@
 import datetime
 import re
 
+import lxml.html
+import scrapelib
+
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-import lxml.html
 
 
 _action_re = (
@@ -175,12 +177,6 @@ class ALBillScraper(BillScraper):
             subject = bill_info.xpath('td[3]/font/text()')[0].strip()
             chamber = self.CHAMBERS[bill_id[0]]
 
-            # If the sponsor is missing, the bill's webpage is probably empty
-            if not sponsor.strip():
-                self.warning("Bill {} is missing sponsor, ".format(bill_id) +
-                             "and probably doesn't have a webpage")
-                continue
-
             if 'B' in bill_id:
                 bill_type = 'bill'
             elif 'JR' in bill_id:
@@ -207,7 +203,14 @@ class ALBillScraper(BillScraper):
             bill_url = ('http://alisondb.legislature.state.al.us/Alison/'
                         'SESSBillResult.aspx?BILL={}'.format(bill_id))
             bill.add_source(bill_url)
-            bill_html = self.get(url=bill_url, allow_redirects=False).text
+
+            try:
+                bill_html = self.get(url=bill_url, allow_redirects=False).text
+            except scrapelib.HTTPError:
+                self.warning("Bill {} has no webpage, and will be skipped".
+                             format(bill_id))
+                continue
+
             bill_doc = lxml.html.fromstring(bill_html)
 
             title = bill_doc.xpath(
