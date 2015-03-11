@@ -8,7 +8,7 @@ from .common import BackoffScraper
 
 import scrapelib
 import lxml.html
-
+import sys
 
 def xpath_one(el, expr):
     ret = el.xpath(expr)
@@ -28,16 +28,19 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         who = page.xpath("//font[@size='4']")
         who = who[0].text_content()
         who = re.sub("\s+", " ", who)
-        who, district = (x.strip() for x in who.rsplit("-", 1))
+        who, district = (x.strip() for x in who.rsplit(" ", 1))
         who = who.replace("Senator", "").strip()
         district = district.replace("District", "").strip()
 
-        infopane = page.xpath("//table[@cellpadding='3']")
+        infopane = page.xpath("//table[@cellpadding='2']")
+        
         infos = [x.tail.strip() if x.tail else ""
+                 for x in infopane[1].xpath(".//b")]
+        infos2 = [x.tail.strip() if x.tail else ""
                  for x in infopane[1].xpath(".//br")]
-
-        keys = ["party", "email", "capitol-office",
-                "district-office", "phone", "fax", "staffer"]
+        infos3 = [x.strip() for x in infopane[1].xpath(".//a[contains(@href, 'mailto')]/text()")]
+        
+        keys = ["party", "district-office", "phone", "fax", "staffer", "email"]
         nodes = [[]]
         for node in infos:
             if node == "":
@@ -45,23 +48,36 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                     nodes.append([])
                 continue
             nodes[-1].append(node)
+        for node in infos2:
+            if node == "":
+               if nodes[-1] != []:
+                    nodes.append([])
+               continue
+            nodes[-1].append(node)
+        for node in infos3:
+            if node == "":
+                if nodes[-1] != []:
+                    nodes.append([])
+                continue
+            nodes[-1].append(node)
 
         data = dict(zip(keys, nodes))
-
+        
+        #print data
+        
         district_office = "\n".join(data['district-office'])
-        capitol_office = "\n".join(data['capitol-office'])
+        #capitol_office = "\n".join(data['capitol-office'])
 
-        rundown = infopane[1].xpath("./*")[-1]
-        rundown_txt = rundown.text_content()
         parties = {
             "Republican": "Republican",
             "Democrat": "Democratic",
         }
-
+        
         party = 'other'
         for slug in parties:
-            if slug in rundown_txt:
-                party = parties[slug]
+            for key, value in data.iteritems():
+                if slug in value:
+                    party = parties[slug]
 
         if party == 'other':
             raise Exception
@@ -81,9 +97,9 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                        'District Office',
                        address=district_office)
 
-        leg.add_office('capitol',
-                       'Capitol Office',
-                       address=capitol_office)
+        #leg.add_office('capitol',
+                       #'Capitol Office',
+                       #address=capitol_office)
 
         leg.add_source(url)
 
@@ -92,7 +108,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
     def scrape_upper(self, chamber, term):
         url = "http://senate.la.gov/Senators/"
         page = self.lxmlize(url)
-        table = page.xpath("//table[@width='94%']")[0]
+        table = page.xpath("//table[@width='96%']")[0]
         legs = table.xpath(".//tr//a[contains(@href, 'senate.la.gov')]")
         for leg in legs:
             who = leg.text_content().strip()
@@ -101,7 +117,9 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             self.scrape_upper_leg_page(term, leg.attrib['href'], who)
 
     def scrape_lower_legislator(self, url, leg_info, term):
+        url2 = "http://house.louisiana.gov/H_Reps/H_Reps_ByParty.asp"
         page = self.lxmlize(url)
+        page2 = self.lxmlize(url2)
         photo = xpath_one(page, '//img[@rel="lightbox"]').attrib['src']
         infoblk = xpath_one(page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
         infoblk = infoblk.getparent()
@@ -109,8 +127,11 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
-        partyblk = filter(lambda x: "District" in x,
-                          page.xpath('//p[@align="center"]//text()'))[0]
+        partyinfo = page2.xpath("//table[@width='100%']")
+        partyblk = [x.strip() for x in partyinfo, partyinfo.xpath(".//td[@class='auto-style6']/text()")]
+        
+        print partyblk
+        sys.exti()
 
         party_flags = {
             "Democrat": "Democratic",
@@ -118,7 +139,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             "Independent": "Independent"
         }
 
-        if leg_info['name'].startswith("Vacant"):
+        if leg_info['name'].startswith(("Vacant","Miguez")):
             return
 
         party = 'other'
