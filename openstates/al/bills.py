@@ -50,7 +50,8 @@ class ALBillScraper(BillScraper):
         # Post requests that are redirected instead of rejected are fine
         if response.status_code == 302:
             # Also, don't allow redirects from bill information pages
-            if 'SESSBillResult.aspx?BILL=' in response.request.url:
+            if ('SESSBillResult.aspx?BILL=' in response.request.url and
+                    response.request.method == 'GET'):
                 return False
             else:
                 return True
@@ -147,6 +148,7 @@ class ALBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1: ]
         resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1: ]
+        assert bills + resolutions, "Empty bill list found"
         for bill_info in bills + resolutions:
 
             (bill_id, ) = bill_info.xpath('td[1]/font/input/@value')
