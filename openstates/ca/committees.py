@@ -79,43 +79,27 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                     # with a 403. Skip it.
                     continue
 
-                if c.endswith('Committee'):
-                    if type_ not in c:
-                        c = '%s %s' % (type_, c)
-                elif ('Subcommittee' not in c and 'Committee on' not in c):
-                    c = '%s Committee on %s' % (type_, c)
-                else:
-                    if type_ not in c:
-                        c = '%s %s' % (type_, c)
-
+                c = c.replace("Committee on ", "").replace(" Committee", "")
                 c = Committee(_chamber, c)
                 c.add_source(_url)
                 c.add_source(url)
-                for member, role, kw in self.scrape_membernames(c, _url,
-                        chamber, term):
-                    c.add_member(member, role, **kw)
+                for member, role in self.scrape_lower_members(_url):
+                    c.add_member(member, role)
 
                 _found = False
-                if len(c['members']) == 0:
-                    for member, role, kw in self.scrape_membernames(c,
-                            _url + '/membersstaff', chamber, term):
+                if not c['members']:
+                    for member, role in self.scrape_lower_members(
+                            _url + '/membersstaff'):
                         _found = True
-                        c.add_member(member, role, **kw)
+                        c.add_member(member, role)
                     if _found:
                         source = _url + '/membersstaff'
                         c.add_source(source)
 
-                if len(c['members']) == 0:
-                    # Some committees weren't staff in early
-                    # 2013; opting to skip rather than blow
-                    # up the whole scrape.
-                    return
-                    cname = c['committee']
-                    msg = '%r must have at least one member.'
-                    raise ValueError(msg % cname)
-
                 if c['members']:
                     self.save_committee(c)
+                else:
+                    self.warning("No members found: {}".format(c))
 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
@@ -124,118 +108,47 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
             names = subcom.xpath('descendant::a/text()')
             names = map(strip, names)
             urls = subcom.xpath('descendant::a/@href')
-            committee = 'Standing Committee on ' + committee
             for n, _url in zip(names, urls):
+                n = re.search(r'^Subcommittee.*?on (.*)$', n).group(1)
                 c = Committee(chamber, committee, subcommittee=n)
                 c.add_source(_url)
                 c.add_source(url)
 
-                for member, role, kw in self.scrape_membernames(c, _url,
-                        chamber, term):
-                    c.add_member(member, role, **kw)
+                for member, role in self.scrape_lower_members(_url):
+                    c.add_member(member, role)
 
                 _found = False
-                if len(c['members']) == 0:
-                    for member, role, kw in self.scrape_membernames(c,
-                            _url + '/membersstaff', chamber, term):
+                if not c['members']:
+                    for member, role in self.scrape_lower_members(
+                            _url + '/membersstaff'):
                         _found = True
-                        c.add_member(member, role, **kw)
+                        c.add_member(member, role)
                     if _found:
                         source = _url + '/membersstaff'
                         c.add_source(source)
 
-                if len(c['members']) == 0:
-                    # Some committees weren't staff in early
-                    # 2013; opting to skip rather than blow
-                    # up the whole scrape.
-                    return
-                    cname = c['committee']
-                    msg = '%r must have at least one member.'
-                    raise ValueError(msg % cname)
-
                 if c['members']:
                     self.save_committee(c)
+                else:
+                    self.warning("No members found: {}".format(c))
 
-    def scrape_membernames(self, committee, url, chamber, term):
-        '''Scrape the member names from this page.
-        '''
+    def scrape_lower_members(self, url):
+        ''' Scrape the members from this page. '''
 
-        # Special-case senate subcomittees.
-        if url == 'http://sbud.senate.ca.gov/subcommittees1':
-            return self.scrape_members_senate_subcommittees(
-                committee, url, chamber, term)
+        doc = self.lxmlize(url)
+        members = doc.xpath(
+            '//table/thead/tr//*[contains(text(), "Committee Members")]/'
+            'ancestor::table/tbody/tr/td[1]/a/text()')
 
-        # Many of the urls don't actually display members. Swap them for ones
-        # that do.
-        corrected_urls = (('http://autism.senate.ca.gov',
-                 'http://autism.senate.ca.gov/committeemembers1'),
-
-                ('Sub Committee on Sustainable School Facilities',
-                 'http://sedn.senate.ca.gov/substainableschoolfacilities'),
-
-                ('Sustainable School Facilities',
-                 'http://sedn.senate.ca.gov/substainableschoolfacilities'),
-
-                ('Sub Committee on Education Policy Research',
-                 'http://sedn.senate.ca.gov/policyresearch'),
-
-                ('Education Policy Research',
-                 'http://sedn.senate.ca.gov/policyresearch'))
-
-        corrected_urls = dict(corrected_urls)
-
-        cname = committee['subcommittee']
-        for key in url, cname:
-            if key in corrected_urls:
-                url = corrected_urls[key]
-                #committee['sources'].pop()
-                committee.add_source(url)
-                break
-
-        # Now actually try to get the names.
-        try:
-            html = self.urlopen(url)
-        except (scrapelib.HTTPError, requests.exceptions.ConnectionError):
-            self.warning('Bogus committee page link: %r' % url)
-            return []
-
-        doc = lxml.html.fromstring(html)
-
-        links = doc.xpath('//a')
-        names = Membernames.extract(links)
-        names = Membernames.scrub(names)
-        return names
-
-    def scrape_members_senate_subcommittees(self, committee, url, chamber,
-                                            term, cache={}):
-
-        if cache:
-            names = cache[committee['subcommittee']]
-            return Membernames.scrub(names)
-
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-
-        # Commence horrific regex-based hackery to get subcommittee members.
-        text = doc.xpath('//div[@class="content"]')[0].text_content()
-        chunks = re.split(r'\s*Subcommittee.*', text)
-        namelists = []
-        for c in chunks:
-            names = re.sub(r'\s*Members\s*', '', c)
-            names = re.split(r'\s*(,|and)\s*', names)
-            names = filter(lambda s: s not in [',', 'and'], names)
-            names = map(clean, names)
-            if filter(None, names):
-                namelists.append(names)
-
-        committee_names = doc.xpath('//div[@class="content"]/h3/text()')
-        committee_names = filter(None, map(clean, committee_names))
-        for _committee, _names in zip(committee_names, namelists):
-            if _committee:
-                cache[_committee] = _names
-
-        names = cache[committee['subcommittee']]
-        return Membernames.scrub(names)
+        for member in members:
+            (mem_name, mem_role) = re.search(r'''(?ux)
+                    ^\s*(.+?)  # Capture the senator's full name
+                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                    \s*$
+                    ''', member).groups()
+            if not mem_role:
+                mem_role = "member"
+            yield (mem_name, mem_role)
 
     def scrape_upper(self, chamber, term):
         url = 'http://senate.ca.gov/committees'
@@ -290,12 +203,12 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                     continue
 
                 (mem_name, mem_role) = re.search(r'''(?ux)
-                    ^(?:Senator|Assembly\sMember)\s  # Legislator title
-                    (.+?)  # Capture the senator's full name
-                    (?:\s\((.{2,}?)\))?  # There may be role in parentheses
-                    (?:\s\([RD]\))?  # There may be a party affiliation
-                    \s*$
-                    ''', member).groups()
+                        ^(?:Senator|Assembly\sMember)\s  # Legislator title
+                        (.+?)  # Capture the senator's full name
+                        (?:\s\((.{2,}?)\))?  # There may be role in parentheses
+                        (?:\s\([RD]\))?  # There may be a party affiliation
+                        \s*$
+                        ''', member).groups()
                 comm.add_member(
                     legislator=mem_name,
                     role=mem_role if mem_role else 'member'
@@ -304,74 +217,3 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
             assert comm['members'], "No members found for committee {}".format(
                 comm_name)
             self.save_committee(comm)
-
-
-class Membernames(object):
-
-    @staticmethod
-    def extract(links):
-        '''Given an lxml.xpath result, extract a list of member names.
-        '''
-        href_rgxs = (r'(sd|a)\d+\.(senate|assembly)\.ca\.gov/$',
-                     r'(senate|assembly)\.ca\.gov/(sd|a)\d+$',
-                     r'(sd|a)\d+$',
-                     r'dist\d+[.]',
-                     r'cssrc[.]us/web/\d+',
-                     r'/Wagner')
-
-        res = collections.defaultdict(list)
-        for a in links:
-            try:
-                href = a.attrib['href']
-            except KeyError:
-                continue
-            for rgx in href_rgxs:
-                if re.search(rgx, href, re.M):
-                    res[href].append(a.text_content().strip())
-        vals = [' '.join(set(lst)) for lst in res.values()]
-        return [re.sub('\s+', ' ', s) for s in vals]
-
-    @staticmethod
-    def scrub(names):
-        '''Separate names from roles and chambers, etc.
-        '''
-        role_rgxs = [r'(.+?)\s+\((.+?)\)',
-                     r'(.+?),\s+(?![III])(.+)',
-                     r'(.+?),\s+(?![JS]r.)(.+)',
-                     ur'(.+?)\s*[-–]\s+(.+)']
-
-        res = []
-        for name in names:
-
-            name = clean(name)
-
-            role = 'member'
-            for rgx in role_rgxs:
-                m = re.match(rgx, name)
-                if m:
-                    name, role = m.groups()
-                    break
-
-            # Special case for Isadore hall. This entire hot mess needs
-            # a re-write at some point.
-            if role == 'III':
-                role = 'member'
-
-            kw = {}
-            for s, ch in (('Senator', 'upper'),
-                          ('Assemblymember', 'lower')):
-                if s in name:
-                    kw = {'chamber': ch}
-            name = re.sub(r'^(Senator|Assemblymember)', '', name)
-            name = name.strip()
-
-            if name:
-                if 'Sanator' in name:
-                    name = name.replace('Sanator', 'Senator')
-                if name.endswith(' (Chair'):
-                    role = 'chair'
-                    name = name.replace(' (Chair', '')
-                name.strip(',').strip()
-                res.append((name, role, kw))
-
-        return res
