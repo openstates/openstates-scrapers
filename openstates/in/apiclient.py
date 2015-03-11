@@ -46,6 +46,7 @@ class ApiClient(object):
         bill='/{session}/bills/{bill_id}',
         chamber_bills='/{session}/chambers/{chamber}/bills',
         bill_rollcalls='/{session}/bills/{bill_id}/roll-calls',
+        bill_actions='/{session}/bills/{bill_id}/actions',
         committees='/{session}/committees',
         committee='/{session}/committees/{committee_name}',
         legislators='/{session}/legislators',

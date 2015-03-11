@@ -69,7 +69,7 @@ class INBillScraper(BillScraper):
             bill_num = bill_id[3:]
         else:
             bill_prefix = bill_id[:2]
-            bill_num = bill_prefix[2:]
+            bill_num = bill_id[2:]
 
         try:
             url += urls[bill_prefix]
@@ -77,6 +77,8 @@ class INBillScraper(BillScraper):
             raise AssertionError("Unknown bill type {}, don't know how to make url".format(bill_id))
         url += bill_num
         return url
+
+
 
     def get_name(self,random_json):
         #got sick of doing this everywhere
@@ -113,6 +115,7 @@ class INBillScraper(BillScraper):
             bill.add_source(api_source,note="API key needed")
             bill.add_source(self.make_html_source(session,bill_id))
             #documents/versions
+            #todo - these are terrible.
 
 
             #sponsors
@@ -140,6 +143,77 @@ class INBillScraper(BillScraper):
                     self.get_name(s),
                     chamber=positions[s["position_title"]],
                     official_type="cosponsor")
+
+            #actions
+            action_link = bill_json["actions"]["link"]
+            api_source = api_base_url + action_link
+            actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            for a in actions["items"]:
+                action_desc = a["description"]
+                chamber = "lower" if a["chamber"]["name"].lower() == "house" else "upper"
+                date = a["date"]
+                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
+                
+                action_type = []
+                d = action_desc.lower()
+                committee = None
+                if "first reading" in d:
+                    action_type.append("bill:reading:1")
+
+                if ("second reading" in d
+                    or "reread second time"):
+                    action_type.append("bill:reading:2")
+
+                if "third reading" in d:
+                    action_type.append("bill:reading:3")
+                    if "passed" in d:
+                        action_type.append("bill:passed")
+                    if "failed" in d:
+                        action_type.append("bill:failed")
+
+                if ("referred" in d and "committee on" in d
+                    or "reassigned" in d and "committee on" in d):
+                    committee = d.split("committee on")[-1].strip()
+                    action_type.append("committee:referred")
+
+
+                if "committee report" in d:
+                    if "pass" in d:
+                        action_type.append("committee:passed")
+                    if "fail" in d:
+                        action_type.append("committee:failed")
+
+                if "amendment" in d:
+                    if "pass" in d or "prevail" in d:
+                        action_type.append("amendment:passed")
+                    if "fail" or "out of order" in d:
+                        action_type.append("amendment:failed")
+                    if "withdraw" in d:
+                        action_type.append("amendment:withdrawn")
+
+
+                #blacklisted actions - don't correspond to anything we know
+                if ("authored" in d
+                    or "referred to the senate" in d
+                    or "referred to the house" in d
+                    or "sponsor" in d
+                    or "coauthor" in d
+                    or ("rule" in d and "suspended" in d)):
+                    #not really actions we track
+                    continue
+
+                if len(action_type) == 0:
+                    raise AssertionError("Could not recognize an action in '{}'".format(action_desc))
+
+                elif committee:
+                    bill.add_action(chamber,action_desc,date,type=action_type,committees=committee)
+
+                else:
+                    bill.add_action(chamber,action_desc,date,type=action_type)
+
+
+
+
 
             #votes
 
