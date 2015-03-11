@@ -2,6 +2,7 @@ import datetime
 import lxml.html
 from .bills import INBillScraper
 from .legislators import INLegislatorScraper
+from .committees import INCommitteeScraper
 
 
 
@@ -72,7 +73,6 @@ def session_list():
     headers = {"Authorization":apikey,
                 "Accept":"application/json"}
     session_json = requests.get("https://api.iga.in.gov/sessions",headers=headers,verify=False)
-    print session_json
     session_json = session_json.json()
     return [session["name"] for session in session_json["items"]]
 
