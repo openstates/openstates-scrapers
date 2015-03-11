@@ -46,6 +46,7 @@ class OHBillScraper(BillScraper):
                             "crpt_301":"other",
                             "crpt_317": "other",
                             "concur_606": "bill:passed",
+                            "pass_301": "bill:passed",
                             "intro_102":["bill:introduced","bill:passed"],
                             "intro_105":["bill:introduced","bill:passed"],
                             "intro_ref_ctte_100":"committee:referred",
