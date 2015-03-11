@@ -1,6 +1,5 @@
 import datetime
 import re
-import time
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -15,7 +14,7 @@ _action_re = (
     ('Amendment (?:.*)adopted', 'amendment:passed'),
     ('Amendment lost', 'amendment:failed'),
     ('Read for the first time and referred to',
-       ['bill:reading:1', 'committee:referred']),
+     ['bill:reading:1', 'committee:referred']),
     ('(r|R)eferred to', 'committee:referred'),
     ('Read for the second time', 'bill:reading:2'),
     ('(S|s)ubstitute adopted', 'bill:substituted'),
@@ -35,11 +34,13 @@ _action_re = (
     ('Favorable from', 'committee:passed:favorable'),
 )
 
+
 def _categorize_action(action):
     for pattern, types in _action_re:
         if re.findall(pattern, action):
             return types
     return 'other'
+
 
 class ALBillScraper(BillScraper):
     jurisdiction = 'al'
@@ -61,11 +62,13 @@ class ALBillScraper(BillScraper):
         # Standard responses are alright if they have an ASP.NET VIEWSTATE
         # If they don't, it means the page is a trivial error message
         else:
-            if not lxml.html.fromstring(response.text).xpath('//input[@id="__VIEWSTATE"]/@value'):
+            if not lxml.html.fromstring(response.text).xpath(
+                    '//input[@id="__VIEWSTATE"]/@value'):
                 return False
             # Also, for bill pages, ensure that they loaded fully
             elif ('SESSBillResult.aspx?BILL=' in response.request.url and
-                    not lxml.html.fromstring(response.text).xpath('//div[@class="shorttitle"]')):
+                    not lxml.html.fromstring(response.text).xpath(
+                        '//div[@class="shorttitle"]')):
                 return False
             else:
                 return True
@@ -73,71 +76,87 @@ class ALBillScraper(BillScraper):
     def _set_session(self, session):
         ''' Activate an ASP.NET session, and set the legislative session '''
 
-        SESSION_SET_URL = 'http://alisondb.legislature.state.al.us/Alison/ALISONLogin.aspx'
+        SESSION_SET_URL = ('http://alisondb.legislature.state.al.us/'
+                           'Alison/ALISONLogin.aspx')
 
         # If the legislative session is the default (ie, current) one,
         # then the scraper must switch away and then return to it
         doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         (current_session, ) = doc.xpath('//option[@selected]/text()')
         if self.session_name == current_session:
-            another_session_name = doc.xpath('//option[not(@selected)]/text()')[0]
+            another_session_name = doc.xpath(
+                '//option[not(@selected)]/text()')[0]
             form = {
-                    '__EVENTTARGET': 'ctl00$cboSession',
-                    'ctl00$cboSession': another_session_name
-                    }
+                '__EVENTTARGET': 'ctl00$cboSession',
+                'ctl00$cboSession': another_session_name
+            }
             self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
         doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         form = {
-                '__EVENTTARGET': 'ctl00$cboSession',
-                'ctl00$cboSession': self.session_name
-                }
+            '__EVENTTARGET': 'ctl00$cboSession',
+            'ctl00$cboSession': self.session_name
+        }
         self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
     def scrape(self, session, chambers):
         self.validate_session(session)
 
         self.session = session
-        self.session_name = self.metadata['session_details'][self.session]['_scraped_name']
-        self.session_id = self.metadata['session_details'][self.session]['internal_id']
+        self.session_name = (self.metadata['session_details']
+                             [self.session]['_scraped_name'])
+        self.session_id = (self.metadata['session_details']
+                           [self.session]['internal_id'])
 
         self._set_session(session)
 
         # Acquire and process a list of all bills
-        BILL_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsBySelectedStatus.aspx'
-        BILL_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSBillsList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
+        BILL_TYPE_URL = ('http://alisondb.legislature.state.al.us/Alison/'
+                         'SESSBillsBySelectedStatus.aspx')
+        BILL_LIST_URL = ('http://alisondb.legislature.state.al.us/Alison/'
+                         'SESSBillsList.aspx?STATUSCODES=Had%20First%20Reading'
+                         '%20House%20of%20Origin&BODY=999999')
 
         doc = lxml.html.fromstring(self.get(url=BILL_TYPE_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-        (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        (viewstategenerator, ) = doc.xpath(
+            '//input[@id="__VIEWSTATEGENERATOR"]/@value')
         form = {
-                '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
-                '__EVENTARGUMENT': 'Select$0',
-                '__LASTFOCUS': '',
-                '__VIEWSTATE': viewstate,
-                '__VIEWSTATEGENERATOR': viewstategenerator,
-                'ctl00$cboSession': self.session_name,
-                'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$MainDefaultContent$gvStatus$ctl02$ctl00'
+            '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
+            '__EVENTARGUMENT': 'Select$0',
+            '__LASTFOCUS': '',
+            '__VIEWSTATE': viewstate,
+            '__VIEWSTATEGENERATOR': viewstategenerator,
+            'ctl00$cboSession': self.session_name,
+            'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$'
+                                    'MainDefaultContent$gvStatus$ctl02$ctl00'
         }
         self.post(url=BILL_TYPE_URL, data=form, allow_redirects=False)
 
         self.scrape_bill_list(BILL_LIST_URL)
 
         # Acquire and process a list of all resolutions
-        RESOLUTION_TYPE_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResBySelectedStatus.aspx'
-        RESOLUTION_LIST_URL = 'http://alisondb.legislature.state.al.us/Alison/SESSResList.aspx?STATUSCODES=Had%20First%20Reading%20House%20of%20Origin&BODY=999999'
+        RESOLUTION_TYPE_URL = (
+            'http://alisondb.legislature.state.al.us/Alison/'
+            'SESSResBySelectedStatus.aspx')
+        RESOLUTION_LIST_URL = (
+            'http://alisondb.legislature.state.al.us/Alison/'
+            'SESSResList.aspx?STATUSCODES=Had%20First%20Reading'
+            '%20House%20of%20Origin&BODY=999999')
 
         doc = lxml.html.fromstring(self.get(url=RESOLUTION_TYPE_URL).text)
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-        (viewstategenerator, ) = doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+        (viewstategenerator, ) = doc.xpath(
+            '//input[@id="__VIEWSTATEGENERATOR"]/@value')
         form = {
-                '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
-                '__EVENTARGUMENT': 'Select$0',
-                '__LASTFOCUS': '',
-                '__VIEWSTATE': viewstate,
-                '__VIEWSTATEGENERATOR': viewstategenerator,
-                'ctl00$cboSession': self.session_name,
-                'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$MainDefaultContent$gvStatus$ctl02$ctl00'
+            '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
+            '__EVENTARGUMENT': 'Select$0',
+            '__LASTFOCUS': '',
+            '__VIEWSTATE': viewstate,
+            '__VIEWSTATEGENERATOR': viewstategenerator,
+            'ctl00$cboSession': self.session_name,
+            'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$'
+                                    'MainDefaultContent$gvStatus$ctl02$ctl00'
         }
         self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=False)
 
@@ -146,8 +165,8 @@ class ALBillScraper(BillScraper):
     def scrape_bill_list(self, url):
         html = self.get(url=url).text
         doc = lxml.html.fromstring(html)
-        bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1: ]
-        resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1: ]
+        bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1:]
+        resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1:]
         assert bills + resolutions, "Empty bill list found"
         for bill_info in bills + resolutions:
 
@@ -158,9 +177,10 @@ class ALBillScraper(BillScraper):
 
             # If the sponsor is missing, the bill's webpage is probably empty
             if not sponsor.strip():
-                self.warning("Bill {} is missing sponsor, and probably doesn't have a webpage".format(bill_id))
+                self.warning("Bill {} is missing sponsor, ".format(bill_id) +
+                             "and probably doesn't have a webpage")
                 continue
-            
+
             if 'B' in bill_id:
                 bill_type = 'bill'
             elif 'JR' in bill_id:
@@ -169,44 +189,51 @@ class ALBillScraper(BillScraper):
                 bill_type = 'resolution'
             else:
                 raise AssertionError(
-                        "Unknown bill type for bill '{}'".format(bill_id))
+                    "Unknown bill type for bill '{}'".format(bill_id))
 
             bill = Bill(
-                    session=self.session,
-                    chamber=chamber,
-                    bill_id=bill_id,
-                    title='',
-                    type=bill_type
-                    )
+                session=self.session,
+                chamber=chamber,
+                bill_id=bill_id,
+                title='',
+                type=bill_type
+            )
             if subject:
                 bill['subjects'] = [subject]
             if sponsor:
                 bill.add_sponsor(type='primary', name=sponsor)
             bill.add_source(url)
 
-            bill_url = 'http://alisondb.legislature.state.al.us/Alison/SESSBillResult.aspx?BILL={}'.format(bill_id)
+            bill_url = ('http://alisondb.legislature.state.al.us/Alison/'
+                        'SESSBillResult.aspx?BILL={}'.format(bill_id))
             bill.add_source(bill_url)
             bill_html = self.get(url=bill_url, allow_redirects=False).text
             bill_doc = lxml.html.fromstring(bill_html)
 
-            title = bill_doc.xpath('//div[@class="shorttitle"]')[0].text_content().strip()
+            title = bill_doc.xpath(
+                '//div[@class="shorttitle"]')[0].text_content().strip()
             if not title:
                 title = "[No title given by state]"
             bill['title'] = title
 
             (viewstate, ) = bill_doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-            (viewstategenerator, ) = bill_doc.xpath('//input[@id="__VIEWSTATEGENERATOR"]/@value')
+            (viewstategenerator, ) = bill_doc.xpath(
+                '//input[@id="__VIEWSTATEGENERATOR"]/@value')
             form = {
-                    '__EVENTTARGET': '',
-                    '__EVENTARGUMENT': '',
-                    '__LASTFOCUS': '',
-                    '__VIEWSTATE': viewstate,
-                    '__VIEWSTATEGENERATOR': viewstategenerator,
-                    'ctl00$cboSession': self.session_name,
-                    }
+                '__EVENTTARGET': '',
+                '__EVENTARGUMENT': '',
+                '__LASTFOCUS': '',
+                '__VIEWSTATE': viewstate,
+                '__VIEWSTATEGENERATOR': viewstategenerator,
+                'ctl00$cboSession': self.session_name,
+            }
 
-            version_url_base = 'http://alisondb.legislature.state.al.us/ALISON/SearchableInstruments/{0}/PrintFiles/{1}-'.format(self.session, bill_id)
-            versions = bill_doc.xpath('//table[@class="box_versions"]/tr/td[2]/font/text()')
+            version_url_base = (
+                'http://alisondb.legislature.state.al.us/ALISON/'
+                'SearchableInstruments/{0}/PrintFiles/{1}-'.
+                format(self.session, bill_id))
+            versions = bill_doc.xpath(
+                '//table[@class="box_versions"]/tr/td[2]/font/text()')
             for version in versions:
                 name = version
                 if version == "Introduced":
@@ -216,35 +243,38 @@ class ALBillScraper(BillScraper):
                 elif version == "Enrolled":
                     version_url = version_url_base + 'enr.pdf'
                 else:
-                    raise NotImplementedError("Unknown version type found: '{}'".format(name))
+                    raise NotImplementedError(
+                        "Unknown version type found: '{}'".format(name))
 
                 bill.add_version(
-                        name=name,
-                        url=version_url,
-                        mimetype='application/pdf'
-                        )
+                    name=name,
+                    url=version_url,
+                    mimetype='application/pdf'
+                )
 
-            # Fiscal notes exist, but I can't figure out how to generate their URLs
-            fiscal_notes = bill_doc.xpath('//table[@class="box_fiscalnote"]')[1: ]
+            # Fiscal notes exist, but I can't figure out how to build their URL
+            fiscal_notes = bill_doc.xpath(
+                '//table[@class="box_fiscalnote"]')[1:]
             for fiscal_note in fiscal_notes:
                 pass
 
-            # Budget Isolation Resolutions are handled as extra actions and votes
-            birs = bill_doc.xpath('//div[@class="box_bir"]//table//table/tr')[1: ]
+            # Budget Isolation Resolutions are handled as extra actions/votes
+            birs = bill_doc.xpath(
+                '//div[@class="box_bir"]//table//table/tr')[1:]
             for bir in birs:
                 bir_date = datetime.datetime.strptime(
-                        bir.xpath('td[2]/font/text()')[0], self.DATE_FORMAT)
+                    bir.xpath('td[2]/font/text()')[0], self.DATE_FORMAT)
                 bir_type = bir.xpath('td[1]/font/text()')[0].split(" ")[0]
                 bir_chamber = self.CHAMBERS[bir_type[0]]
                 bir_text = "{0}: {1}".format(
-                        bir_type, bir.xpath('td[3]/font/text()')[0].strip())
+                    bir_type, bir.xpath('td[3]/font/text()')[0].strip())
 
                 bill.add_action(
-                        actor=bir_chamber,
-                        action=bir_text,
-                        date=bir_date,
-                        type="other"
-                        )
+                    actor=bir_chamber,
+                    action=bir_text,
+                    date=bir_date,
+                    type="other"
+                )
 
                 try:
                     (bir_vote_id, ) = bir.xpath('td[4]/font/input/@value')
@@ -256,51 +286,51 @@ class ALBillScraper(BillScraper):
                     bir_vote_id = bir_vote_id.split(" ")[-1]
 
                     (eventtarget, ) = bir.xpath('td[4]/font/input/@id')
-                    form['ctl00$ScriptManager1'] = 'ctl00$UpdatePanel1|' + eventtarget
+                    form['ctl00$ScriptManager1'] = ('ctl00$UpdatePanel1|' +
+                                                    eventtarget)
                     form[eventtarget] = "Roll " + bir_vote_id
                     self.post(url=bill_url, data=form, allow_redirects=False)
 
                     self.scrape_vote(
-                            bill=bill,
-                            vote_chamber=bir_type[0],
-                            bill_id="{0}%20for%20{1}".format(bir_type, bill_id),
-                            vote_id=bir_vote_id,
-                            vote_date=bir_date,
-                            action_text=bir_text
-                            )
+                        bill=bill,
+                        vote_chamber=bir_type[0],
+                        bill_id="{0}%20for%20{1}".format(bir_type, bill_id),
+                        vote_id=bir_vote_id,
+                        vote_date=bir_date,
+                        action_text=bir_text
+                    )
 
                     form.pop('ctl00$ScriptManager1')
                     form.pop(eventtarget)
 
-            actions = bill_doc.xpath('//table[@class="box_history"]/tr')[1: ]
+            actions = bill_doc.xpath('//table[@class="box_history"]/tr')[1:]
             action_date = None
             for action in actions:
-                # If actions occur on the same day, only the first will list date
+                # If actions occur on the same day, only one date will exist
                 if action.xpath('td[1]/font/text()')[0].strip():
                     action_date = datetime.datetime.strptime(
-                            action.xpath('td[1]/font/text()')[0], self.DATE_FORMAT)
+                        action.xpath('td[1]/font/text()')[0], self.DATE_FORMAT)
 
                 (action_chamber, ) = action.xpath('td[2]/font/text()')
                 (action_text, ) = action.xpath('td[4]/font/text()')
                 action_type = _categorize_action(action_text)
-                
-                # The committee cell is just an abbreviation, so get its full name
+
+                # The committee cell is just an abbreviation, so get its name
                 actor = self.CHAMBERS[action_chamber]
                 try:
                     action_committee = re.search(
-                            r'.*? referred to the .*? committee on (.*?)$',
-                            action_text
-                            ).group(1).strip()
+                        r'.*? referred to the .*? committee on (.*?)$',
+                        action_text).group(1).strip()
                 except AttributeError:
                     action_committee = ''
 
                 bill.add_action(
-                        actor=actor,
-                        action=action_text,
-                        date=action_date,
-                        type=action_type,
-                        committees=action_committee if action_committee else None
-                        )
+                    actor=actor,
+                    action=action_text,
+                    date=action_date,
+                    type=action_type,
+                    committees=action_committee if action_committee else None
+                )
 
                 try:
                     vote_button = action.xpath('td[9]//text()')[0].strip()
@@ -313,17 +343,18 @@ class ALBillScraper(BillScraper):
                     eventargument = action.xpath('@onclick')[0].split("'")[3]
                     form['__EVENTTARGET'] = eventtarget
                     form['__EVENTARGUMENT'] = eventargument
-                    form['ctl00$ScriptManager1'] = 'ctl00$UpdatePanel1|' + eventtarget
+                    form['ctl00$ScriptManager1'] = ('ctl00$UpdatePanel1|' +
+                                                    eventtarget)
                     self.post(url=bill_url, data=form, allow_redirects=False)
 
                     self.scrape_vote(
-                            bill=bill,
-                            vote_chamber=action_chamber,
-                            bill_id=bill_id,
-                            vote_id=vote_id,
-                            vote_date=action_date,
-                            action_text=action_text
-                            )
+                        bill=bill,
+                        vote_chamber=action_chamber,
+                        bill_id=bill_id,
+                        vote_id=vote_id,
+                        vote_date=action_date,
+                        action_text=action_text
+                    )
 
                     form.pop('ctl00$ScriptManager1')
                     form['__EVENTARGUMENT'] = ''
@@ -331,9 +362,12 @@ class ALBillScraper(BillScraper):
 
             self.save_bill(bill)
 
-    def scrape_vote(self, bill, vote_chamber, bill_id, vote_id, vote_date, action_text):
-        url = 'http://alisondb.legislature.state.al.us/Alison/GetRollCallVoteResults.aspx?VOTE={0}&BODY={1}&INST={2}&SESS={3}'.format(
-                vote_id, vote_chamber, bill_id, self.session_id)
+    def scrape_vote(self, bill, vote_chamber, bill_id, vote_id, vote_date,
+                    action_text):
+        url = ('http://alisondb.legislature.state.al.us/Alison/'
+               'GetRollCallVoteResults.aspx?'
+               'VOTE={0}&BODY={1}&INST={2}&SESS={3}'.
+               format(vote_id, vote_chamber, bill_id, self.session_id))
         doc = lxml.html.fromstring(self.get(url=url).text)
 
         voters = {'Y': [], 'N': [], 'P': [], 'A': []}
@@ -351,8 +385,7 @@ class ALBillScraper(BillScraper):
                 name = item
                 if (name.endswith(", Vacant") or
                         name.startswith("Total ") or
-                        not name.strip()
-                        ):
+                        not name.strip()):
                     name = ''
 
         # Check name counts against totals listed on the site
@@ -370,14 +403,16 @@ class ALBillScraper(BillScraper):
         else:
             total_nay = len(voters['N'])
 
-        total_absent = doc.xpath('//*[starts-with(text(), "Total Absent")]/text()')
+        total_absent = doc.xpath(
+            '//*[starts-with(text(), "Total Absent")]/text()')
         if total_absent:
             total_absent = int(total_absent[0].split(":")[-1])
             assert total_absent == len(voters['A']), "Absent count incorrect"
         total_other = len(voters['P']) + len(voters['A'])
 
-        vote = Vote(self.CHAMBERS[vote_chamber[0]], vote_date, action_text, total_yea > total_nay,
-                    total_yea, total_nay, total_other)
+        vote = Vote(
+            self.CHAMBERS[vote_chamber[0]], vote_date, action_text,
+            total_yea > total_nay, total_yea, total_nay, total_other)
         vote.add_source(url)
         for member in voters['Y']:
             vote.yes(member)
