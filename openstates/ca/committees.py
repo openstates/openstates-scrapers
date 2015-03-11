@@ -138,7 +138,7 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
         doc = self.lxmlize(url)
         members = doc.xpath(
             '//table/thead/tr//*[contains(text(), "Committee Members")]/'
-            'ancestor::table/tbody/tr/td[1]/a/text()')
+            'ancestor::table//tr/td[1]/a/text()')
 
         for member in members:
             (mem_name, mem_role) = re.search(r'''(?ux)
