@@ -126,7 +126,6 @@ class ALBillScraper(BillScraper):
         form = {
             '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
             '__EVENTARGUMENT': 'Select$0',
-            '__LASTFOCUS': '',
             '__VIEWSTATE': viewstate,
             '__VIEWSTATEGENERATOR': viewstategenerator,
             'ctl00$cboSession': self.session_name,
@@ -153,7 +152,6 @@ class ALBillScraper(BillScraper):
         form = {
             '__EVENTTARGET': 'ctl00$MainDefaultContent$gvStatus$ctl02$ctl00',
             '__EVENTARGUMENT': 'Select$0',
-            '__LASTFOCUS': '',
             '__VIEWSTATE': viewstate,
             '__VIEWSTATEGENERATOR': viewstategenerator,
             'ctl00$cboSession': self.session_name,
@@ -219,15 +217,7 @@ class ALBillScraper(BillScraper):
                 title = "[No title given by state]"
             bill['title'] = title
 
-            (viewstate, ) = bill_doc.xpath('//input[@id="__VIEWSTATE"]/@value')
-            (viewstategenerator, ) = bill_doc.xpath(
-                '//input[@id="__VIEWSTATEGENERATOR"]/@value')
             form = {
-                '__EVENTTARGET': '',
-                '__EVENTARGUMENT': '',
-                '__LASTFOCUS': '',
-                '__VIEWSTATE': viewstate,
-                '__VIEWSTATEGENERATOR': viewstategenerator,
                 'ctl00$cboSession': self.session_name,
             }
 
@@ -360,8 +350,8 @@ class ALBillScraper(BillScraper):
                     )
 
                     form.pop('ctl00$ScriptManager1')
-                    form['__EVENTARGUMENT'] = ''
-                    form['__EVENTTARGET'] = ''
+                    form.pop('__EVENTARGUMENT')
+                    form.pop('__EVENTTARGET')
 
             self.save_bill(bill)
 
