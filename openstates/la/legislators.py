@@ -22,6 +22,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
     jurisdiction = 'la'
     latest_only = True
 
+    """
     def scrape_upper_leg_page(self, term, url, who):
         page = self.lxmlize(url)
         info = page.xpath("//td[@bgcolor='#EBEAEC']")
@@ -116,6 +117,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                 continue
             self.scrape_upper_leg_page(term, leg.attrib['href'], who)
 
+    """
     def scrape_lower_legislator(self, url, leg_info, term):
         url2 = "http://house.louisiana.gov/H_Reps/H_Reps_ByParty.asp"
         page = self.lxmlize(url)
@@ -127,11 +129,11 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
-        partyinfo = page2.xpath("//table[@width='100%']")
-        partyblk = [x.strip() for x in partyinfo, partyinfo.xpath(".//td[@class='auto-style6']/text()")]
-        
-        print partyblk
-        sys.exti()
+        partyinfo = page2.xpath("//table[@width='100%']")[1]
+        partyblk = [x.strip() for x in partyinfo.xpath(".//td[@class='auto-style6']/text()")]
+
+        partydata = zip(partyblk)
+        #print partydata
 
         party_flags = {
             "Democrat": "Democratic",
@@ -144,8 +146,9 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
         party = 'other'
         for p in party_flags:
-            if p in partyblk:
-                party = party_flags[p]
+            for key in partydata:
+                if p in partyblk:
+                    party = party_flags[p]
 
         if party == 'other':
             raise Exception
@@ -194,7 +197,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             self.scrape_lower_legislator(hrp, info, term)
 
     def scrape(self, chamber, term):
-        if chamber == "upper":
-            return self.scrape_upper(chamber, term)
-        elif chamber == "lower":
+        #if chamber == "upper":
+            #return self.scrape_upper(chamber, term)
+        if chamber == "lower":
             return self.scrape_lower(chamber, term)
