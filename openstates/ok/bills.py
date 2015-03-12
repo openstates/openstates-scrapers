@@ -155,11 +155,12 @@ class OKBillScraper(BillScraper):
                 motion_index = 8
             else:
                 chamber = 'upper'
-                motion_index = 9
+                motion_index = 13
 
             motion = header.xpath(
                 "string(following-sibling::p[%d])" % motion_index).strip()
             motion = re.sub(r'\s+', ' ', motion)
+            assert motion.strip(), "Motion text not found"
             match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
             if match:
                 motion = match.group(1)
@@ -205,7 +206,7 @@ class OKBillScraper(BillScraper):
                     for name in line.split('   '):
                         if not name:
                             continue
-                        if 'HOUSE BILL' in name or 'SENATE BILL' in name:
+                        if 'HOUSE' in name or 'SENATE ' in name:
                             continue
                         votes[vtype].append(name.strip())
 
