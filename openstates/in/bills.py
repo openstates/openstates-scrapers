@@ -213,9 +213,12 @@ class INBillScraper(BillScraper):
 
 
 
-
+            #subjects
+            subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
+            bill["subjects"] = subjects
 
             #votes
+
 
 
 
