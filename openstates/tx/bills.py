@@ -11,7 +11,7 @@ from billy.scrape.bills import BillScraper, Bill
 class TXBillScraper(BillScraper):
     jurisdiction = 'tx'
     _FTP_ROOT = 'ftp.legis.state.tx.us'
-    CHAMBERS = {'H': 'lower', 'S': 'lower'}
+    CHAMBERS = {'H': 'lower', 'S': 'upper'}
     NAME_SLUGS = {
         'I': 'Introduced',
         'E': 'Engrossed',
