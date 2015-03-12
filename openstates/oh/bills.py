@@ -164,8 +164,9 @@ class OHBillScraper(BillScraper):
                                     try:
                                         action_type = action_dict[action["actioncode"]]
                                     except KeyError:
-                                        raise AssertionError("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
-                                        
+                                        self.warning("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
+                                        action_type = "other"
+
 
                                     date = datetime.datetime.strptime(action["datetime"],"%Y-%m-%dT%H:%M:%S")
 
