@@ -22,7 +22,6 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
     jurisdiction = 'la'
     latest_only = True
 
-    """
     def scrape_upper_leg_page(self, term, url, who):
         page = self.lxmlize(url)
         info = page.xpath("//td[@bgcolor='#EBEAEC']")
@@ -117,7 +116,6 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                 continue
             self.scrape_upper_leg_page(term, leg.attrib['href'], who)
 
-    """
     def scrape_lower_legislator(self, url, leg_info, term):
         url2 = "http://house.louisiana.gov/H_Reps/H_Reps_ByParty.asp"
         page = self.lxmlize(url)
@@ -197,7 +195,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             self.scrape_lower_legislator(hrp, info, term)
 
     def scrape(self, chamber, term):
-        #if chamber == "upper":
-            #return self.scrape_upper(chamber, term)
+        if chamber == "upper":
+            return self.scrape_upper(chamber, term)
         if chamber == "lower":
             return self.scrape_lower(chamber, term)
