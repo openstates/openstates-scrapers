@@ -213,9 +213,6 @@ class OKBillScraper(BillScraper):
             if passed is None:
                 passed = counts['yes'] > (counts['no'] + counts['other'])
 
-            if not motion:
-                motion = 'Senate Vote' if chamber == 'upper' else 'House Vote'
-
             vote = Vote(chamber, date, motion, passed,
                         counts['yes'], counts['no'], counts['other'],
                         rcs_num=rcs)
