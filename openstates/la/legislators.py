@@ -1,14 +1,10 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
 
 from .common import BackoffScraper
 
-import scrapelib
-import lxml.html
-import sys
 
 def xpath_one(el, expr):
     ret = el.xpath(expr)
@@ -24,7 +20,6 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
     def scrape_upper_leg_page(self, term, url, who):
         page = self.lxmlize(url)
-        info = page.xpath("//td[@bgcolor='#EBEAEC']")
         who = page.xpath("//font[@size='4']")
         who = who[0].text_content()
         who = re.sub("\s+", " ", who)
@@ -33,13 +28,14 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         district = district.replace("District", "").strip()
 
         infopane = page.xpath("//table[@cellpadding='2']")
-        
+
         infos = [x.tail.strip() if x.tail else ""
                  for x in infopane[1].xpath(".//b")]
         infos2 = [x.tail.strip() if x.tail else ""
-                 for x in infopane[1].xpath(".//br")]
-        infos3 = [x.strip() for x in infopane[1].xpath(".//a[contains(@href, 'mailto')]/text()")]
-        
+                  for x in infopane[1].xpath(".//br")]
+        infos3 = [x.strip() for x in infopane[1].xpath(
+            ".//a[contains(@href, 'mailto')]/text()")]
+
         keys = ["party", "district-office", "phone", "fax", "staffer", "email"]
         nodes = [[]]
         for node in infos:
@@ -50,9 +46,9 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             nodes[-1].append(node)
         for node in infos2:
             if node == "":
-               if nodes[-1] != []:
+                if nodes[-1] != []:
                     nodes.append([])
-               continue
+                continue
             nodes[-1].append(node)
         for node in infos3:
             if node == "":
@@ -62,9 +58,9 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             nodes[-1].append(node)
 
         data = dict(zip(keys, nodes))
-        
+
         #print data
-        
+
         district_office = "\n".join(data['district-office'])
         #capitol_office = "\n".join(data['capitol-office'])
 
@@ -72,7 +68,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             "Republican": "Republican",
             "Democrat": "Democratic",
         }
-        
+
         party = 'other'
         for slug in parties:
             for key, value in data.iteritems():
@@ -91,7 +87,6 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                          district,
                          who,
                          **kwargs)
-
 
         leg.add_office('district',
                        'District Office',
@@ -121,14 +116,15 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         page = self.lxmlize(url)
         page2 = self.lxmlize(url2)
         photo = xpath_one(page, '//img[@rel="lightbox"]').attrib['src']
-        infoblk = xpath_one(page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
+        infoblk = xpath_one(
+            page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
         infoblk = infoblk.getparent()
-        info = infoblk.text_content()
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
         partyinfo = page2.xpath("//table[@width='100%']")[1]
-        partyblk = [x.strip() for x in partyinfo.xpath(".//td[@class='auto-style6']/text()")]
+        partyblk = [x.strip() for x in partyinfo.xpath(
+            ".//td[@class='auto-style6']/text()")]
 
         partydata = zip(partyblk)
         #print partydata
@@ -139,7 +135,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             "Independent": "Independent"
         }
 
-        if leg_info['name'].startswith(("Vacant","Miguez")):
+        if leg_info['name'].startswith(("Vacant", "Miguez")):
             return
 
         party = 'other'
