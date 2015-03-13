@@ -45,6 +45,9 @@ class OHBillScraper(BillScraper):
                             "refer_210":"committee:referred",
                             "crpt_301":"other",
                             "crpt_317": "other",
+                            "concur_606": "bill:passed",
+                            "pass_301": "bill:passed",
+                            "refer_220": "committee:referred",
                             "intro_102":["bill:introduced","bill:passed"],
                             "intro_105":["bill:introduced","bill:passed"],
                             "intro_ref_ctte_100":"committee:referred",
@@ -161,8 +164,9 @@ class OHBillScraper(BillScraper):
                                     try:
                                         action_type = action_dict[action["actioncode"]]
                                     except KeyError:
-                                        raise AssertionError("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
-                                        
+                                        self.warning("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
+                                        action_type = "other"
+
 
                                     date = datetime.datetime.strptime(action["datetime"],"%Y-%m-%dT%H:%M:%S")
 
@@ -260,7 +264,8 @@ class OHBillScraper(BillScraper):
                             "RH": "Reported: House",
                             "PH": "Passed: House",
                             "":"",
-                            "ICS":""}
+                            "ICS":"",
+                            "RCS":""}
 
         for item in documents:
             if type_of_document == "amendment":
@@ -274,7 +279,11 @@ class OHBillScraper(BillScraper):
                 self.logger.warning("The link to doc {name} does not exist, skipping".format(name=name))
                 continue
             if "legacyver" in item:
-                ver = leg_ver_types[item["legacyver"]]
+                try:
+                    ver = leg_ver_types[item["legacyver"]]
+                except KeyError:
+                    self.logger.warning("New legacyver type {}, add it to the leg_ver_types dictionary".format(item["legacyver"]))
+                    ver = ""
                 if ver:
                     name = name+": "+ver
             bill.add_document(name,link,mimetype="application/pdf")

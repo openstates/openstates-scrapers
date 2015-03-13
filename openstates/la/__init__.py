@@ -22,7 +22,7 @@ metadata = {
         {
             "name": "2012-2015",
             "start_year": 2012,
-            "end_year": 2016,
+            "end_year": 2015,
             "sessions": [
                 "2012",
                 "2013",
