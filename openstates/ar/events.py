@@ -51,6 +51,11 @@ class AREventScraper(EventScraper):
         page = csv.reader(StringIO.StringIO(page.bytes), delimiter='|')
 
         for row in page:
+            # Deal with embedded newline characters, which cause fake new rows
+            LINE_LENGTH = 11
+            while len(row) < LINE_LENGTH:
+                row += page.next()
+
             desc = row[7].strip()
 
             match = re.match(r'^(.*)- (HOUSE|SENATE)$', desc)
