@@ -20,74 +20,63 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
     def scrape_upper_leg_page(self, term, url, who):
         page = self.lxmlize(url)
-        who = page.xpath("//font[@size='4']")
-        who = who[0].text_content()
-        who = re.sub("\s+", " ", who)
-        who, district = (x.strip() for x in who.rsplit(" ", 1))
-        who = who.replace("Senator", "").strip()
-        district = district.replace("District", "").strip()
 
-        infopane = page.xpath("//table[@cellpadding='2']")
+        (who, ) = [x for x in
+                   page.xpath('//tr/td/font/text()') if
+                   x.strip().startswith("Senator ")
+                   ]
+        who = re.search(r'(?u)^\s*Senator\s*(.*?)\s*$', who).group(1)
 
-        infos = [x.tail.strip() if x.tail else ""
-                 for x in infopane[1].xpath(".//b")]
-        infos2 = [x.tail.strip() if x.tail else ""
-                  for x in infopane[1].xpath(".//br")]
-        infos3 = [x.strip() for x in infopane[1].xpath(
-            ".//a[contains(@href, 'mailto')]/text()")]
+        (district, ) = [x for x in
+                        page.xpath('//tr/td/font/text()') if
+                        x.strip().startswith("District - ")
+                        ]
+        district = re.search(
+            r'(?u)^\s*District\s*-\s*(.*?)\s*$', district).group(1)
 
-        keys = ["party", "district-office", "phone", "fax", "staffer", "email"]
-        nodes = [[]]
-        for node in infos:
-            if node == "":
-                if nodes[-1] != []:
-                    nodes.append([])
-                continue
-            nodes[-1].append(node)
-        for node in infos2:
-            if node == "":
-                if nodes[-1] != []:
-                    nodes.append([])
-                continue
-            nodes[-1].append(node)
-        for node in infos3:
-            if node == "":
-                if nodes[-1] != []:
-                    nodes.append([])
-                continue
-            nodes[-1].append(node)
-
-        data = dict(zip(keys, nodes))
-
-        district_office = "\n".join(data['district-office'])
+        info = [x.strip() for x in
+                page.xpath('//font[contains(text(), "Information:")]/'
+                'ancestor::table[1]//text()') if
+                x.strip()
+                ]
 
         parties = {
             "Republican": "Republican",
             "Democrat": "Democratic",
         }
+        party_index = info.index("Party:") + 1
+        party = parties[info[party_index]]
 
-        party = 'other'
-        for slug in parties:
-            for key, value in data.iteritems():
-                if slug in value:
-                    party = parties[slug]
+        phone_index = info.index("District Phone") + 1
+        phone = info[phone_index]
+        assert (sum(c.isdigit() for c in phone) == 9,
+                "Phone number is invalid: {}".format(phone))
 
-        if party == 'other':
-            raise Exception
+        # Address exists for all lines between party and phone
+        address = "\n".join(info[party_index + 2:phone_index - 1])
+        address = address.replace("\r", "")
 
-        kwargs = {
-            "party": party
-        }
+        fax_index = info.index("Fax") + 1
+        fax = info[fax_index]
+        assert (sum(c.isdigit() for c in fax) == 9,
+                "Fax number is invalid: {}".format(fax))
+
+        email_index = info.index("E-mail Address") + 1
+        email = info[email_index]
+        assert "@" in email, "Email info is not valid: {}".format(email)
 
         leg = Legislator(term,
                          'upper',
                          district,
                          who,
-                         **kwargs)
+                         party=party)
 
         leg.add_office('district',
                        'District Office',
-                       address=district_office)
+                       address=address,
+                       phone=phone,
+                       fax=fax,
+                       email=email)
 
         leg.add_source(url)
 
