@@ -1,14 +1,10 @@
 import re
 import csv
 import datetime
+import cStringIO as StringIO
 
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
-
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
+
 
 # ftp://www.arkleg.state.ar.us/dfadooas/ReadMeScheduledMeetings.txt
 TIMECODES = {
@@ -42,10 +38,7 @@ TIMECODES = {
 class AREventScraper(EventScraper):
     jurisdiction = 'ar'
 
-    def scrape(self, chamber, session):
-        if chamber == 'other':
-            return
-
+    def scrape(self, session, chambers):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
         page = self.urlopen(url)
         page = csv.reader(StringIO.StringIO(page.bytes), delimiter='|')
@@ -62,13 +55,18 @@ class AREventScraper(EventScraper):
             if match:
                 comm_chamber = {'HOUSE': 'lower',
                                 'SENATE': 'upper'}[match.group(2)]
-                if comm_chamber != chamber:
-                    continue
 
                 comm = match.group(1).strip()
                 comm = re.sub(r'\s+', ' ', comm)
                 location = row[5].strip() or 'Unknown'
                 when = datetime.datetime.strptime(row[2], '%Y-%m-%d %H:%M:%S')
+
+                # Only assign events to a session if they are in the same year
+                # Given that session metadata have some overlap and
+                # missing end dates, this is the best option available
+                session_year = int(session[:4])
+                if session_year != when.year:
+                    continue
 
                 event = Event(session, when, 'committee:meeting',
                               "%s MEETING" % comm,
@@ -76,7 +74,7 @@ class AREventScraper(EventScraper):
                 event.add_source(url)
 
                 event.add_participant('host', comm, 'committee',
-                                      chamber=chamber)
+                                      chamber=comm_chamber)
 
                 time = row[3].strip()
                 if time in TIMECODES:
