@@ -48,6 +48,8 @@ class AREventScraper(EventScraper):
             LINE_LENGTH = 11
             while len(row) < LINE_LENGTH:
                 row += page.next()
+                assert (len(row) <= LINE_LENGTH,
+                        "Line is too long: {}".format(row))
 
             desc = row[7].strip()
 
