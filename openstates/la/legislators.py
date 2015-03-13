@@ -59,10 +59,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
         data = dict(zip(keys, nodes))
 
-        #print data
-
         district_office = "\n".join(data['district-office'])
-        #capitol_office = "\n".join(data['capitol-office'])
 
         parties = {
             "Republican": "Republican",
@@ -92,10 +89,6 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
                        'District Office',
                        address=district_office)
 
-        #leg.add_office('capitol',
-                       #'Capitol Office',
-                       #address=capitol_office)
-
         leg.add_source(url)
 
         self.save_legislator(leg)
@@ -112,9 +105,13 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
             self.scrape_upper_leg_page(term, leg.attrib['href'], who)
 
     def scrape_lower_legislator(self, url, leg_info, term):
-        url2 = "http://house.louisiana.gov/H_Reps/H_Reps_ByParty.asp"
         page = self.lxmlize(url)
-        page2 = self.lxmlize(url2)
+
+        name = page.xpath('//div[@class="FullName"]/text()')[0].strip()
+        if name.startswith("District ") or name.startswith("Vacant "):
+            self.warning("Seat is vacant: {}".format(name))
+            return
+
         photo = xpath_one(page, '//img[@rel="lightbox"]').attrib['src']
         infoblk = xpath_one(
             page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
@@ -122,30 +119,16 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
         cty = cty.getnext()
 
-        partyinfo = page2.xpath("//table[@width='100%']")[1]
-        partyblk = [x.strip() for x in partyinfo.xpath(
-            ".//td[@class='auto-style6']/text()")]
-
-        partydata = zip(partyblk)
-        #print partydata
-
         party_flags = {
             "Democrat": "Democratic",
             "Republican": "Republican",
             "Independent": "Independent"
         }
-
-        if leg_info['name'].startswith(("Vacant", "Miguez")):
-            return
-
-        party = 'other'
-        for p in party_flags:
-            for key in partydata:
-                if p in partyblk:
-                    party = party_flags[p]
-
-        if party == 'other':
-            raise Exception
+        party_info = page.xpath(
+            '//div[@class="FullName"]/ancestor::td[1]/text()')
+        (party_info, ) = [x.strip() for x in party_info if x.strip()]
+        party_info = party_info.split('-')[0].strip()
+        party = party_flags[party_info]
 
         kwargs = {"url": url,
                   "party": party,
@@ -160,10 +143,11 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
         kwargs = {
             "address": leg_info['office'],
             "phone": leg_info['phone'],
+            "email": leg_info['email'],
         }
-
-        if leg_info['email'] != "":
-            kwargs['email'] = leg_info['email']
+        for key in kwargs.keys():
+            if not kwargs[key].strip():
+                kwargs[key] = None
 
         leg.add_office('district',
                        'District Office',
