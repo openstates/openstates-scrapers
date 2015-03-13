@@ -150,6 +150,8 @@ class OKBillScraper(BillScraper):
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
+
+            # Each chamber has the motion name on a different line of the file
             if 'HOUSE' in header.xpath("string()"):
                 chamber = 'lower'
                 motion_index = 8
