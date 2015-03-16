@@ -42,8 +42,6 @@ class INBillScraper(BillScraper):
     categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
 
-    # Can turn this on or off. There are thousands of subjects and it takes hours.
-    SCRAPE_SUBJECTS = True
 
     def make_html_source(self,session,bill_id):
         url = "http://iga.in.gov/legislative/{}/".format(session)
