@@ -101,7 +101,9 @@ class INCommitteeScraper(CommitteeScraper):
                     comm.add_member(mem_name)
 
             api_source = api_base_url + comm_name
-            html_source = html_base_url + comm_name.replace("committee_","")
+
+            if comm_name[:10] == "committee_":
+                html_source = html_base_url + comm_name[10:]
             comm.add_source(api_source,note="requires API key")
             comm.add_source(html_source)
             self.save_committee(comm)
