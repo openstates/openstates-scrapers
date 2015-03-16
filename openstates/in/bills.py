@@ -50,16 +50,16 @@ class INBillScraper(BillScraper):
         urls = {
             "hb":"bills/house/",
             "hr":"resolutions/house/simple/",
-            "hcr":"resolutions/house/concurrent",
-            "hjr":"resolutions/house/joint",
-            "hc":"resolutions/house/concurrent",
-            "hj":"resolutions/house/joint",
+            "hcr":"resolutions/house/concurrent/",
+            "hjr":"resolutions/house/joint/",
+            "hc":"resolutions/house/concurrent/",
+            "hj":"resolutions/house/joint/",
             "sb":"bills/senate/",
             "sr":"resolutions/senate/simple/",
-            "scr":"resolutions/senate/concurrent",
-            "sjr":"resolutions/senate/joint",
-            "sc":"resolutions/senate/concurrent",
-            "sj":"resolutions/senate/joint"
+            "scr":"resolutions/senate/concurrent/",
+            "sjr":"resolutions/senate/joint/",
+            "sc":"resolutions/senate/concurrent/",
+            "sj":"resolutions/senate/joint/"
             }
         bill_id = bill_id.lower()
         try:
