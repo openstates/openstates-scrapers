@@ -60,15 +60,9 @@ class INBillScraper(BillScraper):
             "sj":"resolutions/senate/joint/"
             }
         bill_id = bill_id.lower()
-        try:
-            int(bill_id[2])
-        except ValueError:
-            bill_prefix = bill_id[:3]
-            bill_num = bill_id[3:]
-        else:
-            bill_prefix = bill_id[:2]
-            bill_num = bill_id[2:]
 
+        bill_prefix = "".join([c for c in bill_id if c.isalpha()])
+        bill_num = "".join([c for c in bill_id if c.isdigit()])
 
         try:
             url += urls[bill_prefix]
