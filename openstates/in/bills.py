@@ -91,6 +91,15 @@ class INBillScraper(BillScraper):
         all_pages = client.unpaginate(r)
         for b in all_pages:
             bill_id = b["billName"]
+            for idx,char in enumerate(bill_id):
+                try:
+                    int(char)
+                except ValueError:
+                    continue
+                disp_bill_id = bill_id[:idx]+" "+str(int(bill_id[idx:]))
+                break
+
+
             bill_link = b["link"]
             api_source = api_base_url + bill_link
             bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
@@ -111,7 +120,7 @@ class INBillScraper(BillScraper):
 
 
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
-            bill = Bill(session,original_chamber,bill_id,title)
+            bill = Bill(session,original_chamber,disp_bill_id,title)
             
             bill.add_source(api_source,note="API key needed")
             bill.add_source(self.make_html_source(session,bill_id))
