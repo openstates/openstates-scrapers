@@ -77,8 +77,10 @@ class INCommitteeScraper(CommitteeScraper):
             try:
                 owning_comm = subcomms[name]
             except KeyError:
+                name = name.replace("Statutory Committee on","").strip()
                 comm = Committee(chamber,name)
             else:
+                name = name.replace("Statutory Committee on","").strip()
                 comm = Committee(chamber,owning_comm,subcommittee=name)
 
             chair = self.process_special_members(comm,comm_json,"chair")
@@ -100,16 +102,3 @@ class INCommitteeScraper(CommitteeScraper):
             comm.add_source(api_source,note="requires API key")
             comm.add_source(html_source)
             self.save_committee(comm)
-
-
-
-
-
-
-
-
-
-
-
-
-

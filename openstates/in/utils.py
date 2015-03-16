@@ -12,7 +12,7 @@ def get_with_increasing_timeout(scraper,link,fail=False,kwargs={}):
             html = scraper.get(link,timeout=timeout_length,**kwargs)
         except requests.exceptions.ConnectTimeout:
             old_length = timeout_length
-            timeout_length **= 2
+            timeout_length **= 2 #this squares the result. awesome.
             scraper.logger.debug("Timed out after {now} seconds, increasing to {next} and trying again".format(now=old_length,next=timeout_length))
         else:
             return html
