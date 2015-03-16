@@ -158,12 +158,16 @@ class INBillScraper(BillScraper):
                 action_type = []
                 d = action_desc.lower()
                 committee = None
+
+                reading = False
                 if "first reading" in d:
                     action_type.append("bill:reading:1")
+                    reading = True
 
                 if ("second reading" in d
                     or "reread second time" in d):
                     action_type.append("bill:reading:2")
+                    reading = True
 
                 if ("third reading" in d
                     or "reread third time" in d):
@@ -172,6 +176,10 @@ class INBillScraper(BillScraper):
                         action_type.append("bill:passed")
                     if "failed" in d:
                         action_type.append("bill:failed")
+                    reading = True
+
+                if "adopted voice vote" in d and reading:
+                    action_type.append("bill:passed")
 
                 if ("referred" in d and "committee on" in d
                     or "reassigned" in d and "committee on" in d):
@@ -186,7 +194,7 @@ class INBillScraper(BillScraper):
                         action_type.append("committee:failed")
 
                 if "amendment" in d:
-                    if "pass" in d or "prevail" in d:
+                    if "pass" in d or "prevail" in d or "adopted" in d:
                         action_type.append("amendment:passed")
                     if "fail" or "out of order" in d:
                         action_type.append("amendment:failed")
