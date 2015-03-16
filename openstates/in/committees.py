@@ -76,8 +76,7 @@ class INCommitteeScraper(CommitteeScraper):
             elif chamber == "House":
                 chamber = "lower"
             else:
-                chamber = "joint"
-
+                raise AssertionError("Unknown committee chamber {}".format(chamber))
             name = comm_json["name"]
             try:
                 owning_comm = subcomms[name]
