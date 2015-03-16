@@ -164,10 +164,11 @@ class INBillScraper(BillScraper):
                     action_type.append("bill:reading:1")
 
                 if ("second reading" in d
-                    or "reread second time"):
+                    or "reread second time" in d):
                     action_type.append("bill:reading:2")
 
-                if "third reading" in d:
+                if ("third reading" in d
+                    or "reread third time" in d):
                     action_type.append("bill:reading:3")
                     if "passed" in d:
                         action_type.append("bill:passed")
@@ -195,18 +196,31 @@ class INBillScraper(BillScraper):
                         action_type.append("amendment:withdrawn")
 
 
-                #blacklisted actions - don't correspond to anything we know
-                if ("authored" in d
+                if "signed by the governor" in d:
+                    action_type.append("governor:signed")
+
+
+                if ("not substituted for majority report" in d
+                    or "returned to the house" in d
                     or "referred to the senate" in d
                     or "referred to the house" in d
+                    or "technical corrections" in d
+                    or "signed by the president" in d
+                    or "signed by the speaker"
+                    or "authored" in d
                     or "sponsor" in d
                     or "coauthor" in d
-                    or ("rule" in d and "suspended" in d)):
-                    #not really actions we track
-                    continue
+                    or ("rule" in d and "suspended" in d)
+                    or "removed as author" in d
+                    or ("added as" in d and "author" in d)
+                    or "public law" in d):
+                        action_type.append("other")
 
                 if len(action_type) == 0:
-                    raise AssertionError("Could not recognize an action in '{}'".format(action_desc))
+                    #calling it other and moving on with a warning
+                    self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
+                    action_type = ["other"]
+
 
                 elif committee:
                     bill.add_action(chamber,action_desc,date,type=action_type,committees=committee)
