@@ -98,6 +98,8 @@ class INBillScraper(BillScraper):
             bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
             
             title = bill_json["title"]
+            if title == "NoneNone":
+                title = None
             #sometimes title is blank
             #if that's the case, we can check to see if
             #the latest version has a short description
