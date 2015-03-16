@@ -31,6 +31,7 @@ class INLegislatorScraper(LegislatorScraper):
             doc.make_links_absolute(html_link)
             address, phone = doc.xpath("//address")
             address = address.text_content().strip()
+            address = "\n".join([l.strip() for l in address.split("\n")])
             phone = phone.text_content().strip()
             district = doc.xpath("//span[@class='district-heading']")[0].text.lower().replace("district","").strip()
             legislator = Legislator(term,
@@ -40,6 +41,8 @@ class INLegislatorScraper(LegislatorScraper):
                                     firstname=firstname,
                                     lastname=lastname,
                                     party=party)
+            legislator.add_office('capitol', 'Capitol Office', address=address,
+                           phone=phone)
             legislator.add_source(html_link)
             legislator.add_source(api_link,note="Requires API key")
             self.save_legislator(legislator)
