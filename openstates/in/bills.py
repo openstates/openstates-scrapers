@@ -71,11 +71,12 @@ class INBillScraper(BillScraper):
             bill_prefix = bill_id[:2]
             bill_num = bill_id[2:]
 
+
         try:
             url += urls[bill_prefix]
         except KeyError:
             raise AssertionError("Unknown bill type {}, don't know how to make url".format(bill_id))
-        url += bill_num
+        url += str(int(bill_num))
         return url
 
 
