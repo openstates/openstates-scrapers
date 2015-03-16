@@ -49,8 +49,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
         phone_index = info.index("District Phone") + 1
         phone = info[phone_index]
-        assert (sum(c.isdigit() for c in phone) == 9,
-                "Phone number is invalid: {}".format(phone))
+        assert sum(c.isdigit() for c in phone) == 10, "Phone number is invalid: {}".format(phone)
 
         # Address exists for all lines between party and phone
         address = "\n".join(info[party_index + 2:phone_index - 1])
@@ -58,8 +57,7 @@ class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
 
         fax_index = info.index("Fax") + 1
         fax = info[fax_index]
-        assert (sum(c.isdigit() for c in fax) == 9,
-                "Fax number is invalid: {}".format(fax))
+        assert sum(c.isdigit() for c in fax) == 10, "Fax number is invalid: {}".format(fax)
 
         email_index = info.index("E-mail Address") + 1
         email = info[email_index]
