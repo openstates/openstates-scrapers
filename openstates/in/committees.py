@@ -9,13 +9,16 @@ class INCommitteeScraper(CommitteeScraper):
     jurisdiction = 'in'
 
     def process_special_members(self,comm,comm_json,role_name):
+        role_dict = {"chair":"Chair",
+                    "viceChair": "Vice Chair",
+                    "rankingMinMember":"Ranking Minority Member"}
         try:
             mem = comm_json[role_name]
         except KeyError:
             return
         if mem:
             person = mem["firstName"]+" "+mem["lastName"]
-            comm.add_member(person,role=role_name)
+            comm.add_member(person,role=role_dict[role_name])
             return person
         return None
 
