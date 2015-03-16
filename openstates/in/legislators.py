@@ -19,7 +19,6 @@ class INLegislatorScraper(LegislatorScraper):
         r = client.get("chamber_legislators",session=session,chamber=chamber_name)
         all_pages = client.unpaginate(r)
         for leg in all_pages:
-            print leg
             firstname = leg["firstName"]
             lastname = leg["lastName"]
             party = leg["party"]
