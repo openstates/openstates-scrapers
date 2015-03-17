@@ -13,7 +13,10 @@ class DCCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(com_url)
 
+        #dc spelled committe(e) two different ways
+        #IN THEIR HTML CLASS NAMES!
         comms = doc.xpath('//li[contains(@class,"node_committee-on")]/a')
+        comms += doc.xpath('//li[contains(@class,"node_committe-on")]/a')
         for committee in comms:
             url = committee.attrib['href']
             comm_name = committee.text_content().strip()
