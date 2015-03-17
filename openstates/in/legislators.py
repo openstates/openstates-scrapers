@@ -1,111 +1,51 @@
-import re
-import datetime
-import urlparse
-import collections
-import contextlib
 
 import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import scrapelib
+from apiclient import ApiClient
+from .utils import get_with_increasing_timeout
 
 
 class INLegislatorScraper(LegislatorScraper):
     jurisdiction = 'in'
-    _url = 'http://iga.in.gov/legislative/%d/legislators'
-
-    @property
-    def url(self):
-        return self._url % self.year
-
-    def get_termdata(self, term_id):
-        for term in self.metadata['terms']:
-            if term['name'] == term_id:
-                return term
 
     def scrape(self, chamber, term):
-        self.requests_per_minute = 15
-        self.termdata = self.get_termdata(term)
+        client = ApiClient(self)
+        t = next((item for item in self.metadata["terms"] if item["name"] == term),None)
+        session = max(t["sessions"])
+        base_url = "https://iga.in.gov/legislative"
+        api_base_url = "https://api.iga.in.gov/{}".format(session)
+        chamber_name = "Senate" if chamber == "upper" else "House"
+        r = client.get("chamber_legislators",session=session,chamber=chamber_name)
+        all_pages = client.unpaginate(r)
+        for leg in all_pages:
+            firstname = leg["firstName"]
+            lastname = leg["lastName"]
+            party = leg["party"]
+            link = leg["link"]
+            api_link = api_base_url+link
+            html_link = base_url+link.replace("legislators/","legislators/legislator_")
+            html = get_with_increasing_timeout(self,html_link,fail=True,kwargs={"verify":False})
+            doc = lxml.html.fromstring(html.text)
+            doc.make_links_absolute(html_link)
+            address, phone = doc.xpath("//address")
+            address = address.text_content().strip()
+            address = "\n".join([l.strip() for l in address.split("\n")])
+            phone = phone.text_content().strip()
+            district = doc.xpath("//span[@class='district-heading']")[0].text.lower().replace("district","").strip()
+            image_link = base_url+link.replace("legislators/","portraits/legislator_")
+            legislator = Legislator(term,
+                                    chamber,
+                                    district,
+                                    " ".join([firstname,lastname]),
+                                    firstname=firstname,
+                                    lastname=lastname,
+                                    party=party,
+                                    photo_url = image_link)
+            legislator.add_office('capitol', 'Capitol Office', address=address,
+                           phone=phone)
+            legislator.add_source(html_link)
+            legislator.add_source(api_link,note="Requires API key")
+            self.save_legislator(legislator)
 
-        year = datetime.datetime.now().year
-        if year not in self.termdata.values():
-            year = self.termdata['start_year']
-        self.year = year
-
-        # Get the find-a-legislator page.
-        html = self.urlopen(self.url)
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(self.url)
-        optgroup = dict(upper='Senators', lower='Representatives')[chamber]
-        for option in doc.xpath('//optgroup[@id="%s"]/option' % optgroup):
-            self.scrape_legislator(chamber, term, option)
-
-    @contextlib.contextmanager
-    def scrapelib_settings(self, **kwargs):
-        previous = {}
-        for k, v in kwargs.items():
-            # Store previous setting.
-            val = getattr(self, k, None)
-            previous[k] = val
-
-            # Override them.
-            setattr(self, k, val)
-        yield
-        for k, v in previous.items():
-            setattr(self, k, v)
-
-    def scrape_legislator(self, chamber, term, option):
-        url = urlparse.urljoin(self.url, option.attrib['value'])
-        name, party, district = re.split(r'\s*,\s*', option.text.strip())
-        name = re.sub(r'^(Sen\.|Rep\.)\s+', '', name)
-        district = re.sub(r'^District\s+', '', district)
-        if district == '[N/A]':
-            msg = 'No district found for %r; skipping.'
-            self.logger.warning(msg, name)
-            return
-        leg = Legislator(term, chamber, district, name, party=party)
-
-        # Scrape leg page.
-        try:
-            html = self.urlopen(url)
-        except scrapelib.HTTPError as exc:
-            # As of July 2014, this only happens when a page has
-            # gone missing from their varnish server.
-            # if exc.response.status_code is 503:
-            self.logger.exception(exc)
-            self.logger.warning('Skipping legislator at url: %s' % url)
-            skipped = True
-            return
-
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(self.url)
-        leg.add_source(url)
-
-        # Scrape committees.
-        for tr in doc.xpath('//div[@class="legislator-committees-container"]//table//tr'):
-            committee, committee_type, role = tr
-            committee = committee.text_content().strip()
-            role = role.text_content().strip()
-            if 'member' in role.lower():
-                role = 'committee member'
-            elif 'chair' in role.lower():
-                role = 'chair'
-            if committee != "Committee Name":
-                leg.add_role(role, term, chamber=chamber, committee=committee)
-
-        # Scrape offices.
-        dist_office, phone = doc.xpath('//address')
-        dist_office = dist_office.text_content().strip()
-        dist_office = re.sub(r' {2,}', '', dist_office)
-
-        phone = phone.text_content().strip()
-        email = doc.xpath('string(//a[starts-with(@href, "mailto:")]/@href)')
-        photo_url = doc.xpath('string(//img[contains(@class, "member")]/@src)')
-
-        leg.update(email=email, photo_url=photo_url)
-        leg.add_office(
-            address=dist_office, name='Capitol Office',
-            type='capitol', phone=phone)
-
-        self.save_legislator(leg)
 

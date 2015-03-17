@@ -9,7 +9,7 @@ import lxml.html
 
 from .actions import Categorizer
 from .models import parse_vote, BillDocuments, VoteParseError
-
+from apiclient import ApiClient
 
 def parse_vote_count(s):
     if s == 'NONE':
@@ -42,201 +42,216 @@ class INBillScraper(BillScraper):
     categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
 
-    # Can turn this on or off. There are thousands of subjects and it takes hours.
-    SCRAPE_SUBJECTS = True
 
-    def scrape(self, term, chambers):
-        if 0 < self._requests_per_minute:
-            self.requests_per_minute = 30
-        seen_bill_ids = set()
-
-        # Get resolutions.
-        url = 'http://iga.in.gov/legislative/{}/resolutions'.format(term)
-        self.logger.info('GET ' + url)
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        for a in doc.xpath('//strong/ancestor::a'):
-            bill_id = a.text_content().strip()
-            bill_chamber = ('upper' if bill_id[0] in 'SJ' else 'lower')
-            bill_url = a.attrib['href']
-            bill_title = a.xpath('string(./following-sibling::em)').strip()
-            if bill_title == "":
-                self.logger.warning("Bill %s has no title" % bill_id)
-                continue
-            self.scrape_bill(bill_chamber, term, bill_id, bill_url, bill_title)
-
-        url = 'http://iga.in.gov/legislative/%s/bills/' % term
-        self.logger.info('GET ' + url)
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-
-        # First scrape subjects and any bills found on those pages.
-        for subject_url, subject in self.generate_subjects(term):
-            subject_bills = self.generate_subject_bills(subject_url)
-            for bill_id, bill_url, bill_title in subject_bills:
-                chamber = 'upper' if bill_id[0] == 'S' else 'lower'
-                self.scrape_bill(
-                    chamber, term, bill_id, bill_url, bill_title, subject=subject)
-                seen_bill_ids.add(bill_id)
-
-        # Then hit bill index page to catch any uncategorized bills.
-        uls = doc.xpath('//ul[contains(@class, "clean-list")]')
-
-        for chamber, ul in zip(chambers, uls):
-            for li in ul.xpath('li'):
-                bill_id = li.xpath('string(a/strong)')
-                if bill_id in seen_bill_ids:
-                    continue
-                bill_url = li.xpath('string(a/@href)')
-                try:
-                    bill_title = li.xpath('a/strong')[0].tail.rstrip().lstrip(': ')
-                except IndexError:
-                    continue
-
-                if bill_title.strip() == "":
-                    continue
-
-                self.scrape_bill(chamber, term, bill_id, bill_url, bill_title)
-
-    def generate_subjects(self, term):
-        url = 'http://iga.in.gov/legislative/{}/bysubject/'.format(term)
-        self.logger.info('GET ' + url)
-        resp = self.get(url)
-        html = resp.text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        for li in doc.xpath('//li[contains(@class, "subject-list_item")]'):
-            yield li.xpath('string(a/@href)'), li.text_content().strip()
-
-    def generate_subject_bills(self, url):
-        self.logger.info('GET ' + url)
-        resp = self.get(url)
-        html = resp.text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        for row in doc.xpath('//table//tr')[1:]:
-            try:
-                bill_id = row[2].text_content()
-            except IndexError:
-                # We hit the last row.
-                return
-            bill_url = row[2].xpath('string(a/@href)')
-            bill_title = row[3].text_content()
-            yield bill_id, bill_url, bill_title
-
-    bill_types = {
-        'HB': 'bill',
-        'HC': None,
-        'HCR': 'concurrent resolution',
-        'HJ': None,
-        'HJR': 'joint resolution',
-        'HR': 'resolution',
-        'SB': 'bill',
-        'SC': None,
-        'SCR': 'concurrent resolution',
-        'SJ': None,
-        'SJR': 'joint resolution',
-        'SR': 'resolution'
-        }
-
-    def get_bill_type(self, bill_id):
-        letters = re.search(r'^\s*([A-Za-z]+)', bill_id).group(1)
-        return self.bill_types.get(letters)
-
-    def scrape_bill(self, chamber, term, bill_id, url, title, subject=None):
-        self.logger.info('GET ' + url)
-        try:
-            resp = self.get(url)
-        except scrapelib.HTTPError:
-            return
-
-        html = resp.text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-
-        type_ = self.get_bill_type(bill_id)
-        if type_ is None:
-            # Skip if the bill isn't a bill or resolution. IN has lots of
-            # bad data.
-            return
-
-        bill = Bill(term, chamber, bill_id, title, type=type_)
-        bill.add_source(url)
-        if subject is not None:
-            bill['subjects'] = [subject]
-
-        # Sponsors
-        sponsor_map = {
-            'author': 'primary',
-            'co-author': 'cosponsor',
-            'sponsor': 'cosponsor',
-            'co-sponsor': 'cosponsor',
+    def make_html_source(self,session,bill_id):
+        url = "http://iga.in.gov/legislative/{}/".format(session)
+        urls = {
+            "hb":"bills/house/",
+            "hr":"resolutions/house/simple/",
+            "hcr":"resolutions/house/concurrent/",
+            "hjr":"resolutions/house/joint/",
+            "hc":"resolutions/house/concurrent/",
+            "hj":"resolutions/house/joint/",
+            "sb":"bills/senate/",
+            "sr":"resolutions/senate/simple/",
+            "scr":"resolutions/senate/concurrent/",
+            "sjr":"resolutions/senate/joint/",
+            "sc":"resolutions/senate/concurrent/",
+            "sj":"resolutions/senate/joint/"
             }
-        for div in doc.xpath('//div[contains(@class, "bill-author-info")]'):
-            name = div.xpath('string(em)').strip()
-            sp_type = sponsor_map[div.xpath('string(p)').strip().lower()]
-            bill.add_sponsor(sp_type, name)
+        bill_id = bill_id.lower()
 
-        # Actions
-        action_count = 0
-        for li in doc.xpath('//table[contains(@class,"actions-table")]//dd')[::-1]:
-            action_count += 1
-            if li.text_content() == 'None currently available.':
-                continue
+        bill_prefix = "".join([c for c in bill_id if c.isalpha()])
+        bill_num = "".join([c for c in bill_id if c.isdigit()])
 
-            #this one time, they forgot to put a date on an action
-            #error handling below built to be as fragile as possible
-            chamber_and_date = li.xpath('./b/span/text()')
-            try:
-                chamber_str = chamber_and_date[0]
-                action_date = chamber_and_date[1]
-            except IndexError:
-                self.logger.warning("Missing chamber or date for action %d at %s; skipping" % (action_count, url))
-                continue
-            chambers = dict(H='lower', S='upper', G='executive')
-            if chamber_str not in chambers:
-                action_chamber = chamber
-            else:
-                action_chamber = chambers[chamber_str]
-
-
-            # Some resolution actions have no dates.
-            if not action_date.strip():
-                continue
-            action_date = datetime.datetime.strptime(action_date.strip(), '%m/%d/%Y')
-            action_text = li.xpath('./text()')[1].strip()
-
-            if not action_text.strip():
-                continue
-            if not "referred to the house" in action_text.lower() and "referred to the senate" not in action_text.lower():
-                #removing bills being referred to house/senate because they were being treated like committees
-                #should prob be fixed in the regexes in actions.py someday
-                kwargs = dict(date=action_date, actor=action_chamber, action=action_text)
-                kwargs.update(**self.categorizer.categorize(action_text))
-                bill.add_action(**kwargs)
-
-        # Documents (including votes)
-        for doc_type, doc_meta in BillDocuments(self, doc):
-            if doc_type == 'version':
-                bill.add_version(
-                    doc_meta.title or doc_meta.text, url=doc_meta.url,
-                    mimetype='application/pdf')
-            elif doc_type == 'document':
-                bill.add_document(doc_meta.title or doc_meta.text, url=doc_meta.url,
-                    mimetype='application/pdf')
-            elif doc_type == 'rollcall':
-                self.add_rollcall(chamber, bill, doc_meta)
-
-        self.save_bill(bill)
-
-    def add_rollcall(self, chamber, bill, doc_meta):
         try:
-            vote = parse_vote(self, chamber, doc_meta)
-            bill.add_vote(vote)
+            url += urls[bill_prefix]
+        except KeyError:
+            raise AssertionError("Unknown bill type {}, don't know how to make url".format(bill_id))
+        url += str(int(bill_num))
+        return url
+
+
+
+    def get_name(self,random_json):
+        #got sick of doing this everywhere
+        return random_json["firstName"] + " " + random_json["lastName"]
+
+    def scrape(self, session, chambers):
+        
+        api_base_url = "https://api.iga.in.gov"
+        client = ApiClient(self)
+        r = client.get("bills",session=session)
+        all_pages = client.unpaginate(r)
+        for b in all_pages:
+            bill_id = b["billName"]
+            for idx,char in enumerate(bill_id):
+                try:
+                    int(char)
+                except ValueError:
+                    continue
+                disp_bill_id = bill_id[:idx]+" "+str(int(bill_id[idx:]))
+                break
+
+
+            bill_link = b["link"]
+            api_source = api_base_url + bill_link
+            bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
+            
+            title = bill_json["title"]
+            if title == "NoneNone":
+                title = None
+            #sometimes title is blank
+            #if that's the case, we can check to see if
+            #the latest version has a short description
+            if not title:
+                title = bill_json["latestVersion"]["shortDescription"]
+
+            #and if that doesn't work, use the bill_id but throw a warning
+            if not title:
+                title = bill_id
+                self.logger.warning("Bill is missing a title, using bill id instead.")
+
+
+            original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
+            bill = Bill(session,original_chamber,disp_bill_id,title)
+            
+            bill.add_source(api_source,note="API key needed")
+            bill.add_source(self.make_html_source(session,bill_id))
+            #documents/versions
+            #todo - these are terrible.
+
+
+            #sponsors
+            positions = {"Representative":"lower","Senator":"upper"}
+            for s in bill_json["authors"]:
+                bill.add_sponsor("primary",
+                    self.get_name(s),
+                    chamber=positions[s["position_title"]],
+                    official_type="author")
+
+            for s in bill_json["coauthors"]:
+                bill.add_sponsor("cosponsor",
+                    self.get_name(s),
+                    chamber=positions[s["position_title"]],
+                    official_type="coauthor")
+
+            for s in bill_json["sponsors"]:
+                bill.add_sponsor("primary",
+                    self.get_name(s),
+                    chamber=positions[s["position_title"]],
+                    official_type="sponsor")
+
+            for s in bill_json["cosponsors"]:
+                bill.add_sponsor("cosponsor",
+                    self.get_name(s),
+                    chamber=positions[s["position_title"]],
+                    official_type="cosponsor")
+
+            #actions
+            action_link = bill_json["actions"]["link"]
+            api_source = api_base_url + action_link
+            actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            for a in actions["items"]:
+                action_desc = a["description"]
+                chamber = "lower" if a["chamber"]["name"].lower() == "house" else "upper"
+                date = a["date"]
+                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
+                
+                action_type = []
+                d = action_desc.lower()
+                committee = None
+
+                reading = False
+                if "first reading" in d:
+                    action_type.append("bill:reading:1")
+                    reading = True
+
+                if ("second reading" in d
+                    or "reread second time" in d):
+                    action_type.append("bill:reading:2")
+                    reading = True
+
+                if ("third reading" in d
+                    or "reread third time" in d):
+                    action_type.append("bill:reading:3")
+                    if "passed" in d:
+                        action_type.append("bill:passed")
+                    if "failed" in d:
+                        action_type.append("bill:failed")
+                    reading = True
+
+                if "adopted voice vote" in d and reading:
+                    action_type.append("bill:passed")
+
+                if ("referred" in d and "committee on" in d
+                    or "reassigned" in d and "committee on" in d):
+                    committee = d.split("committee on")[-1].strip()
+                    action_type.append("committee:referred")
+
+
+                if "committee report" in d:
+                    if "pass" in d:
+                        action_type.append("committee:passed")
+                    if "fail" in d:
+                        action_type.append("committee:failed")
+
+                if "amendment" in d:
+                    if "pass" in d or "prevail" in d or "adopted" in d:
+                        action_type.append("amendment:passed")
+                    if "fail" or "out of order" in d:
+                        action_type.append("amendment:failed")
+                    if "withdraw" in d:
+                        action_type.append("amendment:withdrawn")
+
+
+                if "signed by the governor" in d:
+                    action_type.append("governor:signed")
+
+
+                if ("not substituted for majority report" in d
+                    or "returned to the house" in d
+                    or "referred to the senate" in d
+                    or "referred to the house" in d
+                    or "technical corrections" in d
+                    or "signed by the president" in d
+                    or "signed by the speaker"
+                    or "authored" in d
+                    or "sponsor" in d
+                    or "coauthor" in d
+                    or ("rule" in d and "suspended" in d)
+                    or "removed as author" in d
+                    or ("added as" in d and "author" in d)
+                    or "public law" in d):
+
+                        if len(action_type) == 0:
+                            action_type.append("other")
+
+                if len(action_type) == 0:
+                    #calling it other and moving on with a warning
+                    self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
+                    action_type = ["other"]
+
+
+                elif committee:
+                    bill.add_action(chamber,action_desc,date,type=action_type,committees=committee)
+
+                else:
+                    bill.add_action(chamber,action_desc,date,type=action_type)
+
+
+
+            #subjects
+            subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
+            bill["subjects"] = subjects
+
+            #votes
+
+
+
+
             self.save_bill(bill)
-        except VoteParseError:
-            # It was a scanned, hand-written document, most likely.
-            return
+
+
+
+
