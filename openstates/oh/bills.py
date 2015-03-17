@@ -267,7 +267,7 @@ class OHBillScraper(BillScraper):
                             "":"",
                             "ICS":"",
                             "RCS":"",
-                            "EN":"Enacted"
+                            "EN":"Enacted",
                             "RCH":"Re-referred"}
 
         for item in documents:
