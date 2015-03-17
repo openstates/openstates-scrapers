@@ -84,7 +84,7 @@ class INCommitteeScraper(CommitteeScraper):
                 name = name.replace("Statutory Committee on","").strip()
                 comm = Committee(chamber,name)
             else:
-                name = name.replace("Statutory Committee on","").strip()
+                name = name.replace("Statutory Committee on","").replace("Subcommittee","").strip()
                 comm = Committee(chamber,owning_comm,subcommittee=name)
 
             chair = self.process_special_members(comm,comm_json,"chair")
