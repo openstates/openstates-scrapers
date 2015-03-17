@@ -33,13 +33,15 @@ class INLegislatorScraper(LegislatorScraper):
             address = "\n".join([l.strip() for l in address.split("\n")])
             phone = phone.text_content().strip()
             district = doc.xpath("//span[@class='district-heading']")[0].text.lower().replace("district","").strip()
+            image_link = base_url+link.replace("legislators/","portraits/legislator_")
             legislator = Legislator(term,
                                     chamber,
                                     district,
                                     " ".join([firstname,lastname]),
                                     firstname=firstname,
                                     lastname=lastname,
-                                    party=party)
+                                    party=party,
+                                    photo_url = image_link)
             legislator.add_office('capitol', 'Capitol Office', address=address,
                            phone=phone)
             legislator.add_source(html_link)
