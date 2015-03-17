@@ -150,16 +150,19 @@ class OKBillScraper(BillScraper):
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
+
+            # Each chamber has the motion name on a different line of the file
             if 'HOUSE' in header.xpath("string()"):
                 chamber = 'lower'
                 motion_index = 8
             else:
                 chamber = 'upper'
-                motion_index = 9
+                motion_index = 13
 
             motion = header.xpath(
                 "string(following-sibling::p[%d])" % motion_index).strip()
             motion = re.sub(r'\s+', ' ', motion)
+            assert motion.strip(), "Motion text not found"
             match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
             if match:
                 motion = match.group(1)
@@ -205,15 +208,12 @@ class OKBillScraper(BillScraper):
                     for name in line.split('   '):
                         if not name:
                             continue
-                        if 'HOUSE BILL' in name or 'SENATE BILL' in name:
+                        if 'HOUSE' in name or 'SENATE ' in name:
                             continue
                         votes[vtype].append(name.strip())
 
             if passed is None:
                 passed = counts['yes'] > (counts['no'] + counts['other'])
-
-            if not motion:
-                motion = 'Senate Vote' if chamber == 'upper' else 'House Vote'
 
             vote = Vote(chamber, date, motion, passed,
                         counts['yes'], counts['no'], counts['other'],
