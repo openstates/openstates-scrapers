@@ -57,7 +57,8 @@ class OHBillScraper(BillScraper):
                             "msg_reso_503": "bill:passed",
                             "intro_107": ["bill:introduced","bill:passed"],
                             "imm_consid_360": "bill:passed",
-                            "refer_213":"other"}
+                            "refer_213":"other",
+                            "adopt_reso_100":"bill:passed"}
 
 
             base_url = "http://search-prod.lis.state.oh.us"
@@ -265,7 +266,9 @@ class OHBillScraper(BillScraper):
                             "PH": "Passed: House",
                             "":"",
                             "ICS":"",
-                            "RCS":""}
+                            "RCS":"",
+                            "EN":"Enacted"
+                            "RCH":"Re-referred"}
 
         for item in documents:
             if type_of_document == "amendment":
