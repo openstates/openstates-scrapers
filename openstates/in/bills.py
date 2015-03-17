@@ -223,7 +223,9 @@ class INBillScraper(BillScraper):
                     or "removed as author" in d
                     or ("added as" in d and "author" in d)
                     or "public law" in d):
-                        action_type.append("other")
+
+                        if len(action_type) == 0:
+                            action_type.append("other")
 
                 if len(action_type) == 0:
                     #calling it other and moving on with a warning
