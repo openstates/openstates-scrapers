@@ -1,11 +1,10 @@
 import datetime
 import re
 
-import lxml.html
-import scrapelib
-
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+import lxml.html
+import scrapelib
 
 
 _action_re = (
@@ -50,28 +49,43 @@ class ALBillScraper(BillScraper):
     DATE_FORMAT = '%m/%d/%Y'
 
     def accept_response(self, response, **kwargs):
-        # Post requests that are redirected instead of rejected are fine
-        if response.status_code == 302:
-            # Also, don't allow redirects from bill information pages
+        # Errored requests should be retried
+        if response.status_code >= 400:
+            return False
+
+        # POST requests that are redirected instead of rejected are fine
+        # Also, don't allow redirects from bill information pages
+        elif response.status_code == 302:
             if ('SESSBillResult.aspx?BILL=' in response.request.url and
                     response.request.method == 'GET'):
                 return False
             else:
                 return True
-        # Errored requests should be retried
-        elif response.status_code >= 400:
-            return False
-        # Standard responses are alright if they have an ASP.NET VIEWSTATE
-        # If they don't, it means the page is a trivial error message
+
         else:
+            # Standard responses must have an ASP.NET VIEWSTATE
+            # If they don't, it means the page is a trivial error message
             if not lxml.html.fromstring(response.text).xpath(
                     '//input[@id="__VIEWSTATE"]/@value'):
                 return False
-            # Also, for bill pages, ensure that they loaded fully
+
+            # For the bill list and resolution list, require that at
+            # least one piece of legislation has been found
+            elif (('SESSBillsList.aspx' in response.request.url and
+                  not lxml.html.fromstring(response.text).xpath(
+                   '//table[@class="box_billstatusresults"]/tr')[1:])
+                  or
+                  ('SESSResList.aspx' in response.request.url and
+                   not lxml.html.fromstring(response.text).xpath(
+                    '//table[@class="box_resostatusgrid "]/tr')[1:])):
+                return False
+
+            # For bill pages, ensure that they loaded fully
             elif ('SESSBillResult.aspx?BILL=' in response.request.url and
                     not lxml.html.fromstring(response.text).xpath(
                         '//div[@class="shorttitle"]')):
                 return False
+
             else:
                 return True
 
@@ -167,8 +181,7 @@ class ALBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         bills = doc.xpath('//table[@class="box_billstatusresults"]/tr')[1:]
         resolutions = doc.xpath('//table[@class="box_resostatusgrid "]/tr')[1:]
-        assert bills + resolutions, "Empty bill list found"
-        for bill_info in bills + resolutions:
+        for bill_info in bills or resolutions:
 
             (bill_id, ) = bill_info.xpath('td[1]/font/input/@value')
             (sponsor, ) = bill_info.xpath('td[2]/font/input/@value')
