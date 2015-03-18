@@ -153,8 +153,10 @@ class SDBillScraper(BillScraper):
             chamber = 'lower'
         elif location.startswith('Senate'):
             chamber = 'upper'
+        elif location.startswith('Joint'):
+            chamber = 'joint'
         else:
-            raise ScrapeError("Bad chamber: %s" % chamber)
+            raise ScrapeError("Bad chamber: %s" % location)
 
         committee = ' '.join(location.split(' ')[1:]).strip()
         if not committee or committee.startswith('of Representatives'):
