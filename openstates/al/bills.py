@@ -48,6 +48,7 @@ class ALBillScraper(BillScraper):
     CHAMBERS = {'H': 'lower', 'S': 'upper'}
     DATE_FORMAT = '%m/%d/%Y'
 
+    # Tweak which responses are acceptible to the scrapelib internals
     def accept_response(self, response, **kwargs):
         # Errored requests should be retried
         if response.status_code >= 400:
