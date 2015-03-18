@@ -194,7 +194,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                 if "SenateVote" in vote_url:
-                    continue
+                    self.scrape_uppper_floor_vote(
+                        bill, vote_date, vote_url)
                 else:
                     self.scrape_uppper_committee_vote(
                         bill, vote_date, vote_url)
@@ -273,4 +274,49 @@ class FLBillScraper(BillScraper, LXMLMixin):
         vote['no_votes'] = votes['no']
         vote['other_votes'] = votes['other']
 
+        bill.add_vote(vote)
+
+    def scrape_uppper_floor_vote(self, bill, date, url):
+        (path, resp) = self.urlretrieve(url)
+        text = convert_pdf(path, 'text')
+        lines = text.split("\n")
+        os.remove(path)
+
+        MOTION_INDEX = 4
+        TOTALS_INDEX = 6
+        VOTE_START_INDEX = 9
+
+        motion = lines[MOTION_INDEX].strip()
+        assert motion, "Senate floor vote's motion name appears to be empty"
+        if lines[MOTION_INDEX + 1].strip():
+            motion = "{}, {}".format(motion, lines[5].strip())
+            TOTALS_INDEX += 1
+            VOTE_START_INDEX += 1
+
+        (yes_count, no_count, other_count) = [int(x) for x in re.search(
+            r'^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$',
+            lines[TOTALS_INDEX]).groups()]
+        passed = (yes_count > no_count)
+
+        vote = Vote('upper', date, motion, passed, yes_count, no_count,
+                    other_count)
+        vote.add_source(url)
+
+        for line in lines[VOTE_START_INDEX:]:
+            if not line.strip():
+                break
+
+            if " President " in line:
+                line = line.replace(" President ", " ")
+
+            # Votes follow the pattern of:
+            # [vote code] [member name]-[district number]
+            for member in re.findall(r'\s*Y\s+(.*?)-\d{1,2}\s*', line):
+                vote.yes(member)
+            for member in re.findall(r'\s*N\s+(.*?)-\d{1,2}\s*', line):
+                vote.no(member)
+            for member in re.findall(r'\s*(?:EX|AV)\s+(.*?)-\d{1,2}\s*', line):
+                vote.other(member)
+
+        vote.validate()
         bill.add_vote(vote)
