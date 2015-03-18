@@ -85,6 +85,10 @@ def main(fpath, force="false"):
 
                 new_offices.append(office)
 
+            if new_offices == []:
+                print("Yikes! Empty data; bailing")
+                continue
+
             leg['offices'] = new_offices
 
             locked.append("offices")

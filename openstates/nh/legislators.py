@@ -3,11 +3,9 @@ import re
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 
+
 chamber_map = {'House': 'lower', 'Senate': 'upper'}
-party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent',
-             # see wikipedia http://en.wikipedia.org/wiki/New_Hampshire_House_of_Representatives
-             # Coulombe & Wall are listed as D+R
-             'd+r': 'Democratic'}
+party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent'}
 
 
 class NHLegislatorScraper(LegislatorScraper):
@@ -43,7 +41,7 @@ class NHLegislatorScraper(LegislatorScraper):
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5) = line.split('\t')
+             com4, com5, com6, com7) = line.split('*')
 
             chamber = chamber_map[chamber]
 
@@ -68,6 +66,15 @@ class NHLegislatorScraper(LegislatorScraper):
             if county:
                 district = '%s %s' % (county, district)
 
+            # When a candidate receives enough write-in votes in the
+            # other party's primary, they are listed on the ballot as
+            # being a nominee of both parties (eg, 'd+r')
+            # Cross-reference this list for official party affiliation:
+            # http://www.gencourt.state.nh.us/House/caljourns/journals/2015/HJ_4.pdf
+            if fullname == "Wall, Janet G.":
+                assert party == 'd+r', "Remove special-casing for Wall"
+                party = 'd'
+
             leg = Legislator(term, chamber, district, full, first, last,
                              middle, party_map[party], email=email)
             leg.add_office('district', 'Home Address',
@@ -83,14 +90,14 @@ class NHLegislatorScraper(LegislatorScraper):
                     leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
 
             romans = r'(?i)\s([IXV]+)(?:\s|$)'
-            for com in (com1, com2, com3, com4, com5):
+            for com in (com1, com2, com3, com4, com5, com6, com7):
                 com = com.strip('"')
                 if com:
                     com_name = com.title()
                     com_name = re.sub(romans, lambda m: m.group().upper(),
                                       com_name)
                     leg.add_role('committee member', term=term,
-                                  chamber=chamber, committee=com_name)
+                                 chamber=chamber, committee=com_name)
 
             if 'url' in leg:
                 leg['photo_url'] = self.get_photo(leg['url'], chamber)
