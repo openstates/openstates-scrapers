@@ -5,27 +5,24 @@ import datetime
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
-
 import lxml.html
 
+from openstates.utils import LXMLMixin
 
-class FLBillScraper(BillScraper):
+
+class FLBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'fl'
+    CHAMBERS = {'H': 'lower', 'S': 'upper'}
 
-    def scrape(self, chamber, session):
+    def scrape(self, session, chambers):
         self.validate_session(session)
+        url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(
+            session)
+        page = self.lxmlize(url)
 
-        cname = {'upper': 'Senate', 'lower': 'House'}[chamber]
-        url = "http://flsenate.gov/Session/Bills/%s?chamber=%s"
-        url = url % (session, cname)
         while True:
-            html = self.urlopen(url)
-            page = lxml.html.fromstring(html)
-            page.make_links_absolute(url)
-
-            link_path = ("//a[contains(@href, '/Session/Bill/%s')"
-                         "and starts-with(., '%s')]" % (
-                             session, cname[0]))
+            link_path = "//a[contains(@href, '/Session/Bill/{}/')]".format(
+                session)
             for link in page.xpath(link_path):
                 bill_id = link.text.strip()
                 title = link.xpath(
@@ -33,8 +30,7 @@ class FLBillScraper(BillScraper):
                 sponsor = link.xpath(
                     "string(../following-sibling::td[2])").strip()
                 url = link.attrib['href'] + '/ByCategory'
-                self.scrape_bill(chamber, session, bill_id, title,
-                                 sponsor, url)
+                self.scrape_bill(session, bill_id, title, sponsor, url)
 
             try:
                 next_link = page.xpath("//a[contains(., 'Next')]")[0]
@@ -63,7 +59,7 @@ class FLBillScraper(BillScraper):
             raise Exception('Response was invalid')
         return valid
 
-    def scrape_bill(self, chamber, session, bill_id, title, sponsor, url):
+    def scrape_bill(self, session, bill_id, title, sponsor, url):
         try:
             html = self.urlopen(url)
         except:
@@ -71,27 +67,22 @@ class FLBillScraper(BillScraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
-        bill = Bill(session, chamber, bill_id, title)
+        bill = Bill(session, self.CHAMBERS[bill_id[0]], bill_id, title)
         bill.add_source(url)
 
         bill.add_sponsor('primary', sponsor)
 
-        next_href = url + '/?Tab=BillHistory'
-        html = self.urlopen(next_href)
-        hist_page = lxml.html.fromstring(html)
-        hist_page.make_links_absolute(url)
-
         try:
-            hist_table = hist_page.xpath(
+            hist_table = page.xpath(
                 "//div[@id = 'tabBodyBillHistory']//table")[0]
         except IndexError:
             self.warning('no tabBodyBillHistory in %s, attempting to '
                          'refetch once' % url)
             html = self.urlopen(url)
-            hist_page = lxml.html.fromstring(next_href)
-            hist_page.make_links_absolute(next_href)
+            page = lxml.html.fromstring(next_href)
+            page.make_links_absolute(next_href)
 
-            hist_table = hist_page.xpath(
+            hist_table = page.xpath(
                 "//div[@id = 'tabBodyBillHistory']//table")[0]
 
         if bill_id.startswith('SB ') or \
@@ -186,12 +177,7 @@ class FLBillScraper(BillScraper):
         except IndexError:
             self.log("No analysis table for %s" % bill_id)
 
-        next_href = url + '/?Tab=VoteHistory'
-        html = self.urlopen(next_href)
-        vote_page = lxml.html.fromstring(html)
-        vote_page.make_links_absolute(url)
-
-        vote_tables = vote_page.xpath(
+        vote_tables = page.xpath(
             "//div[@id = 'tabBodyVoteHistory']//table")
 
         for vote_table in vote_tables:
@@ -199,10 +185,6 @@ class FLBillScraper(BillScraper):
                 vote_date = tr.xpath("string(td[3])").strip()
                 if vote_date.isalpha():
                     vote_date = tr.xpath("string(td[2])").strip()
-                version = tr.xpath("string(td[1])").strip().split()
-                version_chamber = version[0]
-
-                vote_chamber = chamber
                 try:
                     vote_date = datetime.datetime.strptime(
                         vote_date, "%m/%d/%Y %H:%M %p").date()
@@ -211,14 +193,17 @@ class FLBillScraper(BillScraper):
                     self.logger.warning(msg % vote_date)
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
-                self.scrape_vote(bill, vote_chamber, vote_date,
-                                 vote_url)
+                if "SenateVote" in vote_url:
+                    continue
+                else:
+                    self.scrape_uppper_committee_vote(
+                        bill, vote_date, vote_url)
         else:
             self.log("No vote table for %s" % bill_id)
 
         self.save_bill(bill)
 
-    def scrape_vote(self, bill, chamber, date, url):
+    def scrape_uppper_committee_vote(self, bill, date, url):
         (path, resp) = self.urlretrieve(url)
         text = convert_pdf(path, 'text')
         lines = text.split("\n")
@@ -281,7 +266,7 @@ class FLBillScraper(BillScraper):
         passed = (yes_count > no_count)
         other_count = len(votes['other'])
 
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
+        vote = Vote('upper', date, motion, passed, yes_count, no_count,
                     other_count)
         vote.add_source(url)
         vote['yes_votes'] = votes['yes']
