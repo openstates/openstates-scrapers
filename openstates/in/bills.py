@@ -1,8 +1,12 @@
 import re
 import datetime
+import os
 
 import scrapelib
+
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 import pytz
 import lxml.html
@@ -34,6 +38,7 @@ def check_vote_counts(vote):
         assert vote['other_count'] == len(vote['other_votes'])
     except AssertionError:
         pass
+
 
 
 class INBillScraper(BillScraper):
@@ -247,11 +252,79 @@ class INBillScraper(BillScraper):
 
             #votes
 
+            rollcalls = bill_json["latestVersion"]["rollcalls"]
 
+            for r in rollcalls:
+                rc_link = r["link"]
+                proxy_link = "http://in.proxy.openstates.org" + rc_link
+                (path, resp) = self.urlretrieve(proxy_link)
+                text = convert_pdf(path, 'text')
+                lines = text.split("\n")
+                os.remove(path)
+
+                print lines
+
+                chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
+                date_parts = lines[1].strip().split()[-3:]
+                date_str = " ".join(date_parts).title() + " " + lines[2].strip()
+                vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
+
+                passed = False
+                if "passed" in lines[3].lower() or "adopted" in lines[3].lower():
+                    passed = True
+
+                motion = " ".join(lines[4].split()[:-2])
+
+                yeas = int(lines[4].split()[-1])
+                nays = int(lines[5].split()[-1])
+                excused = int(lines[6].split()[-1])
+                not_voting = int(lines[7].split()[-1])
+                other_count = excused + not_voting
+
+                vote = Vote(chamber,vote_date,motion,passed,yeas,nays,other_count,yes_votes=[],no_votes=[],other_votes=[])
+
+                vote.add_source(proxy_link,note="Access to files requires an API key, so link refers to a proxy app created by Sunlight Foundation with a registered key.")
+
+                currently_counting = ""
+
+                possible_vote_lines = lines[8:]
+                for l in possible_vote_lines:
+                    if "yea -" in l.lower():
+                        currently_counting = "yes_votes"
+                    elif "nay -" in l.lower():
+                        currently_counting = "no_votes"
+                    elif "excused -" in l.lower():
+                        currently_counting = "other_votes"
+                    elif "not voting -" in l.lower():
+                        currently_counting = "other_votes"
+                    elif currently_counting == "":
+                        pass
+                    elif re.search(r'v\. \d\.\d',l):
+                        pass
+                    else:
+                        voters = l.split("  ")
+                        for v in voters:
+                            if v.strip():
+                                vote[currently_counting].append(v.strip())
+
+                assert len(vote["yes_votes"]) == vote["yes_count"], "Yes vote counts don't match actual votes"
+                assert len(vote["no_votes"]) == vote["no_count"], "No vote counts don't match actual votes"
+                assert len(vote["other_votes"]) == vote["other_count"], "Other vote counts don't match actual votes"
+                
+
+                #vote should have the majority if it passed
+                if vote["passed"] and vote["yes_count"] <= vote["no_count"]:
+                    raise AssertionError("The vote should have at least a majority if it passed.")
+
+                #if vote has the majority and didn't pass, throw a warning
+                #this is possible in supermajority cases,
+                #but we might want to think about it if it starts happening lots
+                if not vote["passed"] and vote["yes_count"] > vote["no_count"]:
+                    self.logger.warning("Vote got a majority but didn't pass. Probably worth a look.")
+
+
+                bill.add_vote(vote)
 
 
             self.save_bill(bill)
-
-
-
 
