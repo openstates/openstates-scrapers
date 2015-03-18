@@ -30,8 +30,16 @@ def parse_datetime(s, year):
     if dt is None:
         if s.endswith(","):
             s, _ = s.rsplit(" ", 1)
-        dt = datetime.datetime.strptime(s, "%b %d, %Y, %I:%M %p")
-        return dt
+        formats = ["%b %d, %Y, %I:%M %p",
+                    "%b %d, %Y %I:%M %p"]
+
+        for f in formats:
+            try:
+                dt = datetime.datetime.strptime(s, f)
+            except ValueError:
+                pass
+            else:
+                return dt
 
     raise ValueError("Bad date string: %s" % s)
 
