@@ -95,8 +95,7 @@ class INBillScraper(BillScraper):
         }
 
         for r in rollcalls:
-            rc_link = r["link"]
-            proxy_link = proxy["url"] + rc_link
+            proxy_link = proxy["url"] + r["link"]
             (path, resp) = self.urlretrieve(proxy_link)
             text = convert_pdf(path, 'text')
             lines = text.split("\n")
@@ -144,6 +143,8 @@ class INBillScraper(BillScraper):
                 elif currently_counting == "":
                     pass
                 elif re.search(r'v\. \d\.\d',l):
+                    #this gets rid of the version number
+                    #which is often found at the bottom of the doc
                     pass
                 else:
                     voters = l.split("  ")
@@ -364,6 +365,7 @@ class INBillScraper(BillScraper):
             bill["subjects"] = subjects
 
             
+            #versions and votes
             for version in bill_json["versions"]:
                 version_json = client.get("bill_version",
                                         session=session,
