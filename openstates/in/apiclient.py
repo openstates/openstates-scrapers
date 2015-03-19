@@ -52,6 +52,7 @@ class ApiClient(object):
         legislators='/{session}/legislators',
         legislator='/{session}/legislators/{legislator_id}',
         chamber_legislators='/{session}/chambers/{chamber}/legislators',
+        bill_version = '/{session}/bills/{bill_id}/versions/{version_id}'
         )
 
     def __init__(self, scraper):
