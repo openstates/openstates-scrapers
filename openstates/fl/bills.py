@@ -264,13 +264,6 @@ class FLBillScraper(BillScraper, LXMLMixin):
         totals = re.search(r'(?ms)\s+(\d+)\s+(\d+)\s+.*?TOTALS', text).groups()
         yes_count = int(totals[0])
         no_count = int(totals[1])
-        if yes_count != len(votes['yes']) or no_count != len(votes['no']):
-            raise AssertionError(
-                    "Should have {0} yes votes: {1}\n".
-                    format(yes_count, votes['yes']) +
-                    "and {0} no votes: {1}".
-                    format(no_count, votes['no'])
-                    )
         passed = (yes_count > no_count)
         other_count = len(votes['other'])
 
@@ -281,6 +274,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
         vote['no_votes'] = votes['no']
         vote['other_votes'] = votes['other']
 
+        vote.validate()
         bill.add_vote(vote)
 
     def scrape_floor_vote(self, chamber, bill, date, url):
