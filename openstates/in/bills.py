@@ -126,7 +126,7 @@ class INBillScraper(BillScraper):
 
             vote = Vote(chamber,vote_date,motion,passed,yeas,nays,other_count,yes_votes=[],no_votes=[],other_votes=[])
 
-            vote.add_source(proxy_link,note=proxy["note"])
+            vote.add_source(proxy_link)
 
             currently_counting = ""
 
@@ -184,7 +184,7 @@ class INBillScraper(BillScraper):
             for doc in doc_list:
                 title = "{doc_type}: {name}".format(doc_type=doc_type,name=doc["name"])
                 url = proxy["url"] + doc["link"]
-                bill.add_document(title,url,mimetype="application/pdf",note=proxy["note"])
+                bill.add_document(title,url,mimetype="application/pdf")
 
         #version
         link = proxy["url"] + version["link"]
@@ -198,8 +198,7 @@ class INBillScraper(BillScraper):
     def scrape(self, session, chambers):
         
         api_base_url = "https://api.iga.in.gov"
-        proxy = {"url":"http://in.proxy.openstates.org",
-                "note":"Access to files requires an API key, so link refers to a proxy app created by Sunlight Foundation with a registered key."}
+        proxy = {"url":"http://in.proxy.openstates.org"}
 
         client = ApiClient(self)
         r = client.get("bills",session=session)
@@ -315,7 +314,7 @@ class INBillScraper(BillScraper):
                     if "fail" in d:
                         action_type.append("committee:failed")
 
-                if "amendment" in d:
+                if "amendment" in d and "without amendment" not in d:
                     if "pass" in d or "prevail" in d or "adopted" in d:
                         action_type.append("amendment:passed")
                     if "fail" or "out of order" in d:
