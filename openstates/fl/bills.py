@@ -51,13 +51,13 @@ class FLBillScraper(BillScraper, LXMLMixin):
             if response.url.startswith("http://flsenate.gov/Session/Bill/20"):
                 bill_check = "tabBodyVoteHistory" in response.text
 
-            text_check = \
-                    'he page you have requested has encountered an error.' \
-                    not in response.text
+            text_check = (
+                'he page you have requested has encountered an error.'
+                not in response.text)
 
         valid = (normal and
-                bill_check and
-                text_check)
+                 bill_check and
+                 text_check)
         if not valid:
             raise Exception('Response was invalid')
         return valid
@@ -76,18 +76,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
         bill.add_sponsor('primary', sponsor)
 
-        try:
-            hist_table = page.xpath(
-                "//div[@id = 'tabBodyBillHistory']//table")[0]
-        except IndexError:
-            self.warning('no tabBodyBillHistory in %s, attempting to '
-                         'refetch once' % url)
-            html = self.urlopen(url)
-            page = lxml.html.fromstring(next_href)
-            page.make_links_absolute(next_href)
-
-            hist_table = page.xpath(
-                "//div[@id = 'tabBodyBillHistory']//table")[0]
+        hist_table = page.xpath(
+            "//div[@id = 'tabBodyBillHistory']//table")[0]
 
         if bill_id.startswith('SB ') or \
                 bill_id.startswith('HB ') or \
@@ -224,14 +214,13 @@ class FLBillScraper(BillScraper, LXMLMixin):
             return
 
         vote_top_row = [
-                lines.index(x) for x in lines if 
-                re.search(r'^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$', x)
-                ][0]
+            lines.index(x) for x in lines if
+            re.search(r'^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$', x)][0]
         yea_columns_end = lines[vote_top_row].index("Yea") + len("Yea")
         nay_columns_begin = lines[vote_top_row].index("Nay")
 
         votes = {'yes': [], 'no': [], 'other': []}
-        for line in lines[(vote_top_row + 1): ]:
+        for line in lines[(vote_top_row + 1):]:
             if line.strip():
                 member = re.search(r'''(?x)
                         ^\s+(?:[A-Z\-]+)?\s+  # Possible vote indicator
@@ -241,7 +230,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
                         (?:\s{2,}.*)?  # Name ends when many spaces are seen
                         ''', line).group(1)
                 # Usually non-voting members won't even have a code listed
-                did_vote = bool(re.search(r'^\s+([A-Z\-]+)\s+[A-Z][a-z]', line))
+                did_vote = bool(
+                    re.search(r'^\s+([A-Z\-]+)\s+[A-Z][a-z]', line))
                 if did_vote:
                     # Check where the "X" or vote code is on the page
                     vote_column = len(line) - len(line.lstrip())
@@ -251,9 +241,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
                         votes['no'].append(member)
                     else:
                         raise AssertionError(
-                                "Unparseable vote found for {0} in {1}:\n{2}".
-                                format(member, url, line)
-                                )
+                            "Unparseable vote found for {0} in {1}:\n{2}".
+                            format(member, url, line))
                 else:
                     votes['other'].append(member)
 
