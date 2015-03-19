@@ -12,7 +12,6 @@ import pytz
 import lxml.html
 
 from .actions import Categorizer
-from .models import parse_vote, BillDocuments, VoteParseError
 from apiclient import ApiClient
 
 def parse_vote_count(s):
@@ -254,6 +253,17 @@ class INBillScraper(BillScraper):
 
             rollcalls = bill_json["latestVersion"]["rollcalls"]
 
+            result_types = {
+                'FAILED': False,
+                'DEFEATED': False,
+                'PREVAILED': True,
+                'PASSED': True,
+                'SUSTAINED': True,
+                'NOT SECONDED': False,
+                'OVERRIDDEN': True,
+                'ADOPTED': True,
+            }
+
             for r in rollcalls:
                 rc_link = r["link"]
                 proxy_link = "http://in.proxy.openstates.org" + rc_link
@@ -262,16 +272,16 @@ class INBillScraper(BillScraper):
                 lines = text.split("\n")
                 os.remove(path)
 
-                print lines
 
                 chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
                 date_parts = lines[1].strip().split()[-3:]
                 date_str = " ".join(date_parts).title() + " " + lines[2].strip()
                 vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
 
-                passed = False
-                if "passed" in lines[3].lower() or "adopted" in lines[3].lower():
-                    passed = True
+                for res,val in result_types.items():
+                    if res in lines[3].upper():
+                        passed = val
+                        break
 
                 motion = " ".join(lines[4].split()[:-2])
 
@@ -289,6 +299,7 @@ class INBillScraper(BillScraper):
 
                 possible_vote_lines = lines[8:]
                 for l in possible_vote_lines:
+                    l = l.replace("\xc2\xa0"," -")
                     if "yea -" in l.lower():
                         currently_counting = "yes_votes"
                     elif "nay -" in l.lower():
@@ -307,9 +318,12 @@ class INBillScraper(BillScraper):
                             if v.strip():
                                 vote[currently_counting].append(v.strip())
 
-                assert len(vote["yes_votes"]) == vote["yes_count"], "Yes vote counts don't match actual votes"
-                assert len(vote["no_votes"]) == vote["no_count"], "No vote counts don't match actual votes"
-                assert len(vote["other_votes"]) == vote["other_count"], "Other vote counts don't match actual votes"
+                assert (len(vote["yes_votes"]) == vote["yes_count"],
+                    "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"])))
+                assert (len(vote["no_votes"]) == vote["no_count"],
+                    "No vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["no_count"],actual=len(vote["no_votes"])))
+                assert (len(vote["other_votes"]) == vote["other_count"],
+                    "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"])))
                 
 
                 #vote should have the majority if it passed
