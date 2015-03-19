@@ -261,7 +261,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
             else:
                 break
 
-        totals = re.search(r'(?ms)\s+(\d+)\s+(\d+)\s+.*?TOTALS', text).groups()
+        totals = re.search(
+            r'(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS', text).groups()
         yes_count = int(totals[0])
         no_count = int(totals[1])
         passed = (yes_count > no_count)
@@ -320,6 +321,20 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 vote.no(member)
             for member in re.findall(r'\s*(?:EX|AV)\s+(.*?)-\d{1,3}\s*', line):
                 vote.other(member)
+
+        try:
+            vote.validate()
+        except ValueError:
+            # On a rare occasion, a member won't have a vote code,
+            # which indicates that they didn't vote. The totals reflect
+            # this.
+            self.logger.info("Votes don't add up; looking for additional ones")
+            for line in lines[VOTE_START_INDEX:]:
+                if not line.strip():
+                    break
+                for member in re.findall(
+                        r'\s{8,}([\w\']{3,}.*?)-\d{1,3}', line):
+                    vote.other(member)
 
         vote.validate()
         bill.add_vote(vote)
@@ -395,7 +410,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 '//span[@id="ctl00_ContentPlaceHolder1_lblAction"]/text()')
             motion = "{} ({})".format(action, committee)
 
-            vote = Vote('upper', date, motion, passed, yes_count, no_count,
+            vote = Vote('lower', date, motion, passed, yes_count, no_count,
                         other_count)
             vote.add_source(link)
 
@@ -403,8 +418,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 if not member_vote.text_content().strip():
                     continue
 
-                (member, ) = member_vote.xpath('span[2]/font/text()')
-                (member_vote, ) = member_vote.xpath('span[1]/font/text()')
+                (member, ) = member_vote.xpath('span[2]//text()')
+                (member_vote, ) = member_vote.xpath('span[1]//text()')
 
                 if member_vote == "Y":
                     vote.yes(member)
