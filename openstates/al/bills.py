@@ -276,6 +276,15 @@ class ALBillScraper(BillScraper):
             birs = bill_doc.xpath(
                 '//div[@class="box_bir"]//table//table/tr')[1:]
             for bir in birs:
+                bir_action = bir.xpath('td[1]')[0].text_content().strip()
+                # Sometimes ALISON's database puts another bill's
+                # actions into the BIR action list; ignore these
+                if bill_id not in bir_action:
+                    self.warning(
+                        "BIR action found ({}) ".format(bir_action) +
+                        "that doesn't match the bill ID ({})".format(bill_id))
+                    continue
+
                 bir_date = datetime.datetime.strptime(
                     bir.xpath('td[2]/font/text()')[0], self.DATE_FORMAT)
                 bir_type = bir.xpath('td[1]/font/text()')[0].split(" ")[0]
