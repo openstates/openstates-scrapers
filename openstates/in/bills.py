@@ -1,8 +1,10 @@
 import re
 import datetime
 import os
+from collections import OrderedDict
 
 import scrapelib
+
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -158,22 +160,33 @@ class INBillScraper(BillScraper):
 
     def deal_with_version(self,version,bill,proxy):
         #documents
-        docs = {"Amendment":version["amendments"],
-                "Fiscal Note":version["fiscal-notes"],
-                "Committee Amendment":version["cmte_amendments"],
-                "Floor Amendment":version["floor_amendments"],
-                "Committee Report":version["committee-reports"]
-                }
-        for doc_type,doc_list in docs.items():
+        docs = OrderedDict()
+        docs["Committee Amendment"] = version["cmte_amendments"]
+        docs["Floor Amendment"] = version["floor_amendments"]
+        docs["Amendment"] = version["amendments"]
+        docs["Fiscal Note"] = version["fiscal-notes"]
+        docs["Committee Report"] = version["committee-reports"]
+
+        #sometimes amendments appear in multiple places
+        #cmte_amendment vs amendment
+        #so we're only adding once but using the more
+        #specific if it's available
+        urls_seen = []
+        for doc_type in docs:
+            doc_list = docs[doc_type]
             for doc in doc_list:
                 title = "{doc_type}: {name}".format(doc_type=doc_type,name=doc["name"])
-                url = proxy["url"] + doc["link"]
-                bill.add_document(title,url,mimetype="application/pdf")
+                link = proxy["url"] + doc["link"]
+                if link not in urls_seen:
+                    urls_seen.append(link)
+                    bill.add_document(title,link,mimetype="application/pdf")
 
         #version
         link = proxy["url"] + version["link"]
         name = version["stageVerbose"]
-        bill.add_version(name,link,mimetype="application/pdf")
+        if link not in urls_seen:
+            urls_seen.append(link)
+            bill.add_version(name,link,mimetype="application/pdf")
 
         #votes
         votes = version["rollcalls"]
@@ -184,6 +197,14 @@ class INBillScraper(BillScraper):
         
         api_base_url = "https://api.iga.in.gov"
         proxy = {"url":"http://in.proxy.openstates.org"}
+        #ah, indiana. it's really, really hard to find
+        #pdfs in their web interface. Super easy with
+        #the api, but a key needs to be passed
+        #in the headers. To make these documents
+        #viewable to the public and our scrapers,
+        #sunlight's put up a proxy service at this link
+        #using our api key for pdf document access.
+
 
         client = ApiClient(self)
         r = client.get("bills",session=session)
