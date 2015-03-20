@@ -190,6 +190,7 @@ class INBillScraper(BillScraper):
         #version
         link = proxy["url"] + version["link"]
         name = version["stageVerbose"]
+        bill.add_version(name,link,mimetype="application/pdf")
 
         #votes
         votes = version["rollcalls"]
