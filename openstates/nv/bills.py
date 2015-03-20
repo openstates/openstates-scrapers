@@ -63,7 +63,7 @@ class NVBillScraper(BillScraper):
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/TablesAndIndex/%s_%s-index.html' % (insert, year, session)
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # first, a bit about this page:
@@ -96,7 +96,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
 
-                page = self.urlopen(page_path)
+                page = self.get(page_path).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 
@@ -150,7 +150,7 @@ class NVBillScraper(BillScraper):
             for link in links:
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
-                page = self.urlopen(page_path)
+                page = self.get(page_path).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
                 root.make_links_absolute("http://www.leg.state.nv.us/")
@@ -195,7 +195,7 @@ class NVBillScraper(BillScraper):
     def scrape_links(self, url):
         links = []
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
         path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
         for mr in root.xpath(path):
@@ -234,6 +234,8 @@ class NVBillScraper(BillScraper):
                 # skip blank actions
                 if not action:
                     continue
+
+                action = " ".join(action.split())
 
                 # catch chamber changes
                 if action.startswith('In Assembly'):
@@ -304,7 +306,7 @@ class NVBillScraper(BillScraper):
                 vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
                     insert, link.get('href'))
 
-                page = self.urlopen(vote_url)
+                page = self.get(vote_url).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 
