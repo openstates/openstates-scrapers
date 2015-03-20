@@ -14,31 +14,6 @@ import lxml.html
 from .actions import Categorizer
 from apiclient import ApiClient
 
-def parse_vote_count(s):
-    if s == 'NONE':
-        return 0
-    return int(s)
-
-
-def insert_specific_votes(vote, specific_votes):
-    for name, vtype in specific_votes:
-        if vtype == 'yes':
-            vote.yes(name)
-        elif vtype == 'no':
-            vote.no(name)
-        elif vtype == 'other':
-            vote.other(name)
-
-
-def check_vote_counts(vote):
-    try:
-        assert vote['yes_count'] == len(vote['yes_votes'])
-        assert vote['no_count'] == len(vote['no_votes'])
-        assert vote['other_count'] == len(vote['other_votes'])
-    except AssertionError:
-        pass
-
-
 
 class INBillScraper(BillScraper):
     jurisdiction = 'in'
