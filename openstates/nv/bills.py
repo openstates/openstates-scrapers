@@ -213,7 +213,7 @@ class NVBillScraper(BillScraper):
 
         # tail of last b has remaining sponsors
         for name in b.tail.split(', '):
-            if name.strip():
+            if name.strip() and "name indicates primary sponsorship)" not in name:
                 sponsors.append(name.strip())
 
         return primary, sponsors
