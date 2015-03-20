@@ -136,7 +136,6 @@ class INBillScraper(BillScraper):
                         if v.strip():
                             vote[currently_counting].append(v.strip())
 
-            print vote["other_votes"]
             assert len(vote["yes_votes"]) == vote["yes_count"],\
                 "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"]))
             assert len(vote["no_votes"]) == vote["no_count"],\
@@ -145,16 +144,10 @@ class INBillScraper(BillScraper):
                 "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"]))
             
 
-            #vote should have the majority if it passed
-            if vote["passed"] and vote["yes_count"] <= vote["no_count"]:
-                raise AssertionError("The vote should have at least a majority if it passed.")
-
-            #if vote has the majority and didn't pass, throw a warning
-            #this is possible in supermajority cases,
-            #but we might want to think about it if it starts happening lots
-            if not vote["passed"] and vote["yes_count"] > vote["no_count"]:
-                self.logger.warning("Vote got a majority but didn't pass. Probably worth a look.")
-
+            #indiana only has simple majorities even for veto overrides
+            #if passage status isn't the same as yes>no, then we should look!
+            if vote["passed"] != (vote["yes_count"] > vote["no_count"]):
+                raise AssertionError("Vote count doesn't agree with vote passage status")
 
             bill.add_vote(vote)
 
