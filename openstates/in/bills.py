@@ -152,12 +152,12 @@ class INBillScraper(BillScraper):
                         if v.strip():
                             vote[currently_counting].append(v.strip())
 
-            assert (len(vote["yes_votes"]) == vote["yes_count"],
-                "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"])))
-            assert (len(vote["no_votes"]) == vote["no_count"],
-                "No vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["no_count"],actual=len(vote["no_votes"])))
-            assert (len(vote["other_votes"]) == vote["other_count"],
-                "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"])))
+            assert len(vote["yes_votes"]) == vote["yes_count"],\
+                "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"]))
+            assert len(vote["no_votes"]) == vote["no_count"],\
+                "No vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["no_count"],actual=len(vote["no_votes"]))
+            assert len(vote["other_votes"]) == vote["other_count"],\
+                "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"]))
             
 
             #vote should have the majority if it passed
