@@ -64,6 +64,11 @@ class RILegislatorScraper(LegislatorScraper):
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
 
+            if d['full_name'] == "VACANT":
+                self.warning(
+                    "District {}'s seat is vacant".format(int(d['district'])))
+                continue
+
             slug = re.match(
                 "(?P<class>sen|rep)-(?P<slug>.*)@rilin\.state\.ri\.us", d['email']
             )
@@ -73,10 +78,6 @@ class RILegislatorScraper(LegislatorScraper):
             if d['email'] is not None:
                 info = slug.groupdict()
                 info['chamber'] = "senators" if info['class'] == 'sen' else "representatives"
-
-                if info['slug'] == "tamasso":
-                    # See: DATA-243. Likely typo.
-                    info['slug'] = "tomasso"
 
                 url = ("http://www.rilin.state.ri.us/{chamber}/"
                        "{slug}/Pages/Biography.aspx".format(**info))
