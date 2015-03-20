@@ -131,6 +131,7 @@ class INBillScraper(BillScraper):
 
             possible_vote_lines = lines[8:]
             for l in possible_vote_lines:
+                l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
                 if "yea -" in l.lower():
                     currently_counting = "yes_votes"
@@ -152,6 +153,7 @@ class INBillScraper(BillScraper):
                         if v.strip():
                             vote[currently_counting].append(v.strip())
 
+            print vote["other_votes"]
             assert len(vote["yes_votes"]) == vote["yes_count"],\
                 "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"]))
             assert len(vote["no_votes"]) == vote["no_count"],\
