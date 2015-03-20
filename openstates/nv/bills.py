@@ -105,7 +105,7 @@ class NVBillScraper(BillScraper):
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
-                bill['subjects'] = self.subject_mapping[bill_id]
+                bill['subjects'] = list(set(self.subject_mapping[bill_id]))
 
                 for table in root.xpath('//div[@id="content"]/table'):
                     if 'Bill Text' in table.text_content():
@@ -142,7 +142,7 @@ class NVBillScraper(BillScraper):
     def scrape_assem_bills(self, chamber, insert, session, year):
 
         doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
-                    6: 'joint resolution'}
+                    6: 'joint resolution',9:'initiative petition'}
         for docnum, bill_type in doc_type.iteritems():
             parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
@@ -159,7 +159,7 @@ class NVBillScraper(BillScraper):
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
-                bill['subjects'] = self.subject_mapping[bill_id]
+                bill['subjects'] = list(set(self.subject_mapping[bill_id]))
                 bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
                 text_url = "http://www.leg.state.nv.us" + bill_text
                 bill.add_version("Bill Text", text_url,
@@ -213,7 +213,7 @@ class NVBillScraper(BillScraper):
 
         # tail of last b has remaining sponsors
         for name in b.tail.split(', '):
-            if name.strip():
+            if name.strip() and "name indicates primary sponsorship)" not in name:
                 sponsors.append(name.strip())
 
         return primary, sponsors
@@ -245,7 +245,17 @@ class NVBillScraper(BillScraper):
                         action_type = atype
                         break
 
+
+                if "Committee on" in action:
+                    committees = re.findall("Committee on ([a-zA-Z, ]*)\.",action)
+                    if len(committees) > 0:
+                        bill.add_action(actor, action, date, type=action_type,committees=committees)
+                        continue
+
                 bill.add_action(actor, action, date, type=action_type)
+
+
+
 
     def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
