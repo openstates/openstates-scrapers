@@ -82,10 +82,16 @@ class INBillScraper(BillScraper):
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
             vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
 
+
+            passed = None
+
             for res,val in result_types.items():
                 if res in lines[3].upper():
                     passed = val
                     break
+
+            if passed is None:
+                raise AssertionError("Missing bill passage type")
 
             motion = " ".join(lines[4].split()[:-2])
             try:
