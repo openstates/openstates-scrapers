@@ -245,7 +245,17 @@ class NVBillScraper(BillScraper):
                         action_type = atype
                         break
 
+
+                if "Committee on" in action:
+                    committees = re.findall("Committee on ([a-zA-Z, ]*)\.",action)
+                    if len(committees) > 0:
+                        bill.add_action(actor, action, date, type=action_type,committees=committees)
+                        continue
+
                 bill.add_action(actor, action, date, type=action_type)
+
+
+
 
     def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
