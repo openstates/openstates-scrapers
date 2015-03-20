@@ -142,7 +142,7 @@ class NVBillScraper(BillScraper):
     def scrape_assem_bills(self, chamber, insert, session, year):
 
         doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
-                    6: 'joint resolution'}
+                    6: 'joint resolution',9:'initiative petition'}
         for docnum, bill_type in doc_type.iteritems():
             parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
