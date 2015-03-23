@@ -20,8 +20,13 @@ class FLBillScraper(BillScraper, LXMLMixin):
         url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(
             session)
 
-        while True:
-            page = self.lxmlize(url)
+        page = self.lxmlize(url)
+        page_count = int(page.xpath(
+            "//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
+
+        for page_number in range(1, page_count + 1):
+            page_url = (url + '&PageNumber={}'.format(page_number))
+            page = self.lxmlize(page_url)
 
             link_path = "//a[contains(@href, '/Session/Bill/{}/')]".format(
                 session)
@@ -31,16 +36,9 @@ class FLBillScraper(BillScraper, LXMLMixin):
                     "string(../following-sibling::td[1])").strip()
                 sponsor = link.xpath(
                     "string(../following-sibling::td[2])").strip()
-                url = link.attrib['href'] + '/ByCategory'
+                bill_url = link.attrib['href'] + '/ByCategory'
                 self.scrape_bill(session, session_number,
-                                 bill_id, title, sponsor, url)
-
-            try:
-                next_link = page.xpath("//a[contains(., 'Next')]")[0]
-                url = next_link.attrib['href']
-            except (KeyError, IndexError):
-                self.logger.info('Hit last page of search results.')
-                break
+                                 bill_id, title, sponsor, bill_url)
 
     def accept_response(self, response):
         normal = super(FLBillScraper, self).accept_response(response)
@@ -278,7 +276,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
         VOTE_START_INDEX = 9
 
         motion = lines[MOTION_INDEX].strip()
-        assert motion, "Senate floor vote's motion name appears to be empty"
+        assert motion, "Floor vote's motion name appears to be empty"
         if lines[MOTION_INDEX + 1].strip():
             motion = "{}, {}".format(motion, lines[5].strip())
             TOTALS_INDEX += 1
