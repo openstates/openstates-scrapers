@@ -238,10 +238,6 @@ class ALBillScraper(BillScraper):
                 title = "[No title given by state]"
             bill['title'] = title
 
-            form = {
-                'ctl00$cboSession': self.session_name,
-            }
-
             version_url_base = (
                 'http://alisondb.legislature.state.al.us/ALISON/'
                 'SearchableInstruments/{0}/PrintFiles/{1}-'.
@@ -308,12 +304,6 @@ class ALBillScraper(BillScraper):
                 if bir_vote_id.startswith("Roll "):
                     bir_vote_id = bir_vote_id.split(" ")[-1]
 
-                    (eventtarget, ) = bir.xpath('td[4]/font/input/@id')
-                    form['ctl00$ScriptManager1'] = ('ctl00$UpdatePanel1|' +
-                                                    eventtarget)
-                    form[eventtarget] = "Roll " + bir_vote_id
-                    self.post(url=bill_url, data=form, allow_redirects=False)
-
                     self.scrape_vote(
                         bill=bill,
                         vote_chamber=bir_type[0],
@@ -322,9 +312,6 @@ class ALBillScraper(BillScraper):
                         vote_date=bir_date,
                         action_text=bir_text
                     )
-
-                    form.pop('ctl00$ScriptManager1')
-                    form.pop(eventtarget)
 
             actions = bill_doc.xpath('//table[@class="box_history"]/tr')[1:]
             action_date = None
@@ -362,14 +349,6 @@ class ALBillScraper(BillScraper):
                 if vote_button.startswith("Roll "):
                     vote_id = vote_button.split(" ")[-1]
 
-                    eventtarget = action.xpath('@onclick')[0].split("'")[1]
-                    eventargument = action.xpath('@onclick')[0].split("'")[3]
-                    form['__EVENTTARGET'] = eventtarget
-                    form['__EVENTARGUMENT'] = eventargument
-                    form['ctl00$ScriptManager1'] = ('ctl00$UpdatePanel1|' +
-                                                    eventtarget)
-                    self.post(url=bill_url, data=form, allow_redirects=False)
-
                     self.scrape_vote(
                         bill=bill,
                         vote_chamber=action_chamber,
@@ -378,10 +357,6 @@ class ALBillScraper(BillScraper):
                         vote_date=action_date,
                         action_text=action_text
                     )
-
-                    form.pop('ctl00$ScriptManager1')
-                    form.pop('__EVENTARGUMENT')
-                    form.pop('__EVENTTARGET')
 
             self.save_bill(bill)
 
