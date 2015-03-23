@@ -324,7 +324,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 if not line.strip():
                     break
                 for member in re.findall(
-                        r'\s{8,}([\w\']{3,}.*?)-\d{1,3}', line):
+                        r'\s{8,}([A-Z][a-z\'].*?)-\d{1,3}', line):
                     vote.other(member)
 
         vote.validate()
