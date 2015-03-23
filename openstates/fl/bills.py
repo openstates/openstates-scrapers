@@ -277,10 +277,14 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
         motion = lines[MOTION_INDEX].strip()
         assert motion, "Floor vote's motion name appears to be empty"
-        if lines[MOTION_INDEX + 1].strip():
-            motion = "{}, {}".format(motion, lines[5].strip())
-            TOTALS_INDEX += 1
-            VOTE_START_INDEX += 1
+        for _extra_motion_line in range(2):
+            MOTION_INDEX += 1
+            if lines[MOTION_INDEX].strip():
+                motion = "{}, {}".format(motion, lines[MOTION_INDEX].strip())
+                TOTALS_INDEX += 1
+                VOTE_START_INDEX += 1
+            else:
+                break
 
         (yes_count, no_count, other_count) = [int(x) for x in re.search(
             r'^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$',
