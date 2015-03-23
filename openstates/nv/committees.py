@@ -34,7 +34,7 @@ class NVCommitteeScraper(CommitteeScraper):
         )
         
         list_url = '%s/%s/HomeCommittee/LoadCommitteeListTab' % (nelis_root,insert)
-        html = self.urlopen(list_url)
+        html = self.get(list_url).text
         doc = lxml.html.fromstring(html)
         
         sel = 'panel%sCommittees' % chamber_names[chamber]
@@ -52,7 +52,7 @@ class NVCommitteeScraper(CommitteeScraper):
             self.save_committee(com)
 
     def scrape_comm_members(self, chamber, committee, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         links = doc.xpath('//div[@class="col-md-11"]/a[@class="bio"]')
         for link in links:
