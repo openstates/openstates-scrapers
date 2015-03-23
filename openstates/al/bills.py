@@ -317,7 +317,8 @@ class ALBillScraper(BillScraper):
             action_date = None
             for action in actions:
                 # If actions occur on the same day, only one date will exist
-                if action.xpath('td[1]/font/text()')[0].strip():
+                if (action.xpath('td[1]/font/text()')[0].
+                        encode('ascii', 'ignore').strip()):
                     action_date = datetime.datetime.strptime(
                         action.xpath('td[1]/font/text()')[0], self.DATE_FORMAT)
 
