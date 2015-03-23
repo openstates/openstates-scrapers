@@ -16,16 +16,35 @@ class DELegislatorScraper(LegislatorScraper):
                re_spaces=re.compile(r'\s{,5}')):
 
         url = {
-            'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate',
+            'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview',
             'lower': 'http://legis.delaware.gov/Legislature.nsf/Reps?openview',
             }[chamber]
 
         doc = lxml.html.fromstring(self.urlopen(url))
         doc.make_links_absolute(url)
 
+        if chamber == "upper":
+            #for the senate, it's the same table
+            #but the html is hard-coded in js.
+            table_js = doc.xpath('.//script')[-1].text_content()
+            table = None
+            for line in table_js.split("\n"):
+                if line.strip().startswith("var") and "sen=" in line:
+                    table = line.replace("var","")
+                    table = table.replace('sen="<','<')
+                    table = table.replace('>";','>')
+                    break
 
-        # Skip the first tr (headings)
-        trs = doc.xpath('//tr')
+            assert table is not None, "Senate table could not be found"
+
+            table = lxml.html.fromstring(table)
+            table.make_links_absolute(url)
+            trs = table.xpath('//tr')
+
+
+        else:
+            #same table for the house, but kindly in actual html
+            trs = doc.xpath('//tr')
 
         base_url = "http://legis.delaware.gov/"
 
@@ -62,9 +81,9 @@ class DELegislatorScraper(LegislatorScraper):
             party = 'Republican'
         print party
 
-        leg = Legislator(term, chamber, district, name, party=party, url=url)
+        leg = Legislator(term, chamber, district, name, party=party)
 
-        photo_url = doc.xpath('//img[contains(@src, "FieldElemFormat")]/@src')
+        photo_url = doc.xpath('//img[contains(@src, "jpg")]/@src')
         if photo_url:
             leg['photo_url'] = photo_url[0]
 
@@ -87,9 +106,11 @@ class DELegislatorScraper(LegislatorScraper):
         dist_office = dict(name="District Office", type="district",
                         phone=None,fax=None, email=email, address=None) 
 
+        #this is enormously painful, DE.
         office_list = doc.xpath("//tr")
         for office in office_list:
             title_td = 0
+            #in some trs the photo is the first td
             if len(office.xpath("./td/img")) > 0:
                 title_td = 1
             try:
