@@ -1,11 +1,10 @@
 import datetime as dt
 
-from openstates.utils import LXMLMixin
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
-
-import lxml.html
+from openstates.utils import LXMLMixin
+import scrapelib
 import pytz
+
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
@@ -14,7 +13,11 @@ class WIEventScraper(EventScraper, LXMLMixin):
     _tz = pytz.timezone('US/Eastern')
 
     def scrape_participants(self, session, href):
-        page = self.lxmlize(href)
+        try:
+            page = self.lxmlize(href)
+        except scrapelib.HTTPError:
+            return []
+
         legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
         role_map = {"participant": "participant",
                     "Chair": "chair",
