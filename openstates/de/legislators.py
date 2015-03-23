@@ -20,7 +20,7 @@ class DELegislatorScraper(LegislatorScraper):
             'lower': 'http://legis.delaware.gov/Legislature.nsf/Reps?openview',
             }[chamber]
 
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
         if chamber == "upper":
@@ -70,7 +70,7 @@ class DELegislatorScraper(LegislatorScraper):
     def scrape_bio(self, term, chamber, district, name, url):
         # this opens the committee section without having to do another request
         url += '&TableRow=1.5.5'
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
         # party is in one of these
