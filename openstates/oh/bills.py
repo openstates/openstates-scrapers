@@ -35,6 +35,7 @@ class OHBillScraper(BillScraper):
                             "adopted":True,
                             "true":True,
                             "false":False,
+                            "failed":False,
                             True:True,
                             False:False}
 
