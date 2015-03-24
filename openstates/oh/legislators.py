@@ -17,7 +17,7 @@ SUBCOMMITTEES = {
     "Finance - Corrections Subcommittee": "Finance",
     "Finance - Education Subcommittee": "Finance",
     "Finance - General Government Subcommittee": "Finance",
-    "Finance - Higher Ed  Subcommittee": "Finance",
+    "Finance - Higher Ed Subcommittee": "Finance",
     "Finance - Workforce Subcommittee": "Finance",
 
     # The House has mostly Finance, but also one more
