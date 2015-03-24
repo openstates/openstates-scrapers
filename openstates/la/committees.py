@@ -1,9 +1,10 @@
+import re
+
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
+import lxml.html
 
 from .common import BackoffScraper
-
-import lxml.html
 
 
 class LACommitteeScraper(CommitteeScraper, BackoffScraper):
@@ -23,20 +24,20 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
             'Standing': 'http://senate.legis.state.la.us/Committees/default.asp',
             'Select': 'http://senate.louisiana.gov/committees/default.asp?type=Select'
         }
-        
+
         for name, url in committee_types.items():
             text = self.urlopen(url)
             page = lxml.html.fromstring(text)
             page.make_links_absolute(url)
 
-            links = page.xpath('//b[contains(text(), "{0} Committees")]'
-                               '/../following-sibling::font/ul/li/a'.format(name))
+            links = page.xpath(
+                '//b/font[contains(text(), " Committees")]/'
+                'ancestor::table[1]//table[1]//a')
 
             for link in links:
-                name = link.xpath('string()')
+                name = link.xpath('string()').strip()
                 url = link.attrib['href']
                 self.scrape_senate_committee(name, url)
-        
 
     def scrape_senate_committee(self, name, url):
         url = url.replace('Default.asp', 'Assignments.asp')
@@ -47,15 +48,19 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
         text = self.urlopen(url)
         page = lxml.html.fromstring(text)
 
-        links = page.xpath('//table[@bordercolor="#EBEAEC"]/tr/td/font/a')
+        links = page.xpath(
+            '//table[@bordercolor="#EBEAEC"]//a/b')
 
         for link in links:
-            role = "member"
-            if link.tail:
-                role = link.tail.strip().strip("() ")
+            role = link.xpath('../../text()')[1].strip()
+            if role.endswith(")"):
+                role = role.strip(")( ")
+            else:
+                role = "member"
 
             name = link.xpath('string()')
             name = name.replace('Senator ', '').strip()
+            name = re.sub(r'\s{2,}', " ", name)
 
             committee.add_member(name, role)
 

@@ -1,9 +1,12 @@
 import datetime
+
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+
 from .bills import LABillScraper
 from .legislators import LALegislatorScraper
 from .committees import LACommitteeScraper
 from .events import LAEventScraper
+
 
 metadata = {
     "capitol_timezone": 'America/Chicago',
@@ -17,7 +20,7 @@ metadata = {
                 "2010",
                 "2011 1st Extraordinary Session",
                 "2011"
-                ]
+            ]
         },
         {
             "name": "2012-2015",
@@ -88,52 +91,43 @@ metadata = {
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
-        '2015 Regular Legislative Session',
-        '2014 Regular Legislative Session',  # In as 2014 Regular Session
-        '2013 Regular Legislative Session',  # Samesies.
-        '2013 Regular Legislative Session',  # Samesies.
-        '2008 Regular Session',
+        '2012 Organizational Session',
         '2008 Organizational Session',
-        '2008 Second Extraordinary Session',
+        '2008 Regular Session',
         '2008 First Extraordinary Session',
+        '2008 Second Extraordinary Session',
         '2007 Regular Session',
         '2006 Regular Session',
+        '2006 First Extraordinary Session',
+        '2006 Second Extraordinary Session',
         '2005 Regular Session',
+        '2005 First Extraordinary Session',
+        '2004 Organizational Session',
         '2004 Regular Session',
         '2004 First Extraordinary Session',
-        '2004 1st Extraordinary Session',
         '2003 Regular Session',
         '2002 Regular Session',
+        '2002 First Extraordinary Session',
         '2001 Regular Session',
+        '2001 First Extraordinary Session',
+        '2001 Second Extraordinary Session',
+        '2000 Organizational Session',
         '2000 Regular Session',
+        '2000 First Extraordinary Session',
+        '2000 Second Extraordinary Session',
         '1999 Regular Session',
         '1998 Regular Session',
-        '1997 Regular Session',
-        '2006 Second Extraordinary Session',
-        '2006 First Extraordinary Session',
-        '2005 First Extraordinary Session',
-        '2002 First Extraordinary Session',
-        '2001 Second Extraordinary Session',
-        '2001 First Extraordinary Session',
-        '2000 Second Extraordinary Session',
-        '2000 First Extraordinary Session',
         '1998 First Extraordinary Session',
-        '2012 Organizational Session',
-        '2000 Organizational Session',
-        '2004 Organizational Session',
-        'Other Sessions',
-        'Other Sessions',
-        'Sessions',
+        '1997 Regular Session',
     ]
 }
 
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    import re
     return url_xpath(
-                'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
-                '//a[contains(text(), "Session")]/text()')
+        'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
+        '//a[contains(@id, "ctl00_ctl00_PageBody_DataListSessions")]/text()')
 
 
 def extract_text(doc, data):
