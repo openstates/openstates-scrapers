@@ -1,16 +1,11 @@
+# -*- coding: utf-8 -*-
 '''
 This file has a slightly unusual structure. The urs and the main
 scrape function are defined at the top level because the legislator
 scrape requires data from the committee pages in order to get
 properly capitalized names. So that part needs to be importable and
 hence the need to dcouple it from the scraper instance. If that makes
-sense.
-
-This file currently scrapes only standing committees and doesn't
-bother with the arguably important joint appropriations subcomittees,
-Which contain members of the appropriations committees from each
-and deal with budgetary matters.
-'''
+sense.'''
 import re
 from itertools import dropwhile, takewhile
 from collections import defaultdict
@@ -74,18 +69,20 @@ class MTCommitteeScraper(CommitteeScraper):
     def scrape_committees_pdf(self, year, chamber, filename, url):
         text = convert_pdf(filename, type='text-nolayout')
 
-        # Hot garbage.
         for hotgarbage, replacement in (
-            ('Judicial Branch, Law Enforcement,\s+and\s+Justice',
+            (r'Judicial Branch, Law Enforcement,\s+and\s+Justice',
              'Judicial Branch, Law Enforcement, and Justice'),
 
-            ('Natural Resources and\s+Transportation',
+            (r'Natural Resources and\s+Transportation',
              'Natural Resources and Transportation'),
 
-            ('Federal Relations, Energy,\sand\sTelecommunications',
+            (r'(?u)Federal Relations, Energy,?\s+and\s+Telecommunications',
              'Federal Relations, Energy, and Telecommunications')
             ):
             text = re.sub(hotgarbage, replacement, text)
+
+        if chamber == 'lower' and year == 2015:
+            text = self._fix_house_text(text)
 
         lines = iter(text.splitlines())
 
@@ -99,7 +96,8 @@ class MTCommitteeScraper(CommitteeScraper):
                 'committee', ' and ', 'business', 'resources',
                 'legislative', 'administration', 'government',
                 'local', 'planning', 'judicial', 'natural',
-                'resources', 'general', 'health', 'human'):
+                'resources', 'general', 'health', 'human',
+                'education'):
                 if s in line.lower():
                     return True
             if line.istitle() and len(line.split()) == 1:
@@ -111,17 +109,21 @@ class MTCommitteeScraper(CommitteeScraper):
 
         comm = None
         in_senate_subcommittees = False
-        while 1:
+        while True:
             try:
                 line = lines.next()
             except StopIteration:
                 break
+            # Replace Unicode variants with ASCII equivalents
+            line = line.replace(" ", " ").replace("‐", "-")
 
-            if 'Joint Appropriations/Finance &' in line:
-                # Toss the line continuation.
-                lines.next()
+            if 'Subcommittees' in line:
+                # These appear in both chambers' lists, so de-dup the scraping
+                if chamber == 'lower':
+                    break
+                elif chamber == 'upper':
+                    self.info("Beginning scrape of joint subcommittees")
 
-                # Move on.
                 in_senate_subcommittees = True
                 chamber = 'joint'
                 continue
@@ -131,9 +133,9 @@ class MTCommitteeScraper(CommitteeScraper):
 
                 if in_senate_subcommittees:
                     committee = ('Joint Appropriations/Finance & Claims')
-                    subcommittee = line
+                    subcommittee = line.strip()
                 else:
-                    committee = line
+                    committee = line.strip()
 
                 if comm and comm['members']:
                     self.save_committee(comm)
@@ -144,17 +146,122 @@ class MTCommitteeScraper(CommitteeScraper):
 
             elif is_legislator_name(line):
                 name, party = line.rsplit('(', 1)
-                name = name.strip()
-                if re.search('[^V] Ch', party):
+                name = name.strip().replace("Rep. ", "").replace("Sen. ", "")
+                if re.search(' Ch', party):
                     role = 'chair'
-                elif 'V Ch' in party:
+                elif ' VCh' in party:
                     role = 'vice chair'
+                elif ' MVCh' in party:
+                    role = 'minority vice chair'
                 else:
                     role = 'member'
                 comm.add_member(name, role)
 
         if comm['members']:
             self.save_committee(comm)
+
+    def _fix_house_text(self, text):
+        '''
+        TLDR: throw out bad text, replace it with copy-pasted good text
+
+        When using `pdftotext` on the 2015 House committee list,
+        the second and third columns of the second page get mixed up,
+        which makes it very difficult to parse.
+
+        The best solution to this is to throw out the offending text,
+        and replace it with the correct text, copy-pasted in. The third
+        and fourth columns are joint comittees that are scraped from
+        the Senate document, so the only column that needs to be
+        inserted this way is the second.
+        '''
+
+        assert "Revised: January 23, 2015" in text,\
+            "House committee list has changed; check that the special-case"\
+            " fix is still necessary, and that its text is still correct"
+
+        second_page_second_column = '''State Administration (cont.)     
+Hayman, Denise (D)               
+Karjala, Jessica (D)             
+Knudsen, Austin (R)              
+Lamm, Debra (R)                  
+Mandeville, Forrest (R)          
+McKamey, Wendy (R)               
+Mortensen, Dale (R)              
+Price, Jean (D)                  
+Shaw, Ray (R)                    
+Swanson, Kathy (D)               
+Webber, Susan (D)                
+Wittich, Art (R)                 
+Secretary: Jennifer Petersen, Rm
+465, (406) 444-4666          
+                             
+Staff: Sheri Scurr (LSD),       
+Research Analyst, Rm 136C,   
+                             
+(406) 444-3596               
+Taxation                         
+M-F; 8 a.m.; Rm 152              
+Miller, Mike (R) – Ch            
+Hertz, Greg (R) – VCh            
+Williams, Kathleen (D) – VCh     
+Brown, Zach (D)                  
+Cook, Rob (R)                    
+Custer, Geraldine (R)            
+Dunwell, Mary Ann (D)            
+Flynn, Kelly (R)                 
+Jacobson, Tom (D)                
+Lavin, Steve (R)                 
+Lieser, Ed (D)                   
+McClafferty, Edie (D)            
+Olszewski, Albert (R)            
+Randall, Lee (R)                 
+Redfield, Alan (R)               
+Schwaderer, Nicholas (R)         
+Smith, Bridget (D)
+White, Kerry (R)                 
+                             
+Wilson, Nancy (D)
+Zolnikov, Daniel (R)             
+                             
+Secretary: Erica Siate, Rm 451,
+(406) 444-4264               
+                             
+Staff: Megan Moore (LSD),
+Research Analyst, Rm 111F,   
+                             
+(406) 444-4496; Stephanie
+Morrison (LFD), Rm 130, (406)
+                             
+444-4408
+                             
+Transportation                   
+M, W, F; 3 p.m.; Rm 455          
+Lavin, Steve (R) – Ch            
+Clark, Christy (R) – VCh         
+Wilson, Nancy (D) – VCh          
+Cook, Rob (R)
+Curdy, Willis (D)                
+Fiscus, Clayton (R)              
+Garner, Frank (R)                
+Kipp, George III (D)             
+MacDonald, Margie (D)            
+McKamey, Wendy (R)               
+Miller, Mike (R)                 
+                             
+Randall, Lee (R)
+Smith, Bridget (D)               
+                             
+Swanson, Kathy (D)
+Secretary: Kendra Balian, Rm    
+                             
+451, (406) 444-7353
+Staff: Dave Bohyer (LSD),       
+Director of Research & Policy
+Analysis, Rm 111C, (406) 444-
+3592'''
+        text = re.sub(r'(?sm)Appropriations/F&C.*$', "", text)
+        text = text + second_page_second_column
+        return text
 
 
 def scrape_committees_html(year, chamber, doc):
