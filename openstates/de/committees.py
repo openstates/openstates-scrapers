@@ -22,7 +22,7 @@ class DECommitteeScraper(CommitteeScraper):
 
         url = urls[chamber] % (session,)
         self.log(url)
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         committees = {}
@@ -34,7 +34,7 @@ class DECommitteeScraper(CommitteeScraper):
 
         for c in committees:
             url = committees[c]
-            page = lxml.html.fromstring(self.urlopen(url))
+            page = lxml.html.fromstring(self.get(url).text)
             page.make_links_absolute(url)
             committee = Committee(chamber, c)
             committee.add_source(url)
