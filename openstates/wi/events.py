@@ -16,6 +16,7 @@ class WIEventScraper(EventScraper, LXMLMixin):
         try:
             page = self.lxmlize(href)
         except scrapelib.HTTPError:
+            self.warning("Committee page not found for this event")
             return []
 
         legs = page.xpath("//a[contains(@href, '/Pages/leg-info.aspx')]/text()")
