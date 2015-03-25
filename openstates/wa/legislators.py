@@ -26,8 +26,8 @@ class WALegislatorScraper(LegislatorScraper):
         cur_members_doc = lxml.html.fromstring(cur_members)
         cur_members_doc.make_links_absolute(cur_member_url)
 
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page.bytes)
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
 
         for member in xpath(page, "//wa:Member"):
 

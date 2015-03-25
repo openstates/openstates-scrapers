@@ -40,8 +40,8 @@ class AREventScraper(EventScraper):
 
     def scrape(self, session, chambers):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
-        page = self.urlopen(url)
-        page = csv.reader(StringIO.StringIO(page.bytes), delimiter='|')
+        page = self.get(url)
+        page = csv.reader(StringIO.StringIO(page.content), delimiter='|')
 
         for row in page:
             # Deal with embedded newline characters, which cause fake new rows

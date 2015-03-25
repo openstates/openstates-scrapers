@@ -44,7 +44,7 @@ class CTEventScraper(EventScraper):
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.urlopen(url)
+        page = self.get(url)
         page = open_csv(page)
         return [(row['comm_code'].strip(),
                  row['comm_name'].strip())

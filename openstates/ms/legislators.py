@@ -27,8 +27,8 @@ class MSLegislatorScraper(LegislatorScraper):
             url = 'http://billstatus.ls.state.ms.us/members/hr_membs.xml'
             range_num = 6
 
-        leg_dir_page = self.urlopen(url)
-        root = lxml.etree.fromstring(leg_dir_page.bytes)
+        leg_dir_page = self.get(url)
+        root = lxml.etree.fromstring(leg_dir_page.content)
         for mr in root.xpath('//LEGISLATURE/MEMBER'):
             for num in range(1, range_num):
                 leg_path = "string(M%s_NAME)" % num
@@ -66,8 +66,8 @@ class MSLegislatorScraper(LegislatorScraper):
         try:
             url = 'http://billstatus.ls.state.ms.us/members/%s' % leg_link
             url_root = os.path.dirname(url)
-            details_page = self.urlopen(url)
-            root = lxml.etree.fromstring(details_page.bytes)
+            details_page = self.get(url)
+            root = lxml.etree.fromstring(details_page.content)
             party = root.xpath('string(//PARTY)')
             district = root.xpath('string(//DISTRICT)')
             photo = "%s/%s" % (url_root, root.xpath('string(//IMG_NAME)'))

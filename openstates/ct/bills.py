@@ -39,7 +39,7 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_info(self, session, chambers):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/bill_info.csv"
-        data = self.urlopen(info_url)
+        data = self.get(info_url)
         page = open_csv(data)
 
         chamber_map = {'H': 'lower', 'S': 'upper'}
@@ -183,7 +183,7 @@ class CTBillScraper(BillScraper):
 
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
-        page = self.urlopen(history_url)
+        page = self.get(history_url)
         page = open_csv(page)
 
         action_rows = defaultdict(list)
@@ -275,7 +275,7 @@ class CTBillScraper(BillScraper):
 
     def scrape_subjects(self):
         info_url = "ftp://ftp.cga.ct.gov/pub/data/subject.csv"
-        data = self.urlopen(info_url)
+        data = self.get(info_url)
         page = open_csv(data)
 
         for row in page:
@@ -283,7 +283,7 @@ class CTBillScraper(BillScraper):
 
     def scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.urlopen(comm_url)
+        page = self.get(comm_url)
         page = open_csv(page)
 
         for row in page:
