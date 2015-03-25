@@ -39,7 +39,6 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
     def scrape_senate_committee(self, name, url2):
         cat = "Assignments.asp"
         url3 = "".join((url2, cat))
-        print url3
 
         committee = Committee('upper', name)
         committee.add_source(url2)
@@ -58,8 +57,6 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
 
             name = link.xpath('string()')
             name = name.replace('Senator ', '').strip()
-            print role
-            print name
 
             committee.add_member(name, role)
 
