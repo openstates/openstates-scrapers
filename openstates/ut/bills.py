@@ -277,7 +277,12 @@ class UTBillScraper(BillScraper, LXMLMixin):
         bill.add_vote(vote)
 
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.urlopen(url)
+        try:
+            page = self.urlopen(url)
+        except scrapelib.HTTPError:
+            self.warning("A vote page not found for bill {}".
+                         format(bill['bill_id']))
+            return
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         descr = page.xpath("//b")[0].text_content()
