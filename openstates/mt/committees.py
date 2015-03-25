@@ -278,7 +278,7 @@ def scrape_committees_html(year, chamber, doc):
     # Get the joint approps subcommittees during the upper scrape.
     if chamber == 'upper':
         url = committee_urls['joint'][year]
-        html = scrapelib.urlopen(url)
+        html = scrapelib.get(url).text
 
         name_dict = defaultdict(set)
         doc = lxml.html.fromstring(html)

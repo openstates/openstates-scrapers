@@ -10,7 +10,7 @@ from collections import defaultdict
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
-from scrapelib import urlopen, HTTPError
+from scrapelib import HTTPError
 
 import lxml.html
 from lxml.etree import ElementTree, XMLSyntaxError
@@ -19,7 +19,7 @@ from . import actions
 
 
 def url2lxml(url):
-    html = urlopen(url)
+    html = self.get(url).text
     return lxml.html.fromstring(html)
 
 
@@ -81,7 +81,7 @@ class MTBillScraper(BillScraper):
         self.versions_dict = self._versions_dict(year)
 
         base_bill_url = 'http://leg.mt.gov/bills/%d/BillHtml/' % year
-        index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
+        index_page = ElementTree(lxml.html.fromstring(self.get(base_bill_url).text))
 
         bill_urls = []
         for bill_anchor in index_page.findall('//a'):
@@ -106,7 +106,7 @@ class MTBillScraper(BillScraper):
 
         bill = None
         try:
-            doc = lxml.html.fromstring(self.urlopen(bill_url))
+            doc = lxml.html.fromstring(self.get(bill_url).text)
         except XMLSyntaxError as e:
             self.logger.warning("Got %r while parsing %r" % (e, bill_url))
             return
@@ -173,7 +173,7 @@ class MTBillScraper(BillScraper):
         return dict(tabledata)
 
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
-        status_page = lxml.html.fromstring(self.urlopen(status_url))
+        status_page = lxml.html.fromstring(self.get(status_url).text)
         # see 2007 HB 2... weird.
         bill_re = r'.*?/([A-Z]+)0*(\d+)\.pdf'
         bill_xpath = '//a[contains(@href, ".pdf") and ' + \
@@ -281,7 +281,7 @@ class MTBillScraper(BillScraper):
 
         url = 'http://leg.mt.gov/bills/%d/' % year
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
@@ -382,7 +382,7 @@ class MTBillScraper(BillScraper):
         if url.lower().endswith('.pdf'):
 
             try:
-                resp = self.urlopen(url)
+                resp = self.get(url).text
             except HTTPError:
                 # This vote document wasn't found.
                 msg = 'No document found at url %r' % url
@@ -398,7 +398,7 @@ class MTBillScraper(BillScraper):
                 return
 
         keymap = {'Y': 'yes', 'N': 'no'}
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # Yes, no, excused, absent.
