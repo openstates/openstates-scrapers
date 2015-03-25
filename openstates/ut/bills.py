@@ -214,7 +214,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
                                     vote_url, uniqid)
 
     def scrape_committee_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         committee = page.xpath("//b")[0].text_content()
@@ -278,7 +278,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
 
     def parse_html_vote(self, bill, actor, date, motion, url, uniqid):
         try:
-            page = self.urlopen(url)
+            page = self.get(url).text
         except scrapelib.HTTPError:
             self.warning("A vote page not found for bill {}".
                          format(bill['bill_id']))
@@ -347,7 +347,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
         bill.add_vote(vote)
 
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.urlopen(url)
+        page = self.get(url).text
         bill.add_source(url)
         vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
                              '(.*)ABSENT( OR NOT VOTING)? -?\s?'
