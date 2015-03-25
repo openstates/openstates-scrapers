@@ -4,7 +4,7 @@ from billy.scrape.committees import CommitteeScraper, Committee
 from .common import BackoffScraper
 
 import lxml.html
-
+import sys
 
 class LACommitteeScraper(CommitteeScraper, BackoffScraper):
     jurisdiction = 'la'
@@ -20,8 +20,8 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
 
     def scrape_senate(self):
         committee_types = {
-            'Standing': 'http://senate.legis.state.la.us/Committees/default.asp',
-            'Select': 'http://senate.louisiana.gov/committees/default.asp?type=Select'
+            'Standing': 'http://senate.la.gov/Committees/Assignments.asp?type=Standing',
+            'Select': 'http://senate.la.gov/Committees/Assignments.asp?type=Select'
         }
         
         for name, url in committee_types.items():
@@ -29,38 +29,42 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
             page = lxml.html.fromstring(text)
             page.make_links_absolute(url)
 
-            links = page.xpath('//b[contains(text(), "{0} Committees")]'
-                               '/../following-sibling::font/ul/li/a'.format(name))
+            committees = page.xpath('//td[@bgcolor="#EBEAEC"]//a') 
+            
+            for link in committees:
+                name = link.xpath('string()').strip()
+                url2 = link.attrib['href']
+                self.scrape_senate_committee(name, url2)
 
-            for link in links:
-                name = link.xpath('string()')
-                url = link.attrib['href']
-                self.scrape_senate_committee(name, url)
-        
-
-    def scrape_senate_committee(self, name, url):
-        url = url.replace('Default.asp', 'Assignments.asp')
+    def scrape_senate_committee(self, name, url2):
+        cat = "Assignments.asp"
+        url3 = "".join((url2, cat))
+        print url3
 
         committee = Committee('upper', name)
-        committee.add_source(url)
+        committee.add_source(url2)
 
-        text = self.urlopen(url)
+        text = self.urlopen(url3)
         page = lxml.html.fromstring(text)
 
-        links = page.xpath('//table[@bordercolor="#EBEAEC"]/tr/td/font/a')
+        members = page.xpath('//table[@id="table38"]//font/a/b')
 
-        for link in links:
+        for link in members:
             role = "member"
-            if link.tail:
-                role = link.tail.strip().strip("() ")
+            if link == members[0]:
+                role = "Chairman"
+            if link == members[1]:
+                role = "Vice-Chairman"
 
             name = link.xpath('string()')
             name = name.replace('Senator ', '').strip()
+            print role
+            print name
 
             committee.add_member(name, role)
 
         self.save_committee(committee)
-
+    
     def scrape_house(self):
         url = "http://house.louisiana.gov/H_Reps/H_Reps_CmtesFull.asp"
         comm_cache = {}
@@ -177,6 +181,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
         
         return committees
         
+    
     def normalize_committee_name(self, name):
         committees = {
             'House Executive Cmte': 'House Executive Committee',
