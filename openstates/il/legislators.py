@@ -18,7 +18,7 @@ class ILLegislatorScraper(LegislatorScraper):
         term_slug = term[:-2]
         url = MEMBER_LIST_URL[chamber] % term_slug
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -40,7 +40,7 @@ class ILLegislatorScraper(LegislatorScraper):
                 name = name.strip('*')
                 continue
 
-            leg_html = self.urlopen(leg_url)
+            leg_html = self.get(leg_url).text
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
 
