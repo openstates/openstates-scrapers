@@ -382,7 +382,7 @@ class MTBillScraper(BillScraper):
         if url.lower().endswith('.pdf'):
 
             try:
-                resp = self.get(url).text
+                resp = self.get(url)
             except HTTPError:
                 # This vote document wasn't found.
                 msg = 'No document found at url %r' % url
@@ -390,7 +390,7 @@ class MTBillScraper(BillScraper):
                 return
 
             try:
-                v = PDFCommitteeVote(url, resp.bytes)
+                v = PDFCommitteeVote(url, resp.content)
                 return v.asvote()
             except PDFCommitteeVoteParseError as e:
                 # Warn and skip.
