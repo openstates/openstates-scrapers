@@ -98,7 +98,7 @@ class NYEventScraper(EventScraper, LXMLMixin):
 
             title_key = set(metainf) & set([
                 'Public Hearing:', 'Summitt:', 'Roundtable:',
-                'Public Roundtable:'])
+                'Public Roundtable:', 'Public Meeting:'])
             assert len(title_key) == 1, "Couldn't determine event title."
             title_key = list(title_key).pop()
             title = metainf[title_key]
