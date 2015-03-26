@@ -35,7 +35,7 @@ class NCLegislatorScraper(LegislatorScraper):
         else:
             url += 'Senate'
 
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute('http://www.ncga.state.nc.us')
         rows = doc.xpath('//div[@id="mainBody"]/table/tr')
@@ -61,7 +61,7 @@ class NCLegislatorScraper(LegislatorScraper):
             full_name = full_name.replace(u'\u00a0', ' ')
 
             # scrape legislator page details
-            lhtml = self.urlopen(link)
+            lhtml = self.get(link).text
             ldoc = lxml.html.fromstring(lhtml)
             ldoc.make_links_absolute('http://www.ncga.state.nc.us')
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]

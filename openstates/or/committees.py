@@ -1,23 +1,11 @@
 from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 import scrapelib
+from openstates.utils import LXMLMixin
 
 
-class ORCommitteeScraper(CommitteeScraper):
+class ORCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'or'
-
-    def lxmlize(self, url, ignore=None):
-        if ignore is None:
-            ignore = []
-
-        try:
-            page = self.urlopen(url)
-        except scrapelib.HTTPError:
-            raise
-
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape(self, term, chambers):
         cdict = {"upper": "SenateCommittees_search",
@@ -39,9 +27,11 @@ class ORCommitteeScraper(CommitteeScraper):
                                       committee.text, chamber)
 
     def scrape_committee(self, committee_url, committee_name, chamber):
-        page = self.lxmlize(committee_url, ignore=[500])
-        if page is None:
-            return
+        try:
+            page = self.lxmlize(committee_url)
+        except scrapelib.HTTPError as e:
+            self.warning(e)
+            return None
         people = page.xpath("//div[@id='membership']//tbody/tr")
         c = Committee(chamber=chamber, committee=committee_name)
         for row in people:

@@ -17,7 +17,7 @@ class PALegislatorScraper(LegislatorScraper):
 
         leg_list_url = legislators_url(chamber)
 
-        page = self.urlopen(leg_list_url)
+        page = self.get(leg_list_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(leg_list_url)
 
@@ -39,7 +39,7 @@ class PALegislatorScraper(LegislatorScraper):
             legislator.add_source(leg_list_url)
 
             # Scrape email, offices, photo.
-            page = self.urlopen(url)
+            page = self.get(url).text
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(url)
 

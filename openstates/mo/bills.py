@@ -36,7 +36,7 @@ class MOBillScraper(BillScraper):
         self.scrape_subjects(lk_session)
 
     def url_xpath(self, url, path):
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
         return doc.xpath(path)
 
     def scrape_subjects(self, session):
@@ -48,7 +48,7 @@ class MOBillScraper(BillScraper):
         subject_url = "http://www.senate.mo.gov/%sinfo/BTS_Web/Keywords.aspx?SessionType=R" % (
             short
         )
-        subject_page = self.urlopen(subject_url)
+        subject_page = self.get(subject_url).text
         subject_page = lxml.html.fromstring(subject_page)
         subjects = subject_page.xpath("//h3")
         for subject in subjects:
@@ -63,7 +63,7 @@ class MOBillScraper(BillScraper):
 
     def scrape_house_subjects(self, session):
         subject_url = "http://house.mo.gov/subjectindexlist.aspx"
-        subject_page = self.urlopen(subject_url)
+        subject_page = self.get(subject_url).text
         subject_page = lxml.html.fromstring(subject_page)
         # OK. Let's load all the subjects up.
         subjects = subject_page.xpath("//ul[@id='subjectindexitems']/div/li")
@@ -106,7 +106,7 @@ class MOBillScraper(BillScraper):
         index_url = bill_root + 'BillList.aspx?SessionType=R'
         #print "index = %s" % index_url
 
-        index_page = self.urlopen(index_url)
+        index_page = self.get(index_url).text
         index_page = lxml.html.fromstring(index_page)
         # each bill is in it's own table (nested in a larger table)
         bill_tables = index_page.xpath('//a[@id]')
@@ -124,7 +124,7 @@ class MOBillScraper(BillScraper):
                 #print "one down!"
 
     def parse_senate_billpage(self, bill_url, year):
-        bill_page = self.urlopen(bill_url)
+        bill_page = self.get(bill_url).text
         bill_page = lxml.html.fromstring(bill_page)
         # get all the info needed to record the bill
         # TODO probably still needs to be fixed
@@ -179,7 +179,7 @@ class MOBillScraper(BillScraper):
 
     def parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
-        versions_page = self.urlopen(url)
+        versions_page = self.get(url).text
         versions_page = lxml.html.fromstring(versions_page)
         version_tags = versions_page.xpath('//li/font/a')
         for version_tag in version_tags:
@@ -234,7 +234,7 @@ class MOBillScraper(BillScraper):
 
     def parse_senate_actions(self, bill, url):
         bill.add_source(url)
-        actions_page = self.urlopen(url)
+        actions_page = self.get(url).text
         actions_page = lxml.html.fromstring(actions_page)
         bigtable = actions_page.xpath('/html/body/font/form/table/tr[3]/td/div/table/tr')
 
@@ -248,7 +248,7 @@ class MOBillScraper(BillScraper):
 
     def parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
-        cosponsors_page = self.urlopen(url)
+        cosponsors_page = self.get(url).text
         cosponsors_page = lxml.html.fromstring(cosponsors_page)
         # cosponsors are all in a table
         cosponsors = cosponsors_page.xpath('//table[@id="dgCoSponsors"]/tr/td/a')
@@ -276,7 +276,7 @@ class MOBillScraper(BillScraper):
     def parse_house_billpage(self, url, year):
         url_root = re.match("(.*//.*?/)", url).group(1)
 
-        bill_list_page = self.urlopen(url)
+        bill_list_page = self.get(url).text
         bill_list_page = lxml.html.fromstring(bill_list_page)
         # find the first center tag, take the text after
         # 'House of Representatives' and before 'Bills' as
@@ -309,7 +309,7 @@ class MOBillScraper(BillScraper):
         url = re.sub("billsummary", "billsummaryprn", url)
         url = '%s/%s' % (self.senate_base_url,url)
 
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
         bill_page.make_links_absolute(url)
 
@@ -440,7 +440,7 @@ class MOBillScraper(BillScraper):
         self.save_bill(bill)
 
     def parse_cosponsors_from_bill(self, bill, url):
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
         sponsors_text = find_nodes_with_matching_text(bill_page,'//p/span',r'\s*INTRODUCED.*')
         if len(sponsors_text) == 0:
@@ -467,7 +467,7 @@ class MOBillScraper(BillScraper):
     def parse_house_actions(self, bill, url):
         url = re.sub("BillActions", "BillActionsPrn", url)
         bill.add_source(url)
-        actions_page = self.urlopen(url)
+        actions_page = self.get(url).text
         actions_page = lxml.html.fromstring(actions_page)
         rows = actions_page.xpath('//table/tr')
 
