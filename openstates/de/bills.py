@@ -28,19 +28,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
             if name.strip():
                 yield name.strip()
 
-    def deal_with_action(self,bill,action):
-        if "senate" in action.lower():
-            actor = "upper"
-        elif "house" in action.lower():
-            actor = "lower"
-        elif "governor" in action.lower():
-            actor = "governor"
-        else:
-            self.logger.warning("Could not find actor for action '{}'".format(action))
-            return
-
-
-
     def scrape_bill(self,link,chamber,session):
 
         legislation_types = {
@@ -90,9 +77,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
         #through the individual tables and look for keywords
         #in the first td to tell us what we're looking at
         tables = page.xpath(".//table")
+
         bill_documents = {}
         action_list = []
+        vote_documents = {}
         sub_link = None
+        bill_text_avail = False
+
         for table in tables:
             tds = table.xpath(".//td")
             if len(tds) == 0:
@@ -142,7 +133,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     not "Original" in content):
                     sub_link = tds[1].xpath(".//a/@href")[0]
 
-            if "committee" in title_text:
+            if ("full text" in title_text
+                and ("(" not in title_text
+                or "html" in title_text)):
+                    if tds[1].text_content().strip():
+                        bill_text_avail = True
+
+            if "fiscal" in title_text:
                 pass
                 #skipping fiscal notes for now, they are really ugly
                 #but leaving in as a placeholder so we can remember to
@@ -150,13 +147,21 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
             if "committee" in title_text:
                 pass
-                #waiting on DE to explain what a vote of "on its merits"
-                #means, might do something here if that happens
-                #otherwise this will be added as an action.
+                #the committee reports let a legislator
+                #comment on a bill. They can comment as
+                #"favorable","unfavorable" or "on its merits"
+                #but these are NOT votes (per conversation w
+                #seceretary of the DE senate 3/16/15). The bill is
+                #considered if the majority sign it, which will
+                #appear in the bill's action history as being
+                #reported out of committee
 
             if "voting" in title_text:
-                pass
-                #todo: votes
+                vote_info = tds[1].xpath('./a')
+                for v in vote_info:
+                    vote_name = v.text_content().strip()
+                    vote_documents[vote_name] = v.attrib["href"]
+                
 
             if "actions history" in title_text:
                 action_list = tds[1].text_content().split("\n")
@@ -182,12 +187,12 @@ class DEBillScraper(BillScraper, LXMLMixin):
             for s in cosponsors:
                 bill.add_sponsor("cosponsor",s)
 
-        text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
-        #it is totally unclear which version of the bill is referred to here
-        #so I'm just calling it "bill text"
-        version_url = text_base_url.format(session=session,
+        if bill_text_avail:
+            #it is totally unclear which version of the bill is referred to here
+            #so I'm just calling it "bill text"
+            version_url = text_base_url.format(session=session,
                                         bill_id=bill_id.replace(" ","+"))
-        bill.add_version("Bill text",version_url,mimetype="text/html")
+            bill.add_version("Bill text",version_url,mimetype="text/html")
 
         for name, doc_link in bill_documents.items():
             if "Engrossment" in name:
@@ -208,16 +213,67 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 attrs.update(**self.categorizer.categorize(action))
                 bill.add_action(**attrs)
 
+        for name, doc in vote_documents.items():
+            vote_chamber = "lower" if "house" in name.lower() else "upper"
+            vote_page = self.lxmlize(doc)
+            vote_info = vote_page.xpath(".//div[@id='page_content']/p")[-1]
+            yes_votes = []
+            no_votes = []
+            other_votes = []                        
+            lines = vote_info.text_content().split("\n")
+            for line in lines:
+                if line.strip().startswith("Date"):
+                    date_str = " ".join(line.split()[1:4])
+                    date = datetime.strptime(date_str,"%m/%d/%Y %I:%M %p")
 
+                if line.strip().startswith("Vote Type"):
+                    passed = "Passed" in line
+                    if "voice" in line.lower():
+                        voice_vote = True
+                    else:
+                        voice_vote = False
+                        yes_count = int(re.findall("Yes: (\d*)",line)[0])
+                        no_count = int(re.findall("No: (\d*)",line)[0])
+                        other_count = int(re.findall("Not Voting: (\d*)",line)[0])
+                        other_count += int(re.findall("Absent: (\d*)",line)[0])
+                        vote_tds = vote_page.xpath(".//table//td")
+                        person_seen = False
+                        for td in vote_tds:
+                            if person_seen:
+                                person_vote = td.text_content().strip()
+                                if person_vote == "Y":
+                                    yes_votes.append(person)
+                                elif person_vote == "N":
+                                    no_votes.append(person)
+                                elif person_vote in ["NV","A","X"]:
+                                    other_votes.append(person)
+                                else:
+                                    raise AssertionError("Unknown vote '{}'".format(person_vote))
+                                person_seen = False
+                            else:
+                                person = td.text_content().strip()
+                                if person:
+                                    person_seen = True
 
+            if voice_vote:
+                vote = Vote(vote_chamber,date,"passage",passed,0,0,0)
+            else:
+                vote = Vote(vote_chamber,date,"passage",
+                            passed,yes_count,no_count,other_count,
+                            yes_votes=[],
+                            no_votes=[],
+                            other_votes=[])
+
+                vote["yes_votes"] = yes_votes
+                vote["no_votes"] = no_votes
+                vote["other_votes"] = other_votes
+
+            vote.add_source(doc)
+            bill.add_vote(vote)
 
         bill.add_source(link)
 
         return bill
-
-                
-
-
 
 
     def scrape(self,chamber,session):
