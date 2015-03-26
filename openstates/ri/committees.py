@@ -38,13 +38,13 @@ class RICommitteeScraper(CommitteeScraper):
     def scrape_comm_list(self, ctype):
         url = 'http://webserver.rilin.state.ri.us/CommitteeMembers/'
         self.log("looking for "+ctype)
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(url)
         return root.xpath("//a[contains(@href,'"+ctype+"')]")
 
     def add_members(self,comm,url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         self.log(comm)
         root = lxml.html.fromstring(page)
         # The first <tr> in the table of members

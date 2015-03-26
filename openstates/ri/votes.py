@@ -20,7 +20,7 @@ class RIVoteScraper(VoteScraper):
 
     def get_votes(self, url, session):
         ret = {}
-        html = self.urlopen(url)
+        html = self.get(url).text
         p = lxml.html.fromstring(html)
         tables = \
             p.xpath("//td[@background='/images/capBG.jpg']/div/table")
@@ -134,8 +134,7 @@ session[-2:]
         headers = {
             "votedate" : vote
         }
-        #headers = urllib.urlencode( headers )
-        return self.urlopen( url, method="POST", body=headers)
+        return self.post(url, data=headers).text
 
     def scrape(self, chamber, session):
         url = {

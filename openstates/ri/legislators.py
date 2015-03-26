@@ -42,7 +42,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
         # XLS doc as the source URL for all legislators.
         # 374: RI: legislator url
         leg_source_url_map = {}
-        leg_page = lxml.html.fromstring(self.urlopen(source_url))
+        leg_page = lxml.html.fromstring(self.get(source_url).text)
         leg_page.make_links_absolute(source_url)
 
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):
