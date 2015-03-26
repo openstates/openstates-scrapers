@@ -225,9 +225,9 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 if line.strip().startswith("Date"):
                     date_str = " ".join(line.split()[1:4])
                     date = datetime.strptime(date_str,"%m/%d/%Y %I:%M %p")
+                    passed = "Passed" in line
 
                 if line.strip().startswith("Vote Type"):
-                    passed = "Passed" in line
                     if "voice" in line.lower():
                         voice_vote = True
                     else:
@@ -268,6 +268,22 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 vote["no_votes"] = no_votes
                 vote["other_votes"] = other_votes
 
+            assert len(vote["yes_votes"]) == vote["yes_count"], \
+                "Yes vote count does not match number of yes votes"
+            assert len(vote["no_votes"]) == vote["no_count"], \
+                "No vote count does not match number of no votes"
+            assert len(vote["other_votes"]) == vote["other_count"], \
+                "Other vote count does not match number of other votes"
+
+            if (passed
+                and vote["yes_count"] <= vote["no_count"]
+                and not voice_vote):
+                    raise AssertionError("Vote passed with more N than Y votes?")
+
+            if not passed and vote["yes_count"] > vote["no_count"]:
+                self.logger.warning("Vote did not pass but had a majority \
+                        probably worth checking")
+
             vote.add_source(doc)
             bill.add_vote(vote)
 
@@ -302,7 +318,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     continue
                 link_td = tr.xpath("./td")[1]
                 link = link_td.xpath(".//a/@href")[0]
-
+                
                 bill = self.scrape_bill(link,chamber,session)
                 if bill:
                     self.save_bill(bill)
