@@ -351,9 +351,10 @@ class MNBillScraper(BillScraper):
       Versions of a bill are on a separate page, linked to from the column
       labeled, "Bill Text", on the search results page.
       """
-      version_html = self.urlopen(version_list_url)
-      if 'resolution' in version_html.response.url:
-          bill.add_version('resolution text', version_html.response.url,
+      version_resp = self.get(version_list_url)
+      version_html = version_resp.text
+      if 'resolution' in version_resp.url:
+          bill.add_version('resolution text', version_resp.url,
               mimetype='text/html')
       else:
           version_doc = lxml.html.fromstring(version_html)

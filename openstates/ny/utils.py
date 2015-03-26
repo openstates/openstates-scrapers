@@ -51,7 +51,7 @@ class UrlData(object):
         '''Return the decoded html or xml or whatever. sometimes
         necessary for a quick "if 'page not found' in html:..."
         '''
-        return self.text.response
+        return self.get(self.url)
 
     @CachedAttr
     def doc(self):

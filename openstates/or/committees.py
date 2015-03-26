@@ -12,10 +12,7 @@ class ORCommitteeScraper(CommitteeScraper):
 
         try:
             page = self.urlopen(url)
-        except scrapelib.HTTPError as e:
-            if e.response.status_code in ignore:
-                self.warning("Page is giving me a 500: %s" % (url))
-                return None
+        except scrapelib.HTTPError:
             raise
 
         page = lxml.html.fromstring(page)
