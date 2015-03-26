@@ -28,7 +28,7 @@ class WABillScraper(BillScraper, LXMLMixin):
 
     def build_subject_mapping(self, year):
         url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s' % year
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
         for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
@@ -36,7 +36,7 @@ class WABillScraper(BillScraper, LXMLMixin):
             link = link.replace(' ', '%20')
 
             # Strip invalid characters
-            rss = re.sub(r'^[^<]+', '', self.urlopen(link))
+            rss = re.sub(r'^[^<]+', '', self.get(link).text)
             rss = feedparser.parse(rss)
             for e in rss['entries']:
                 match = re.match('\w\w \d{4}', e['title'])
@@ -276,7 +276,7 @@ class WABillScraper(BillScraper, LXMLMixin):
                format(bill_num, self.biennium))
 
         try:
-            page = self.urlopen(url)
+            page = self.get(url).text
         except scrapelib.HTTPError, e:
             self.warning(e)
             return

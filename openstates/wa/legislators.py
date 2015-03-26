@@ -22,7 +22,7 @@ class WALegislatorScraper(LegislatorScraper):
         else:
             cur_member_url = 'http://www.leg.wa.gov/house/representatives/Pages/default.aspx'
 
-        cur_members = self.urlopen(cur_member_url)
+        cur_members = self.get(cur_member_url).text
         cur_members_doc = lxml.html.fromstring(cur_members)
         cur_members_doc.make_links_absolute(cur_member_url)
 
@@ -71,7 +71,7 @@ class WALegislatorScraper(LegislatorScraper):
             photo_url = ""
 
             try:
-                leg_page = self.urlopen(leg_url)
+                leg_page = self.get(leg_url).text
                 leg_page = lxml.html.fromstring(leg_page)
                 leg_page.make_links_absolute(leg_url)
 
