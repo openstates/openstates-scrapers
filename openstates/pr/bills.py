@@ -141,7 +141,7 @@ class PRBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, bill_id, bill_type):
         url = '%s?r=%s' % (self.base_url, bill_id)
-        html = self.urlopen(url)
+        html = self.get(url).text
         if "error '80020009'" in html:
             self.warning('asp error on page, skipping %s', bill_id)
             return

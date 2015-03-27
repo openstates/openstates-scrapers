@@ -9,7 +9,7 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ks'
 
     def scrape(self, term, chambers):
-        content = json.loads(self.urlopen(ksapi.url + 'members/'))['content']
+        content = json.loads(self.get(ksapi.url + 'members/').text)['content']
         if 'upper' in chambers:
             for member in content['senate_members']:
                 self.get_member(term, 'upper', member['KPID'])
@@ -20,7 +20,7 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
 
     def get_member(self, term, chamber, kpid):
         url = '%smembers/%s' % (ksapi.url, kpid)
-        content = json.loads(self.urlopen(url))['content']
+        content = json.loads(self.get(url).text)['content']
 
         party = content['PARTY']
         if party == 'Democrat':

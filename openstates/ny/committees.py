@@ -52,7 +52,7 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape_lower(self, only_names=None):
         committees = []
         url = "http://assembly.state.ny.us/comm/"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -69,7 +69,7 @@ class NYCommitteeScraper(CommitteeScraper):
         return committees
 
     def scrape_lower_committee(self, name, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         comm = Committee('lower', name)
@@ -101,7 +101,7 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape_upper(self):
         committees = []
         url = "http://www.nysenate.gov/committees"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -124,7 +124,7 @@ class NYCommitteeScraper(CommitteeScraper):
         return committees
 
     def scrape_upper_committee(self, name, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         comm = Committee('upper', name)

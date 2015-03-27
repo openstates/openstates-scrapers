@@ -21,13 +21,13 @@ class VTBillScraper(BillScraper, LXMLMixin):
         bills_url = \
                 'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
                 format(year_slug)
-        bills_json = self.urlopen(bills_url)
+        bills_json = self.get(bills_url).text
         bills = json.loads(bills_json)['data']
 
         resolutions_url = \
                 'http://legislature.vermont.gov/bill/loadAllResolutionsByChamber/{}/both'.\
                 format(year_slug)
-        resolutions_json = self.urlopen(resolutions_url)
+        resolutions_json = self.get(resolutions_url).text
         bills.extend(json.loads(resolutions_json)['data'])
 
         # Parse the information from each bill
@@ -143,7 +143,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
             # Capture actions
             actions_url = 'http://legislature.vermont.gov/bill/loadBillDetailedStatus/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-            actions_json = self.urlopen(actions_url)
+            actions_json = self.get(actions_url).text
             actions = json.loads(actions_json)['data']
             bill.add_source(actions_url)
 
@@ -192,7 +192,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
             # Capture votes
             votes_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
                     format(year_slug, internal_bill_id)
-            votes_json = self.urlopen(votes_url)
+            votes_json = self.get(votes_url).text
             votes = json.loads(votes_json)['data']
             bill.add_source(votes_url)
 
@@ -200,7 +200,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                 roll_call_id = vote['VoteHeaderID']
                 roll_call_url = 'http://legislature.vermont.gov/bill/loadBillRollCallDetails/{0}/{1}'.\
                         format(year_slug, roll_call_id)
-                roll_call_json = self.urlopen(roll_call_url)
+                roll_call_json = self.get(roll_call_url).text
                 roll_call = json.loads(roll_call_json)['data']
 
                 roll_call_yea = []

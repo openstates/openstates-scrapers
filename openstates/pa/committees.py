@@ -29,7 +29,7 @@ class PACommitteeScraper(CommitteeScraper):
             url = ('http://www.legis.state.pa.us/cfdocs/legis/'
                    'home/member_information/representatives_ca.cfm')
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         committees = CommitteeDict()

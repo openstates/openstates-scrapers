@@ -13,7 +13,7 @@ class WYLegislatorScraper(LegislatorScraper):
 
         url = ("http://legisweb.state.wy.us/LegislatorSummary/LegislatorList"
                ".aspx?strHouse=%s&strStatus=N" % chamber_abbrev)
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'LegDetail')]"):
@@ -35,7 +35,7 @@ class WYLegislatorScraper(LegislatorScraper):
             district = link.xpath(
                 "string(../../../td[4])").strip().lstrip('HS0')
 
-            leg_page = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_page = lxml.html.fromstring(self.get(leg_url).text)
             leg_page.make_links_absolute(leg_url)
             img = leg_page.xpath(
                 "//img[contains(@src, 'LegislatorSummary/photos')]")[0]

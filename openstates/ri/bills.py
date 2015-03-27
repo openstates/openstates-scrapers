@@ -155,8 +155,8 @@ class RIBillScraper(BillScraper):
             #    "%s: %s" % (x, default_headers[x][:20]) for x in default_headers
             #])
 
-            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
-                method="POST", body=default_headers))
+            blocks = self.parse_results_page(self.post(SEARCH_URL,
+                                             data=default_headers).text)
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
             for block in blocks:
@@ -241,8 +241,8 @@ class RIBillScraper(BillScraper):
             default_headers[YEAR] = session
             idex += MAXQUERY
             #headers = urllib.urlencode( default_headers )
-            blocks = self.parse_results_page(self.urlopen( SEARCH_URL,
-                method="POST", body=default_headers))
+            blocks = self.parse_results_page(self.post(SEARCH_URL,
+                                             data=default_headers).text)
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
 

@@ -16,7 +16,7 @@ class OKEventScraper(EventScraper):
 
     def scrape_upper(self, session):
         url = "http://www.oksenate.gov/Committees/meetingnotices.htm"
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         text = page.text_content()

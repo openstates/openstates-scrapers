@@ -18,7 +18,7 @@ class WILegislatorScraper(LegislatorScraper):
         else:
             url = "http://legis.wisconsin.gov/Pages/leg-list.aspx?h=a"
 
-        body = self.urlopen(url)
+        body = self.get(url).text
         page = lxml.html.fromstring(body)
         page.make_links_absolute(url)
 
@@ -27,7 +27,7 @@ class WILegislatorScraper(LegislatorScraper):
             if row.xpath(".//a/@href") and not row.xpath(".//a[text()='Vacant']"):
                 rep_url = row.xpath(".//a[text()='Details']/@href")[0].strip("https://")
                 rep_url = "https://docs."+rep_url
-                rep_doc = lxml.html.fromstring(self.urlopen(rep_url))
+                rep_doc = lxml.html.fromstring(self.get(rep_url).text)
                 rep_doc.make_links_absolute(rep_url)
 
                 full_name = rep_doc.xpath('.//div[@id="district"]/h1/text()')[0].replace("Senator ","").replace("Representative ","")

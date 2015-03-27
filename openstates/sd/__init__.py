@@ -63,8 +63,7 @@ metadata = dict(
 def session_list():
     import scrapelib
     import lxml.html
-    # uses urllib because httplib2 has a compression issue on this page
-    html = scrapelib.urlopen('http://legis.sd.gov/Legislative_Session/Menu.aspx')
+    html = scrapelib.Scraper().get('http://legis.sd.gov/Legislative_Session/Menu.aspx').text
     doc = lxml.html.fromstring(html)
     return doc.xpath('//div[@id="ContentPlaceHolder1_BlueBoxLeft"]//ul/li/a/div/text()')
 

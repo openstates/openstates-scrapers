@@ -17,7 +17,7 @@ SUBCOMMITTEES = {
     "Finance - Corrections Subcommittee": "Finance",
     "Finance - Education Subcommittee": "Finance",
     "Finance - General Government Subcommittee": "Finance",
-    "Finance - Higher Ed  Subcommittee": "Finance",
+    "Finance - Higher Ed Subcommittee": "Finance",
     "Finance - Workforce Subcommittee": "Finance",
 
     # The House has mostly Finance, but also one more
@@ -44,7 +44,7 @@ class OHLegislatorScraper(LegislatorScraper):
         self.scrape_page(chamber, term, url)
 
     def fetch_committee_positions(self, a):
-        page = self.urlopen(a.attrib['href'])
+        page = self.get(a.attrib['href']).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(a.attrib['href'])
         ret = {}
@@ -64,7 +64,7 @@ class OHLegislatorScraper(LegislatorScraper):
         return ret
 
     def scrape_homepage(self, leg, chamber, homepage, term):
-        page = self.urlopen(homepage)
+        page = self.get(homepage).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(homepage)
         bio = page.xpath(
@@ -119,7 +119,7 @@ class OHLegislatorScraper(LegislatorScraper):
                          **kwargs)
 
     def scrape_page(self, chamber, term, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

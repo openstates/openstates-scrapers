@@ -17,7 +17,7 @@ class KYLegislatorScraper(LegislatorScraper):
         else:
             leg_list_url = 'http://www.lrc.ky.gov/house/hsemembers.htm'
 
-        page = self.urlopen(leg_list_url)
+        page = self.get(leg_list_url).text
         page = lxml.html.fromstring(page)
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
@@ -25,7 +25,7 @@ class KYLegislatorScraper(LegislatorScraper):
 
     def scrape_office_info(self, url):
         ret = {}
-        legislator_page = self.urlopen(url)
+        legislator_page = self.get(url).text
         legislator_page = lxml.html.fromstring(legislator_page)
         legislator_page.make_links_absolute(url)
         info = legislator_page.xpath("//table//span")
@@ -85,7 +85,7 @@ class KYLegislatorScraper(LegislatorScraper):
         return ret
 
     def scrape_member(self, chamber, year, member_url):
-        member_page = self.urlopen(member_url)
+        member_page = self.get(member_url).text
         doc = lxml.html.fromstring(member_page)
 
         photo_url = doc.xpath('//div[@id="bioImage"]/img/@src')[0]

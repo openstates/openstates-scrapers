@@ -98,7 +98,7 @@ class NYEventScraper(EventScraper, LXMLMixin):
 
             title_key = set(metainf) & set([
                 'Public Hearing:', 'Summitt:', 'Roundtable:',
-                'Public Roundtable:'])
+                'Public Roundtable:', 'Public Meeting:'])
             assert len(title_key) == 1, "Couldn't determine event title."
             title_key = list(title_key).pop()
             title = metainf[title_key]
@@ -143,12 +143,12 @@ class NYEventScraper(EventScraper, LXMLMixin):
                r'term=otype:meeting&pageSize=1000&pageIdx=%d')
         page_index = 1
         while True:
-            resp = self.urlopen(url % page_index)
-            if not resp.response.json():
+            resp = self.get(url % page_index)
+            if not resp.json():
                 break
-            if not resp.response.json()['response']['results']:
+            if not resp.json()['response']['results']:
                 break
-            for obj in resp.response.json()['response']['results']:
+            for obj in resp.json()['response']['results']:
                 event = self.upper_scrape_event(chamber, session, obj)
                 if event:
                     self.save_event(event)

@@ -65,7 +65,7 @@ class MNLegislatorScraper(LegislatorScraper):
 
     def scrape_senate(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
-        doc = lxml.html.fromstring(self.urlopen(index_url))
+        doc = lxml.html.fromstring(self.get(index_url).text)
         doc.make_links_absolute(index_url)
 
         leg_data = defaultdict(dict)
@@ -88,7 +88,7 @@ class MNLegislatorScraper(LegislatorScraper):
 
         # use CSV for most of data
         csv_url = 'http://www.senate.mn/members/member_list_ascii.php?ls='
-        csvfile = self.urlopen(csv_url)
+        csvfile = self.get(csv_url).text
 
         for row in csv.DictReader(StringIO(csvfile)):
             if not row['First Name']:

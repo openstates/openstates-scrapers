@@ -41,7 +41,7 @@ class ARBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = unicode_csv_reader(StringIO.StringIO(page), delimiter='|')
 
         for row in page:
@@ -82,7 +82,7 @@ class ARBillScraper(BillScraper):
 
     def scrape_actions(self):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ChamberActions.txt"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = csv.reader(StringIO.StringIO(page))
 
         for row in page:
@@ -151,7 +151,7 @@ class ARBillScraper(BillScraper):
                    term_year, self.slug, measureno))
         bill.add_source(url)
 
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'Amendments')]"):
@@ -171,7 +171,7 @@ class ARBillScraper(BillScraper):
     #     self.scrape_votes(bill, hist_link.attrib['href'])
 
     # def scrape_votes(self, bill, url):
-    #     page = lxml.html.fromstring(self.urlopen(url))
+    #     page = lxml.html.fromstring(self.get(url).text)
     #     page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
@@ -184,7 +184,7 @@ class ARBillScraper(BillScraper):
 
     def scrape_vote(self, bill, date, motion, url):
         try:
-            page = self.urlopen(url)
+            page = self.get(url).text
         except scrapelib.HTTPError:
             #sometiems the link is there but is dead
             return
@@ -225,5 +225,5 @@ class ARBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def scrape_cosponsors(self, bill, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)

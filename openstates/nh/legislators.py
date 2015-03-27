@@ -13,7 +13,7 @@ class NHLegislatorScraper(LegislatorScraper):
     latest_only = True
 
     def get_photo(self, url, chamber):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         if chamber == 'lower':
@@ -28,12 +28,12 @@ class NHLegislatorScraper(LegislatorScraper):
         url = 'http://gencourt.state.nh.us/downloads/Members.txt'
 
         option_map = {}
-        html = self.urlopen('http://www.gencourt.state.nh.us/house/members/memberlookup.aspx')
+        html = self.get('http://www.gencourt.state.nh.us/house/members/memberlookup.aspx').text
         doc = lxml.html.fromstring(html)
         for opt in doc.xpath('//option'):
             option_map[opt.text] = opt.get('value')
 
-        data = self.urlopen(url)
+        data = self.get(url).text
         for line in data.splitlines():
             if line.strip() == "":
                 continue

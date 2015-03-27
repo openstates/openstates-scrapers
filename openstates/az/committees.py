@@ -73,7 +73,7 @@ class AZCommitteeScraper(CommitteeScraper):
         url = base_url + 'CommitteeInfo.asp?Committee_ID=%s&Session_ID=%s' % (committee_id,
                                                                     session_id)
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         committee.add_source(url)
         root = lxml.html.fromstring(page)
         p = '//table/tr/td[1]/a/ancestor::tr[1]'
@@ -87,8 +87,8 @@ class AZCommitteeScraper(CommitteeScraper):
     def scrape_index(self, chamber, session, session_id, committee_type):
         url = base_url + 'xml/committees.asp?session=%s&type=%s' % (session_id,
                                                                  committee_type)
-        page = self.urlopen(url)
-        root = etree.fromstring(page.bytes, etree.XMLParser(recover=True))
+        page = self.get(url)
+        root = etree.fromstring(page.content, etree.XMLParser(recover=True))
 
         body = '//body[@Body="%s"]/committee' % {'upper': 'S',
                                                  'lower': 'H'}[chamber]

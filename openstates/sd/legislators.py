@@ -17,7 +17,7 @@ class SDLegislatorScraper(LegislatorScraper):
         else:
             search = 'House Members'
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -28,7 +28,7 @@ class SDLegislatorScraper(LegislatorScraper):
                                    link.attrib['href'])
 
     def scrape_legislator(self, name, chamber, term, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -88,7 +88,7 @@ class SDLegislatorScraper(LegislatorScraper):
         self.save_legislator(legislator)
 
     def scrape_committees(self, leg, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         leg.add_source(url)
 

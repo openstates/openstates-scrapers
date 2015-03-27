@@ -25,7 +25,7 @@ class CTEventScraper(EventScraper):
         events_url = \
                 'http://www.cga.ct.gov/basin/fullcalendar/commevents.php?' \
                 'comm_code={}'.format(code)
-        events_data = self.urlopen(events_url)
+        events_data = self.get(events_url).text
         events = json.loads(events_data)
 
         DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -44,7 +44,7 @@ class CTEventScraper(EventScraper):
 
     def get_comm_codes(self):
         url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.urlopen(url)
+        page = self.get(url)
         page = open_csv(page)
         return [(row['comm_code'].strip(),
                  row['comm_name'].strip())
