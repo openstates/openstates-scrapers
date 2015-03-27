@@ -18,7 +18,7 @@ class MNVoteScraper(VoteScraper):
         if not votes_url:
             self.warning('no house votes URL for %s', session)
             return
-        html = self.urlopen(votes_url)
+        html = self.get(votes_url).text
         doc = lxml.html.fromstring(html)
         prefix = {'lower': 'H', 'upper': 'S'}[chamber]
         xpath = '//a[contains(@href, "votesbynumber.asp?billnum=%s")]' % prefix
@@ -29,7 +29,7 @@ class MNVoteScraper(VoteScraper):
             self.scrape_votes(chamber, session, bill_id, link_url)
 
     def scrape_votes(self, chamber, session, bill_id, link_url):
-        html = self.urlopen(link_url)
+        html = self.get(link_url).text
         doc = lxml.html.fromstring(html)
         for vote_url in doc.xpath('//a[starts-with(text(), "View Vote")]/@href'):
             self.scrape_vote(chamber, session, bill_id, vote_url)

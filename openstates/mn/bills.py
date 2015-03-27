@@ -116,7 +116,7 @@ class MNBillScraper(BillScraper):
                     start + stride, bill_type)
 
                 # Parse HTML
-                html = self.urlopen(url)
+                html = self.get(url).text
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
@@ -156,7 +156,7 @@ class MNBillScraper(BillScraper):
         chamber = 'upper' if chamber.lower() == 'senate' else chamber
 
         # Get html and parse
-        bill_html = self.urlopen(bill_detail_url)
+        bill_html = self.get(bill_detail_url).text
         doc = lxml.html.fromstring(bill_html)
 
         # Get the basic parts of the bill
@@ -202,7 +202,7 @@ class MNBillScraper(BillScraper):
 
         url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
             BILL_DETAIL_URL_BASE, search_chamber, search_session)
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # For testing purposes, we don't really care about getting
@@ -218,7 +218,7 @@ class MNBillScraper(BillScraper):
             value = option.get('value')
             opt_url = '%sstatus_results.php?body=%s&search=topic&session=%s&topic[]=%s' % (
                 BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
-            opt_html = self.urlopen(opt_url)
+            opt_html = self.get(opt_url).text
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
                 bill = self.make_bill_id(bill)

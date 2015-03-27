@@ -30,7 +30,7 @@ class MECommitteeScraper(CommitteeScraper):
 
 
         url = 'http://legislature.maine.gov/house/hsecoms.htm'
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
 
         count = 0
@@ -60,12 +60,12 @@ class MECommitteeScraper(CommitteeScraper):
 
     def scrape_senate_comm(self):
         url = 'http://legisweb1.mainelegislature.org/wp/senate/legislative-committees/'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         committee_urls = doc.xpath('//address/a/@href')
         for committee_url in committee_urls:
 
-            html = self.urlopen(committee_url)
+            html = self.get(committee_url).text
             doc = lxml.html.fromstring(html)
 
             (committee_name, ) = \

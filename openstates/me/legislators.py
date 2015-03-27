@@ -21,7 +21,7 @@ class MELegislatorScraper(LegislatorScraper):
 
     def scrape_reps(self, chamber, term_name):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -59,7 +59,7 @@ class MELegislatorScraper(LegislatorScraper):
             leg.add_source(leg_url)
 
             # Get the photo url.
-            html = self.urlopen(leg_url)
+            html = self.get(leg_url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(leg_url)
             (photo_url, ) = doc.xpath('//img[contains(@src, ".jpg")]/@src')
@@ -188,7 +188,7 @@ class MELegislatorScraper(LegislatorScraper):
             # Determine legislator's URL to get their photo
             LEGISLATOR_ROSTER_URL = \
                     'http://legisweb1.mainelegislature.org/wp/senate/senators/'
-            html = self.urlopen(LEGISLATOR_ROSTER_URL)
+            html = self.get(LEGISLATOR_ROSTER_URL).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
 
@@ -207,7 +207,7 @@ class MELegislatorScraper(LegislatorScraper):
             leg.add_source(url)
             leg.add_source(leg_url)
 
-            html = self.urlopen(leg_url)
+            html = self.get(leg_url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(leg_url)
             xpath = '//img[contains(@src, ".png")]/@src'

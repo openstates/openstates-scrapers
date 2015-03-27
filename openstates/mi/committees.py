@@ -17,7 +17,7 @@ class MICommitteeScraper(CommitteeScraper):
 
     def scrape_house_committees(self):
         base_url = 'http://house.mi.gov/MHRPublic/CommitteeInfo.aspx?comkey='
-        html = self.urlopen('http://house.mi.gov/mhrpublic/committee.aspx')
+        html = self.get('http://house.mi.gov/mhrpublic/committee.aspx').text
         doc = lxml.html.fromstring(html)
 
         # get values out of drop down
@@ -30,7 +30,7 @@ class MICommitteeScraper(CommitteeScraper):
                 self.warning('no committees yet for the house')
                 return
             com_url = base_url + opt.get('value')
-            com_html =  self.urlopen(com_url)
+            com_html =  self.get(com_url).text
             cdoc = lxml.html.fromstring(com_html)
             com = Committee(chamber='lower', committee=name)
             com.add_source(com_url)
@@ -54,7 +54,7 @@ class MICommitteeScraper(CommitteeScraper):
 
     def scrape_senate_committees(self):
         url = 'http://www.senate.michigan.gov/committee.html'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -66,7 +66,7 @@ class MICommitteeScraper(CommitteeScraper):
 
 
     def scrape_senate_committee(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//h3/text()')[0]
@@ -101,7 +101,7 @@ class MICommitteeScraper(CommitteeScraper):
 
 
     def scrape_approp_subcommittees(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         for strong in doc.xpath('//strong'):
