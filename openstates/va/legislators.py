@@ -47,6 +47,9 @@ class VALegislatorScraper(LegislatorScraper):
             if chamber != CHAMBER_MOVES[name]:
                 return  # Skip bad chambers.
 
+        if "vacated" in name:
+            return
+
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
         party_district_re = re.compile(
             r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
@@ -56,6 +59,7 @@ class VALegislatorScraper(LegislatorScraper):
         if match:
             action, date = match.groups()
             name = name.rsplit('-')[0]
+
             if action == 'Resigned':
                 pass # TODO: set end date
             elif action == 'Member':
