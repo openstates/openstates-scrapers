@@ -219,7 +219,11 @@ class TNBillScraper(BillScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(bill_url)
 
-        bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+        try:
+            bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+        except IndexError:
+            self.logger.warning("Something is wrong with bill page, skipping.")
+            return
         secondary_bill_id = page.xpath('//span[@id="lblCompNumber"]/a[1]')
 
         # checking if there is a matching bill
