@@ -61,7 +61,7 @@ def session_list():
     import lxml.html
 
     url = 'http://www.legis.nd.gov/assembly/'
-    html = scrapelib.get(url).text
+    html = scrapelib.Scraper().get(url).text
     doc = lxml.html.fromstring(html)
     doc.make_links_absolute(url)
     return doc.xpath("//div[@class='view-content']//a/text()")
