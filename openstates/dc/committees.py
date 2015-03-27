@@ -9,7 +9,7 @@ class DCCommitteeScraper(CommitteeScraper):
     def scrape(self, term, chambers):
         # com_url = 'http://www.dccouncil.washington.dc.us/committees'
         com_url = 'http://dccouncil.us/committees'
-        data = self.urlopen(com_url)
+        data = self.get(com_url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(com_url)
 
@@ -20,7 +20,7 @@ class DCCommitteeScraper(CommitteeScraper):
         for committee in comms:
             url = committee.attrib['href']
             comm_name = committee.text_content().strip()
-            comm_data = self.urlopen(url)
+            comm_data = self.get(url).text
             comm_page = lxml.html.fromstring(comm_data)
             comm_page.make_links_absolute(url)
             comm = Committee("upper",comm_name)

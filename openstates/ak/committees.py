@@ -10,7 +10,7 @@ class AKCommitteeScraper(CommitteeScraper):
         url = ("http://www.legis.state.ak.us/basis/commbr_info.asp"
                "?session=%s" % term)
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -27,7 +27,7 @@ class AKCommitteeScraper(CommitteeScraper):
                 self.scrape_committee(chamber, name, url)
 
     def scrape_committee(self, chamber, name, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         if page.xpath("//h3[. = 'Joint Committee']"):

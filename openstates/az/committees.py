@@ -73,7 +73,7 @@ class AZCommitteeScraper(CommitteeScraper):
         url = base_url + 'CommitteeInfo.asp?Committee_ID=%s&Session_ID=%s' % (committee_id,
                                                                     session_id)
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         committee.add_source(url)
         root = lxml.html.fromstring(page)
         p = '//table/tr/td[1]/a/ancestor::tr[1]'

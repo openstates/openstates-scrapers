@@ -42,7 +42,7 @@ class CALegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
 
         url = self.urls[chamber]
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         if chamber == 'lower':

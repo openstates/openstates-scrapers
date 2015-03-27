@@ -25,7 +25,7 @@ class KYCommitteeScraper(CommitteeScraper):
             chamber = 'joint'
 
         for url in urls:
-            page = self.urlopen(url)
+            page = self.get(url).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
@@ -52,7 +52,7 @@ class KYCommitteeScraper(CommitteeScraper):
                     self.save_committee(comm)
 
     def scrape_members(self, comm, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         comm.add_source(url)

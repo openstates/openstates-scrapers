@@ -54,7 +54,7 @@ class AZEventScraper(EventScraper):
         # could use &ShowAll=ON doesn't seem to work though
         url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % \
                                           self._chamber_short[chamber]
-        html_ = self.urlopen(url)
+        html_ = self.get(url).text
         doc = html.fromstring(html_)
         if chamber == 'upper':
             event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
@@ -113,7 +113,7 @@ class AZEventScraper(EventScraper):
         any other useful info
         self.parse_agenda(url)--> (desc='', who=[], meeting_type='', other={})
         """
-        html_ = self.urlopen(url)
+        html_ = self.get(url).text
         doc = html.fromstring(html_)
 
         # Related bills
@@ -221,7 +221,7 @@ class AZEventScraper(EventScraper):
         agendas_path = '//table[contains(' \
                        'tr/td/div[@class="ContentPageTitle"]/text(), "%s")]'
 
-        html_ = self.urlopen(url)
+        html_ = self.get(url).text
         doc = html.fromstring(html_)
         table = doc.xpath(agendas_path % "Interim Committee Agendas")
         if table:

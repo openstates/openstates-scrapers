@@ -14,7 +14,7 @@ class KYEventScraper(EventScraper):
 
     def scrape(self, session, chambers):
         url = "http://www.lrc.ky.gov/legislative_calendar/index.aspx"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         for div in page.xpath("//div[@style = 'MARGIN-LEFT: 20px']"):

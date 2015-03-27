@@ -16,7 +16,7 @@ class DCLegislatorScraper(LegislatorScraper):
     def scrape(self, term, chambers):
         # council_url = 'http://www.dccouncil.washington.dc.us/council'
         council_url = 'http://dccouncil.us/council'
-        data = self.urlopen(council_url)
+        data = self.get(council_url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
@@ -25,7 +25,7 @@ class DCLegislatorScraper(LegislatorScraper):
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
         for url in urls:
-            data = self.urlopen(url)
+            data = self.get(url).text
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 

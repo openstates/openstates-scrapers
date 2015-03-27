@@ -56,7 +56,7 @@ metadata = dict(
 
 def session_list():
     import scrapelib
-    text = scrapelib.urlopen('ftp://ftp.cga.ct.gov')
+    text = scrapelib.get('ftp://ftp.cga.ct.gov').text
     sessions = [line.split()[-1] for line in text.splitlines()]
     
     for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac"):

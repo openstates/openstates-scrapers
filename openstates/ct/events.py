@@ -25,7 +25,7 @@ class CTEventScraper(EventScraper):
         events_url = \
                 'http://www.cga.ct.gov/basin/fullcalendar/commevents.php?' \
                 'comm_code={}'.format(code)
-        events_data = self.urlopen(events_url)
+        events_data = self.get(events_url).text
         events = json.loads(events_data)
 
         DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'

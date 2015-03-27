@@ -122,7 +122,7 @@ class IDBillScraper(BillScraper):
         self._subjects = defaultdict(list)
 
         url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # loop through anchors
@@ -151,7 +151,7 @@ class IDBillScraper(BillScraper):
     def scrape_post_2009(self, chamber, session):
         "scrapes legislation for 2009 and above"
         url = BILLS_URL % session
-        bill_index = self.urlopen(url)
+        bill_index = self.get(url).text
         html = lxml.html.fromstring(bill_index)
         # I check for rows with an id that contains 'bill' and startswith
         # 'H' or 'S' to make sure I dont get any links from the menus
@@ -170,7 +170,7 @@ class IDBillScraper(BillScraper):
         """scrapes legislation from 2008 and below."""
         url = BILLS_URL + 'l'
         url = url % session
-        bill_index = self.urlopen(url)
+        bill_index = self.get(url).text
         html = lxml.html.fromstring(bill_index)
         html.make_links_absolute(url)
         links = html.xpath('//a')
@@ -188,7 +188,7 @@ class IDBillScraper(BillScraper):
         bills from the 2009 session and above.
         """
         url = BILL_URL % (session, bill_id.replace(' ', ''))
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         html = lxml.html.fromstring(bill_page)
         html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
         bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
@@ -266,7 +266,7 @@ class IDBillScraper(BillScraper):
         """bills from 2008 and below are in a 'pre' element and is simpler to
         parse them as text"""
         url = 'http://legislature.idaho.gov/legislation/%s/%s.html' % (session, bill_id.replace(' ', ''))
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         html = lxml.html.fromstring(bill_page)
         text = html.xpath('//pre')[0].text.split('\r\n')
 
