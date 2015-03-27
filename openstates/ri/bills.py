@@ -156,7 +156,7 @@ class RIBillScraper(BillScraper):
             #])
 
             blocks = self.parse_results_page(self.post(SEARCH_URL,
-                                             data=default_headers))
+                                             data=default_headers).text)
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
             for block in blocks:
@@ -242,7 +242,7 @@ class RIBillScraper(BillScraper):
             idex += MAXQUERY
             #headers = urllib.urlencode( default_headers )
             blocks = self.parse_results_page(self.post(SEARCH_URL,
-                                             data=default_headers))
+                                             data=default_headers).text)
             blocks = blocks[1:-1]
             blocks = self.digest_results_page(blocks)
 
