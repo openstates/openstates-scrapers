@@ -83,11 +83,11 @@ class VALegislatorScraper(LegislatorScraper):
                     email = text.strip('email: ').strip()
                 else:
                     address.append(text)
-                type = ('capitol' if 'Capitol Square' in address
+                office_type = ('capitol' if 'Capitol Square' in address
                         else 'district')
-                name = ('Capitol Office' if type == 'capitol'
+                name = ('Capitol Office' if office_type == 'capitol'
                         else 'District Office')
-            leg.add_office(type, name, address='\n'.join(address),
+            leg.add_office(office_type, name, address='\n'.join(address),
                            phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
