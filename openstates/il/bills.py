@@ -147,7 +147,7 @@ class ILBillScraper(BillScraper):
     jurisdiction = 'il'
 
     def url_to_doc(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         return doc
