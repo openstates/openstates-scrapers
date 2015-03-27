@@ -426,7 +426,7 @@ def find_columns_and_parse(vote_lines):
 
 def _is_potential_column(line, i):
     for val in VOTE_VALUES:
-        if re.search(r'^%s\s{2,7}(\w.).*' % val, line[i:]):
+        if re.search(r'^%s\s{2,10}(\w.).*' % val, line[i:]):
             return True
     return False
 
