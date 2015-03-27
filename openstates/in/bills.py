@@ -179,7 +179,19 @@ class INBillScraper(BillScraper):
         name = version["stageVerbose"]
         if link not in urls_seen:
             urls_seen.append(link)
-            bill.add_version(name,link,mimetype="application/pdf")
+            update_date = version["updated"]
+            create_date = version["created"]
+            intro_date = version["introduced"]
+            file_date = version["filed"]
+            for d in [update_date,create_date,intro_date,file_date]:
+                try:
+                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S")
+                except TypeError:
+                    continue
+                else:
+                    break
+                
+            bill.add_version(name,link,mimetype="application/pdf",date=update_date)
 
         #votes
         votes = version["rollcalls"]
