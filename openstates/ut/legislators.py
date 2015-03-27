@@ -16,7 +16,7 @@ class UTLegislatorScraper(LegislatorScraper):
 
     def scrape_lower(self, term):
         url = 'http://le.utah.gov/house2/representatives.jsp'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -40,7 +40,7 @@ class UTLegislatorScraper(LegislatorScraper):
                 raise ValueError('unknown party')
 
             # get photo
-            leg_html = self.urlopen(leg_url)
+            leg_html = self.get(leg_url).text
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//img[@alt="photo"]/@src')[0]
@@ -65,7 +65,7 @@ class UTLegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, term):
         url = 'http://www.utahsenate.org/aspx/roster.aspx'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -107,7 +107,7 @@ class UTLegislatorScraper(LegislatorScraper):
 
             # get photo
             try:
-                leg_html = self.urlopen(leg_url)
+                leg_html = self.get(leg_url).text
                 leg_doc = lxml.html.fromstring(leg_html)
                 leg_doc.make_links_absolute(leg_url)
                 photo_url = leg_doc.xpath('//p[@class="photo"]/img/@src')[0]
