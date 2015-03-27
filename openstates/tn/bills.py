@@ -203,7 +203,7 @@ class TNBillScraper(BillScraper):
 
             bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
 
-            bill_list_page = self.urlopen(bill_listing)
+            bill_list_page = self.get(bill_listing).text
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
@@ -215,11 +215,15 @@ class TNBillScraper(BillScraper):
 
     def scrape_bill(self, term, bill_url, bill_type):
 
-        page = self.urlopen(bill_url)
+        page = self.get(bill_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(bill_url)
 
-        bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+        try:
+            bill_id = page.xpath('//span[@id="lblBillNumber"]/a[1]')[0].text
+        except IndexError:
+            self.logger.warning("Something is wrong with bill page, skipping.")
+            return
         secondary_bill_id = page.xpath('//span[@id="lblCompNumber"]/a[1]')
 
         # checking if there is a matching bill
@@ -309,7 +313,7 @@ class TNBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_votes(self, bill, link):
-        page = self.urlopen(link)
+        page = self.get(link).text
         page = lxml.html.fromstring(page)
         raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
         raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]

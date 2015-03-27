@@ -24,9 +24,10 @@ class NEBillScraper(BillScraper, LXMLMixin):
             #POST request for search form
             post_dict = {'DocumentNumber': bill_abbr, 'Legislature': session}
             #headers = urllib.urlencode(post_dict)
-            bill_page = self.urlopen( 'http://nebraskalegislature.gov/bills/search_by_number.php',
-                                     method="POST", body=post_dict)
-            bill_link = bill_page.response.url
+            bill_resp = self.post('http://nebraskalegislature.gov/bills/search_by_number.php',
+                                  data=post_dict)
+            bill_link = bill_resp.url
+            bill_page = bill_resp.text
 
             #scrapes info from bill page
             self.bill_info(bill_link, session, main_url, bill_page)

@@ -15,7 +15,7 @@ class SCLegislatorScraper(LegislatorScraper):
         else:
             url = 'http://www.scstatehouse.gov/member.php?chamber=S'
 
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
 
@@ -23,7 +23,7 @@ class SCLegislatorScraper(LegislatorScraper):
             full_name = a.text
             leg_url = a.get('href')
 
-            leg_html = self.urlopen(leg_url)
+            leg_html = self.get(leg_url).text
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(leg_url)
 

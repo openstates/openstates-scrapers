@@ -7,7 +7,7 @@ class NCCommitteeScraper(CommitteeScraper):
 
     def scrape_committee(self, committee, url):
         url = url.replace(' ', '%20') + '&bPrintable=true'
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table/tr'):
             children = row.getchildren()
@@ -30,7 +30,7 @@ class NCCommitteeScraper(CommitteeScraper):
 
         for chamber in chambers:
             for ctype in chamber_slugs[chamber]:
-                data = self.urlopen(base_url + ctype)
+                data = self.get(base_url + ctype).text
                 doc = lxml.html.fromstring(data)
                 doc.make_links_absolute(base_url+ctype)
                 for comm in doc.xpath('//ul/li/a'):

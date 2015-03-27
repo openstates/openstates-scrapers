@@ -28,7 +28,7 @@ class WABillScraper(BillScraper, LXMLMixin):
 
     def build_subject_mapping(self, year):
         url = 'http://apps.leg.wa.gov/billsbytopic/Results.aspx?year=%s' % year
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute('http://apps.leg.wa.gov/billsbytopic/')
         for link in doc.xpath('//a[contains(@href, "ResultsRss")]/@href'):
@@ -36,7 +36,7 @@ class WABillScraper(BillScraper, LXMLMixin):
             link = link.replace(' ', '%20')
 
             # Strip invalid characters
-            rss = re.sub(r'^[^<]+', '', self.urlopen(link))
+            rss = re.sub(r'^[^<]+', '', self.get(link).text)
             rss = feedparser.parse(rss)
             for e in rss['entries']:
                 match = re.match('\w\w \d{4}', e['title'])
@@ -168,8 +168,8 @@ class WABillScraper(BillScraper, LXMLMixin):
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             try:
-                page = self.urlopen(url)
-                page = lxml.etree.fromstring(page.bytes)
+                page = self.get(url)
+                page = lxml.etree.fromstring(page.content)
             except scrapelib.HTTPError:
                 continue  # future years.
 
@@ -213,8 +213,8 @@ class WABillScraper(BillScraper, LXMLMixin):
         url = ("%s/GetLegislation?biennium=%s&billNumber"
                "=%s" % (self._base_url, self.biennium, bill_num))
 
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page.bytes)
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
         page = xpath(page, "//wa:Legislation")[0]
 
         title = xpath(page, "string(wa:LongDescription)")
@@ -259,8 +259,8 @@ class WABillScraper(BillScraper, LXMLMixin):
         url = "%s/GetSponsors?biennium=%s&billId=%s" % (
             self._base_url, self.biennium, bill_id)
 
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page.bytes)
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
 
         first = True
         for sponsor in xpath(page, "//wa:Sponsor/wa:Name"):
@@ -276,7 +276,7 @@ class WABillScraper(BillScraper, LXMLMixin):
                format(bill_num, self.biennium))
 
         try:
-            page = self.urlopen(url)
+            page = self.get(url).text
         except scrapelib.HTTPError, e:
             self.warning(e)
             return
@@ -375,8 +375,8 @@ class WABillScraper(BillScraper, LXMLMixin):
         url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
                "GetRollCalls?billNumber=%s&biennium=%s" % (
                    bill_num, self.biennium))
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page.bytes)
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
 
         for rc in xpath(page, "//wa:RollCall"):
             motion = xpath(rc, "string(wa:Motion)")

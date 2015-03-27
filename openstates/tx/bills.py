@@ -106,7 +106,7 @@ class TXBillScraper(BillScraper):
             self.scrape_bill(session, bill_url)
 
     def scrape_bill(self, session, history_url):
-        history_xml = self.urlopen(history_url).encode('ascii', 'ignore')
+        history_xml = self.get(history_url).text.encode('ascii', 'ignore')
         root = etree.fromstring(history_xml)
 
         bill_title = root.findtext("caption")

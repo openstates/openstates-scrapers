@@ -83,7 +83,7 @@ class AKBillScraper(BillScraper):
                              '.asp?session=%s&bill1=%s1&bill2=%s999' %
                              (session, abbr, abbr)
                             )
-            doc = lxml.html.fromstring(self.urlopen(bill_list_url))
+            doc = lxml.html.fromstring(self.get(bill_list_url).text)
             doc.make_links_absolute(bill_list_url)
             for bill_link in doc.xpath('//table[@align="center"]//tr/td[1]//a'):
                 bill_url = bill_link.get('href')
@@ -93,7 +93,7 @@ class AKBillScraper(BillScraper):
 
 
     def scrape_bill(self, chamber, session, bill_id, bill_type, url):
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
         title = doc.xpath('//b[text()="TITLE:"]')
@@ -178,7 +178,7 @@ class AKBillScraper(BillScraper):
             session, bill_id)
         bill.add_source(text_list_url)
 
-        text_doc = lxml.html.fromstring(self.urlopen(text_list_url))
+        text_doc = lxml.html.fromstring(self.get(text_list_url).text)
         text_doc.make_links_absolute(text_list_url)
         for link in text_doc.xpath('//a[contains(@href, "get_bill_text")]'):
             name = link.xpath('../preceding-sibling::td/text()')[0].strip()
@@ -189,7 +189,7 @@ class AKBillScraper(BillScraper):
         doc_list_url = "http://www.legis.state.ak.us/"\
                 "basis/get_documents.asp?session=%s&bill=%s" % (
                     session, bill_id )
-        doc_list = lxml.html.fromstring(self.urlopen(doc_list_url))
+        doc_list = lxml.html.fromstring(self.get(doc_list_url).text)
         doc_list.make_links_absolute(doc_list_url)
         bill.add_source(doc_list_url)
         for href in doc_list.xpath('//a[contains(@href, "get_documents")][@onclick]'):
@@ -205,7 +205,7 @@ class AKBillScraper(BillScraper):
         re_vote_text = re.compile(r'The question (?:being|to be reconsidered):\s*"(.*?\?)"', re.S),
         re_header=re.compile(r'\d{2}-\d{2}-\d{4}\s{10,}\w{,20} Journal\s{10,}\d{,6}\s{,4}')):
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # Find all chunks of text representing voting reports.

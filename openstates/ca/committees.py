@@ -44,7 +44,7 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
 
     def scrape_lower(self, chamber, term):
         url = self.urls[chamber]
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.base_urls[chamber])
 

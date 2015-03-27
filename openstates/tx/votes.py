@@ -272,7 +272,7 @@ class TXVoteScraper(VoteScraper):
         else:
             journal_root = urlparse.urljoin(journal_root, "senate/", True)
 
-        listing = self.urlopen(journal_root)
+        listing = self.get(journal_root).text
         for name in parse_ftp_listing(listing):
             if not name.startswith(session):
                 continue
@@ -311,7 +311,7 @@ class TXVoteScraper(VoteScraper):
             session_num = session
         year = tx.metadata['session_details'][session_num]['start_year']
         try:
-            page = self.urlopen(url)
+            page = self.get(url).text
         except scrapelib.HTTPError:
             return
 

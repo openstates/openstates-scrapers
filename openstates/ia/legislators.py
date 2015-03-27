@@ -20,7 +20,7 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
             chamber_name = 'house'
 
         url = "https://www.legis.iowa.gov/legislators/%s" % chamber_name
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
         table = page.xpath('//table[@id="sortableTable"]')[0]
         for link in table.xpath(".//a[contains(@href, 'legislator')]"):
@@ -41,7 +41,7 @@ class IALegislatorScraper(InvalidHTTPSScraper, LegislatorScraper):
                              photo_url=photo_url, url=url)
             leg.add_source(url)
 
-            leg_page = lxml.html.fromstring(self.urlopen(link.attrib['href']))
+            leg_page = lxml.html.fromstring(self.get(link.attrib['href']).text)
 
             office_data = {
                 "Legislative Email:": "email",

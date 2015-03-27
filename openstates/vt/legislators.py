@@ -14,7 +14,7 @@ class VTLegislatorScraper(LegislatorScraper):
         legislator_dump_url = \
                 'http://legislature.vermont.gov/people/loadAll/{}'.\
                 format(year_slug)
-        json_data = self.urlopen(legislator_dump_url)
+        json_data = self.get(legislator_dump_url).text
         legislators = json.loads(json_data)['data']
 
         # Parse the information from each legislator

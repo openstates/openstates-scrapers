@@ -47,7 +47,7 @@ class COBillScraper(BillScraper):
         """
         ret = {"meta": {}, 'votes': {}}
         ret['meta']['url'] = bill_vote_url
-        vote_html = self.urlopen(bill_vote_url)
+        vote_html = self.get(bill_vote_url).text
         bill_vote_page = lxml.html.fromstring(vote_html)
         bill_vote_page.make_links_absolute(bill_vote_url)
         nodes = bill_vote_page.xpath('//table/tr')
@@ -119,7 +119,7 @@ class COBillScraper(BillScraper):
         """
         ret = {}
 
-        vote_html = self.urlopen(bill_vote_url)
+        vote_html = self.get(bill_vote_url).text
         bill_vote_page = lxml.html.fromstring(vote_html)
         bill_vote_page.make_links_absolute(bill_vote_url)
         nodes = bill_vote_page.xpath('//b/font')
@@ -173,7 +173,7 @@ class COBillScraper(BillScraper):
         Parse a bill versions page for all the versions
         """
         try:
-            versions_html = self.urlopen(bill_versions_url)
+            versions_html = self.get(bill_versions_url).text
             bill_versions_page = lxml.html.fromstring(versions_html)
             bill_versions_page.make_links_absolute(bill_versions_url)
         except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
@@ -236,7 +236,7 @@ class COBillScraper(BillScraper):
             return ret
 
         try:
-            history_html = self.urlopen(bill_history_url)
+            history_html = self.get(bill_history_url).text
             bill_history_page = lxml.html.fromstring(history_html)
             bill_history_page.make_links_absolute(bill_history_url)
         except scrapelib.HTTPError:  # XXX: Hack for deleted pages - 404s
@@ -283,7 +283,7 @@ class COBillScraper(BillScraper):
             "votes": 7
         }
 
-        sheet_html = self.urlopen(sheet_url)
+        sheet_html = self.get(sheet_url).text
         sheet_page = lxml.html.fromstring(sheet_html)
         sheet_page.make_links_absolute(sheet_url)
 

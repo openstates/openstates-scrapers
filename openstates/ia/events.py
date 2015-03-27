@@ -33,7 +33,7 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
                                           end_date.day,
                                           end_date.year))
 
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
         for link in page.xpath("//a[contains(@id, 'linkCommittee')]"):
             comm = link.text.strip()

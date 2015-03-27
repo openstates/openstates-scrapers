@@ -52,8 +52,8 @@ class VABillScraper(BillScraper):
                 and 'the source database is temporarily unavailable' not in response.text)
 
     def get_page_bills(self, issue_name, href):
-        issue_html = self.urlopen('http://lis.virginia.gov' + href,
-                                  retry_on_404=True)
+        issue_html = self.get('http://lis.virginia.gov' + href,
+                                  retry_on_404=True).text
         idoc = lxml.html.fromstring(issue_html)
         for ilink in idoc.xpath(self.link_xpath):
             self.subject_map[ilink.text].append(issue_name)
@@ -67,7 +67,7 @@ class VABillScraper(BillScraper):
         self.subject_map = defaultdict(list)
 
         # loop over list of all issue pages
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         for link in doc.xpath(self.link_xpath):
             # get bills from page
@@ -87,7 +87,7 @@ class VABillScraper(BillScraper):
         url = 'http://lis.virginia.gov/cgi-bin/legp604.exe?%s+lst+ALL' % self.site_id
 
         while url:
-            html = self.urlopen(url, retry_on_404=True)
+            html = self.get(url, retry_on_404=True).text
             doc = lxml.html.fromstring(html)
 
             url = None  # no more unless we encounter 'More...'
@@ -123,7 +123,7 @@ class VABillScraper(BillScraper):
 
 
     def scrape_bill_details(self, url, bill):
-        html = self.urlopen(url, retry_on_404=True)
+        html = self.get(url, retry_on_404=True).text
         doc = lxml.html.fromstring(html)
 
         # summary sections
@@ -195,7 +195,7 @@ class VABillScraper(BillScraper):
         #else:
         #    order = ['upper', 'lower']
 
-        html = self.urlopen(url, retry_on_404=True)
+        html = self.get(url, retry_on_404=True).text
         doc = lxml.html.fromstring(html)
 
         for slist in doc.xpath('//ul[@class="linkSect"]'):
@@ -231,7 +231,7 @@ class VABillScraper(BillScraper):
     def parse_vote(self, vote, url):
         url = BASE_URL + url
 
-        html = self.urlopen(url, retry_on_404=True)
+        html = self.get(url, retry_on_404=True).text
         doc = lxml.html.fromstring(html)
 
         yeas = doc.xpath('//p[contains(text(), "YEAS--")]')

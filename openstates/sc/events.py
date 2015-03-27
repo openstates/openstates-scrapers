@@ -10,7 +10,7 @@ class SCEventScraper(EventScraper):
     _tz = pytz.timezone('US/Eastern')
 
     def get_page_from_url(self,url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page

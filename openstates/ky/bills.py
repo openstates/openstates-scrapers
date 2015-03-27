@@ -28,12 +28,12 @@ class KYBillScraper(BillScraper):
             return
 
         url = session_url(session) + 'indexhd.htm'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         for subj_link in doc.xpath('//a[contains(@href, ".htm")]/@href'):
             # subject links are 4 numbers
             if re.match('\d{4}', subj_link):
-                subj_html = self.urlopen(session_url(session) + subj_link)
+                subj_html = self.get(session_url(session) + subj_link).text
                 sdoc = lxml.html.fromstring(subj_html)
                 subject = sdoc.xpath('//p[@class="PageHeader"]/text()')[0]
                 for bill in sdoc.xpath('//div[@id="bul"]/a/text()'):
@@ -56,7 +56,7 @@ class KYBillScraper(BillScraper):
 
     def scrape_bill_list(self, chamber, session, url):
         bill_abbr = None
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -75,7 +75,7 @@ class KYBillScraper(BillScraper):
                                 link.attrib['href'])
 
     def parse_bill(self, chamber, session, bill_id, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

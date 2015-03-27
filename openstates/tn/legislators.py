@@ -27,7 +27,7 @@ class TNLegislatorScraper(LegislatorScraper):
         else:
             chamber_url = root_url + url_chamber_name + '/members/'
 
-        page = self.urlopen(chamber_url)
+        page = self.get(chamber_url).text
         page = lxml.html.fromstring(page)
 
         for row in page.xpath("//tr"):

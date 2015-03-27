@@ -17,7 +17,7 @@ class FLLegislatorScraper(LegislatorScraper):
             self.scrape_reps(term)
 
     def scrape_sen_offices(self, leg, leg_url):
-        doc = lxml.html.fromstring(self.urlopen(leg_url))
+        doc = lxml.html.fromstring(self.get(leg_url).text)
         email = doc.xpath('//a[contains(@href, "mailto:")]')[0].get('href').split(':')[-1]
         PHONE_RE = r'\(\d{3}\)\s\d{3}\-\d{4}'
 
@@ -56,7 +56,7 @@ class FLLegislatorScraper(LegislatorScraper):
 
     def scrape_senators(self, term):
         url = "http://www.flsenate.gov/Senators/"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -64,7 +64,7 @@ class FLLegislatorScraper(LegislatorScraper):
             name = " ".join(link.xpath('.//text()'))
             name = re.sub(r'\s+', " ", name).replace(" ,", ",").strip()
             leg_url = link.get('href')
-            leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_doc = lxml.html.fromstring(self.get(leg_url).text)
             leg_doc.make_links_absolute(leg_url)
 
             if 'Vacant' in name:
@@ -124,7 +124,7 @@ class FLLegislatorScraper(LegislatorScraper):
         url = ("http://www.flhouse.gov/Sections/Representatives/"
                "representatives.aspx")
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -159,7 +159,7 @@ class FLLegislatorScraper(LegislatorScraper):
                              party=party, photo_url=photo_url, url=leg_url)
 
             # offices
-            leg_doc = lxml.html.fromstring(self.urlopen(leg_url))
+            leg_doc = lxml.html.fromstring(self.get(leg_url).text)
             self.scrape_rep_office(leg, leg_doc, 'Capitol Office')
             self.scrape_rep_office(leg, leg_doc, 'District Office')
 

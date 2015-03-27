@@ -32,7 +32,7 @@ class MOCommitteeScraper(CommitteeScraper):
                 continue
             url = '{base}{year}info/com-standing.htm'.format(
                                             base=self.senate_url_base, year=year)
-            page_string = self.urlopen(url)
+            page_string = self.get(url).text
             page = lxml.html.fromstring(page_string)
             comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
 
@@ -46,7 +46,7 @@ class MOCommitteeScraper(CommitteeScraper):
                 if not "comm" in comm_link:
                     continue
 
-                comm_page = lxml.html.fromstring(self.urlopen(comm_link))
+                comm_page = lxml.html.fromstring(self.get(comm_link).text)
                 comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
 
                 committee = Committee(chamber, comm_name)
@@ -90,7 +90,7 @@ class MOCommitteeScraper(CommitteeScraper):
 
     def scrape_reps_committees(self, term_name, chamber):
         url = '{base}ActiveCommittees.aspx'.format(base=self.reps_url_base)
-        page_string = self.urlopen(url)
+        page_string = self.get(url).text
         page = lxml.html.fromstring(page_string)
         table = page.xpath('//div[@class="lightened"]/table[1]')[0]
         # Last tr has the date
@@ -109,7 +109,7 @@ class MOCommitteeScraper(CommitteeScraper):
                 actual_chamber = 'joint'
 
             committee = Committee(actual_chamber, committee_name, status=status)
-            committee_page_string = self.urlopen(committee_url)
+            committee_page_string = self.get(committee_url).text
             committee_page = lxml.html.fromstring(
                                 committee_page_string)
             # First tr has the title (sigh)
