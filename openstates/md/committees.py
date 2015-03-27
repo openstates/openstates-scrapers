@@ -9,7 +9,7 @@ class MDCommitteeScraper(CommitteeScraper):
     def scrape(self, term, chambers):
         # committee list
         url = 'http://mgaleg.maryland.gov/webmga/frmcommittees.aspx?pid=commpage&tab=subject7'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -34,7 +34,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
 
     def scrape_committee(self, chamber, com_name, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 

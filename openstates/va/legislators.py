@@ -32,7 +32,7 @@ class VALegislatorScraper(LegislatorScraper):
         elif chamber == 'upper':
             column = 'lColRt'
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -61,7 +61,7 @@ class VALegislatorScraper(LegislatorScraper):
             elif action == 'Member':
                 pass # TODO: set start date
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         party_district_line = doc.xpath('//h3/font/text()')[0]

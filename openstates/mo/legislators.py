@@ -34,7 +34,7 @@ class MOLegislatorScraper(LegislatorScraper):
     def scrape_senators(self, chamber, session, term):
         url = self.senator_url % (session[2:])
         root_url = url
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         table = page.xpath('//*[@id="mainContent"]/table//table/tr')
         rowcount = 0
@@ -62,7 +62,7 @@ class MOLegislatorScraper(LegislatorScraper):
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=url)
             leg.add_source(root_url)
-            details_page = self.urlopen(url)
+            details_page = self.get(url).text
             leg.add_source(url)
             homepage = url
             page = lxml.html.fromstring(details_page)
@@ -72,7 +72,7 @@ class MOLegislatorScraper(LegislatorScraper):
             url = self.senator_address_url % (
                 session[2:],int(senator_key[1:]))
 
-            details_page = self.urlopen(url)
+            details_page = self.get(url).text
             leg.add_source(url)
             page = lxml.html.fromstring(details_page)
             if page.xpath("//body/*") != []:
@@ -112,7 +112,7 @@ class MOLegislatorScraper(LegislatorScraper):
 
     def scrape_reps(self, chamber, session, term):
         url = (self.reps_url % (session))
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         # This is the ASP.net table container
         table_xpath = ('id("ContentPlaceHolder1_'
@@ -168,7 +168,7 @@ class MOLegislatorScraper(LegislatorScraper):
 
                 url = (self.rep_details_url % (session,district))
                 leg.add_source(url)
-                details_page = self.urlopen(url)
+                details_page = self.get(url).text
                 page = lxml.html.fromstring(details_page)
                 picture = page.xpath('//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
                 email = page.xpath('//*[@id="ContentPlaceHolder1_lblAddresses"]/table/tr[4]/td/a/@href')

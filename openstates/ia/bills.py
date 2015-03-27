@@ -27,7 +27,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
         session_id = self.metadata['session_details'][session]['number']
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
@@ -43,7 +43,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
             subj_url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp'
                         '?Category=BillInfo&Service=DsplData&var=gasi&ga=%s&'
                         'typ=o&key=%s') % (session_id, value)
-            subj_doc = lxml.html.fromstring(self.urlopen(subj_url))
+            subj_doc = lxml.html.fromstring(self.get(subj_url).text)
             bill_ids = subj_doc.xpath('//td[@width="10%"]/a/text()')
             for bill_id in bill_ids:
                 self._subjects[bill_id.replace(' ', '')].append(subject)
@@ -61,7 +61,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
                "%20%20%20&cham=House&amend=%20%20%20%20%20%20&am2nd=%20"
                "%20%20%20%20%20&am3rd=%20%20%20%20%20%20&version=red;"
                "%20%20%20%20&menu=true&ga=" % (bill_offset)) + session_id
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         if chamber == 'upper':
@@ -79,7 +79,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
             self.scrape_bill(chamber, session, bill_id, bill_url)
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        sidebar = lxml.html.fromstring(self.urlopen(url))
+        sidebar = lxml.html.fromstring(self.get(url).text)
 
         try:
             hist_url = get_popup_url(
@@ -88,7 +88,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
             # where is it?
             return
 
-        page = lxml.html.fromstring(self.urlopen(hist_url))
+        page = lxml.html.fromstring(self.get(hist_url).text)
         page.make_links_absolute(hist_url)
 
         title = page.xpath("string(//table[2]/tr[4])").strip()

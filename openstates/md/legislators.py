@@ -16,7 +16,7 @@ class MDLegislatorScraper(LegislatorScraper):
     def scrape(self, term, chambers):
         url = 'http://mgaleg.maryland.gov/webmga/frmmain.aspx?pid=legisrpage&tab=subject6'
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         sen_tbl, house_tbl = doc.xpath('//div[@class="legislrlist"]//table[@class="grid"]')
@@ -37,7 +37,7 @@ class MDLegislatorScraper(LegislatorScraper):
             leg_url = leg_a.xpath('a/@href')[0]
 
             # get details
-            html = self.urlopen(leg_url)
+            html = self.get(leg_url).text
             ldoc = lxml.html.fromstring(html)
             ldoc.make_links_absolute(leg_url)
 

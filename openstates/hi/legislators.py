@@ -20,12 +20,12 @@ class HILegislatorScraper(LegislatorScraper):
     jurisdiction = 'hi'
 
     def get_page( self, url ):
-        html = self.urlopen(url)
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
-        return ( page, html )
+        return page
 
     def scrape_homepage( self, url ):
-        page, html = self.get_page( url )
+        page = self.get_page( url )
         ret = { "source" : url, 'ctty' : [] }
 
         table = page.xpath(
@@ -52,7 +52,7 @@ class HILegislatorScraper(LegislatorScraper):
         return ret
 
     def scrape_leg_page( self, url ):
-        page, html = self.get_page(url)
+        page = self.get_page(url)
         people = page.xpath( \
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
         people = people.xpath('./tr')[1:]

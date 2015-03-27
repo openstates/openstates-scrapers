@@ -12,7 +12,7 @@ class VTEventScraper(EventScraper):
         url = 'http://legislature.vermont.gov/committee/loadAllMeetings/{}'.\
                 format(year_slug)
 
-        json_data = self.urlopen(url)
+        json_data = self.get(url).text
         events = json.loads(json_data)['data']
         for info in events:
 

@@ -14,7 +14,7 @@ class NECommitteeScraper(CommitteeScraper):
 
     def select_special_comm(self):
         main_url = 'http://www.nebraskalegislature.gov/committees/select-committees.php'
-        page = self.urlopen(main_url)
+        page = self.get(main_url).text
         page = lxml.html.fromstring(page)
 
         for comm_names in page.xpath('//div[@class="content_box"]'):
@@ -54,13 +54,13 @@ class NECommitteeScraper(CommitteeScraper):
 
     def standing_comm(self):
        main_url = 'http://www.nebraskalegislature.gov/committees/standing-committees.php'
-       page = self.urlopen(main_url)
+       page = self.get(main_url).text
        page = lxml.html.fromstring(page)
        
        for comm_links in page.xpath('//div[@id="content_text"]/div[@class="content_box_container"]/div[@class="content_box"][1]/ul[@class="nobullet"]/li/a'):
            detail_link = comm_links.attrib['href']
 
-           detail_page =  self.urlopen(detail_link)
+           detail_page =  self.get(detail_link).text
            detail_page = lxml.html.fromstring(detail_page)
            name = detail_page.xpath('//div[@id="content"]/div[@class="content_header"]/div[@class="content_header_right"]/a')[0].text
            name = name.split()

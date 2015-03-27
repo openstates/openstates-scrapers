@@ -42,7 +42,7 @@ class AZLegislatorScraper(LegislatorScraper):
         body = {'lower': 'H', 'upper': 'S'}[chamber]
         url = 'http://www.azleg.gov/MemberRoster.asp?Session_ID=%s&body=%s' % (
                                                                session_id, body)
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = html.fromstring(page)
         path = '//table[@id="%s"]/tr' % {'H': 'house', 'S': 'senate'}[body]
         roster = root.xpath(path)[1:]
@@ -62,7 +62,7 @@ class AZLegislatorScraper(LegislatorScraper):
                 position = name.tail.strip()
                 name = name[0].text_content().strip()
 
-            linkpage = self.urlopen(link)
+            linkpage = self.get(link).text
             linkroot = html.fromstring(linkpage)
             linkroot.make_links_absolute(link)
 
@@ -126,7 +126,7 @@ class AZLegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_member_page(self, url, session, chamber, leg):
-        html = self.urlopen(url)
+        html = self.get(url).text
         root = html.fromstring(html)
         #get the committee membership
         c = root.xpath('//td/div/strong[contains(text(), "Committee")]')

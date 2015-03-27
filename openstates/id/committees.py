@@ -28,7 +28,7 @@ class IDCommitteeScraper(CommitteeScraper):
     def get_jfac(self, name, url):
         """gets membership info for the Joint Finance and Appropriations
         Committee."""
-        jfac_page = self.urlopen(url)
+        jfac_page = self.get(url).text
         html = lxml.html.fromstring(jfac_page)
         table = html.xpath('body/table/tr/td[2]/table')[0]
         committee = Committee('joint', name)
@@ -50,7 +50,7 @@ class IDCommitteeScraper(CommitteeScraper):
 
     def get_jlfc(self, name, url):
         """Gets info for the Joint Legislative Oversight Committee"""
-        jlfc_page = self.urlopen(url)
+        jlfc_page = self.get(url).text
         html = lxml.html.fromstring(jlfc_page)
         committee = Committee('joint', name)
         member_path = '//h3[contains(text(), "%s")]/following-sibling::p[1]'
@@ -71,7 +71,7 @@ class IDCommitteeScraper(CommitteeScraper):
 
     def get_jmfc(self, name, url):
         """Gets the Joint Millennium Fund Committee info"""
-        jfmc_page = self.urlopen(url)
+        jfmc_page = self.get(url).text
         html = lxml.html.fromstring(jfmc_page)
         committee = Committee('joint', name)
         table = html.xpath('//table')[2]
@@ -99,7 +99,7 @@ class IDCommitteeScraper(CommitteeScraper):
 
     def scrape_committees(self, chamber):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
-        page = self.urlopen(url)
+        page = self.get(url).text
         html = lxml.html.fromstring(page)
         table = html.xpath('body/table/tr/td[2]/table')[0]
 
@@ -135,7 +135,7 @@ class IDCommitteeScraper(CommitteeScraper):
 
     def scrape_joint_committees(self):
         url = 'http://legislature.idaho.gov/about/jointcommittees.htm'
-        page = self.urlopen(url)
+        page = self.get(url).text
         html = lxml.html.fromstring(page)
         html.make_links_absolute(url)
         joint_li = html.xpath('//td[contains(h1, "Joint")]/ul/li')

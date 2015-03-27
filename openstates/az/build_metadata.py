@@ -70,7 +70,7 @@ class AZTermScraper(Scraper):
         where they should be.
         """
         url = 'http://www.azleg.gov/xml/sessions.asp'
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = etree.fromstring(page)
         session_file = open('session_details.py', 'w')
         terms = """

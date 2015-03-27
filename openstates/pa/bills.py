@@ -29,7 +29,7 @@ class PABillScraper(BillScraper):
     def scrape_session(self, chamber, session, special=0):
         url = bill_list_url(chamber, session, special)
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -48,7 +48,7 @@ class PABillScraper(BillScraper):
         bill_id = "%s%s %s" % (bill_abbr(chamber), type_abbr, bill_num)
 
         url = info_url(chamber, session, special, type_abbr, bill_num)
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -109,10 +109,10 @@ class PABillScraper(BillScraper):
 
     def parse_history(self, bill, url):
         bill.add_source(url)
-        html = self.urlopen(url)
+        html = self.get(url).text
         tries = 0
         while 'There is a problem generating the page you requested.' in html:
-            html = self.urlopen(url)
+            html = self.get(url).text
             if tries < 2:
                 self.logger.warning('Internal error')
                 return
@@ -175,13 +175,13 @@ class PABillScraper(BillScraper):
 
     def parse_votes(self, bill, url):
         bill.add_source(url)
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for url in page.xpath("//a[contains(., 'Vote')]/@href"):
             bill.add_source(url)
-            page = self.urlopen(url)
+            page = self.get(url).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
             if '/RC/' in url:
@@ -194,7 +194,7 @@ class PABillScraper(BillScraper):
 
     def parse_chamber_votes(self, bill, url):
         bill.add_source(url)
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         xpath = "//a[contains(@href, 'rc_view_action2')]"
@@ -207,7 +207,7 @@ class PABillScraper(BillScraper):
 
     def parse_roll_call(self, link, chamber, date):
         url = link.attrib['href']
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         xpath = 'string(//div[@class="Column-OneFourth"]/div[3])'
@@ -258,7 +258,7 @@ class PABillScraper(BillScraper):
 
     def parse_committee_votes(self, bill, url):
         bill.add_source(url)
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         chamber = ('upper'if 'Senate' in doc.xpath('string(//h1)') else 'lower')
@@ -296,7 +296,7 @@ class PABillScraper(BillScraper):
 
     def parse_upper_committee_vote_rollcall(self, bill, url):
         bill.add_source(url)
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         rollcall = collections.defaultdict(list)

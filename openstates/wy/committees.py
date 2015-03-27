@@ -35,7 +35,7 @@ class WYCommitteeScraper(CommitteeScraper):
 
         list_url = self.urls["list"] % (session, )
         committees = {}
-        page = self.urlopen(list_url)
+        page = self.get(list_url).text
         page = lxml.html.fromstring(page)
         for el in page.xpath(".//a[contains(@href, 'CommitteeMembers')]"):
             committees[el.text.strip()] = el.get("href")
@@ -43,7 +43,7 @@ class WYCommitteeScraper(CommitteeScraper):
         for c in committees:
             self.log(c)
             detail_url = self.urls["detail"] % (committees[c],)
-            page = self.urlopen(detail_url)
+            page = self.get(detail_url).text
             page = lxml.html.fromstring(page)
             if re.match('\d{1,2}-', c):
                 c = c.split('-', 1)[1]

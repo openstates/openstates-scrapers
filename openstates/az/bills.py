@@ -45,7 +45,7 @@ class AZBillScraper(BillScraper):
         url = BASE_URL + 'DocumentsForBill.asp?Bill_Number=%s&Session_ID=%s' % (
                                            bill_id.replace(' ', ''), session_id)
 
-        docs_for_bill = self.urlopen(url)
+        docs_for_bill = self.get(url).text
 
         if hot_garbage_404_fail in docs_for_bill:
             # Bailing here will prevent the bill from being saved, which
@@ -142,7 +142,7 @@ class AZBillScraper(BillScraper):
         ses_num = utils.legislature_to_number(session)
         bill_id = bill['bill_id'].replace(' ', '')
         action_url = BASE_URL + 'FormatDocument.asp?inDoc=/legtext/%s/bills/%so.asp' % (ses_num, bill_id.lower())
-        action_page = self.urlopen(action_url)
+        action_page = self.get(action_url).text
 
         if hot_garbage_404_fail in action_page:
             # This bill has no actions yet, but that
@@ -426,7 +426,7 @@ class AZBillScraper(BillScraper):
         view = {'lower':'allhouse', 'upper':'allsenate'}[chamber]
         url = BASE_URL + 'Bills.asp?view=%s&Session_ID=%s' % (view, session_id)
 
-        bills_index = self.urlopen(url)
+        bills_index = self.get(url).text
         root = html.fromstring(bills_index)
         bill_links = root.xpath('//div/table/tr[3]/td[4]/table/tr/td/' +
                     'table[2]/tr[2]/td/table/tr/td[2]/table/tr/td//a')
@@ -466,7 +466,7 @@ class AZBillScraper(BillScraper):
         if 'committees' in kwargs:
             o_args['committee'] = utils.get_committee_name(kwargs.pop('committees'),
                                                             chamber)
-        vote_page = self.urlopen(url)
+        vote_page = self.get(url).text
         root = html.fromstring(vote_page)
         vote_table = root.xpath('/html/body/div/table/tr[3]/td[4]/table/tr/td/table/tr/td/table')[0]
         vote_count = vote_table.xpath('following-sibling::p/following-sibling::text()')

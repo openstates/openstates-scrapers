@@ -26,7 +26,7 @@ class OKLegislatorScraper(LegislatorScraper):
 
     def scrape_lower(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
         for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
@@ -118,7 +118,7 @@ class OKLegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, term):
         url = "http://oksenate.gov/Senators/Default.aspx"
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -144,7 +144,7 @@ class OKLegislatorScraper(LegislatorScraper):
 
     def scrape_upper_offices(self, legislator, url):
         url = url.replace('aspx', 'html')
-        html = self.urlopen(url)
+        html = self.get(url).text
         legislator.add_source(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)

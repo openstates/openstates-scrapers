@@ -17,7 +17,7 @@ class CTLegislatorScraper(LegislatorScraper):
 
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
-        data = self.urlopen(leg_url)
+        data = self.get(leg_url)
         page = open_csv(data)
 
         for row in page:
@@ -77,7 +77,7 @@ class CTLegislatorScraper(LegislatorScraper):
 
     def _scrape_committee_names(self):
         comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.urlopen(comm_url)
+        page = self.get(comm_url)
         page = open_csv(page)
 
         for row in page:

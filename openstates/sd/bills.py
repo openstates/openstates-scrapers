@@ -19,7 +19,7 @@ class SDBillScraper(BillScraper):
         else:
             bill_abbr = 'H'
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -33,7 +33,7 @@ class SDBillScraper(BillScraper):
                              link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -139,7 +139,7 @@ class SDBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_vote(self, bill, date, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         header = page.xpath("string(//h4[contains(@id, 'hdVote')])")

@@ -63,7 +63,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
     def scrape_bill(self, session, session_number, bill_id, title, sponsor,
                     url):
         try:
-            html = self.urlopen(url)
+            html = self.get(url).text
         except:
             return
         page = lxml.html.fromstring(html)

@@ -51,8 +51,8 @@ class MSBillScraper(BillScraper):
     def scrape_bills(self, chamber_to_scrape, session):
         url = 'http://billstatus.ls.state.ms.us/%s/pdf/all_measures/allmsrs.xml' % session
 
-        bill_dir_page = self.urlopen(url)
-        root = lxml.etree.fromstring(bill_dir_page.bytes)
+        bill_dir_page = self.get(url)
+        root = lxml.etree.fromstring(bill_dir_page.content)
         for mr in root.xpath('//LASTACTION/MSRGROUP'):
             bill_id = mr.xpath('string(MEASURE)').replace(" ", "")
             if bill_id[0] == "S":
@@ -71,9 +71,9 @@ class MSBillScraper(BillScraper):
             main_doc = mr.xpath('string(MEASURELINK)').replace("../../../", "")
             main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
             bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
-            details_page = self.urlopen(bill_details_url)
+            details_page = self.get(bill_details_url)
 
-            page = details_page.bytes.replace(chr(11), "")
+            page = details_page.content.replace(chr(11), "")
             # Some pages have the (invalid) byte 11 sitting around. Just drop
             # them out. Might as well.
 
