@@ -67,7 +67,10 @@ class MTCommitteeScraper(CommitteeScraper):
                         self.save_committee(c)
 
     def scrape_committees_pdf(self, year, chamber, filename, url):
-        text = convert_pdf(filename, type='text-nolayout')
+        if chamber == 'lower' and year == 2015:
+            text = self._fix_house_text(filename)
+        else:
+            text = convert_pdf(filename, type='text-nolayout')
 
         for hotgarbage, replacement in (
             (r'Judicial Branch, Law Enforcement,\s+and\s+Justice',
@@ -80,9 +83,6 @@ class MTCommitteeScraper(CommitteeScraper):
              'Federal Relations, Energy, and Telecommunications')
             ):
             text = re.sub(hotgarbage, replacement, text)
-
-        if chamber == 'lower' and year == 2015:
-            text = self._fix_house_text(text)
 
         lines = iter(text.splitlines())
 
@@ -160,107 +160,54 @@ class MTCommitteeScraper(CommitteeScraper):
         if comm['members']:
             self.save_committee(comm)
 
-    def _fix_house_text(self, text):
+    def _fix_house_text(self, filename):
         '''
-        TLDR: throw out bad text, replace it with copy-pasted good text
+        TLDR: throw out bad text, replace it using different parser
+        settings.
 
         When using `pdftotext` on the 2015 House committee list,
         the second and third columns of the second page get mixed up,
-        which makes it very difficult to parse.
+        which makes it very difficult to parse. Adding the `--layout`
+        option fixes this, but isn't worth switching all parsing to
+        that since the standard `pdftotext --nolayout` is easier in all
+        other cases.
 
         The best solution to this is to throw out the offending text,
-        and replace it with the correct text, copy-pasted in. The third
-        and fourth columns are joint comittees that are scraped from
-        the Senate document, so the only column that needs to be
-        inserted this way is the second.
+        and replace it with the correct text. The third and fourth
+        columns are joint comittees that are scraped from the Senate
+        document, so the only column that needs to be inserted this way
+        is the second.
         '''
 
+        # Take the usable text from the normally-working parsing settings
+        text = convert_pdf(filename, type='text-nolayout')
         assert "Revised: January 23, 2015" in text,\
             "House committee list has changed; check that the special-case"\
-            " fix is still necessary, and that its text is still correct"
-
-        second_page_second_column = '''State Administration (cont.)     
-Hayman, Denise (D)               
-Karjala, Jessica (D)             
-Knudsen, Austin (R)              
-Lamm, Debra (R)                  
-Mandeville, Forrest (R)          
-McKamey, Wendy (R)               
-Mortensen, Dale (R)              
-Price, Jean (D)                  
-Shaw, Ray (R)                    
-Swanson, Kathy (D)               
-Webber, Susan (D)                
-Wittich, Art (R)                 
-Secretary: Jennifer Petersen, Rm
-465, (406) 444-4666          
-                             
-Staff: Sheri Scurr (LSD),       
-Research Analyst, Rm 136C,   
-                             
-(406) 444-3596               
-Taxation                         
-M-F; 8 a.m.; Rm 152              
-Miller, Mike (R) – Ch            
-Hertz, Greg (R) – VCh            
-Williams, Kathleen (D) – VCh     
-Brown, Zach (D)                  
-Cook, Rob (R)                    
-Custer, Geraldine (R)            
-Dunwell, Mary Ann (D)            
-Flynn, Kelly (R)                 
-Jacobson, Tom (D)                
-Lavin, Steve (R)                 
-Lieser, Ed (D)                   
-McClafferty, Edie (D)            
-Olszewski, Albert (R)            
-Randall, Lee (R)                 
-Redfield, Alan (R)               
-Schwaderer, Nicholas (R)         
-Smith, Bridget (D)
-White, Kerry (R)                 
-                             
-Wilson, Nancy (D)
-Zolnikov, Daniel (R)             
-                             
-Secretary: Erica Siate, Rm 451,
-(406) 444-4264               
-                             
-Staff: Megan Moore (LSD),
-Research Analyst, Rm 111F,   
-                             
-(406) 444-4496; Stephanie
-Morrison (LFD), Rm 130, (406)
-                             
-444-4408
-                             
-Transportation                   
-M, W, F; 3 p.m.; Rm 455          
-Lavin, Steve (R) – Ch            
-Clark, Christy (R) – VCh         
-Wilson, Nancy (D) – VCh          
-Cook, Rob (R)
-Curdy, Willis (D)                
-Fiscus, Clayton (R)              
-Garner, Frank (R)                
-Kipp, George III (D)             
-MacDonald, Margie (D)            
-McKamey, Wendy (R)               
-Miller, Mike (R)                 
-                             
-Randall, Lee (R)
-Smith, Bridget (D)               
-                             
-Swanson, Kathy (D)
-Secretary: Kendra Balian, Rm    
-                             
-451, (406) 444-7353
-Staff: Dave Bohyer (LSD),       
-Director of Research & Policy
-Analysis, Rm 111C, (406) 444-
-3592'''
+            " fix is still necessary, and that the result is still correct"
         text = re.sub(r'(?sm)Appropriations/F&C.*$', "", text)
-        text = text + second_page_second_column
+
+        # Take the usable column from the alternate parser
+        alternate_text = convert_pdf(filename, type='text')
+        alternate_lines = alternate_text.split('\n')
+
+        HEADER_OF_COLUMN_TO_REPLACE = "State Administration (cont.)      "
+        (text_of_line_to_replace, ) = [
+            x for x in alternate_lines
+            if HEADER_OF_COLUMN_TO_REPLACE in x
+        ]
+        first_line_to_replace = alternate_lines.index(text_of_line_to_replace)
+        first_character_to_replace = alternate_lines[
+            first_line_to_replace].index(HEADER_OF_COLUMN_TO_REPLACE) - 1
+        last_character_to_replace = (first_character_to_replace +
+                                     len(HEADER_OF_COLUMN_TO_REPLACE))
+
+        column_lines_to_add = [
+            x[first_character_to_replace:last_character_to_replace]
+            for x in alternate_lines[first_line_to_replace + 1:]
+        ]
+        column_text_to_add = '\n'.join(column_lines_to_add)
+
+        text = text + column_text_to_add
         return text
 
 
