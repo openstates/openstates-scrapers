@@ -376,7 +376,7 @@ class INBillScraper(BillScraper):
 
             
             #versions and votes
-            for version in bill_json["versions"]:
+            for version in bill_json["versions"][::-1]:
                 version_json = client.get("bill_version",
                                         session=session,
                                         bill_id=version["billName"],
