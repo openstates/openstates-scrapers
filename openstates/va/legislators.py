@@ -48,6 +48,7 @@ class VALegislatorScraper(LegislatorScraper):
                 return  # Skip bad chambers.
 
         if "vacated" in name:
+            self.logger.warning("Seat seems to have been vacated: '{}'".format(name))
             return
 
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
