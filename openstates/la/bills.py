@@ -2,8 +2,7 @@ from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import pdf_to_lxml
-
-from .common import BackoffScraper
+from openstates.utils import LXMLMixin
 
 import datetime as dt
 import lxml.html
@@ -21,17 +20,8 @@ bill_types = {
 }
 
 
-class LABillScraper(BillScraper, BackoffScraper):
+class LABillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'la'
-
-    def lxmlize(self, url):
-        try:
-            page = self.urlopen(url)
-        except scrapelib.HTTPError:
-            return self.lxmlize(url)
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def do_post_back(self, page, event_target, event_argument):
         form = page.xpath("//form[@id='aspnetForm']")[0]
@@ -39,9 +29,13 @@ class LABillScraper(BillScraper, BackoffScraper):
                     for obj in form.xpath(".//input")]}
         block['__EVENTTARGET'] = event_target
         block['__EVENTARGUMENT'] = event_argument
-        ret = lxml.html.fromstring(self.urlopen(form.action,
-                                   method=form.method,
-                                   body=block))
+        if form.method == "GET":
+            ret = lxml.html.fromstring(self.get(form.action, data=block).text)
+        elif form.method == "POST":
+            ret = lxml.html.fromstring(self.post(form.action, data=block).text)
+        else:
+            raise AssertionError("Unrecognized request type found: {}".format(
+                                 form.method))
 
         ret.make_links_absolute(form.action)
         return ret
@@ -88,7 +82,7 @@ class LABillScraper(BillScraper, BackoffScraper):
         return ret[0]
 
     def scrape_votes(self, bill, url):
-        text = self.urlopen(url)
+        text = self.get(url).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
 

@@ -4,7 +4,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
-from .common import BackoffScraper
+from openstates.utils import LXMLMixin
 
 import requests.exceptions
 import lxml.html
@@ -44,7 +44,7 @@ def parse_datetime(s, year):
     raise ValueError("Bad date string: %s" % s)
 
 
-class LAEventScraper(EventScraper):
+class LAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'la'
     _tz = pytz.timezone('America/Chicago')
 
@@ -57,7 +57,7 @@ class LAEventScraper(EventScraper):
     def scrape_committee_schedule(self, session, chamber):
         url = "http://www.legis.la.gov/legis/ByCmte.aspx"
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -77,7 +77,7 @@ class LAEventScraper(EventScraper):
         return ret
 
     def scrape_meeting(self, session, chamber, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         title ,= page.xpath("//a[@id='linkTitle']//text()")
@@ -156,16 +156,6 @@ class LAEventScraper(EventScraper):
                                    chamber=bill_chamber,
                                    type='consideration')
         self.save_event(event)
-
-    def lxmlize(self, url):
-        try:
-            page = self.urlopen(url)
-        except requests.exceptions.Timeout:
-            return self.lxmlize(url)
-
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_house_weekly_schedule(self, session):
         url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
