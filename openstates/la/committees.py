@@ -24,7 +24,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
         }
         
         for name, url in committee_types.items():
-            text = self.urlopen(url)
+            text = self.get(url).text
             page = lxml.html.fromstring(text)
             page.make_links_absolute(url)
 
@@ -42,7 +42,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
         committee = Committee('upper', name)
         committee.add_source(url2)
 
-        text = self.urlopen(url3)
+        text = self.get(url3).text
         page = lxml.html.fromstring(text)
 
         members = page.xpath('//table[@id="table38"]//font/a/b')
@@ -64,7 +64,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
     def scrape_house(self):
         url = "http://house.louisiana.gov/H_Reps/H_Reps_CmtesFull.asp"
         comm_cache = {}
-        text = self.urlopen(url)
+        text = self.get(url).text
         page = lxml.html.fromstring(text)
 
         for row in page.xpath("//table[@bordercolorlight='#EAEAEA']/tr"):
@@ -131,7 +131,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
             
     def scrape_house_special(self, scraped_committees):
         url = 'http://house.louisiana.gov/H_Reps/H_Reps_SpecialCmtes.asp'
-        text = self.urlopen(url)
+        text = self.get(url).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute('http://house.louisiana.gov')
         
@@ -151,7 +151,7 @@ class LACommitteeScraper(CommitteeScraper, BackoffScraper):
             committee = Committee(chamber, name)
             committee.add_source(url)
             
-            text = self.urlopen(url)
+            text = self.get(url).text
             page = lxml.html.fromstring(text)
             page.make_links_absolute('http://house.louisiana.gov')
 
