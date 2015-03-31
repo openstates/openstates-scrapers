@@ -18,7 +18,8 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
         for leg_info in leg_json["legislators"]:
             leg_name = leg_info["fullName"]
             district = leg_info["district"]
-            party = leg_info["party"]
+            party = {"R":"Republican",
+                    "D":"Democrat"}[leg_info["party"]]
             photo_url = leg_info["image"]
             leg_id = leg_info["id"]
             
