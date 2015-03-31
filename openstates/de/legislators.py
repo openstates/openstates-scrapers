@@ -79,7 +79,6 @@ class DELegislatorScraper(LegislatorScraper):
             party = 'Democratic'
         elif '(R)' in party:
             party = 'Republican'
-        print party
 
         leg = Legislator(term, chamber, district, name, party=party)
 
