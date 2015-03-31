@@ -63,6 +63,9 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
             self.save_legislator(leg)
 
     def scrape_house_member(self, leg_url, leg):
+        #JSON is complete for senators, not for reps
+        #so we still have to hit the rep's page
+        #to get office info
 
         leg_doc = self.lxmlize(leg_url)
         email = leg_doc.xpath('//a[starts-with(@href, "mailto")]')[0].text
