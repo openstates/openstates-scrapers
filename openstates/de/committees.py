@@ -55,8 +55,4 @@ class DECommitteeScraper(CommitteeScraper):
                         for m in content.split("\n"):
                             committee.add_member(m.strip())
 
-
-
-
-
                 self.save_committee(committee)
