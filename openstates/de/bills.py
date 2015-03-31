@@ -41,11 +41,15 @@ class DEBillScraper(BillScraper, LXMLMixin):
             'Senate Resolution': 'SR',
         }
 
-
-
         base_url = "http://legis.delaware.gov"
         text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
         page = self.lxmlize(link)
+
+        nominee = page.xpath(".//div[@id='page_header']/text()")[0]
+        if nominee.strip().lower() == "nominee information":
+            self.logger.info("Nominee, skipping")
+            return
+
         bill_id = page.xpath(".//div[@align='center']")
         try:
             bill_id = bill_id[0].text_content().strip()
