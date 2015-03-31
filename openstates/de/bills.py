@@ -72,6 +72,9 @@ class DEBillScraper(BillScraper, LXMLMixin):
             self.logger.warning("Unknown bill type for {}".format(bill_id))
             return
 
+        bill_id = bill_id.replace('&nbsp',"")
+        bill_id = bill_id.strip()
+
         #each row is in its own table
         #there are no classes/ids or anything, so we're going to loop
         #through the individual tables and look for keywords
@@ -125,7 +128,8 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     engrossment_base = "http://legis.delaware.gov/LIS/lis{session}.nsf/EngrossmentsforLookup/{bill_id}/$file/Engross.html?open"
                     engrossment_link = engrossment_base.format(session=session,
                                         bill_id = "+".join(bill_id.split()))
-                    bill_documents["Engrossed Version"] = engrossment_link
+                    if bill_url not in bill_documents.values():
+                        bill_documents["Engrossed Version"] = engrossment_link
 
             if "substituted" in title_text:
                 content = tds[1].text_content().strip()
@@ -137,7 +141,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 and ("(" not in title_text
                 or "html" in title_text)):
                     if tds[1].text_content().strip():
-                        bill_text_avail = True
+                        #it is totally unclear which version of the bill is referred to here
+                        #so I'm just calling it "bill text"
+                        bill_url = text_base_url.format(
+                                        session=session,
+                                        bill_id=bill_id.replace(" ","+"))
+                        if bill_url not in bill_documents.values():
+                            bill_documents["Bill Text"] = bill_url
 
             if "fiscal" in title_text:
                 pass
@@ -166,9 +176,10 @@ class DEBillScraper(BillScraper, LXMLMixin):
             if "actions history" in title_text:
                 action_list = tds[1].text_content().split("\n")
 
-
+        sub_versions = []
         if sub_link:
             bill = self.scrape_bill(sub_link,chamber,session)
+            sub_versions = [v["url"] for v in bill["versions"]]
             bill.add_title(bill_id)
 
         else:
@@ -187,17 +198,12 @@ class DEBillScraper(BillScraper, LXMLMixin):
             for s in cosponsors:
                 bill.add_sponsor("cosponsor",s)
 
-        if bill_text_avail:
-            #it is totally unclear which version of the bill is referred to here
-            #so I'm just calling it "bill text"
-            version_url = text_base_url.format(session=session,
-                                        bill_id=bill_id.replace(" ","+"))
-            bill.add_version("Bill text",version_url,mimetype="text/html")
-
         for name, doc_link in bill_documents.items():
-            if "Engrossment" in name:
-                bill.add_version(name,doc_link,mimetype="text/html")
+            if "Engrossment" in name or "Bill Text" in name:
+                if doc_link not in sub_versions:
+                    bill.add_version(name,doc_link,mimetype="text/html")
             else:
+                pass
                 bill.add_document(name,doc_link,mimetype="text/html")
 
         for a in action_list:
