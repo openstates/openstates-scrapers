@@ -30,6 +30,15 @@ class CTEventScraper(EventScraper):
 
         DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
         for info in events:
+
+            if info['title'] is None:
+                self.warning("Event found with no title; it will be skipped")
+                continue
+            elif info['title'].startswith('CANCELLED:'):
+                self.info("Cancelled event found; it will be skipped: {}".
+                          format(info['title']))
+                continue
+
             event = Event(
                     session=session,
                     when=datetime.datetime.strptime(info['start'], DATETIME_FORMAT),
