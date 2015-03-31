@@ -1,5 +1,5 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
-
+from scrapelib import HTTPError
 import lxml.html
 
 from openstates.utils import LXMLMixin
@@ -32,9 +32,19 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
             else:
                 leg_url = (senate_base_url +
                         "senators/district{dist}.html".format(dist=district))
-                leg = Legislator(term, 'upper', district, leg_name,
-                         party=party, photo_url=photo_url, url=leg_url)
-                leg.add_source(leg_url)
+                try:
+                    self.head(leg_url)
+                except HTTPError:
+                    warning_text = "Bad link for {sen}".format(sen=leg_name)
+                    self.logger.warning(warning_text)
+
+                    leg = Legislator(term, 'upper', district, leg_name,
+                         party=party, photo_url=photo_url)
+                else:
+                    leg = Legislator(term, 'upper', district, leg_name,
+                         party=party, photo_url=photo_url,url=leg_url)
+                    leg.add_source(leg_url)
+
                 address = leg_info["address"]
                 try:
                     cell = leg_info["cell"]
