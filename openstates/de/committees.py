@@ -21,11 +21,8 @@ class DECommitteeScraper(CommitteeScraper):
         session = term2session[term]
 
         url = urls[chamber] % (session,)
-        self.log(url)
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-
-        committees = {}
 
         for row in page.xpath('//tr'):
             if len(row.xpath('./td')) > 0:
