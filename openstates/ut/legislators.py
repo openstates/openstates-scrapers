@@ -61,7 +61,7 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
                 #them in order of how likely we think they are
                 #to actually get us to the person we care about
                 phone = (cell or home_phone or work_phone)
-                
+
                 email = leg_info["email"]
                 leg.add_office('district', 'Home',
                     address=address, phone=phone, email=email, fax=fax)
@@ -82,13 +82,18 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
         email = leg_doc.xpath('//a[starts-with(@href, "mailto")]')[0].text
         address = leg_doc.xpath('//b[text()="Address:"]')[0].tail.strip()
         cell = leg_doc.xpath('//b[text()="Cell Phone:"]')
-        if cell:
-            cell = cell[0].tail.strip()
-        else:
-            cell = None
+        work_phone = leg_doc.xpath('//b[text()="Work Phone:"]')
+        home_phone = leg_doc.xpath('//b[text()="Home Phone:"]')
+        fax = leg_doc.xpath('//b[text()="Fax:"]')
+        
+        cell = cell[0].tail.strip() if cell else None
+        work_phone = work_phone[0].tail.strip() if work_phone else None
+        home_phone = home_phone[0].tail.strip() if home_phone else None
+        fax = fax[0].tail.strip() if fax else None
 
+        phone = (cell or home_phone or work_phone)
         leg.add_office('district', 'Home',
-                    address=address, phone=cell, email=email)
+                    address=address, phone=phone, email=email, fax=fax)
 
         conflict_of_interest = leg_doc.xpath("//a[contains(@href,'CofI')]/@href")
         leg["links"] = [conflict_of_interest]
