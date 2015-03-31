@@ -229,7 +229,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
                         ''', line).group(1)
                 # Usually non-voting members won't even have a code listed
                 did_vote = bool(
-                    re.search(r'^\s+([A-Z\-]+)\s+[A-Z][a-z]', line))
+                    re.search(r'^\s+(X|VA)\s+[A-Z][a-z]', line))
                 if did_vote:
                     # Check where the "X" or vote code is on the page
                     vote_column = len(line) - len(line.lstrip())
