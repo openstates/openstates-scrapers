@@ -38,7 +38,7 @@ class DCBillScraper(BillScraper):
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
-        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","ComitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","CommitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
         param_json = json.dumps(params)
         response = self.post(url,headers=headers,data=param_json)
         #the response is a terrible string-of-nested-json-strings. Yuck.
@@ -188,9 +188,9 @@ class DCBillScraper(BillScraper):
                     self.logger.warning("Crap, we can't find anything that looks like an action date. Skipping")
                     continue
                 date = self.date_format(date)
-                if "ComitteeReferral" in legislation_info: #their typo, not mine
+                if "CommitteeReferral" in legislation_info:
                     committees = []
-                    for committee in legislation_info["ComitteeReferral"]:
+                    for committee in legislation_info["CommitteeReferral"]:
                         if committee["Name"].lower() == "retained by the council":
                             committees = []
                             break
@@ -235,8 +235,8 @@ class DCBillScraper(BillScraper):
      
 
                 #deal with committee votes
-                if "ComiteeMarkup" in bill_info: #their typo, not mine
-                    committee_info = bill_info["ComiteeMarkup"]
+                if "CommitteeMarkup" in bill_info:
+                    committee_info = bill_info["CommitteeMarkup"]
                     if len(committee_info) > 0:
                         for committee_action in committee_info:
                             self.process_committee_vote(committee_action,bill)
@@ -304,7 +304,7 @@ class DCBillScraper(BillScraper):
 
         date = self.date_format(vote["DateOfVote"])
 
-        leg_votes = vote["MappedJASON"] #their typo, not mine
+        leg_votes = vote["MemberVotes"]
         v = Vote('upper',date,motion,status,0,0,0,
                 yes_votes=[],no_votes=[],other_votes=[])
         for leg_vote in leg_votes:
