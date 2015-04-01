@@ -74,12 +74,21 @@ class MALegislatorScraper(LegislatorScraper):
         email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
         email = email.replace('mailto:','')
 
+        party_elems = root.xpath('//span[@class="legislatorAffiliation"]/text()')
+
         district = root.xpath('//div[@id="District"]//div[starts-with(@class,"widgetContent")]')
-        # Rady Mom has a malformed, empty legislator page, so special-case him
+
+        # Certain members have malformed, empty legislator pages, so special-case them
         if full_name == "Rady Mom":
             assert len(district) == 0, "Remove the special-casing code for Rady Mom"
             district = "Eighteenth Middlesex"
             district_dirty = district
+        elif full_name == "John F. Keenan":
+            assert len(district) == 0, "Remove the special-casing district code for John F. Keenan"
+            district = "Norfolk and Plymouth"
+            district_dirty = district
+            assert not party_elems, "Remove the special-casing party code for John F. Keenan"
+            party_elems = ('D')
 
         elif len(district):
             district_dirty = district[0].text_content().strip()
@@ -90,8 +99,7 @@ class MALegislatorScraper(LegislatorScraper):
             self.logger.critical('clean_district wiped out all district text.')
             assert False
 
-        party = root.xpath('//span[@class="legislatorAffiliation"]/text()')[0]
-
+        (party, ) = party_elems
         if party == 'D':
             party = 'Democratic'
         elif party == 'R':
