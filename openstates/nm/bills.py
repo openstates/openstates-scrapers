@@ -417,6 +417,8 @@ class NMBillScraper(BillScraper):
 
         # all links but first one
         for fname in doc.xpath('//a/text()')[1:]:
+            # Delete any errant words found following the file name
+            fname = fname.split(" ")[0]
 
             # skip PDFs for now -- everything but votes have HTML versions
             if fname.endswith('pdf') and 'VOTE' not in fname:
