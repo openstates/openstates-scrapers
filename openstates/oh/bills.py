@@ -132,7 +132,8 @@ class OHBillScraper(BillScraper):
                                 display_id = bill_id[:idx]+" "+bill_id[idx:]
                                 break
 
-
+                            if doc_type == 'bills':
+                                doc_type = 'bill'
                             bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
 
                             #this stuff is the same for all versions
