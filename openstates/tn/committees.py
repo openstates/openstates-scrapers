@@ -179,7 +179,7 @@ class TNCommitteeScraper(CommitteeScraper):
                         ):
                     member_name = ' '.join([
                             x.strip() for x in
-                            a.xpath('//text()')
+                            a.xpath('.//text()')
                             if x.strip()
                             ])
                     role = a.xpath('small')
