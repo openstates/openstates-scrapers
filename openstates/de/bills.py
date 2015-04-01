@@ -28,6 +28,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
             if name.strip():
                 yield name.strip()
 
+    def find_vote(self,tds,vote_documents,extra=""):
+        vote_info = tds[1].xpath('./a')
+        for v in vote_info:
+            prev = v.getprevious()
+            vote_name = extra+prev.text_content().strip()
+            vote_documents[vote_name] = v.attrib["href"]
+
     def scrape_bill(self,link,chamber,session):
 
         legislation_types = {
@@ -129,6 +136,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     amm_link = text_base_url.format(session=session,
                                                 bill_id=amm_slg)
                     bill_documents[amm_text] = amm_link
+                    amm_page = self.lxmlize(a.attrib["href"])
+                    for tr in amm_page.xpath('//tr'):
+                        tds = tr.xpath("./td")
+                        if len(tds) > 1:
+                            if "voting" in tds[0].text_content().lower():
+                                self.find_vote(tds,vote_documents,"Amendment: ")
+
 
             elif "engrossed version" in title_text:
                 if tds[1].text_content().strip():
@@ -174,11 +188,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 #reported out of committee
 
             elif "voting" in title_text:
-                vote_info = tds[1].xpath('./a')
-                for v in vote_info:
-                    prev = v.getprevious()
-                    vote_name = prev.text_content().strip()
-                    vote_documents[vote_name] = v.attrib["href"]
+                self.find_vote(tds,vote_documents)
                 
             elif "actions history" in title_text:
                 action_list = tds[1].text_content().split("\n")
@@ -243,9 +253,11 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
                     #we've never seen a vote with anything but "passed"
                     #so throw an error otherwise so we can figure it out
-                    if passage_status != "Passed":
+                    passed_statuses = ["Passed"]
+                    failed_statuses = ["Defeated"]
+                    if passage_status not in passed_statuses+failed_statuses:
                         raise AssertionError("Unknown passage state {}".format(passage_status))
-                    passed = "Passed" in line
+                    passed = passage_status in passed_statuses
 
                 if line.strip().startswith("Vote Type"):
                     if "voice" in line.lower():
@@ -297,6 +309,10 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 self.logger.warning("Vote did not pass but had a majority \
                         probably worth checking")
 
+            if "Amendment" in name:
+                vote["type"] = "amendment"
+            else:
+                vote["type"] = "passage"
             vote.add_source(doc)
             bill.add_vote(vote)
 
