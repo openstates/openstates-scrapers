@@ -46,7 +46,7 @@ class DELegislatorScraper(LegislatorScraper):
             #same table for the house, but kindly in actual html
             trs = doc.xpath('//tr')
 
-        base_url = "http://legis.delaware.gov/"
+        base_url = "http://legis.delaware.gov"
 
         for tr in trs:
 

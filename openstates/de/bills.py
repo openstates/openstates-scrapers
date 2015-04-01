@@ -332,8 +332,3 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 bill = self.scrape_bill(link,chamber,session)
                 if bill:
                     self.save_bill(bill)
-
-
-
-
-
