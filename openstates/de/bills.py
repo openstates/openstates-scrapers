@@ -107,27 +107,30 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 add_spons_text = tds[2].text_content().strip()
                 if add_spons_text:
                     add_spons_text = add_spons_text.replace("Additional Sponsor(s):","")
-                    addl_sponsors = self.separate_names(add_spons_text)
+                    if not "on behalf of all representatives" in add_spons_text.lower():
+                        addl_sponsors = self.separate_names(add_spons_text)
 
-            if "co-sponsor" in title_text:
+            elif "co-sponsor" in title_text:
                 cosponsor_text = tds[1].text_content()
-                if "none" in cosponsor_text.lower():
+                if "none..." in cosponsor_text.lower():
                     cosponsors = []
                     continue
                 cosponsors = self.separate_names(cosponsor_text)
 
-            if "long title" in title_text:
+            elif "long title" in title_text:
                 bill_title = tds[1].text_content().strip()
 
-            if "amendment" in title_text:
-                amendments = tds[1].xpath("./a/text")
+            elif "amendment" in title_text:
+                amendments = tds[1].xpath(".//a")
                 for a in amendments:
-                    amm_text = "Amendment {}".format(a.strip())
-                    amm_link = base_url.format(session=session,
-                                                bill_id = "+".join(a.split()))
+                    amm = a.text
+                    amm_text = "Amendment".format(amm.strip())
+                    amm_slg = "+".join(amm.split())
+                    amm_link = text_base_url.format(session=session,
+                                                bill_id=amm_slg)
                     bill_documents[amm_text] = amm_link
 
-            if "engrossed version" in title_text:
+            elif "engrossed version" in title_text:
                 if tds[1].text_content().strip():
                     engrossment_base = "http://legis.delaware.gov/LIS/lis{session}.nsf/EngrossmentsforLookup/{bill_id}/$file/Engross.html?open"
                     engrossment_link = engrossment_base.format(session=session,
@@ -135,13 +138,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     if bill_url not in bill_documents.values():
                         bill_documents["Engrossed Version"] = engrossment_link
 
-            if "substituted" in title_text:
+            elif "substituted" in title_text:
                 content = tds[1].text_content().strip()
                 if ("Substitute" in content and
                     not "Original" in content):
                     sub_link = tds[1].xpath(".//a/@href")[0]
 
-            if ("full text" in title_text
+            elif ("full text" in title_text
                 and ("(" not in title_text
                 or "html" in title_text)):
                     if tds[1].text_content().strip():
@@ -153,13 +156,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                         if bill_url not in bill_documents.values():
                             bill_documents["Bill Text"] = bill_url
 
-            if "fiscal" in title_text:
+            elif "fiscal" in title_text:
                 pass
                 #skipping fiscal notes for now, they are really ugly
                 #but leaving in as a placeholder so we can remember to
                 #do this someday, if we feel like it
 
-            if "committee" in title_text:
+            elif "committee" in title_text:
                 pass
                 #the committee reports let a legislator
                 #comment on a bill. They can comment as
@@ -170,14 +173,14 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 #appear in the bill's action history as being
                 #reported out of committee
 
-            if "voting" in title_text:
+            elif "voting" in title_text:
                 vote_info = tds[1].xpath('./a')
                 for v in vote_info:
-                    vote_name = v.text_content().strip()
+                    prev = v.getprevious()
+                    vote_name = prev.text_content().strip()
                     vote_documents[vote_name] = v.attrib["href"]
                 
-
-            if "actions history" in title_text:
+            elif "actions history" in title_text:
                 action_list = tds[1].text_content().split("\n")
 
         sub_versions = []
@@ -236,6 +239,12 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 if line.strip().startswith("Date"):
                     date_str = " ".join(line.split()[1:4])
                     date = datetime.strptime(date_str,"%m/%d/%Y %I:%M %p")
+                    passage_status = line.strip().split()[-1]
+
+                    #we've never seen a vote with anything but "passed"
+                    #so throw an error otherwise so we can figure it out
+                    if passage_status != "Passed":
+                        raise AssertionError("Unknown passage state {}".format(passage_status))
                     passed = "Passed" in line
 
                 if line.strip().startswith("Vote Type"):
@@ -243,10 +252,10 @@ class DEBillScraper(BillScraper, LXMLMixin):
                         voice_vote = True
                     else:
                         voice_vote = False
-                        yes_count = int(re.findall("Yes: (\d*)",line)[0])
-                        no_count = int(re.findall("No: (\d*)",line)[0])
-                        other_count = int(re.findall("Not Voting: (\d*)",line)[0])
-                        other_count += int(re.findall("Absent: (\d*)",line)[0])
+                        yes_count = int(re.findall("Yes: (\d+)",line)[0])
+                        no_count = int(re.findall("No: (\d+)",line)[0])
+                        other_count = int(re.findall("Not Voting: (\d+)",line)[0])
+                        other_count += int(re.findall("Absent: (\d+)",line)[0])
                         vote_tds = vote_page.xpath(".//table//td")
                         person_seen = False
                         for td in vote_tds:
@@ -256,7 +265,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                                     yes_votes.append(person)
                                 elif person_vote == "N":
                                     no_votes.append(person)
-                                elif person_vote in ["NV","A","X"]:
+                                elif person_vote in ["NV","A","X","C"]:
                                     other_votes.append(person)
                                 else:
                                     raise AssertionError("Unknown vote '{}'".format(person_vote))
@@ -278,13 +287,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 vote["yes_votes"] = yes_votes
                 vote["no_votes"] = no_votes
                 vote["other_votes"] = other_votes
-
-            assert len(vote["yes_votes"]) == vote["yes_count"], \
-                "Yes vote count does not match number of yes votes"
-            assert len(vote["no_votes"]) == vote["no_count"], \
-                "No vote count does not match number of no votes"
-            assert len(vote["other_votes"]) == vote["other_count"], \
-                "Other vote count does not match number of other votes"
 
             if (passed
                 and vote["yes_count"] <= vote["no_count"]
@@ -309,7 +311,9 @@ class DEBillScraper(BillScraper, LXMLMixin):
         for bill_code in bill_codes[chamber]:
             page = self.lxmlize(base_url.format(session=session,
                                             bill_type=bill_code,
-                                            count=1000)) #1000 shld be enough
+                                            count=1000))
+                                            #1000 is higher than the highest
+                                            #TOTAL # of bills we've ever seen 
 
             #there are not a lot of attributes to hold on to
             #this is the best I could come up with
