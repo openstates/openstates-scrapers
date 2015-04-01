@@ -1,7 +1,3 @@
-from collections import defaultdict
-from urlparse import urlunsplit
-from urllib import urlencode
-from operator import methodcaller
 import re
 
 import lxml.html
@@ -12,8 +8,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 class DELegislatorScraper(LegislatorScraper):
     jurisdiction = 'de'
 
-    def scrape(self, chamber, term, text=methodcaller('text_content'),
-               re_spaces=re.compile(r'\s{,5}')):
+    def scrape(self, chamber, term):
 
         url = {
             'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview',
@@ -57,6 +52,7 @@ class DELegislatorScraper(LegislatorScraper):
             name = name_and_url.text_content()
             if name.strip() == "." or name.strip() == "":
                 continue
+            re_spaces=re.compile(r'\s{,5}')
             name = ' '.join(re_spaces.split(name))
             district = tr.xpath('.//td')[2].text_content()
             district = district.replace("District:","").strip()
