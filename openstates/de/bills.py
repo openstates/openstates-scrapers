@@ -221,6 +221,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 actor = actions.get_actor(action, bill['chamber'])
                 attrs = dict(actor=actor, action=action, date=date)
                 attrs.update(**self.categorizer.categorize(action))
+                attrs["action"] = " ".join(attrs["action"].split())
                 bill.add_action(**attrs)
 
         for name, doc in vote_documents.items():
