@@ -1,11 +1,11 @@
 import re
-
 import lxml.html
+from openstates.utils import LXMLMixin
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
-class DELegislatorScraper(LegislatorScraper):
+class DELegislatorScraper(LegislatorScraper,LXMLMixin):
     jurisdiction = 'de'
 
     def scrape(self, chamber, term):
@@ -15,8 +15,7 @@ class DELegislatorScraper(LegislatorScraper):
             'lower': 'http://legis.delaware.gov/Legislature.nsf/Reps?openview',
             }[chamber]
 
-        doc = lxml.html.fromstring(self.get(url).text)
-        doc.make_links_absolute(url)
+        doc = self.lxmlize(url)
 
         if chamber == "upper":
             #for the senate, it's the same table
@@ -66,8 +65,7 @@ class DELegislatorScraper(LegislatorScraper):
     def scrape_bio(self, term, chamber, district, name, url):
         # this opens the committee section without having to do another request
         url += '&TableRow=1.5.5'
-        doc = lxml.html.fromstring(self.get(url).text)
-        doc.make_links_absolute(url)
+        doc = self.lxmlize(url)
 
         # party is in one of these
         party = doc.xpath('//div[@id="page_header"]')[0].text.strip()[-3:]
@@ -75,6 +73,8 @@ class DELegislatorScraper(LegislatorScraper):
             party = 'Democratic'
         elif '(R)' in party:
             party = 'Republican'
+        else:
+            raise AssertionError("No party found for {name}".format(name=name))
 
         leg = Legislator(term, chamber, district, name, party=party)
 
@@ -91,15 +91,27 @@ class DELegislatorScraper(LegislatorScraper):
         # Email
         email = doc.xpath(".//a[contains(@href,'mailto')]")
         email = email[0].text_content().strip()
-        if not email:
-            email = None
+        leg_email = None
+        dist_email = None
+        try:
+            emails = email.split(";")
+        except AttributeError:
+            pass
+        else:
+            for e in emails:
+                if email:
+                    if "state.de.us" in e:
+                        leg_email = e
+                    else:
+                        dist_email = e
+        
 
         # Offices
 
         leg_office = dict(name="Capitol Office", type="capitol",
-                        phone=None, fax=None, email=email, address=None)
-        dist_office = dict(name="District Office", type="district",
-                        phone=None,fax=None, email=email, address=None) 
+                        phone=None, fax=None, email=leg_email, address=None)
+        dist_office = dict(name="Outside Office", type="capitol",
+                        phone=None,fax=None, email=dist_email, address=None) 
 
         #this is enormously painful, DE.
         office_list = doc.xpath("//tr")
@@ -115,36 +127,32 @@ class DELegislatorScraper(LegislatorScraper):
             except IndexError:
                 continue
 
-            if "legislative office" in title_text:
-                leg_office["address"] = content.strip()
-            if "legislative phone" in title_text:
-                phones = content.lower().split("\n")
-                if len(phones) == 1:
-                    phone = phones[0].replace("phone:","").strip()
-                    if phone:
-                        leg_office["phone"] = phone
-                else:
-                    for line in phones:
-                        if "phone" in line:
-                            leg_office["phone"] = line.replace("phone:","").strip()
-                        elif "fax" in line:
-                            leg_office["fax"] = line.replace("fax:","").strip()
-
-            if "outside office" in title_text:
-                dist_office["address"] = content.strip()
-            if "outside phone" in title_text:
-                phones = content.lower().split("\n")
-                if len(phones) == 1:
-                    phone = phones[0].replace("phone:","").strip()
-                    if phone:
-                        dist_office["phone"] = phone
-                else:
-                    for line in phones:
-                        if "phone" in line:
-                            dist_office["phone"] = line.replace("phone:","").strip()
-                        elif "fax" in line:
-                            dist_office["fax"] = line.replace("fax:","").strip()
+            leg_office = self.add_contact("legislative",
+                    title_text,content,leg_office)
+            dist_office = self.add_contact("outside",
+                    title_text,content,dist_office)
 
         offices = [o for o in [leg_office,dist_office] if o["address"]]
-
+        assert len(offices) > 0, "No offices with addresses found "\
+            "make sure we're not losing any data."
         return {"offices":offices}
+
+    def add_contact(self,office_type,
+                    title_text,content,office):
+        #office type is the name of the office
+        #either "legislative" or "outside"
+        if "{} office".format(office_type) in title_text:
+            office["address"] = content.strip()
+        if "{} phone".format(office_type) in title_text:
+            phones = content.lower().split("\n")
+            if len(phones) == 1:
+                phone = phones[0].replace("phone:","").strip()
+                if phone:
+                    office["phone"] = phone
+            else:
+                for line in phones:
+                    if "phone" in line:
+                        office["phone"] = line.replace("phone:","").strip()
+                    elif "fax" in line:
+                        office["fax"] = line.replace("fax:","").strip()
+        return office
