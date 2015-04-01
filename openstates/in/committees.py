@@ -66,7 +66,7 @@ class INCommitteeScraper(CommitteeScraper):
             #sure we're not overloading their api
             comm_link = comm_info["link"]
             comm_name = comm_link.split("/")[-1]
-            if "withdrawn" in comm_name:
+            if "withdrawn" in comm_name or "conference" in comm_name:
                 continue
             comm_json = client.get("committee",session=session,committee_name=comm_name)
             
