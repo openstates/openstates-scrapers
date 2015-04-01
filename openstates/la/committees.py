@@ -1,11 +1,9 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
-from .common import BackoffScraper
-
 import lxml.html
 
-class LACommitteeScraper(CommitteeScraper, BackoffScraper):
+class LACommitteeScraper(CommitteeScraper):
     jurisdiction = 'la'
 
     def scrape(self, chamber, term):
