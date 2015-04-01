@@ -47,7 +47,7 @@ class VALegislatorScraper(LegislatorScraper):
             if chamber != CHAMBER_MOVES[name]:
                 return  # Skip bad chambers.
 
-        if "vacated" in name:
+        if "vacated" in name.lower():
             self.logger.warning("Seat seems to have been vacated: '{}'".format(name))
             return
 
