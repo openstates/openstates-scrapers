@@ -283,7 +283,12 @@ class INBillScraper(BillScraper):
             actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
             for a in actions["items"]:
                 action_desc = a["description"]
-                chamber = "lower" if a["chamber"]["name"].lower() == "house" else "upper"
+                if "governor" in action_desc:
+                    action_chamber = "executive"
+                elif a["chamber"]["name"].lower() == "house":
+                    action_chamber = "lower"
+                else:
+                    action_chamber = "upper"
                 date = a["date"]
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
                 
@@ -363,10 +368,10 @@ class INBillScraper(BillScraper):
 
 
                 elif committee:
-                    bill.add_action(chamber,action_desc,date,type=action_type,committees=committee)
+                    bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
 
                 else:
-                    bill.add_action(chamber,action_desc,date,type=action_type)
+                    bill.add_action(action_chamber,action_desc,date,type=action_type)
 
 
 
@@ -376,7 +381,7 @@ class INBillScraper(BillScraper):
 
             
             #versions and votes
-            for version in bill_json["versions"]:
+            for version in bill_json["versions"][::-1]:
                 version_json = client.get("bill_version",
                                         session=session,
                                         bill_id=version["billName"],

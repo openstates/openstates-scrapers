@@ -3,8 +3,6 @@ import re
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
 
-from .common import BackoffScraper
-
 
 def xpath_one(el, expr):
     ret = el.xpath(expr)
@@ -14,7 +12,7 @@ def xpath_one(el, expr):
     return ret[0]
 
 
-class LALegislatorScraper(LegislatorScraper, BackoffScraper, LXMLMixin):
+class LALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'la'
     latest_only = True
 

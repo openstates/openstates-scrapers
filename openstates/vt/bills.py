@@ -229,15 +229,6 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         int(re.search(r'Yeas = (\d+)', vote['FullStatus']).group(1))
                 nay_count = \
                         int(re.search(r'Nays = (\d+)', vote['FullStatus']).group(1))
-                if yea_count != len(roll_call_yea) or \
-                        nay_count != len(roll_call_nay):
-                    raise AssertionError(
-                            "Yea and/or nay counts incongruous:\n" +
-                            "Yeas from vote text: {}\n".format(yea_count) +
-                            "Yeas from number of members: {}\n".format(len(roll_call_yea)) +
-                            "Nays from vote text: {}\n".format(nay_count) +
-                            "Nays from number of members: {}".format(len(roll_call_nay))
-                            )
 
                 vote_to_add = Vote(
                         chamber=(
@@ -259,6 +250,11 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     vote_to_add.no(member)
                 for member in roll_call_other:
                     vote_to_add.other(member)
+
+                try:
+                    vote_to_add.validate()
+                except ValueError as e:
+                    self.warning(e)
 
                 bill.add_vote(vote_to_add)
 
