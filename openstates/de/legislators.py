@@ -99,7 +99,8 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
             pass
         else:
             for e in emails:
-                if email:
+                e = e.strip()
+                if e:
                     if "state.de.us" in e:
                         leg_email = e
                     else:
@@ -146,13 +147,27 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
         if "{} phone".format(office_type) in title_text:
             phones = content.lower().split("\n")
             if len(phones) == 1:
-                phone = phones[0].replace("phone:","").strip()
+                phone = self.clean_phone(phones[0])
                 if phone:
                     office["phone"] = phone
             else:
                 for line in phones:
                     if "phone" in line:
-                        office["phone"] = line.replace("phone:","").strip()
+                        phone = self.clean_phone(line)
+                        if phone:
+                            office["phone"] = phone
                     elif "fax" in line:
-                        office["fax"] = line.replace("fax:","").strip()
+                        phone = self.clean_phone(line)
+                        if phone:
+                            office["fax"] = phone
         return office
+
+    def clean_phone(self,phone):
+        if not phone.strip():
+            return
+        if not re.search("\d",phone):
+            return
+        if not ":" in phone:
+            return phone
+        return phone.split(":")[1].strip()
+
