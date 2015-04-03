@@ -106,7 +106,7 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
                 elif ", Chair" in person_name:
                     role = "Chair"
                     person_name = person_name.replace(", Chair","")
-                person_name = person_name.strip()
+                person_name = person_name.strip().strip(",").strip()
                 committee.add_member(person_name,role)
             self.save_committee(committee)
 
