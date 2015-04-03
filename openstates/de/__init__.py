@@ -46,10 +46,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    sessions = url_xpath('http://legis.delaware.gov/',
+    url = "http://legis.delaware.gov/Legislature.nsf/"\
+            "7CD69CCAB66992B285256EE0005E0727/FC256764B3B3DCAE85257E0E005F9CD8"
+    sessions = url_xpath(url,
         "//select[@name='gSession']/option/text()")
-    sessions = [session.strip() for session in sessions]
-    sessions.remove("Session")
+    sessions = [session.strip() for session in sessions if session.strip()]
     return sessions
 
 
