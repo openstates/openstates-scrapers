@@ -34,19 +34,6 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
                 comm = row.xpath('.//a')[1]
                 comm_name = comm.text_content().strip()
 
-                #specific logic to skip chamber-specific
-                #versions of joint committees because SOMETIMES
-                #they are listed in both places. blech.
-                if chamber == "lower":
-                    dup_comm_names = ["Joint Finance",
-                        "Sunset Committee (Policy Analysis & "\
-                        "Government Accountability)"]
-                else:
-                    dup_comm_names = ["Finance","Legislative Council",
-                                    "Sunset"]
-                if comm_name in dup_comm_names:
-                    continue
-
                 comm_url = comm.attrib["href"]
 
                 comm_page = lxml.html.fromstring(self.get(comm_url).text)
@@ -93,15 +80,32 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
             people = comm_page.xpath("//a/b")
             things_to_replace = ["Senator",
                                 "Representative",
-                                "(D)","(R)"]
+                                "(D)","(R)",
+                                "House Minority Whip",
+                                "House Majority Whip",
+                                "Senate Minority Whip",
+                                "Senate Majority Whip",
+                                "House Minority Leader",
+                                "House Majority Leader",
+                                "Senate Minority Leader",
+                                "Senate Majority Leader",
+                                "President Pro Tempore",
+                                "Speaker of the House"]
             for person in people:
                 person_name = person.text_content()
                 for thing in things_to_replace:
                     person_name = person_name.replace(thing,"")
+                person_name = person_name.strip().strip(",")
                 role = "Member"
                 if person_name.strip()[-1] == ")":
                     person_name,role = person_name.rsplit("(",1)
                     role = role.replace(")","").strip()
+                elif ", Vice-Chair" in person_name:
+                    role = "Vice-Chair"
+                    person_name = person_name.replace(", Vice-Chair","")
+                elif ", Chair" in person_name:
+                    role = "Chair"
+                    person_name = person_name.replace(", Chair","")
                 person_name = person_name.strip()
                 committee.add_member(person_name,role)
             self.save_committee(committee)
