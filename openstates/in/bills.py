@@ -287,7 +287,7 @@ class INBillScraper(BillScraper):
                 actions = {"items":[]}
             for a in actions["items"]:
                 action_desc = a["description"]
-                if "governor" in action_desc:
+                if "governor" in action_desc.lower():
                     action_chamber = "executive"
                 elif a["chamber"]["name"].lower() == "house":
                     action_chamber = "lower"
@@ -328,53 +328,53 @@ class INBillScraper(BillScraper):
                     action_type.append("committee:referred")
 
 
-                    if "committee report" in d:
-                        if "pass" in d:
-                            action_type.append("committee:passed")
-                        if "fail" in d:
-                            action_type.append("committee:failed")
+                if "committee report" in d:
+                    if "pass" in d:
+                        action_type.append("committee:passed")
+                    if "fail" in d:
+                        action_type.append("committee:failed")
 
-                    if "amendment" in d and "without amendment" not in d:
-                        if "pass" in d or "prevail" in d or "adopted" in d:
-                            action_type.append("amendment:passed")
-                        if "fail" or "out of order" in d:
-                            action_type.append("amendment:failed")
-                        if "withdraw" in d:
-                            action_type.append("amendment:withdrawn")
-
-
-                    if "signed by the governor" in d:
-                        action_type.append("governor:signed")
+                if "amendment" in d and "without amendment" not in d:
+                    if "pass" in d or "prevail" in d or "adopted" in d:
+                        action_type.append("amendment:passed")
+                    if "fail" or "out of order" in d:
+                        action_type.append("amendment:failed")
+                    if "withdraw" in d:
+                        action_type.append("amendment:withdrawn")
 
 
-                    if ("not substituted for majority report" in d
-                        or "returned to the house" in d
-                        or "referred to the senate" in d
-                        or "referred to the house" in d
-                        or "technical corrections" in d
-                        or "signed by the president" in d
-                        or "signed by the speaker"
-                        or "authored" in d
-                        or "sponsor" in d
-                        or "coauthor" in d
-                        or ("rule" in d and "suspended" in d)
-                        or "removed as author" in d
-                        or ("added as" in d and "author" in d)
-                        or "public law" in d):
+                if "signed by the governor" in d:
+                    action_type.append("governor:signed")
 
-                            if len(action_type) == 0:
-                                action_type.append("other")
 
-                    if len(action_type) == 0:
-                        #calling it other and moving on with a warning
-                        self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
-                        action_type = ["other"]
+                if ("not substituted for majority report" in d
+                    or "returned to the house" in d
+                    or "referred to the senate" in d
+                    or "referred to the house" in d
+                    or "technical corrections" in d
+                    or "signed by the president" in d
+                    or "signed by the speaker"
+                    or "authored" in d
+                    or "sponsor" in d
+                    or "coauthor" in d
+                    or ("rule" in d and "suspended" in d)
+                    or "removed as author" in d
+                    or ("added as" in d and "author" in d)
+                    or "public law" in d):
 
-                    elif committee:
-                        bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
+                        if len(action_type) == 0:
+                            action_type.append("other")
 
-                    else:
-                        bill.add_action(action_chamber,action_desc,date,type=action_type)
+                if len(action_type) == 0:
+                    #calling it other and moving on with a warning
+                    self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
+                    action_type = ["other"]
+
+                elif committee:
+                    bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
+
+                else:
+                    bill.add_action(action_chamber,action_desc,date,type=action_type)
 
 
 
