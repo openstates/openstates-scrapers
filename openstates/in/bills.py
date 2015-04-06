@@ -116,13 +116,13 @@ class INBillScraper(BillScraper):
             for l in possible_vote_lines:
                 l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
-                if "yea -" in l.lower():
+                if "yea-" in l.lower().replace(" ",""):
                     currently_counting = "yes_votes"
-                elif "nay -" in l.lower():
+                elif "nay-" in l.lower().replace(" ",""):
                     currently_counting = "no_votes"
-                elif "excused -" in l.lower():
+                elif "excused-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
-                elif "not voting -" in l.lower():
+                elif "notvoting-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
                 elif currently_counting == "":
                     pass
@@ -280,10 +280,14 @@ class INBillScraper(BillScraper):
             #actions
             action_link = bill_json["actions"]["link"]
             api_source = api_base_url + action_link
-            actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            try:
+                actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            except scrapelib.HTTPError:
+                self.logger.warning("Could not find bill actions page")
+                actions = {"items":[]}
             for a in actions["items"]:
                 action_desc = a["description"]
-                if "governor" in action_desc:
+                if "governor" in action_desc.lower():
                     action_chamber = "executive"
                 elif a["chamber"]["name"].lower() == "house":
                     action_chamber = "lower"
@@ -365,7 +369,6 @@ class INBillScraper(BillScraper):
                     #calling it other and moving on with a warning
                     self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
                     action_type = ["other"]
-
 
                 elif committee:
                     bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
