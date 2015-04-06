@@ -114,7 +114,6 @@ class INBillScraper(BillScraper):
 
             possible_vote_lines = lines[8:]
             for l in possible_vote_lines:
-                print l
                 l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
                 if "yea-" in l.lower().replace(" ",""):
