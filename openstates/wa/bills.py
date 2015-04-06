@@ -54,7 +54,6 @@ class WABillScraper(BillScraper, LXMLMixin):
             'Joint Memorials': 'JM',
             'Joint Resolutions': 'JR'
         }
-        oddly_formed_types = ['Resolutions', 'Joint Memorials']
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
 
         for bill_type in bill_types.keys():
@@ -64,14 +63,14 @@ class WABillScraper(BillScraper, LXMLMixin):
                 (link, ) = document.xpath('@href')
 
                 (text, ) = document.xpath('text()')
-                if bill_type in oddly_formed_types:
-                    is_substitute = False
-                    is_engrossed = False
-                    bill_num = re.search(r'^(\d+)-', text).group(1)
-                else:
-                    (bill_num, is_substitute, substitute_num, is_engrossed,
-                        engrossed_num) = re.search(
-                        r'^(\d+)(-S(\d?))?(\.E(\d?))?\.htm$', text).groups()
+                (bill_num, is_substitute, substitute_num, is_engrossed,
+                    engrossed_num) = re.search(r'''(?x)
+                    ^(\d+)  # Bill number
+                    (-S(\d)?)?  # Substitution indicator
+                    (\.E(\d)?)?  # Engrossment indicator
+                    \s?(?:.*?)  # Document name, only for some types
+                    \.htm$''',
+                    text).groups()
 
                 bill_id = chamber[0] + bill_types[bill_type] + " " + bill_num
 
