@@ -280,10 +280,14 @@ class INBillScraper(BillScraper):
             #actions
             action_link = bill_json["actions"]["link"]
             api_source = api_base_url + action_link
-            actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            try:
+                actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            except scrapelib.HTTPError:
+                self.logger.warning("Could not find bill actions page")
+                actions = {"items":[]}
             for a in actions["items"]:
                 action_desc = a["description"]
-                if "governor" in action_desc:
+                if "governor" in action_desc.lower():
                     action_chamber = "executive"
                 elif a["chamber"]["name"].lower() == "house":
                     action_chamber = "lower"
@@ -365,7 +369,6 @@ class INBillScraper(BillScraper):
                     #calling it other and moving on with a warning
                     self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
                     action_type = ["other"]
-
 
                 elif committee:
                     bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
