@@ -35,7 +35,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
         }
 
         for district, url in urls.iteritems():
-            leg_page_html = self.urlopen(url)
+            leg_page_html = self.get(url).text
             doc = lxml.html.fromstring(leg_page_html)
             doc.make_links_absolute(url)
             rows = doc.xpath('//table[@summary="Senadores 2013-2016"]/tr[not(@class="ms-viewheadertr")]')
@@ -60,7 +60,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                 # Construct the photo url
                 photo_url = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + (nameparts[0][0] + lastname).lower() + '.jpg'
                 try:
-                    picture_data = self.urlopen(photo_url)  # Checking to see if the file is there
+                    picture_data = self.head(photo_url)  # Checking to see if the file is there
                 except scrapelib.HTTPError:         # If not, leave out the photo_url
                     photo_url = ''
 

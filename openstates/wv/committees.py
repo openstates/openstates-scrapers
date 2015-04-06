@@ -13,7 +13,7 @@ class WVCommitteeScraper(CommitteeScraper):
 
     def scrape_lower(self):
         url = 'http://www.legis.state.wv.us/committees/house/main.cfm'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -27,7 +27,7 @@ class WVCommitteeScraper(CommitteeScraper):
             self.save_committee(committee)
 
         url = 'http://www.legis.state.wv.us/committees/interims/interims.cfm'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         xpath = '//a[contains(@href, "committee.cfm")]'
@@ -41,7 +41,7 @@ class WVCommitteeScraper(CommitteeScraper):
 
     def scrape_lower_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -59,7 +59,7 @@ class WVCommitteeScraper(CommitteeScraper):
 
     def scrape_interim_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -78,7 +78,7 @@ class WVCommitteeScraper(CommitteeScraper):
 
     def scrape_upper(self):
         url = 'http://www.legis.state.wv.us/committees/senate/main.cfm'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -93,7 +93,7 @@ class WVCommitteeScraper(CommitteeScraper):
 
     def scrape_upper_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 

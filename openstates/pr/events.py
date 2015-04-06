@@ -37,7 +37,7 @@ class PREventScraper(EventScraper):
 
     def scrape_events(self, chamber,session,event_id):
         url = '%s%s' % (self.upper_url, event_id)
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         rows = doc.xpath("//div[@id='WebPartWPQ2']")

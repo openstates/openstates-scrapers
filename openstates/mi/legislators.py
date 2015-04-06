@@ -25,7 +25,7 @@ class MILegislatorScraper(LegislatorScraper):
             "phone",
             "email"
         ]
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         # skip two rows at top
@@ -75,7 +75,7 @@ class MILegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, chamber, term):
         url = 'http://www.senate.michigan.gov/senatorinfo.html'
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         for row in doc.xpath('//table[not(@id="calendar")]//tr')[3:]:
             if len(row) != 6:

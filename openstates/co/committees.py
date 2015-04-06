@@ -12,7 +12,7 @@ class COCommitteeScraper(CommitteeScraper):
     jurisdiction = "co"
 
     def lxmlize(self, url):
-        text = self.urlopen(url)
+        text = self.get(url).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
         return page, text

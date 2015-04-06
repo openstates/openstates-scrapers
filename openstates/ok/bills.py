@@ -26,7 +26,7 @@ class OKBillScraper(BillScraper):
         self.scrape_subjects(chamber, session)
 
         url = "http://webserver1.lsb.state.ok.us/WebApplication3/WebForm1.aspx"
-        form_page = lxml.html.fromstring(self.urlopen(url))
+        form_page = lxml.html.fromstring(self.get(url).text)
 
         if chamber == 'upper':
             chamber_letter = 'S'
@@ -48,7 +48,7 @@ class OKBillScraper(BillScraper):
         for hidden in form_page.xpath("//input[@type='hidden']"):
             values[hidden.attrib['name']] =  hidden.attrib['value']
 
-        page = self.urlopen(url, "POST", values)
+        page = self.post(url, data=values).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -68,7 +68,7 @@ class OKBillScraper(BillScraper):
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
-            page = lxml.html.fromstring(self.urlopen(url))
+            page = lxml.html.fromstring(self.get(url).text)
         except scrapelib.HTTPError as e:
             self.warning('error (%s) fetching %s, skipping' % (e, url))
             return
@@ -145,7 +145,7 @@ class OKBillScraper(BillScraper):
             self.save_bill(bill)
 
     def scrape_votes(self, bill, url):
-        page = lxml.html.fromstring(self.urlopen(url).replace(u'\xa0', ' '))
+        page = lxml.html.fromstring(self.get(url).text.replace(u'\xa0', ' '))
 
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
@@ -236,7 +236,7 @@ class OKBillScraper(BillScraper):
 
     def scrape_subjects(self, chamber, session):
         form_url = 'http://webserver1.lsb.state.ok.us/WebApplication19/WebForm1.aspx'
-        form_html = self.urlopen(form_url)
+        form_html = self.get(form_url).text
         fdoc = lxml.html.fromstring(form_html)
 
         # bill types
@@ -255,7 +255,7 @@ class OKBillScraper(BillScraper):
             for hidden in fdoc.xpath("//input[@type='hidden']"):
                 values[hidden.attrib['name']] = hidden.attrib['value']
             #values = urllib.urlencode(values, doseq=True)
-            page_data = self.urlopen(form_url, 'POST', values)
+            page_data = self.post(form_url, data=values).text
             page_doc = lxml.html.fromstring(page_data)
 
             # all links after first are bill_ids

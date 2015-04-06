@@ -19,7 +19,7 @@ class WVLegislatorScraper(LegislatorScraper):
             chamber_abbrev = 'House'
 
         url = 'http://www.legis.state.wv.us/%s/roster.cfm' % chamber_abbrev
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, '?member=')]"):
@@ -35,7 +35,7 @@ class WVLegislatorScraper(LegislatorScraper):
             self.scrape_legislator(chamber, term, name, leg_url)
 
     def scrape_legislator(self, chamber, term, name, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 

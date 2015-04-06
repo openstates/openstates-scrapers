@@ -24,7 +24,7 @@ class KSCommitteeScraper(CommitteeScraper):
         else:
             chambers = ['house_committees']
 
-        committee_request = self.urlopen(ksapi.url + 'ctte/')
+        committee_request = self.get(ksapi.url + 'ctte/').text
         committee_json = json.loads(committee_request)
 
         for com_type in chambers:
@@ -40,7 +40,7 @@ class KSCommitteeScraper(CommitteeScraper):
 
                 com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
                 try:
-                    detail_json = self.urlopen(com_url)
+                    detail_json = self.get(com_url).text
                 except scrapelib.HTTPError:
                     self.warning("error fetching committee %s" % com_url)
                     continue

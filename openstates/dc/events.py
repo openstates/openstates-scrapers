@@ -10,7 +10,7 @@ class DCEventScraper(EventScraper):
 
     def scrape(self, session, chambers):
         calendar_url = "http://dccouncil.us/calendar"
-        data = self.urlopen(calendar_url)
+        data = self.get(calendar_url).text
         doc = lxml.html.fromstring(data)
 
         committee_regex = re.compile("(Committee .*?)will")

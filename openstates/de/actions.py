@@ -3,9 +3,6 @@ from billy.scrape.actions import Rule, BaseCategorizer
 
 
 rules = (
-    Rule(r'(?P<yes_votes>\d+)\s+YES\s+(?P<no_votes>\d+)'
-         r'\s+NO\s+(?P<not_voting>.+?)\s+NOT VOTING\s+(?P<absent>.+?)\s+'
-         r'ABSENT\s+(?P<vacant>.+?) VACANT'),
     Rule([u'Amendment (?P<bills>.+?) -\s+Laid On Table'], ['amendment:tabled']),
     Rule([u'Favorable'], ['committee:passed:favorable']),
     Rule([u'(?i)Amendment (?P<bills>.+?) defeated'], ['amendment:failed']),

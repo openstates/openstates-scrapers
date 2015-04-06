@@ -6,7 +6,7 @@ class ILCommitteeScraper(CommitteeScraper):
     jurisdiction = 'il'
 
     def scrape_members(self, com, url):
-        data = self.urlopen(url)
+        data = self.get(url).text
         if 'No members added' in data:
             return
         doc = lxml.html.fromstring(data)
@@ -25,7 +25,7 @@ class ILCommitteeScraper(CommitteeScraper):
         chamber_name = 'senate' if chamber == 'upper' else 'house'
 
         url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 

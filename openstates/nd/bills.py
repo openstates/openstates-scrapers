@@ -20,7 +20,7 @@ class NDBillScraper(BillScraper):
     categorizer = NDCategorizer()
 
     def scrape_actions(self, session, subject, href, bid):
-        page = self.urlopen(href)
+        page = self.get(href).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         table = page.xpath("//table[contains(@summary, 'Number Breakdown')]")
@@ -123,7 +123,7 @@ class NDBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_versions(self, bill, href):
-        page = self.urlopen(href)
+        page = self.get(href).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         versions = page.xpath("//a[contains(@href, '/documents/')]")
@@ -134,7 +134,7 @@ class NDBillScraper(BillScraper):
         return bill
 
     def scrape_subject(self, session, href, subject):
-        page = self.urlopen(href)
+        page = self.get(href).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
@@ -153,7 +153,7 @@ class NDBillScraper(BillScraper):
                 break
 
         url = base_url % (term, start_year)
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         subjects = page.xpath(

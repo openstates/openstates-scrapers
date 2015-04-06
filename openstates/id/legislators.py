@@ -20,7 +20,7 @@ class IDLegislatorScraper(LegislatorScraper):
 
     def scrape_sub(self, chamber, term, district, sub_url):
         "Scrape basic info for a legislator's substitute."
-        page = self.urlopen(sub_url)
+        page = self.get(sub_url).text
         html = lxml.html.fromstring(page)
         html.make_links_absolute(sub_url)
         # substitute info div#MAINS35
@@ -47,7 +47,7 @@ class IDLegislatorScraper(LegislatorScraper):
         """
         self.validate_term(term, latest_only=True)
         url = _BASE_URL % _CHAMBERS[chamber].lower()
-        index = self.urlopen(url)
+        index = self.get(url).text
         html = lxml.html.fromstring(index)
         html.make_links_absolute(url)
         base_table = html.xpath('body/table/tr/td[2]/table[2]')

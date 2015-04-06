@@ -8,7 +8,7 @@ class WICommitteeScraper(CommitteeScraper):
     def scrape_committee(self, name, url, chamber):
         com = Committee(chamber, name)
         com.add_source(url)
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
 
         for leg in doc.xpath('//div[@id="members"]/div[@id="members"]/p/a/text()'):
@@ -41,7 +41,7 @@ class WICommitteeScraper(CommitteeScraper):
                 url += 'senate'
             else:
                 url += 'assembly'
-            data = self.urlopen(url)
+            data = self.get(url).text
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 

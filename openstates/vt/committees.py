@@ -15,7 +15,7 @@ class VTCommitteeScraper(CommitteeScraper):
         committee_dump_url = \
                 'http://legislature.vermont.gov/committee/loadList/{}/'.\
                 format(year_slug)
-        json_data = self.urlopen(committee_dump_url)
+        json_data = self.get(committee_dump_url).text
         committees = json.loads(json_data)['data']
 
         # Parse the information from each committee

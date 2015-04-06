@@ -132,7 +132,8 @@ class OHBillScraper(BillScraper):
                                 display_id = bill_id[:idx]+" "+bill_id[idx:]
                                 break
 
-
+                            if doc_type == 'bills':
+                                doc_type = 'bill'
                             bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
 
                             #this stuff is the same for all versions
@@ -379,7 +380,7 @@ class OHBillScraper(BillScraper):
         status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
 
         #ssl verification off due Ohio not correctly implementing SSL
-        doc = self.urlopen(status_report_url,verify=False)
+        doc = self.get(status_report_url,verify=False).text
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
 
@@ -490,7 +491,7 @@ class OHBillScraper(BillScraper):
                 bill.add_version(name, base_url + link,
                                  mimetype='application/pdf')
 
-        html = self.urlopen(base_url + piece)
+        html = self.get(base_url + piece).text
         # pass over missing bills - (unclear why this happens)
         if 'could not be found.' in html:
             self.warning('missing page: %s' % base_url + piece)
@@ -500,16 +501,16 @@ class OHBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.urlopen(base_url + a))
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
         for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.urlopen(base_url + a))
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
 
     def scrape_votes_old(self, bill, billname, session):
         vote_url = ('http://archives.legislature.state.oh.us/bills.cfm?ID=' +
                     session + '_' + billname)
 
-        page = self.urlopen(vote_url)
+        page = self.get(vote_url).text
         page = lxml.html.fromstring(page)
 
         for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):

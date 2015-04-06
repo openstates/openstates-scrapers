@@ -3,6 +3,7 @@ import datetime
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 import lxml.html
 import xlrd
@@ -16,17 +17,9 @@ excel_mapping = {
     'email': 6,
 }
 
-class RILegislatorScraper(LegislatorScraper):
+class RILegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ri'
     latest_only = True
-
-    def lxmlize(self, url):
-        page = self.urlopen(url)
-        if page.response.code != 200:
-            raise ValueError("HTTP: {}".format(page.response.code))
-        root = lxml.html.fromstring(page)
-        root.make_links_absolute(url)
-        return root
 
     def scrape(self, chamber, term):
         if chamber == 'upper':
@@ -49,7 +42,7 @@ class RILegislatorScraper(LegislatorScraper):
         # XLS doc as the source URL for all legislators.
         # 374: RI: legislator url
         leg_source_url_map = {}
-        leg_page = lxml.html.fromstring(self.urlopen(source_url))
+        leg_page = lxml.html.fromstring(self.get(source_url).text)
         leg_page.make_links_absolute(source_url)
 
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):

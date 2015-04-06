@@ -17,7 +17,7 @@ class NELegislatorScraper(LegislatorScraper):
                 rep_url = base_url + str(district) + '/biography/'
 
             try:
-                html = self.urlopen(rep_url)
+                html = self.get(rep_url).text
                 page = lxml.html.fromstring(html)
 
                 full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split(' ',1)[1].strip()

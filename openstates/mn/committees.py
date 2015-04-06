@@ -26,14 +26,14 @@ class MNCommitteeScraper(CommitteeScraper):
 
         url = 'http://www.senate.mn/committees/index.php?ls=%s' % biennium
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         for link in doc.xpath('//a[contains(@href, "committee_bio")]/@href'):
             self.scrape_senate_committee(term, link)
 
     def scrape_senate_committee(self, term, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         com_name = doc.xpath('//a[contains(@href, "committee_bio")]/text()')[0]
@@ -68,7 +68,7 @@ class MNCommitteeScraper(CommitteeScraper):
     def scrape_house_committees(self, term):
         url = 'http://www.house.leg.state.mn.us/comm/commemlist.asp'
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         for com in doc.xpath('//h2[@class="commhighlight"]'):
@@ -77,7 +77,7 @@ class MNCommitteeScraper(CommitteeScraper):
             com = Committee('lower', com.text)
             com.add_source(members_url)
 
-            member_html = self.urlopen(members_url)
+            member_html = self.get(members_url).text
             mdoc = lxml.html.fromstring(member_html)
 
             # each legislator in their own table

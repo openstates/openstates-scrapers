@@ -105,7 +105,7 @@ class NMBillScraper(BillScraper):
             raise ValueError('no zip file present for %s' % session)
 
         # use listing to get latest modified LegInfo zip
-        listing = self.urlopen(ftp_base)
+        listing = self.get(ftp_base).text
         matches = re.findall(fname_re, listing)
         matches = sorted([
             (datetime.strptime(date, '%m-%d-%y  %H:%M%p'), filename)
@@ -225,7 +225,7 @@ class NMBillScraper(BillScraper):
         # go through all of the links on these pages and add them to the
         # appropriate bills
         def check_docs(url, doc_type):
-            html = self.urlopen(url)
+            html = self.get(url).text
             doc = lxml.html.fromstring(html)
 
             for fname in doc.xpath('//a/text()'):
@@ -411,12 +411,14 @@ class NMBillScraper(BillScraper):
         doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
         doc_path = doc_path % (session_path, doctype, chamber_name)
 
-        html = self.urlopen(doc_path)
+        html = self.get(doc_path).text
 
         doc = lxml.html.fromstring(html)
 
         # all links but first one
         for fname in doc.xpath('//a/text()')[1:]:
+            # Delete any errant words found following the file name
+            fname = fname.split(" ")[0]
 
             # skip PDFs for now -- everything but votes have HTML versions
             if fname.endswith('pdf') and 'VOTE' not in fname:
@@ -660,7 +662,7 @@ class NMBillScraper(BillScraper):
                 resp_set = set()
                 for doc in documents:
                     try:
-                        resp = self.urlopen(doc['url'])
+                        resp = self.head(doc['url'])
                     except scrapelib.HTTPError:
                         documents.remove(doc)
                         continue

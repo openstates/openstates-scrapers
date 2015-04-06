@@ -116,13 +116,13 @@ class INBillScraper(BillScraper):
             for l in possible_vote_lines:
                 l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
-                if "yea -" in l.lower():
+                if "yea-" in l.lower().replace(" ",""):
                     currently_counting = "yes_votes"
-                elif "nay -" in l.lower():
+                elif "nay-" in l.lower().replace(" ",""):
                     currently_counting = "no_votes"
-                elif "excused -" in l.lower():
+                elif "excused-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
-                elif "not voting -" in l.lower():
+                elif "notvoting-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
                 elif currently_counting == "":
                     pass
@@ -179,7 +179,19 @@ class INBillScraper(BillScraper):
         name = version["stageVerbose"]
         if link not in urls_seen:
             urls_seen.append(link)
-            bill.add_version(name,link,mimetype="application/pdf")
+            update_date = version["updated"]
+            create_date = version["created"]
+            intro_date = version["introduced"]
+            file_date = version["filed"]
+            for d in [update_date,create_date,intro_date,file_date]:
+                try:
+                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S")
+                except TypeError:
+                    continue
+                else:
+                    break
+                
+            bill.add_version(name,link,mimetype="application/pdf",date=update_date)
 
         #votes
         votes = version["rollcalls"]
@@ -268,10 +280,19 @@ class INBillScraper(BillScraper):
             #actions
             action_link = bill_json["actions"]["link"]
             api_source = api_base_url + action_link
-            actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            try:
+                actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+            except scrapelib.HTTPError:
+                self.logger.warning("Could not find bill actions page")
+                actions = {"items":[]}
             for a in actions["items"]:
                 action_desc = a["description"]
-                chamber = "lower" if a["chamber"]["name"].lower() == "house" else "upper"
+                if "governor" in action_desc.lower():
+                    action_chamber = "executive"
+                elif a["chamber"]["name"].lower() == "house":
+                    action_chamber = "lower"
+                else:
+                    action_chamber = "upper"
                 date = a["date"]
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
                 
@@ -349,12 +370,11 @@ class INBillScraper(BillScraper):
                     self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
                     action_type = ["other"]
 
-
                 elif committee:
-                    bill.add_action(chamber,action_desc,date,type=action_type,committees=committee)
+                    bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
 
                 else:
-                    bill.add_action(chamber,action_desc,date,type=action_type)
+                    bill.add_action(action_chamber,action_desc,date,type=action_type)
 
 
 
@@ -364,7 +384,7 @@ class INBillScraper(BillScraper):
 
             
             #versions and votes
-            for version in bill_json["versions"]:
+            for version in bill_json["versions"][::-1]:
                 version_json = client.get("bill_version",
                                         session=session,
                                         bill_id=version["billName"],

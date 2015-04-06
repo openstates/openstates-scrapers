@@ -5,7 +5,7 @@ SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
 def get_short_codes(scraper):
-    list_html = scraper.urlopen(SHORT_CODES)
+    list_html = scraper.get(SHORT_CODES).text
     list_page = lxml.html.fromstring(list_html)
     rows = list_page.xpath(
         "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")

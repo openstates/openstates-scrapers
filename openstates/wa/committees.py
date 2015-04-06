@@ -13,8 +13,8 @@ class WACommitteeScraper(CommitteeScraper):
         biennium = "%s-%s" % (term[0:4], term[7:9])
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
-        page = self.urlopen(url)
-        page = lxml.etree.fromstring(page.bytes)
+        page = self.get(url)
+        page = lxml.etree.fromstring(page.content)
 
         for comm in xpath(page, "//wa:Committee"):
             agency = xpath(comm, "string(wa:Agency)")

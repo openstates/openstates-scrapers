@@ -1,5 +1,6 @@
 import datetime
 import lxml.html
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import INBillScraper
 from .legislators import INLegislatorScraper
 from .committees import INCommitteeScraper
@@ -86,6 +87,6 @@ def session_list():
     
 
 def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    return ' '.join(x.text_content()
-                    for x in doc.xpath('//div[@align="full"]'))
+    text = pdfdata_to_text(data)
+    return text_after_line_numbers(text)
+

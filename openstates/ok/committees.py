@@ -18,7 +18,7 @@ class OKCommitteeScraper(CommitteeScraper):
 
     def scrape_lower(self):
         url = "http://www.okhouse.gov/Committees/Default.aspx"
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         parents = {}
@@ -42,7 +42,7 @@ class OKCommitteeScraper(CommitteeScraper):
             self.scrape_lower_committee(name, parent, link.attrib['href'])
 
     def scrape_lower_committee(self, name, parent, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         if 'Joint' in name or (parent and 'Joint' in parent):
@@ -83,7 +83,7 @@ class OKCommitteeScraper(CommitteeScraper):
 
     def scrape_upper(self):
         url = "http://www.oksenate.gov/Committees/standingcommittees.htm"
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'standing/')]"):
@@ -95,7 +95,7 @@ class OKCommitteeScraper(CommitteeScraper):
             self.scrape_upper_committee(name, link.attrib['href'])
 
     def scrape_upper_committee(self, name, url):
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
 
         comm = Committee('upper', name)
         comm.add_source(url)

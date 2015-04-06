@@ -14,7 +14,7 @@ class NMLegislatorScraper(LegislatorScraper):
         else:
             xpath = '//table[@id="ctl00_mainCopy_gridViewSenateDistricts"]//a[contains(@href, "SPONCODE")]/@href'
 
-        html = self.urlopen('http://www.nmlegis.gov/lcs/districts.aspx')
+        html = self.get('http://www.nmlegis.gov/lcs/districts.aspx').text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute('http://www.nmlegis.gov/lcs/')
         for link in doc.xpath(xpath):
@@ -24,7 +24,7 @@ class NMLegislatorScraper(LegislatorScraper):
             self.scrape_legislator(chamber, term, link)
 
     def scrape_legislator(self, chamber, term, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
