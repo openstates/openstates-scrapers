@@ -114,15 +114,16 @@ class INBillScraper(BillScraper):
 
             possible_vote_lines = lines[8:]
             for l in possible_vote_lines:
+                print l
                 l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
-                if "yea -" in l.lower():
+                if "yea-" in l.lower().replace(" ",""):
                     currently_counting = "yes_votes"
-                elif "nay -" in l.lower():
+                elif "nay-" in l.lower().replace(" ",""):
                     currently_counting = "no_votes"
-                elif "excused -" in l.lower():
+                elif "excused-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
-                elif "not voting -" in l.lower():
+                elif "notvoting-" in l.lower().replace(" ",""):
                     currently_counting = "other_votes"
                 elif currently_counting == "":
                     pass
