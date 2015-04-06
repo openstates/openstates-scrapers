@@ -97,6 +97,6 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
                     address=address, phone=phone, email=email, fax=fax)
 
         conflict_of_interest = leg_doc.xpath("//a[contains(@href,'CofI')]/@href")
-        leg["links"] = [conflict_of_interest]
+        leg["links"] = conflict_of_interest
 
         return leg
