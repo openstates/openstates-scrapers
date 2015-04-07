@@ -15,12 +15,8 @@ from scrapelib import HTTPError
 import lxml.html
 from lxml.etree import ElementTree, XMLSyntaxError
 
+from openstates.utils import LXMLMixin
 from . import actions
-
-
-def url2lxml(url):
-    html = self.get(url).text
-    return lxml.html.fromstring(html)
 
 
 actor_map = {
@@ -59,7 +55,7 @@ vote_ambiguous_indicators = [
     'Taken from']
 
 
-class MTBillScraper(BillScraper):
+class MTBillScraper(BillScraper, LXMLMixin):
     #must set state attribute as the state's abbreviated name
     jurisdiction = 'mt'
 
@@ -285,7 +281,7 @@ class MTBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
 
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
-            doc = url2lxml(url)
+            doc = self.lxmlize(url)
             for fn in doc.xpath('//a/@href')[1:]:
                 _url = urljoin(url, fn)
                 fn = fn.split('/')[-1]
