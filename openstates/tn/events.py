@@ -46,7 +46,7 @@ class TNEventScraper(EventScraper, LXMLMixin):
                 type="consideration"
             )
         event.add_source(url)
-        event.add_document(url, "Agenda", type="agenda")
+        event.add_document(url=url, name="Agenda", type="agenda")
         return event
 
     def _add_agenda_list(self, url, event):
@@ -61,8 +61,8 @@ class TNEventScraper(EventScraper, LXMLMixin):
         if "CalendarMain" in url:
             return self._add_agenda_main(url, event)
         if "scheduledocs" in url:
-            return event.add_document(name, url, "agenda")
-        return event.add_document(name, url, "other")
+            return event.add_document(name=name, url=url, type="agenda")
+        return event.add_document(name=name, url=url, type="other")
 
     def scrape(self, chamber, session):
         chmbr = cal_chamber_text[chamber]
