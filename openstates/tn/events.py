@@ -95,17 +95,24 @@ class TNEventScraper(EventScraper, LXMLMixin):
                 description = metainf['type'].text_content()
 
                 dtfmt = "%A, %B %d, %Y %I:%M %p"
+                dtfmt_no_time = "%A, %B %d, %Y"
                 if time == 'Cancelled':
                     self.log("Skipping cancelled event.")
                     continue
                 else:
+                    print(datetime_string)
+                    if "Immediately follows H-FLOOR":
+                        continue
                     if ' Immediately follows' in datetime_string:
                         datetime_string, _ = datetime_string.split(
                             'Immediately follows')
-                        dtfmt = "%A, %B %d, %Y"
                     if "canceled" in datetime_string.lower():
                         continue
-                    when = dt.datetime.strptime(datetime_string, dtfmt)
+                    try:
+                        when = dt.datetime.strptime(datetime_string, dtfmt)
+                    except ValueError:
+                        when = dt.datetime.strptime(datetime_string, dtfmt_no_time)
+
                 event = Event(session, when, 'committee:meeting',
                               description, location=location)
                 event.add_participant("host", description, 'committee', chamber=chamber)
