@@ -16,7 +16,6 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
         json_link = "http://le.utah.gov/data/legislators.json"
         leg_json = self.get(json_link).json()
         for leg_info in leg_json["legislators"]:
-            scrape_name = leg_info["fullName"]
             leg_name = leg_info["formatName"]
             district = leg_info["district"]
             party = {"R":"Republican",
@@ -27,7 +26,7 @@ class UTLegislatorScraper(LegislatorScraper,LXMLMixin):
             if leg_info["house"] == "H":
                 leg_url = house_base_url + "detail.jsp?i=" + leg_id
                 leg = Legislator(term, 'lower', district, leg_name,
-                         party=party, photo_url=photo_url, url=leg_url, _scraped_name=scrape_name)
+                         party=party, photo_url=photo_url, url=leg_url)
                 leg.add_source(leg_url)
                 leg = self.scrape_house_member(leg_url, leg)
             
