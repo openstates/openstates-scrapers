@@ -247,9 +247,8 @@ class INBillScraper(BillScraper):
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
             bill = Bill(session,original_chamber,disp_bill_id,title)
             
-            bill.add_source(api_source,note="API key needed")
             bill.add_source(self.make_html_source(session,bill_id))
-            
+            bill.add_source(api_source)
 
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
