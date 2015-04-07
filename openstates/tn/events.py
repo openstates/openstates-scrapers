@@ -100,7 +100,7 @@ class TNEventScraper(EventScraper, LXMLMixin):
                     self.log("Skipping cancelled event.")
                     continue
                 else:
-                    if "Immediately follows H-FLOOR":
+                    if "Immediately follows H-FLOOR" in datetime_string:
                         continue
                     if ' Immediately follows' in datetime_string:
                         datetime_string, _ = datetime_string.split(
