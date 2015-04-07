@@ -134,6 +134,8 @@ class OHBillScraper(BillScraper):
 
                             if doc_type == 'bills':
                                 doc_type = 'bill'
+                            elif doc_type == 'resolutions':
+                                doc_type = 'resolution'
                             bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
 
                             #this stuff is the same for all versions
