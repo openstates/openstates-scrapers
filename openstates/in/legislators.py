@@ -38,8 +38,6 @@ class INLegislatorScraper(LegislatorScraper):
                                     chamber,
                                     district,
                                     " ".join([firstname,lastname]),
-                                    firstname=firstname,
-                                    lastname=lastname,
                                     party=party,
                                     photo_url = image_link)
             legislator.add_office('capitol', 'Capitol Office', address=address,
