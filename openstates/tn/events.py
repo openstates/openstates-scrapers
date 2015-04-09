@@ -107,6 +107,8 @@ class TNEventScraper(EventScraper, LXMLMixin):
                             'Immediately follows')
                     if "canceled" in datetime_string.lower():
                         continue
+                    if "TBA" in datetime_string:
+                        continue
                     try:
                         when = dt.datetime.strptime(datetime_string, dtfmt)
                     except ValueError:
