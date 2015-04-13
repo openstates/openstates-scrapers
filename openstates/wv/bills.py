@@ -61,6 +61,7 @@ class WVBillScraper(BillScraper):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
+                self.logger.warning("Can't find bill title, using ID as title")
                 title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
@@ -76,6 +77,7 @@ class WVBillScraper(BillScraper):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
+                self.logger.warning("Can't find bill title, using ID as title")
                 title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
