@@ -60,6 +60,8 @@ class WVBillScraper(BillScraper):
         for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
+            if not title:
+                title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
@@ -73,6 +75,8 @@ class WVBillScraper(BillScraper):
         for link in doc.xpath('//a[contains(@href, "houseorig=%s")]' % orig):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
+            if not title:
+                title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
