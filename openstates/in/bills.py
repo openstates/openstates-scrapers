@@ -293,6 +293,11 @@ class INBillScraper(BillScraper):
                 else:
                     action_chamber = "upper"
                 date = a["date"]
+                
+                if not date:
+                    self.logger.warning("Action has no date, skipping")
+                    continue
+
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
                 
                 action_type = []
