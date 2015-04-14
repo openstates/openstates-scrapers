@@ -136,6 +136,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
                     r"(or 15 minutes after adjournment of the .*)": "",
                     r"Upon final adjourn./recess": "",
                     "or upon recess/adjournment": "",
+                    "upon adjourn.": "",
                 }
                 for rep in replace:
                     datetime = re.sub(rep, replace[rep], datetime)
