@@ -234,7 +234,7 @@ class OHBillScraper(BillScraper):
                     self.save_bill(bill)
 
     def pages(self,base_url, first_page):
-        page = self.get(first_page+"?per_page=300")
+        page = self.get(first_page)
         page = page.json()
         yield page
         while "nextLink" in page:
