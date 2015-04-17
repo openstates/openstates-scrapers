@@ -59,7 +59,14 @@ class OHBillScraper(BillScraper):
                             "intro_107": ["bill:introduced","bill:passed"],
                             "imm_consid_360": "bill:passed",
                             "refer_213":"other",
-                            "adopt_reso_100":"bill:passed"}
+                            "adopt_reso_100":"bill:passed",
+                            "msg_507":"amendment:passed",
+                            "confer_713":"other",
+                            "concur_603":"other",
+                            "confer_712":"other",
+                            "msg_506":"amendment:failed",
+                            "receive_message_100":"bill:passed",
+                            }
 
 
             base_url = "http://search-prod.lis.state.oh.us"
@@ -228,7 +235,7 @@ class OHBillScraper(BillScraper):
                     self.save_bill(bill)
 
     def pages(self,base_url, first_page):
-        page = self.get(first_page+"?per_page=300")
+        page = self.get(first_page)
         page = page.json()
         yield page
         while "nextLink" in page:
@@ -272,7 +279,9 @@ class OHBillScraper(BillScraper):
                             "ICS":"",
                             "RCS":"",
                             "EN":"Enacted",
-                            "RCH":"Re-referred"}
+                            "RCH":"Re-referred",
+                            "PHC":""
+                            }
 
         for item in documents:
             if type_of_document == "amendment":
@@ -289,7 +298,10 @@ class OHBillScraper(BillScraper):
                 try:
                     ver = leg_ver_types[item["legacyver"]]
                 except KeyError:
-                    self.logger.warning("New legacyver type {}, add it to the leg_ver_types dictionary".format(item["legacyver"]))
+                    self.logger.warning(
+                        "New legacyver; check the type and add it to the "
+                        "leg_ver_types dictionary: {} ({})".format(
+                        item["legacyver"], item['link']))
                     ver = ""
                 if ver:
                     name = name+": "+ver
