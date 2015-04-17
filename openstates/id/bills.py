@@ -347,6 +347,7 @@ class IDBillScraper(BillScraper):
 
     def get_names(self,name_text):
         if name_text:
+            #both of these are unicode non-breaking spaces
             name_text = name_text.replace(u'\xa0--\xa0', '')
             name_text = name_text.replace(u'\u00a0',' ')
             name_list = [name.strip() for name in name_text.split(",") if name]
