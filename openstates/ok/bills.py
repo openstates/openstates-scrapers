@@ -150,7 +150,7 @@ class OKBillScraper(BillScraper):
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
-
+            bad_vote = False
             # Each chamber has the motion name on a different line of the file
             if 'HOUSE' in header.xpath("string()"):
                 chamber = 'lower'
@@ -191,7 +191,7 @@ class OKBillScraper(BillScraper):
                     break
 
                 match = re.match(
-                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)',
+                    r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)',
                     line)
                 if match:
                     if match.group(1) == 'YEAS' and 'RCS#' not in line:
@@ -203,6 +203,9 @@ class OKBillScraper(BillScraper):
                         continue  # skip these
                     elif seen_yes:
                         vtype = 'other'
+                    if seen_yes and match.group(3).strip():
+                        self.logger.warning("Bad vote format, skipping.")
+                        bad_vote = True
                     counts[vtype] += int(match.group(2))
                 elif seen_yes:
                     for name in line.split('   '):
@@ -211,6 +214,9 @@ class OKBillScraper(BillScraper):
                         if 'HOUSE' in name or 'SENATE ' in name:
                             continue
                         votes[vtype].append(name.strip())
+
+            if bad_vote:
+                continue
 
             if passed is None:
                 passed = counts['yes'] > (counts['no'] + counts['other'])
