@@ -38,51 +38,35 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
         comm = None
         comm_name = ''
         title = ''
-        MINIMUM_NAME_LENGTH = len('Hon _ _')
-
         for line in (x.decode('utf8') for x in lines):
             line = line.strip()
             if not line.strip():
                 continue
 
-            if (line.startswith('Comisi') or
-                    line.startswith('COMISIONES') or
-                    line.startswith('SECRETAR')):
-
+            if line.startswith('Comisi'):
                 if comm:
-                    # Joint committee rosters are not complete, unfortunately
-                    if "Conjunta" not in comm_name:
-                        self.save_committee(comm)
+                    comm.add_source(url)
+                    self.save_committee(comm)
                     comm = None
                     comm_name = ''
+                comm_name = line
 
-                if not (line.startswith('COMISIONES') or
-                        line.startswith('SECRETAR')):
-                    comm_name = line
-
-                    # Remove "Committee" from committee names
-                    comm_name = (
+                # Remove "Committee" from committee names
+                comm_name = (
                         comm_name.
                         replace(u"Comisión de ", "").
+                        replace(u"Comisión Conjunta sobre ", "").
                         replace(u"Comisión Especial para el Estudio de ", "").
                         replace(u"Comisión Especial para ", "")
-                    )
-                    comm_name = re.sub(r'(?u)^(las?|el|los)\s', "", comm_name)
-                    comm_name = comm_name[0].upper() + comm_name[1:]
+                        )
+                comm_name = re.sub(r'(?u)^(las?|el|los)\s', "", comm_name)
+                comm_name = comm_name[0].upper() + comm_name[1: ]
 
             # Committee president is always listed right after committee name
-            elif (not comm and
-                    comm_name and
-                    not re.search(r'^(?:Co.)?President', line) and
-                    not line.startswith('Miembr')):
+            elif not comm and comm_name and not line.startswith("President"):
                 comm_name = comm_name + " " + line
-
-            elif (not comm and
-                    (re.search(r'^(?:Co.)?President', line) or
-                     line.startswith('Miembr')) and
-                    len(line) > len('Presidente ') + MINIMUM_NAME_LENGTH):
+            elif not comm and line.startswith("President"):
                 comm = Committee('upper', comm_name)
-                comm.add_source(url)
 
             if comm:
                 assert re.search(r'(?u)Hon\.?\s\w', line)
@@ -93,7 +77,7 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                     title = temp_title
 
                     # Translate titles to English for parity with other states
-                    if "President" in title:
+                    if title.startswith("President"):
                         title = 'chairman'
                     elif title.startswith("Vicepresident"):
                         title = 'vicechairman'
@@ -111,9 +95,6 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
 
                 if name.lower() != 'vacante':
                     comm.add_member(name, title)
-
-        if comm and "Conjunta" not in comm_name:
-            self.save_committee(comm)
 
         os.remove(filename)
 
