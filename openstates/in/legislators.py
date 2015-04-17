@@ -38,14 +38,12 @@ class INLegislatorScraper(LegislatorScraper):
                                     chamber,
                                     district,
                                     " ".join([firstname,lastname]),
-                                    firstname=firstname,
-                                    lastname=lastname,
                                     party=party,
                                     photo_url = image_link)
             legislator.add_office('capitol', 'Capitol Office', address=address,
                            phone=phone)
             legislator.add_source(html_link)
-            legislator.add_source(api_link,note="Requires API key")
+            legislator.add_source(api_link)
             self.save_legislator(legislator)
 
 

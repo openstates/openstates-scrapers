@@ -94,7 +94,7 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
             info['District'] = info['District'].encode(
                 'ascii', 'ignore').strip()
 
-            info['Party'] = info['Party'].strip(": ")
+            info['Party'] = info['Party'].strip(": ").replace(u"\u00a0","")
 
             leg = Legislator(term=term,
                              url=h2.attrib['href'],

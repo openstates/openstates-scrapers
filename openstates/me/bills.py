@@ -101,9 +101,9 @@ class MEBillScraper(BillScraper):
 
         if bill_title.startswith('Joint Order') or \
                 bill_title.startswith('Joint Resolution'):
-            bill['bill_type'] = 'joint resolution'
+            bill['type'] = ['joint resolution']
         else:
-            bill['bill_type'] = 'bill'
+            bill['type'] = ['bill']
 
         # Add the LD number in.
         for ld_num in page.xpath("//b[contains(text(), 'LD ')]/text()"):

@@ -247,9 +247,8 @@ class INBillScraper(BillScraper):
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
             bill = Bill(session,original_chamber,disp_bill_id,title)
             
-            bill.add_source(api_source,note="API key needed")
             bill.add_source(self.make_html_source(session,bill_id))
-            
+            bill.add_source(api_source)
 
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
@@ -294,6 +293,11 @@ class INBillScraper(BillScraper):
                 else:
                     action_chamber = "upper"
                 date = a["date"]
+                
+                if not date:
+                    self.logger.warning("Action has no date, skipping")
+                    continue
+
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
                 
                 action_type = []
