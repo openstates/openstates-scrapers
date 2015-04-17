@@ -65,6 +65,7 @@ class OHBillScraper(BillScraper):
                             "concur_603":"other",
                             "confer_712":"other",
                             "msg_506":"amendment:failed",
+                            "receive_message_100":"bill:passed",
                             }
 
 
