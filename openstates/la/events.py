@@ -98,6 +98,10 @@ class LAEventScraper(EventScraper, LXMLMixin):
             for value in values:
                 time = time.replace(value, key)
 
+        # Make sure there's a space between the time's minutes and its AM/PM
+        if re.search(r'(?i)\d[AP]M$', time):
+            time = time[:-2] + " " + time[-2:]
+
         try:
             when = datetime.datetime.strptime("%s %s" % (
                 date, time
