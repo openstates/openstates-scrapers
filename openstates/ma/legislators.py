@@ -83,12 +83,6 @@ class MALegislatorScraper(LegislatorScraper):
             assert len(district) == 0, "Remove the special-casing code for Rady Mom"
             district = "Eighteenth Middlesex"
             district_dirty = district
-        elif full_name == "John F. Keenan":
-            assert len(district) == 0, "Remove the special-casing district code for John F. Keenan"
-            district = "Norfolk and Plymouth"
-            district_dirty = district
-            assert not party_elems, "Remove the special-casing party code for John F. Keenan"
-            party_elems = ('D')
 
         elif len(district):
             district_dirty = district[0].text_content().strip()
