@@ -109,9 +109,6 @@ class TXEventScraper(EventScraper, LXMLMixin):
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
                 datetime = "%s %s" % ( date, thyme )
-                if "Upon Adjournment" in datetime:
-                    continue
-
                 replace = {
                     r"of .*": "",
                     "or recess": "",
@@ -136,6 +133,9 @@ class TXEventScraper(EventScraper, LXMLMixin):
                     r"(or 15 minutes after adjournment of the .*)": "",
                     r"Upon final adjourn./recess": "",
                     "or upon recess/adjournment": "",
+                    "upon adjourn.": "",
+                    "Upon Adjournment": "",
+                    "Upon first adjournment": "",
                 }
                 for rep in replace:
                     datetime = re.sub(rep, replace[rep], datetime)

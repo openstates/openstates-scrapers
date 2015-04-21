@@ -93,7 +93,6 @@ class TNEventScraper(EventScraper, LXMLMixin):
                         (date.strip(' \r\n'), time.strip(' \r\n'))
                 location = metainf['location'].text_content()
                 description = metainf['type'].text_content()
-
                 dtfmt = "%A, %B %d, %Y %I:%M %p"
                 dtfmt_no_time = "%A, %B %d, %Y"
                 if time == 'Cancelled':
@@ -109,6 +108,9 @@ class TNEventScraper(EventScraper, LXMLMixin):
                         continue
                     if "TBA" in datetime_string:
                         continue
+
+                    datetime_string = datetime_string.strip()
+                    
                     try:
                         when = dt.datetime.strptime(datetime_string, dtfmt)
                     except ValueError:
