@@ -345,26 +345,30 @@ class IDBillScraper(BillScraper):
 
         self.save_bill(bill)
 
+    def get_names(self,name_text):
+        if name_text:
+            #both of these are unicode non-breaking spaces
+            name_text = name_text.replace(u'\xa0--\xa0', '')
+            name_text = name_text.replace(u'\u00a0',' ')
+            name_list = [name.strip() for name in name_text.split(",") if name]
+            return name_list
+        return []
+
     def parse_vote(self, actor, date, row):
         """
         takes the actor, date and row element and returns a Vote object
         """
         spans = row.xpath('.//span')
-        motion = row.text
-        passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
-        yes_votes = [ name for name in
-                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
-                      if name ] if spans[1].tail else []
+        motion = row.text.replace(u'\u00a0'," ").replace("-","").strip()
+        motion = motion if motion else "passage"
+        passed, yes_count, no_count, other_count = spans[0].text_content().rsplit('-',3)
+        yes_votes = self.get_names(spans[1].tail)
+        no_votes = self.get_names(spans[2].tail)
 
-        no_votes = [ name for name in
-                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
-                     if name ]
         other_votes = []
         for span in spans[3:]:
             if span.text.startswith(('Absent', 'Excused')):
-                other_votes += [name.strip() for name in
-                                span.tail.replace(u'\xa0--\xa0', '').split(',')
-                                if name]
+                other_votes += self.get_names(span.tail)
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
                 passed = val
