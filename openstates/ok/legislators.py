@@ -30,6 +30,11 @@ class OKLegislatorScraper(LegislatorScraper):
         page.make_links_absolute(url)
         for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
+            
+            if name.startswith('House District'):
+                self.warning("skipping %s %s" % (name, leg_url))
+                continue
+
             district = tr.xpath('.//td[3]')[0].text_content().strip()
             party = tr.xpath('.//td[4]')[0].text_content().strip()
             party = {'R': 'Republican', 'D': 'Democratic'}[party]
@@ -41,9 +46,7 @@ class OKLegislatorScraper(LegislatorScraper):
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
 
-            if name.startswith('House District'):
-                self.warning("skipping %s %s" % (name, leg_url))
-                continue
+            
 
             leg = Legislator(term, 'lower', district, name, party=party,
                              photo_url=photo_url, url=leg_url)
@@ -137,7 +140,7 @@ class OKLegislatorScraper(LegislatorScraper):
                 district = a.xpath('../../span')[1].text.split()[1]
             url = a.get('href')
 
-            leg = Legislator(term, 'upper', district, name, party=party, url=url)
+            leg = Legislator(term, 'upper', district, name.strip(), party=party, url=url)
             leg.add_source(url)
             self.scrape_upper_offices(leg, url)
             self.save_legislator(leg)
