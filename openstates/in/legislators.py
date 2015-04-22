@@ -14,7 +14,7 @@ class INLegislatorScraper(LegislatorScraper):
         t = next((item for item in self.metadata["terms"] if item["name"] == term),None)
         session = max(t["sessions"])
         base_url = "https://iga.in.gov/legislative"
-        api_base_url = "https://api.iga.in.gov/{}".format(session)
+        api_base_url = "https://api.iga.in.gov"
         chamber_name = "Senate" if chamber == "upper" else "House"
         r = client.get("chamber_legislators",session=session,chamber=chamber_name)
         all_pages = client.unpaginate(r)
