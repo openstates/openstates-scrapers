@@ -158,8 +158,8 @@ ma,lower,Ninth Norfolk,1,sldl/ma-9th-norfolk,ocd-division/country:us/state:ma/sl
 ma,lower,Ninth Plymouth,1,sldl/ma-9th-plymouth,ocd-division/country:us/state:ma/sldl:9th_plymouth
 ma,lower,Ninth Suffolk,1,sldl/ma-9th-suffolk,ocd-division/country:us/state:ma/sldl:9th_suffolk
 ma,lower,Ninth Worcester,1,sldl/ma-9th-worcester,ocd-division/country:us/state:ma/sldl:9th_worcester
-ma,lower,"Barnstable, Dukes and Nantucket",1,ocd-division/country:us/state:ma/sldl:barnstable_dukes_and_nantucket
-ma,upper,"Berkshire, Hampshire, Franklin and Hampden",1,ocd-division/country:us/state:ma/sldu:berkshire_hampshire_franklin_and_hampden
+ma,lower,"Barnstable, Dukes and Nantucket",1,sldl/ma-barnstable-dukes-and-nantucket,ocd-division/country:us/state:ma/sldl:barnstable_dukes_and_nantucket
+ma,upper,"Berkshire, Hampshire, Franklin and Hampden",1,sldu/ma-berkshire-hampshire-franklin-and-hampden,ocd-division/country:us/state:ma/sldu:berkshire_hampshire_franklin_and_hampden
 ma,upper,Bristol and Norfolk,1,sldu/ma-bristol-norfolk,ocd-division/country:us/state:ma/sldu:bristol_and_norfolk
 ma,upper,Cape and Islands,1,sldu/ma-cape-islands,ocd-division/country:us/state:ma/sldu:cape_and_islands
 ma,upper,Fifth Middlesex,1,sldu/ma-fifth-middlesex,ocd-division/country:us/state:ma/sldu:5th_middlesex
@@ -175,11 +175,11 @@ ma,upper,First Suffolk and Middlesex,1,sldu/ma-first-suffolk-middlesex,ocd-divis
 ma,upper,First Worcester,1,sldu/ma-first-worcester,ocd-division/country:us/state:ma/sldu:1st_worcester
 ma,upper,Fourth Middlesex,1,sldu/ma-fourth-middlesex,ocd-division/country:us/state:ma/sldu:4th_middlesex
 ma,upper,Hampden,1,sldu/ma-hampden,ocd-division/country:us/state:ma/sldu:hampden
-ma,upper,"Hampshire, Franklin and Worcester",1,ocd-division/country:us/state:ma/sldu:hampshire_franklin_and_worcester
+ma,upper,"Hampshire, Franklin and Worcester",1,sldu/ma-hampshire-franklin-and-worcester,ocd-division/country:us/state:ma/sldu:hampshire_franklin_and_worcester
 ma,upper,Middlesex and Suffolk,1,sldu/ma-middlesex-suffolk,ocd-division/country:us/state:ma/sldu:middlesex_and_suffolk
 ma,upper,Middlesex and Worcester,1,sldu/ma-middlesex-worcester,ocd-division/country:us/state:ma/sldu:middlesex_and_worcester
-ma,upper,"Norfolk, Bristol and Middlesex",1,ocd-division/country:us/state:ma/sldu:norfolk_bristol_and_middlesex
-ma,upper,"Norfolk, Bristol and Plymouth",1,ocd-division/country:us/state:ma/sldu:norfolk_bristol_and_plymouth
+ma,upper,"Norfolk, Bristol and Middlesex",1,sldu/ma-norfolk-bristol-and-middlesex,ocd-division/country:us/state:ma/sldu:norfolk_bristol_and_middlesex
+ma,upper,"Norfolk, Bristol and Plymouth",1,sldu/ma-norfolk-bristol-and-plymouth,ocd-division/country:us/state:ma/sldu:norfolk_bristol_and_plymouth
 ma,upper,Norfolk and Plymouth,1,sldu/ma-norfolk-plymouth,ocd-division/country:us/state:ma/sldu:norfolk_and_plymouth
 ma,upper,Norfolk and Suffolk,1,sldu/ma-norfolk-suffolk,ocd-division/country:us/state:ma/sldu:norfolk_and_suffolk
 ma,upper,Plymouth and Barnstable,1,sldu/ma-plymouth-barnstable,ocd-division/country:us/state:ma/sldu:plymouth_and_barnstable
@@ -195,7 +195,7 @@ ma,upper,Second Suffolk,1,sldu/ma-second-suffolk,ocd-division/country:us/state:m
 ma,upper,Second Suffolk and Middlesex,1,sldu/ma-second-suffolk-middlesex,ocd-division/country:us/state:ma/sldu:2nd_suffolk_and_middlesex
 ma,upper,Second Worcester,1,sldu/ma-second-worcester,ocd-division/country:us/state:ma/sldu:2nd_worcester
 ma,upper,Third Essex,1,sldu/ma-third-essex,ocd-division/country:us/state:ma/sldu:3rd_essex
-ma,upper,Third Middlesex,1,sldu/ma-third-middlesex,ocd-division/country:us/state:ma/sldu:3rd_essex_and_middlesex
-ma,upper,"Worcester, Hampden, Hampshire and Middlesex",1,ocd-division/country:us/state:ma/sldu:worcester_hampden_hampshire_and_middlesex
+ma,upper,Third Middlesex,1,sldu/ma-third-middlesex,ocd-division/country:us/state:ma/sldu:3rd_middlesex
+ma,upper,"Worcester, Hampden, Hampshire and Middlesex",1,sldu/ma-worcester-hampden-hampshire-and-middlesex,ocd-division/country:us/state:ma/sldu:worcester_hampden_hampshire_and_middlesex
 ma,upper,Worcester and Middlesex,1,sldu/ma-worcester-middlesex,ocd-division/country:us/state:ma/sldu:worcester_and_middlesex
 ma,upper,Worcester and Norfolk,1,sldu/ma-worcester-norfolk,ocd-division/country:us/state:ma/sldu:worcester_and_norfolk
