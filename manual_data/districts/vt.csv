@@ -109,7 +109,7 @@ vt,upper,Caledonia,2,sldu/vt-caledonia,ocd-division/country:us/state:vt/sldu:cal
 vt,upper,Chittenden,6,sldu/vt-chittenden,ocd-division/country:us/state:vt/sldu:chittenden
 vt,upper,Essex-Orleans,2,sldu/vt-essex-orleans,ocd-division/country:us/state:vt/sldu:essex-orleans
 vt,upper,Franklin,2,sldu/vt-franklin,ocd-division/country:us/state:vt/sldu:franklin
-vt,upper,Chittenden-Grand Isle,1,sldu/vt-grand-isle-chittenden,
+vt,upper,Chittenden-Grand Isle,1,sldu/vt-grand-isle-chittenden,ocd-division/country:us/state:vt/sldu:grand_isle-chittenden
 vt,upper,Lamoille,1,sldu/vt-lamoille,ocd-division/country:us/state:vt/sldu:lamoille
 vt,upper,Orange,1,sldu/vt-orange,ocd-division/country:us/state:vt/sldu:orange
 vt,upper,Rutland,3,sldu/vt-rutland,ocd-division/country:us/state:vt/sldu:rutland
