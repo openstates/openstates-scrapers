@@ -136,6 +136,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
                     "upon adjourn.": "",
                     "Upon Adjournment": "",
                     "Upon first adjournment": "",
+                    "Upon lunch recess": "",
                 }
                 for rep in replace:
                     datetime = re.sub(rep, replace[rep], datetime)
