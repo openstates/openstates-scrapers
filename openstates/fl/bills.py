@@ -228,8 +228,10 @@ class FLBillScraper(BillScraper, LXMLMixin):
                         (?:\s{2,}.*)?  # Name ends when many spaces are seen
                         ''', line).group(1)
                 # Usually non-voting members won't even have a code listed
+                # Only a couple of codes indicate an actual vote:
+                # "VA" (vote after roll call) and "VC" (vote change)
                 did_vote = bool(
-                    re.search(r'^\s+(X|VA)\s+[A-Z][a-z]', line))
+                    re.search(r'^\s+(X|VA|VC)\s+[A-Z][a-z]', line))
                 if did_vote:
                     # Check where the "X" or vote code is on the page
                     vote_column = len(line) - len(line.lstrip())
