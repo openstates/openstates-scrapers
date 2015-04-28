@@ -66,66 +66,51 @@ class IDLegislatorScraper(LegislatorScraper):
                 party = _PARTY[row[1][0].tail.strip()]
 
             pieces = [ x.strip() for x in row.itertext() if x ][6:]
+            print(pieces)
 
-            # the first index will either be a role or the district
-            role = None
-            if 'District' in pieces[0]:
-                district = pieces.pop(0)
-                if "term" in pieces[0].lower():
-                    pieces.pop(0)
-            elif "term" in pieces[1].lower():
-                pieces.pop(1)
-            else:
-                role = pieces.pop(0)
-                district = pieces.pop(0)
+            # The parsed HTML will be something like:
+            # ['District 4', '2', 'nd', 'term', address, phone(s), profession, committees]
+            # Sometimes there's a leadership title before all that
+            if 'District ' in pieces[1]:
+                pieces.pop(0)
+            assert pieces[0].startswith('District '), "Improper district found: {}".format(pieces[0])
+            assert pieces[3] == 'term', "Improper term found: {}".format(pieces[3])
 
-            looking_for = [
-                "home",
-                "fax"
-            ]
+            district = pieces[0]
+            district = district.replace('District', '').strip()
+            pieces = pieces[4:]
+            if pieces[0].startswith(u'(Served '):
+                pieces.pop(0)
 
-            metainf = {
-                "office": pieces[0]
-            }
+            address = pieces.pop(0).strip()
+            assert re.match(r'.*\d{5}', address), "Address potentially invalid: {}".format(address)
 
-            for bit in pieces:
-                for thing in looking_for:
-                    if thing in bit.lower():
-                        metainf[thing] = bit.split(" ", 1)[-1].strip()
+            phone = None
+            fax = None
+            for line in pieces:
+                if line.lower().startswith('home '):
+                    phone = line[len('home '):]
+                if line.lower().startswith('fax '):
+                    fax = line[len('fax '):]
 
-            leg = Legislator(term, chamber,
-                             district.replace('District', '').strip(),
+                # After committees begin, no more contact information exists
+                if line == "Committees:":
+                    break
+
+            leg = Legislator(term,
+                             chamber,
+                             district,
                              full_name,
                              party=party)
 
-            kwargs = {}
-            if "office" in metainf:
-                kwargs['address'] = metainf['office']
-            if "fax" in metainf:
-                kwargs['fax'] = metainf['fax'].lower().replace("fax","").strip()
-
             leg.add_office('district',
                            'District Office',
-                            **kwargs)
+                           fax=fax if fax else None,
+                           phone=phone if phone else None)
 
             leg.add_source(url)
             leg['photo_url'] = img_url
             leg['contact_form'] = contact_form
             leg['url'] = additional_info_url
-            leg['address'] = pieces.pop(0)
-
-            # at this point 'pieces' still contains phone numbers and profession
-            # and committee membership
-            # skip committee membership, pick 'em up in IDCommitteeScraper
-            end = -1
-            if 'Committees:' in pieces:
-                end = pieces.index('Committees:')
-            for prop in pieces[:end]:
-                # phone numbers
-                if prop.lower()[0:3] in _PHONE_NUMBERS:
-                    leg[ _PHONE_NUMBERS[ prop.lower()[0:3]]] = prop.lower().replace("home","").replace("bus","").replace("fax","").strip()
-                # profession
-                else:
-                    leg['profession'] = prop
 
             self.save_legislator(leg)
