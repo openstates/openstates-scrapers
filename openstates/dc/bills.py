@@ -120,10 +120,12 @@ class DCBillScraper(BillScraper):
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
                     withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
 
-                    bill.add_action(withdrawn_by,
+
+                    bill.add_action("upper",
                                     "withdrawn",
                                     withdrawn_date,
-                                    "bill:withdrawn")
+                                    "bill:withdrawn",
+                                    legislators=withdrawn_by)
 
 
                 #deal with actions involving the mayor
@@ -354,7 +356,7 @@ class DCBillScraper(BillScraper):
         else:
             t = "other"
         
-        bill.add_action("council",
+        bill.add_action("upper",
                         motion,
                         date,
                         type=t)
