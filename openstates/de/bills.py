@@ -239,6 +239,11 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
         for name, doc in vote_documents.items():
             vote_chamber = "lower" if "house" in name.lower() else "upper"
+            try:
+                self.head(doc)
+            except scrapelib.HTTPError:
+                self.logger.warning("could not access vote document")
+                continue
             vote_page = self.lxmlize(doc)
             vote_info = vote_page.xpath(".//div[@id='page_content']/p")[-1]
             yes_votes = []
