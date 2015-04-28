@@ -135,7 +135,7 @@ class DCBillScraper(BillScraper):
                     if "TransmittedDate" in mayor:
                         transmitted_date = self.date_format(mayor["TransmittedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                     "transmitted to mayor",
                                     transmitted_date,
                                     type = "governor:received")
@@ -143,7 +143,7 @@ class DCBillScraper(BillScraper):
                     if 'SignedDate' in mayor:
                         signed_date = self.date_format(mayor["SignedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                         "signed",
                                         signed_date,
                                         type="governor:signed")
@@ -152,7 +152,7 @@ class DCBillScraper(BillScraper):
                     elif 'ReturnedDate' in mayor: #if returned but not signed, it was vetoed
                         veto_date = self.date_format(mayor["ReturnedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                         "vetoed",
                                         veto_date,
                                         type="governor:vetoed")
@@ -174,9 +174,12 @@ class DCBillScraper(BillScraper):
                     congress = congress[0]
                     if "TransmittedDate" in congress:
                         transmitted_date = self.date_format(congress["TransmittedDate"])
-                        bill.add_action("US Congress",
+
+                        bill.add_action("other",
                                     "Transmitted to Congress for review",
                                     transmitted_date)
+
+
 
 
                 #deal with committee actions
@@ -197,7 +200,7 @@ class DCBillScraper(BillScraper):
                         else:
                             committees.append(committee["Name"])
                     if committees != []:
-                        bill.add_action("committee",
+                        bill.add_action("upper",
                                     "referred to committee",
                                     date,
                                     committees=committees,
@@ -207,7 +210,7 @@ class DCBillScraper(BillScraper):
                     committees = []
                     for committee in legislation_info["CommitteeReferralComments"]:
                         committees.append(committee["Name"])
-                    bill.add_action("committee",
+                    bill.add_action("upper",
                                     "comments from committee",
                                     date,
                                     committees=committees,
