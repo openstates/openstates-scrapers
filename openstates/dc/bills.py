@@ -119,9 +119,21 @@ class DCBillScraper(BillScraper):
                 if "WithDrawnDate" in legislation_info:
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
                     withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
+                    if withdrawn_by == "the Mayor":
 
+                        bill.add_action("executive",
+                                    "withdrawn",
+                                    withdrawn_date,
+                                    "bill:withdrawn")
 
-                    bill.add_action("upper",
+                    elif "committee" in withdrawn_by.lower():
+                        bill.add_action("upper",
+                                    "withdrawn",
+                                    withdrawn_date,
+                                    "bill:withdrawn",
+                                    committees=withdrawn_by)
+                    else:
+                        bill.add_action("upper",
                                     "withdrawn",
                                     withdrawn_date,
                                     "bill:withdrawn",
