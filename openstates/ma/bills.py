@@ -120,17 +120,12 @@ class MABillScraper(BillScraper):
                     continue
                 bill.add_sponsor('cosponsor', petitioner)
 
-            # sometimes html link is just missing
-            bill_text_url = (
-                doc.xpath('//a[contains(@href, "BillHtml")]/@href') or
-                doc.xpath('//a[contains(@href, "Bills/PDF")]/@href')
-            )
+            bill_text_url = doc.xpath(
+                '//a[contains(@href, "/Document/Bill/{}/")]/@href'.
+                format(session_slug))
             if bill_text_url:
-                if 'PDF' in bill_text_url[0]:
-                    mimetype = 'application/pdf'
-                else:
-                    mimetype = 'text/html'
+                assert bill_text_url[0].endswith('.pdf'), "Handle other mimetypes"
                 bill.add_version('Current Text', bill_text_url[0],
-                                 mimetype=mimetype)
+                                 mimetype='application/pdf')
 
             self.save_bill(bill)
