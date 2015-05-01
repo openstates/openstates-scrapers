@@ -252,6 +252,12 @@ class GABillScraper(BillScraper):
                     _version_id=version_id
                 )
 
+            versions = sorted(
+                bill['versions'],
+                key=lambda x: x['_internal_document_id']
+            )
+            bill['versions'] = versions
+
             bill.add_source(self.msource)
             bill.add_source(self.lsource)
             bill.add_source(SOURCE_URL.format(**{
