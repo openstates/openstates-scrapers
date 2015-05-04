@@ -101,7 +101,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
             for event in events:
                 replace = OrderedDict([
                     (r"(?i)see below", ""),
-                    ("9:00 AM Mountain Time", "8:00 AM"),
+                    ("9:00 AM Mountain Time", "10:00 AM"),
                     ("or recess", ""),
                     (r"on Article .+", ""),
                     ("or upon (the )?adjournment", ""),
