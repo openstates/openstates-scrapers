@@ -4,6 +4,7 @@ import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from apiclient import ApiClient
 from .utils import get_with_increasing_timeout
+import scrapelib
 
 
 class INLegislatorScraper(LegislatorScraper):
@@ -25,7 +26,11 @@ class INLegislatorScraper(LegislatorScraper):
             link = leg["link"]
             api_link = api_base_url+link
             html_link = base_url+link.replace("legislators/","legislators/legislator_")
-            html = get_with_increasing_timeout(self,html_link,fail=True,kwargs={"verify":False})
+            try:
+                html = get_with_increasing_timeout(self,html_link,fail=True,kwargs={"verify":False})
+            except scrapelib.HTTPError:
+                self.logger.warning("Legislator's page is not available.")
+                continue
             doc = lxml.html.fromstring(html.text)
             doc.make_links_absolute(html_link)
             address, phone = doc.xpath("//address")
