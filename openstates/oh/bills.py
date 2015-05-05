@@ -139,11 +139,8 @@ class OHBillScraper(BillScraper):
                                 display_id = bill_id[:idx]+" "+bill_id[idx:]
                                 break
 
-                            if doc_type == 'bills':
-                                doc_type = 'bill'
-                            elif doc_type == 'resolutions':
-                                doc_type = 'resolution'
-                            bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
+                            assert doc_type.endswith('s'), "Only bills and resolutions accepted"
+                            bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type[:-1])
 
                             #this stuff is the same for all versions
 
