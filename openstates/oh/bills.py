@@ -147,7 +147,7 @@ class OHBillScraper(BillScraper):
 
                             #this stuff is the same for all versions
 
-                            bill.add_source(first_page+doc_type+"/"+bill_id)
+                            bill.add_source(first_page+doc_type+"s/"+bill_id)
 
                             sponsors = bill_version["sponsors"]
                             for sponsor in sponsors:
