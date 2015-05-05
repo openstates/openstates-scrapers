@@ -279,7 +279,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
         motion = lines[MOTION_INDEX].strip()
         # Sometimes there is no motion name, only "Passage" in the line above
-        if not motion and lines[MOTION_INDEX - 1].strip() == "Passage":
+        if (not motion and
+                not lines[MOTION_INDEX - 1].startswith("Calendar Page:")):
             motion = lines[MOTION_INDEX - 1]
             MOTION_INDEX -= 1
             TOTALS_INDEX -= 1
