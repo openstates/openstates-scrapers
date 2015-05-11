@@ -166,9 +166,12 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     action_type = 'governor:signed'
                 elif actor == 'lower' and \
                         action['FullStatus'] in (
-                        "Passed", "Read Third time and Passed",
-                        "Read and Adopted in Concurrence", "Read and Adopted",
-                        "Adopted", "Adopted in Concurrence",
+                        "Passed",
+                        "Read Third time and Passed",
+                        "Adopted",
+                        "Adopted in Concurrence",
+                        "Read and Adopted",
+                        "Read and Adopted in Concurrence",
                         "Passed in Concurrence",
                         "Passed in Concurrence with Proposal of Amendment"):
                     action_type = 'bill:passed'
