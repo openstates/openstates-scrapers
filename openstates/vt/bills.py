@@ -169,7 +169,8 @@ class VTBillScraper(BillScraper, LXMLMixin):
                         "Passed", "Read Third time and Passed",
                         "Read and Adopted in Concurrence", "Read and Adopted",
                         "Adopted", "Adopted in Concurrence",
-                        "Passed in Concurrence"):
+                        "Passed in Concurrence",
+                        "Passed in Concurrence with Proposal of Amendment"):
                     action_type = 'bill:passed'
                     assert "H" not in chambers_passed
                     chambers_passed.add("H")
