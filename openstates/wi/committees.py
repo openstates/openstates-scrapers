@@ -45,5 +45,6 @@ class WICommitteeScraper(CommitteeScraper):
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 
-            for a in doc.xpath('.//div[starts-with(@id,"committee-")]/h5/a'):
-                self.scrape_committee(a.text, a.get('href'), chamber)
+            for a in doc.xpath('//ul[@class="docLinks"]/li/p/a'):
+                if "(Disbanded" not in a.text:
+                    self.scrape_committee(a.text, a.get('href'), chamber)
