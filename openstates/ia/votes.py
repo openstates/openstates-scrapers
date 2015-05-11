@@ -98,7 +98,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                     ^
                     On\sthe\squestion\s  # Precedes any motion
                     "?  # Vote sometimes preceded by a quote mark
-                    (Shall\s.*?\?)  # The motion text begins with "Shall"
+                    (Shall\s.*?\??)  # The motion text begins with "Shall"
                     \s*"?\s*  # Vote sometimes followed by a quote mark
                     ({})?  # If the vote regards a bill, its number is listed
                     (,?.*?the\svote\swas:)?  # Senate has trailing text
