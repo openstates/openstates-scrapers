@@ -55,7 +55,7 @@ class INCommitteeScraper(CommitteeScraper):
 
         subcomms = self.get_subcommittee_info(session)
 
-        api_base_url = "https://api.iga.in.gov/{}/committees/".format(session)
+        api_base_url = "https://api.iga.in.gov"
         html_base_url = "http://iga.in.gov/legislative/{}/committees/".format(session)
         client = ApiClient(self)
         r = client.get("committees",session=session)
@@ -68,15 +68,20 @@ class INCommitteeScraper(CommitteeScraper):
             comm_name = comm_link.split("/")[-1]
             if "withdrawn" in comm_name or "conference" in comm_name:
                 continue
-            comm_json = client.get("committee",session=session,committee_name=comm_name)
+            comm_json = client.get("committee",committee_link=comm_link[1:])
             
-            chamber = comm_json["chamber"]["name"]
-            if chamber == "Senate":
-                chamber = "upper"
-            elif chamber == "House":
-                chamber = "lower"
+            try:
+                chamber = comm_json["chamber"]["name"]
+            except KeyError:
+                chamber = 'joint'
             else:
-                raise AssertionError("Unknown committee chamber {}".format(chamber))
+                if chamber == "Senate":
+                    chamber = "upper"
+                elif chamber == "House":
+                    chamber = "lower"
+                else:
+                    raise AssertionError("Unknown committee chamber {}".format(chamber))
+            
             name = comm_json["name"]
             try:
                 owning_comm = subcomms[name]
@@ -101,7 +106,7 @@ class INCommitteeScraper(CommitteeScraper):
                     comm_members.append(mem_name)
                     comm.add_member(mem_name)
 
-            api_source = api_base_url + comm_name
+            api_source = api_base_url + comm_link
 
             if comm_name[:10] == "committee_":
                 html_source = html_base_url + comm_name[10:]
