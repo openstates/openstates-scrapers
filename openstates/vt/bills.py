@@ -165,24 +165,12 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     assert chambers_passed == set("HS")
                     action_type = 'governor:signed'
                 elif actor == 'lower' and \
-                        action['FullStatus'] in (
-                        "Passed",
-                        "Read Third time and Passed",
-                        "Adopted",
-                        "Adopted in Concurrence",
-                        "Read and Adopted",
-                        "Read and Adopted in Concurrence",
-                        "Passed in Concurrence",
-                        "Passed in Concurrence with Proposal of Amendment"):
+                        any(x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
                     action_type = 'bill:passed'
-                    assert "H" not in chambers_passed
                     chambers_passed.add("H")
                 elif actor == 'upper' and \
-                        any(action['FullStatus'].startswith(x) for x in (
-                        "Read 3rd time & passed",
-                        "Read & adopted", "Adopted")):
+                        any(x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
                     action_type = 'bill:passed'
-                    assert "S" not in chambers_passed
                     chambers_passed.add("S")
                 else:
                     action_type = 'other'
