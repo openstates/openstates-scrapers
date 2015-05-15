@@ -48,7 +48,7 @@ class ApiClient(object):
         rollcalls='/{session}/rollcalls/{rollcall_id}', #note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
         bill_actions='/{session}/bills/{bill_id}/actions',
         committees='/{session}/committees',
-        committee='/{session}/committees/{committee_name}',
+        committee='/{committee_link}',
         legislators='/{session}/legislators',
         legislator='/{session}/legislators/{legislator_id}',
         chamber_legislators='/{session}/chambers/{chamber}/legislators',
