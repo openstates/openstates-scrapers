@@ -269,7 +269,15 @@ class NVBillScraper(BillScraper):
         assert len(trs) >= 1, "Didn't find the Final Passage Votes' table"
 
         for tr in trs[1:]:
-            link = tr.xpath('td/a[contains(text(), "Passage")]')[0]
+            links = tr.xpath('td/a[contains(text(), "Passage")]')
+            if len(links) == 0:
+                self.warning("Non-passage vote found for {}; ".format(bill['bill_id']) +
+                    "probably a motion for the calendar. It will be skipped.")
+            else:
+                assert len(links) == 1, \
+                    "Too many votes found for XPath query, on bill {}".format(bill['bill_id'])
+                link = links[0]
+
             motion = link.text
             if 'Assembly' in motion:
                 chamber = 'lower'
