@@ -26,5 +26,5 @@ for state in db.legislators.distinct("state"):
             names.add(full_name)
             names.add(scraped_name)
 
-    for name in dup_names:
+    for name in sorted(dup_names):
         print("{}    {}".format(state, name.encode('utf-8')))
