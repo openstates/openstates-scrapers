@@ -54,9 +54,9 @@ metadata = dict(
         '2015': {'display_name': '2015 Regular Session',
                  '_scraped_name': '2015 (90th) Session',
                 },
-        '2016': {'display_name': '2016 Regular Session',
-                 '_scraped_name': '2016 (91st) Session',
-                }
+        # '2016': {'display_name': '2016 Regular Session',
+        #          '_scraped_name': '2016 (91st) Session',
+        #         }
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=['Previous Years'],
