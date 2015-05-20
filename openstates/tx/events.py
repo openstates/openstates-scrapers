@@ -104,7 +104,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
                     ("9:00 AM Mountain Time", "10:00 AM"),
                     ("or recess", ""),
                     (r"on Article .+", ""),
-                    ("or upon (the )?adjournment", ""),
+                    (r"or upon (the )?adjournment", ""),
                     (r"or upon final adjourn\.(/recess)?", ""),
                     (r"or \d{2} minutes upon adjourn(\.|ment)", ""),
                     ("During reading and referral of bills", ""),
@@ -117,6 +117,8 @@ class TXEventScraper(EventScraper, LXMLMixin):
                 ])
 
                 datetime = "{} {}".format(date, time)
+                # Remove the chamber separately
+                datetime = re.sub(r"of the (House|Senate)\s*$", "", datetime)
                 _original_datetime = datetime
                 fix_used = ''
                 for rep in replace:
