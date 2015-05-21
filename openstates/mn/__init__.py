@@ -51,7 +51,7 @@ metadata = dict(
         },
         {
             'name': '2015-2016',
-            'sessions': ['2015-2016'],
+            'sessions': ['2015-2016','2015s1'],
             'start_year': 2015,
             'end_year': 2016,
             'biennium': 89,
@@ -113,7 +113,12 @@ metadata = dict(
             '_scraped_name': '89th Legislature, 2015-2016',
             'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
         },
-
+        '2015s1': {
+            'site_id': '1892015', 'type': 'special',
+            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
+            'display_name': '2015, 1st Special Session',
+            '_scraped_name': '89th Legislature, 2015 1st Special Session',
+        },
 
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
