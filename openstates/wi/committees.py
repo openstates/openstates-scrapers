@@ -47,4 +47,14 @@ class WICommitteeScraper(CommitteeScraper):
 
             for a in doc.xpath('//ul[@class="docLinks"]/li/p/a'):
                 if "(Disbanded" not in a.text:
-                    self.scrape_committee(a.text, a.get('href'), chamber)
+                    comm_name = a.text
+                    comm_name = comm_name.replace("Committee on", "")
+                    comm_name = comm_name.replace("Assembly", "")
+                    comm_name = comm_name.replace("Joint Survey", "")
+                    comm_name = comm_name.replace("Joint Review", "")
+                    comm_name = comm_name.replace("Joint", "")
+                    comm_name = comm_name.replace("Senate", "")
+                    comm_name = comm_name.replace("Committee for", "")
+                    comm_name = comm_name.replace("Committee", "")
+                    comm_name = comm_name.strip()
+                    self.scrape_committee(comm_name, a.get('href'), chamber)
