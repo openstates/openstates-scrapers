@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -133,12 +132,14 @@ class NYCommitteeScraper(CommitteeScraper):
         chair_div = page.xpath("//div[@class = 'committee-chair']")
         for chair in chair_div:
             role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
-            member_name = chair.xpath("./a/text()")[0].replace("Sen.","").strip()
+            member_name = chair.xpath(".//a[not(@class)]/text()")[-2].strip()
+            member_name = re.sub(r'^Sen\.', "", member_name).strip()
             comm.add_member(member_name, role)
 
-        member_list = page.xpath("//div[contains(@class, 'view-committee-members')]//li[contains(@class, 'views-row')]")
+        member_list = page.xpath("//div[@class='committee-members']//ul/li/div/span/a/text()")
         for member in member_list:
-            member_name = " ".join(member.text_content().split()) #remove arbitrary stupid random whitespace
+            # Remove arbitrary whitespace in the middle of names
+            member_name = " ".join(member.split())
             comm.add_member(member_name, "member")
 
         if comm['members']:
