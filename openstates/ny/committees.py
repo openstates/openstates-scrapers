@@ -134,7 +134,6 @@ class NYCommitteeScraper(CommitteeScraper):
         for chair in chair_div:
             role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
             member_name = chair.xpath("./a/text()")[0].replace("Sen.","").strip()
-            print member_name
             comm.add_member(member_name, role)
 
         member_list = page.xpath("//div[contains(@class, 'view-committee-members')]//li[contains(@class, 'views-row')]")
