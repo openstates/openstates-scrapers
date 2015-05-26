@@ -25,8 +25,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
             page_count = int(page.xpath(
                 "//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
         except IndexError:
-            assert page.xpath(
-                '//div[@class="ListPagination"][1]/span/text()') == ["1", ], \
+            assert set(page.xpath(
+                '//div[@class="ListPagination"]/span/text()')) == set(["1"]), \
                 "Bill search pagination needed but not used"
             self.warning(
                 "Pagination not used; "
