@@ -136,7 +136,7 @@ class NYCommitteeScraper(CommitteeScraper):
             # Remove title and arbitrary whitespace from names
             member_name = chair.xpath(".//a[not(@class)]/text()")[-2].strip()
             member_name = re.sub(r'^Sen\.', "", member_name).strip()
-            member_name = " ".join(member.split())
+            member_name = " ".join(member_name.split())
 
             comm.add_member(member_name, role)
 
