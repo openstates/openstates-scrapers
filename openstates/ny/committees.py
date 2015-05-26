@@ -132,13 +132,16 @@ class NYCommitteeScraper(CommitteeScraper):
         chair_div = page.xpath("//div[@class = 'committee-chair']")
         for chair in chair_div:
             role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
+
+            # Remove title and arbitrary whitespace from names
             member_name = chair.xpath(".//a[not(@class)]/text()")[-2].strip()
             member_name = re.sub(r'^Sen\.', "", member_name).strip()
+            member_name = " ".join(member.split())
+
             comm.add_member(member_name, role)
 
         member_list = page.xpath("//div[@class='committee-members']//ul/li/div/span/a/text()")
         for member in member_list:
-            # Remove arbitrary whitespace in the middle of names
             member_name = " ".join(member.split())
             comm.add_member(member_name, "member")
 
