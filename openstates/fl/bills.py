@@ -21,8 +21,17 @@ class FLBillScraper(BillScraper, LXMLMixin):
             session)
 
         page = self.lxmlize(url)
-        page_count = int(page.xpath(
-            "//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
+        try:
+            page_count = int(page.xpath(
+                "//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
+        except IndexError:
+            assert set(page.xpath(
+                '//div[@class="ListPagination"]/span/text()')) == set(["1"]), \
+                "Bill search pagination needed but not used"
+            self.warning(
+                "Pagination not used; "
+                "make sure there're only a few bills for this session")
+            page_count = 1
 
         for page_number in range(1, page_count + 1):
             page_url = (url + '&PageNumber={}'.format(page_number))
@@ -72,6 +81,7 @@ class FLBillScraper(BillScraper, LXMLMixin):
         bill = Bill(session, self.CHAMBERS[bill_id[0]], bill_id, title)
         bill.add_source(url)
 
+        sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
         bill.add_sponsor('primary', sponsor)
 
         hist_table = page.xpath(
@@ -373,7 +383,10 @@ class FLBillScraper(BillScraper, LXMLMixin):
         '''
 
         house_url = 'http://www.myfloridahouse.gov/Sections/Bills/bills.aspx'
-        bill_number = ''.join([c for c in bill['bill_id'] if c.isdigit()])
+
+        # Keep the digits and all following characters in the bill's ID
+        bill_number = re.search(r'^\w+\s(\d+\w*)$', bill['bill_id']).group(1)
+
         form = {
             'rblChamber': 'B',
             'ddlSession': session_number,
