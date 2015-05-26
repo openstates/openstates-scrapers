@@ -101,11 +101,21 @@ class MNLegislatorScraper(LegislatorScraper):
                              last_name=row['Last Name'],
                              **leg_data[name]
                             )
-
-            row['Rm Number'] = row['Rm. Number']  # .format issue with "."
-            leg.add_office('capitol', 'Capitol Office',
-                           address='{Office Building}\n{Office Address}\nRoom {Rm Number}\n{City}, {State} {Zipcode}'.format(**row)
+            row["Zipcode"] = row["Zipcode"].strip()
+            
+            if 'Martin Luther King' in row['Address2']:\
+                leg.add_office('capitol', 'Capitol Office',
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
                            )
+            elif row['Address2']:
+                leg.add_office('district', 'District Office',
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                           )
+            else:
+                leg.add_office('district', 'District Office',
+                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row)
+                           )
+
 
 
             leg.add_source(csv_url)
