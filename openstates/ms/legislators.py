@@ -93,12 +93,19 @@ class MSLegislatorScraper(LegislatorScraper):
             email_name = root.xpath('string(//EMAIL_ADDRESS)')
             cap_room = root.xpath('string(//CAP_ROOM)')
 
-            if party == 'D':
+            if leg_name in ('Oscar Denton', 'Lataisha Jackson', 'John G. Faulkner'):
+                assert not party, "Remove special-casing for this Democrat without a listed party: {}".format(leg_name)
+                party = 'Democratic'
+            elif leg_name in ('James W. Mathis'):
+                assert not party, "Remove special-casing for this Republican without a listed party: {}".format(leg_name)
+                party = 'Republican'
+            elif party == 'D':
                 party = 'Democratic'
             elif party == 'R':
                 party = 'Republican'
-            elif leg_name in ('Oscar Denton', 'Lataisha Jackson', 'John G. Faulkner'):
-                party = 'Democratic'
+            else:
+                raise AssertionError(
+                    "A member with no identifiable party was found: {}".format(leg_name))
 
             leg = Legislator(term, chamber, district, leg_name, party=party, role=role,
                              org_info=org_info, url=url, photo_url=photo)
