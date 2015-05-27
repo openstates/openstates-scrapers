@@ -99,45 +99,11 @@ class TXEventScraper(EventScraper, LXMLMixin):
 
             events = row.xpath(".//a[contains(@href, 'schedules/html')]")
             for event in events:
-                replace = OrderedDict([
-                    (r"(?i)see below", ""),
-                    ("9:00 AM Mountain Time", "10:00 AM"),
-                    ("or recess", ""),
-                    (r"on Article .+", ""),
-                    (r"or upon (the )?adjournment", ""),
-                    (r"or upon final adjourn\.(/recess)?", ""),
-                    (r"or \d{2} minutes upon adjourn(\.|ment)", ""),
-                    ("During reading and referral of bills", ""),
-                    ("or during reading and referral of bills", ""),
-                    (r"or \d{2} minutes after adjournment of the .+", ""),
-                    (r"Upon final adjourn./recess", ""),
-                    ("or upon recess/adjournment", ""),
-                    ("Upon first adjournment", ""),
-                    ("Upon lunch recess", ""),
-                ])
 
+                # Ignore text after the datetime proper (ie, after "AM" or "PM")
                 datetime = "{} {}".format(date, time)
-                # Remove the chamber separately
-                datetime = re.sub(r"of the (House|Senate)\s*$", "", datetime)
-                _original_datetime = datetime
-                fix_used = ''
-                for rep in replace:
-                    _pre_fix = datetime
-                    datetime = re.sub(rep, replace[rep], datetime)
-
-                    if _pre_fix != datetime:
-                        assert fix_used == '', (
-                            "Event datetime text shouldn't be changed twice\n"
-                            "This was the original string:\n{}\n".format(_original_datetime) +
-                            "These were the fixes used:\n{}\n{}".format(fix_used, rep))
-                        fix_used = rep
-
-                datetime = datetime.strip()
-
-                try:
-                    datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
-                except ValueError:
-                    datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y")
+                datetime = re.search(r'(?i)(.+?[ap]m).+', datetime).group(1)
+                datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
                 self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
 
