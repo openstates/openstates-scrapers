@@ -74,6 +74,6 @@ class NCLegislatorScraper(LegislatorScraper):
                                     photo_url=photo_url, party=party,
                                     url=link, notice=notice, email=email)
             legislator.add_source(link)
-            legislator.add_office('capitol', 'Capitol Office',
+            legislator.add_office('district', 'District Office',
                                   address=address, phone=phone)
             self.save_legislator(legislator)
