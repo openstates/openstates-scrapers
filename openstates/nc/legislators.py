@@ -67,13 +67,21 @@ class NCLegislatorScraper(LegislatorScraper):
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
             phone = get_table_item(ldoc, 'Phone:') or None
             address = get_table_item(ldoc, 'Address:') or None
-            email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0].text or ''
+            email ,= ldoc.xpath('//a[starts-with(@href, "mailto:")]')
+            capitol_email = email.text
+            capitol_phone = email.xpath('ancestor::tr[1]/preceding-sibling::tr[1]/td/span')[0].text
+            capitol_address = email.xpath('ancestor::tr[1]/preceding-sibling::tr[2]/td/text()')
+            capitol_address = [x.strip() for x in capitol_address]
+            capitol_address = '\n'.join(capitol_address)
+            capitol_phone = capitol_phone.strip()
 
             # save legislator
             legislator = Legislator(term, chamber, district, full_name,
                                     photo_url=photo_url, party=party,
-                                    url=link, notice=notice, email=email)
+                                    url=link, notice=notice)
             legislator.add_source(link)
             legislator.add_office('district', 'District Office',
                                   address=address, phone=phone)
+            legislator.add_office('capitol', 'Capitol Office',
+                                  address=capitol_address, phone=capitol_phone, email=capitol_email)
             self.save_legislator(legislator)
