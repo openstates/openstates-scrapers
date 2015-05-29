@@ -90,12 +90,18 @@ class IDLegislatorScraper(LegislatorScraper):
             for line in pieces:
                 if line.lower().startswith('home '):
                     phone = line[len('home '):]
+                elif not phone and line.lower().startswith('bus '):
+                    phone = line[len('bus '):]
+                
                 if line.lower().startswith('fax '):
                     fax = line[len('fax '):]
+              
 
                 # After committees begin, no more contact information exists
                 if line == "Committees:":
                     break
+
+
 
             leg = Legislator(term,
                              chamber,
