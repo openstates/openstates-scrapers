@@ -46,8 +46,8 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
 
             name_and_url = tr.xpath('.//a')[0]
             bio_url = name_and_url.attrib["href"]
-            bio_url = bio_url.replace("JavaScript:window.location.href=","")
-            bio_url = base_url + bio_url.replace('"','')
+            bio_url = bio_url.replace("JavaScript:window.top.location.href=","")
+            bio_url = bio_url.replace('"','')
             name = name_and_url.text_content()
             if name.strip() == "." or name.strip() == "":
                 continue
@@ -65,7 +65,9 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
     def scrape_bio(self, term, chamber, district, name, url):
         # this opens the committee section without having to do another request
         url += '&TableRow=1.5.5'
-        doc = self.lxmlize(url)
+        frame_doc = self.lxmlize(url)
+        actual_url = frame_doc.xpath("//frame[@name='right']/@src")[0]
+        doc = self.lxmlize(actual_url)
 
         # party is in one of these
         party = doc.xpath('//div[@id="page_header"]')[0].text.strip()[-3:]
