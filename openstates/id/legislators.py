@@ -66,7 +66,6 @@ class IDLegislatorScraper(LegislatorScraper):
                 party = _PARTY[row[1][0].tail.strip()]
 
             pieces = [ x.strip() for x in row.itertext() if x ][6:]
-            print(pieces)
 
             # The parsed HTML will be something like:
             # ['District 4', '2', 'nd', 'term', address, phone(s), profession, committees]
@@ -90,6 +89,8 @@ class IDLegislatorScraper(LegislatorScraper):
             for line in pieces:
                 if line.lower().startswith('home '):
                     phone = line[len('home '):]
+                elif not phone and line.lower().startswith('bus '):
+                    phone = line[len('bus '):]
                 if line.lower().startswith('fax '):
                     fax = line[len('fax '):]
 
