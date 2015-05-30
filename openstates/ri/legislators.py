@@ -75,12 +75,6 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                 url = ("http://www.rilin.state.ri.us/{chamber}/"
                        "{slug}/Pages/Biography.aspx".format(**info))
 
-                page = self.lxmlize(url)
-                for el in page.xpath("//div[@id='WebPartWPQ4']//div//span/text()"):
-                    if re.match("\(\d{3}\) \d{3}-\d{4}", el):
-                        d['phone'] = el
-
-
             dist = str(int(d['district']))
             district_name = dist
             full_name = re.sub(rep_type, '', d['full_name']).strip()
@@ -98,6 +92,19 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                 "town_represented": d['town_represented'],
             }
 
+            if chamber == 'upper':
+                contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'            
+            if chamber == 'lower':
+                contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
+            contact = lxml.html.fromstring(self.get(contact_url).text)
+            contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text()')
+
+            for el in contact_phone:
+                if full_name in el:
+                    number = contact_phone.index(el)
+                    d['phone'] = contact_phone[number + 1]
+                    d['phone'] = d['phone'].strip()
+
             if d['email'] is not None:
                 kwargs['email'] = d['email']
 
@@ -112,7 +119,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                              translate[d['party']],
                              **kwargs)
 
-            leg.add_office('district', 'Address', address=d['address'])
+            leg.add_office('district', 'Address', address=d['address'], phone=d['phone'])
             leg.add_source(source_url)
             if homepage_url:
                 leg.add_source(homepage_url)
