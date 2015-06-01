@@ -102,8 +102,8 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             for el in contact_phone:
                 if full_name in el:
                     number = contact_phone.index(el)
-                    d['phone'] = contact_phone[number + 1]
-                    d['phone'] = d['phone'].strip()
+                    phone = contact_phone[number + 1]
+                    phone = phone.strip()
 
             if d['email'] is not None:
                 kwargs['email'] = d['email']
@@ -119,7 +119,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                              translate[d['party']],
                              **kwargs)
 
-            leg.add_office('district', 'Address', address=d['address'], phone=d['phone'])
+            leg.add_office('district', 'Address', address=d['address'], phone=phone)
             leg.add_source(source_url)
             if homepage_url:
                 leg.add_source(homepage_url)
