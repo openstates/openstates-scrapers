@@ -96,7 +96,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                 contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'            
             if chamber == 'lower':
                 contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
-            contact = lxml.html.fromstring(self.get(contact_url).text)
+            contact = self.lxmlize(contact_url)
             contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text()')
 
             for el in contact_phone:
