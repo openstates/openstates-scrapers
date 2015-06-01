@@ -86,15 +86,22 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             }
 
             homepage_url = None
-            split_name = full_name.split()
-            if len(split_name) == 2:
-                url_name = split_name[1]
-            if len(split_name) >= 3:
-                url_name = split_name[2]
-            url_name = re.sub(r'[^\w\s]', '', url_name)
-            if url_name == "WOBrien":
-                url_name = 'OBrien'
-            homepage_url = "http://www.rilin.state.ri.us/representatives/" + url_name
+            url_names = lxml.html.fromstring(self.get(source_url).text)
+            url_names = url_names.xpath('//td[@class="ms-vb2"]/a/@href')
+            modified_name = re.sub(r'[^\w\s]', '', full_name)
+            modified_name = modified_name.replace(' ', '').strip('').lower()
+
+            for el in url_names:
+                if 'default.aspx' in el:
+                    el = el.replace('default.aspx', '')
+                    el = el.strip('')
+                if el[-1] == '/':
+                    el = el[:-1]
+                el = el.lower()
+                url_name_array = el.split('/')
+                if url_name_array[-1] in modified_name:
+                    #remove '/default.aspx' and add last name
+                    homepage_url = source_url[:-12] + url_name_array[-1]
 
             kwargs = {
                 "town_represented": d['town_represented'],
