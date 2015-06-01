@@ -1,5 +1,5 @@
 import re
-import datetime
+import string
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
@@ -27,11 +27,13 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             rep_type = 'Senator '
             source_url = 'http://www.rilin.state.ri.us/senators/default.aspx'
             source_url_title_replacement = rep_type
+            contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'
         elif chamber == 'lower':
             url = ('http://webserver.rilin.state.ri.us/Documents/Representatives.xls')
             rep_type = 'Representative '
             source_url = 'http://www.rilin.state.ri.us/representatives/default.aspx'
             source_url_title_replacement = 'Rep. '
+            contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
 
         self.urlretrieve(url, 'ri_leg.xls')
 
@@ -42,8 +44,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
         # XLS doc as the source URL for all legislators.
         # 374: RI: legislator url
         leg_source_url_map = {}
-        leg_page = lxml.html.fromstring(self.get(source_url).text)
-        leg_page.make_links_absolute(source_url)
+        leg_page = self.lxmlize(source_url)
 
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):
             leg_name = link.text_content().replace(source_url_title_replacement,'')
@@ -85,24 +86,27 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             }
 
             homepage_url = None
-            if full_name in leg_source_url_map.keys():
-                homepage_url = leg_source_url_map[full_name]
+            split_name = full_name.split()
+            if len(split_name) == 2:
+                url_name = split_name[1]
+            if len(split_name) >= 3:
+                url_name = split_name[2]
+            url_name = re.sub(r'[^\w\s]', '', url_name)
+            if url_name == "WOBrien":
+                url_name = 'OBrien'
+            homepage_url = "http://www.rilin.state.ri.us/representatives/" + url_name
 
             kwargs = {
                 "town_represented": d['town_represented'],
             }
 
-            if chamber == 'upper':
-                contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'            
-            if chamber == 'lower':
-                contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
             contact = self.lxmlize(contact_url)
-            contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text()')
+            contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text() | //td[@class="bodyCopy"]//center/text()')
 
             for el in contact_phone:
-                if full_name in el:
+                if len(el) <= 2 and dist == el:
                     number = contact_phone.index(el)
-                    phone = contact_phone[number + 1]
+                    phone = contact_phone[number + 2]
                     phone = phone.strip()
 
             if d['email'] is not None:
@@ -121,6 +125,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
 
             leg.add_office('district', 'Address', address=d['address'], phone=phone)
             leg.add_source(source_url)
+            leg.add_source(contact_url)
             if homepage_url:
                 leg.add_source(homepage_url)
             self.save_legislator(leg)
