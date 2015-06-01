@@ -2,11 +2,9 @@ import re
 import pytz
 import datetime
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 from openstates.utils import LXMLMixin
 
-import requests.exceptions
 import lxml.html
 
 
@@ -91,7 +89,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
         substs = {
             "AM": ["A.M.", "a.m."],
-            "PM": ["P.M.", "p.m."],
+            "PM": ["P.M.", "p.m.", "Noon"],
         }
 
         for key, values in substs.items():
