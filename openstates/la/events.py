@@ -20,11 +20,6 @@ def parse_datetime(s, year):
     if dt:
         return dt.replace(year=int(year))
 
-    # Commented out; unlikely this is correct anymore.
-    #match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
-    #if match:
-    #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
-
     if dt is None:
         if s.endswith(","):
             s, _ = s.rsplit(" ", 1)
@@ -83,10 +78,6 @@ class LAEventScraper(EventScraper, LXMLMixin):
         time ,= page.xpath("//span[@id='lTime']/text()")
         location ,= page.xpath("//span[@id='lLocation']/text()")
 
-        if ("UPON ADJOURNMENT" in time.upper() or
-                "UPON  ADJOURNMENT" in time.upper()):
-            return
-
         substs = {
             "AM": ["A.M.", "a.m."],
             "PM": ["P.M.", "p.m.", "Noon"],
@@ -100,14 +91,14 @@ class LAEventScraper(EventScraper, LXMLMixin):
         if re.search(r'(?i)\d[AP]M$', time):
             time = time[:-2] + " " + time[-2:]
 
-        try:
+        if "UPON ADJ" in ' '.join(time.split()).upper():
+            all_day = True
+            when = datetime.datetime.strptime(date, "%B %d, %Y")
+        else:
+            all_day = False
             when = datetime.datetime.strptime("%s %s" % (
                 date, time
             ), "%B %d, %Y %I:%M %p")
-        except ValueError:
-            when = datetime.datetime.strptime("%s %s" % (
-                date, time
-            ), "%B %d, %Y %I:%M")
 
         # when = self._tz.localize(when)
 
@@ -128,7 +119,8 @@ class LAEventScraper(EventScraper, LXMLMixin):
             when,
             'committee:meeting',
             description,
-            location=location
+            location=location,
+            all_day=all_day
         )
         event.add_source(url)
 
