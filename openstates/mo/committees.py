@@ -40,7 +40,6 @@ class MOCommitteeScraper(CommitteeScraper):
                 if "Assigned bills" in comm_link.text_content():
                     continue
 
-
                 comm_link = comm_link.attrib['href']
 
                 if not "comm" in comm_link:
@@ -48,6 +47,8 @@ class MOCommitteeScraper(CommitteeScraper):
 
                 comm_page = lxml.html.fromstring(self.get(comm_link).text)
                 comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
+                comm_name = comm_name.replace(' Committee', '')
+                comm_name = comm_name.strip()
 
                 committee = Committee(chamber, comm_name)
 
@@ -107,6 +108,15 @@ class MOCommitteeScraper(CommitteeScraper):
             actual_chamber = chamber
             if 'joint' in committee_name.lower():
                 actual_chamber = 'joint'
+
+            committee_name = committee_name.replace('Committee On ', '')
+            committee_name = committee_name.replace('Special', '')
+            committee_name = committee_name.replace('Select', '')
+            committee_name = committee_name.replace('Special', '')
+            committee_name = committee_name.replace('Joint', '')
+            committee_name = committee_name.replace(' Committee', '')
+            committee_name = committee_name.strip()
+
 
             committee = Committee(actual_chamber, committee_name, status=status)
             committee_page_string = self.get(committee_url).text
