@@ -52,9 +52,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             leg_source_url_map[leg_name] = leg_url
 
         for rownum in xrange(1, sh.nrows):
-            d = {
-                "phone": None
-            }
+            d = {}
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
 
@@ -118,9 +116,6 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
 
             if d['email'] is not None:
                 kwargs['email'] = d['email']
-
-            if d['phone'] is not None:
-                kwargs['phone'] = d['phone']
 
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
