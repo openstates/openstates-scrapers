@@ -54,6 +54,8 @@ class ARLegislatorScraper(LegislatorScraper):
             party = 'Democratic'
         elif party == '(G)':
             party = 'Green'
+        elif party == '(I)':
+            party = 'Independent'
 
         else:
             raise AssertionError(
