@@ -93,7 +93,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
         if "UPON ADJ" in ' '.join(time.split()).upper():
             all_day = True
-            datetime.datetime.strptime(date, "%B %d, %Y")
+            when = datetime.datetime.strptime(date, "%B %d, %Y")
         else:
             all_day = False
             when = datetime.datetime.strptime("%s %s" % (
