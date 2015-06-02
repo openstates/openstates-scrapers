@@ -36,6 +36,13 @@ class TNLegislatorScraper(LegislatorScraper):
             if set(child.tag for child in row) == set(['th']):
                 continue
 
+            vacancy_check = row.xpath('./td/text()')[1]
+            if 'Vacant' in vacancy_check:
+                self.logger.warning("Vacant Seat")
+                continue
+
+
+
             partyInit = row.xpath('td[3]')[0].text.split()[0]
             party = parties[partyInit]
             district = row.xpath('td[5]/a')[0].text.split()[1]
