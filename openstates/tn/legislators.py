@@ -36,8 +36,8 @@ class TNLegislatorScraper(LegislatorScraper):
             if set(child.tag for child in row) == set(['th']):
                 continue
 
-            name = row.xpath('./td/text()')[1]
-            if 'Vacant' in name:
+            vacancy_check = row.xpath('./td/text()')[1]
+            if 'Vacant' in vacancy_check:
                 self.logger.warning("Vacant Seat")
                 continue
 
