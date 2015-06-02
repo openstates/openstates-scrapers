@@ -1,5 +1,5 @@
 import re
-import datetime
+import string
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
@@ -27,11 +27,13 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             rep_type = 'Senator '
             source_url = 'http://www.rilin.state.ri.us/senators/default.aspx'
             source_url_title_replacement = rep_type
+            contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'
         elif chamber == 'lower':
             url = ('http://webserver.rilin.state.ri.us/Documents/Representatives.xls')
             rep_type = 'Representative '
             source_url = 'http://www.rilin.state.ri.us/representatives/default.aspx'
             source_url_title_replacement = 'Rep. '
+            contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
 
         self.urlretrieve(url, 'ri_leg.xls')
 
@@ -42,8 +44,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
         # XLS doc as the source URL for all legislators.
         # 374: RI: legislator url
         leg_source_url_map = {}
-        leg_page = lxml.html.fromstring(self.get(source_url).text)
-        leg_page.make_links_absolute(source_url)
+        leg_page = self.lxmlize(source_url)
 
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):
             leg_name = link.text_content().replace(source_url_title_replacement,'')
@@ -51,9 +52,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             leg_source_url_map[leg_name] = leg_url
 
         for rownum in xrange(1, sh.nrows):
-            d = {
-                "phone": None
-            }
+            d = {}
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
 
@@ -75,12 +74,6 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                 url = ("http://www.rilin.state.ri.us/{chamber}/"
                        "{slug}/Pages/Biography.aspx".format(**info))
 
-                page = self.lxmlize(url)
-                for el in page.xpath("//div[@id='WebPartWPQ4']//div//span/text()"):
-                    if re.match("\(\d{3}\) \d{3}-\d{4}", el):
-                        d['phone'] = el
-
-
             dist = str(int(d['district']))
             district_name = dist
             full_name = re.sub(rep_type, '', d['full_name']).strip()
@@ -91,18 +84,38 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             }
 
             homepage_url = None
-            if full_name in leg_source_url_map.keys():
-                homepage_url = leg_source_url_map[full_name]
+            url_names = lxml.html.fromstring(self.get(source_url).text)
+            url_names = url_names.xpath('//td[@class="ms-vb2"]/a/@href')
+            modified_name = re.sub(r'[^\w\s]', '', full_name)
+            modified_name = modified_name.replace(' ', '').strip('').lower()
+
+            for el in url_names:
+                if 'default.aspx' in el:
+                    el = el.replace('default.aspx', '')
+                    el = el.strip('')
+                if el[-1] == '/':
+                    el = el[:-1]
+                el = el.lower()
+                url_name_array = el.split('/')
+                if url_name_array[-1] in modified_name:
+                    #remove '/default.aspx' and add last name
+                    homepage_url = source_url[:-12] + url_name_array[-1]
 
             kwargs = {
                 "town_represented": d['town_represented'],
             }
 
+            contact = self.lxmlize(contact_url)
+            contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text() | //td[@class="bodyCopy"]//center/text()')
+
+            for el in contact_phone:
+                if len(el) <= 2 and dist == el:
+                    number = contact_phone.index(el)
+                    phone = contact_phone[number + 2]
+                    phone = phone.strip()
+
             if d['email'] is not None:
                 kwargs['email'] = d['email']
-
-            if d['phone'] is not None:
-                kwargs['phone'] = d['phone']
 
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
@@ -112,8 +125,9 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                              translate[d['party']],
                              **kwargs)
 
-            leg.add_office('district', 'Address', address=d['address'])
+            leg.add_office('district', 'Address', address=d['address'], phone=phone)
             leg.add_source(source_url)
+            leg.add_source(contact_url)
             if homepage_url:
                 leg.add_source(homepage_url)
             self.save_legislator(leg)
