@@ -17,7 +17,7 @@ def unlock(person):
 
     print("{_id} - {photo_url}".format(**person))
 
-    if requests.get(person['photo_url']).status_code / 100 == 2:
+    if requests.get(person['photo_url']).status_code // 100 == 2:
         return
 
     # Right, we've got a photo_url, but it sucks. Let's go and unlock
