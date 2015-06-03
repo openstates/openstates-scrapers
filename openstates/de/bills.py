@@ -9,7 +9,6 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import scrapelib
 import actions
-import requests
 
 class DEBillScraper(BillScraper, LXMLMixin):
  
@@ -50,13 +49,11 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
         base_url = "http://legis.delaware.gov"
         text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
-        
-        code = requests.head(link).status_code
-        if code == 404:
-            self.logger.warning("404. Apparently bill hasn't been posted yet.")
+        try:
+            page = self.lxmlize(link)
+        except scrapelib.HTTPError:
+            self.logger.warning('404. Apparently the bill hasn\'t been posted')
             return
-
-        page = self.lxmlize(link)
         nominee = page.xpath(".//div[@id='page_header']/text()")[0]
         if nominee.strip().lower() == "nominee information":
             self.logger.info("Nominee, skipping")
