@@ -11,7 +11,7 @@ def unlock(person):
         return
 
     locked = person.get('_locked_fields')
-    if 'photo_url' not in locked:
+    if locked is None or 'photo_url' not in locked:
         # We're not locked, so that's fine.
         return
 
