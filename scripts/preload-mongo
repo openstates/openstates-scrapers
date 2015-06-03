@@ -3,7 +3,7 @@ set -e
 
 URL="http://static.openstates.org.s3.amazonaws.com/mongo/latest-mongo-dump.tar.gz"
 POPDIR=$(pwd)
-if [ ! $(which mktemp) ]; then
+if [ "x$(which mktemp)" != "x" ]; then
 	WORKDIR=$(mktemp -d)
 else
 	WORKDIR=$(gmktemp -d)
