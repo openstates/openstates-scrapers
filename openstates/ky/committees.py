@@ -68,6 +68,8 @@ class KYCommitteeScraper(CommitteeScraper):
                 role = 'co-chair'
             elif link.tail.strip() == '[Vice Chair]':
                 role = 'vice chair'
+            elif link.tail.strip() == '[ex officio]':
+                role = 'member'
             else:
                 raise Exception("unexpected position: %s" % link.tail)
             comm.add_member(name, role=role)
