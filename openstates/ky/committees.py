@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -43,7 +42,7 @@ class KYCommitteeScraper(CommitteeScraper):
 
             for link in links:
                 name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
-                name = name.replace(".","")
+                name = name.replace(".", "")
                 comm = Committee(chamber, name)
                 comm_url = link.attrib['href'].replace(
                     'home.htm', 'members.htm')
@@ -59,7 +58,7 @@ class KYCommitteeScraper(CommitteeScraper):
 
         for link in page.xpath("//a[contains(@href, 'Legislator')]"):
             name = re.sub(r'^(Rep\.|Sen\.) ', '', link.text).strip()
-            name = name.replace("  "," ")
+            name = name.replace("  ", " ")
             if not link.tail or not link.tail.strip():
                 role = 'member'
             elif link.tail.strip() == '[Chair]':
@@ -68,6 +67,8 @@ class KYCommitteeScraper(CommitteeScraper):
                 role = 'co-chair'
             elif link.tail.strip() == '[Vice Chair]':
                 role = 'vice chair'
+            elif link.tail.strip() == '[ex officio]':
+                role = 'member'
             else:
                 raise Exception("unexpected position: %s" % link.tail)
             comm.add_member(name, role=role)
