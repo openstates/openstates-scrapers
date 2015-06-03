@@ -9,7 +9,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import scrapelib
 import actions
-
+import requests
 
 class DEBillScraper(BillScraper, LXMLMixin):
  
@@ -50,8 +50,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
         base_url = "http://legis.delaware.gov"
         text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
-        page = self.lxmlize(link)
+        
+        code = requests.head(link).status_code
+        if code == 404:
+            self.logger.warning("404. Apparently bill hasn't been posted yet.")
+            return
 
+        page = self.lxmlize(link)
         nominee = page.xpath(".//div[@id='page_header']/text()")[0]
         if nominee.strip().lower() == "nominee information":
             self.logger.info("Nominee, skipping")
@@ -194,12 +199,15 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 action_list = tds[1].text_content().split("\n")
 
         sub_versions = []
+        use_sub = False
         if sub_link:
             bill = self.scrape_bill(sub_link,chamber,session)
-            sub_versions = [v["url"] for v in bill["versions"]]
-            bill.add_title(bill_id)
+            if bill:
+                sub_versions = [v["url"] for v in bill["versions"]]
+                bill.add_title(bill_id)
+                use_sub = True
 
-        else:
+        if not use_sub:
             bill = Bill(session,chamber,bill_id,bill_title)
 
             for s in primary_sponsors:
