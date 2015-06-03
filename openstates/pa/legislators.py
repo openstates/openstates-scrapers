@@ -45,7 +45,14 @@ class PALegislatorScraper(LegislatorScraper):
 
             self.scrape_email_address(url, page, legislator)
             self.scrape_offices(url, doc, legislator)
+            self.scrape_photo_url(url, doc, legislator)
             self.save_legislator(legislator)
+
+    def scrape_photo_url(self, url, page, legislator):
+        (photo_url,) = page.xpath(
+            "//div[@class='MemberBio']//img[contains(@src, '/members/')]/@src"
+        )
+        legislator['photo_url'] = photo_url
 
     def scrape_email_address(self, url, page, legislator):
         if re.search(r'var \S+\s+= "(\S+)";', page):
