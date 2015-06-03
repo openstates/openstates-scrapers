@@ -17,7 +17,9 @@ def unlock(person):
 
     print("{_id} - {photo_url}".format(**person))
 
-    if requests.get(person['photo_url']).status_code // 100 == 2:
+    # Count redirects as 404s because their 404 page (which says 404 on it)
+    # is actually a 200. TOOT TOOT.
+    if requests.get(person['photo_url'], allow_redirects=False).status_code // 100 == 2:
         return
 
     # Right, we've got a photo_url, but it sucks. Let's go and unlock
