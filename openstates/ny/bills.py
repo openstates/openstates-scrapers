@@ -114,6 +114,7 @@ class NYBillScraper(BillScraper):
             'R': ('upper', 'resolution'),
             'J': ('upper', 'legislative resolution'),
             'B': ('upper', 'concurrent resolution'),
+            'C': ('lower', 'concurrent resolution'),
             'A': ('lower', 'bill'),
             'E': ('lower', 'resolution'),
             'K': ('lower', 'legislative resolution'),
