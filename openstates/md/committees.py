@@ -6,7 +6,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
     jurisdiction = 'md'
 
-    def scrape(self, term, chambers):
+    def scrape(self, term, chamber):
         # committee list
         url = 'http://mgaleg.maryland.gov/webmga/frmcommittees.aspx?pid=commpage&tab=subject7'
         html = self.get(url).text
@@ -14,24 +14,32 @@ class MDCommitteeScraper(CommitteeScraper):
         doc.make_links_absolute(url)
 
         for a in doc.xpath('//a[contains(@href, "cmtepage")]'):
-            url = a.get('href').replace('stab=01', 'stab=04')
-            chamber = a.xpath('../../..//th/text()')[0]
+            url = a.get('href')
+            chamber_name = a.xpath('../../..//th/text()')[0]
+            if chamber_name == 'Senate Standing':
+                url = url.replace('stab=01', 'stab=04')
+            if chamber_name == 'House Standing':
+                url = url.replace('stab=01', 'stab=04')
             com_name = a.text
             if com_name is None:
                 continue
+            com_name = com_name.replace("Joint ", "")
+            com_name = com_name.replace("Committee on ", "")
+            com_name = com_name.replace(" Committee", "")
             com_name = com_name.strip()
-            if 'Senate' in chamber and 'upper' in chambers:
+            print com_name
+            if 'Senate' in chamber_name:
                 chamber = 'upper'
-            elif 'House' in chamber and 'Delegation' not in chamber and 'lower' in chambers:
+            elif 'House' in chamber_name and 'Delegation' not in chamber_name:
                 chamber = 'lower'
-            elif chamber in ('Joint', 'Statutory', 'Special Joint', 'Other'):
+            elif 'Joint' or 'Statutory' or 'Special Joint' or 'Other' in chamber_name:
                 chamber = 'joint'
+                print chamber
             else:
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
                 continue
 
             self.scrape_committee(chamber, com_name, url)
-
 
     def scrape_committee(self, chamber, com_name, url):
         html = self.get(url).text
@@ -65,4 +73,4 @@ class MDCommitteeScraper(CommitteeScraper):
                     role = 'member'
                 com.add_member(name, role)
 
-            self.save_committee(com)
+        self.save_committee(com)
