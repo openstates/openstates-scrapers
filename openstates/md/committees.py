@@ -51,6 +51,25 @@ class MDCommitteeScraper(CommitteeScraper):
 
             self.scrape_committee(chamber, com_name, url)
 
+        for a in doc.xpath('//a[contains(@href, "AELR")]'):
+            url = a.get('href')
+            chamber_name = a.xpath('../../..//th/text()')[0]
+            chamber = 'joint'
+            com_name = a.text
+            if com_name is None:
+                continue
+            if com_name.startswith("Joint "):
+                com_name = com_name.replace("Joint ", "", 1)
+            com_name = com_name.replace("Special Committee on ", "")
+            com_name = com_name.replace("Committee on ", "")
+            if com_name.endswith("Committee"):
+                com_name = com_name.replace(" Committee", "")
+            com_name = com_name.strip()
+            if com_name.startswith('the'):
+                com_name = com_name.replace('the', 'The')
+
+            self.scrape_committee(chamber, com_name, url)
+
     def scrape_committee(self, chamber, com_name, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -87,4 +106,64 @@ class MDCommitteeScraper(CommitteeScraper):
 
                 self.save_committee(com)
         else:
-            self.save_committee(com)
+            table_source = doc.xpath('//table[@class="noncogrid"]')
+
+            if table_source != []:
+                for table in table_source:
+                    row = table.xpath('tr/td/a[contains(@href, "sponpage")]/text()')
+                    sub_name_source = table.xpath('tr/th/text()')
+
+                    if "Subcommittee" in sub_name_source[0]:
+                        sub_name = sub_name_source[0]
+                        sub_name = sub_name.replace("Subcommittee", "").strip()
+                        com = Committee(chamber, com_name, subcommittee=sub_name)
+                        com.add_source(url)
+
+                    for name in row:
+                        if name.endswith(' (House Chair)'):
+                            name = name.replace(' (House Chair)', '')
+                            role = 'house chair'
+                        elif name.endswith(' (Senate Chair)'):
+                            name = name.replace(' (Senate Chair)', '')
+                            role = 'senate chair'
+                        elif name.endswith(' (Chair)'):
+                            name = name.replace(' (Chair)', '')
+                            role = 'chair'
+                        elif name.endswith(' (Senate Vice Chair)'):
+                            name = name.replace(' (Senate Vice Chair)', '')
+                            role = 'vice chair'
+                        elif name.endswith(' (Senate Co-Chair)'):
+                            name = name.replace(' (Senate Co-Chair)', '')
+                            role = 'co-chair'
+                        elif name.endswith(' (House Vice Chair)'):
+                            name = name.replace(' (House Vice Chair)', '')
+                            role = 'vice chair'
+                        elif name.endswith(' (House Co-Chair)'):
+                            name = name.replace(' (House Co-Chair)', '')
+                            role = 'co-chair'
+                        else:
+                            role = 'member'
+                        if name.startswith("Delegate "):
+                            name = name.replace("Delegate", "", 1).strip()
+                        if name.startswith("Senator "):
+                            name = name.replace("Senator", "", 1).strip()
+                        com.add_member(name, role)
+
+                    self.save_committee(com)
+            else:
+                row = doc.xpath('//table[@class="spco"]/tr[1]/td/text()')
+                for name in row:
+                    if name.startswith('House Chair:'):
+                        name = name.replace('House Chair:', '')
+                        role = 'house chair'
+                    elif name.startswith('Senate Chair:'):
+                        name = name.replace('Senate Chair:', '')
+                        role = 'senate chair'
+                    else:
+                        role = 'member'
+                    name = name.replace("Delegate", "", 1).strip()
+                    name = name.replace("Senator", "", 1).strip()
+                    com.add_member(name, role)
+                    print name
+
+                self.save_committee(com)
