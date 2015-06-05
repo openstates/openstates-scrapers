@@ -27,14 +27,12 @@ class MDCommitteeScraper(CommitteeScraper):
             com_name = com_name.replace("Committee on ", "")
             com_name = com_name.replace(" Committee", "")
             com_name = com_name.strip()
-            print com_name
             if 'Senate' in chamber_name:
                 chamber = 'upper'
             elif 'House' in chamber_name and 'Delegation' not in chamber_name:
                 chamber = 'lower'
             elif 'Joint' or 'Statutory' or 'Special Joint' or 'Other' in chamber_name:
                 chamber = 'joint'
-                print chamber
             else:
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
                 continue
@@ -61,13 +59,13 @@ class MDCommitteeScraper(CommitteeScraper):
             for row in rows[1:]:
                 name = row.getchildren()[0].text_content().strip()
                 if name.endswith(' (Chair)'):
-                    name = name.replace(' (Chair)','')
+                    name = name.replace(' (Chair)', '')
                     role = 'chair'
                 elif name.endswith(' (Vice Chair)'):
-                    name = name.replace(' (Vice Chair)','')
+                    name = name.replace(' (Vice Chair)', '')
                     role = 'vice chair'
                 elif name.endswith(' (Co-Chair)'):
-                    name = name.replace(' (Co-Chair)','')
+                    name = name.replace(' (Co-Chair)', '')
                     role = 'co-chair'
                 else:
                     role = 'member'
