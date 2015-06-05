@@ -2,6 +2,7 @@ import lxml.html
 
 from billy.scrape.committees import CommitteeScraper, Committee
 
+
 class MDCommitteeScraper(CommitteeScraper):
 
     jurisdiction = 'md'
@@ -23,15 +24,26 @@ class MDCommitteeScraper(CommitteeScraper):
             com_name = a.text
             if com_name is None:
                 continue
-            com_name = com_name.replace("Joint ", "")
+            if com_name.startswith("Joint "):
+                com_name = com_name.replace("Joint ", "", 1)
+            com_name = com_name.replace("Special Committee on ", "")
             com_name = com_name.replace("Committee on ", "")
-            com_name = com_name.replace(" Committee", "")
+            if com_name.endswith("Committee"):
+                com_name = com_name.replace(" Committee", "")
             com_name = com_name.strip()
+            if com_name.startswith('the'):
+                com_name = com_name.replace('the', 'The')
             if 'Senate' in chamber_name:
                 chamber = 'upper'
-            elif 'House' in chamber_name and 'Delegation' not in chamber_name:
+            elif 'House' in chamber_name:
                 chamber = 'lower'
-            elif 'Joint' or 'Statutory' or 'Special Joint' or 'Other' in chamber_name:
+            elif 'Joint' in chamber_name:
+                chamber = 'joint'
+            elif 'Statutory' in chamber_name:
+                chamber = 'joint'
+            elif 'Special Joint' in chamber_name:
+                chamber = 'joint'
+            elif 'Other' in chamber_name:
                 chamber = 'joint'
             else:
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
@@ -47,28 +59,32 @@ class MDCommitteeScraper(CommitteeScraper):
         com = Committee(chamber, com_name)
         com.add_source(url)
 
-        for table in doc.xpath('//table[@class="grid"]'):
-            rows = table.xpath('tr')
-            sub_name = rows[0].getchildren()[0].text.strip()
+        if 'stab=04' in url:
+            for table in doc.xpath('//table[@class="grid"]'):
+                rows = table.xpath('tr')
+                sub_name = rows[0].getchildren()[0].text.strip()
 
-            # new table - subcommittee
-            if sub_name != 'Full Committee':
-                com = Committee(chamber, com_name, subcommittee=sub_name)
-                com.add_source(url)
+                # new table - subcommittee
+                if sub_name != 'Full Committee':
+                    sub_name = sub_name.replace("Subcommittee", "").strip()
+                    com = Committee(chamber, com_name, subcommittee=sub_name)
+                    com.add_source(url)
 
-            for row in rows[1:]:
-                name = row.getchildren()[0].text_content().strip()
-                if name.endswith(' (Chair)'):
-                    name = name.replace(' (Chair)', '')
-                    role = 'chair'
-                elif name.endswith(' (Vice Chair)'):
-                    name = name.replace(' (Vice Chair)', '')
-                    role = 'vice chair'
-                elif name.endswith(' (Co-Chair)'):
-                    name = name.replace(' (Co-Chair)', '')
-                    role = 'co-chair'
-                else:
-                    role = 'member'
-                com.add_member(name, role)
+                for row in rows[1:]:
+                    name = row.getchildren()[0].text_content().strip()
+                    if name.endswith(' (Chair)'):
+                        name = name.replace(' (Chair)', '')
+                        role = 'chair'
+                    elif name.endswith(' (Vice Chair)'):
+                        name = name.replace(' (Vice Chair)', '')
+                        role = 'vice chair'
+                    elif name.endswith(' (Co-Chair)'):
+                        name = name.replace(' (Co-Chair)', '')
+                        role = 'co-chair'
+                    else:
+                        role = 'member'
+                    com.add_member(name, role)
 
-        self.save_committee(com)
+                self.save_committee(com)
+        else:
+            self.save_committee(com)
