@@ -26,7 +26,7 @@ metadata = {
          },
         {'name': '2015-2016',
          'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015'],
+         'sessions': ['2015', '2016'],
          }
         ],
     'session_details': {
@@ -44,6 +44,9 @@ metadata = {
                  },
         '2015': {'display_name': '2015 Regular Session',
                  '_scraped_name': '2015'
+                 },
+        '2016': {'display_name': '2016 Regular Session',
+                 '_scraped_name': '2016'
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
