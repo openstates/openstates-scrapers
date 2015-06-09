@@ -133,10 +133,7 @@ class MDCommitteeScraper(CommitteeScraper):
 
                 for row in rows[1:]:
                     name = row.getchildren()[0].text_content().strip()
-                    result = define_role(name)
-                    name = result[0]
-                    role = result[1]
-
+                    name, role = define_role(name)
                     com.add_member(name, role)
 
                 self.save_committee(com)
@@ -155,19 +152,14 @@ class MDCommitteeScraper(CommitteeScraper):
                         com.add_source(url)
 
                     for name in row:
-                        result = define_role(name)
-                        name = result[0]
-                        role = result[1]
-
+                        name, role = define_role(name)
                         com.add_member(name, role)
 
                     self.save_committee(com)
             else:
                 row = doc.xpath('//table[@class="spco"]/tr[1]/td/text()')
                 for name in row:
-                    result = define_role(name)
-                    name = result[0]
-                    role = result[1]
+                    name, role = define_role(name)
                     com.add_member(name, role)
 
                 self.save_committee(com)
