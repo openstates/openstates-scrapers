@@ -21,6 +21,7 @@ import re
 
 from billy.scrape.committees import Committee, CommitteeScraper
 import lxml.html
+import requests
 
 
 def fix_whitespace(s):
@@ -134,7 +135,12 @@ class TNCommitteeScraper(CommitteeScraper):
     def scrape_joint_committee(self, committee_name, url):
         if 'state.tn.us' in url:
             com = Committee('joint', committee_name)
-            page = self.get(url).text
+            try:
+                page = self.get(url).text
+            except requests.exceptions.ConnectionError:
+                self.logger.warning("Committee link is broken, skipping")
+                return
+
             page = lxml.html.fromstring(page)
 
             for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"):
