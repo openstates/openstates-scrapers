@@ -89,6 +89,7 @@ class ApiClient(object):
             requests_kwargs=None, **url_format_args):
         '''Resource is a self.resources dict key.
         '''
+        num_bad_packets_allowed = 5
         url = self.make_url(resource_name, **url_format_args)
 
         # Add in the api key.
@@ -104,11 +105,13 @@ class ApiClient(object):
         self.scraper.info('Api GET: %r, %r, %r' % args)
         resp = None
         tries = 0
-        while resp is None:
+        while resp is None and tries <  num_bad_packets_allowed:
             try:
                 resp = self.scraper.get(url, *requests_args, **requests_kwargs)
             except SysCallError:
                 tries += 1
+                if tries >= num_bad_packets_allowed:
+                    raise RuntimeError("Got bad packet from API 5 times, I give up")
                 self.logger.warning("Got RST packet, trying again, this will be try # {}".format(tries))
         return resp
 
