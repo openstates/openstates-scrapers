@@ -88,6 +88,7 @@ metadata = {
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
+        '2016 Organizational Session',
         '2015 Regular Legislative Session',
         '2014 Regular Legislative Session',  # In as 2014 Regular Session
         '2013 Regular Legislative Session',  # Samesies.
