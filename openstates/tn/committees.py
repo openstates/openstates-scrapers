@@ -147,12 +147,9 @@ class TNCommitteeScraper(CommitteeScraper):
                 else:
                     role = 'member'
 
-                if 'Senator' in member_name:
-                    member_name = member_name[8:len(member_name)]
-                elif 'Representative' in member_name:
-                    member_name = member_name[15:len(member_name)]
-                else:
-                    member_name = member_name[17: len(member_name)]
+                member_name = member_name.replace('Senator', '')
+                member_name = member_name.replace('Representative', '')
+                member_name = member_name.strip()
                 com.add_member(member_name, role)
 
             com.add_source(url)
@@ -185,6 +182,7 @@ class TNCommitteeScraper(CommitteeScraper):
                     role = a.xpath('small')
                     if role:
                         role = role[0].xpath('text()')[0].strip()
+                        member_name = member_name.replace(role, '').strip()
                     else:
                         role = 'member'
                     com.add_member(member_name, role)
