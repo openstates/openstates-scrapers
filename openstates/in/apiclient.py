@@ -3,6 +3,7 @@ import time
 import requests
 import urlparse
 import functools
+from OpenSSL.SSL import SysCallError
 
 
 class BadApiResponse(Exception):
@@ -101,7 +102,15 @@ class ApiClient(object):
 
         args = (url, requests_args, requests_kwargs)
         self.scraper.info('Api GET: %r, %r, %r' % args)
-        return self.scraper.get(url, *requests_args, **requests_kwargs)
+        resp = None
+        tries = 0
+        while resp is None:
+            try:
+                resp = self.scraper.get(url, *requests_args, **requests_kwargs)
+            except SysCallError:
+                tries += 1
+                self.logger.warning("Got RST packet, trying again, this will be try # {}".format(tries))
+        return resp
 
     def unpaginate(self, result):
         for data in result['items']:
