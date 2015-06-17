@@ -101,6 +101,9 @@ class NMBillScraper(BillScraper):
         if session == '2015':
             fname = 'LegInfo15'
             fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo15.*zip)'
+        elif session == '2015S':
+            fname = 'LegInfo15S'
+            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo15S.*zip)'
         else:
             raise ValueError('no zip file present for %s' % session)
 
