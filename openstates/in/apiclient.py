@@ -111,7 +111,7 @@ class ApiClient(object):
             except SysCallError:
                 tries += 1
                 if tries >= num_bad_packets_allowed:
-                    raise RuntimeError("Got bad packet from API 5 times, I give up")
+                    raise RuntimeError("Got bad packet from API too many times, I give up")
                 self.logger.warning("Got RST packet, trying again, this will be try # {}".format(tries))
         return resp
 
