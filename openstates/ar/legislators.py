@@ -22,7 +22,7 @@ class ARLegislatorScraper(LegislatorScraper):
         url = ('http://www.arkleg.state.ar.us/assembly/%s/%sR/Pages/'
                'LegislatorSearchResults.aspx?member=&committee=All&chamber=')
         url = url % (start_year, start_year)
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
 
         for a in root.xpath('//table[@class="dxgvTable"]'
@@ -32,7 +32,7 @@ class ARLegislatorScraper(LegislatorScraper):
             self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
-        page = self.urlopen(member_url)
+        page = self.get(member_url).text
         root = lxml.html.fromstring(page)
 
         name_and_party = root.xpath(
@@ -54,6 +54,8 @@ class ARLegislatorScraper(LegislatorScraper):
             party = 'Democratic'
         elif party == '(G)':
             party = 'Green'
+        elif party == '(I)':
+            party = 'Independent'
 
         else:
             raise AssertionError(

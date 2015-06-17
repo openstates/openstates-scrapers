@@ -1,42 +1,60 @@
-from collections import defaultdict
-from urlparse import urlunsplit
-from urllib import urlencode
-from operator import methodcaller
 import re
-
 import lxml.html
+from openstates.utils import LXMLMixin
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
-class DELegislatorScraper(LegislatorScraper):
+class DELegislatorScraper(LegislatorScraper,LXMLMixin):
     jurisdiction = 'de'
 
-    def scrape(self, chamber, term, text=methodcaller('text_content'),
-               re_spaces=re.compile(r'\s{,5}')):
+    def scrape(self, chamber, term):
 
         url = {
-            'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate',
-            'lower': 'http://legis.delaware.gov/legislature.nsf/Reps?openview&Count=75&nav=house&count=75',
+            'upper': 'http://legis.delaware.gov/legislature.nsf/sen?openview',
+            'lower': 'http://legis.delaware.gov/Legislature.nsf/Reps?openview',
             }[chamber]
 
-        doc = lxml.html.fromstring(self.urlopen(url))
-        doc.make_links_absolute(url)
+        doc = self.lxmlize(url)
 
-        # Sneak into the main table...
-        xpath = '//font[contains(., "Leadership Position")]/ancestor::table[1]'
-        table = doc.xpath(xpath)[0]
+        if chamber == "upper":
+            #for the senate, it's the same table
+            #but the html is hard-coded in js.
+            table_js = doc.xpath('.//script')[-1].text_content()
+            table = None
+            for line in table_js.split("\n"):
+                if line.strip().startswith("var") and "sen=" in line:
+                    table = line.replace("var","")
+                    table = table.replace('sen="<','<')
+                    table = table.replace('>";','>')
+                    break
 
-        # Skip the first tr (headings)
-        trs = table.xpath('tr')[1:]
+            assert table is not None, "Senate table could not be found"
+
+            table = lxml.html.fromstring(table)
+            table.make_links_absolute(url)
+            trs = table.xpath('//tr')
+
+
+        else:
+            #same table for the house, but kindly in actual html
+            trs = doc.xpath('//tr')
+
+        base_url = "http://legis.delaware.gov"
 
         for tr in trs:
 
-            bio_url = tr.xpath('descendant::a/@href')[0]
-            name, _, district = map(text, tr.xpath("td"))
+            name_and_url = tr.xpath('.//a')[0]
+            bio_url = name_and_url.attrib["href"]
+            bio_url = bio_url.replace("JavaScript:window.top.location.href=","")
+            bio_url = bio_url.replace('"','')
+            name = name_and_url.text_content()
             if name.strip() == "." or name.strip() == "":
                 continue
+            re_spaces=re.compile(r'\s{1,5}')
             name = ' '.join(re_spaces.split(name))
+            district = tr.xpath('.//td')[2].text_content()
+            district = district.replace("District:","").strip()
 
 
             leg = self.scrape_bio(term, chamber, district, name, bio_url)
@@ -47,19 +65,22 @@ class DELegislatorScraper(LegislatorScraper):
     def scrape_bio(self, term, chamber, district, name, url):
         # this opens the committee section without having to do another request
         url += '&TableRow=1.5.5'
-        doc = lxml.html.fromstring(self.urlopen(url))
-        doc.make_links_absolute(url)
+        frame_doc = self.lxmlize(url)
+        actual_url = frame_doc.xpath("//frame[@name='right']/@src")[0]
+        doc = self.lxmlize(actual_url)
 
         # party is in one of these
-        party = doc.xpath('//div[@align="center"]/b/font[@size="2"]/text()')
+        party = doc.xpath('//div[@id="page_header"]')[0].text.strip()[-3:]
         if '(D)' in party:
             party = 'Democratic'
         elif '(R)' in party:
             party = 'Republican'
+        else:
+            raise AssertionError("No party found for {name}".format(name=name))
 
-        leg = Legislator(term, chamber, district, name, party=party, url=url)
+        leg = Legislator(term, chamber, district, name, party=party)
 
-        photo_url = doc.xpath('//img[contains(@src, "FieldElemFormat")]/@src')
+        photo_url = doc.xpath('//img[contains(@src, "jpg")]/@src')
         if photo_url:
             leg['photo_url'] = photo_url[0]
 
@@ -68,64 +89,87 @@ class DELegislatorScraper(LegislatorScraper):
         return leg
 
     def scrape_contact_info(self, doc):
-        office_names = ['Legislative Hall Office', 'Outside Office']
-        office_types = ['capitol', 'district']
-        xpath = '//u[contains(., "Office")]/ancestor::table/tr[2]/td'
-        data = zip(doc.xpath(xpath)[::2], office_names, office_types)
-        info = {}
 
         # Email
-        xpath = '//font[contains(., "E-mail Address")]/../font[2]'
-        email = doc.xpath(xpath)[0].text_content()
-
-        # If multiple email addresses listed, only take the official
-        # noone@state.de.us address.
-        emails = re.split(r'(?:\n| or |;|\s+)', email)
-        for email in filter(None, emails):
-            if email.strip():
-                info['email'] = email.strip()
-                break
+        email = doc.xpath(".//a[contains(@href,'mailto')]")
+        email = email[0].text_content().strip()
+        leg_email = None
+        dist_email = None
+        try:
+            emails = email.split(";")
+        except AttributeError:
+            pass
+        else:
+            for e in emails:
+                e = e.strip()
+                if e:
+                    if "state.de.us" in e:
+                        leg_email = e
+                    else:
+                        dist_email = e
+        
 
         # Offices
-        offices = []
-        for (td, name, type_) in data:
-            office = dict(name=name, type=type_, phone=None,
-                          fax=None, email=None, address=None)
 
-            chunks = td.text_content().strip().split('\n\n')
-            chunks = [s.strip() for s in chunks]
-            chunks = filter(None, chunks)
-            if len(chunks) == 1:
-                if ':' in chunks[0].splitlines()[0]:
-                    # It's just phone numbers with no actual address.
-                    numbers = [chunks[0]]
-                    office['address'] = None
-                elif chunks[0].strip().startswith("("):
-                    numbers = [chunks[0]]
-                    office['address'] = None
-                else:
-                    office['address'] = chunks[0]
-                    numbers = []
-                    offices.append(office)
-                    continue
+        leg_office = dict(name="Capitol Office", type="capitol",
+                        phone=None, fax=None, email=leg_email, address=None)
+        dist_office = dict(name="Outside Office", type="capitol",
+                        phone=None,fax=None, email=dist_email, address=None) 
+
+        #this is enormously painful, DE.
+        office_list = doc.xpath("//tr")
+        for office in office_list:
+            title_td = 0
+            #in some trs the photo is the first td
+            if len(office.xpath("./td/img")) > 0:
+                title_td = 1
+            try:
+                title_text = office.xpath("./td")[title_td].text_content().lower()
+                content = office.xpath("./td")[title_td+1].text_content()
+
+            except IndexError:
+                continue
+
+            leg_office = self.add_contact("legislative",
+                    title_text,content,leg_office)
+            dist_office = self.add_contact("outside",
+                    title_text,content,dist_office)
+
+        offices = [o for o in [leg_office,dist_office] if o["address"]]
+        assert len(offices) > 0, "No offices with addresses found "\
+            "make sure we're not losing any data."
+        return {"offices":offices}
+
+    def add_contact(self,office_type,
+                    title_text,content,office):
+        #office type is the name of the office
+        #either "legislative" or "outside"
+        if "{} office".format(office_type) in title_text:
+            office["address"] = content.strip()
+        if "{} phone".format(office_type) in title_text:
+            phones = content.lower().split("\n")
+            if len(phones) == 1:
+                phone = self.clean_phone(phones[0])
+                if phone:
+                    office["phone"] = phone
             else:
-                if not chunks:
-                    # This office has no data.
-                    continue
-                address = chunks.pop(0)
-                numbers = chunks
-                office['address'] = address
-            for number in numbers:
-                for line in number.splitlines():
-                    if not line.strip():
-                        continue
-                    for key in ('phone', 'fax'):
-                        if key in line.lower():
-                            break
-                    number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
-                    if number:
-                        number = number.group()
-                        office[key] = number
-                offices.append(office)
+                for line in phones:
+                    if "phone" in line:
+                        phone = self.clean_phone(line)
+                        if phone:
+                            office["phone"] = phone
+                    elif "fax" in line:
+                        phone = self.clean_phone(line)
+                        if phone:
+                            office["fax"] = phone
+        return office
 
-        return dict(info, offices=offices)
+    def clean_phone(self,phone):
+        if not phone.strip():
+            return
+        if not re.search("\d",phone):
+            return
+        if not ":" in phone:
+            return phone
+        return phone.split(":")[1].strip()
+

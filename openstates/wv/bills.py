@@ -54,32 +54,38 @@ class WVBillScraper(BillScraper):
         url = ("http://www.legis.state.wv.us/Bill_Status/"
                "Bills_all_bills.cfm?year=%s&sessiontype=RS"
                "&btype=bill&orig=%s" % (session, orig))
-        page = lxml.html.fromstring(self.urlopen(url))
+        page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'Bills_history')]"):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
+            if not title:
+                self.logger.warning("Can't find bill title, using ID as title")
+                title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
         # scrape resolutions
         res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?"
                    "year=%s&sessiontype=rs&btype=res") % session
-        doc = lxml.html.fromstring(self.urlopen(res_url))
+        doc = lxml.html.fromstring(self.get(res_url).text)
         doc.make_links_absolute(res_url)
 
         # check for links originating in this house
         for link in doc.xpath('//a[contains(@href, "houseorig=%s")]' % orig):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
+            if not title:
+                self.logger.warning("Can't find bill title, using ID as title")
+                title = bill_id
             self.scrape_bill(session, chamber, bill_id, title,
                              link.attrib['href'])
 
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
 
-        html = self.urlopen(url)
+        html = self.get(url).text
 
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)

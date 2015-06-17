@@ -21,6 +21,7 @@ import re
 
 from billy.scrape.committees import Committee, CommitteeScraper
 import lxml.html
+import requests
 
 
 def fix_whitespace(s):
@@ -46,7 +47,7 @@ class TNCommitteeScraper(CommitteeScraper):
             self.scrape_house_committees(url)
 
     def scrape_senate_committees(self, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -59,7 +60,7 @@ class TNCommitteeScraper(CommitteeScraper):
             self._scrape_committee(committee_name, link, 'upper')
 
     def scrape_house_committees(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -74,7 +75,7 @@ class TNCommitteeScraper(CommitteeScraper):
     def _scrape_committee(self, committee_name, link, chamber):
         """Scrape individual committee page and add members"""
 
-        page = self.urlopen(link)
+        page = self.get(link).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(link)
 
@@ -118,7 +119,7 @@ class TNCommitteeScraper(CommitteeScraper):
     def scrape_joint_committees(self):
         main_url = 'http://www.capitol.tn.gov/joint/'
 
-        page = self.urlopen(main_url)
+        page = self.get(main_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
 
@@ -134,7 +135,12 @@ class TNCommitteeScraper(CommitteeScraper):
     def scrape_joint_committee(self, committee_name, url):
         if 'state.tn.us' in url:
             com = Committee('joint', committee_name)
-            page = self.urlopen(url)
+            try:
+                page = self.get(url).text
+            except requests.exceptions.ConnectionError:
+                self.logger.warning("Committee link is broken, skipping")
+                return
+
             page = lxml.html.fromstring(page)
 
             for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"):
@@ -147,12 +153,9 @@ class TNCommitteeScraper(CommitteeScraper):
                 else:
                     role = 'member'
 
-                if 'Senator' in member_name:
-                    member_name = member_name[8:len(member_name)]
-                elif 'Representative' in member_name:
-                    member_name = member_name[15:len(member_name)]
-                else:
-                    member_name = member_name[17: len(member_name)]
+                member_name = member_name.replace('Senator', '')
+                member_name = member_name.replace('Representative', '')
+                member_name = member_name.strip()
                 com.add_member(member_name, role)
 
             com.add_source(url)
@@ -160,13 +163,13 @@ class TNCommitteeScraper(CommitteeScraper):
 
         elif 'gov-opps' in url:
             com = Committee('joint', committee_name)
-            page = self.urlopen(url)
+            page = self.get(url).text
             page = lxml.html.fromstring(page)
 
             links = ['senate', 'house']
             for link in links:
                 chamber_link = self.base_href + '/' + link + '/committees/gov-opps.html'
-                chamber_page = self.urlopen(chamber_link)
+                chamber_page = self.get(chamber_link).text
                 chamber_page = lxml.html.fromstring(chamber_page)
                 
                 OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
@@ -179,12 +182,13 @@ class TNCommitteeScraper(CommitteeScraper):
                         ):
                     member_name = ' '.join([
                             x.strip() for x in
-                            a.xpath('//text()')
+                            a.xpath('.//text()')
                             if x.strip()
                             ])
                     role = a.xpath('small')
                     if role:
                         role = role[0].xpath('text()')[0].strip()
+                        member_name = member_name.replace(role, '').strip()
                     else:
                         role = 'member'
                     com.add_member(member_name, role)

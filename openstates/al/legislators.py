@@ -73,7 +73,7 @@ class ALLegislatorScraper(LegislatorScraper):
         district_to_sponsor_id = self.get_sponsor_ids()
 
         #get reps
-        html = self.urlopen(url)
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
         reps = page.xpath("//table[contains(@id,'HseMainContent_tabByName_TabPanel')]//tr")
         for rep in reps:
@@ -122,7 +122,7 @@ class ALLegislatorScraper(LegislatorScraper):
 
             #scrape rep's additional info from sponsor page
             rep_sponsor_url = "http://www.legislature.state.al.us/aliswww/Representative.aspx?OID_SPONSOR={}".format(sponsor_id)
-            rep_html = self.urlopen(rep_sponsor_url)
+            rep_html = self.get(rep_sponsor_url).text
             rep_page = lxml.html.fromstring(rep_html)
 
             leg["photo_url"] = rep_page.xpath("//input[contains(@id,'imgLEG')]/@src")[0]
@@ -137,7 +137,7 @@ class ALLegislatorScraper(LegislatorScraper):
                           '(I)': 'Independent'}
 
         base_senator_url = "http://www.legislature.state.al.us/aliswww/Senator.aspx?OID_SPONSOR={sponsor_id}&OID_PERSON={person_id}&SESSNAME="
-        html = self.urlopen(url)
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
         
         senators = page.xpath("//input[contains(@id,'SenMainContent_Img')]") + page.xpath("//input[contains(@id,'SenMainContent_img')]")
@@ -147,7 +147,7 @@ class ALLegislatorScraper(LegislatorScraper):
             sponsor_id = senator.attrib["longdesc"]
             
             senator_link = base_senator_url.format(person_id = person_id, sponsor_id = sponsor_id)
-            sen_html = self.urlopen(senator_link)
+            sen_html = self.get(senator_link).text
             sen_page = lxml.html.fromstring(sen_html)
             
             #stuff that's easy to grab

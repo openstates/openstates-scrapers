@@ -20,7 +20,7 @@ class FLCommitteeScraper(CommitteeScraper):
 
     def scrape_upper_committees(self):
         url = "http://flsenate.gov/Committees/"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -42,7 +42,7 @@ class FLCommitteeScraper(CommitteeScraper):
                 self.save_committee(comm)
 
     def scrape_upper_committee(self, comm, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         comm.add_source(url)
 
@@ -63,7 +63,7 @@ class FLCommitteeScraper(CommitteeScraper):
     def scrape_lower_committees(self):
         url = ("http://www.myfloridahouse.gov/Sections/Committees/"
                "committees.aspx")
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -85,7 +85,7 @@ class FLCommitteeScraper(CommitteeScraper):
             self.scrape_joint_committee(link)
 
     def scrape_joint_committee(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//h1/text()') or doc.xpath('//h2/text()')
@@ -114,7 +114,7 @@ class FLCommitteeScraper(CommitteeScraper):
             self.save_committee(comm)
 
     def scrape_lower_committee(self, comm, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         comm.add_source(url)
 

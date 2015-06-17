@@ -122,7 +122,7 @@ class IDBillScraper(BillScraper):
         self._subjects = defaultdict(list)
 
         url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # loop through anchors
@@ -151,7 +151,7 @@ class IDBillScraper(BillScraper):
     def scrape_post_2009(self, chamber, session):
         "scrapes legislation for 2009 and above"
         url = BILLS_URL % session
-        bill_index = self.urlopen(url)
+        bill_index = self.get(url).text
         html = lxml.html.fromstring(bill_index)
         # I check for rows with an id that contains 'bill' and startswith
         # 'H' or 'S' to make sure I dont get any links from the menus
@@ -170,7 +170,7 @@ class IDBillScraper(BillScraper):
         """scrapes legislation from 2008 and below."""
         url = BILLS_URL + 'l'
         url = url % session
-        bill_index = self.urlopen(url)
+        bill_index = self.get(url).text
         html = lxml.html.fromstring(bill_index)
         html.make_links_absolute(url)
         links = html.xpath('//a')
@@ -188,7 +188,7 @@ class IDBillScraper(BillScraper):
         bills from the 2009 session and above.
         """
         url = BILL_URL % (session, bill_id.replace(' ', ''))
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         html = lxml.html.fromstring(bill_page)
         html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
         bill_tables = html.xpath('./body/table/tr/td[2]')[0].xpath('.//table')
@@ -266,7 +266,7 @@ class IDBillScraper(BillScraper):
         """bills from 2008 and below are in a 'pre' element and is simpler to
         parse them as text"""
         url = 'http://legislature.idaho.gov/legislation/%s/%s.html' % (session, bill_id.replace(' ', ''))
-        bill_page = self.urlopen(url)
+        bill_page = self.get(url).text
         html = lxml.html.fromstring(bill_page)
         text = html.xpath('//pre')[0].text.split('\r\n')
 
@@ -345,26 +345,30 @@ class IDBillScraper(BillScraper):
 
         self.save_bill(bill)
 
+    def get_names(self,name_text):
+        if name_text:
+            #both of these are unicode non-breaking spaces
+            name_text = name_text.replace(u'\xa0--\xa0', '')
+            name_text = name_text.replace(u'\u00a0',' ')
+            name_list = [name.strip() for name in name_text.split(",") if name]
+            return name_list
+        return []
+
     def parse_vote(self, actor, date, row):
         """
         takes the actor, date and row element and returns a Vote object
         """
         spans = row.xpath('.//span')
-        motion = row.text
-        passed, yes_count, no_count, other_count = spans[0].text_content().split('-')
-        yes_votes = [ name for name in
-                      spans[1].tail.replace(u'\xa0--\xa0', '').split(',')
-                      if name ] if spans[1].tail else []
+        motion = row.text.replace(u'\u00a0'," ").replace("-","").strip()
+        motion = motion if motion else "passage"
+        passed, yes_count, no_count, other_count = spans[0].text_content().rsplit('-',3)
+        yes_votes = self.get_names(spans[1].tail)
+        no_votes = self.get_names(spans[2].tail)
 
-        no_votes = [ name for name in
-                     spans[2].tail.replace(u'\xa0--\xa0', '').split(',')
-                     if name ]
         other_votes = []
         for span in spans[3:]:
             if span.text.startswith(('Absent', 'Excused')):
-                other_votes += [name.strip() for name in
-                                span.tail.replace(u'\xa0--\xa0', '').split(',')
-                                if name]
+                other_votes += self.get_names(span.tail)
         for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
             if key in passed.lower():
                 passed = val

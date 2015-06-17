@@ -1,13 +1,10 @@
 import re
 import csv
-import difflib
 import urlparse
-from itertools import dropwhile, takewhile
 
 import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import scrapelib
 
 
 class NoDetails(Exception):
@@ -24,7 +21,7 @@ class MTLegislatorScraper(LegislatorScraper):
         # incidents in the past suggest some external part of their stack
         # is having some issue and the error is bubbling up to the ret code.
         self.raise_errors = False
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         self.raise_errors = True
         return doc
@@ -42,7 +39,7 @@ class MTLegislatorScraper(LegislatorScraper):
             (session_number, year, chamber == 'upper' and 'Senate' or 'House')
 
         # Parse it.
-        data = self.urlopen(url)
+        data = self.get(url).text
         data = data.replace('"""', '"')  # weird triple quotes
         data = data.splitlines()
 
@@ -143,20 +140,9 @@ class MTLegislatorScraper(LegislatorScraper):
 
         # Fetch it.
         self.raise_errors = False
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         self.raise_errors = True
-        # try:
-        #     with open('mt_hotgarbage.txt') as f:
-        #         html = f.read()
-        #         doc = lxml.html.fromstring(html)
-        # except IOError:
-        #     self.raise_errors = False
-        #     html = self.urlopen(url)
-        #     doc = lxml.html.fromstring(html)
-        #     self.raise_errors = True
-        #     with open('mt_hotgarbage.txt', 'w') as f:
-        #         f.write(html)
 
         # Get the new baseurl, like 'http://leg.mt.gov/css/Sessions/62nd/'
         parts = urlparse.urlparse(url)
@@ -209,10 +195,6 @@ class MTLegislatorScraper(LegislatorScraper):
 
         # # Parse address.
         elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])
-        # # dropper = lambda element: element.tag != 'b'
-        # # elements = dropwhile(dropper, elements)
-        # # assert next(elements).text == 'Address'
-        # # elements = list(takewhile(taker, elements))
 
         # # MT's website currently has a typo that places the "address"
         # # heading inline with the "Information Office" phone number.
@@ -223,9 +205,6 @@ class MTLegislatorScraper(LegislatorScraper):
             chunks.extend(filter(None, [br.text, br.tail]))
 
         # As far as I can tell, MT legislators don't have capital offices.
-        # office = dict(name='District Office', type='district', phone=None,
-        #               fax=None, email=None,
-        #               address='\n'.join(chunks[:2]))
         for line in chunks[2:]:
             if not line.strip():
                 continue
@@ -240,8 +219,6 @@ class MTLegislatorScraper(LegislatorScraper):
                     # Used to set this on the office.
                     details[key] = number
 
-        # details['offices'] = [office]
-
         try:
             email = doc.xpath('//b[contains(., "Email")]/..')[0]
         except IndexError:
@@ -254,4 +231,3 @@ class MTLegislatorScraper(LegislatorScraper):
                     details['email'] = match.group()
 
         return details
-

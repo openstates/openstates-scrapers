@@ -25,7 +25,7 @@ class NVLegislatorScraper(LegislatorScraper):
         leg_base_url = 'http://www.leg.state.nv.us/App/Legislator/A/%s/%s/' % (chamber_slug, slug)
         leg_json_url = 'http://www.leg.state.nv.us/App/Legislator/A/api/%s/Legislator?house=%s' % (slug, chamber_slug)
 
-        resp = json.loads(self.urlopen(leg_json_url))
+        resp = json.loads(self.get(leg_json_url).text)
 
         for item in resp:
             # empty district
@@ -40,14 +40,14 @@ class NVLegislatorScraper(LegislatorScraper):
             leg_url = leg_base_url + item['DistrictNbr']
 
             # hack to get the legislator ID
-            html = self.urlopen(leg_url)
+            html = self.get(leg_url).text
             for l in html.split('\n'):
                 if 'GetLegislatorDetails' in l:
                     leg_id = l.split(',')[1].split("'")[1]
 
             # fetch the json used by the page
             leg_details_url = 'https://www.leg.state.nv.us/App/Legislator/A/api/78th2015/Legislator?id=' + leg_id
-            leg_resp = json.loads(self.urlopen(leg_details_url))
+            leg_resp = json.loads(self.get(leg_details_url).text)
             details = leg_resp['legislatorDetails']
 
             address = details['Address1']

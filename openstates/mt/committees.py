@@ -1,16 +1,11 @@
+# -*- coding: utf-8 -*-
 '''
 This file has a slightly unusual structure. The urs and the main
 scrape function are defined at the top level because the legislator
 scrape requires data from the committee pages in order to get
 properly capitalized names. So that part needs to be importable and
 hence the need to dcouple it from the scraper instance. If that makes
-sense.
-
-This file currently scrapes only standing committees and doesn't
-bother with the arguably important joint appropriations subcomittees,
-Which contain members of the appropriations committees from each
-and deal with budgetary matters.
-'''
+sense.'''
 import re
 from itertools import dropwhile, takewhile
 from collections import defaultdict
@@ -72,17 +67,19 @@ class MTCommitteeScraper(CommitteeScraper):
                         self.save_committee(c)
 
     def scrape_committees_pdf(self, year, chamber, filename, url):
-        text = convert_pdf(filename, type='text-nolayout')
+        if chamber == 'lower' and year == 2015:
+            text = self._fix_house_text(filename)
+        else:
+            text = convert_pdf(filename, type='text-nolayout')
 
-        # Hot garbage.
         for hotgarbage, replacement in (
-            ('Judicial Branch, Law Enforcement,\s+and\s+Justice',
+            (r'Judicial Branch, Law Enforcement,\s+and\s+Justice',
              'Judicial Branch, Law Enforcement, and Justice'),
 
-            ('Natural Resources and\s+Transportation',
+            (r'Natural Resources and\s+Transportation',
              'Natural Resources and Transportation'),
 
-            ('Federal Relations, Energy,\sand\sTelecommunications',
+            (r'(?u)Federal Relations, Energy,?\s+and\s+Telecommunications',
              'Federal Relations, Energy, and Telecommunications')
             ):
             text = re.sub(hotgarbage, replacement, text)
@@ -99,7 +96,8 @@ class MTCommitteeScraper(CommitteeScraper):
                 'committee', ' and ', 'business', 'resources',
                 'legislative', 'administration', 'government',
                 'local', 'planning', 'judicial', 'natural',
-                'resources', 'general', 'health', 'human'):
+                'resources', 'general', 'health', 'human',
+                'education'):
                 if s in line.lower():
                     return True
             if line.istitle() and len(line.split()) == 1:
@@ -111,17 +109,21 @@ class MTCommitteeScraper(CommitteeScraper):
 
         comm = None
         in_senate_subcommittees = False
-        while 1:
+        while True:
             try:
                 line = lines.next()
             except StopIteration:
                 break
+            # Replace Unicode variants with ASCII equivalents
+            line = line.replace(" ", " ").replace("‐", "-")
 
-            if 'Joint Appropriations/Finance &' in line:
-                # Toss the line continuation.
-                lines.next()
+            if 'Subcommittees' in line:
+                # These appear in both chambers' lists, so de-dup the scraping
+                if chamber == 'lower':
+                    break
+                elif chamber == 'upper':
+                    self.info("Beginning scrape of joint subcommittees")
 
-                # Move on.
                 in_senate_subcommittees = True
                 chamber = 'joint'
                 continue
@@ -131,9 +133,9 @@ class MTCommitteeScraper(CommitteeScraper):
 
                 if in_senate_subcommittees:
                     committee = ('Joint Appropriations/Finance & Claims')
-                    subcommittee = line
+                    subcommittee = line.strip()
                 else:
-                    committee = line
+                    committee = line.strip()
 
                 if comm and comm['members']:
                     self.save_committee(comm)
@@ -144,17 +146,69 @@ class MTCommitteeScraper(CommitteeScraper):
 
             elif is_legislator_name(line):
                 name, party = line.rsplit('(', 1)
-                name = name.strip()
-                if re.search('[^V] Ch', party):
+                name = name.strip().replace("Rep. ", "").replace("Sen. ", "")
+                if re.search(' Ch', party):
                     role = 'chair'
-                elif 'V Ch' in party:
+                elif ' VCh' in party:
                     role = 'vice chair'
+                elif ' MVCh' in party:
+                    role = 'minority vice chair'
                 else:
                     role = 'member'
                 comm.add_member(name, role)
 
         if comm['members']:
             self.save_committee(comm)
+
+    def _fix_house_text(self, filename):
+        '''
+        TLDR: throw out bad text, replace it using different parser
+        settings.
+
+        When using `pdftotext` on the 2015 House committee list,
+        the second and third columns of the second page get mixed up,
+        which makes it very difficult to parse. Adding the `--layout`
+        option fixes this, but isn't worth switching all parsing to
+        that since the standard `pdftotext --nolayout` is easier in all
+        other cases.
+
+        The best solution to this is to throw out the offending text,
+        and replace it with the correct text. The third and fourth
+        columns are joint comittees that are scraped from the Senate
+        document, so the only column that needs to be inserted this way
+        is the second.
+        '''
+
+        # Take the usable text from the normally-working parsing settings
+        text = convert_pdf(filename, type='text-nolayout')
+        assert "Revised: January 23, 2015" in text,\
+            "House committee list has changed; check that the special-case"\
+            " fix is still necessary, and that the result is still correct"
+        text = re.sub(r'(?sm)Appropriations/F&C.*$', "", text)
+
+        # Take the usable column from the alternate parser
+        alternate_text = convert_pdf(filename, type='text')
+        alternate_lines = alternate_text.split('\n')
+
+        HEADER_OF_COLUMN_TO_REPLACE = "State Administration (cont.)      "
+        (text_of_line_to_replace, ) = [
+            x for x in alternate_lines
+            if HEADER_OF_COLUMN_TO_REPLACE in x
+        ]
+        first_line_to_replace = alternate_lines.index(text_of_line_to_replace)
+        first_character_to_replace = alternate_lines[
+            first_line_to_replace].index(HEADER_OF_COLUMN_TO_REPLACE) - 1
+        last_character_to_replace = (first_character_to_replace +
+                                     len(HEADER_OF_COLUMN_TO_REPLACE))
+
+        column_lines_to_add = [
+            x[first_character_to_replace:last_character_to_replace]
+            for x in alternate_lines[first_line_to_replace + 1:]
+        ]
+        column_text_to_add = '\n'.join(column_lines_to_add)
+
+        text = text + column_text_to_add
+        return text
 
 
 def scrape_committees_html(year, chamber, doc):
@@ -171,7 +225,7 @@ def scrape_committees_html(year, chamber, doc):
     # Get the joint approps subcommittees during the upper scrape.
     if chamber == 'upper':
         url = committee_urls['joint'][year]
-        html = scrapelib.urlopen(url)
+        html = scrapelib.get(url).text
 
         name_dict = defaultdict(set)
         doc = lxml.html.fromstring(html)

@@ -1,693 +1,365 @@
-import re
-import itertools
-import logging
-from urlparse import urlparse
 from datetime import datetime
-from operator import methodcaller
-from functools import partial
-from collections import defaultdict
+import re
 
 import lxml.html
 
+from openstates.utils import LXMLMixin
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 import scrapelib
-
 import actions
 
-
-class BillIdParseError(ScrapeError):
-    '''
-    Raised when function `parse_bill_id` returns a string that
-    doesn't remotely resmble a valid bill_id.
-    '''
-    pass
-
-
-class WeirdDataError(ScrapeError):
-    '''Raised when unexpected format is encountered, probably due to
-    manual entry.
-    '''
-    logger = logging.getLogger('billy')
-
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        self.logger.warning(message)
-
-
-def get_text(doc, i, xpath):
-    '''
-    A shortcut to get stripped text content given 1) a document of
-    type lxml.html.HtmlElement, 2) an xpath, and 3) optionaly
-    an index `i` that defaults to zero.
-    '''
-    if not i:
-        i = 0
-    return doc.xpath(xpath)[i].text_content().strip()
-
-
-def slugify(s):
-    '''
-    Turn a phrase like "Current Status:" into "current_status".
-    '''
-    return s.lower().replace(' ', '_').rstrip(':')
-
-
-def parse_votestring(v, strptime=datetime.strptime,
-    re_date=re.compile('\d{,2}/\d{,2}/\d{,4} [\d:]{,8} [AP]M'),
-    chambers={'House': 'lower', 'Senate': 'upper'}):
-    '''
-    Parse contents of the string on the main bill detail page
-    describing a vote.
-    '''
-    motion, _ = v.split(':', 1)
-    motion = motion.strip()
-
-    m = re_date.search(v)
-    if m is None:
-        raise WeirdDataError('Got unexpected date format: %s' % v)
-    date = strptime(m.group(), '%m/%d/%Y %I:%M:%S %p')
-
-    chamber, _ = v.split(' ', 1)
-    chamber = chambers[chamber.strip()]
-
-    passed = ('Passed' in v)
-
-    return dict(date=date, chamber=chamber, passed=passed, motion=motion)
-
-
-def extract_bill_id(bill_id, fns=(
-    partial(re.compile(r'( w/.A \d{1,3}.{,200},?)+$', re.I).sub, ''),
-    partial(re.compile(r'^.{,20}for ', re.I).sub, '')),
-    is_valid=re.compile(r'[A-Z]{2,4} \d{1,6}$').match):
-    '''
-    Given a bill id string from the website's index pages, removes
-    characters indicating amendments and substitutions, e.g.:
-
-        SB 137 w/SA 1 --> SB 137
-        SB 112 w/SA 1 + HA 1 --> SB 112
-        SS 1 for SB 156 --> SB 156
-
-    Complains if the result doesn't look like a normal bill id.
-    '''
-    _bill_id = bill_id
-
-    for f in fns:
-        bill_id = f(bill_id)
-
-    if not is_valid(bill_id):
-        msg = 'Not a valid bill id: "%s" ' % _bill_id
-        raise BillIdParseError(msg)
-
-    return bill_id
-
-
-class DEBillScraper(BillScraper):
-    '''
-    Scrapes bills for the current session. Delware's website
-    (http://legis.delaware.gov/) lists archival data separately and
-    with a different (though similar) format.
-    See http://legis.delaware.gov/LEGISLATURE.NSF/LookUp/LIS_archives?opendocument
-    '''
-
+class DEBillScraper(BillScraper, LXMLMixin):
+ 
     jurisdiction = 'de'
 
     categorizer = actions.Categorizer()
 
-    legislation_types = {
-        'House Bill': 'bill',
-        'House Concurrent Resolution': 'concurrent resolution',
-        'House Joint Resolution': 'joint resolution',
-        'House Resolution': 'resolution',
-        'Senate Bill': 'bill',
-        'Senate Concurrent Resolution': 'concurrent resolution',
-        'Senate Joint Resolution': 'joint resolution',
-        'Senate Resolution': 'resolution',
-        'Senate Nominations': 'nomination',
+
+    def separate_names(self,text):
+        text = text.replace("&nbsp","")
+        names = re.split("[,;&]",text)
+        bad_things_in_names = ["Sen.","Sens.","Rep.","Reps."]
+        for name in names:
+            for b in bad_things_in_names:
+                name = name.replace(b,"")  
+            if name.strip():
+                yield name.strip()
+
+    def find_vote(self,tds,vote_documents,extra=""):
+        vote_info = tds[1].xpath('./a')
+        for v in vote_info:
+            prev = v.getprevious()
+            vote_name = extra+prev.text_content().strip()
+            vote_documents[vote_name] = v.attrib["href"]
+
+    def scrape_bill(self,link,chamber,session):
+
+        legislation_types = {
+            'House Bill': 'HB',
+            'House Concurrent Resolution': 'HCR',
+            'House Joint Resolution': 'HJR',
+            'House Resolution': 'HR',
+            'Senate Bill': 'SB',
+            'Senate Concurrent Resolution': 'SCR',
+            'Senate Joint Resolution': 'SJR',
+            'Senate Resolution': 'SR',
         }
 
-    def _url_2_lxml(self, url, base_url='{0.scheme}://{0.netloc}'.format):
-        '''
-        Fetch the url and parse with lxml.
-        '''
-        html = self.urlopen(url)
-        doc = lxml.html.fromstring(html)
-        urldata = urlparse(url)
-        doc.make_links_absolute(base_url(urldata))
-        return doc
-
-    def _cleanup_sponsors(self, string, chamber,
-
-        # Splits at ampersands and commas.
-        re_amp=re.compile(r'[,&]'),
-
-        # Changes "Sen. Jones" into "Jones"
-        re_title=re.compile(r'(Sen|Rep)s?[.;]\s?'),
-
-        # Map to clean up sponsor name data.
-        name_map={
-            '{ NONE...}': '',
-            },
-
-        # Mapping of member designations to related chamber type.
-        chamber_map={
-            'Sen': 'upper',
-            'Rep': 'lower',
-            },
-
-        chain=itertools.chain.from_iterable,
-        replace=methodcaller('replace', '&nbsp', ''),
-        strip=methodcaller('strip'),
-
-        splitter=re.compile('(?:[,;] NewLine|(?<!Reps); |on behalf of all \w+)')):
-        '''
-        Sponsor names are sometimes joined with an ampersand,
-        are '{ NONE...}', or contain '&nbsp'. This helper removes
-        that stuff and returns a list minus any non-name strings found.
-        '''
-
-        # "Briggs King" is a deplorable hack to work around DE's
-        # not-easily-parseable sponsorship strings.
-        tokenizer = r'(?:(?:[A-Z]\.){,5} )?(?:Briggs King|[A-Z][^.]\S{,50})'
-        tokenize = partial(re.findall, tokenizer)
-
-        for string in splitter.split(string):
-
-            # Override the chamber based on presence of "Sens." or "Rep."
-            m = re_title.search(string)
-            if m:
-                chamber = chamber_map[m.group(1)]
-
-            # Remove junk.
-            names = re_amp.split(string)
-            names = map(lambda s: re_title.sub('', s), names)
-            names = map(replace, names)
-            names = filter(None, [name_map.get(n, n) for n in names])
-            names = map(tokenize, names)
-
-            for n in chain(names):
-                yield (strip(n), chamber)
-
-    def _get_urls(self, chamber, session):
-        '''
-        A generator of urls to legislation types listed on the
-        index_url page.
-        '''
-        re_count = re.compile(r'count=\d+', re.I)
-
-        index_url = ('http://legis.delaware.gov/LIS/lis%s.nsf'
-                     '/Legislation/?openview' % session)
-
-        chamber_map = {'Senate': 'upper',
-                       'House': 'lower'}
-
-        legislation_types = self.legislation_types
-
-        index_page = self._url_2_lxml(index_url)
-
-        # The last link on the "all legis'n" page pertains to senate
-        # nominations, so skip it.
-        index_links = index_page.xpath('//a[contains(@href, "Expand=")]')
-        index_links = index_links[:-1]
-
-        for el in index_links:
-
-            type_raw = el.xpath('../following-sibling::td')[0].text_content()
-            type_ = legislation_types[type_raw]
-
-            # Skip any links that aren't for this chamber.
-            _chamber, _ = type_raw.split(' ', 1)
-            if chamber != chamber_map[_chamber]:
-                continue
-
-            # Tweak the url to ask the server for 10000 results (i.e., all)
-            url = el.attrib['href']
-            url = re_count.sub('count=10000', url)
-
-            # Get the index page.
-            doc = self._url_2_lxml(url)
-
-            for el in doc.xpath('//a[contains(@href, "OpenDocument")]'):
-
-                title = el.xpath('./../../../td[4]')[0].text_content()
-
-                url = el.attrib['href']
-
-                bill_kwargs = {'type': type_,
-                               'bill_id': extract_bill_id(el.text),
-                               'chamber': chamber,
-                               'session': session,
-                               'title': title}
-
-                yield (url, bill_kwargs)
-
-    def scrape(self, chamber, session):
-
-        scrape_bill = self.scrape_bill
-        for url, kw in self._get_urls(chamber, session):
-            try:
-                scrape_bill(url, kw)
-            except WeirdDataError as exc:
-                continue
-
-    def scrape_bill(self, url, kw,
-                    re_amendment=re.compile(r'(^[A-Z]A \d{1,3}) to'),
-                    re_substitution=re.compile(r'(^[A-Z]S \d{1,2}) for'),
-                    re_digits=re.compile(r'\d{,5}'),
-                    actions_get_actor=actions.get_actor):
-
-        bill = Bill(**kw)
-        bill.add_source(url)
-
-        #---------------------------------------------------------------------
-        # A few helpers.
-        _url_2_lxml = self._url_2_lxml
-        _cleanup_sponsors = self._cleanup_sponsors
-
-        # Shortcut function partial to get text at a particular xpath:
-        doc = _url_2_lxml(url)
-        _get_text = partial(get_text, doc, 0)
-
-        # Get session number--needed for fetching related documents (see below).
-        xpath = '//font[contains(., "General Assembly") and @face="Arial"]'
-        session_num = doc.xpath(xpath)[0].text_content()
-        session_num = re_digits.match(session_num).group()
-
-        #---------------------------------------------------------------------
-        # Sponsors
-        chamber = bill['chamber']
-
-        sponsor_types = {
-            'Additional Sponsor(s):': 'cosponsor',
-            'CoSponsors:': 'cosponsor',
-            'Primary Sponsor:': 'primary'}
-
-        xpath = '//font[contains(., "Sponsor") and @color="#008080"]'
-        headings = doc.xpath(xpath + '/text()')
-        sponsors = doc.xpath(xpath + '/../../following-sibling::td/font/text()')
-
-        for h, s in zip(headings, sponsors):
-
-            names = _cleanup_sponsors(s, chamber)
-            type_ = sponsor_types[h.strip()]
-
-            if names:
-                for name, _chamber in names:
-                    bill.add_sponsor(type_, name, chamber=_chamber)
-
-        #---------------------------------------------------------------------
-        # Versions
-
-        tmp = '/'.join([
-            'http://www.legis.delaware.gov',
-            'LIS/lis{session_num}.nsf/vwLegislation',
-            '{moniker}/$file/{filename}{format_}?open'])
-
-        documents = self.scrape_documents(source=url,
-                                     docname="introduced",
-                                     filename="Legis",
-                                     tmp=tmp,
-                                     session_num=session_num)
-
-        for d in documents:
-            bill.add_version(**d)
-
-        # If bill is a substitution, add the original as a version.
-        names = doc.xpath('//*[contains(text(), "Substituted '
-                          'Legislation for Bill:")]/text()')
-        urls = doc.xpath('//*[contains(text(), "Substituted '
-                          'Legislation for Bill:")]'
-                         '/following-sibling::a/@href')
-
-        for name, url in zip(names, urls):
-
-            name = re_substitution.match(name).group(1)
-            bill.add_version(name, url,
-                             description='original bill')
-
-        #---------------------------------------------------------------------
-        # Actions
-        actions = doc.xpath('//font[contains(., "Actions History")]'
-                            '/../following-sibling::table/descendant::td[2]')
-        actions = actions[0].text_content()
-        actions = filter(None, actions.splitlines())
-
-        for a in reversed(actions):
-            date, action = a.split(' - ', 1)
-            try:
-                date = datetime.strptime(date, '%b %d, %Y')
-            except ValueError:
-                date = datetime.strptime(date, '%B %d, %Y')  # XXX: ugh.
-
-            actor = actions_get_actor(action, bill['chamber'])
-            attrs = dict(actor=actor, action=action, date=date)
-            attrs.update(**self.categorizer.categorize(action))
-            bill.add_action(**attrs)
-
-        #---------------------------------------------------------------------
-        # Votes
-        xpaths = [
-            '//*[contains(text(), "vote:")]/following-sibling::a/@href',
-            '//font[contains(., "vote:")]/a/@href']
-        for xpath in xpaths:
-            vote_urls = doc.xpath(xpath)
-            if vote_urls:
-                break
-
-        for url in vote_urls:
-            vote = self.scrape_vote(url)
-            if vote:
-                bill.add_vote(vote)
-
-        #---------------------------------------------------------------------
-        # Amendments
-        xpath = ("//font[contains(., 'Amendments')]/"
-                 "../../../td[2]/font/a")
-
-        tmp = ('http://www.legis.delaware.gov/LIS/lis{session_num}.nsf/'
-               'vwLegislation/{id_}/$file/{filename}{format_}?open')
-
-        for source, id_ in zip(doc.xpath(xpath + '/@href'),
-                               doc.xpath(xpath + '/text()')):
-
-            match = re_amendment.match(id_)
-            if match is None:
-                match = re.search('/?([A-Z]A \\d{1,3}) to', id_)
-            short_id = match.group(1)
-
-            documents = self.scrape_documents(
-                source=source,
-                docname='amendment (%s)' % short_id,
-                filename='Legis',
-                tmp=tmp, session_num=session_num,
-                id_=id_)
-
-            for d in documents:
-                bill.add_document(**d)
-
-        #---------------------------------------------------------------------
-        # Add any related "Engrossments".
-        # See www.ncsl.org/documents/legismgt/ILP/98Tab3Pt4.pdf for
-        # an explanation of the engrossment process in DE.
-        source = doc.xpath('//img[@alt="Engrossment"]/../@href')
-
-        if source:
-
-            tmp = '/'.join([
-                'http://www.legis.delaware.gov',
-                'LIS/lis{session_num}.nsf/EngrossmentsforLookup',
-                '{moniker}/$file/{filename}{format_}?open'])
-
-            documents = self.scrape_documents(
-                source=source[0],
-                docname="Engrossment",
-                filename="Engross",
-                tmp=tmp,
-                session_num=session_num,
-                id_=bill['bill_id'])
-
-            for d in documents:
-                bill.add_version(**d)
-
-        # --------------------------------------------------------------------
-        # Add any fiscal notes.
-        source = doc.xpath("//img[@alt='Fiscal Note']/../@href")
-
-        if source:
-
-            tmp = '/'.join([
-                'http://www.legis.delaware.gov',
-                'LIS/lis{session_num}.nsf/FiscalforLookup',
-                '{docnum}/$file/{filename}{format_}?open'])
-
-            documents = self.scrape_documents(
-                source=source[0],
-                docname="Fiscal Note",
-                filename="Fiscal",
-                tmp=tmp,
-                session_num=session_num)
-
-            for d in documents:
-                bill.add_document(**d)
-
-        #---------------------------------------------------------------------
-        # Extra fields
-
-        # Helper to get the first td sibling of certain nodes.
-        tmp = '//font[contains(., "%s")]/../../../td[2]'
-        first_sibling_text = lambda heading: _get_text(tmp % heading)
-
-        extra_fields = {
-            # A long description of the legislation.
-            "summary": "Synopsis",
-            # Codification details for enacted legislation.
-            "volume_chapter": "Volume Chapter",
-            # Presumably the date of approval/veto.
-            "date_governor_acted": "Date Governor Acted",
-            "fiscal_notes": "Fiscal Notes",
-        }
-
-        for key, name in extra_fields.iteritems():
-            try:
-                bill[key] = first_sibling_text(name)
-            except IndexError:
-                # xpath lookup failed.
-                pass
-
-        if bill['title'].strip() == "":
-            if bill['bill_id'] != "HB 130" and bill['session'] != '147':
-                raise Exception("bill title is empty")
-            bill['title'] = bill['summary']
-            # This added to help hack around the page that's missing
-            # the bill title.
-
-        self.save_bill(bill)
-
-    def scrape_vote(self, url,
-                    re_digit=re.compile(r'\d{1,3}'),
-                    re_totals=re.compile(
-                        r'(?:Yes|No|Not Voting|Absent):\s{,3}(\d{,3})', re.I)):
-        namespaces = {"re": "http://exslt.org/regular-expressions"}
+        base_url = "http://legis.delaware.gov"
+        text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
         try:
-            html = self.urlopen(url)
-            doc = lxml.html.fromstring(html)
-        except scrapelib.HTTPError as e:
-            known_fail_links = [
-                "http://legis.delaware.gov/LIS/lis146.nsf/7712cf7cc0e9227a852568470077336f/cdfd8149e79c2bb385257a24006e9f7a?OpenDocument",
-                'http://legis.delaware.gov/LIS/lis147.nsf/7712cf7cc0e9227a852568470077336f/5f86852ea6649fa285257d08001bbe06?OpenDocument'
-            ]
-            if "404" in str(e.response):
-                # XXX: Ugh, ok, so there's no way (that I could find quickly)
-                #      to get the _actual_ response (just "ok") from the object.
-                #      As a result, this. Forgive me.
-                #            -PRT
-                # XXX: THERE SHALL BE NO FORGIVENESS FOR PAULTAG!!!!
-                #
-                #       Just kidding. I blame Delaware.
-                #            -TWN
-                if url in known_fail_links:
-                    msg = 'Recieved a bogus 22/404 return code. Skipping vote.'
-                    self.warning(msg)
-                    return
-            raise
-
-        if 'Committee Report' in lxml.html.tostring(doc):
-            # This was a committee vote with weird formatting.
-            self.info('Skipping committee report.')
-            return
-
-        xpath = ("//font[re:match(., '^(Yes|No|Not Voting|Absent):', 'i')]"
-                 "/ancestor::tr[1]")
-
-        # Get the vote tallies.
-        try:
-            totals = doc.xpath(xpath, namespaces=namespaces)
-            totals = totals[0].text_content()
-
-        except IndexError:
-            # Here the vote page didn't have have the typical format.
-            # Maybe it's a hand edited page. Log and try to parse
-            # the vitals from plain text.
-            self.warning('Found an unusual votes page at url: "%s"' % url)
-            totals = re_totals.findall(doc.text_content())
-            if len(totals) == 4:
-                self.warning('...was able to parse vote tallies from "%s"' % url)
-
-        else:
-            totals = re_digit.findall(totals)
-
-        try:
-            yes_count, no_count, abstentions, absent = map(int, totals)
-
-        except ValueError:
-            # There were'nt any votes listed on this page. This is probably
-            # a "voice vote" lacking actual vote tallies.
-            yes_count, no_count, other_count = 0, 0, 0
-
-        else:
-            other_count = abstentions + absent
-
-        font_text = [s.strip() for s in doc.xpath('//font/text()')]
-        date_index = font_text.index('Date:')
-        date_string = font_text[date_index + 2]
-        date = datetime.strptime(date_string, '%m/%d/%Y %H:%M %p')
-        passed = True if font_text[date_index + 4] else False
-        counts = defaultdict(int)
-        for key, string in [
-            ('yes_count', 'Yes:'),
-            ('no_count', 'No:'),
-            ('absent_count', 'Absent:'),
-            ('not_voting', 'Not Voting:')]:
-            try:
-                counts[key] = int(font_text[font_text.index(string) + 2])
-            except ValueError:
-                continue
-        counts['other_count'] = counts['absent_count'] + counts['not_voting']
-
-        chamber_string = doc.xpath('string(//b/u/font/text())').lower()
-        if 'senate' in chamber_string:
-            chamber = 'upper'
-        elif 'house' in chamber_string:
-            chamber = 'lower'
-
-        for xpath in (
-            'string(//td/b/text())',
-            'string(//td/b/font/text())',
-            'string(//form/b/font/text())'):
-            motion = doc.xpath(xpath)
-            if motion:
-                break
-            # Will fail at validictory level if no motion found.
-
-        # Create the vote object.
-        vote = Vote(chamber, date, motion, passed,
-                    counts['yes_count'], counts['no_count'],
-                    counts['other_count'])
-
-        # Add source.
-        vote.add_source(url)
-
-        # Get the "vote type"
-        el = doc.xpath('//font[contains(., "Vote Type:")]')[0]
-        try:
-            vote_type = el.xpath('following-sibling::font[1]/text()')[0]
-        except IndexError:
-            vote_type = el.xpath('../following-sibling::font[1]/text()')[0]
-
-        vote['vote_type'] = vote_type
-
-        # Get an iterator like: name1, vote1, name2, vote2, ...
-        xpath = ("//font[re:match(., '^[A-Z]$')]"
-                 "/../../../descendant::td/font/text()")
-        data = doc.xpath(xpath, namespaces=namespaces)
-        data = filter(lambda s: s.strip(), data)
-
-        # Handle the rare case where not all names have corresponding
-        # text indicating vote value. See e.g. session 146 HB10.
-        data_len = len(data) / 2
-        tally = sum(v for (k, v) in vote.items() if '_count' in k)
-
-        if (0 < data_len) and ((data_len) != tally):
-            xpath = ("//font[re:match(., '^[A-Z]$')]/ancestor::table")
-            els = doc.xpath(xpath, namespaces=namespaces)[-1]
-            els = els.xpath('descendant::td')
-            data = [e.text_content().strip() for e in els]
-
-        data = iter(data)
-
-        # Add names and vote values.
-        vote_map = {
-            'Y': 'yes',
-            'N': 'no',
-            }
-
-        while True:
-
-            try:
-                name = data.next()
-                _vote = data.next()
-
-                # Evidently, the motion for vote can be rescinded before
-                # the vote is cast, perhaps due to a quorum failure.
-                # (See the Senate vote (1/26/2011) for HB 10 w/HA 1.) In
-                # this rare case, values in the vote col are whitespace. Skip.
-                if not _vote.strip():
-                    continue
-
-                _vote = vote_map.get(_vote, 'other')
-                getattr(vote, _vote)(name)
-
-            except StopIteration:
-                break
-
-        return vote
-
-    def scrape_documents(self, source, docname, filename, tmp, session_num,
-                         re_docnum=re.compile(r'var F?docnum="(.+?)"'),
-                         re_moniker=re.compile(r'var moniker="(.+?)"'),
-                         **kwargs):
-        '''
-        Returns a generator like [{'name': 'docname', 'url': 'docurl'}, ...]
-        '''
-        source = source.replace(' ', '+')
-
-        try:
-            _doc = self._url_2_lxml(source)
+            page = self.lxmlize(link)
         except scrapelib.HTTPError:
-            # Grrr...there was a dead link posted. Warn and skip.
-            msg = 'Related document download failed (dead link): %r' % source
-            self.warning(msg)
+            self.logger.warning('404. Apparently the bill hasn\'t been posted')
+            return
+        nominee = page.xpath(".//div[@id='page_header']/text()")[0]
+        if nominee.strip().lower() == "nominee information":
+            self.logger.info("Nominee, skipping")
             return
 
-        if _doc.xpath('//font[contains(., "DRAFT INFORMATION")]'):
-            # This amendment is apparently still in draft form or can't
-            # be viewed for security reasons, but we can still link to
-            # its status page.
-            yield dict(name=docname, url=source)
+        bill_id = page.xpath(".//div[@align='center']")
+        try:
+            bill_id = bill_id[0].text_content().strip()
+        except IndexError:
+            self.logger.warning("Can't find bill number, skipping")
             return
 
-        # The full-text urls are generated using onlick javascript and
-        # window-level vars named "moniker" and "docnum".
-        if docname == "Fiscal Note":
-            xpath = '//script[contains(., "var Fdocnum")]'
+        #some bill_ids include relevant amendments
+        #in the form "SB 10 w/SA1", so we fix it here
+        bill_id = bill_id.split("w/")[0]
+        bill_id = bill_id.split("(")[0]
+        
+        leg_type = None
+        for long_name, short_name in legislation_types.items():
+            if long_name in bill_id:
+                leg_type = short_name
+                bill_num = bill_id.replace(long_name,"").strip()
+                break
+        if leg_type:
+            bill_id = leg_type + " " + bill_num
+        elif "for" in bill_id:
+            bill_id = bill_id.split("for")[1]
         else:
-            xpath = '//script[contains(., "var docnum")]'
-        script_text = _doc.xpath(xpath)[0].text_content()
-        docnum = re_docnum.search(script_text).group(1)
-        moniker = re_moniker.search(script_text).group(1)
+            self.logger.warning("Unknown bill type for {}".format(bill_id))
+            return
 
-        # Mimetypes.
-        formats = ['.html', '.pdf', '.docx', '.Docx']
-        mimetypes = {
-            '.html': 'text/html',
-            '.pdf': 'application/pdf',
-            '.docx': 'application/msword'
-            }
+        bill_id = bill_id.replace('&nbsp',"")
+        bill_id = bill_id.strip()
 
-        for format_ in formats:
+        #each row is in its own table
+        #there are no classes/ids or anything, so we're going to loop
+        #through the individual tables and look for keywords
+        #in the first td to tell us what we're looking at
+        tables = page.xpath(".//table")
 
-            el =_doc.xpath('//font[contains(., "%s%s")]' % (filename, format_))
+        bill_documents = {}
+        action_list = []
+        vote_documents = {}
+        sub_link = None
+        bill_text_avail = False
 
-            if not el:
+        for table in tables:
+            tds = table.xpath(".//td")
+            if len(tds) == 0:
+                #some kind of empty table for formatting reasons
                 continue
+            title_text = tds[0].text_content().strip().lower()
 
-            format_ = format_.lower()
-            _kwargs = kwargs.copy()
-            _kwargs.update(**locals())
+            if "primary sponsor" in title_text:
+                pri_sponsor_text = tds[1].text_content()
+                primary_sponsors = self.separate_names(pri_sponsor_text)
+                #sometimes additional sponsors are in a 3rd td
+                #other times the 3rd td contains a blank image
+                addl_sponsors = []
+                add_spons_text = tds[2].text_content().strip()
+                if add_spons_text:
+                    add_spons_text = add_spons_text.replace("Additional Sponsor(s):","")
+                    if not "on behalf of all representatives" in add_spons_text.lower():
+                        addl_sponsors = self.separate_names(add_spons_text)
 
-            if format_.lower() == '.docx':
-                _kwargs['filename'] = docnum
+            elif "co-sponsor" in title_text:
+                cosponsor_text = tds[1].text_content()
+                if "none..." in cosponsor_text.lower():
+                    cosponsors = []
+                    continue
+                cosponsors = self.separate_names(cosponsor_text)
+
+            elif "long title" in title_text:
+                bill_title = tds[1].text_content().strip()
+
+            elif "amendment" in title_text:
+                amendments = tds[1].xpath(".//a")
+                for a in amendments:
+                    amm = a.text
+                    amm_text = "Amendment".format(amm.strip())
+                    amm_slg = "+".join(amm.split())
+                    amm_link = text_base_url.format(session=session,
+                                                bill_id=amm_slg)
+                    bill_documents[amm_text] = amm_link
+                    amm_page = self.lxmlize(a.attrib["href"])
+                    for tr in amm_page.xpath('//tr'):
+                        tds = tr.xpath("./td")
+                        if len(tds) > 1:
+                            if "voting" in tds[0].text_content().lower():
+                                self.find_vote(tds,vote_documents,"Amendment: ")
+
+
+            elif "engrossed version" in title_text:
+                if tds[1].text_content().strip():
+                    engrossment_base = "http://legis.delaware.gov/LIS/lis{session}.nsf/EngrossmentsforLookup/{bill_id}/$file/Engross.html?open"
+                    engrossment_link = engrossment_base.format(session=session,
+                                        bill_id = "+".join(bill_id.split()))
+                    if bill_url not in bill_documents.values():
+                        bill_documents["Engrossed Version"] = engrossment_link
+
+            elif "substituted" in title_text:
+                content = tds[1].text_content().strip()
+                if ("Substitute" in content and
+                    not "Original" in content):
+                    sub_link = tds[1].xpath(".//a/@href")[0]
+
+            elif ("full text" in title_text
+                and ("(" not in title_text
+                or "html" in title_text)):
+                    if tds[1].text_content().strip():
+                        #it is totally unclear which version of the bill is referred to here
+                        #so I'm just calling it "bill text"
+                        bill_url = text_base_url.format(
+                                        session=session,
+                                        bill_id=bill_id.replace(" ","+"))
+                        if bill_url not in bill_documents.values():
+                            bill_documents["Bill Text"] = bill_url
+
+            elif "fiscal" in title_text:
+                pass
+                #skipping fiscal notes for now, they are really ugly
+                #but leaving in as a placeholder so we can remember to
+                #do this someday, if we feel like it
+
+            elif "committee" in title_text:
+                pass
+                #the committee reports let a legislator
+                #comment on a bill. They can comment as
+                #"favorable","unfavorable" or "on its merits"
+                #but these are NOT votes (per conversation w
+                #seceretary of the DE senate 3/16/15). The bill is
+                #considered if the majority sign it, which will
+                #appear in the bill's action history as being
+                #reported out of committee
+
+            elif "voting" in title_text:
+                self.find_vote(tds,vote_documents)
+                
+            elif "actions history" in title_text:
+                action_list = tds[1].text_content().split("\n")
+
+        sub_versions = []
+        use_sub = False
+        if sub_link:
+            bill = self.scrape_bill(sub_link,chamber,session)
+            if bill:
+                sub_versions = [v["url"] for v in bill["versions"]]
+                bill.add_title(bill_id)
+                use_sub = True
+
+        if not use_sub:
+            bill = Bill(session,chamber,bill_id,bill_title)
+
+            for s in primary_sponsors:
+                bill.add_sponsor("primary",s)
+
+            for s in addl_sponsors:
+                #it is not totally clear whether "additional sponsors"
+                #are co or primary but primary is my best guess
+                #based on the bill text, bc they're on the first
+                #line with the primary sponsor
+                bill.add_sponsor("primary",s)
+
+            for s in cosponsors:
+                bill.add_sponsor("cosponsor",s)
+
+        for name, doc_link in bill_documents.items():
+            if "Engrossment" in name or "Bill Text" in name:
+                if doc_link not in sub_versions:
+                    bill.add_version(name,doc_link,mimetype="text/html")
             else:
-                _kwargs['filename'] = _kwargs['filename'].lower()
+                pass
+                bill.add_document(name,doc_link,mimetype="text/html")
 
-            url = tmp.format(**_kwargs).replace(' ', '+')
+        for a in action_list:
+            if a.strip():
+                date, action = a.split('-', 1)
+                try:
+                    date = datetime.strptime(date.strip(), '%b %d, %Y')
+                except ValueError:
+                    date = datetime.strptime(date.strip(), '%B %d, %Y') # XXX: ugh.
+                action = action.strip()
+                actor = actions.get_actor(action, bill['chamber'])
+                attrs = dict(actor=actor, action=action, date=date)
+                attrs.update(**self.categorizer.categorize(action))
+                attrs["action"] = " ".join(attrs["action"].split())
+                bill.add_action(**attrs)
 
+        for name, doc in vote_documents.items():
+            vote_chamber = "lower" if "house" in name.lower() else "upper"
             try:
-                self.urlopen(url)
+                self.head(doc)
             except scrapelib.HTTPError:
-                msg = 'Could\'t fetch %s version at url: "%s".'
-                self.warning(msg % (format_, url))
+                self.logger.warning("could not access vote document")
+                continue
+            vote_page = self.lxmlize(doc)
+            vote_info = vote_page.xpath(".//div[@id='page_content']/p")[-1]
+            yes_votes = []
+            no_votes = []
+            other_votes = []                        
+            lines = vote_info.text_content().split("\n")
+            for line in lines:
+                if line.strip().startswith("Date"):
+                    date_str = " ".join(line.split()[1:4])
+                    date = datetime.strptime(date_str,"%m/%d/%Y %I:%M %p")
+                    passage_status = line.strip().split()[-1]
+
+                    #we've never seen a vote with anything but "passed"
+                    #so throw an error otherwise so we can figure it out
+                    passed_statuses = ["Passed"]
+                    failed_statuses = ["Defeated"]
+                    if passage_status not in passed_statuses+failed_statuses:
+                        raise AssertionError("Unknown passage state {}".format(passage_status))
+                    passed = passage_status in passed_statuses
+
+                if line.strip().startswith("Vote Type"):
+                    if "voice" in line.lower():
+                        voice_vote = True
+                    else:
+                        voice_vote = False
+                        yes_count = int(re.findall("Yes: (\d+)",line)[0])
+                        no_count = int(re.findall("No: (\d+)",line)[0])
+                        other_count = int(re.findall("Not Voting: (\d+)",line)[0])
+                        other_count += int(re.findall("Absent: (\d+)",line)[0])
+                        vote_tds = vote_page.xpath(".//table//td")
+                        person_seen = False
+                        for td in vote_tds:
+                            if person_seen:
+                                person_vote = td.text_content().strip()
+                                if person_vote == "Y":
+                                    yes_votes.append(person)
+                                elif person_vote == "N":
+                                    no_votes.append(person)
+                                elif person_vote in ["NV","A","X","C"]:
+                                    other_votes.append(person)
+                                else:
+                                    raise AssertionError("Unknown vote '{}'".format(person_vote))
+                                person_seen = False
+                            else:
+                                person = td.text_content().strip()
+                                if person:
+                                    person_seen = True
+
+            if voice_vote:
+                vote = Vote(vote_chamber,date,"passage",passed,0,0,0)
             else:
-                yield dict(name=docname, url=url,
-                           source=source, mimetype=mimetypes[format_])
+                vote = Vote(vote_chamber,date,"passage",
+                            passed,yes_count,no_count,other_count,
+                            yes_votes=[],
+                            no_votes=[],
+                            other_votes=[])
+
+                vote["yes_votes"] = yes_votes
+                vote["no_votes"] = no_votes
+                vote["other_votes"] = other_votes
+
+            if (passed
+                and vote["yes_count"] <= vote["no_count"]
+                and not voice_vote):
+                    raise AssertionError("Vote passed with more N than Y votes?")
+
+            if not passed and vote["yes_count"] > vote["no_count"]:
+                self.logger.warning("Vote did not pass but had a majority \
+                        probably worth checking")
+
+            if "Amendment" in name:
+                vote["type"] = "amendment"
+            else:
+                vote["type"] = "passage"
+            vote.add_source(doc)
+            bill.add_vote(vote)
+
+        bill.add_source(link)
+
+        return bill
+
+
+    def scrape(self,chamber,session):
+        bill_codes = {"lower":[1,2,3,4],"upper":[5,6,7,8]}
+        base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/ByAll?OpenForm&Start=1&Count={count}&Expand={bill_type}&Seq=1"
+        for bill_code in bill_codes[chamber]:
+            page = self.lxmlize(base_url.format(session=session,
+                                            bill_type=bill_code,
+                                            count=1000))
+                                            #1000 is higher than the highest
+                                            #TOTAL # of bills we've ever seen 
+
+            #there are not a lot of attributes to hold on to
+            #this is the best I could come up with
+            tables = page.xpath(".//table")
+            good_table = None
+            for table in tables:
+                th = table.xpath(".//tr/th") 
+                if len(th) > 0 and th[0].text_content().strip() == "Type":
+                    good_table = table
+                    break
+
+            assert good_table is not None, "Could not find a table of bills."
+
+            for tr in good_table.xpath(".//tr"):
+                if len(tr.xpath("./td")) < 3:
+                    #this is some kind of header row for a bill type
+                    continue
+                link_td = tr.xpath("./td")[1]
+                link = link_td.xpath(".//a/@href")[0]
+                
+                bill = self.scrape_bill(link,chamber,session)
+                if bill:
+                    self.save_bill(bill)

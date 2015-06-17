@@ -63,7 +63,7 @@ class NVBillScraper(BillScraper):
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/TablesAndIndex/%s_%s-index.html' % (insert, year, session)
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # first, a bit about this page:
@@ -96,7 +96,7 @@ class NVBillScraper(BillScraper):
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
 
-                page = self.urlopen(page_path)
+                page = self.get(page_path).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 
@@ -105,7 +105,7 @@ class NVBillScraper(BillScraper):
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
-                bill['subjects'] = self.subject_mapping[bill_id]
+                bill['subjects'] = list(set(self.subject_mapping[bill_id]))
 
                 for table in root.xpath('//div[@id="content"]/table'):
                     if 'Bill Text' in table.text_content():
@@ -142,7 +142,7 @@ class NVBillScraper(BillScraper):
     def scrape_assem_bills(self, chamber, insert, session, year):
 
         doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
-                    6: 'joint resolution'}
+                    6: 'joint resolution',9:'petition'}
         for docnum, bill_type in doc_type.iteritems():
             parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
@@ -150,19 +150,23 @@ class NVBillScraper(BillScraper):
             for link in links:
                 count = count + 1
                 page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
-                page = self.urlopen(page_path)
+                page = self.get(page_path).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
+                root.make_links_absolute("http://www.leg.state.nv.us/")
 
                 bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
                 title = root.xpath('string(/html/body/div[@id="content"]/table[2]/tr[4]/td)')
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
-                bill['subjects'] = self.subject_mapping[bill_id]
-                bill_text = root.xpath("string(/html/body/div[@id='content']/table[6]/tr/td[2]/a/@href)")
-                text_url = "http://www.leg.state.nv.us" + bill_text
-                bill.add_version("Bill Text", text_url,
+                bill['subjects'] = list(set(self.subject_mapping[bill_id]))
+                billtext = root.xpath("//b[text()='Bill Text']")[0].getparent().getnext()
+                text_urls = billtext.xpath("./a")
+                for text_url in text_urls:
+                    version_name = text_url.text.strip()
+                    version_url = text_url.attrib['href']
+                    bill.add_version(version_name, version_url,
                                  mimetype='application/pdf')
 
                 primary, secondary = self.scrape_sponsors(page)
@@ -191,7 +195,7 @@ class NVBillScraper(BillScraper):
     def scrape_links(self, url):
         links = []
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
         path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
         for mr in root.xpath(path):
@@ -213,7 +217,7 @@ class NVBillScraper(BillScraper):
 
         # tail of last b has remaining sponsors
         for name in b.tail.split(', '):
-            if name.strip():
+            if name.strip() and "name indicates primary sponsorship)" not in name:
                 sponsors.append(name.strip())
 
         return primary, sponsors
@@ -231,6 +235,8 @@ class NVBillScraper(BillScraper):
                 if not action:
                     continue
 
+                action = " ".join(action.split())
+
                 # catch chamber changes
                 if action.startswith('In Assembly'):
                     actor = 'lower'
@@ -245,17 +251,33 @@ class NVBillScraper(BillScraper):
                         action_type = atype
                         break
 
+
+                if "Committee on" in action:
+                    committees = re.findall("Committee on ([a-zA-Z, ]*)\.",action)
+                    if len(committees) > 0:
+                        bill.add_action(actor, action, date, type=action_type,committees=committees)
+                        continue
+
                 bill.add_action(actor, action, date, type=action_type)
+
+
+
 
     def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
-        trs = root.xpath('//table[6]//tr')
-        if len(trs) == 1:
-            # no vote info
-            return
+        trs = root.xpath('/html/body/div/table[6]//tr')
+        assert len(trs) >= 1, "Didn't find the Final Passage Votes' table"
 
         for tr in trs[1:]:
-            link = tr.xpath('td/a[contains(text(), "Passage")]')[0]
+            links = tr.xpath('td/a[contains(text(), "Passage")]')
+            if len(links) == 0:
+                self.warning("Non-passage vote found for {}; ".format(bill['bill_id']) +
+                    "probably a motion for the calendar. It will be skipped.")
+            else:
+                assert len(links) == 1, \
+                    "Too many votes found for XPath query, on bill {}".format(bill['bill_id'])
+                link = links[0]
+
             motion = link.text
             if 'Assembly' in motion:
                 chamber = 'lower'
@@ -284,14 +306,13 @@ class NVBillScraper(BillScraper):
 
             vote = Vote(chamber, vote_date, motion, passed, yes, no,
                         other, not_voting=not_voting, absent=absent)
-            vote.add_source(page_url)
 
             # try to get vote details
             try:
                 vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
                     insert, link.get('href'))
 
-                page = self.urlopen(vote_url)
+                page = self.get(vote_url).text
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 

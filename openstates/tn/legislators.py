@@ -27,7 +27,7 @@ class TNLegislatorScraper(LegislatorScraper):
         else:
             chamber_url = root_url + url_chamber_name + '/members/'
 
-        page = self.urlopen(chamber_url)
+        page = self.get(chamber_url).text
         page = lxml.html.fromstring(page)
 
         for row in page.xpath("//tr"):
@@ -35,6 +35,13 @@ class TNLegislatorScraper(LegislatorScraper):
             # Skip any a header row.
             if set(child.tag for child in row) == set(['th']):
                 continue
+
+            vacancy_check = row.xpath('./td/text()')[1]
+            if 'Vacant' in vacancy_check:
+                self.logger.warning("Vacant Seat")
+                continue
+
+
 
             partyInit = row.xpath('td[3]')[0].text.split()[0]
             party = parties[partyInit]

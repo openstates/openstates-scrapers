@@ -7,7 +7,7 @@ class NDCommitteeScraper(CommitteeScraper):
     jurisdiction = 'nd'
 
     def scrape_committee(self, term, chambers, href, name):
-        page = self.urlopen(href)
+        page = self.get(href).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(href)
         members =page.xpath("//div[@class='view-content']"
@@ -56,7 +56,7 @@ class NDCommitteeScraper(CommitteeScraper):
             start_year
         )
 
-        page = self.urlopen(main_url)
+        page = self.get(main_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
 

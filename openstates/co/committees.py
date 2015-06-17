@@ -3,16 +3,14 @@ import lxml.html
 
 from billy.scrape.committees import CommitteeScraper, Committee
 
-COMMITTEE_URL = ("http://www.colorado.gov/cs/Satellite?c=Page&"
-    "childpagename=CGA-LegislativeCouncil%2FCLCLayout&"
-    "cid=1245677985421&pagename=CLCWrapper")
+COMMITTEE_URL = ("https://www.colorado.gov/pacific/cga-legislativecouncil/committees-3")
 
 
 class COCommitteeScraper(CommitteeScraper):
     jurisdiction = "co"
 
     def lxmlize(self, url):
-        text = self.urlopen(url)
+        text = self.get(url).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
         return page, text
@@ -32,14 +30,15 @@ class COCommitteeScraper(CommitteeScraper):
 
         committee.add_source(a.attrib['href'])
 
-        tables = page.xpath("//table[@width='545' or @width='540']")
+        tables = page.xpath("//table")
         added = False
 
         seen_people = set([])
         for table in tables:
             people = table.xpath(
-                ".//a[contains(@href, 'MemberDetailPage')]/text()")
-            for person in [x.strip() for x in people]:
+                ".//a[contains(@href, 'MemberDetailPage')]")
+            for person in people:
+                person = person.text_content().strip()
                 role = "member"
                 for flag in roles:
                     if person.endswith(flag):
@@ -59,7 +58,7 @@ class COCommitteeScraper(CommitteeScraper):
             self.save_committee(committee)
             return
 
-        tables = page.xpath("//table[@width='466']")
+        tables = page.xpath("//table")
         added = False
         seen_people = set([])
         for table in tables:
@@ -81,26 +80,18 @@ class COCommitteeScraper(CommitteeScraper):
 
     def scrape(self, term, chambers):
         page, _ = self.lxmlize(COMMITTEE_URL)
-        chamber = "other"
-        for div in page.xpath("//div[@id='Content_COITArticleDetail']"):
-            hrefs = div.xpath(
-                ".//a[contains(@href,'childpagename=CGA-LegislativeCouncil')]")
-
-            if hrefs == []:
-                div_txt = div.text_content().lower()
-                flags = {
-                    "house": "lower",
-                    "senate": "upper",
-                    "joint": "joint"
-                }
-                for flag in flags:
-                    if flag in div_txt:
-                        chamber = flags[flag]
-
-            for a in hrefs:
-                cchamber = chamber
-                text = a.text_content().strip()
-                for flag in flags:
-                    if flag in text:
-                        cchamber = flags[flag]
-                self.scrape_page(a, cchamber, term)
+        comms = page.xpath(".//li[contains(@class, 'is-leaf')]")
+        chambers = {'senate':'upper',
+                    'house':'lower',
+                    'joint':'joint'}
+        for comm in comms:
+            link = comm.xpath('./a')[0]
+            if re.search(r'\d\d\d\d', link.text):
+                #this is an archive of a previous year, ditch it
+                continue
+            chamber = 'joint'
+            for c in chambers:
+                if c in link.attrib['href']:
+                    chamber = chambers[c]
+            if chamber:
+                self.scrape_page(link, chamber, term)

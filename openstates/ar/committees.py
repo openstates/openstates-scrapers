@@ -31,7 +31,7 @@ class ARCommitteeScraper(CommitteeScraper):
 
         for chamber, url_ext in COMM_TYPES.iteritems():
             chamber_url = urlescape(base_url + url_ext)
-            page = self.urlopen(chamber_url)
+            page = self.get(chamber_url).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(chamber_url)
 
@@ -117,7 +117,7 @@ class ARCommitteeScraper(CommitteeScraper):
         name = self._fix_committee_name(name)
         name = self._fix_committee_case(name)
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

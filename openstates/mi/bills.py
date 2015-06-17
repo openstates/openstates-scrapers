@@ -47,12 +47,14 @@ class MIBillScraper(BillScraper):
         # try and get bill for current year
         url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
             session[:4], bill_id.replace(' ', '-'))
-        html = self.urlopen(url)
+        html = self.get(url).text
         # if first page isn't found, try second year
-        if 'Page Not Found' in html:
-            html = self.urlopen('http://legislature.mi.gov/doc.aspx?%s-%s'
-                                % (session[-4:], bill_id.replace(' ','-')))
-            if 'Page Not Found' in html:
+        if ('Page Not Found' in html
+                or 'The bill you are looking for is not available yet' in html):
+            html = self.get('http://legislature.mi.gov/doc.aspx?%s-%s'
+                            % (session[-4:], bill_id.replace(' ','-'))).text
+            if ('Page Not Found' in html
+                or 'The bill you are looking for is not available yet' in html):
                 return None
 
         doc = lxml.html.fromstring(html)
@@ -177,7 +179,7 @@ class MIBillScraper(BillScraper):
             return name, url
 
     def parse_roll_call(self, vote, url, rc_num):
-        html = self.urlopen(url)
+        html = self.get(url).text
         if 'In The Chair' not in html:
             self.warning('"In The Chair" indicator not found, unable to extract vote')
             return

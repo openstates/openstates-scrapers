@@ -2,11 +2,9 @@ import re
 import pytz
 import datetime
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
-from .common import BackoffScraper
+from openstates.utils import LXMLMixin
 
-import requests.exceptions
 import lxml.html
 
 
@@ -21,11 +19,6 @@ def parse_datetime(s, year):
 
     if dt:
         return dt.replace(year=int(year))
-
-    # Commented out; unlikely this is correct anymore.
-    #match = re.match(r"[A-Z][a-z]{2,2} \d+", s)
-    #if match:
-    #    dt = datetime.datetime.strptime(match.group(0), "%b %d").date()
 
     if dt is None:
         if s.endswith(","):
@@ -44,7 +37,7 @@ def parse_datetime(s, year):
     raise ValueError("Bad date string: %s" % s)
 
 
-class LAEventScraper(EventScraper):
+class LAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'la'
     _tz = pytz.timezone('America/Chicago')
 
@@ -57,7 +50,7 @@ class LAEventScraper(EventScraper):
     def scrape_committee_schedule(self, session, chamber):
         url = "http://www.legis.la.gov/legis/ByCmte.aspx"
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -77,7 +70,7 @@ class LAEventScraper(EventScraper):
         return ret
 
     def scrape_meeting(self, session, chamber, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         title ,= page.xpath("//a[@id='linkTitle']//text()")
@@ -85,27 +78,27 @@ class LAEventScraper(EventScraper):
         time ,= page.xpath("//span[@id='lTime']/text()")
         location ,= page.xpath("//span[@id='lLocation']/text()")
 
-        if ("UPON ADJOURNMENT" in time.upper() or
-                "UPON  ADJOURNMENT" in time.upper()):
-            return
-
         substs = {
             "AM": ["A.M.", "a.m."],
-            "PM": ["P.M.", "p.m."],
+            "PM": ["P.M.", "p.m.", "Noon"],
         }
 
         for key, values in substs.items():
             for value in values:
                 time = time.replace(value, key)
 
-        try:
+        # Make sure there's a space between the time's minutes and its AM/PM
+        if re.search(r'(?i)\d[AP]M$', time):
+            time = time[:-2] + " " + time[-2:]
+
+        if "UPON ADJ" in ' '.join(time.split()).upper():
+            all_day = True
+            when = datetime.datetime.strptime(date, "%B %d, %Y")
+        else:
+            all_day = False
             when = datetime.datetime.strptime("%s %s" % (
                 date, time
             ), "%B %d, %Y %I:%M %p")
-        except ValueError:
-            when = datetime.datetime.strptime("%s %s" % (
-                date, time
-            ), "%B %d, %Y %I:%M")
 
         # when = self._tz.localize(when)
 
@@ -126,7 +119,8 @@ class LAEventScraper(EventScraper):
             when,
             'committee:meeting',
             description,
-            location=location
+            location=location,
+            all_day=all_day
         )
         event.add_source(url)
 
@@ -156,16 +150,6 @@ class LAEventScraper(EventScraper):
                                    chamber=bill_chamber,
                                    type='consideration')
         self.save_event(event)
-
-    def lxmlize(self, url):
-        try:
-            page = self.urlopen(url)
-        except requests.exceptions.Timeout:
-            return self.lxmlize(url)
-
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        return page
 
     def scrape_house_weekly_schedule(self, session):
         url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"

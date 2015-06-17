@@ -53,7 +53,7 @@ class NCBillScraper(BillScraper):
 
         for letter in letters:
             url = 'http://www.ncga.state.nc.us/gascripts/Reports/keywords.pl?Letter=' + letter
-            html = self.urlopen(url)
+            html = self.get(url).text
             doc = lxml.html.fromstring(html)
             for td in doc.xpath('//td[@class="tableText"]'):
                 if td.get('style') == 'font-weight: bold;':
@@ -84,7 +84,7 @@ class NCBillScraper(BillScraper):
             session, bill_id)
 
         # parse the bill data page, finding the latest html text
-        data = self.urlopen(bill_detail_url)
+        data = self.get(bill_detail_url).text
         doc = lxml.html.fromstring(data)
 
         title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
@@ -170,7 +170,7 @@ class NCBillScraper(BillScraper):
             'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s' % (
             session, chamber)
 
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]

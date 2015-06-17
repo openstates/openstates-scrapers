@@ -170,7 +170,7 @@ class MDBillScraper(BillScraper):
 
 
     def parse_vote_page(self, vote_url):
-        vote_html = self.urlopen(vote_url)
+        vote_html = self.get(vote_url).text
         doc = lxml.html.fromstring(vote_html)
 
         # chamber
@@ -229,7 +229,7 @@ class MDBillScraper(BillScraper):
         else:
             session_url = session
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         # find <a name="Title">, get parent dt, get parent dl, then dd n dl
@@ -262,7 +262,7 @@ class MDBillScraper(BillScraper):
 
 
     def scrape_vote(self, bill, action_text, url):
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
 
         date = None
         yes_count = no_count = other_count = None
@@ -334,7 +334,7 @@ class MDBillScraper(BillScraper):
 
 
     def scrape_bill(self, chamber, session, bill_id, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -379,7 +379,7 @@ class MDBillScraper(BillScraper):
 
 
     def scrape_documents(self, bill, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -418,7 +418,7 @@ class MDBillScraper(BillScraper):
 
 
     def scrape_actions(self, bill, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -451,7 +451,7 @@ class MDBillScraper(BillScraper):
 
         main_page = 'http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3&ys=' + session_slug
         chamber_prefix = 'S' if chamber == 'upper' else 'H'
-        html = self.urlopen(main_page)
+        html = self.get(main_page).text
         doc = lxml.html.fromstring(html)
 
         ranges = doc.xpath('//table[@class="box1leg"]//td/text()')

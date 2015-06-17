@@ -3,6 +3,7 @@ import time
 import requests
 import urlparse
 import functools
+from OpenSSL.SSL import SysCallError
 
 
 class BadApiResponse(Exception):
@@ -45,13 +46,14 @@ class ApiClient(object):
         bills='/{session}/bills',
         bill='/{session}/bills/{bill_id}',
         chamber_bills='/{session}/chambers/{chamber}/bills',
-        rollcalls='/{session}/rollcalls/{rollcall_id', #note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
+        rollcalls='/{session}/rollcalls/{rollcall_id}', #note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
         bill_actions='/{session}/bills/{bill_id}/actions',
         committees='/{session}/committees',
-        committee='/{session}/committees/{committee_name}',
+        committee='/{committee_link}',
         legislators='/{session}/legislators',
         legislator='/{session}/legislators/{legislator_id}',
         chamber_legislators='/{session}/chambers/{chamber}/legislators',
+        bill_version = '/{session}/bills/{bill_id}/versions/{version_id}'
         )
 
     def __init__(self, scraper):
@@ -87,6 +89,7 @@ class ApiClient(object):
             requests_kwargs=None, **url_format_args):
         '''Resource is a self.resources dict key.
         '''
+        num_bad_packets_allowed = 5
         url = self.make_url(resource_name, **url_format_args)
 
         # Add in the api key.
@@ -100,7 +103,20 @@ class ApiClient(object):
 
         args = (url, requests_args, requests_kwargs)
         self.scraper.info('Api GET: %r, %r, %r' % args)
-        return self.scraper.get(url, *requests_args, **requests_kwargs)
+        resp = None
+        tries = 0
+        while resp is None and tries <  num_bad_packets_allowed:
+            try:
+                resp = self.scraper.get(url, *requests_args, **requests_kwargs)
+            except SysCallError as e:
+                err, string = e.args
+                if err != 104:
+                    raise
+                tries += 1
+                if tries >= num_bad_packets_allowed:
+                    raise RuntimeError("Got bad packet from API too many times, I give up")
+                self.logger.warning("Got RST packet, trying again, this will be try # {}".format(tries))
+        return resp
 
     def unpaginate(self, result):
         for data in result['items']:

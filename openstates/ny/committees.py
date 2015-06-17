@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
@@ -52,7 +51,7 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape_lower(self, only_names=None):
         committees = []
         url = "http://assembly.state.ny.us/comm/"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -69,7 +68,7 @@ class NYCommitteeScraper(CommitteeScraper):
         return committees
 
     def scrape_lower_committee(self, name, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         comm = Committee('lower', name)
@@ -101,7 +100,7 @@ class NYCommitteeScraper(CommitteeScraper):
     def scrape_upper(self):
         committees = []
         url = "http://www.nysenate.gov/committees"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -124,7 +123,7 @@ class NYCommitteeScraper(CommitteeScraper):
         return committees
 
     def scrape_upper_committee(self, name, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         comm = Committee('upper', name)
@@ -133,13 +132,17 @@ class NYCommitteeScraper(CommitteeScraper):
         chair_div = page.xpath("//div[@class = 'committee-chair']")
         for chair in chair_div:
             role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
-            member_name = chair.xpath("./a/text()")[0].replace("Sen.","").strip()
-            print member_name
+
+            # Remove title and arbitrary whitespace from names
+            member_name = chair.xpath(".//a[not(@class)]/text()")[-2].strip()
+            member_name = re.sub(r'^Sen\.', "", member_name).strip()
+            member_name = " ".join(member_name.split())
+
             comm.add_member(member_name, role)
 
-        member_list = page.xpath("//div[contains(@class, 'view-committee-members')]//li[contains(@class, 'views-row')]")
+        member_list = page.xpath("//div[@class='committee-members']//ul/li/div/span/a/text()")
         for member in member_list:
-            member_name = " ".join(member.text_content().split()) #remove arbitrary stupid random whitespace
+            member_name = " ".join(member.split())
             comm.add_member(member_name, "member")
 
         if comm['members']:

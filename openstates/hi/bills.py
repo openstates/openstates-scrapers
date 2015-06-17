@@ -160,7 +160,7 @@ class HIBillScraper(BillScraper):
             bill.add_version(name, pdf_link, mimetype="application/pdf")
 
     def scrape_bill(self, session, chamber, bill_type, url):
-        bill_html = self.urlopen(url)
+        bill_html = self.get(url).text
         bill_page = lxml.html.fromstring(bill_html)
         scraped_bill_id = bill_page.xpath(
             "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
@@ -223,7 +223,7 @@ class HIBillScraper(BillScraper):
             "r"    : "resolution"
         }[billtype]
 
-        list_html = self.urlopen(report_page_url)
+        list_html = self.get(report_page_url).text
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = HI_URL_BASE + bill_url.attrib['href']

@@ -22,7 +22,7 @@ class NYLegislatorScraper(LegislatorScraper):
         party_by_district = self._identify_party('upper')
 
         url = "http://www.nysenate.gov/senators"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -59,7 +59,7 @@ class NYLegislatorScraper(LegislatorScraper):
             self.save_legislator(legislator)
 
     def scrape_upper_offices(self, legislator, url):
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         legislator.add_source(url)
@@ -120,7 +120,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
     def scrape_lower(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         # full_names = []
@@ -199,7 +199,7 @@ class NYLegislatorScraper(LegislatorScraper):
     def scrape_lower_offices(self, url, legislator):
         legislator.add_source(url)
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -251,7 +251,7 @@ class NYLegislatorScraper(LegislatorScraper):
         # Download the page and ingest using lxml
         MEMBER_LIST_URL = \
                 'http://www.elections.ny.gov:8080/reports/rwservlet?cmdkey=nysboe_incumbnt'
-        html = self.urlopen(MEMBER_LIST_URL)
+        html = self.get(MEMBER_LIST_URL).text
         doc = lxml.html.fromstring(html)
 
         # Map district to party affiliation

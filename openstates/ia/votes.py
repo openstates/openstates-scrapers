@@ -95,15 +95,17 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
             # Get the motion text
             motion_re = r'''
-                    ^
-                    On\sthe\squestion\s  # Precedes any motion
-                    "?  # Vote sometimes preceded by a quote mark
-                    (Shall\s.*?\?)  # The motion text begins with "Shall"
-                    \s*"?\s*  # Vote sometimes followed by a quote mark
-                    ({})?  # If the vote regards a bill, its number is listed
-                    (,?.*?the\svote\swas:)?  # Senate has trailing text
+                    ^On\sthe\squestion\s  # Precedes any motion
+                    "  # Motion is preceded by a quote mark
+                    (Shall\s.+?\??)  # The motion text begins with "Shall"
+                    \s*"\s+  # Motion is followed by a quote mark
+                    (?:{})?  # If the vote regards a bill, its number is listed
+                    {}  # Senate has trailing text
                     \s*$
-                    '''.format(bill_re)
+                    '''.format(
+                    bill_re,
+                    r',?.*?the\svote\swas:' if chamber == 'upper' else ''
+                    )
             motion = re.search(motion_re,
                                line,
                                re.VERBOSE | re.IGNORECASE).group(1)

@@ -32,7 +32,7 @@ class VALegislatorScraper(LegislatorScraper):
         elif chamber == 'upper':
             column = 'lColRt'
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -47,6 +47,10 @@ class VALegislatorScraper(LegislatorScraper):
             if chamber != CHAMBER_MOVES[name]:
                 return  # Skip bad chambers.
 
+        if "vacated" in name.lower():
+            self.logger.warning("Seat seems to have been vacated: '{}'".format(name))
+            return
+
         party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
         party_district_re = re.compile(
             r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
@@ -56,12 +60,13 @@ class VALegislatorScraper(LegislatorScraper):
         if match:
             action, date = match.groups()
             name = name.rsplit('-')[0]
+
             if action == 'Resigned':
                 pass # TODO: set end date
             elif action == 'Member':
                 pass # TODO: set start date
 
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         party_district_line = doc.xpath('//h3/font/text()')[0]
@@ -83,11 +88,11 @@ class VALegislatorScraper(LegislatorScraper):
                     email = text.strip('email: ').strip()
                 else:
                     address.append(text)
-                type = ('capitol' if 'Capitol Square' in address
+                office_type = ('capitol' if 'Capitol Square' in address
                         else 'district')
-                name = ('Capitol Office' if type == 'capitol'
+                name = ('Capitol Office' if office_type == 'capitol'
                         else 'District Office')
-            leg.add_office(type, name, address='\n'.join(address),
+            leg.add_office(office_type, name, address='\n'.join(address),
                            phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):

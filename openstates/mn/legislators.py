@@ -65,7 +65,7 @@ class MNLegislatorScraper(LegislatorScraper):
 
     def scrape_senate(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
-        doc = lxml.html.fromstring(self.urlopen(index_url))
+        doc = lxml.html.fromstring(self.get(index_url).text)
         doc.make_links_absolute(index_url)
 
         leg_data = defaultdict(dict)
@@ -88,7 +88,7 @@ class MNLegislatorScraper(LegislatorScraper):
 
         # use CSV for most of data
         csv_url = 'http://www.senate.mn/members/member_list_ascii.php?ls='
-        csvfile = self.urlopen(csv_url)
+        csvfile = self.get(csv_url).text
 
         for row in csv.DictReader(StringIO(csvfile)):
             if not row['First Name']:
@@ -101,11 +101,21 @@ class MNLegislatorScraper(LegislatorScraper):
                              last_name=row['Last Name'],
                              **leg_data[name]
                             )
-
-            row['Rm Number'] = row['Rm. Number']  # .format issue with "."
-            leg.add_office('capitol', 'Capitol Office',
-                           address='{Office Building}\n{Office Address}\nRoom {Rm Number}\n{City}, {State} {Zipcode}'.format(**row)
+            row["Zipcode"] = row["Zipcode"].strip()
+            
+            if 'Martin Luther King' in row['Address2']:\
+                leg.add_office('capitol', 'Capitol Office',
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
                            )
+            elif row['Address2']:
+                leg.add_office('district', 'District Office',
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                           )
+            else:
+                leg.add_office('district', 'District Office',
+                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row)
+                           )
+
 
 
             leg.add_source(csv_url)

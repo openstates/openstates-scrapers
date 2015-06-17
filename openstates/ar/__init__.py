@@ -27,7 +27,7 @@ metadata = dict(
         {'name': '2015-2016',
          'start_year': 2015,
          'end_year': 2016,
-         'sessions': ['2015']},
+         'sessions': ['2015','2015S1']},
         ],
     session_details={
         '2011': {'start_date': datetime.date(2011, 1, 10),
@@ -79,6 +79,12 @@ metadata = dict(
                  'type': 'primary',
                  'slug': '2015R',
                 },
+        '2015S1': {'start_date': datetime.date(2015, 5, 26),
+                 'display_name': '2015 First Extraordinary Session',
+                 '_scraped_name': 'First Extraordinary Session, 2015',
+                 'type': 'special',
+                 'slug': '2015S1',
+                 }
         },
     feature_flags=['influenceexplorer', 'events'],
     _ignored_scraped_sessions=['Regular Session, 2009',

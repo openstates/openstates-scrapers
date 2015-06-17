@@ -23,7 +23,7 @@ class TXLegislatorScraper(LegislatorScraper):
 
         url = ("http://www.legdir.legis.state.tx.us/members.aspx?type=%s" %
                chamber_type)
-        page = self.urlopen(url)
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
 
         for li in root.xpath('//ul[@class="options"]/li'):
@@ -34,7 +34,7 @@ class TXLegislatorScraper(LegislatorScraper):
             self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
-        page = self.urlopen(member_url)
+        page = self.get(member_url).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(member_url)
 

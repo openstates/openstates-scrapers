@@ -147,7 +147,7 @@ class ILBillScraper(BillScraper):
     jurisdiction = 'il'
 
     def url_to_doc(self, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         return doc
@@ -426,7 +426,7 @@ def find_columns_and_parse(vote_lines):
 
 def _is_potential_column(line, i):
     for val in VOTE_VALUES:
-        if re.search(r'^{}\s+\w.*'.format(val), line[i: ]):
+        if re.search(r'^%s\s{2,10}(\w.).*' % val, line[i:]):
             return True
     return False
 
@@ -446,7 +446,7 @@ def find_columns(vote_lines):
         starter.intersection_update(pc)
     last_row_cols = potential_columns[-1]
     if not last_row_cols.issubset(starter):
-        raise Exception("Last row columns [%s] don't align with candidate final columns [%s]" % (last_row_cols, starter))
+        raise Exception("Row's columns [%s] don't align with candidate final columns [%s]: %s" % (last_row_cols, starter, line))
     # we should now only have values that appeared in every line
     return sorted(starter)
 

@@ -62,6 +62,7 @@ rules = (
     Rule('Governor Action - Partial Veto', 'governor:vetoed:line-item'),
     Rule('Sent to the Governor', 'governor:received'),
     Rule('Governor Action - Signed', 'governor:signed'),
+    Rule('Governor Signed', 'governor:signed'),
     Rule('Governor Action - Vetoed', 'governor:vetoed'),
 
     Rule(r'^Introduced', 'bill:introduced'),

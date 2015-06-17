@@ -14,7 +14,7 @@ class FLEventScraper(EventScraper):
 
     def scrape_upper_events(self, session):
         url = "http://flsenate.gov/Session/DailyCalendarRSS.cfm?format=rss"
-        page = self.urlopen(url)
+        page = self.get(url).text
         feed = feedparser.parse(page)
 
         for entry in feed['entries']:

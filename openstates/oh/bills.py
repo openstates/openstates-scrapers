@@ -35,6 +35,7 @@ class OHBillScraper(BillScraper):
                             "adopted":True,
                             "true":True,
                             "false":False,
+                            "failed":False,
                             True:True,
                             False:False}
 
@@ -58,7 +59,14 @@ class OHBillScraper(BillScraper):
                             "intro_107": ["bill:introduced","bill:passed"],
                             "imm_consid_360": "bill:passed",
                             "refer_213":"other",
-                            "adopt_reso_100":"bill:passed"}
+                            "adopt_reso_100":"bill:passed",
+                            "msg_507":"amendment:passed",
+                            "confer_713":"other",
+                            "concur_603":"other",
+                            "confer_712":"other",
+                            "msg_506":"amendment:failed",
+                            "receive_message_100":"bill:passed",
+                            }
 
 
             base_url = "http://search-prod.lis.state.oh.us"
@@ -131,8 +139,8 @@ class OHBillScraper(BillScraper):
                                 display_id = bill_id[:idx]+" "+bill_id[idx:]
                                 break
 
-
-                            bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type)
+                            assert doc_type.endswith('s'), "Only bills and resolutions accepted"
+                            bill = Bill(session,chamber,display_id.upper(),title,subjects=subjects,type=doc_type[:-1])
 
                             #this stuff is the same for all versions
 
@@ -224,7 +232,7 @@ class OHBillScraper(BillScraper):
                     self.save_bill(bill)
 
     def pages(self,base_url, first_page):
-        page = self.get(first_page+"?per_page=300")
+        page = self.get(first_page)
         page = page.json()
         yield page
         while "nextLink" in page:
@@ -268,7 +276,9 @@ class OHBillScraper(BillScraper):
                             "ICS":"",
                             "RCS":"",
                             "EN":"Enacted",
-                            "RCH":"Re-referred"}
+                            "RCH":"Re-referred",
+                            "PHC":""
+                            }
 
         for item in documents:
             if type_of_document == "amendment":
@@ -285,7 +295,10 @@ class OHBillScraper(BillScraper):
                 try:
                     ver = leg_ver_types[item["legacyver"]]
                 except KeyError:
-                    self.logger.warning("New legacyver type {}, add it to the leg_ver_types dictionary".format(item["legacyver"]))
+                    self.logger.warning(
+                        "New legacyver; check the type and add it to the "
+                        "leg_ver_types dictionary: {} ({})".format(
+                        item["legacyver"], item['link']))
                     ver = ""
                 if ver:
                     name = name+": "+ver
@@ -378,7 +391,7 @@ class OHBillScraper(BillScraper):
         status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
 
         #ssl verification off due Ohio not correctly implementing SSL
-        doc = self.urlopen(status_report_url,verify=False)
+        doc = self.get(status_report_url,verify=False).text
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
 
@@ -489,7 +502,7 @@ class OHBillScraper(BillScraper):
                 bill.add_version(name, base_url + link,
                                  mimetype='application/pdf')
 
-        html = self.urlopen(base_url + piece)
+        html = self.get(base_url + piece).text
         # pass over missing bills - (unclear why this happens)
         if 'could not be found.' in html:
             self.warning('missing page: %s' % base_url + piece)
@@ -499,16 +512,16 @@ class OHBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
         for a in doc.xpath('//a[starts-with(@href, "/bills.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.urlopen(base_url + a))
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
         for a in doc.xpath('//a[starts-with(@href, "/res.cfm")]/@href'):
             if a != piece:
-                _get_html_or_pdf_version_old(self.urlopen(base_url + a))
+                _get_html_or_pdf_version_old(self.get(base_url + a).text)
 
     def scrape_votes_old(self, bill, billname, session):
         vote_url = ('http://archives.legislature.state.oh.us/bills.cfm?ID=' +
                     session + '_' + billname)
 
-        page = self.urlopen(vote_url)
+        page = self.get(vote_url).text
         page = lxml.html.fromstring(page)
 
         for jlink in page.xpath("//a[contains(@href, 'JournalText')]"):

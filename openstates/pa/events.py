@@ -21,7 +21,7 @@ class PAEventScraper(EventScraper):
         else:
             return
 
-        page = self.urlopen(url)
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 

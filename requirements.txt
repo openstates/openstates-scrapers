@@ -17,3 +17,6 @@ sh
 -e git://github.com/twneale/tater.git#egg=tater
 numpy
 # python-opencv
+
+#Indiana error handling
+pyopenssl

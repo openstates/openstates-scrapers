@@ -38,7 +38,7 @@ class DCBillScraper(BillScraper):
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
-        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","ComitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","CommitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
         param_json = json.dumps(params)
         response = self.post(url,headers=headers,data=param_json)
         #the response is a terrible string-of-nested-json-strings. Yuck.
@@ -119,11 +119,25 @@ class DCBillScraper(BillScraper):
                 if "WithDrawnDate" in legislation_info:
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
                     withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
+                    if withdrawn_by == "the Mayor":
 
-                    bill.add_action(withdrawn_by,
+                        bill.add_action("executive",
                                     "withdrawn",
                                     withdrawn_date,
                                     "bill:withdrawn")
+
+                    elif "committee" in withdrawn_by.lower():
+                        bill.add_action("upper",
+                                    "withdrawn",
+                                    withdrawn_date,
+                                    "bill:withdrawn",
+                                    committees=withdrawn_by)
+                    else:
+                        bill.add_action("upper",
+                                    "withdrawn",
+                                    withdrawn_date,
+                                    "bill:withdrawn",
+                                    legislators=withdrawn_by)
 
 
                 #deal with actions involving the mayor
@@ -135,7 +149,7 @@ class DCBillScraper(BillScraper):
                     if "TransmittedDate" in mayor:
                         transmitted_date = self.date_format(mayor["TransmittedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                     "transmitted to mayor",
                                     transmitted_date,
                                     type = "governor:received")
@@ -143,7 +157,7 @@ class DCBillScraper(BillScraper):
                     if 'SignedDate' in mayor:
                         signed_date = self.date_format(mayor["SignedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                         "signed",
                                         signed_date,
                                         type="governor:signed")
@@ -152,7 +166,7 @@ class DCBillScraper(BillScraper):
                     elif 'ReturnedDate' in mayor: #if returned but not signed, it was vetoed
                         veto_date = self.date_format(mayor["ReturnedDate"])
 
-                        bill.add_action("mayor",
+                        bill.add_action("executive",
                                         "vetoed",
                                         veto_date,
                                         type="governor:vetoed")
@@ -174,9 +188,12 @@ class DCBillScraper(BillScraper):
                     congress = congress[0]
                     if "TransmittedDate" in congress:
                         transmitted_date = self.date_format(congress["TransmittedDate"])
-                        bill.add_action("US Congress",
+
+                        bill.add_action("other",
                                     "Transmitted to Congress for review",
                                     transmitted_date)
+
+
 
 
                 #deal with committee actions
@@ -188,16 +205,16 @@ class DCBillScraper(BillScraper):
                     self.logger.warning("Crap, we can't find anything that looks like an action date. Skipping")
                     continue
                 date = self.date_format(date)
-                if "ComitteeReferral" in legislation_info: #their typo, not mine
+                if "CommitteeReferral" in legislation_info:
                     committees = []
-                    for committee in legislation_info["ComitteeReferral"]:
+                    for committee in legislation_info["CommitteeReferral"]:
                         if committee["Name"].lower() == "retained by the council":
                             committees = []
                             break
                         else:
                             committees.append(committee["Name"])
                     if committees != []:
-                        bill.add_action("committee",
+                        bill.add_action("upper",
                                     "referred to committee",
                                     date,
                                     committees=committees,
@@ -207,7 +224,7 @@ class DCBillScraper(BillScraper):
                     committees = []
                     for committee in legislation_info["CommitteeReferralComments"]:
                         committees.append(committee["Name"])
-                    bill.add_action("committee",
+                    bill.add_action("upper",
                                     "comments from committee",
                                     date,
                                     committees=committees,
@@ -235,8 +252,8 @@ class DCBillScraper(BillScraper):
      
 
                 #deal with committee votes
-                if "ComiteeMarkup" in bill_info: #their typo, not mine
-                    committee_info = bill_info["ComiteeMarkup"]
+                if "CommitteeMarkup" in bill_info:
+                    committee_info = bill_info["CommitteeMarkup"]
                     if len(committee_info) > 0:
                         for committee_action in committee_info:
                             self.process_committee_vote(committee_action,bill)
@@ -304,7 +321,7 @@ class DCBillScraper(BillScraper):
 
         date = self.date_format(vote["DateOfVote"])
 
-        leg_votes = vote["MappedJASON"] #their typo, not mine
+        leg_votes = vote["MemberVotes"]
         v = Vote('upper',date,motion,status,0,0,0,
                 yes_votes=[],no_votes=[],other_votes=[])
         for leg_vote in leg_votes:
@@ -351,7 +368,7 @@ class DCBillScraper(BillScraper):
         else:
             t = "other"
         
-        bill.add_action("council",
+        bill.add_action("upper",
                         motion,
                         date,
                         type=t)

@@ -90,7 +90,7 @@ class MEBillScraper(BillScraper):
 
     def scrape_bill(self, bill):
         url = bill['sources'][0]['url']
-        html = self.urlopen(url)
+        html = self.get(url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
@@ -101,9 +101,9 @@ class MEBillScraper(BillScraper):
 
         if bill_title.startswith('Joint Order') or \
                 bill_title.startswith('Joint Resolution'):
-            bill['bill_type'] = 'joint resolution'
+            bill['type'] = ['joint resolution']
         else:
-            bill['bill_type'] = 'bill'
+            bill['type'] = ['bill']
 
         # Add the LD number in.
         for ld_num in page.xpath("//b[contains(text(), 'LD ')]/text()"):
@@ -122,7 +122,7 @@ class MEBillScraper(BillScraper):
             msg = ('Page didn\'t contain sponsors url with expected '
                    'format. Page url was %s' % url)
             raise ValueError(msg)
-        sponsors_html = self.urlopen(sponsors_url, retry_on_404=True)
+        sponsors_html = self.get(sponsors_url, retry_on_404=True).text
         sponsors_page = lxml.html.fromstring(sponsors_html)
         sponsors_page.make_links_absolute(sponsors_url)
 
@@ -186,7 +186,7 @@ class MEBillScraper(BillScraper):
         spon_link = page.xpath("//a[contains(@href, 'subjects.asp')]")[0]
         spon_url = spon_link.get('href')
         bill.add_source(spon_url)
-        spon_html = self.urlopen(spon_url, retry_on_404=True)
+        spon_html = self.get(spon_url, retry_on_404=True).text
         sdoc = lxml.html.fromstring(spon_html)
         xpath = '//table[@class="sectionbody"]/tr[2]/td/text()'
         srow = sdoc.xpath(xpath)[1:]
@@ -196,7 +196,7 @@ class MEBillScraper(BillScraper):
         ver_link = page.xpath("//a[contains(@href, 'display_ps.asp')]")[0]
         ver_url = ver_link.get('href')
         try:
-            ver_html = self.urlopen(ver_url, retry_on_404=True)
+            ver_html = self.get(ver_url, retry_on_404=True).text
         except socket.timeout:
             pass
         else:
@@ -210,7 +210,7 @@ class MEBillScraper(BillScraper):
                                      mimetype='text/html')
 
     def scrape_votes(self, bill, url):
-        page = self.urlopen(url, retry_on_404=True)
+        page = self.get(url, retry_on_404=True).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
@@ -225,7 +225,7 @@ class MEBillScraper(BillScraper):
                 self.scrape_vote(bill, motion, url)
 
     def scrape_vote(self, bill, motion, url):
-        page = self.urlopen(url, retry_on_404=True)
+        page = self.get(url, retry_on_404=True).text
         page = lxml.html.fromstring(page)
 
         yeas_cell = page.xpath("//td[text() = 'Yeas (Y):']")[0]
@@ -278,7 +278,7 @@ class MEBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def scrape_actions(self, bill, url):
-        page = self.urlopen(url, retry_on_404=True)
+        page = self.get(url, retry_on_404=True).text
         page = lxml.html.fromstring(page)
         bill.add_source(url)
 

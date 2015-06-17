@@ -1,5 +1,6 @@
 import datetime
 import lxml.html
+from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import INBillScraper
 from .legislators import INLegislatorScraper
 from .committees import INCommitteeScraper
@@ -17,12 +18,25 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
+        {'name': '2009-2010', 'start_year': 2009,
+        'end_year': 2010, 'sessions': ['2009', '2010']},
+        {'name': '2011-2012', 'start_year': 2011,
+        'end_year': 2012, 'sessions': ['2011', '2012']},
         {'name': '2013-2014', 'start_year': 2013,
          'end_year': 2014, 'sessions': ['2013', '2014']},
         {'name': '2015-2016', 'start_year': 2015,
          'end_year': 2016, 'sessions': ['2015']},
         ],
     session_details={
+        '2009': {'display_name': '2009 Regular Session',
+            '_scraped_name': 'First Regular Session 116th General Assembly (2009)'},
+        '2010': {'display_name': '2010 Regular Session',
+            '_scraped_name': 'Second Regular Session 116th General Assembly (2010)'},
+        '2011': {'start_date': datetime.date(2011, 1, 5),
+            'display_name': '2011 Regular Session',
+            '_scraped_name': 'First Regular Session 117th General Assembly (2011)'},
+        '2012': {'display_name': '2012 Regular Session',
+            '_scraped_name': 'Second Regular Session 117th General Assembly (2012)'},
         '2013': {'display_name': '2013 Regular Session',
                  '_scraped_name': 'First Regular Session 118th General Assembly (2013)'},
         '2014': {'display_name': '2014 Regular Session',
@@ -79,6 +93,6 @@ def session_list():
     
 
 def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    return ' '.join(x.text_content()
-                    for x in doc.xpath('//div[@align="full"]'))
+    text = pdfdata_to_text(data)
+    return text_after_line_numbers(text)
+

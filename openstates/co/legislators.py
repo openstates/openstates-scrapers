@@ -41,7 +41,7 @@ class COLegislatorScraper(LegislatorScraper):
 
     def scrape_directory(self, next_page, chamber, session):
         ret = {}
-        html = self.urlopen(next_page)
+        html = self.get(next_page).text
         page = lxml.html.fromstring(html)
         # Alright. We'll get all the districts.
         dID = page.xpath( "//div[@id='viewBody']" )[0] # should be only one
@@ -73,7 +73,7 @@ class COLegislatorScraper(LegislatorScraper):
         ret = []
         obj = {}
         image = ""
-        html = self.urlopen(hp_url)
+        html = self.get(hp_url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(hp_url)
 
@@ -122,7 +122,7 @@ class COLegislatorScraper(LegislatorScraper):
     def process_person( self, p_url ):
         ret = { "homepage" : p_url }
 
-        html = self.urlopen(p_url)
+        html = self.get(p_url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(p_url)
 

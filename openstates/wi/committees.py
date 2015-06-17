@@ -8,7 +8,7 @@ class WICommitteeScraper(CommitteeScraper):
     def scrape_committee(self, name, url, chamber):
         com = Committee(chamber, name)
         com.add_source(url)
-        data = self.urlopen(url)
+        data = self.get(url).text
         doc = lxml.html.fromstring(data)
 
         for leg in doc.xpath('//div[@id="members"]/div[@id="members"]/p/a/text()'):
@@ -41,9 +41,20 @@ class WICommitteeScraper(CommitteeScraper):
                 url += 'senate'
             else:
                 url += 'assembly'
-            data = self.urlopen(url)
+            data = self.get(url).text
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 
-            for a in doc.xpath('.//div[starts-with(@id,"committee-")]/h5/a'):
-                self.scrape_committee(a.text, a.get('href'), chamber)
+            for a in doc.xpath('//ul[@class="docLinks"]/li/p/a'):
+                if "(Disbanded" not in a.text:
+                    comm_name = a.text
+                    comm_name = comm_name.replace("Committee on", "")
+                    comm_name = comm_name.replace("Assembly", "")
+                    comm_name = comm_name.replace("Joint Survey", "")
+                    comm_name = comm_name.replace("Joint Review", "")
+                    comm_name = comm_name.replace("Joint", "")
+                    comm_name = comm_name.replace("Senate", "")
+                    comm_name = comm_name.replace("Committee for", "")
+                    comm_name = comm_name.replace("Committee", "")
+                    comm_name = comm_name.strip()
+                    self.scrape_committee(comm_name, a.get('href'), chamber)

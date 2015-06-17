@@ -51,7 +51,7 @@ class WIBillScraper(BillScraper):
         self.subjects = defaultdict(list)
 
         while last_url != next_url:
-            html = self.urlopen(next_url)
+            html = self.get(next_url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(next_url)
 
@@ -117,7 +117,7 @@ class WIBillScraper(BillScraper):
             bill_type = 'bill'
 
         try:
-            data = self.urlopen(url)
+            data = self.get(url).text
         except scrapelib.HTTPError:
             self.warning('skipping URL %s' % url)
             return
@@ -137,7 +137,7 @@ class WIBillScraper(BillScraper):
             self.scrape_bill_history(bill, bill_url)
 
     def scrape_bill_history(self, bill, url):
-        body = self.urlopen(url)
+        body = self.get(url).text
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
 
@@ -174,7 +174,7 @@ class WIBillScraper(BillScraper):
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
                 extra_doc_url = a.get('href')
-                extra_doc = lxml.html.fromstring(self.urlopen(extra_doc_url))
+                extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)
                 extra_doc.make_links_absolute(extra_doc_url)
                 for extra_a in extra_doc.xpath('//li//a'):
                     if extra_a.text:
@@ -300,7 +300,7 @@ class WIBillScraper(BillScraper):
 
 
     def add_senate_votes(self, vote, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # what to do with the pieces
@@ -327,7 +327,7 @@ class WIBillScraper(BillScraper):
                 raise ValueError('unexpected block in vote')
 
     def add_house_votes(self, vote, url):
-        html = self.urlopen(url)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         header_td = doc.xpath('//td[@align="center"]')[0].text_content()

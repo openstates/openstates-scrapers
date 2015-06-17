@@ -26,7 +26,7 @@ class KSBillScraper(BillScraper):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
-        bill_request = self.urlopen(ksapi.url + 'bill_status/')
+        bill_request = self.get(ksapi.url + 'bill_status/').text
         bill_request_json = json.loads(bill_request)
         bills = bill_request_json['content']
         for bill_data in bills:
@@ -99,7 +99,7 @@ class KSBillScraper(BillScraper):
             base_url = 'http://www.kslegislature.org/li/%s/year1/measures/' % slug
 
         url = base_url + bill['bill_id'].lower() + '/'
-        doc = lxml.html.fromstring(self.urlopen(url))
+        doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
         bill.add_source(url)
