@@ -108,7 +108,10 @@ class ApiClient(object):
         while resp is None and tries <  num_bad_packets_allowed:
             try:
                 resp = self.scraper.get(url, *requests_args, **requests_kwargs)
-            except SysCallError:
+            except SysCallError as e:
+                err, string = e.args
+                if err != 104:
+                    raise
                 tries += 1
                 if tries >= num_bad_packets_allowed:
                     raise RuntimeError("Got bad packet from API too many times, I give up")
