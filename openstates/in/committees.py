@@ -4,6 +4,7 @@ import lxml.html
 from billy.scrape.committees import CommitteeScraper, Committee
 from apiclient import ApiClient
 from .utils import get_with_increasing_timeout
+from scrapelib import HTTPError
 
 class INCommitteeScraper(CommitteeScraper):
     jurisdiction = 'in'
@@ -68,8 +69,11 @@ class INCommitteeScraper(CommitteeScraper):
             comm_name = comm_link.split("/")[-1]
             if "withdrawn" in comm_name or "conference" in comm_name:
                 continue
-            comm_json = client.get("committee",committee_link=comm_link[1:])
-            
+            try:
+                comm_json = client.get("committee",committee_link=comm_link[1:])
+            except HTTPError:
+                self.logger.warning("Page does not exist")
+                continue
             try:
                 chamber = comm_json["chamber"]["name"]
             except KeyError:
