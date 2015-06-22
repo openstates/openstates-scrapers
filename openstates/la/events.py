@@ -41,13 +41,9 @@ class LAEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'la'
     _tz = pytz.timezone('America/Chicago')
 
-    def scrape(self, chamber, session):
-        if chamber == 'lower':
-            self.scrape_house_weekly_schedule(session)
+    def scrape(self, session, chambers):
+        self.scrape_house_weekly_schedule(session)
 
-        self.scrape_committee_schedule(session, chamber)
-
-    def scrape_committee_schedule(self, session, chamber):
         url = "http://www.legis.la.gov/legis/ByCmte.aspx"
 
         page = self.get(url).text
@@ -55,7 +51,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'Agenda.aspx')]"):
-            self.scrape_meeting(session, chamber, link.attrib['href'])
+            self.scrape_meeting(session, link.attrib['href'])
 
     def scrape_bills(self, line):
         ret = []
@@ -69,7 +65,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 ret.append(blob)
         return ret
 
-    def scrape_meeting(self, session, chamber, url):
+    def scrape_meeting(self, session, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
