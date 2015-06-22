@@ -71,9 +71,7 @@ class NHLegislatorScraper(LegislatorScraper):
             # being a nominee of both parties (eg, 'd+r')
             # Cross-reference this list for official party affiliation:
             # http://www.gencourt.state.nh.us/House/caljourns/journals/2015/HJ_4.pdf
-            if fullname == "Wall, Janet G.":
-                assert party == 'd+r', "Remove special-casing for Wall"
-                party = 'd'
+
 
             leg = Legislator(term, chamber, district, full, first, last,
                              middle, party_map[party], email=email)
