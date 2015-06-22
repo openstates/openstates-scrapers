@@ -1,5 +1,6 @@
 import os
 import datetime
+from operator import itemgetter
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
@@ -228,6 +229,9 @@ class OHBillScraper(BillScraper):
                         version_link = base_url+bill_version["pdfDownloadLink"]
                         mimetype = "application/pdf" if version_link.endswith("pdf") else "application/octet-stream"
                         bill.add_version(version_name,version_link,mimetype=mimetype)
+
+                    # Need to sort bill actions, since they may be jumbled
+                    bill['actions'] = sorted(bill['actions'], key=itemgetter('date'))
 
                     self.save_bill(bill)
 
