@@ -2,6 +2,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
 import lxml.html
+from scrapelib import HTTPError
 
 class LACommitteeScraper(CommitteeScraper):
     jurisdiction = 'la'
@@ -134,7 +135,7 @@ class LACommitteeScraper(CommitteeScraper):
         page.make_links_absolute('http://house.louisiana.gov')
         
         committees = {}
-        for el in page.xpath("//a[contains(@href,'../H_Cmtes/')]"):
+        for el in page.xpath("//a[contains(@href,'H_Cmtes/')]"):
             comm_name = el.xpath('normalize-space(string())')
             comm_name = self.normalize_committee_name(comm_name)
             
@@ -142,36 +143,40 @@ class LACommitteeScraper(CommitteeScraper):
             # http://house.louisiana.gov/H_Reps/H_Reps_CmtesFull.asp
             if comm_name not in scraped_committees:    
                 comm_url = el.get('href').replace('../','')
-                committees[comm_name] = comm_url
 
-        for name, url in committees.items():
-            chamber = 'joint' if name.startswith('Joint') else 'lower'
-            committee = Committee(chamber, name)
-            committee.add_source(url)
-            
-            text = self.get(url).text
-            page = lxml.html.fromstring(text)
-            page.make_links_absolute('http://house.louisiana.gov')
+                try:
+                    text = self.get(comm_url).text
+                except HTTPError:
+                    self.logger.warning("Link not working, skipping.")
+                    continue
 
-            for row in page.xpath('//table[@id="table1"]//tbody/tr'):
-                member_info = row.xpath('./td')
-                mname = member_info[0].xpath('normalize-space(string())')
-                mtype = member_info[1].xpath('normalize-space(string())')
-                if mtype == 'Chairman':
-                    mtype = 'chairman'
-                elif mtype  == 'Co-Chairmain':
-                    mtype = 'co-chairmain'
-                elif mtype ==  'Vice Chair':
-                    mtype = 'vice chair'
-                elif mtype  == 'Ex Officio':
-                    mtype = 'ex officio'
-                elif mtype == 'Interim Member':
-                    mtype = 'interim'
-                else:
-                    mtype = 'member'
-                committee.add_member(mname, mtype)
-            
-            committees[name] = committee
+                chamber = 'joint' if comm_name.startswith('Joint') else 'lower'
+                committee = Committee(chamber, comm_name)
+                committee.add_source(url)
+                
+
+                page = lxml.html.fromstring(text)
+                page.make_links_absolute('http://house.louisiana.gov')
+
+                for row in page.xpath('//table[@id="table1"]//tbody/tr'):
+                    member_info = row.xpath('./td')
+                    mname = member_info[0].xpath('normalize-space(string())')
+                    mtype = member_info[1].xpath('normalize-space(string())')
+                    if mtype == 'Chairman':
+                        mtype = 'chairman'
+                    elif mtype  == 'Co-Chairmain':
+                        mtype = 'co-chairmain'
+                    elif mtype ==  'Vice Chair':
+                        mtype = 'vice chair'
+                    elif mtype  == 'Ex Officio':
+                        mtype = 'ex officio'
+                    elif mtype == 'Interim Member':
+                        mtype = 'interim'
+                    else:
+                        mtype = 'member'
+                    committee.add_member(mname, mtype)
+                
+                committees[comm_name] = committee
         
         return committees
         
