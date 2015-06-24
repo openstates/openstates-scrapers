@@ -24,13 +24,13 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape(self, chamber, term):
         if chamber == 'upper':
             url = ('http://webserver.rilin.state.ri.us/Documents/Senators.xls')
-            rep_type = 'Senator '
+            rep_type = 'Senator'
             source_url = 'http://www.rilin.state.ri.us/senators/default.aspx'
             source_url_title_replacement = rep_type
             contact_url = 'http://webserver.rilin.state.ri.us/Email/SenEmailListDistrict.asp'
         elif chamber == 'lower':
             url = ('http://webserver.rilin.state.ri.us/Documents/Representatives.xls')
-            rep_type = 'Representative '
+            rep_type = 'Representative'
             source_url = 'http://www.rilin.state.ri.us/representatives/default.aspx'
             source_url_title_replacement = 'Rep. '
             contact_url = 'http://webserver.rilin.state.ri.us/Email/RepEmailListDistrict.asp'
@@ -76,7 +76,9 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
 
             dist = str(int(d['district']))
             district_name = dist
-            full_name = re.sub(rep_type, '', d['full_name']).strip()
+
+            assert d['full_name'].startswith(rep_type), "Improper name found"
+            full_name = re.sub(r"^{}(?=\s?[A-Z].*$)".format(rep_type), '', d['full_name']).strip()
             translate = {
                 "Democrat"    : "Democratic",
                 "Republican"  : "Republican",
