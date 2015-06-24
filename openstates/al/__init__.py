@@ -70,6 +70,12 @@ metadata =  {
             'type': 'primary',
             '_scraped_name': 'Regular Session 2015',
         },
+        # '2016rs': {
+        #     'display_name': '2016 Regular Session',
+        #     'internal_id': '1065',
+        #     'type': 'primary',
+        #     '_scraped_name': 'Regular Session 2016',
+        # },
     },
     '_ignored_scraped_sessions': [
             'Regular Session 1998',
@@ -102,7 +108,8 @@ metadata =  {
             'Regular Session 2009',
             'Regular Session 2010',
             'First Special Session 2009',
-            'First Special Session 2010'
+            'First Special Session 2010',
+            'Regular Session 2016'
             ]
 }
 
