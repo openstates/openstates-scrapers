@@ -42,8 +42,8 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             h2, = h2s
             # Need to remove weird Unicode spaces from their names
-            name = h2.text.encode('ascii', 'ignore').strip()
-            name = re.sub(r'^\s*(Senator|Representative)\s*(?=[A-Z])', "", name)
+            name = " ".join(h2.text.split())
+            name = re.sub(r'^\W?(Senator|Representative)\W?(?=[A-Z])', "", name)
 
             photo_block, = photo_block
             # (The <td> before ours was the photo)
