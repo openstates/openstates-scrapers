@@ -1,6 +1,5 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
-import lxml.html
 import re
 
 
@@ -42,7 +41,9 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             h2, = h2s
-            name = h2.text.strip()
+            # Need to remove weird Unicode spaces from their names
+            name = h2.text.encode('ascii', 'ignore')
+            name = re.sub(r'^\s*(Senator|Representative)\s*(?=[A-Z])', "", name)
 
             photo_block, = photo_block
             # (The <td> before ours was the photo)
