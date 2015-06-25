@@ -264,7 +264,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     #we've never seen a vote with anything but "passed"
                     #so throw an error otherwise so we can figure it out
                     passed_statuses = ["Passed"]
-                    failed_statuses = ["Defeated"]
+                    failed_statuses = ["Defeated", "Rescinded"]
                     if passage_status not in passed_statuses+failed_statuses:
                         raise AssertionError("Unknown passage state {}".format(passage_status))
                     passed = passage_status in passed_statuses
