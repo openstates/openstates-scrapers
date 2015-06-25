@@ -37,6 +37,7 @@ class NDLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         name = page.xpath("//h1[@id='page-title']/text()")[0]
+        name = re.sub(r'^(Representative|Senator)\s', '', name)
         district = page.xpath("//a[contains(@href, 'district')]/text()")[0]
         district = district.replace("District", "").strip()
 
