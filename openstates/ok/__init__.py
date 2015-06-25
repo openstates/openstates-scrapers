@@ -56,13 +56,14 @@ metadata = dict(
              '_scraped_name': '2014 Regular Session',
             },
          '2015-2016':
-            {'display_name': '2015 Regular Session',
+            {'display_name': '2015-2016 Regular Session',
              'session_id': '1500',
-             '_scraped_name': '2015 Regular Session',
+             '_scraped_name': '2016 Regular Session',
             },
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
+        '2015 Regular Session',
         '2013 Regular Session',
         '2011 Regular Session', '2010 Regular Session',
         '2009 Regular Session', '2008 Regular Session',
