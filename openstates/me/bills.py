@@ -5,6 +5,7 @@ import htmlentitydefs
 import requests
 
 import lxml.html
+import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -278,7 +279,14 @@ class MEBillScraper(BillScraper):
         bill.add_vote(vote)
 
     def scrape_actions(self, bill, url):
-        page = self.get(url, retry_on_404=True).text
+        try:
+            page = self.get(url, retry_on_404=True).text
+        except scrapelib.HTTPError:
+            self.warning(
+                "Error loading actions webpage for bill {}".
+                format(bill['bill_id']))
+            return
+
         page = lxml.html.fromstring(page)
         bill.add_source(url)
 
