@@ -76,20 +76,9 @@ class ALBillScraper(BillScraper):
         SESSION_SET_URL = ('http://alisondb.legislature.state.al.us/'
                            'Alison/ALISONLogin.aspx')
 
-        # If the legislative session is the default (ie, current) one,
-        # then the scraper must switch away and then return to it
         doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         (current_session, ) = doc.xpath('//option[@selected]/text()')
-        if self.session_name == current_session:
-            another_session_name = doc.xpath(
-                '//option[not(@selected)]/text()')[0]
-            form = {
-                '__EVENTTARGET': 'ctl00$cboSession',
-                'ctl00$cboSession': another_session_name
-            }
-            self.post(url=SESSION_SET_URL, data=form, allow_redirects=False)
 
-        doc = lxml.html.fromstring(self.get(url=SESSION_SET_URL).text)
         form = {
             '__EVENTTARGET': 'ctl00$cboSession',
             'ctl00$cboSession': self.session_name
@@ -109,9 +98,17 @@ class ALBillScraper(BillScraper):
             resolutions = doc.xpath(
                 '//table[@class="box_resostatusgrid "]/tr')[1:]
 
-            assert not (bills and resolutions), "Found multiple bill types"
-            if bills or resolutions:
+            if bills and resolutions:
+                raise AssertionError("Found multiple bill types")
+            elif bills or resolutions:
                 return bills or resolutions
+            elif doc.xpath(
+                    '//span[@class="ctl00_MainDefaultContent_lblCount"]/text()'
+                    ) == ["0 Instruments", ]:
+                self.warning("Missing either bills or resolutions")
+                return []
+            else:
+                continue
         else:
             raise AssertionError("Bill list not found")
 
