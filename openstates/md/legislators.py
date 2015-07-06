@@ -58,12 +58,13 @@ class MDLegislatorScraper(LegislatorScraper):
                 self.warning("Missing phone!")
                 phone = None
 
-            email = ldoc.xpath('//a[contains(@href, "mailto:")]/@href')
-            if email:
-                email = email[0].strip('mailto:')
-                email = email.split('?')[0]
-            else:
+            email = ldoc.xpath('//a[contains(@href, "mailto:")]/text()')
+            if not email:
                 email = ''
+            elif len(email) == 1:
+                email = email[0].strip()
+            else:
+                raise AssertionError('Multiple email links found on page')
 
             leg = Legislator(term, chamber, district, name, party=party,
                              url=leg_url, email=email)
