@@ -18,7 +18,6 @@ metadata = dict(
     terms = [
         {'name': '62', 'sessions': ['62'],
          'start_year': 2011, 'end_year': 2012},
-        # 2013 term is already there, but we avoid scraping it
         {'name': '63', 'sessions': ['63'],
          'start_year': 2013, 'end_year': 2014},
         {'name': '64', 'sessions': ['64'],
@@ -40,6 +39,9 @@ metadata = dict(
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=[
+        # Nothing is available for the 65th yet, and 64th events are ongoing
+        '65th Legislative Assembly (2017-18)',
+
         '61st Legislative Assembly (2009-10)',
         '60th Legislative Assembly (2007-08)',
         '59th Legislative Assembly (2005-06)',
