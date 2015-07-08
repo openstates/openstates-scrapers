@@ -89,7 +89,7 @@ class ApiClient(object):
             requests_kwargs=None, **url_format_args):
         '''Resource is a self.resources dict key.
         '''
-        num_bad_packets_allowed = 5
+        num_bad_packets_allowed = 10
         url = self.make_url(resource_name, **url_format_args)
 
         # Add in the api key.
@@ -114,6 +114,7 @@ class ApiClient(object):
                     raise
                 tries += 1
                 if tries >= num_bad_packets_allowed:
+                    print err, string
                     raise RuntimeError("Got bad packet from API too many times, I give up")
         return resp
 
