@@ -68,7 +68,7 @@ class LABillScraper(BillScraper, LXMLMixin):
         for bill_type in bill_types[chamber]:
             for bill_page in self.bill_pages(bill_type):
                 for bill in bill_page.xpath(
-                        "//a[contains(@href, 'BillInfo.aspx')]"):
+                        "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"):
                     self.scrape_bill_page(chamber,
                                           session,
                                           bill.attrib['href'],
