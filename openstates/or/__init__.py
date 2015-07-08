@@ -96,6 +96,7 @@ metadata = dict(
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['Today',
+                               '2015-2016 Interim',
                                '2013 1st Special Session',
                                '2012 1st Special Session',
                                '2013 - 2014 Interim',
