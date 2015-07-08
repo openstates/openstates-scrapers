@@ -15,6 +15,9 @@ class OHBillScraper(BillScraper):
     jurisdiction = 'oh'
 
     def scrape(self, session, chambers):
+        # Bills endpoint can sometimes take a very long time to load
+        self.timeout = 300
+
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
 
@@ -89,7 +92,12 @@ class OHBillScraper(BillScraper):
                         #and values are the bill data from the api.
                         #then loop through that to avoid duplicate bills
 
-                        bill_id = v["number"]
+                        try:
+                            bill_id = v["number"]
+                        except KeyError:
+                            self.warning("Apparent bill has no information:\n{}".format(v))
+                            continue
+
                         version_id = v["versionid"]
                         if bill_id in bill_versions:
                             if version_id in bill_versions[bill_id]:
@@ -201,7 +209,11 @@ class OHBillScraper(BillScraper):
                             self.process_vote(votes,vote_url,base_url,bill,legislators,chamber_dict,vote_results)
 
                             vote_url = base_url+bill_version["cmtevotes"][0]["link"]
-                            vote_doc = self.get(vote_url)
+                            try:
+                                vote_doc = self.get(vote_url)
+                            except scrapelib.HTTPError:
+                                self.warning("Vote page not loading; skipping: {}".format(vote_url))
+                                continue
                             votes = vote_doc.json()
                             self.process_vote(votes,vote_url,base_url,bill,legislators,chamber_dict,vote_results)
 
@@ -339,7 +351,7 @@ class OHBillScraper(BillScraper):
             try:
                 chamber = chamber_dict[v["chamber"]]
             except KeyError:
-                chamber = "lower" if "h" in v["assocdoc"] else "upper"
+                chamber = "lower" if "house" in v["apn"] else "upper"
             try:
                 date = datetime.datetime.strptime(v["date"],"%m/%d/%y")
             except KeyError:
@@ -352,12 +364,15 @@ class OHBillScraper(BillScraper):
                 motion = v["action"]
             except KeyError:
                 motion = v["motiontype"]
-            try:
-                result = v["results"].lower()
-            except KeyError:
-                result = v["passed"]
 
-            passed = vote_results[result]
+            result = v.get("results") or v.get("passed")
+            if result is None:
+                if len(v['yeas']) > len(v['nays']):
+                    result = "passed"
+                else:
+                    result = "failed"
+
+            passed = vote_results[result.lower()]
             committee = None
             if "committee" in v:
                 vote = Vote(chamber,date,motion,passed,0,0,0,yes_votes=[],no_votes=[],other_votes=[],committee=v["committee"])
