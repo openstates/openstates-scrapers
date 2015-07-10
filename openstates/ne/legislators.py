@@ -21,6 +21,9 @@ class NELegislatorScraper(LegislatorScraper):
                 page = lxml.html.fromstring(html)
 
                 full_name = page.xpath('//div[@class="content_header_right"]/a')[0].text.split(' ',1)[1].strip()
+                if full_name == 'Seat Vacant':
+                    continue
+
                 # This is hacky, are lis always the same?
                 address = page.xpath('//div[@id="sidebar"]/ul[1]/li[3]')[0].text.strip() + '\n'
                 address += page.xpath('//div[@id="sidebar"]/ul[1]/li[4]')[0].text.strip() + '\n'
