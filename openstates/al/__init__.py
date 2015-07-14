@@ -21,7 +21,7 @@ metadata =  {
          'end_year': 2014,
         },
         {'name': '2015-2018',
-         'sessions': ['2015os','2015rs'],
+         'sessions': ['2015os','2015rs', 'First Special Session 2015'],
          'start_year': 2015,
          'end_year': 2018,
         }
@@ -69,6 +69,12 @@ metadata =  {
             'internal_id': '1064',
             'type': 'primary',
             '_scraped_name': 'Regular Session 2015',
+        },
+        'First Special Session 2015': {
+            'display_name': 'First Special Session 2015',
+            'internal_id': '1066',
+            'type': 'special',
+            '_scraped_name': 'First Special Session 2015',
         },
         # '2016rs': {
         #     'display_name': '2016 Regular Session',
