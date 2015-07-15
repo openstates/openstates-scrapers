@@ -3,10 +3,10 @@ set -e
 
 URL="http://static.openstates.org.s3.amazonaws.com/mongo/latest-mongo-dump.tar.gz"
 POPDIR=$(pwd)
-if [ "x$(which mktemp)" != "x" ]; then
-	WORKDIR=$(mktemp -d)
-else
+if [ "x$(which gmktemp)" != "x" ]; then
 	WORKDIR=$(gmktemp -d)
+else
+	WORKDIR=$(mktemp -d)
 fi
 cd ${WORKDIR}
 wget ${URL}
