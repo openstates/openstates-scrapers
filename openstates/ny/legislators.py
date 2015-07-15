@@ -40,7 +40,7 @@ class NYLegislatorScraper(LegislatorScraper):
             district = link.xpath("string(../../../div[3]/span[1])")
             district = re.match(r"District (\d+)", district).group(1)
 
-            party = party_by_district[district]
+            party = party_by_district[district].strip()
 
             photo_link = link.xpath("../../../div[1]/span/a/img")[0]
             photo_url = photo_link.attrib['src']
@@ -174,7 +174,7 @@ class NYLegislatorScraper(LegislatorScraper):
                                   "div[@class = 'email2'][1])")
             district = district.rstrip('rthnds')
 
-            party = party_by_district[district]
+            party = party_by_district[district].strip()
 
             photo_url = "http://assembly.state.ny.us/mem/pic/%03d.jpg" % \
                     int(district)
