@@ -95,7 +95,7 @@ class MSLegislatorScraper(LegislatorScraper):
             capital_phone = root.xpath('string(//CAP_PHONE)')
             other_phone = root.xpath('string(//OTH_PHONE)')
             org_info = root.xpath('string(//ORG_INFO)')
-            email_name = root.xpath('string(//EMAIL_ADDRESS)')
+            email_name = root.xpath('string(//EMAIL_ADDRESS)').strip()
             cap_room = root.xpath('string(//CAP_ROOM)')
 
             if leg_name in ('Oscar Denton', 'Lataisha Jackson', 'John G. Faulkner'):
@@ -118,9 +118,12 @@ class MSLegislatorScraper(LegislatorScraper):
 
             kwargs = {}
 
-            if email_name.strip() != "":
-                email = '%s@%s.ms.gov' % (email_name,
-                                          {"upper": "senate", "lower": "house"}[chamber])
+            if email_name != "":
+                if "@" in email_name:
+                    email = email_name
+                else:
+                    email = '%s@%s.ms.gov' % (email_name,
+                                              {"upper": "senate", "lower": "house"}[chamber])
                 kwargs['email'] = email
 
             if capital_phone != "":
