@@ -31,6 +31,10 @@ class MELegislatorScraper(LegislatorScraper):
         districts = [x for x in page.xpath('/html/body/p') if
                 len(x.xpath('a')) == 3]
         for district in districts:
+            if "- Vacant" in district.text_content():
+                self.warning("District is vacant: '{}'".
+                             format(district.text_content()))
+                continue
 
             district_number = district.xpath('a[1]/@name')[0]
 
