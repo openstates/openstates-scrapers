@@ -12,11 +12,13 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
-            urls = ["http://www.lrc.ky.gov/committee/standing_senate.htm"]
+            urls = ["http://www.lrc.ky.gov/committee/standing_senate.htm",
+                    "http://www.lrc.ky.gov/committee/standing/A&R(S)/home.htm"]
             # also invoke joint scraper
             self.scrape('joint', term)
         elif chamber == 'lower':
-            urls = ["http://www.lrc.ky.gov/committee/standing_house.htm"]
+            urls = ["http://www.lrc.ky.gov/committee/standing_house.htm",
+                    "http://www.lrc.ky.gov/committee/standing/A&R(H)/home.htm"]
         else:
             urls = ["http://www.lrc.ky.gov/committee/interim.htm",
                     "http://www.lrc.ky.gov/committee/statutory.htm"]
@@ -41,6 +43,9 @@ class KYCommitteeScraper(CommitteeScraper):
                 links = links + linkz
 
             for link in links:
+                if "home" not in link.attrib["href"].lower():
+                    #allows us to scrape known subcommittee
+                    continue
                 name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
                 name = name.replace(".", "")
                 comm = Committee(chamber, name)
@@ -49,6 +54,7 @@ class KYCommitteeScraper(CommitteeScraper):
                 self.scrape_members(comm, comm_url)
                 if comm['members']:
                     self.save_committee(comm)
+
 
     def scrape_members(self, comm, url):
         page = self.get(url).text
@@ -67,7 +73,7 @@ class KYCommitteeScraper(CommitteeScraper):
                 role = 'co-chair'
             elif link.tail.strip() == '[Vice Chair]':
                 role = 'vice chair'
-            elif link.tail.strip() == '[ex officio]':
+            elif link.tail.strip() in ['[ex officio]', '[non voting ex officio]', '[Liaison Member]']:
                 role = 'member'
             else:
                 raise Exception("unexpected position: %s" % link.tail)
