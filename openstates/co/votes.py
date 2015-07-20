@@ -69,7 +69,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                         continue
 
                 found = re.findall(
-                    "(?P<bill_id>(H|S|SJ|HJ)(B|M|R)\d{2}-\d{4})",
+                    "(?P<bill_id>(H|S|SJ|HJ)(B|M|R)\d{2}-\d{3,4})",
                     line
                 )
                 if found != []:
