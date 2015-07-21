@@ -12,13 +12,11 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
 
         if chamber == 'upper':
-            urls = ["http://www.lrc.ky.gov/committee/standing_senate.htm",
-                    "http://www.lrc.ky.gov/committee/standing/A&R(S)/home.htm"]
+            urls = ["http://www.lrc.ky.gov/committee/standing_senate.htm"]
             # also invoke joint scraper
             self.scrape('joint', term)
         elif chamber == 'lower':
-            urls = ["http://www.lrc.ky.gov/committee/standing_house.htm",
-                    "http://www.lrc.ky.gov/committee/standing/A&R(H)/home.htm"]
+            urls = ["http://www.lrc.ky.gov/committee/standing_house.htm"]
         else:
             urls = ["http://www.lrc.ky.gov/committee/interim.htm",
                     "http://www.lrc.ky.gov/committee/statutory.htm"]
@@ -43,19 +41,42 @@ class KYCommitteeScraper(CommitteeScraper):
                 links = links + linkz
 
             for link in links:
-                home_link = link.attrib["href"]
-                if "home" not in home_link.lower():
-                    #allows us to scrape known subcommittee
-                    continue
-                name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
-                name = name.replace(".", "")
-                comm = Committee(chamber, name)
-                comm.add_source(home_link)
-                comm_url = home_link.replace(
-                    'home.htm', 'members.htm')
-                self.scrape_members(comm, comm_url)
-                if comm['members']:
-                    self.save_committee(comm)
+                self.scrape_committee(chamber, link)
+                
+
+    def scrape_committee(self, chamber, link, parent_comm=None):
+        home_link = link.attrib["href"]
+        name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
+        name = name.replace(".", "")
+        if "Subcommittee " in name:
+            subcomm = name.split("Subcommittee")[1]
+            subcomm = subcomm.replace(" on ","").replace(" On ", "")
+            subcomm = subcomm.strip()
+            comm = Committee(chamber, parent_comm, subcomm)
+        else:
+            comm = Committee(chamber, name)
+        comm.add_source(home_link)
+        comm_url = home_link.replace(
+            'home.htm', 'members.htm')
+        self.scrape_members(comm, comm_url)
+        
+
+        if comm['members']:
+            self.save_committee(comm)
+        
+        #deal with subcommittees
+        if parent_comm is None:
+            #checking parent_comm so we don't look for subcommittees
+            #in subcommittees leaving us exposed to infinity 
+            page = self.get(home_link).text
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(home_link)
+            sub_links = page.xpath("//li/a[contains(@href, '/home.htm')]")
+            for l in sub_links:
+                if "committee" in l.text.lower():
+                    self.scrape_committee(chamber, l, name)
+
+
 
 
     def scrape_members(self, comm, url):
