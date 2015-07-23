@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import open_csv
 
@@ -10,10 +9,6 @@ class CTLegislatorScraper(LegislatorScraper):
     latest_only = True
 
     _committee_names = {}
-
-    #def __init__(self, *args, **kwargs):
-        #super(CTLegislatorScraper, self).__init__(*args, **kwargs)
-        #self._scrape_committee_names()
 
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
