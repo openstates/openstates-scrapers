@@ -1,7 +1,47 @@
 import re
+import chardet
+import unicodecsv
+import StringIO
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import open_csv
+
+
+HEADERS = [
+    'dist',
+    'office code',
+    '_dist',
+    'party',
+    'first name',
+    'middle initial',
+    'last name',
+    'suffix',
+    '_first name',
+    'home street address',
+    'home city',
+    'home state',
+    'home zip',
+    'home phone',
+    'capitol street address',
+    '_capitol city state',
+    'capitol phone',
+    '_room',
+    'room number',
+    '_chair of',
+    '_vice chair of',
+    '_ranking member of',
+    'committee member1',
+    'title',
+    '_party',
+    '_role',
+    '_gender',
+    '_extra phone',
+    'email',
+    '_blank',
+    '_zero',
+    'URL',
+    '_committee codes',
+]
 
 
 class CTLegislatorScraper(LegislatorScraper):
@@ -13,12 +53,20 @@ class CTLegislatorScraper(LegislatorScraper):
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         data = self.get(leg_url)
-        page = open_csv(data)
+        char_encoding = chardet.detect(data.content)['encoding']
+        page = unicodecsv.reader(
+            StringIO.StringIO(data.content),
+            delimiter=',',
+            encoding=char_encoding
+        )
 
         for row in page:
+            row = dict(zip(HEADERS, row))
+
+            if row['_blank'] != ' ' or row['_zero'] != '0':
+                raise AssertionError("Spreadsheet structure may have changed")
+
             chamber = {'H': 'lower', 'S': 'upper'}[row['office code']]
-            if chamber not in chambers:
-                continue
 
             district = row['dist'].lstrip('0')
 
