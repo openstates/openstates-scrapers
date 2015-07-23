@@ -11,7 +11,7 @@ HEADERS = [
     'dist',
     'office code',
     '_dist',
-    'party',
+    '_?',
     'first name',
     'middle initial',
     'last name',
@@ -32,7 +32,7 @@ HEADERS = [
     '_ranking member of',
     'committee member1',
     'title',
-    '_party',
+    'party',
     '_role',
     '_gender',
     '_extra phone',
@@ -91,11 +91,24 @@ class CTLegislatorScraper(LegislatorScraper):
                              party=party,
                              url=row['URL'])
 
-            office_address = "%s, Room %s\nHartford, CT 06106" % (
+            office_address = "%s\nRoom %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
             leg.add_office('capitol', 'Capitol Office',
-                           address=office_address, phone=row['capitol phone'])
-            # skipping home address for now
+                           address=office_address,
+                           phone=row['capitol phone'],
+                           email=row['email'])
+
+            home_address = "{}\n{}, {} {}".format(
+                row['home street address'],
+                row['home city'],
+                row['home state'],
+                row['home zip'],
+            )
+            if "Legislative Office Building" not in home_address:
+                leg.add_office('district', 'District Office',
+                               address=home_address,
+                               phone=row['home phone'] if row['home phone'].strip() else None)
+
             leg.add_source(leg_url)
 
             for comm in row['committee member1'].split(';'):
@@ -109,10 +122,9 @@ class CTLegislatorScraper(LegislatorScraper):
                     if comm == '':
                         continue
 
-                    leg.add_role('committee member', term,
+                    leg.add_role(role, term,
                                  chamber='joint',
-                                 committee=comm,
-                                 position=role)
+                                 committee=comm)
 
             self.save_legislator(leg)
 
