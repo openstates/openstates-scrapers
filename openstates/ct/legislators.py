@@ -23,7 +23,7 @@ HEADERS = [
     'home zip',
     'home phone',
     'capitol street address',
-    '_capitol city state',
+    '_capitol city state zip',
     'capitol phone',
     '_room',
     'room number',
@@ -63,7 +63,11 @@ class CTLegislatorScraper(LegislatorScraper):
         for row in page:
             row = dict(zip(HEADERS, row))
 
-            if row['_blank'] != ' ' or row['_zero'] != '0':
+            # Ensure that the spreadsheet's structure hasn't generally changed
+            if (row['_blank'] != ' ' or
+                    row['_zero'] != '0' or
+                    not row['_capitol city state zip'].startswith("Hartford, CT")):
+                self.warning(row)
                 raise AssertionError("Spreadsheet structure may have changed")
 
             chamber = {'H': 'lower', 'S': 'upper'}[row['office code']]
@@ -83,17 +87,11 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            leg = Legislator(term, chamber, district,
-                             name, first_name=row['first name'],
-                             last_name=row['last name'],
-                             middle_name=row['middle initial'],
-                             suffixes=row['suffix'],
+            leg = Legislator(term, chamber, district, name,
                              party=party,
-                             email=row['email'].strip(),
-                             url=row['URL'],
-                             office_phone=row['capitol phone'])
+                             url=row['URL'])
 
-            office_address = "%s, Room %s\nHartford, CT 06106-1591" % (
+            office_address = "%s, Room %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
             leg.add_office('capitol', 'Capitol Office',
                            address=office_address, phone=row['capitol phone'])
