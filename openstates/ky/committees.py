@@ -47,13 +47,16 @@ class KYCommitteeScraper(CommitteeScraper):
     def scrape_committee(self, chamber, link, parent_comm=None):
         home_link = link.attrib["href"]
         name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
-        name = name.replace(".", "")
+        name = name.replace(".", "").strip()
         if "Subcommittee " in name:
             subcomm = name.split("Subcommittee")[1]
             subcomm = subcomm.replace(" on ","").replace(" On ", "")
             subcomm = subcomm.strip()
             comm = Committee(chamber, parent_comm, subcomm)
         else:
+            for c in ["Committee", "Comm", "Sub","Subcommittee"]:
+                if name.endswith(c):
+                    name = name[:-1*len(c)].strip()
             comm = Committee(chamber, name)
         comm.add_source(home_link)
         comm_url = home_link.replace(
