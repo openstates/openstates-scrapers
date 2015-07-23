@@ -66,6 +66,8 @@ class KYCommitteeScraper(CommitteeScraper):
 
         if comm['members']:
             self.save_committee(comm)
+        else:
+            self.logger.warning("Empty committee, skipping.")
         
         #deal with subcommittees
         if parent_comm is None:
