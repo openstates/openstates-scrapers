@@ -49,11 +49,9 @@ class WILegislatorScraper(LegislatorScraper):
                 else:
                     email = ''
 
-                if full_name in ('Devin LeMahieu', 'Roger Roth'):
+                if full_name in ('Devin LeMahieu'):
                     assert party is None, "Remove special-casing code for {}".format(full_name)
                     if full_name == 'Devin LeMahieu':
-                        party = "Republican"
-                    if full_name == 'Roger Roth':
                         party = "Republican"
                 else:
                     assert party is not None, "{} is missing party".format(full_name)
