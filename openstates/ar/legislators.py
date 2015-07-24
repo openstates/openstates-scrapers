@@ -53,7 +53,6 @@ class ARLegislatorScraper(LegislatorScraper):
 
         party = name_and_party[-1]
 
-        # David Johnson special casing:
         if ' '.join(name_and_party[1:]) == 'David Johnson' and "(" not in party:
             full_name = ' '.join(name_and_party[1:])
             party = 'Democratic'
