@@ -41,14 +41,48 @@ class KYCommitteeScraper(CommitteeScraper):
                 links = links + linkz
 
             for link in links:
-                name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
-                name = name.replace(".", "")
-                comm = Committee(chamber, name)
-                comm_url = link.attrib['href'].replace(
-                    'home.htm', 'members.htm')
-                self.scrape_members(comm, comm_url)
-                if comm['members']:
-                    self.save_committee(comm)
+                self.scrape_committee(chamber, link)
+                
+
+    def scrape_committee(self, chamber, link, parent_comm=None):
+        home_link = link.attrib["href"]
+        name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
+        name = name.replace(".", "").strip()
+        if "Subcommittee " in name:
+            subcomm = name.split("Subcommittee")[1]
+            subcomm = subcomm.replace(" on ","").replace(" On ", "")
+            subcomm = subcomm.strip()
+            comm = Committee(chamber, parent_comm, subcomm)
+        else:
+            for c in ["Committee", "Comm", "Sub","Subcommittee"]:
+                if name.endswith(c):
+                    name = name[:-1*len(c)].strip()
+            comm = Committee(chamber, name)
+        comm.add_source(home_link)
+        comm_url = home_link.replace(
+            'home.htm', 'members.htm')
+        self.scrape_members(comm, comm_url)
+        
+
+        if comm['members']:
+            self.save_committee(comm)
+        else:
+            self.logger.warning("Empty committee, skipping.")
+        
+        #deal with subcommittees
+        if parent_comm is None:
+            #checking parent_comm so we don't look for subcommittees
+            #in subcommittees leaving us exposed to infinity 
+            page = self.get(home_link).text
+            page = lxml.html.fromstring(page)
+            page.make_links_absolute(home_link)
+            sub_links = page.xpath("//li/a[contains(@href, '/home.htm')]")
+            for l in sub_links:
+                if "committee" in l.text.lower():
+                    self.scrape_committee(chamber, l, name)
+
+
+
 
     def scrape_members(self, comm, url):
         page = self.get(url).text
@@ -67,7 +101,7 @@ class KYCommitteeScraper(CommitteeScraper):
                 role = 'co-chair'
             elif link.tail.strip() == '[Vice Chair]':
                 role = 'vice chair'
-            elif link.tail.strip() == '[ex officio]':
+            elif link.tail.strip() in ['[ex officio]', '[non voting ex officio]', '[Liaison Member]']:
                 role = 'member'
             else:
                 raise Exception("unexpected position: %s" % link.tail)
