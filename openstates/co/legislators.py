@@ -111,7 +111,10 @@ class COLegislatorScraper(LegislatorScraper):
         try:
             (image,) = page.xpath("//img[contains(@src, '.jpg')]/@src")
         except ValueError:
-            (image,) = page.xpath("//img[contains(@src, '.png')]/@src")
+            try:
+                (image,) = page.xpath("//img[contains(@src, '.jpeg')]/@src")
+            except ValueError:
+                (image,) = page.xpath("//img[contains(@src, '.png')]/@src")
 
         obj.update({
             "ctty"  : ctty_apptmts,
