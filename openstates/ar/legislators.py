@@ -5,7 +5,7 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
-_Remove_special_casing = True
+remove_special_case = True
 
 
 class ARLegislatorScraper(LegislatorScraper):
@@ -32,7 +32,7 @@ class ARLegislatorScraper(LegislatorScraper):
             member_url = urlescape(a.attrib['href'])
             self.scrape_member(chamber, term, member_url)
 
-        if _Remove_special_casing is True:
+        if remove_special_case is True:
             raise AssertionError(
                 "Remove David Johnson special case")
 
@@ -56,8 +56,8 @@ class ARLegislatorScraper(LegislatorScraper):
         if ' '.join(name_and_party[1:]) == 'David Johnson' and "(" not in party:
             full_name = ' '.join(name_and_party[1:])
             party = 'Democratic'
-            global _Remove_special_casing
-            _Remove_special_casing = False
+            global remove_special_case
+            remove_special_case = False
 
         elif party == '(R)':
             party = 'Republican'
