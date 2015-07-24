@@ -46,7 +46,10 @@ metadata = dict(
          # 'start_date': datetime.date(2013, ??, ?),
          },
          {'name': '20152016',
-         'sessions': ['20152016', '20152016 Special Session 1'],
+         'sessions': [
+                      '20152016 Special Session 1',
+                      '20152016 Special Session 2',
+                      '20152016'],
          'start_year': 2015, 'end_year': 2016,
          },
         ],
@@ -120,6 +123,10 @@ metadata = dict(
         },
         '20152016 Special Session 1': {
             'display_name': '2015-2016, 1st Special Session',
+            'type': 'special'
+        },
+        '20152016 Special Session 2': {
+            'display_name': '2015-2016, 2nd Special Session',
             'type': 'special'
         },
     },
