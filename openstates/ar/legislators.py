@@ -48,7 +48,13 @@ class ARLegislatorScraper(LegislatorScraper):
 
         party = name_and_party[-1]
 
-        if party == '(R)':
+        if ' '.join(name_and_party[1:]) == 'David Johnson' and "(" not in party:
+                full_name = ' '.join(name_and_party[1:])
+                party = 'Democratic'
+        elif ' '.join(name_and_party[1:]) == 'David Johnson' and "(" in party:
+            raise AssertionError(
+                "Remove David Johnson special case")
+        elif party == '(R)':
             party = 'Republican'
         elif party == '(D)':
             party = 'Democratic'
