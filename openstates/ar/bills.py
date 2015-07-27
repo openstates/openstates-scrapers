@@ -117,6 +117,8 @@ class ARBillScraper(BillScraper):
                 action_type.append('bill:reading:3')
             elif action.startswith('DELIVERED TO GOVERNOR'):
                 action_type.append('governor:received')
+            elif action.startswith('Notification'):
+                action_type.append('governor:signed')
 
             if 'referred to' in action:
                 action_type.append('committee:referred')
