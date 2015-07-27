@@ -23,7 +23,7 @@ metadata = dict(
          'sessions': ['2013', '2014', '2014A'],
          'start_year': 2013, 'end_year': 2014},
         {'name': '2015-2016',
-         'sessions': ['2015', '2015A', '2016'],
+         'sessions': ['2015', '2015A', '2015B', '2016'],
          'start_year': 2015, 'end_year': 2016}
     ],
     session_details={
@@ -50,6 +50,9 @@ metadata = dict(
                 },
         '2015A': {'display_name': '2015 Special Session A',
                  '_scraped_name': '2015A',
+                },
+        '2015B': {'display_name': '2015 Special Session B',
+                 '_scraped_name': '2015B',
                 },
         '2016': {'display_name': '2016 Regular Session',
                  '_scraped_name': '2016',
