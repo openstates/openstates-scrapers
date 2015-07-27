@@ -1,8 +1,47 @@
 import re
+import chardet
+import unicodecsv
+import StringIO
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import open_csv
+
+
+HEADERS = [
+    'dist',
+    'office code',
+    '_dist',
+    '_?',
+    'first name',
+    'middle initial',
+    'last name',
+    'suffix',
+    '_first name',
+    'home street address',
+    'home city',
+    'home state',
+    'home zip',
+    'home phone',
+    'capitol street address',
+    '_capitol city state zip',
+    'capitol phone',
+    '_room',
+    'room number',
+    '_chair of',
+    '_vice chair of',
+    '_ranking member of',
+    'committee member1',
+    'title',
+    'party',
+    '_role',
+    '_gender',
+    '_extra phone',
+    'email',
+    '_blank',
+    '_zero',
+    'URL',
+    '_committee codes',
+]
 
 
 class CTLegislatorScraper(LegislatorScraper):
@@ -11,19 +50,27 @@ class CTLegislatorScraper(LegislatorScraper):
 
     _committee_names = {}
 
-    #def __init__(self, *args, **kwargs):
-        #super(CTLegislatorScraper, self).__init__(*args, **kwargs)
-        #self._scrape_committee_names()
-
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         data = self.get(leg_url)
-        page = open_csv(data)
+        char_encoding = chardet.detect(data.content)['encoding']
+        page = unicodecsv.reader(
+            StringIO.StringIO(data.content),
+            delimiter=',',
+            encoding=char_encoding
+        )
 
         for row in page:
+            row = dict(zip(HEADERS, row))
+
+            # Ensure that the spreadsheet's structure hasn't generally changed
+            if (row['_blank'] != ' ' or
+                    row['_zero'] != '0' or
+                    not row['_capitol city state zip'].startswith("Hartford, CT")):
+                self.warning(row)
+                raise AssertionError("Spreadsheet structure may have changed")
+
             chamber = {'H': 'lower', 'S': 'upper'}[row['office code']]
-            if chamber not in chambers:
-                continue
 
             district = row['dist'].lstrip('0')
 
@@ -40,21 +87,28 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            leg = Legislator(term, chamber, district,
-                             name, first_name=row['first name'],
-                             last_name=row['last name'],
-                             middle_name=row['middle initial'],
-                             suffixes=row['suffix'],
+            leg = Legislator(term, chamber, district, name,
                              party=party,
-                             email=row['email'].strip(),
-                             url=row['URL'],
-                             office_phone=row['capitol phone'])
+                             url=row['URL'])
 
-            office_address = "%s, Room %s\nHartford, CT 06106-1591" % (
+            office_address = "%s\nRoom %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
             leg.add_office('capitol', 'Capitol Office',
-                           address=office_address, phone=row['capitol phone'])
-            # skipping home address for now
+                           address=office_address,
+                           phone=row['capitol phone'],
+                           email=row['email'])
+
+            home_address = "{}\n{}, {} {}".format(
+                row['home street address'],
+                row['home city'],
+                row['home state'],
+                row['home zip'],
+            )
+            if "Legislative Office Building" not in home_address:
+                leg.add_office('district', 'District Office',
+                               address=home_address,
+                               phone=row['home phone'] if row['home phone'].strip() else None)
+
             leg.add_source(leg_url)
 
             for comm in row['committee member1'].split(';'):
@@ -68,10 +122,9 @@ class CTLegislatorScraper(LegislatorScraper):
                     if comm == '':
                         continue
 
-                    leg.add_role('committee member', term,
+                    leg.add_role(role, term,
                                  chamber='joint',
-                                 committee=comm,
-                                 position=role)
+                                 committee=comm)
 
             self.save_legislator(leg)
 
