@@ -1,9 +1,10 @@
 import json
 
 from billy.scrape.legislators import Legislator, LegislatorScraper
+from openstates.utils import LXMLMixin
 
 
-class VTLegislatorScraper(LegislatorScraper):
+class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'vt'
     latest_only = True
 
@@ -22,9 +23,11 @@ class VTLegislatorScraper(LegislatorScraper):
             # Strip whitespace from strings
             info = { k:v.strip() for k, v in info.iteritems() }
 
-            # First and last initials must be uppercased for the photo URL
-            photo_name = info['Email'].replace("@leg.state.vt.us", "")
-            photo_name = photo_name[ :2].upper() + photo_name[2: ]
+            # Gather photo URL from the member's page
+            member_url = 'http://legislature.vermont.gov/people/single/{}/{}'.format(
+                year_slug, info['PersonID'])
+            page = self.lxmlize(member_url)
+            (photo_url, ) = page.xpath('//img[@class="profile-photo"]/@src')
 
             leg = Legislator(
                     term=term,
@@ -33,11 +36,10 @@ class VTLegislatorScraper(LegislatorScraper):
                     party=info['Party'],
                     email=info['Email'],
                     full_name="{0} {1}".format(info['FirstName'], info['LastName']),
-                    photo_url=
-                            'http://legislature.vermont.gov/assets/Documents/Legislators/{}.jpg'.
-                            format(photo_name)
+                    photo_url=photo_url
                     )
             leg.add_source(legislator_dump_url)
+            leg.add_source(member_url)
             leg.add_office(
                     type='district',
                     name='District Office',
