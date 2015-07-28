@@ -61,18 +61,19 @@ class NMLegislatorScraper(LegislatorScraper):
                     pass
                 if val:
                     properties[key] = val.strip()
-                else:
-                    properties[key] = None
 
             if found is False and key not in optional:
                 self.warning('bad legislator page %s missing %s' %
                              (url, id_))
                 return
+            elif found is False:
+                properties[key] = None
+            elif properties[key] == ["lblCapitolPhone", "lblOfficePhone"]:
+                properties[key] = None
 
         # image & email are a bit different
         properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
         email = doc.get_element_by_id('ctl00_mainCopy_formViewLegislator_linkEmail').text
-        
 
         properties['url'] = url
 
