@@ -28,7 +28,61 @@ class NMLegislatorScraper(LegislatorScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
+<<<<<<< HEAD
         xpath = '//span[@id="ctl00_mainCopy_formViewLegislator_{}"]/text()'
+=======
+        # most properties are easy to pull
+        optional = ["home_phone"]
+        properties = {
+            'start_year': 'lblStartYear',
+            'district': "linkDistrict",
+            'occupation': "lblOccupation",
+            'header': "lblHeader",
+            'addr_street': "lblAddress",
+            'office_phone': ["lblCapitolPhone", "lblOfficePhone"],
+            'home_phone': "lblHomePhone",
+#            '': "",
+#            '': "",
+#            '': "",
+#            '': "",
+            }
+
+        for key, value in properties.iteritems():
+            if isinstance(value, list):
+                values = value
+            else:
+                values = [value]
+
+            found = False
+            for value in values:
+                id_ = 'ctl00_mainCopy_formViewLegislator_%s' % value
+                val = None
+                try:
+                    val = "\n".join(doc.get_element_by_id(id_).itertext())
+                    found = True
+                except KeyError:
+                    pass
+                if val:
+                    properties[key] = val.strip()
+
+            if found is False and key not in optional:
+                self.warning('bad legislator page %s missing %s' %
+                             (url, id_))
+                return
+            elif found is False:
+                properties[key] = None
+            elif properties[key] == ["lblCapitolPhone", "lblOfficePhone"]:
+                properties[key] = None
+
+        # image & email are a bit different
+        properties['photo_url'] = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
+        email = doc.get_element_by_id('ctl00_mainCopy_formViewLegislator_linkEmail').text
+
+        properties['url'] = url
+
+        properties['chamber'] = chamber
+        properties['term'] = term
+>>>>>>> a2bb5ea5c2ffb0014f00414e82ecc3c934da744e
 
         district = doc.xpath('//a[@id="ctl00_mainCopy_formViewLegislator_linkDistrict"]/text()')[0]
 
