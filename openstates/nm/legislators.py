@@ -44,7 +44,7 @@ class NMLegislatorScraper(LegislatorScraper):
             # decline to state = independent
             party = 'Independent'
         else:
-            raise Exception("unknown party encountered")
+            raise AssertionError("unknown party encountered")
 
         photo_url = doc.xpath('//img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')[0]
 
@@ -52,10 +52,10 @@ class NMLegislatorScraper(LegislatorScraper):
         if email:
             email = email[0]
         else:
-            print "no email"
+            self.warning('no email')
             email = None
 
-        district_address = ", ".join(doc.xpath(xpath.format('lblAddress')))
+        district_address = "\n".join(doc.xpath(xpath.format('lblAddress')))
 
         district_phone = doc.xpath(xpath.format('lblHomePhone'))
         # if they don't have a home phone, check for an office phone
@@ -68,10 +68,10 @@ class NMLegislatorScraper(LegislatorScraper):
 
         capitol_address = doc.xpath(xpath.format('lblCapitolRoom'))
         if capitol_address:
-            capitol_address = 'Room ' + capitol_address[0] + ' State Capitol, Santa Fe, NM 87501'
+            capitol_address = 'Room ' + capitol_address[0] + ' State Capitol\nSanta Fe, NM 87501'
         else:
             capitol_address = None
-        
+
         capitol_phone = doc.xpath(xpath.format('lblCapitolPhone'))
         if capitol_phone:
             capitol_phone = "(505) " + capitol_phone[0]
@@ -95,12 +95,10 @@ class NMLegislatorScraper(LegislatorScraper):
                 role = 'interim ' + role.lower()
             else:
                 role = role.lower()
+            if ' Committee' in committee:
+                committee = committee.replace(" Committee", '')
+            if ' Subcommittee' in committee:
+                committee = committee.replace(' Subcommittee', '')
             leg.add_role('committee member', term, committee=committee, position=role, chamber=chamber)
-
-        # Already have the photo url.
-        try:
-            del leg['image_url']
-        except KeyError:
-            pass
 
         self.save_legislator(leg)
