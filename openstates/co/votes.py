@@ -86,14 +86,14 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                     continue
 
                 if in_question:
-                    cur_question += " " + line
+                    cur_question += " " + line.strip()
                     continue
 
                 if ("The question being" in line) or \
                    ("On motion of" in line) or \
                    ("the following" in line) or \
                    ("moved that the" in line):
-                    cur_question = line
+                    cur_question = line.strip()
                     in_question = True
 
 
@@ -214,8 +214,8 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                     dt = date_re.findall(line)
                     if dt != []:
                         dt, dow = dt[0]
-                        known_date = datetime.datetime.strptime(dt,
-                            "%A, %B %d, %Y")
+                        dt = dt.replace(',', '')
+                        known_date = datetime.datetime.strptime(dt, "%A %B %d %Y")
 
                 if in_question:
                     line = line.strip()
@@ -224,12 +224,12 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                         continue
                     try:
                         line, _ = line.rsplit(" ", 1)
-                        cur_question += line
+                        cur_question += line.strip()
                     except ValueError:
                         in_question = False
                         continue
 
-                    cur_question += line
+                    cur_question += line.strip()
                 if not in_vote:
                     summ = vote_re.findall(line)
                     if summ != []:
@@ -243,6 +243,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                        ("the following" in line) or \
                        ("moved that the" in line):
                         cur_question, _ = line.strip().rsplit(" ", 1)
+                        cur_question = cur_question.strip()
                         in_question = True
 
                     if line.strip() == "":
