@@ -3,12 +3,14 @@ import re
 import os
 from collections import defaultdict
 import datetime
-import lxml.html
 from urllib import urlencode
+import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
+from openstates.utils import LXMLMixin
+
 
 def group(lst, n):
     # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
@@ -142,20 +144,14 @@ def chamber_slug(chamber):
     return 'S'
 
 
-class ILBillScraper(BillScraper):
+class ILBillScraper(BillScraper, LXMLMixin):
 
     jurisdiction = 'il'
-
-    def url_to_doc(self, url):
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        return doc
 
     def get_bill_urls(self, chamber, session, doc_type):
         url = build_url_for_legislation_list(self.metadata, chamber, session,
                                              doc_type)
-        doc = self.url_to_doc(url)
+        doc = self.lxmlize(url)
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
 
@@ -177,7 +173,13 @@ class ILBillScraper(BillScraper):
             # handle governor so they are omitted for now
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
-        doc = self.url_to_doc(url)
+        try:
+            doc = self.lxmlize(url)
+        except scrapelib.HTTPError as e:
+            assert '500' in e.args[0], "Unexpected error when accessing page: {}".format(e)
+            self.warning("500 error for bill page; skipping bill")
+            return
+
         # bill id, title, summary
         bill_num = re.findall('DocNum=(\d+)', url)[0]
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
@@ -232,7 +234,7 @@ class ILBillScraper(BillScraper):
         self.save_bill(bill)
 
     def scrape_documents(self, bill, version_url):
-        doc = self.url_to_doc(version_url)
+        doc = self.lxmlize(version_url)
 
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
@@ -249,7 +251,7 @@ class ILBillScraper(BillScraper):
                 bill.add_document(name, url)
 
     def scrape_votes(self, session, bill, votes_url):
-        doc = self.url_to_doc(votes_url)
+        doc = self.lxmlize(votes_url)
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
 
