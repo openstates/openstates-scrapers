@@ -10,37 +10,37 @@ from .utils import open_csv
 HEADERS = [
     'dist',
     'office code',
-    '_dist',
-    '_?',
+    'district number',
+    'designator code',
     'first name',
     'middle initial',
     'last name',
     'suffix',
-    '_first name',
+    'commonly used name',
     'home street address',
     'home city',
     'home state',
-    'home zip',
+    'home zip code',
     'home phone',
     'capitol street address',
-    '_capitol city state zip',
+    'capitol city',
     'capitol phone',
-    '_room',
+    'room',
     'room number',
-    '_chair of',
-    '_vice chair of',
-    '_ranking member of',
+    'committees chaired',
+    'committees vice chaired',
+    'ranking member',
     'committee member1',
-    'title',
+    'senator/representative',
     'party',
-    '_role',
-    '_gender',
-    '_extra phone',
+    'title',
+    'gender',
+    'business phone',
     'email',
-    '_blank',
-    '_zero',
+    'fax',
+    'prison',
     'URL',
-    '_committee codes',
+    'committee codes',
 ]
 
 
@@ -52,27 +52,19 @@ class CTLegislatorScraper(LegislatorScraper):
 
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
-        data = self.get(leg_url)
-        char_encoding = chardet.detect(data.content)['encoding']
-        page = unicodecsv.reader(
-            StringIO.StringIO(data.content),
-            delimiter=',',
-            encoding=char_encoding
-        )
+        page = self.get(leg_url)
 
+        # Ensure that the spreadsheet's structure hasn't generally changed
+        _row_headers = page.text.split('\r\n')[0].replace('"', '').split(',')
+        assert _row_headers == HEADERS, "Spreadsheet structure may have changed"
+
+        page = open_csv(page)
         for row in page:
-            row = dict(zip(HEADERS, row))
-
-            # Ensure that the spreadsheet's structure hasn't generally changed
-            if (row['_blank'] != ' ' or
-                    row['_zero'] != '0' or
-                    not row['_capitol city state zip'].startswith("Hartford, CT")):
-                self.warning(row)
-                raise AssertionError("Spreadsheet structure may have changed")
 
             chamber = {'H': 'lower', 'S': 'upper'}[row['office code']]
 
             district = row['dist'].lstrip('0')
+            assert district.isdigit(), "Invalid district found: {}".format(district)
 
             name = row['first name']
             mid = row['middle initial'].strip()
@@ -93,16 +85,21 @@ class CTLegislatorScraper(LegislatorScraper):
 
             office_address = "%s\nRoom %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
+            email = row['email'].strip()
+            if "@" not in email:
+                assert email.endswith("mailform.php"), "Problematic email found: {}".format(email)
+                email = None
             leg.add_office('capitol', 'Capitol Office',
                            address=office_address,
                            phone=row['capitol phone'],
-                           email=row['email'])
+                           fax=(row['fax'].strip() or None),
+                           email=email)
 
             home_address = "{}\n{}, {} {}".format(
                 row['home street address'],
                 row['home city'],
                 row['home state'],
-                row['home zip'],
+                row['home zip code'],
             )
             if "Legislative Office Building" not in home_address:
                 leg.add_office('district', 'District Office',
