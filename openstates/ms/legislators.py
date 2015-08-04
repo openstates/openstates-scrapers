@@ -71,9 +71,6 @@ class MSLegislatorScraper(LegislatorScraper):
             party = root.xpath('string(//PARTY)')
 
             district = root.xpath('string(//DISTRICT)')
-            if leg_name == "Philip Gunn":
-                assert not district, "Remove district special-casing on Rep. Gunn"
-                district = "56"
 
             photo = "%s/%s" % (url_root, root.xpath('string(//IMG_NAME)'))
 
