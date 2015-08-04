@@ -1,11 +1,12 @@
 import re
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import lxml.html
+from openstates.utils import LXMLMixin
 
 abbr = {'D': 'Democratic', 'R': 'Republican'}
 
-class MILegislatorScraper(LegislatorScraper):
+
+class MILegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'mi'
 
     def scrape(self, chamber, term):
@@ -25,9 +26,7 @@ class MILegislatorScraper(LegislatorScraper):
             "phone",
             "email"
         ]
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
+        doc = self.lxmlize(url)
         # skip two rows at top
         for row in doc.xpath('//table[@id="grvRepInfo"]/*'):
             tds = row.xpath('.//td')
@@ -42,8 +41,8 @@ class MILegislatorScraper(LegislatorScraper):
             email = metainf['email'].text_content().strip()
             leg_url = metainf['website'].xpath("./a")[0].attrib['href']
             name = metainf['name'].text_content().strip()
-            if name == 'Vacant':
-                self.info('district %s is vacant', district)
+            if name == 'Vacant' or (party == 'N' and "District " in name):
+                self.warning('District {} appears vacant, and will be skipped'.format(district))
                 continue
 
             office = metainf['location'].text_content().strip()
@@ -75,8 +74,7 @@ class MILegislatorScraper(LegislatorScraper):
 
     def scrape_upper(self, chamber, term):
         url = 'http://www.senate.michigan.gov/senatorinfo.html'
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
+        doc = self.lxmlize(url)
         for row in doc.xpath('//table[not(@id="calendar")]//tr')[3:]:
             if len(row) != 6:
                 continue
