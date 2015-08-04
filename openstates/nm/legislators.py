@@ -30,7 +30,7 @@ class NMLegislatorScraper(LegislatorScraper):
 
         xpath = '//span[@id="ctl00_mainCopy_formViewLegislator_{}"]/text()'
 
-        district = doc.xpath('//a[@id="ctl00_mainCopy_formViewLegislator_linkDistrict"]/text()')[0]
+        district = doc.xpath('//a[@id="ctl00_mainCopy_formViewLegislator_linkDistrict"]/text()')[0].strip()
 
         header = doc.xpath(xpath.format('lblHeader'))
         full_name, party = header[0].rsplit("-", 1)
