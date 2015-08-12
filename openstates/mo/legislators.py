@@ -46,7 +46,7 @@ class MOLegislatorScraper(LegislatorScraper):
             tds = tr.xpath('td')
             full_name = tds[0].xpath('div/a')[0].text_content().strip()
 
-            if full_name == 'Vacant':
+            if full_name.startswith('Vacant'):
                 continue
 
             party_and_district = tds[1].xpath('div')[0].text_content().strip().split('-')
