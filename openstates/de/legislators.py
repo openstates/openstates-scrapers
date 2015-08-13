@@ -51,6 +51,8 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
             name = name_and_url.text_content()
             if name.strip() == "." or name.strip() == "":
                 continue
+            if name.strip().lower().startswith("vacant"):
+                continue
             re_spaces=re.compile(r'\s{1,5}')
             name = ' '.join(re_spaces.split(name))
             district = tr.xpath('.//td')[2].text_content()
