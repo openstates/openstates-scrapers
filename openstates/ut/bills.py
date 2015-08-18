@@ -31,8 +31,13 @@ class UTBillScraper(BillScraper, LXMLMixin):
         # Identify the index page for the given session
         sessions = self.lxmlize(
                 'http://le.utah.gov/Documents/bills.htm')
+        session_search_text = session
+        if "s" not in session.lower() and "h" not in session.lower():
+            session_search_text += "GS"
+
+
         sessions = sessions.xpath(
-                '//p/a[contains(text(), {})]'.format(session))
+                '//p/a[contains(@href, "{}")]'.format(session_search_text))
         
         session_url = ''
         for elem in sessions:
