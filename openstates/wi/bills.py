@@ -42,7 +42,7 @@ class WIBillScraper(BillScraper):
 
     def scrape_subjects(self, year, site_id):
         last_url = None
-        next_url = 'https://docs.legis.wisconsin.gov/%s/related/subject_index/index/' % year
+        next_url = 'http://docs.legis.wisconsin.gov/%s/related/subject_index/index/' % year
 
         # if you visit this page in your browser it is infinite-scrolled
         # but if you disable javascript you'll see the 'Down' links
