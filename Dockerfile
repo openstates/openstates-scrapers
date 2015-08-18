@@ -6,8 +6,13 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN mkdir -p /opt/sunlightfoundation.com/
 ADD . /opt/sunlightfoundation.com/openstates/
 
+# Handle interactive part of MySQL server installation
 RUN echo mysql-server mysql-server/root_password password nicetry | debconf-set-selections
 RUN echo mysql-server mysql-server/root_password_again password nicetry | debconf-set-selections
+
+# CA requires MySQL (python-dev, mysql-server, libmysqlclient-dev)
+# NM and NJ require mdbtools
+# KS requires Abiword
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     s3cmd \
