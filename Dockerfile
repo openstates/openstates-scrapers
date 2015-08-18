@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     python-dev \
     mysql-server \
     libmysqlclient-dev \
-    mdbtools
+    mdbtools \
+    abiword
 
 RUN pip install -r /opt/sunlightfoundation.com/openstates/requirements.txt
 RUN pip install -e /opt/sunlightfoundation.com/openstates/
