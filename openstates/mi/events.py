@@ -35,7 +35,7 @@ class MIEventScraper(EventScraper, LXMLMixin):
         # Wednesday, 5/16/2012 3:00 pm
         datetime = "%s %s" % (
             metainf['Date']['txt'],
-            metainf['Time']['txt']
+            metainf['Time']['txt'].replace(".","")
         )
         if "Cancelled" in datetime:
             return
