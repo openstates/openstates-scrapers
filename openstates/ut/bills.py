@@ -46,6 +46,12 @@ class UTBillScraper(BillScraper, LXMLMixin):
                 session_url = elem.xpath('@href')[0]
         assert session_url
 
+        # For some sessions the link doesn't go straight to the bill list
+        doc = self.lxmlize(session_url)
+        replacement_session_url = doc.xpath('//a[text()="Numbered Bills" and contains(@href, "DynaBill/BillList")]/@href')
+        if replacement_session_url:
+            (session_url, ) = replacement_session_url
+
         # Identify all the bill lists linked from a given session's page
         bill_indices = [
                 re.sub(r'^r', "", x) for x in
