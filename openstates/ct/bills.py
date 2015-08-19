@@ -81,7 +81,7 @@ class CTBillScraper(BillScraper):
                 pass
 
     def scrape_bill_page(self, bill):
-        url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
+        url = ("https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill['bill_id'], bill['session']))
         page = self.get(url).text
         if 'not found in Database' in page:
@@ -294,7 +294,7 @@ class CTBillScraper(BillScraper):
 
     def scrape_introducers(self, chamber):
         chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
-        url = "http://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
+        url = "https://www.cga.ct.gov/asp/menu/%slist.asp" % chamber_letter
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
