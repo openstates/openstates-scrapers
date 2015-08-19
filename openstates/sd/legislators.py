@@ -45,12 +45,7 @@ class SDLegislatorScraper(LegislatorScraper):
             "string(//span[contains(@id, 'Occupation')])")
         occupation = occupation.strip()
 
-        photo_url = page.xpath(
-            "//img[starts-with(@alt, 'Picture of ')]")[0]
-        if 'ContentPlaceHolder' in photo_url.get('id'):
-            photo_url = ''
-        else:
-            photo_url = photo_url.get('src')
+        (photo_url, ) = page.xpath('//img[@id="ContentPlaceHolder1_imgMember"]/@src')
 
         office_phone = page.xpath(
             "string(//span[contains(@id, 'CapitolPhone')])").strip()
