@@ -365,6 +365,11 @@ class OHBillScraper(BillScraper):
             except KeyError:
                 motion = v["motiontype"]
 
+            # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
+            if not motion and isinstance(v['yeas'], basestring) and isinstance(v['nays'], basestring):
+                self.warning('Malformed JSON found for vote ("revno" of {}); skipping'.format(v['revno']))
+                continue
+
             result = v.get("results") or v.get("passed")
             if result is None:
                 if len(v['yeas']) > len(v['nays']):
