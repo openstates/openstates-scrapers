@@ -1,7 +1,4 @@
 import re
-import chardet
-import unicodecsv
-import StringIO
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import open_csv
@@ -47,8 +44,6 @@ HEADERS = [
 class CTLegislatorScraper(LegislatorScraper):
     jurisdiction = 'ct'
     latest_only = True
-
-    _committee_names = {}
 
     def scrape(self, term, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
@@ -116,22 +111,7 @@ class CTLegislatorScraper(LegislatorScraper):
                     else:
                         role = 'member'
                     comm = comm.strip()
-                    if comm == '':
-                        continue
-
-                    leg.add_role(role, term,
-                                 chamber='joint',
-                                 committee=comm)
+                    if comm:
+                        leg.add_role(role, term, chamber='joint', committee=comm)
 
             self.save_legislator(leg)
-
-    def _scrape_committee_names(self):
-        comm_url = "ftp://ftp.cga.ct.gov/pub/data/committee.csv"
-        page = self.get(comm_url)
-        page = open_csv(page)
-
-        for row in page:
-            comm_code = row['comm_code'].strip()
-            comm_name = row['comm_name'].strip()
-            comm_name = re.sub(r' Committee$', '', comm_name)
-            self._committee_names[comm_code] = comm_name
