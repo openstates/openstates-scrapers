@@ -13,7 +13,7 @@ RUN echo mysql-server mysql-server/root_password_again password nicetry | debcon
 # CA requires MySQL (python-dev, mysql-server, libmysqlclient-dev)
 # NM and NJ require mdbtools
 # KS requires Abiword
-RUN apt-get clean && apt-get update && apt-get -y upgrade && apt-get install -y \
+RUN apt-get clean && apt-get update && sleep 1 && apt-get -y upgrade && apt-get install -y \
     poppler-utils \
     s3cmd \
     mongodb-clients \
