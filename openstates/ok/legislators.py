@@ -126,18 +126,23 @@ class OKLegislatorScraper(LegislatorScraper):
         doc.make_links_absolute(url)
 
         for a in doc.xpath('//table[@summary]')[1].xpath('.//td//a[contains(@href, "biographies")]'):
-            name, party = a.text.rsplit(None, 1)
+            tail = a.xpath('..')[0].tail
+            if tail:
+                district = tail.split()[1]
+            else:
+                district = a.xpath('../../span')[1].text.split()[1]
+
+            if a.text == None:
+                self.warning("District {} appears to be empty".format(district))
+                continue
+            else:
+                name, party = a.text.rsplit(None, 1)
 
             if party == '(D)':
                 party = 'Democratic'
             elif party == '(R)':
                 party = 'Republican'
 
-            tail = a.xpath('..')[0].tail
-            if tail:
-                district = tail.split()[1]
-            else:
-                district = a.xpath('../../span')[1].text.split()[1]
             url = a.get('href')
 
             leg = Legislator(term, 'upper', district, name.strip(), party=party, url=url)
@@ -164,7 +169,7 @@ class OKLegislatorScraper(LegislatorScraper):
             # Throw away anything after the email address.
             last = col1[-1]
             if '@' not in last and not re.search(r'[\d\-\(\) ]{7,}', last):
-                print col1.pop()
+                col1.pop()
             else:
                 break
 
