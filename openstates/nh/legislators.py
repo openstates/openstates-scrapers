@@ -25,6 +25,8 @@ class NHLegislatorScraper(LegislatorScraper):
         return ''
 
     def scrape(self, term, chambers):
+        special_case_used = False
+
         url = 'http://gencourt.state.nh.us/downloads/Members.txt'
 
         option_map = {}
@@ -41,7 +43,7 @@ class NHLegislatorScraper(LegislatorScraper):
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5, com6, com7) = line.split('*')
+             com4, com5, com6) = line.split('\t')
 
             chamber = chamber_map[chamber]
 
@@ -51,6 +53,11 @@ class NHLegislatorScraper(LegislatorScraper):
 
             middle = middle.strip()
             last = last.strip('"')
+
+            if last == "TRUE":
+                assert fullname == '"True, Chris"'
+                last = "True"
+                special_case_used = True
 
             if middle:
                 full = '%s %s %s' % (first, middle, last)
@@ -72,13 +79,13 @@ class NHLegislatorScraper(LegislatorScraper):
             # Cross-reference this list for official party affiliation:
             # http://www.gencourt.state.nh.us/House/caljourns/journals/2015/HJ_4.pdf
 
-
-            leg = Legislator(term, chamber, district, full, first, last,
-                             middle, party_map[party], email=email)
+            leg = Legislator(term, chamber, district, full, party=party_map[party])
             leg.add_office('district', 'Home Address',
                            address=address, phone=home_phone or None)
             leg.add_office('district', 'Office Address',
-                           phone=office_phone or None, fax=fax or None)
+                           phone=office_phone or None,
+                           fax=fax or None,
+                           email=email or None)
 
             if chamber == 'upper':
                 leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
@@ -88,7 +95,7 @@ class NHLegislatorScraper(LegislatorScraper):
                     leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
 
             romans = r'(?i)\s([IXV]+)(?:\s|$)'
-            for com in (com1, com2, com3, com4, com5, com6, com7):
+            for com in (com1, com2, com3, com4, com5, com6):
                 com = com.strip('"')
                 if com:
                     com_name = com.title()
@@ -102,3 +109,5 @@ class NHLegislatorScraper(LegislatorScraper):
 
             leg.add_source(url)
             self.save_legislator(leg)
+
+        assert special_case_used, "Remove special casing for Chris True"
