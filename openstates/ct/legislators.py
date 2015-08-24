@@ -1,5 +1,3 @@
-import re
-
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import open_csv
 
@@ -112,6 +110,12 @@ class CTLegislatorScraper(LegislatorScraper):
                         role = 'member'
                     comm = comm.strip()
                     if comm:
-                        leg.add_role(role, term, chamber='joint', committee=comm)
+                        leg.add_role(
+                            'committee member',
+                            term=term,
+                            chamber='joint',
+                            committee=comm,
+                            position=role
+                        )
 
             self.save_legislator(leg)
