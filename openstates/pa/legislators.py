@@ -49,10 +49,13 @@ class PALegislatorScraper(LegislatorScraper):
             self.save_legislator(legislator)
 
     def scrape_photo_url(self, url, page, legislator):
-        (photo_url,) = page.xpath(
-            "//div[@class='MemberBio']//img[contains(@src, '/members/')]/@src"
-        )
-        legislator['photo_url'] = photo_url
+        photo_urls = page.xpath("//div[@class='MemberBio']//img[contains(@src, '/members/')]/@src")
+        if len(photo_urls) == 0:
+            self.warning("No photo found for legislator {}".format(legislator['full_name']))
+        elif len(photo_urls) == 1:
+            legislator['photo_url'] = photo_urls[0]
+        else:
+            raise AssertionError("Legislator photo parsing needs to be rewritten")
 
     def scrape_email_address(self, url, page, legislator):
         if re.search(r'var \S+\s+= "(\S+)";', page):
