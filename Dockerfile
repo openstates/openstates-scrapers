@@ -22,7 +22,9 @@ RUN apt-get clean && apt-get update && sleep 1 && apt-get -y upgrade && apt-get 
     mysql-server \
     libmysqlclient-dev \
     mdbtools \
-    abiword
+    abiword \
+    wget \
+    unzip
 
 RUN pip install -r /opt/sunlightfoundation.com/openstates/requirements.txt
 RUN pip install -e /opt/sunlightfoundation.com/openstates/
