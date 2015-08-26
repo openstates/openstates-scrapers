@@ -473,7 +473,11 @@ class Extractor(object):
 
                 terms = trie_terms[collection_name]
                 if collection_name == 'legislators':
-                    terms = terms[record['chamber']]
+                    # Skip lieutennant governors and other non-legislator actors
+                    if 'chamber' not in record:
+                        continue
+                    else:
+                        terms = terms[record['chamber']]
 
                 for term in terms:
                     args = term, vals, collection_name, record
