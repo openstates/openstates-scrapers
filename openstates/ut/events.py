@@ -3,6 +3,7 @@ import datetime
 
 from openstates.utils import LXMLMixin
 from billy.scrape.events import EventScraper, Event
+from scrapelib import HTTPError
 
 
 class UTEventScraper(EventScraper, LXMLMixin):
@@ -30,7 +31,11 @@ class UTEventScraper(EventScraper, LXMLMixin):
             event.add_source(URL)
 
             url = re.search(r'(http://.*?)\s', info.text_content()).group(1)
-            doc = self.lxmlize(url)
+            try:
+                doc = self.lxmlize(url)
+            except HTTPError:
+                self.logger.warning("Page missing, skipping")
+                continue
             event.add_source(url)
 
             committee = doc.xpath('//a[text()="View committee page"]/@href')
