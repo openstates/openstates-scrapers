@@ -39,9 +39,15 @@ class MICommitteeScraper(CommitteeScraper):
                 name = a.text.strip()
 
             # all links to http:// pages in servicecolumn2 are legislators
-            for a in cdoc.xpath('//div[@class="servicecolumn2"]//a[starts-with(@href, "http")]'):
-                name = a.text.strip()
-                text = a.xpath('following-sibling::span/text()')[0]
+            members = cdoc.xpath('//div[contains(@id,"memberPanelRow")]')
+            for mem in members:
+                name = mem.xpath('./a')
+                if name:
+                    name=name[0].text.strip()
+                else:
+                    #this is a blank row
+                    continue
+                text = mem.xpath('./span')[0].text
                 if 'Committee Chair' in text:
                     role = 'chair'
                 elif 'Vice-Chair' in text:
