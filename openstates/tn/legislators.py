@@ -2,7 +2,7 @@ import HTMLParser
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
-
+from scrapelib import HTTPError
 
 class TNLegislatorScraper(LegislatorScraper):
     jurisdiction = 'tn'
@@ -70,7 +70,11 @@ class TNLegislatorScraper(LegislatorScraper):
             try:
                 member_page = self.get(member_url, follow_redirects=False).text
             except TypeError:
-                member_page = self.get(member_url).text
+                try:
+                    member_page = self.get(member_url).text
+                except HTTPError:
+                    self.logger.warning("page doesn't exist")
+                    continue
             member_page = lxml.html.fromstring(member_page)
             try:
                 name = member_page.xpath('body/div/div/h1/text()')[0]
