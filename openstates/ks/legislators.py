@@ -3,6 +3,7 @@ from openstates.utils import LXMLMixin
 
 from . import ksapi
 import json
+import scrapelib
 
 
 class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -29,9 +30,15 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
         slug = {'2013-2014': 'b2013_14',
                 '2015-2016': 'b2015_16'}[term]
         leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
-        legislator_page = self.lxmlize(leg_url)
-        (photo_url, ) = legislator_page.xpath(
-                '//img[@class="profile-picture"]/@src')
+
+        try:
+            legislator_page = self.lxmlize(leg_url)
+            (photo_url, ) = legislator_page.xpath(
+                    '//img[@class="profile-picture"]/@src')
+        except scrapelib.HTTPError:
+            self.warning("{}'s legislator bio page not found".format(content['FULLNAME']))
+            leg_url = ''
+            photo_url = ''
 
         legislator = Legislator(term, chamber, str(content['DISTRICT']),
                                 content['FULLNAME'], email=content['EMAIL'],
