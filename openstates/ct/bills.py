@@ -83,7 +83,10 @@ class CTBillScraper(BillScraper):
     def scrape_bill_page(self, bill):
         url = ("https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill['bill_id'], bill['session']))
-        page = self.get(url).text
+
+        # Turn off SSL, since CT's is causing issues
+        page = self.get(url, verify=False).text
+
         if 'not found in Database' in page:
             raise SkipBill()
         page = lxml.html.fromstring(page)
