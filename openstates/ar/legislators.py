@@ -90,14 +90,13 @@ class ARLegislatorScraper(LegislatorScraper):
             phone = re.search(r'Phone(.+)\r', info_box).group(1)
         except AttributeError:
             phone = None
+        try:
+            email = re.search(r'Email(.+)\r', info_box).group(1)
+        except AttributeError:
+            email = None
         address = root.xpath('//nobr/text()')[0].replace(u'\xa0', ' ')
         leg.add_office('district', 'District Office', address=address,
-                       phone=phone)
-
-        try:
-            leg['email'] = re.search(r'Email(.+)\r', info_box).group(1)
-        except AttributeError:
-            pass
+                       phone=phone, email=email)
 
         try:
             leg['occupation'] = re.search(
