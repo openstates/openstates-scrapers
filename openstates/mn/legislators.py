@@ -95,6 +95,11 @@ class MNLegislatorScraper(LegislatorScraper):
                 continue
             name = '%s %s' % (row['First Name'], row['Last Name'])
             party = self._parties[row['Party']]
+            leg_data[name]
+            if 'email' in leg_data[name]:
+                email = leg_data[name].pop('email')
+            else:
+                email = None
             leg = Legislator(term, 'upper', row['District'].lstrip('0'), name,
                              party=party,
                              first_name=row['First Name'],
@@ -105,16 +110,16 @@ class MNLegislatorScraper(LegislatorScraper):
             
             if 'Martin Luther King' in row['Address2']:\
                 leg.add_office('capitol', 'Capitol Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
-                           )
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                           email=email)
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
-                           )
+                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                           email=email)
             else:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row)
-                           )
+                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
+                           email=email)
 
 
 
