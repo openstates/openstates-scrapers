@@ -231,6 +231,5 @@ class MELegislatorScraper(LegislatorScraper):
                 address=address
                 )
 
-            leg['email'] = d['email']
             leg.add_office(**office)
             self.save_legislator(leg)
