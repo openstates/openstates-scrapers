@@ -41,7 +41,7 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
             photo_url = ''
 
         legislator = Legislator(term, chamber, str(content['DISTRICT']),
-                                content['FULLNAME'], email=content['EMAIL'],
+                                content['FULLNAME'],
                                 party=party, url=leg_url, photo_url=photo_url,
                                 occupation=content['OCCUPATION'],
                                )
@@ -53,7 +53,8 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         legislator.add_office('capitol', 'Capitol Office',
                               phone=content['OFFPH'] or None,
-                              address=address)
+                              address=address,
+                              email=content['EMAIL'])
 
         legislator.add_source(url)
         self.save_legislator(legislator)
