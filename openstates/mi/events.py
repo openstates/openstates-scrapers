@@ -76,9 +76,11 @@ class MIEventScraper(EventScraper, LXMLMixin):
         event.add_source(url)
         event.add_source(mi_events)
 
-        event.add_participant('chair', metainf['Chair']['txt'],
-                              'legislator',
-                              chamber=chamber)
+        chair_name = metainf['Chair']['txt'].strip()
+        if chair_name:
+            event.add_participant('chair', chair_name, 'legislator', chamber=chamber)
+        else:
+            self.warning("No chair found for event '{}'".format(title))
 
         event.add_participant('host', metainf['Committee']['txt'],
                               'committee',
