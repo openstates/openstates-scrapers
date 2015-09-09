@@ -35,6 +35,8 @@ class NELegislatorScraper(LegislatorScraper):
                     phone = None
                 mailto = page.xpath('//div[@id="sidebar"]/ul[1]/li[contains(text(), "Email:")]/a/@href')[0]
                 email = mailto[7:]
+                if email == "":
+                    email = None
 
                 photo_url = \
                         "http://www.nebraskalegislature.gov/media/images/blogs/dist%02d.jpg" \
@@ -43,11 +45,11 @@ class NELegislatorScraper(LegislatorScraper):
                 #Nebraska is offically nonpartisan
                 party = 'Nonpartisan'
                 leg = Legislator(term, 'upper', str(district), full_name,
-                                 party=party, email=email, url=rep_url,
+                                 party=party, url=rep_url,
                                  photo_url=photo_url)
                 leg.add_source(rep_url)
                 leg.add_office('capitol', 'Capitol Office', address=address,
-                               phone=phone)
+                               phone=phone, email=email)
                 self.save_legislator(leg)
             except scrapelib.HTTPError:
                 self.warning('could not retrieve %s' % rep_url)
