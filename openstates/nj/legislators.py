@@ -53,10 +53,9 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             title = rec["Title"]
             legal_position = rec["LegPos"]
             phone = rec["Phone"] or None
-            if 'Email' in rec:
+            email = None
+            if 'Email' in rec and rec["Email"] != "":
                 email = rec["Email"]
-            else:
-                email = ''
             try:
                 photo_url = photos[rec['Roster Key']]
             except KeyError:
@@ -72,10 +71,10 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
                              first_name, last_name, middle_name, party,
                              suffixes=suffix, title=title,
                              legal_position=legal_position,
-                             email=email, url=url, photo_url=photo_url,
+                             url=url, photo_url=photo_url,
                              gender=gender)
             leg.add_office('district', 'District Office', address=address,
-                           phone=phone)
+                           phone=phone, email=email)
             leg.add_source(url)
             leg.add_source('http://www.njleg.state.nj.us/downloads.asp')
             self.save_legislator(leg)
