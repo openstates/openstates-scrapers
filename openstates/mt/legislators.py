@@ -102,6 +102,12 @@ class MTLegislatorScraper(LegislatorScraper):
             # Add the details and delete junk.
             entry.update(deets)
             del entry['first_name'], entry['last_name']
+            if 'phone' in entry:
+                del entry['phone']
+            if 'fax' in entry:
+                del entry['fax']
+            if 'email' in entry:
+                del entry['email']
 
             legislator = Legislator(term, chamber, district, fullname,
                                     party=party)
@@ -112,6 +118,7 @@ class MTLegislatorScraper(LegislatorScraper):
 
             office['phone'] = deets.get('phone')
             office['fax'] = deets.get('fax')
+            office['email'] = deets.get('email')
             legislator.add_office(**office)
 
             self.save_legislator(legislator)
