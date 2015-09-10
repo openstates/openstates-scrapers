@@ -1,11 +1,8 @@
 import re
 
-import xlrd
 import lxml.html
-import name_tools
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import scrapelib
 
 
 def scrub(text):
@@ -28,9 +25,9 @@ class OKLegislatorScraper(LegislatorScraper):
         url = "http://www.okhouse.gov/Members/Default.aspx"
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for tr in page.xpath("//table[@class='rgMasterTable']/tbody/tr")[1:]:
+        for tr in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_RadGrid1_ctl00']/tbody/tr")[1:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
-            
+
             if name.startswith('House District'):
                 self.warning("skipping %s %s" % (name, leg_url))
                 continue
@@ -45,8 +42,6 @@ class OKLegislatorScraper(LegislatorScraper):
             }).content)
             leg_doc.make_links_absolute(leg_url)
             photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
-
-            
 
             leg = Legislator(term, 'lower', district, name, party=party,
                              photo_url=photo_url, url=leg_url)
@@ -72,6 +67,7 @@ class OKLegislatorScraper(LegislatorScraper):
             room = address_div.xpath(xpath)
             if room:
                 parts = map(scrub, list(address_div.itertext()))
+                parts = [x.strip() for x in parts if x.strip()]
                 phone = parts.pop()
                 parts = [parts[0], 'Room ' + room[0], parts[-1]]
                 address = '\n'.join(parts)
@@ -87,36 +83,20 @@ class OKLegislatorScraper(LegislatorScraper):
                 xpath = '//a[contains(@href, "mailto")]/@href'
                 email = doc.xpath(xpath)[0][7:]
             except IndexError:
-                email = ''
-
-            legislator['email'] = email
+                email = None
 
             office = dict(
-                name='Capitol Office', type='capitol', phone=phone,
-                fax=None, email=None, address=address)
+                name='Capitol Office', type='capitol', phone=phone, email=email, address=address)
 
             legislator.add_office(**office)
 
-        # District offices:
-        xpath = '//*[contains(text(), "District Address")]'
-        for bold in doc.xpath(xpath):
+        # District offices only have address, no other information
+        district_address = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictAddress"]/text()')
+        if district_address:
+            (district_city_state, ) = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictCity"]/text()')
+            district_address = "{}\n{}".format(district_address[0], district_city_state)
 
-            # Get the address.
-            parts = []
-            for node in bold.getparent().itersiblings():
-                if node.tag != 'div':
-                    parts.append(node.text)
-                else:
-                    break
-
-            parts = filter(None, parts)
-            parts = map(scrub, parts)
-            phone = parts.pop()
-            address = '\n'.join(parts)
-            office = dict(
-                name='District Office', type='district', phone=phone,
-                fax=None, email=None, address=address)
-
+            office = dict(name='District Office', type='district', address=district_address)
             legislator.add_office(**office)
 
     def scrape_upper(self, term):
