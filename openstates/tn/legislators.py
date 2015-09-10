@@ -91,7 +91,7 @@ class TNLegislatorScraper(LegislatorScraper):
                 full_name = name[8:len(name)]
 
             leg = Legislator(term, chamber, district, full_name.strip(),
-                             party=party, email=email, url=member_url,
+                             party=party, url=member_url,
                              photo_url=member_photo_url)
             leg.add_source(chamber_url)
             leg.add_source(member_url)
@@ -99,6 +99,6 @@ class TNLegislatorScraper(LegislatorScraper):
             # TODO: add district address from this page
 
             leg.add_office('capitol', 'Nashville Address',
-                           address=address, phone=phone)
+                           address=address, phone=phone, email=email)
 
             self.save_legislator(leg)

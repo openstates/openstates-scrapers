@@ -67,10 +67,12 @@ class ILLegislatorScraper(LegislatorScraper):
             # email
             email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
-                leg['email'] = email[0].tail
+                email = email[0].tail.strip()
+            else:
+                email = None
 
             # function for turning an IL contact info table to office details
-            def _table_to_office(table, office_type, office_name):
+            def _table_to_office(table, office_type, office_name, email=None):
                 addr = ''
                 phone = ''
                 fax = None
@@ -90,12 +92,12 @@ class ILLegislatorScraper(LegislatorScraper):
                         addr += (row + '\n')
                 if addr.strip() != ',':
                     leg.add_office(office_type, office_name,
-                                   address=addr.strip(), phone=phone, fax=fax)
+                                   address=addr.strip(), phone=phone, fax=fax, email=email)
 
             # extract both offices from tables
             table = leg_doc.xpath('//table[contains(string(), "Springfield Office")]')
             if table:
-                _table_to_office(table[3], 'capitol', 'Springfield Office')
+                _table_to_office(table[3], 'capitol', 'Springfield Office', email)
             table = leg_doc.xpath('//table[contains(string(), "District Office")]')
             if table:
                 _table_to_office(table[3], 'district', 'District Office')

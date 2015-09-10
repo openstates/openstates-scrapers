@@ -71,7 +71,6 @@ class NYLegislatorScraper(LegislatorScraper):
         if email:
             email = email[0].text_content()
             email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
-            legislator['email'] = email
 
         try:
             span = page.xpath("//span[. = 'Albany Office']/..")[0]
@@ -85,13 +84,18 @@ class NYLegislatorScraper(LegislatorScraper):
             office = dict(
                     name='Capitol Office',
                     type='capitol', phone=phone,
-                    fax=None, email=None,
+                    fax=None, email=email,
                     address=address)
             legislator.add_office(**office)
 
         except IndexError:
-            # Sometimes contact pages are just plain broken
-            pass
+            #to make sure we get the email in there if it exists
+                if email:
+                    office = dict(
+                        name='Capitol Office',
+                        type='capitol',
+                        email=email)
+                legislator.add_office(**office)
 
         try:
             span = page.xpath("//span[. = 'District Office']/..")[0]
@@ -159,8 +163,11 @@ class NYLegislatorScraper(LegislatorScraper):
                 email = email.xpath(".//a[contains(@href, 'mailto')]")
                 if email != []:
                     email = email[0]
+                    email = email.text_content().strip()
                 else:
                     email = None
+
+                
 
             name = link.text.strip()
             if name == 'Assembly Members':
@@ -187,21 +194,20 @@ class NYLegislatorScraper(LegislatorScraper):
             legislator.add_source(url)
 
             # Legislator
-            self.scrape_lower_offices(leg_url, legislator)
+            self.scrape_lower_offices(leg_url, legislator, email)
 
-            if email is not None:
-                email = email.text_content().strip()
-                if email:
-                    legislator['email'] = email
+            
 
             self.save_legislator(legislator)
 
-    def scrape_lower_offices(self, url, legislator):
+    def scrape_lower_offices(self, url, legislator, email=None):
         legislator.add_source(url)
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
+
+        offices = False
 
         for data in doc.xpath('//div[@class="officehdg"]'):
             data = (data.xpath('text()'),
@@ -230,8 +236,18 @@ class NYLegislatorScraper(LegislatorScraper):
                     type=office_type,
                     phone=phone,
                     fax=fax,
-                    address=address
+                    address=address,
+                    email=email
                     )
+
+            offices = True
+
+        if not offices and email:
+            legislator.add_office(
+                type="capitol",
+                name="Capitol Office",
+                email=email)
+
 
     def _identify_party(self, chamber):
         '''

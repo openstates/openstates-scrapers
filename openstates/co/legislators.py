@@ -77,13 +77,11 @@ class COLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(hp_url)
 
-        try:
-            email = page.xpath("//a[contains(@href, 'mailto')]")[0]
-            email = email.attrib['href']
-            email = email.split(":", 1)[1]
-            obj['email'] = email
-        except IndexError:
-            pass
+        email = page.xpath("//a[contains(@href, 'mailto')]")[0]
+        email = email.attrib['href']
+        email = email.split(":", 1)[1]
+        obj['email'] = email
+
         infoblock = page.xpath("//div[@align='center']")
         info = infoblock[0].text_content()
 
@@ -176,12 +174,13 @@ class COLegislatorScraper(LegislatorScraper):
                 occupation=metainf['occupation'],
                 photo_url=metainf['photo_url'],
                 url=metainf['homepage'])
-            if "email" in metainf:
-                p['email'] = metainf['email']
-            if "number" in metainf:
-                p.add_office('capitol', 'Capitol Office',
-                             phone=metainf['number'],
-                             address='200 E. Colfax\nDenver, CO 80203'
+
+            phone = metainf['number'] if 'number' in metainf else None
+            email = metainf['email'] if 'email' in metainf else None
+            p.add_office('capitol', 'Capitol Office',
+                             phone=phone,
+                             address='200 E. Colfax\nDenver, CO 80203',
+                             email=email
                             )
 
             p.add_source( p_url )

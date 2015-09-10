@@ -60,14 +60,14 @@ class MDLegislatorScraper(LegislatorScraper):
 
             email = ldoc.xpath('//a[contains(@href, "mailto:")]/text()')
             if not email:
-                email = ''
+                email = None
             elif len(email) == 1:
                 email = email[0].strip()
             else:
                 raise AssertionError('Multiple email links found on page')
 
             leg = Legislator(term, chamber, district, name, party=party,
-                             url=leg_url, email=email)
+                             url=leg_url)
             leg.add_source(url=leg_url)
 
             # photo
@@ -76,5 +76,5 @@ class MDLegislatorScraper(LegislatorScraper):
                 leg['photo_url'] = img_src[0]
 
             leg.add_office('capitol', 'Capitol Office', address=address or None,
-                           phone=phone)
+                           phone=phone, email=email)
             self.save_legislator(leg)

@@ -202,10 +202,10 @@ class HILegislatorScraper(LegislatorScraper):
                 party=leg['party'],
                 # some additional things the website provides:
                 photo_url=leg['image'],
-                url=leg['homepage'],
-                email=leg['email'])
+                url=leg['homepage'])
             p.add_office('capitol', 'Capitol Office', address=leg['addr'],
-                         phone=leg['phone'], fax=leg['fax'] or None)
+                         phone=leg['phone'], fax=leg['fax'] or None,
+                         email=leg['email'])
 
             for source in leg['source']:
                 p.add_source( source )

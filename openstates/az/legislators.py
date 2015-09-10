@@ -109,11 +109,11 @@ class AZLegislatorScraper(LegislatorScraper):
                 leg['roles'][0]['end_date'] = end_date
             else:
                 leg = Legislator(term, chamber, district, full_name=name,
-                                 party=party, email=email, url=link,
+                                 party=party, url=link,
                                  photo_url=photo_url)
 
             leg.add_office('capitol', 'Capitol Office', address=address,
-                           phone=phone, fax=fax)
+                           phone=phone, fax=fax,  email=email)
 
             if position:
                 leg.add_role( position, term, chamber=chamber,

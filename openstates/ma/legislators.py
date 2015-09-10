@@ -102,12 +102,19 @@ class MALegislatorScraper(LegislatorScraper):
             party = 'Other'
 
         leg = Legislator(term, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url, email=email)
+                         photo_url=photo_url, url=member_url)
         leg.add_source(member_url)
 
         # offices
+
+        #this bool is so we only attach the email to one office
+        #and we make sure to create at least one office
+        email_stored = True
+        if email:
+            email_stored = False
+
         for dl in root.xpath('//dl[@class="address"]'):
-            office_name = phone = fax = email = None
+            office_name = phone = fax = None
             address = []
             for child in dl.getchildren():
                 text = child.text_content()
@@ -132,7 +139,16 @@ class MALegislatorScraper(LegislatorScraper):
                 None, [re.sub(r'\s+', ' ', s).strip() for s in address])
 
             if address:
-                leg.add_office(otype, office_name, phone=phone, fax=fax,
-                               address='\n'.join(address), email=None)
+                if not email_stored:
+                    email_stored = True
+                    leg.add_office(otype, office_name, phone=phone, fax=fax,
+                               address='\n'.join(address), email=email)
+                else:
+                    leg.add_office(otype, office_name, phone=phone, fax=fax,
+                               address='\n'.join(address))
+
+        if not email_stored:
+            leg.add_office('capitol','Capitol Office', email=email)
+
 
         self.save_legislator(leg)
