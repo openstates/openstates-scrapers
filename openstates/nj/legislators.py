@@ -54,7 +54,7 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             legal_position = rec["LegPos"]
             phone = rec["Phone"] or None
             email = None
-            if 'Email' in rec and rec["Email"] != "":
+            if rec["Email"]:
                 email = rec["Email"]
             try:
                 photo_url = photos[rec['Roster Key']]
