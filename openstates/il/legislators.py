@@ -70,7 +70,6 @@ class ILLegislatorScraper(LegislatorScraper):
                 email = email[0].tail.strip()
             else:
                 email = None
-            print email
 
             # function for turning an IL contact info table to office details
             def _table_to_office(table, office_type, office_name, email=None):
