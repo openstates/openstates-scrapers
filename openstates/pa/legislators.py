@@ -43,8 +43,8 @@ class PALegislatorScraper(LegislatorScraper):
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(url)
 
-            self.scrape_email_address(url, page, legislator)
-            self.scrape_offices(url, doc, legislator)
+            email = self.scrape_email_address(url, page)
+            self.scrape_offices(url, doc, legislator, email)
             self.scrape_photo_url(url, doc, legislator)
             self.save_legislator(legislator)
 
@@ -57,20 +57,22 @@ class PALegislatorScraper(LegislatorScraper):
         else:
             raise AssertionError("Legislator photo parsing needs to be rewritten")
 
-    def scrape_email_address(self, url, page, legislator):
+    def scrape_email_address(self, url, page):
+        email = None
         if re.search(r'var \S+\s+= "(\S+)";', page):
             vals = re.findall(r'var \S+\s+= "(\S+)";', page)
-            legislator['email'] = '%s@%s%s' % tuple(vals)
+            email = '%s@%s%s' % tuple(vals)
+        return email
+        
+    def scrape_offices(self, url, doc, legislator, email):
+        offices = False
 
-    def scrape_offices(self, url, doc, legislator):
         account_types = ["facebook","twitter","youtube","instagram","pintrest"]
         soc_media_accounts = doc.xpath("//div[contains(@class,'MemberBio-SocialLinks')]/a/@href")
         for acct in soc_media_accounts:
             for sm_site in account_types:
                 if sm_site in acct.lower():
                     legislator[sm_site] = acct
-
-
 
         contact_chunks = doc.xpath('//address')
         if contact_chunks == []:
@@ -111,5 +113,12 @@ class PALegislatorScraper(LegislatorScraper):
                     office["type"] = "district"
                 office["address"] = address
                 office["name"] = office["type"].title() + " Office"
+                office["email"] = email
                 legislator.add_office(**office)
+                offices = True
+        if not offices and email:
+            legislator.add_office(
+                type="capitol",
+                name="Capitol Office",
+                email=email)
         legislator.add_source(url)
