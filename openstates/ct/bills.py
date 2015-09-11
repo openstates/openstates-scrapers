@@ -81,8 +81,12 @@ class CTBillScraper(BillScraper):
                 pass
 
     def scrape_bill_page(self, bill):
-        url = ("https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
-               "&bill_num=%s&which_year=%s" % (bill['bill_id'], bill['session']))
+        id_num_only = bill['bill_id']
+        for prefix in ['HB','HR','HJ','SB','SR','SJ']:
+            id_num_only = id_num_only.replace(prefix, "")
+        
+        url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
+               "&bill_num=%s&which_year=%s" % (id_num_only, bill['session']))
 
         # Turn off SSL, since CT's is causing issues
         page = self.get(url, verify=False).text
