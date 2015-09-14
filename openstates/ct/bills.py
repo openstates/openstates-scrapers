@@ -1,5 +1,6 @@
 import re
 import datetime
+import requests
 from operator import itemgetter
 from collections import defaultdict
 
@@ -88,8 +89,8 @@ class CTBillScraper(BillScraper):
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (id_num_only, bill['session']))
 
-        # Turn off SSL, since CT's is causing issues
-        page = self.get(url, verify=False).text
+        # Connecticut's SSL is causing problems with Scrapelib, so use Requests
+        page = requests.get(url, verify=False).text
 
         if 'not found in Database' in page:
             raise SkipBill()
