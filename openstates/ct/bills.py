@@ -134,7 +134,9 @@ class CTBillScraper(BillScraper):
             yes_offset = 1
             no_offset = 2
 
-        page = self.get(url).text
+        # Connecticut's SSL is causing problems with Scrapelib, so use Requests
+        page = requests.get(url, verify=False).text
+
         if 'BUDGET ADDRESS' in page:
             return
 
