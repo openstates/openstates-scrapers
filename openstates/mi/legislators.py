@@ -41,7 +41,7 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
             email = metainf['email'].text_content().strip()
             leg_url = metainf['website'].xpath("./a")[0].attrib['href']
             name = metainf['name'].text_content().strip()
-            if name == 'Vacant' or (party == 'N' and "District " in name):
+            if name == 'Vacant' or re.match(r'^District \d{1,3}$', name):
                 self.warning('District {} appears vacant, and will be skipped'.format(district))
                 continue
 
