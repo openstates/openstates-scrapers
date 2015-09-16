@@ -7,6 +7,7 @@ from billy.scrape.events import EventScraper, Event
 import lxml.html
 import pytz
 
+import logging
 
 class KYEventScraper(EventScraper):
     jurisdiction = 'ky'
@@ -27,11 +28,17 @@ class KYEventScraper(EventScraper):
                 delimiter = ','
                 time, delimiter, location = div.xpath("string(span[1])").partition(delimiter)
 
-                # Attempt to extract a clock time from the time string.
-                match = re.search(r'([0-9]{1,2}:[0-9]{2})([\s]?[aApP][mM])?([\s](eE[dDsS]tT))?', time)
+                # Strip any dates from time string.
+                time = re.sub(r'[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}', '', time)
 
-                if match:
-                    time = match.group(0).strip()
+                logging.debug(time)
+
+                # Strip extraneous timezone data from time string.
+                time = re.sub(r'[\s-]*?([eE][dDsS][tT]).*', '', time)
+
+                time = time.strip()
+
+                logging.debug(time)
             except ValueError:
                 # No meetings
                 continue
