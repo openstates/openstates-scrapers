@@ -6,6 +6,7 @@ from billy.scrape.events import EventScraper, Event
 
 import lxml.html
 import pytz
+import logging
 
 
 class KYEventScraper(EventScraper):
@@ -23,9 +24,19 @@ class KYEventScraper(EventScraper):
             date = div.xpath("string(../preceding-sibling::span[div[@align]][1])").strip()
 
             try:
+                # Get most likely element that contains the event time and location.
+                event = div.xpath("string(span[1])")
+
+                # Check whether the event has been cancelled.
+                match = re.search(r'\bcance[l]{1,2}ed\b', event, re.IGNORECASE)
+
+                # Skip if the event has been cancelled.
+                if match:
+                    raise ValueError('Event canceled.')
+
                 # Attempt to separate the time and location.
                 delimiter = ','
-                time, delimiter, location = div.xpath("string(span[1])").partition(delimiter)
+                time, delimiter, location = event.partition(delimiter)
 
                 # Strip any dates from time string.
                 time = re.sub(r'[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}', '', time)
@@ -47,6 +58,9 @@ class KYEventScraper(EventScraper):
 
             # Combine extracted date and time into a datetime string.
             when = "%s %s" % (date, time)
+
+            logging.debug(date)
+            logging.debug(time)
 
             # Attempt to create a datetime object from datetime string.
             try:
