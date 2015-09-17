@@ -6,7 +6,6 @@ from billy.scrape.events import EventScraper, Event
 
 import lxml.html
 import pytz
-import logging
 
 
 class KYEventScraper(EventScraper):
@@ -58,9 +57,6 @@ class KYEventScraper(EventScraper):
 
             # Combine extracted date and time into a datetime string.
             when = "%s %s" % (date, time)
-
-            logging.debug(date)
-            logging.debug(time)
 
             # Attempt to create a datetime object from datetime string.
             try:
