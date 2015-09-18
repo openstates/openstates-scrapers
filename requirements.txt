@@ -1,4 +1,4 @@
--e git://github.com/sunlightlabs/billy.git#egg=billy
+billy
 
 # scraping
 xlrd
