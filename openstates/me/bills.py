@@ -11,6 +11,7 @@ from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
 from .actions import Categorizer
+import logging
 
 
 class MEBillScraper(BillScraper):
@@ -207,10 +208,9 @@ class MEBillScraper(BillScraper):
                 vdoc = lxml.html.fromstring(ver_html)
 
                 # Check whether the bill text is missing.
-                bill_text_missing = vdoc.xpath('string(//div[@id = "sec0"])').strip()
-                match = re.search('Cannot find requested paper', bill_text_missing)
+                is_bill_text_missing = vdoc.xpath('boolean(//div[@id = "sec0" and contains(.,"Cannot find requested paper")])')
 
-                if not match:
+                if not is_bill_text_missing:
                     vdoc.make_links_absolute(ver_url)
 
                     # various versions: billtexts, billdocs, billpdfs
