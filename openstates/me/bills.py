@@ -203,12 +203,35 @@ class MEBillScraper(BillScraper):
         else:
             if ver_html:
                 vdoc = lxml.html.fromstring(ver_html)
-                vdoc.make_links_absolute(ver_url)
-                # various versions: billtexts, billdocs, billpdfs
-                vurl = vdoc.xpath('//a[contains(@href, "billtexts/")]/@href')
-                if vurl:
-                    bill.add_version('Initial Version', vurl[0],
-                                     mimetype='text/html')
+
+                # Check whether the bill text is missing.
+                is_bill_text_missing = vdoc.xpath('boolean(//div[@id = "sec0" \
+                    and contains(.,"Cannot find requested paper")])')
+
+                if not is_bill_text_missing:
+                    vdoc.make_links_absolute(ver_url)
+
+                    # various versions: billtexts, billdocs, billpdfs
+                    bill_text_html = vdoc.xpath('string(//a[contains(@href, \
+                        "billtexts/")][1]/@href)')
+                    bill_text_rtf = vdoc.xpath('string(//a[contains(@href, \
+                        "billdocs/")][1]/@href)')
+                    bill_text_pdf = vdoc.xpath('string(//a[contains(@href, \
+                        "getPDF.asp")][1]/@href)')
+
+                    if bill_text_html:
+                        bill.add_version('Initial Version', bill_text_html,
+                            mimetype='text/html')
+
+                    if bill_text_rtf:
+                        bill.add_version('Initial Version', bill_text_rtf,
+                            mimetype='application/rtf')
+
+                    if bill_text_pdf:
+                        bill.add_version('Initial Version', bill_text_pdf,
+                            mimetype='application/pdf')
+
+
 
     def scrape_votes(self, bill, url):
         page = self.get(url, retry_on_404=True).text
