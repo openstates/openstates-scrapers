@@ -65,6 +65,10 @@ class MECommitteeScraper(CommitteeScraper):
         committee_urls = doc.xpath('//address/a/@href')
         for committee_url in committee_urls:
 
+            # Exclude the committee listing document
+            if committee_url.endswith('.docx'):
+                continue
+
             html = self.get(committee_url).text
             doc = lxml.html.fromstring(html)
 
