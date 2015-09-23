@@ -163,10 +163,12 @@ class MTLegislatorScraper(LegislatorScraper):
 
             td1, td2 = tr.xpath('td')
 
-            # Get link to the member's page.
-            if 'Resigned' in tr.text_content():
+            # Skip header rows and retired legislators
+            if (not td2.text_content().strip() or
+                    'Resigned' in tr.text_content()):
                 continue
 
+            # Get link to the member's page.
             detail_url = td1.xpath('h4/a/@href')[0]
 
             # Get the members district so we can match the
