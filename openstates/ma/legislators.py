@@ -55,7 +55,7 @@ class MALegislatorScraper(LegislatorScraper):
             chamber_type = 'House'
 
         url = "http://www.malegislature.gov/People/%s" % chamber_type
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute("http://www.malegislature.gov")
 
@@ -63,7 +63,7 @@ class MALegislatorScraper(LegislatorScraper):
             self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
-        page = self.get(member_url).text
+        page = self.get(member_url, verify=False).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(member_url)
 
