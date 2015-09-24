@@ -64,14 +64,22 @@ class WVLegislatorScraper(LegislatorScraper):
         email = doc.xpath(
             "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
             'mailto:')[1]
+
+        # Retrieve element that should contain all contact information for the
+        # legislator and turn its text into a list.
         text = doc.xpath('//b[contains(., "Capitol Office:")]')[0]
         text = text.getparent().itertext()
         text = filter(None, [t.strip() for t in text])
+
+        # Parse capitol office contact details.
         officedata = defaultdict(list)
         current = None
         for chunk in text:
+            # Skip parsing biography link.
             if chunk.lower() == 'biography':
                 break
+            # Contact snippets should be elements with headers that end in
+            # colons.
             if chunk.strip().endswith(':'):
                 current_key = chunk.strip()
                 current = officedata[current_key]
@@ -83,10 +91,18 @@ class WVLegislatorScraper(LegislatorScraper):
         email = doc.xpath('//a[contains(@href, "mailto:")]/@href')[1]
         email = email[7:]
 
+        try:
+            if officedata['Capitol Phone:'][0] not in ('', 'NA'):
+                phone = officedata['Capitol Phone:'][0]
+            else:
+                raise ValueError('Invalid phone number')
+        except (IndexError, ValueError) as e:
+            phone = None
+
         office = dict(
             name='Capitol Office',
             type='capitol',
-            phone=officedata['Capitol Phone:'][0] if officedata['Capitol Phone:'][0] not in ('', 'NA') else '',
+            phone=phone,
             fax=None,
             email=email,
             address='\n'.join(officedata['Capitol Office:']))
