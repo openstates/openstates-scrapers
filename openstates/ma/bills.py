@@ -40,7 +40,7 @@ class MABillScraper(BillScraper):
             if skipped == 10:
                 break
 
-            html = self.get(bill_url).text
+            html = self.get(bill_url, verify=False).text
             if 'Unable to find the Bill' in html:
                 self.warning('skipping %s' % bill_url)
                 skipped += 1
@@ -50,7 +50,7 @@ class MABillScraper(BillScraper):
             if 'billShortDesc' not in html:
                 self.warning('truncated page on %s' % bill_url)
                 time.sleep(1)
-                html = self.get(bill_url).text
+                html = self.get(bill_url, verify=False).text
                 if 'billShortDesc' not in html:
                     self.warning('skipping %s' % bill_url)
                     skipped += 1
