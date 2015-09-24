@@ -61,10 +61,6 @@ class WVLegislatorScraper(LegislatorScraper):
         self.save_legislator(leg)
 
     def scrape_offices(self, legislator, doc):
-        email = doc.xpath(
-            "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
-            'mailto:')[1]
-
         # Retrieve element that should contain all contact information for the
         # legislator and turn its text into a list.
         text = doc.xpath('//b[contains(., "Capitol Office:")]')[0]
