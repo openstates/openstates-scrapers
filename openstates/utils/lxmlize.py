@@ -1,3 +1,4 @@
+import requests
 import lxml.html
 
 
@@ -11,7 +12,10 @@ class LXMLMixin(object):
     """
 
     def lxmlize(self, url):
-        text = self.get(url).text
+        try:
+            text = self.get(url).text
+        except requests.exceptions.SSLError:
+            text = self.get(url, verify=False).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
         return page
