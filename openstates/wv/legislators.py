@@ -89,24 +89,53 @@ class WVLegislatorScraper(LegislatorScraper):
 
         try:
             if officedata['Capitol Phone:'][0] not in ('', 'NA'):
-                phone = officedata['Capitol Phone:'][0]
+                capitol_phone = officedata['Capitol Phone:'][0]
             else:
                 raise ValueError('Invalid phone number')
         except (IndexError, ValueError) as e:
-            phone = None
+            capitol_phone = None
 
-        office = dict(
+        if officedata['Capitol Office:']:
+            capitol_address = '\n'.join(officedata['Capitol Office:'])
+        else:
+            capitol_address = None
+
+        capitol = dict(
             name='Capitol Office',
             type='capitol',
-            phone=phone,
+            phone=capitol_phone,
             fax=None,
             email=email,
-            address='\n'.join(officedata['Capitol Office:']))
+            address=capitol_address,
+        )
 
-        legislator.add_office(**office)
+        legislator.add_office(**capitol)
 
-        if officedata.get('Business Phone:', '') not in ([], ['NA']):
-            legislator.add_office(
-                name='Business Office',
+        # If a business or home phone is listed, attempt to use the
+        # business phone first, then fall back on the home phone for
+        # the district office number.
+        try:
+            if officedata['Business Phone:'][0] not in ('', 'NA'):
+                district_phone = officedata['Business Phone:'][0]
+            elif officedata['Home Phone:'][0] not in ('', 'NA'):
+                district_phone = officedata['Home Phone:'][0]
+            else:
+                raise ValueError('Invalid phone number')
+        except (IndexError, ValueError) as e:
+            district_phone = None
+
+        if officedata['Home:']:
+            district_address = '\n'.join(officedata['Home:'])
+        else:
+            district_address = None
+
+        # Add district office entry only if data exists for it.
+        if district_phone or officedata['Home:']:
+            district = dict(
+                name='District Office',
                 type='district',
-                phone=officedata['Business Phone:'][0])
+                phone=district_phone,
+                address=district_address,
+            )
+
+            legislator.add_office(**district)
