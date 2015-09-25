@@ -112,13 +112,13 @@ class WVLegislatorScraper(LegislatorScraper):
         legislator.add_office(**capitol)
 
         # If a business or home phone is listed, attempt to use the
-        # business phone first, then fall back on the home phone for
+        # home phone first, then fall back on the business phone for
         # the district office number.
         try:
-            if officedata['Business Phone:'][0] not in ('', 'NA'):
-                district_phone = officedata['Business Phone:'][0]
-            elif officedata['Home Phone:'][0] not in ('', 'NA'):
+            if officedata['Home Phone:'][0] not in ('', 'NA'):
                 district_phone = officedata['Home Phone:'][0]
+            elif officedata['Business Phone:'][0] not in ('', 'NA'):
+                district_phone = officedata['Business Phone:'][0]
             else:
                 raise ValueError('Invalid phone number')
         except (IndexError, ValueError) as e:
