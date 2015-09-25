@@ -61,17 +61,21 @@ class WVLegislatorScraper(LegislatorScraper):
         self.save_legislator(leg)
 
     def scrape_offices(self, legislator, doc):
-        email = doc.xpath(
-            "//a[contains(@href, 'mailto:')]")[1].attrib['href'].split(
-            'mailto:')[1]
+        # Retrieve element that should contain all contact information for the
+        # legislator and turn its text into a list.
         text = doc.xpath('//b[contains(., "Capitol Office:")]')[0]
         text = text.getparent().itertext()
         text = filter(None, [t.strip() for t in text])
+
+        # Parse capitol office contact details.
         officedata = defaultdict(list)
         current = None
         for chunk in text:
+            # Skip parsing biography link.
             if chunk.lower() == 'biography':
                 break
+            # Contact snippets should be elements with headers that end in
+            # colons.
             if chunk.strip().endswith(':'):
                 current_key = chunk.strip()
                 current = officedata[current_key]
@@ -83,18 +87,55 @@ class WVLegislatorScraper(LegislatorScraper):
         email = doc.xpath('//a[contains(@href, "mailto:")]/@href')[1]
         email = email[7:]
 
-        office = dict(
+        try:
+            if officedata['Capitol Phone:'][0] not in ('', 'NA'):
+                capitol_phone = officedata['Capitol Phone:'][0]
+            else:
+                raise ValueError('Invalid phone number')
+        except (IndexError, ValueError) as e:
+            capitol_phone = None
+
+        if officedata['Capitol Office:']:
+            capitol_address = '\n'.join(officedata['Capitol Office:'])
+        else:
+            capitol_address = None
+
+        capitol = dict(
             name='Capitol Office',
             type='capitol',
-            phone=officedata['Capitol Phone:'][0] if officedata['Capitol Phone:'][0] not in ('', 'NA') else '',
+            phone=capitol_phone,
             fax=None,
             email=email,
-            address='\n'.join(officedata['Capitol Office:']))
+            address=capitol_address,
+        )
 
-        legislator.add_office(**office)
+        legislator.add_office(**capitol)
 
-        if officedata.get('Business Phone:', '') not in ([], ['NA']):
-            legislator.add_office(
-                name='Business Office',
+        # If a business or home phone is listed, attempt to use the
+        # home phone first, then fall back on the business phone for
+        # the district office number.
+        try:
+            if officedata['Home Phone:'][0] not in ('', 'NA'):
+                district_phone = officedata['Home Phone:'][0]
+            elif officedata['Business Phone:'][0] not in ('', 'NA'):
+                district_phone = officedata['Business Phone:'][0]
+            else:
+                raise ValueError('Invalid phone number')
+        except (IndexError, ValueError) as e:
+            district_phone = None
+
+        if officedata['Home:']:
+            district_address = '\n'.join(officedata['Home:'])
+        else:
+            district_address = None
+
+        # Add district office entry only if data exists for it.
+        if district_phone or officedata['Home:']:
+            district = dict(
+                name='District Office',
                 type='district',
-                phone=officedata['Business Phone:'][0])
+                phone=district_phone,
+                address=district_address,
+            )
+
+            legislator.add_office(**district)
