@@ -151,6 +151,7 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
             yield (mem_name, mem_role)
 
     def scrape_upper(self, chamber, term):
+        # Retrieve index list of committees.
         url = 'http://senate.ca.gov/committees'
         doc = self.lxmlize(url)
 
@@ -163,9 +164,13 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
         other_committees = doc.xpath(
             '//h2[text()="Other"]/../following-sibling::div//a')
 
+        # Iterates over each committee [link] found.
         for committee in (standing_committees + sub_committees +
                           joint_committees + other_committees):
+            # Get the text of the committee link, which should be the name of
+            # the committee.
             (comm_name, ) = committee.xpath('text()')
+
             comm = Committee(
                 chamber=chamber,
                 committee=comm_name
@@ -193,11 +198,39 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                     r'^Subcommittee.*?on (.*)$', comm_name).group(1)
                 comm['subcommittee'] = comm_name
 
-            members = comm_doc.xpath(
-                '//a[(contains(@href, "/sd") or '
-                'contains(@href, "assembly.ca.gov/a")) and '
-                '(starts-with(text(), "Senator") or '
-                'starts-with(text(), "Assembly Member"))]/text()')
+            # Special case of members list being presented in text blob.
+            member_blob = comm_doc.xpath(
+                'string(//div[contains(@class, "field-item") and '
+                'starts-with(text(), "Senate Membership:")][1]/text()[1])')
+
+            if member_blob:
+                # Separate senate membership from assembly membership.
+                # This should strip the header from assembly membership
+                # string automatically.
+                delimiter = 'Assembly Membership:\n'
+                senate_members, delimiter, assembly_members = \
+                    member_blob.partition(delimiter)
+
+                # Strip header from senate membership string.
+                senate_members = senate_members.replace('Senate Membership:\n', '')
+
+                # Clean membership strings.
+                senate_members = senate_members.strip()
+                assembly_members = assembly_members.strip()
+
+                # Parse membership strings into lists.
+                senate_members = senate_members.split('\n')
+                assembly_members = assembly_members.split('\n')
+
+                members = senate_members + assembly_members
+            # Typical membership list format.
+            else:
+                members = comm_doc.xpath(
+                    '//a[(contains(@href, "/sd") or '
+                    'contains(@href, "assembly.ca.gov/a")) and '
+                    '(starts-with(text(), "Senator") or '
+                    'starts-with(text(), "Assembly Member"))]/text()')
+
             for member in members:
                 if not member.strip():
                     continue
