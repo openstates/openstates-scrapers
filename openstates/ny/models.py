@@ -173,10 +173,17 @@ class AssemblyBillPage(BasePageyThing):
         if doc is None:
             return
 
-        pre = doc.xpath('//pre')[0].text_content()
-        no_votes = ('There are no votes for this bill in this '
-                    'legislative session.')
-        if pre == no_votes:
+        # Grab bill information.
+        try:
+            pre = doc.xpath('//pre')[0].text_content()
+
+            no_votes = ('There are no votes for this bill in this legislative '
+                        'session.')
+
+            if pre == no_votes:
+                raise ValueError('No votes for this bill.')
+        # Skip bill if votes can't be found.
+        except (IndexError, ValueError) as e:
             return
 
         actual_vote = collections.defaultdict(list)
