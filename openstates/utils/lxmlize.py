@@ -15,7 +15,8 @@ class LXMLMixin(object):
         try:
             text = self.get(url).text
         except requests.exceptions.SSLError:
-            text = self.get(url, verify=False).text
+            self.warning("`self.lxmlize()` failed due to SSL error, trying an unverified `requests.get()`")
+            text = requests.get(url, verify=False).text
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
         return page
