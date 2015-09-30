@@ -38,12 +38,24 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
 
             capitol_office = member.xpath('.//div[@class="memberColumnTitle" and text()=" Olympia Office"]/parent::div[1]/text()')
             capitol_office = [l.strip() for l in capitol_office if l.strip()]
+
             capitol_fax = None
-            if capitol_office[-1].startswith('Fax: '):
-                capitol_fax = capitol_office.pop().replace('Fax: ', "")
-            assert re.match(r'\(\d{3}\) \d{3} \- \d{4}', capitol_office[-1]), "Phone number expected but not found"
-            capitol_phone = capitol_office.pop()
-            capitol_address = '\n'.join(capitol_office)
+            capitol_phone = None
+            capitol_address = None
+
+            # Can't capture any information anyway if office data is empty,
+            # so we can skip if that's the case.
+            if capitol_office:
+                # Retrieve capitol office fax number.
+                if capitol_office[-1].startswith('Fax: '):
+                    capitol_fax = capitol_office.pop().replace('Fax: ', "")
+
+                # Retrieve capitol office phone number.
+                capitol_phone = capitol_office.pop()
+
+                # Retrieve capitol office address.
+                capitol_address = '\n'.join(capitol_office)
+
             leg.add_office(
                 'capitol',
                 'Capitol Office',
