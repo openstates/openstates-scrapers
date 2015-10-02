@@ -88,6 +88,8 @@ class ALLegislatorScraper(LegislatorScraper):
             assert rep_name.count(",") == 1, "Unable to parse representative's name: {}".format(rep_name)
             full_name_parts = [x.strip() for x in rep_name.split(",")]
             full_name = "{0} {1}".format(full_name_parts[1], full_name_parts[0])
+            last_name = full_name_parts[0]
+            first_name = full_name_parts[1]
 
             PARTIES = {
                     'R': "Republican",
@@ -100,7 +102,9 @@ class ALLegislatorScraper(LegislatorScraper):
                             "lower",
                             district,
                             full_name,
-                            party=party)
+                            party=party,
+                            first_name=first_name,
+                            last_name=last_name)
             leg.add_office('capitol',
                             'Capitol Office',
                             address=office_address,
@@ -159,6 +163,8 @@ class ALLegislatorScraper(LegislatorScraper):
             assert sen_name.count(",") == 1, "Unable to parse representative's name: {}".format(sen_name)
             full_name_parts = [x.strip() for x in sen_name.split(",")]
             full_name = "{0} {1}".format(full_name_parts[1], full_name_parts[0])
+            last_name = full_name_parts[0]
+            first_name = full_name_parts[1]
 
             #putting the stuff in the table in a dictionary
             #with the first td as the key and the 2nd as the value
@@ -177,7 +183,9 @@ class ALLegislatorScraper(LegislatorScraper):
                             "upper",
                             info_dict["district"].replace("Senate District","").strip(),
                             full_name,
-                            party = party_dict[info_dict["affiliation"].strip()]
+                            party = party_dict[info_dict["affiliation"].strip()],
+                            first_name=first_name,
+                            last_name=last_name
                             )
 
             #putting addresses together, skipping empty fields
