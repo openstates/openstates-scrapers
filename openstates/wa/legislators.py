@@ -2,7 +2,6 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
 import re
 
-
 class WALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'wa'
 
@@ -12,6 +11,10 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
         else:
             index_url = 'http://www.leg.wa.gov/house/representatives/Pages/default.aspx'
         doc = self.lxmlize(index_url)
+
+	# Email addresses are listed on a separate page.
+        email_list_url = 'http://app.leg.wa.gov/memberemail/Default.aspx'
+        email_doc = self.lxmlize(email_list_url)
 
         for member in doc.xpath('//div[@id="allMembers"]/div[@class="memberInformation"]'):
             (photo_url, ) = member.xpath('.//a[text()="Print Quality Photo"]/@href')
@@ -56,11 +59,21 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
                 # Retrieve capitol office address.
                 capitol_address = '\n'.join(capitol_office)
 
+            # Retrieve the member's position from the email link. We need it to find the member's email address.
+            # These positions are enough to discriminate the chamber too (0 = upper, 1,2 = lower)
+            email_link_url = member.xpath('.//a[contains(@href, "memberEmail")]')[0].get('href')
+            position = re.search(r'/([[0-9]+)$', email_link_url).group(1)
+ 
+            # Need to get the email from the email page by matching with the member's the district and position
+            email_xpath = './/tr/td/a[contains(@href, "memberEmail/%s/%s")]/parent::td/following-sibling::td[1]/text()' % (district_num, position)
+            capitol_email = email_doc.xpath(email_xpath)[0]
+
             leg.add_office(
                 'capitol',
                 'Capitol Office',
                 address=capitol_address,
                 phone=capitol_phone,
+                email = capitol_email,
                 fax=capitol_fax
             )
 
