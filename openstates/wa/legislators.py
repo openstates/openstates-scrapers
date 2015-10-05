@@ -1,7 +1,6 @@
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
 import re
-import sys
 
 class WALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'wa'
