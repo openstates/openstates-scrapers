@@ -23,8 +23,8 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
         else:
             chamber_abbrev = 'H'
 
-        url = ("http://www.legis.iowa.gov/Schedules/meetingsList"
-               "Chamber.aspx?chamber=%s&bDate=%02d/%02d/"
+        url = ("http://www.legis.iowa.gov/committees/meetings/meetingsList"
+               "Chamber?chamber=%s&bDate=%02d/%02d/"
                "%d&eDate=%02d/%02d/%d" % (chamber_abbrev,
                                           start_date.month,
                                           start_date.day,
