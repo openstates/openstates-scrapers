@@ -20,7 +20,7 @@ VERSION_URL = ('https://www.revisor.mn.gov/bin/getbill.php'
 
 # Search URL
 BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
-    'status_results.php?body=%s&session=%s&bill=%s-%s'
+    'status_result.php?body=%s&session=%s&bill=%s-%s'
     '&bill_type=%s&submit_bill=GO')
 
 
@@ -216,7 +216,7 @@ class MNBillScraper(BillScraper):
             # Subjects look like "Name of Subject (##)" -- split off the #
             subject = option.text.rsplit(' (')[0]
             value = option.get('value')
-            opt_url = '%sstatus_results.php?body=%s&search=topic&session=%s&topic[]=%s' % (
+            opt_url = '%sstatus_result.php?body=%s&search=topic&session=%s&topic[]=%s' % (
                 BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
             opt_html = self.get(opt_url).text
             opt_doc = lxml.html.fromstring(opt_html)
