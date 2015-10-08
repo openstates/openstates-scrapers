@@ -34,31 +34,33 @@ metadata = dict(
     session_details={
         '2009-2010': {
             'display_name': '2009 Regular Session',
-            '_scraped_name': '2009-2010',
+            '_scraped_name': '2009',
         },
         '2011-2012': {
             'display_name': '2011 Regular Session',
-            '_scraped_name': '2011-2012',
+            '_scraped_name': '2011',
         },
         '2013-2014': {
             'display_name': '2013 Regular Session',
-            '_scraped_name': '2013-2014',
+            '_scraped_name': '2013',
         },
         '2015-2016': {
             'display_name': '2015 Regular Session',
-            '_scraped_name': '2015-2016',
+            '_scraped_name': '2015',
         }
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
-    _ignored_scraped_sessions=['2009-2010'],
+    _ignored_scraped_sessions=['2009'],
 
     requests_per_minute=30,
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://open.nysenate.gov/legislation/advanced/',
-                     '//select[@name="session"]/option/text()')
+    url = 'http://nysenate.gov/search/legislation'
+    sessions = url_xpath(url,
+        '//select[@name="bill_session_year"]/option[@value!=""]/@value')
+    return sessions
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
