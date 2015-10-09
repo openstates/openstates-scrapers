@@ -4,7 +4,6 @@ import itertools
 import datetime
 import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
-import logging
 
 
 class NYLegislatorScraper(LegislatorScraper):
@@ -16,7 +15,6 @@ class NYLegislatorScraper(LegislatorScraper):
         else:
             self.scrape_lower(term)
 
-    # Scrape senators.
     def scrape_upper(self, term):
         url = 'http://www.nysenate.gov/senators-committees'
 
@@ -89,10 +87,11 @@ class NYLegislatorScraper(LegislatorScraper):
                 party=party,
                 photo_url=photo_url
             )
+
             legislator.add_source(url)
             legislator['url'] = legislator_url
 
-            # Find legislator office contact information.
+            # Find legislator's offices.
             contact_url = legislator_url + '/contact'
             self.scrape_upper_offices(legislator, contact_url)
 
@@ -103,73 +102,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         legislator.add_source(url)
 
-        # Find capitol office contact information.
-        address_node = self._get_node(
-            legislator_page,
-            '//div[@class="adr" and span[contains(text(), "Albany Office")]]')
-
-        # Terminate if capitol office contact information is not found.
-        if not address_node:
-            return
-
-        street_address_text = self._get_node(
-            address_node,
-            './/div[@class="street-address"][1]/'
-            'span[@itemprop="streetAddress"][1]/text()')
-        if street_address_text:
-            street_address = street_address_text.strip()
-        else:
-            street_address = None
-        city_text = self._get_node(
-            address_node,
-            './/span[@class="locality"][1]/text()')
-        if city_text:
-            city = city_text.strip()
-        else:
-            city = None
-        state_text = self._get_node(
-            address_node,
-            './/span[@class="region"][1]/text()')
-        if state_text:
-            state = state_text.strip()
-        else:
-            state = None
-        zip_code_text = self._get_node(
-            address_node,
-            './/span[@class="postal-code"][1]/text()')
-        if zip_code_text:
-            zip_code = zip_code_text.strip()
-        else:
-            zip_code = None
-
-        # Build capitol office physical address.
-        if (street_address is not None and
-            city is not None and
-            state is not None and
-            zip_code is not None):
-            address = "%s\n%s, %s %s" % (
-                street_address, city, state, zip_code)
-        else:
-            address = None
-
-        # Find capitol office phone number.
-        phone_node = self._get_node(
-            address_node,
-            './/div[@class="tel"]/span[@itemprop="telephone"]')
-        if phone_node is not None:
-            phone = phone_node.text.strip()
-        else:
-            phone = None
-
-        # Find capitol office fax number.
-        fax_node = self._get_node(
-            address_node,
-            './/div[@class="tel"]/span[@itemprop="faxNumber"]')
-        if fax_node is not None:
-            fax = fax_node.text.strip()
-        else:
-            fax = None
-
         # Find legislator e-mail address.
         email_node = self._get_node(
             legislator_page,
@@ -177,48 +109,22 @@ class NYLegislatorScraper(LegislatorScraper):
             '" c-block--senator-email ")]/div/a[contains(@href, "mailto:")]')
         if email_node is not None:
             email_text = email_node.attrib['href']
-            email = re.sub(r'       for office in offices:^mailto:', '', email_text)
+            email = re.sub(r'^mailto:', '', email_text)
         else:
             email = None
 
-        office = dict(
-            name='Capitol Office',
-            type='capitol',
-            address=address,
-            phone=phone,
-            fax=fax,
-            email=email,
-        )
-        legislator.add_office(**office)
+        # Parse all offices.
+        office_nodes = self._get_nodes(
+            legislator_page,
+            '//div[@class="adr"]')
 
-        offices = legislator_page.xpath(
-            '//div[@class="adr" and span[@class="fn" and contains(text(),'
-            '"District Office")]]')
+        for office_node in office_nodes:
+            office = self._parse_office(office_node)
 
-        """try:
-            span = page.xpath("//span[. = 'District Office']/..")[0]
-            address = span.xpath("string(div[1])").strip() + "\n"
-            address += span.xpath(
-                "string(span[@class='locality'])").strip() + ", "
-            address += span.xpath(
-                "string(span[@class='region'])").strip() + " "
-            address += span.xpath(
-                "string(span[@class='postal-code'])").strip()
-            address = re.sub(r'[ ]{2,}', "", address)
-
-            phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
-            phone = phone.text.strip()
-
-            office = dict(
-                    name='District Office',
-                    type='district', phone=phone,
-                    fax=None, email=None,
-                    address=address)
-
-            legislator.add_office(**office)
-        except IndexError:
-            # No district office yet?
-            pass"""
+            if office:
+                if office['type'] == 'capitol' and email is not None:
+                    office['email'] = email
+                legislator.add_office(**office)
 
     def scrape_lower(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
@@ -451,6 +357,95 @@ class NYLegislatorScraper(LegislatorScraper):
             return assembly_affiliations
         else:
             raise AssertionError("Unknown chamber passed to party parser")
+
+    def _parse_office(self, office_node):
+        office_name_text = self._get_node(
+            office_node,
+            './/span[@itemprop="name"]/text()')
+        if office_name_text:
+            office_name_text = office_name_text.strip()
+        else:
+            office_name_text = ()
+
+        office_name = None
+        office_type = None
+
+        # Determine office names/types consistent with Open States internals.
+        if 'Albany Office' in office_name_text:
+            office_name = 'Capitol Office'
+            office_type = 'capitol'
+        elif 'District Office' in office_name_text:
+            office_name = 'District Office'
+            office_type = 'district'
+        else:
+            # Terminate if not a capitol or district office.
+            return None
+
+        street_address_text = self._get_node(
+            office_node,
+            './/div[@class="street-address"][1]/'
+            'span[@itemprop="streetAddress"][1]/text()')
+        if street_address_text:
+            street_address = street_address_text.strip()
+        else:
+            street_address = None
+        city_text = self._get_node(
+            office_node,
+            './/span[@class="locality"][1]/text()')
+        if city_text:
+            city = city_text.strip()
+        else:
+            city = None
+        state_text = self._get_node(
+            office_node,
+            './/span[@class="region"][1]/text()')
+        if state_text:
+            state = state_text.strip()
+        else:
+            state = None
+        zip_code_text = self._get_node(
+            office_node,
+            './/span[@class="postal-code"][1]/text()')
+        if zip_code_text:
+            zip_code = zip_code_text.strip()
+        else:
+            zip_code = None
+
+        # Build office physical address.
+        if (street_address is not None and
+            city is not None and
+            state is not None and
+            zip_code is not None):
+            address = "{}\n{}, {} {}".format(
+                street_address, city, state, zip_code)
+        else:
+            address = None
+
+        phone_node = self._get_node(
+            office_node,
+            './/div[@class="tel"]/span[@itemprop="telephone"]')
+        if phone_node is not None:
+            phone = phone_node.text.strip()
+        else:
+            phone = None
+
+        fax_node = self._get_node(
+            office_node,
+            './/div[@class="tel"]/span[@itemprop="faxNumber"]')
+        if fax_node is not None:
+            fax = fax_node.text.strip()
+        else:
+            fax = None
+
+        office = dict(
+            name=office_name,
+            type=office_type,
+            phone=phone,
+            fax=fax,
+            email=None,
+            address=address)
+
+        return office
 
     def _get_node(self, base_node, xpath_query):
         try:
