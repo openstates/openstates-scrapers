@@ -2,11 +2,9 @@
 import re
 import itertools
 import datetime
-
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
 import lxml.html
-
+from billy.scrape.legislators import LegislatorScraper, Legislator
+import logging
 
 
 class NYLegislatorScraper(LegislatorScraper):
@@ -18,86 +16,186 @@ class NYLegislatorScraper(LegislatorScraper):
         else:
             self.scrape_lower(term)
 
+    # Scrape senators.
     def scrape_upper(self, term):
-        party_by_district = self._identify_party('upper')
+        url = 'http://www.nysenate.gov/senators-committees'
 
-        url = "http://www.nysenate.gov/senators"
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        page = self._get_page(url) 
 
-        xpath = (
-            '//div[contains(@class, "views-row")]/'
-            'div[contains(@class, "last-name")]/'
-            'span[contains(@class, "field-content")]/a')
-        for link in page.xpath(xpath):
-            if link.text in (None, 'Contact', 'RSS'):
-                continue
-            name = link.text.strip()
-            if name.lower().startswith('senate district'):
-                continue
+        legislator_nodes = page.xpath(
+            '//div[contains(@class, "u-even") or contains(@class, "u-odd")]/a')
 
-            district = link.xpath("string(../../../div[3]/span[1])")
-            district = re.match(r"District (\d+)", district).group(1)
+        for legislator_node in legislator_nodes:
+            legislator_url = legislator_node.attrib['href']
 
-            party = party_by_district[district].strip()
+            # Find element containing senator data.
+            info_node = self._get_node(
+                legislator_node,
+                './/div[@class="nys-senator--info"]')
 
-            photo_link = link.xpath("../../../div[1]/span/a/img")[0]
-            photo_url = photo_link.attrib['src']
+            # Fail if no legislator information was found.
+            assert(info_node)
 
-            legislator = Legislator(term, 'upper', district,
-                                    name, party=party,
-                                    photo_url=photo_url)
+            # Find legislator's name.
+            name_node = self._get_node(
+                info_node,
+                'h4[@class="nys-senator--name"]')
+            if name_node is not None:
+                name = name_node.text.strip()
+            else:
+                name = None
+
+            # Find legislator's district number.
+            district_node = self._get_node(
+                info_node,
+                './/span[@class="nys-senator--district"]')
+            if district_node is not None:
+                district_text = district_node.xpath('.//text()')[2]
+                district = re.sub(r'\D', '', district_text)
+            else:
+                district = None
+
+            # Find legislator's party affiliation.
+            party_node = self._get_node(
+                district_node,
+                './/span[@class="nys-senator--party"]')
+            if party_node is not None:
+                party_text = party_node.text.strip()
+
+                if party_text.startswith('(D'):
+                    party = 'Democratic'
+                elif party_text.startswith('(R'):
+                    party = 'Republican'
+                else:
+                    raise ValueError('Unexpected party affiliation: {}'
+                        .format(party_text))
+            else:
+                party = None
+
+            # Find legislator's profile photograph.
+            photo_node = self._get_node(
+                legislator_node,
+                './/div[@class="nys-senator--thumb"]/img')
+            if photo_node is not None:
+                photo_url = photo_node.attrib['src']
+            else:
+                photo_url = None
+
+            legislator = Legislator(
+                full_name=name,
+                term=term,
+                chamber='upper',
+                district=district,
+                party=party,
+                photo_url=photo_url
+            )
             legislator.add_source(url)
+            legislator['url'] = legislator_url
 
-            contact_link = link.xpath("../span[@class = 'contact']/a")[0]
-            contact_url = contact_link.attrib['href']
+            # Find legislator office contact information.
+            contact_url = legislator_url + '/contact'
             self.scrape_upper_offices(legislator, contact_url)
-
-            legislator['url'] = contact_url.replace('/contact', '')
 
             self.save_legislator(legislator)
 
     def scrape_upper_offices(self, legislator, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        legislator_page = self._get_page(url)
+
         legislator.add_source(url)
 
-        xpath = '//a[contains(@href, "profile-pictures")]/@href'
-        legislator['photo_url'] = page.xpath(xpath).pop()
+        # Find capitol office contact information.
+        address_node = self._get_node(
+            legislator_page,
+            '//div[@class="adr" and span[contains(text(), "Albany Office")]]')
 
-        email = page.xpath('//span[@class="spamspan"]')
-        if email:
-            email = email[0].text_content()
-            email = email.replace(' [at] ', '@').replace(' [dot] ', '.')
+        # Terminate if capitol office contact information is not found.
+        if not address_node:
+            return
 
-        try:
-            span = page.xpath("//span[. = 'Albany Office']/..")[0]
-            address = span.xpath("string(div[1])").strip()
-            address = re.sub(r'[ ]{2,}', "", address)
-            address += "\nAlbany, NY 12247"
+        street_address_text = self._get_node(
+            address_node,
+            './/div[@class="street-address"][1]/'
+            'span[@itemprop="streetAddress"][1]/text()')
+        if street_address_text:
+            street_address = street_address_text.strip()
+        else:
+            street_address = None
+        city_text = self._get_node(
+            address_node,
+            './/span[@class="locality"][1]/text()')
+        if city_text:
+            city = city_text.strip()
+        else:
+            city = None
+        state_text = self._get_node(
+            address_node,
+            './/span[@class="region"][1]/text()')
+        if state_text:
+            state = state_text.strip()
+        else:
+            state = None
+        zip_code_text = self._get_node(
+            address_node,
+            './/span[@class="postal-code"][1]/text()')
+        if zip_code_text:
+            zip_code = zip_code_text.strip()
+        else:
+            zip_code = None
 
-            phone = span.xpath("div[@class='tel']/span[@class='value']")[0]
-            phone = phone.text.strip()
+        # Build capitol office physical address.
+        if (street_address is not None and
+            city is not None and
+            state is not None and
+            zip_code is not None):
+            address = "%s\n%s, %s %s" % (
+                street_address, city, state, zip_code)
+        else:
+            address = None
 
-            office = dict(
-                    name='Capitol Office',
-                    type='capitol', phone=phone,
-                    fax=None, email=email,
-                    address=address)
-            legislator.add_office(**office)
+        # Find capitol office phone number.
+        phone_node = self._get_node(
+            address_node,
+            './/div[@class="tel"]/span[@itemprop="telephone"]')
+        if phone_node is not None:
+            phone = phone_node.text.strip()
+        else:
+            phone = None
 
-        except IndexError:
-            #to make sure we get the email in there if it exists
-                if email:
-                    office = dict(
-                        name='Capitol Office',
-                        type='capitol',
-                        email=email)
-                legislator.add_office(**office)
+        # Find capitol office fax number.
+        fax_node = self._get_node(
+            address_node,
+            './/div[@class="tel"]/span[@itemprop="faxNumber"]')
+        if fax_node is not None:
+            fax = fax_node.text.strip()
+        else:
+            fax = None
 
-        try:
+        # Find legislator e-mail address.
+        email_node = self._get_node(
+            legislator_page,
+            '//div[contains(concat(" ", normalize-space(@class), " "), '
+            '" c-block--senator-email ")]/div/a[contains(@href, "mailto:")]')
+        if email_node is not None:
+            email_text = email_node.attrib['href']
+            email = re.sub(r'       for office in offices:^mailto:', '', email_text)
+        else:
+            email = None
+
+        office = dict(
+            name='Capitol Office',
+            type='capitol',
+            address=address,
+            phone=phone,
+            fax=fax,
+            email=email,
+        )
+        legislator.add_office(**office)
+
+        offices = legislator_page.xpath(
+            '//div[@class="adr" and span[@class="fn" and contains(text(),'
+            '"District Office")]]')
+
+        """try:
             span = page.xpath("//span[. = 'District Office']/..")[0]
             address = span.xpath("string(div[1])").strip() + "\n"
             address += span.xpath(
@@ -120,7 +218,7 @@ class NYLegislatorScraper(LegislatorScraper):
             legislator.add_office(**office)
         except IndexError:
             # No district office yet?
-            pass
+            pass"""
 
     def scrape_lower(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
@@ -353,3 +451,26 @@ class NYLegislatorScraper(LegislatorScraper):
             return assembly_affiliations
         else:
             raise AssertionError("Unknown chamber passed to party parser")
+
+    def _get_node(self, base_node, xpath_query):
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+    def _get_page(self, url):
+        page = self.get(url).text
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        return page
