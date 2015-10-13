@@ -4,7 +4,9 @@ import re
 import itertools
 import datetime
 import lxml.html
+import logging
 from billy.scrape.legislators import LegislatorScraper, Legislator
+logger = logging.getLogger('openstates')
 
 
 class NYLegislatorScraper(LegislatorScraper):
@@ -285,8 +287,9 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator_node,
                 './/div[@class="nys-senator--info"]')
 
-            # Fail if no legislator information was found.
-            assert(info_node)
+            if not info_node:
+                warning = 'No information found for legislator at {}.'
+                logger.warning(warning.format(legislator_url)
 
             # Find legislator's name.
             name_node = self._get_node(
