@@ -130,8 +130,16 @@ class NYLegislatorScraper(LegislatorScraper):
         else:
             office_name_text = ()
 
-        office_name = None
-        office_type = None
+        # Initializing default values for office attributes.
+        office_name    = None
+        office_type    = None
+        street_address = None
+        city           = None
+        state          = None
+        zip_code       = None
+        address        = None
+        phone          = None
+        fax            = None
 
         # Determine office names/types consistent with Open States internal
         # format.
@@ -153,8 +161,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if street_address_text is not None:
             street_address = street_address_text.strip()
-        else:
-            street_address = None
 
         # Get office city.
         city_text = self._get_node(
@@ -163,8 +169,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if city_text is not None:
             city = city_text.strip()
-        else:
-            city = None
 
         # Get office state.
         state_text = self._get_node(
@@ -173,8 +177,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if state_text is not None:
             state = state_text.strip()
-        else:
-            state = None
 
         # Get office postal code.
         zip_code_text = self._get_node(
@@ -183,8 +185,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if zip_code_text is not None:
             zip_code = zip_code_text.strip()
-        else:
-            zip_code = None
 
         # Build office physical address.
         if (street_address is not None and
@@ -203,8 +203,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if phone_node is not None:
             phone = phone_node.text.strip()
-        else:
-            phone = None
 
         # Get office fax number.
         fax_node = self._get_node(
@@ -213,8 +211,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         if fax_node is not None:
             fax = fax_node.text.strip()
-        else:
-            fax = None
 
         office = dict(
             name=office_name,
@@ -287,9 +283,17 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator_node,
                 './/div[@class="nys-senator--info"]')
 
+            # Skip legislator if information is missing entirely.
             if not info_node:
                 warning = 'No information found for legislator at {}.'
-                logger.warning(warning.format(legislator_url)
+                logger.warning(warning.format(legislator_url))
+                continue
+
+            # Initialize default values for legislator attributes.
+            name      = None
+            district  = None
+            party     = None
+            photo_url = None
 
             # Find legislator's name.
             name_node = self._get_node(
@@ -310,8 +314,6 @@ class NYLegislatorScraper(LegislatorScraper):
             if district_node is not None:
                 district_text = district_node.xpath('.//text()')[2]
                 district = re.sub(r'\D', '', district_text)
-            else:
-                district = None
 
             # Find legislator's party affiliation.
             party_node = self._get_node(
@@ -328,8 +330,6 @@ class NYLegislatorScraper(LegislatorScraper):
                 else:
                     raise ValueError('Unexpected party affiliation: {}'
                         .format(party_text))
-            else:
-                party = None
 
             # Find legislator's profile photograph.
             photo_node = self._get_node(
@@ -338,8 +338,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
             if photo_node is not None:
                 photo_url = photo_node.attrib['src']
-            else:
-                photo_url = None
 
             legislator = Legislator(
                 full_name=name,
