@@ -264,7 +264,7 @@ class NYLegislatorScraper(LegislatorScraper):
         getattr(self, 'scrape_' + chamber + '_chamber')()
 
 
-    def scrape_upper(self, term):
+    def scrape_upper_chamber(self, term):
         """
         Finds legislators from the upper chamber of the NY senate.
         """
@@ -389,7 +389,7 @@ class NYLegislatorScraper(LegislatorScraper):
                 legislator.add_office(**office)
 
 
-    def scrape_lower(self, term):
+    def scrape_lower_chamber(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
         page = self.get(url).text
         page = lxml.html.fromstring(page)
