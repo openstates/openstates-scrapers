@@ -261,7 +261,7 @@ class NYLegislatorScraper(LegislatorScraper):
 
 
     def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')()
+        getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
 
     def scrape_upper_chamber(self, term):
