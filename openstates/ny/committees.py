@@ -1,147 +1,282 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import re
 import lxml.html
+import logging
 from billy.scrape.committees import CommitteeScraper, Committee
-
-
-def parse_name(name):
-    """
-    Split a committee membership string into name and role.
-
-    >>> parse_name('Felix Ortiz')
-    ('Felix Ortiz', 'member')
-    >>> parse_name('Felix Ortiz (Chair)')
-    ('Felix Ortiz', 'chair')
-    >>> parse_name('Hon. Felix Ortiz, Co-Chair')
-    ('Felix Ortiz', 'co-chair')
-    >>> parse_name('Owen H.\\r\\nJohnson (Vice Chairperson)')
-    ('Owen H. Johnson', 'vice chairperson')
-    """
-
-
-    name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
-    name = re.sub(r'\s+', ' ', name)
-
-    roles = ["Chairwoman", "Chairperson", "Chair", "Secretary", "Treasurer",
-             "Parliamentarian", "Chaplain"]
-    match = re.match(
-        r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
-        name)
-
-    role = "member"
-    if match:
-        name = match.group(1).strip(' ,')
-        role = match.group(2).lower()
-
-
-    name = name.replace("Sen.","").replace("Rep.","").strip()
-
-
-    return (name, role)
+logger = logging.getLogger('openstates')
 
 
 class NYCommitteeScraper(CommitteeScraper):
     jurisdiction = "ny"
     latest_only = True
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber)()
 
-    def scrape_lower(self, only_names=None):
-        committees = []
-        url = "http://assembly.state.ny.us/comm/"
+    def _parse_name(self, name):
+        """
+        Split a committee membership string into name and role.
+
+        >>> parse_name('Felix Ortiz')
+        ('Felix Ortiz', 'member')
+        >>> parse_name('Felix Ortiz (Chair)')
+        ('Felix Ortiz', 'chair')
+        >>> parse_name('Hon. Felix Ortiz, Co-Chair')
+        ('Felix Ortiz', 'co-chair')
+        >>> parse_name('Owen H.\\r\\nJohnson (Vice Chairperson)')
+        ('Owen H. Johnson', 'vice chairperson')
+        """
+        name = re.sub(r'^(Hon\.|Assemblyman|Assemblywoman)\s+', '', name)
+        name = re.sub(r'\s+', ' ', name)
+
+        roles = ['Chairwoman', 'Chairperson', 'Chair', 'Secretary',
+            'Treasurer', 'Parliamentarian', 'Chaplain']
+        match = re.match(
+            r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
+            name)
+
+        role = 'member'
+
+        if match:
+            name = match.group(1).strip(' ,')
+            role = match.group(2).lower()
+
+        name = name.replace('Sen.', '').replace('Rep.', '').strip()
+
+        return (name, role)
+
+
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+
+    def _get_page(self, url):
+        """
+        Prepares page retrieved from URL for xpath querying.
+        """
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, 'sec=mem')]"):
-            name = link.xpath("string(../strong)").strip()
-            if 'Caucus' in name:
-                continue
+        return page
 
-            url = link.attrib['href']
 
-            committees.append(name)
+    def scrape(self, chamber, term):
+        getattr(self, 'scrape_' + chamber + '_chamber')()
 
-            self.scrape_lower_committee(name, url)
+
+    def scrape_lower_chamber(self, only_names=None):
+        url = 'http://assembly.state.ny.us/comm/'
+
+        page = self._get_page(url)
+
+        committees = []
+
+        link_nodes = self._get_nodes(
+            page,
+            '//a[contains(@href, "sec=mem")]')
+
+        for link_node in link_nodes:
+            committee_name_text = self._get_node(
+                link_node,
+                '../strong/text()')
+
+            if committee_name_text is not None:
+                committee_name = committee_name_text.strip()
+                assert committee_name
+
+                if 'Caucus' in committee_name:
+                    continue
+
+                committees.append(committee_name)
+
+                url = link_node.attrib['href']
+                committee = self.scrape_lower_committee(committee_name, url)
+
+                self.save_committee(committee)
+
         return committees
 
+
     def scrape_lower_committee(self, name, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
+        page = self._get_page(url)
 
-        comm = Committee('lower', name)
-        comm.add_source(url)
+        committee = Committee('lower', name)
+        committee.add_source(url)
+
         seen = set()
-        for link in page.xpath("//div[@class='commlinks']//a[contains(@href, 'mem')]"):
 
-            member = link.text.strip()
-            member = re.sub(r'\s+', ' ', member)
+        member_links = self._get_nodes(
+            page,
+            '//div[@class="commlinks"]//a[contains(@href, "mem")]')
 
-            name, role = parse_name(member)
-            if name is None:
+        for member_link in member_links:
+            member_name = None
+            member_role = None
+
+            member_text = member_link.text
+            if member_text is not None:
+                member = member_text.strip()
+                member = re.sub(r'\s+', ' ', member)
+                member_name, member_role = self._parse_name(member)
+
+            if member_name is None:
                 continue
 
             # Figure out if this person is the chair.
-            role_type = link.xpath('../../preceding-sibling::div[1]/text()')
+            role_type = self._get_node(
+                member_link,
+                '../../preceding-sibling::div[1]/text()')
+
             if role_type in (['Chair'], ['Co-Chair']):
-                role = 'chair'
+                member_role = 'chair'
             else:
-                role = 'member'
+                member_role = 'member'
 
             if name not in seen:
-                comm.add_member(name, role)
-                seen.add(name)
+                committee.add_member(member_name, member_role)
+                seen.add(member_name)
 
-        if comm['members']:
-            self.save_committee(comm)
+        return committee
 
-    def scrape_upper(self):
+
+    def scrape_upper_chamber(self):
+        url = 'http://www.nysenate.gov/senators-committees'
+
+        page = self._get_page(url)
+
         committees = []
-        url = "http://www.nysenate.gov/committees"
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
 
-        for h2 in page.xpath("//h2"):
-            committee_types = [
-                'Standing Committees',
-                'Temporary Committees',
-                'Task Forces & Other Entities'
-            ]
+        committee_nodes = self._get_nodes(
+            page,
+            '//div[@id="c-committees-container"][1]//'
+            'a[@class="c-committee-link"]')
 
-            if h2.text not in committee_types:
-                continue
+        for committee_node in committee_nodes:
+            name_text = self._get_node(
+                committee_node,
+                './h4[@class="c-committee-title"][1]/text()')
 
-            for link in h2.getparent().xpath(".//a[contains(@href, '/committee/')]"):
-                name = link.text.strip()
+            if name_text is not None:
+                name = name_text.strip()
+                assert name
 
                 committees.append(name)
-                self.scrape_upper_committee(name, link.attrib['href'])
+
+                # Retrieve committee information.
+                committee_url = committee_node.attrib['href']
+                committee = self.scrape_upper_committee(name,
+                    committee_url)
+
+                self.save_committee(committee)
 
         return committees
 
-    def scrape_upper_committee(self, name, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
 
-        comm = Committee('upper', name)
-        comm.add_source(url)
+    def scrape_upper_committee(self, committee_name, url):
+        page = self._get_page(url)
 
-        chair_div = page.xpath("//div[@class = 'committee-chair']")
-        for chair in chair_div:
-            role = chair.xpath("./label/text()")[0].replace(":","").strip().lower()
+        committee = Committee('upper', committee_name)
+        committee.add_source(url)
 
-            # Remove title and arbitrary whitespace from names
-            member_name = chair.xpath(".//a[not(@class)]/text()")[-2].strip()
-            member_name = re.sub(r'^Sen\.', "", member_name).strip()
-            member_name = " ".join(member_name.split())
+        # Committee member attributes.
+        member_name = None
+        member_role = None
 
-            comm.add_member(member_name, role)
+        # Attempt to record the committee chair.
+        committee_chair = self._get_node(
+            page,
+            '//div[@class="nys-senator" and div[@class="nys-senator--info"'
+            ' and p[@class="nys-senator--title" and'
+            ' normalize-space(text())="Chair"]]]')
+        if committee_chair is not None:
+            info_node = self._get_node(
+                committee_chair,
+                'div[@class="nys-senator--info" and p[@class='
+                '"nys-senator--title" and contains(text(), "Chair")]]')
+            if info_node is not None:
+                # Attempt to retrieve committee chair's name.
+                member_name_text = self._get_node(
+                    info_node,
+                    './h4[@class="nys-senator--name"][1]/a[1]/text()')
 
-        member_list = page.xpath("//div[@class='committee-members']//ul/li/div/span/a/text()")
-        for member in member_list:
-            member_name = " ".join(member.split())
-            comm.add_member(member_name, "member")
+                if member_name_text is not None:
+                    member_name = member_name_text.strip()
+                else:
+                    warning = ('Could not find the name of the chair for the'
+                        ' {} committee')
+                    logger.warning(warning.format(committee_name))
 
-        if comm['members']:
-            self.save_committee(comm)
+                # Attempt to retrieve committee chair's role (explicitly).
+                member_role_text = self._get_node(
+                    info_node,
+                    './p[@class="nys-senator--title" and contains(text(), '
+                    '"Chair")][1]/text()')
+
+                if member_role_text is not None:
+                    member_role = member_role_text.strip()
+                else:
+                    # This seems like a silly case, but could still be useful
+                    # to check for.
+                    warning = ('Could not find the role of the chair for the'
+                        ' {} committee')
+                    logger.warning(warning.format(committee_name))
+
+                if member_name is not None and member_role is not None:
+                    committee.add_member(member_name, member_role)
+            else:
+                warning = ('Could not find information for the chair of the'
+                    ' {} committee.')
+                logger.warning(warning.format(committee_name))
+        else:
+            warning = 'Missing chairperson for the {} committee.'
+            logger.warning(warning.format(committee_name))
+
+        # Get list of regular committee members.
+        member_nodes = self._get_nodes(
+            page,
+            '//div[contains(concat(" ", @class, " "), '
+            '" c-senators-container ")]//div[@class="view-content"]/'
+            ' div/a')
+
+        # Attempt to record each committee member.
+        for member_node in member_nodes:
+            member_name = None
+
+            member_name_text = self._get_node(
+                member_node,
+                './/div[@class="nys-senator--info"][1]/h4[@class='
+                '"nys-senator--name"][1]/text()')
+
+            if member_name_text is not None:
+                member_name = member_name_text.strip()
+            
+            if member_name is not None:
+                committee.add_member(member_name, 'member')
+            else:
+                warning = ('Could not find the name of a member in the {}'
+                    ' committee')
+                logger.warning(warning.format(committee_name))
+
+        return committee
