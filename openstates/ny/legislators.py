@@ -20,7 +20,6 @@ class NYLegislatorScraper(LegislatorScraper):
         The formatting of this page is pretty abysmal, so apologies
         about the dirtiness of this method.
         """
-
         # These may need to be changed, but should be mostly constant
         NY_SEATS_IN_US_HOUSE = 27
         NY_STATE_SENATE_SEATS = 63
@@ -117,10 +116,14 @@ class NYLegislatorScraper(LegislatorScraper):
             raise AssertionError("Unknown chamber passed to party parser")
 
     def _parse_office(self, office_node):
+        """
+        Gets the contact information from the provided office.
+        """
         office_name_text = self._get_node(
             office_node,
             './/span[@itemprop="name"]/text()')
-        if office_name_text:
+
+        if office_name_text is not None:
             office_name_text = office_name_text.strip()
         else:
             office_name_text = ()
@@ -128,7 +131,8 @@ class NYLegislatorScraper(LegislatorScraper):
         office_name = None
         office_type = None
 
-        # Determine office names/types consistent with Open States internals.
+        # Determine office names/types consistent with Open States internal
+        # format.
         if 'Albany Office' in office_name_text:
             office_name = 'Capitol Office'
             office_type = 'capitol'
@@ -139,32 +143,43 @@ class NYLegislatorScraper(LegislatorScraper):
             # Terminate if not a capitol or district office.
             return None
 
+        # Get office street address.
         street_address_text = self._get_node(
             office_node,
             './/div[@class="street-address"][1]/'
             'span[@itemprop="streetAddress"][1]/text()')
-        if street_address_text:
+
+        if street_address_text is not None:
             street_address = street_address_text.strip()
         else:
             street_address = None
+
+        # Get office city.
         city_text = self._get_node(
             office_node,
             './/span[@class="locality"][1]/text()')
-        if city_text:
+
+        if city_text is not None:
             city = city_text.strip()
         else:
             city = None
+
+        # Get office state.
         state_text = self._get_node(
             office_node,
             './/span[@class="region"][1]/text()')
-        if state_text:
+
+        if state_text is not None:
             state = state_text.strip()
         else:
             state = None
+
+        # Get office postal code.
         zip_code_text = self._get_node(
             office_node,
             './/span[@class="postal-code"][1]/text()')
-        if zip_code_text:
+
+        if zip_code_text is not None:
             zip_code = zip_code_text.strip()
         else:
             zip_code = None
@@ -179,17 +194,21 @@ class NYLegislatorScraper(LegislatorScraper):
         else:
             address = None
 
+        # Get office phone number.
         phone_node = self._get_node(
             office_node,
             './/div[@class="tel"]/span[@itemprop="telephone"]')
+
         if phone_node is not None:
             phone = phone_node.text.strip()
         else:
             phone = None
 
+        # Get office fax number.
         fax_node = self._get_node(
             office_node,
             './/div[@class="tel"]/span[@itemprop="faxNumber"]')
+
         if fax_node is not None:
             fax = fax_node.text.strip()
         else:
@@ -244,13 +263,13 @@ class NYLegislatorScraper(LegislatorScraper):
 
 
     def scrape(self, chamber, term):
-        if chamber == 'upper':
-            self.scrape_upper(term)
-        else:
-            self.scrape_lower(term)
+        getattr(self, 'scrape_' + chamber + '_chamber')()
 
 
     def scrape_upper(self, term):
+        """
+        Finds legislators from the upper chamber of the NY senate.
+        """
         url = 'http://www.nysenate.gov/senators-committees'
 
         page = self._get_page(url)
@@ -273,6 +292,7 @@ class NYLegislatorScraper(LegislatorScraper):
             name_node = self._get_node(
                 info_node,
                 'h4[@class="nys-senator--name"]')
+
             if name_node is not None:
                 name = name_node.text.strip()
             else:
@@ -282,6 +302,7 @@ class NYLegislatorScraper(LegislatorScraper):
             district_node = self._get_node(
                 info_node,
                 './/span[@class="nys-senator--district"]')
+
             if district_node is not None:
                 district_text = district_node.xpath('.//text()')[2]
                 district = re.sub(r'\D', '', district_text)
@@ -292,6 +313,7 @@ class NYLegislatorScraper(LegislatorScraper):
             party_node = self._get_node(
                 district_node,
                 './/span[@class="nys-senator--party"]')
+
             if party_node is not None:
                 party_text = party_node.text.strip()
 
@@ -309,6 +331,7 @@ class NYLegislatorScraper(LegislatorScraper):
             photo_node = self._get_node(
                 legislator_node,
                 './/div[@class="nys-senator--thumb"]/img')
+
             if photo_node is not None:
                 photo_url = photo_node.attrib['src']
             else:
@@ -343,6 +366,7 @@ class NYLegislatorScraper(LegislatorScraper):
             legislator_page,
             '//div[contains(concat(" ", normalize-space(@class), " "), '
             '" c-block--senator-email ")]/div/a[contains(@href, "mailto:")]')
+
         if email_node is not None:
             email_text = email_node.attrib['href']
             email = re.sub(r'^mailto:', '', email_text)
@@ -357,7 +381,7 @@ class NYLegislatorScraper(LegislatorScraper):
         for office_node in office_nodes:
             office = self._parse_office(office_node)
 
-            if office:
+            if office is not None:
                 if office['type'] == 'capitol' and email is not None:
                     office['email'] = email
                 legislator.add_office(**office)
