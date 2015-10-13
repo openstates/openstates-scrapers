@@ -1,8 +1,6 @@
 import re
-
-from billy.scrape.committees import CommitteeScraper, Committee
-
 import lxml.html
+from billy.scrape.committees import CommitteeScraper, Committee
 
 
 def parse_name(name):
