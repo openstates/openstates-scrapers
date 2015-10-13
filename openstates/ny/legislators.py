@@ -299,7 +299,8 @@ class NYLegislatorScraper(LegislatorScraper):
             if name_node is not None:
                 name = name_node.text.strip()
             else:
-                name = None
+                # Skip the legislator if a name cannot be found.
+                continue
 
             # Find legislator's district number.
             district_node = self._get_node(
