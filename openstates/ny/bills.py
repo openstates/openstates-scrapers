@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 '''Note, this needs to scrape both assembly and senate sites. Neither
 house has the other's votes, so you have to scrape both and merge them.
 '''
