@@ -1,5 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
 import re
 import itertools
 import datetime
@@ -11,7 +9,6 @@ logger = logging.getLogger('openstates')
 
 class NYLegislatorScraper(LegislatorScraper):
     jurisdiction = 'ny'
-
 
     def _identify_party(self, chamber):
         """
@@ -222,7 +219,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         return office
 
-
     def _get_node(self, base_node, xpath_query):
         """
         Attempts to return only the first node found for an xpath query. Meant
@@ -234,7 +230,6 @@ class NYLegislatorScraper(LegislatorScraper):
             node = None
 
         return node
-
 
     def _get_nodes(self, base_node, xpath_query):
         """
@@ -248,7 +243,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         return nodes
 
-
     def _get_page(self, url):
         """
         Prepares page retrieved from URL for xpath querying.
@@ -259,10 +253,8 @@ class NYLegislatorScraper(LegislatorScraper):
 
         return page
 
-
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
-
 
     def scrape_upper_chamber(self, term):
         """
@@ -357,7 +349,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
             self.save_legislator(legislator)
 
-
     def scrape_upper_offices(self, legislator, url):
         legislator_page = self._get_page(url)
 
@@ -387,7 +378,6 @@ class NYLegislatorScraper(LegislatorScraper):
                 if office['type'] == 'capitol' and email is not None:
                     office['email'] = email
                 legislator.add_office(**office)
-
 
     def scrape_lower_chamber(self, term):
         url = "http://assembly.state.ny.us/mem/?sh=email"
@@ -462,7 +452,6 @@ class NYLegislatorScraper(LegislatorScraper):
             self.scrape_lower_offices(leg_url, legislator, email)
 
             self.save_legislator(legislator)
-
 
     def scrape_lower_offices(self, url, legislator, email=None):
         legislator.add_source(url)
