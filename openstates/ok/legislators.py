@@ -1,7 +1,5 @@
 import re
-
 import lxml.html
-
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
@@ -25,7 +23,7 @@ class OKLegislatorScraper(LegislatorScraper):
         url = "http://www.okhouse.gov/Members/Default.aspx"
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for tr in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_RadGrid1_ctl00']/tbody/tr")[1:]:
+        for tr in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_RadGrid1_ctl00']/tbody/tr")[0:]:
             name = tr.xpath('.//td[1]/a')[0].text.strip()
 
             if name.startswith('House District'):
