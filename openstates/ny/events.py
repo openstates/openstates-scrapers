@@ -1,11 +1,9 @@
 import re
 import datetime as dt
-
-from billy.scrape.events import EventScraper, Event
-from openstates.utils import LXMLMixin
-
 import pytz
 import lxml.html
+from billy.scrape.events import EventScraper, Event
+from openstates.utils import LXMLMixin
 
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 
@@ -130,12 +128,13 @@ class NYEventScraper(EventScraper, LXMLMixin):
 
     def scrape(self, chamber, session):
         self.scrape_lower(chamber, session)
-        self.scrape_upper(chamber, session)
+        #self.scrape_upper(chamber, session)
 
     def scrape_lower(self, chamber, session):
         if chamber == 'other':
             self.lower_parse_page(url, session)
 
+    """
     def scrape_upper(self, chamber, session):
         if chamber != 'upper':
             return
@@ -179,3 +178,4 @@ class NYEventScraper(EventScraper, LXMLMixin):
                 bill_id, type='bill',
                 description=bill['summary'] or 'No description given.')
         return event
+        """
