@@ -566,6 +566,7 @@ metadata = dict(
             'Forty-seventh Legislature - First Special Session',
             'Forty-eighth Legislature - First Regular Session',
             'Forty-eighth Legislature - Second Regular Session',
+            'Fifty-second Legislature - First Special Session',
             'Miscellaneous Legislature - New Member Orientation Session',
             'Miscellaneous Legislature - Technical Session',],
         feature_flags=[ 'events', 'influenceexplorer' ],
