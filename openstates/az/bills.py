@@ -117,10 +117,13 @@ class AZBillScraper(BillScraper):
             tds = row.xpath('td')
             amendment_title = tds[1].text_content().strip()
             amendment_link = tds[2].xpath('string(font/a/@href)')
+
             if amendment_link == "": #if there's no html link, take the pdf one which is next
                 amendment_link = tds[3].xpath('string(font/a/@href)')
-            bill.add_document(amendment_title, amendment_link,
-                              type='amendment')
+
+            if amendment_link:
+                bill.add_document(amendment_title, amendment_link,
+                    type='amendment')
 
         # videos
         # http://azleg.granicus.com/MediaPlayer.php?view_id=13&clip_id=7684
