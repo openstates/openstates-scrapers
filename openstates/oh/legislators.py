@@ -38,7 +38,7 @@ class OHLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         url = (
-            "http://www.ohiosenate.gov/senate/members/senate-directory"
+            "http://www.ohiosenate.gov/members/senate-directory"
             if chamber == "upper" else
             "http://www.ohiohouse.gov/members/member-directory")
         self.scrape_page(chamber, term, url)
