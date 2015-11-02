@@ -5,6 +5,30 @@ import re
 class WALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'wa'
 
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
     def scrape(self, chamber, term):
         if chamber == 'upper':
             index_url = 'http://www.leg.wa.gov/senate/senators/Pages/default.aspx'
