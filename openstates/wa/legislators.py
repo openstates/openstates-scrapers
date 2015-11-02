@@ -89,15 +89,19 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
             position = re.search(r'/([[0-9]+)$', email_link_url).group(1)
  
             # Need to get the email from the email page by matching with the member's district and position
-            email_xpath = './/tr/td/a[contains(@href, "memberEmail/%s/%s")]/parent::td/following-sibling::td[1]/text()' % (district_num, position)
-            capitol_email = email_doc.xpath(email_xpath)[0]
+            email = self._get_node(
+                email_doc,
+                './/tr/td/a[contains(@href, "memberEmail/{}/{}")]/parent::td/'
+                'following-sibling::td[1]/text()'.format(
+                    district_num,
+                    position))
 
             leg.add_office(
                 'capitol',
                 'Capitol Office',
                 address=capitol_address,
                 phone=capitol_phone,
-                email = capitol_email,
+                email=email,
                 fax=capitol_fax
             )
 
