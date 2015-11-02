@@ -5,6 +5,30 @@ import re
 class WALegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'wa'
 
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
     def scrape(self, chamber, term):
         if chamber == 'upper':
             index_url = 'http://www.leg.wa.gov/senate/senators/Pages/default.aspx'
@@ -65,15 +89,19 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
             position = re.search(r'/([[0-9]+)$', email_link_url).group(1)
  
             # Need to get the email from the email page by matching with the member's district and position
-            email_xpath = './/tr/td/a[contains(@href, "memberEmail/%s/%s")]/parent::td/following-sibling::td[1]/text()' % (district_num, position)
-            capitol_email = email_doc.xpath(email_xpath)[0]
+            email = self._get_node(
+                email_doc,
+                './/tr/td/a[contains(@href, "memberEmail/{}/{}")]/parent::td/'
+                'following-sibling::td[1]/text()'.format(
+                    district_num,
+                    position))
 
             leg.add_office(
                 'capitol',
                 'Capitol Office',
                 address=capitol_address,
                 phone=capitol_phone,
-                email = capitol_email,
+                email=email,
                 fax=capitol_fax
             )
 
