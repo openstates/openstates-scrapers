@@ -275,7 +275,7 @@ class NYLegislatorScraper(LegislatorScraper):
                 './/div[@class="nys-senator--info"]')
 
             # Skip legislator if information is missing entirely.
-            if not info_node:
+            if info_node is None:
                 warning = 'No information found for legislator at {}.'
                 logger.warning(warning.format(legislator_url))
                 continue
