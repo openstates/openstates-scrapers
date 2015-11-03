@@ -214,7 +214,6 @@ class NYLegislatorScraper(LegislatorScraper):
             type=office_type,
             phone=phone,
             fax=fax,
-            email=None,
             address=address)
 
         return office
@@ -276,7 +275,7 @@ class NYLegislatorScraper(LegislatorScraper):
                 './/div[@class="nys-senator--info"]')
 
             # Skip legislator if information is missing entirely.
-            if not info_node:
+            if info_node is None:
                 warning = 'No information found for legislator at {}.'
                 logger.warning(warning.format(legislator_url))
                 continue
@@ -363,6 +362,7 @@ class NYLegislatorScraper(LegislatorScraper):
         if email_node is not None:
             email_text = email_node.attrib['href']
             email = re.sub(r'^mailto:', '', email_text)
+            legislator['email'] = email
         else:
             email = None
 
@@ -375,8 +375,6 @@ class NYLegislatorScraper(LegislatorScraper):
             office = self._parse_office(office_node)
 
             if office is not None:
-                if office['type'] == 'capitol' and email is not None:
-                    office['email'] = email
                 legislator.add_office(**office)
 
     def scrape_lower_chamber(self, term):
