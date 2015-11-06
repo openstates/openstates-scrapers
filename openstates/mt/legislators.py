@@ -235,7 +235,7 @@ class MTLegislatorScraper(LegislatorScraper):
         else:
             if email:
                 html = lxml.html.tostring(email.getparent())
-                match = re.search('\w+@\w+\.[a-z]+', html)
+                match = re.search('[a-zA-Z0-9\.\_\%\+\-]+@\w+\.[a-z]+', html)
                 if match:
                     details['email'] = match.group()
 
