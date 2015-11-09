@@ -2,26 +2,58 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
-
 import lxml.html
 import re
 import unicodedata
 import scrapelib
+import logging
 
-PHONE_RE = re.compile('\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
 
 class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'pr'
 
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+    def _get_page(self, url):
+        """
+        Prepares page retrieved from URL for xpath querying.
+        """
+        page = self.get(url).text
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        return page
+
     def scrape(self, chamber, term):
+        self.logger.info('Scraping {} {} chamber.'.format(
+            self.jurisdiction.upper(),
+            chamber))
         self.validate_term(term, latest_only=True)
+        getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
-        if chamber == 'upper':
-            self.scrape_senate(term)
-        elif chamber == 'lower':
-            self.scrape_house(term)
-
-    def scrape_senate(self, term):
+    def scrape_upper_chamber(self, term):
         urls = { 
             'At-Large': 'http://www.senadopr.us/Pages/SenadoresporAcumulacion.aspx',
             'I': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
@@ -78,92 +110,127 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
                 self.save_legislator(leg)
 
-    def scrape_house(self, term):
+    def scrape_lower_chamber(self, term):
+        # E-mail contact is now hidden behind webforms. Sadness.
+
         party_map = {'PNP': 'Partido Nuevo Progresista',
                      'PPD': u'Partido Popular Democr\xe1tico'}
 
-        url = 'http://www.camaraderepresentantes.org/cr_legs.asp'
-        doc = self.lxmlize(url)
+        url = 'http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara.aspx'
 
-        members = doc.xpath('//table[@class="img_news"]/tr/td[*]')
-        for member in members:
+        page = self.lxmlize(url)
 
-            (member_url, ) = member.xpath('a/@href')
-            (name, ) = member.xpath('font/b/text()[1]')
-            name = " ".join(name.split())
-            (photo_url, ) = member.xpath('a/img/@src')
-            party = party_map[member.xpath('font//font/text()')[0]]
+        member_nodes = self._get_nodes(
+            page,
+            '//div[@class="info-block"][1]//a[@class="opener"]')
 
-            member_text = member.text_content()
-            missing_district_on_index_page = False
-            try:
-                district = re.search(r'0?(\d{1,2})', member_text).group(1)
-            except AttributeError:
-                if "Distrito" not in member_text:
-                    district = 'At-Large'
-                else:
-                    self.warning(u"{} represents a district, but it is not listed".
-                            format(name))
-                    missing_district_on_index_page = True
+        if member_nodes is not None:
+            for member_node in member_nodes:
+                # Initialize default values for legislator attributes.
+                name      = None
+                district  = None
+                party     = None
+                photo_url = None
+                phone     = None
+                fax       = None
 
-                    # Special-case one member, whose page only displays a SQL error
-                    if name == u"Yashira M. Lebrón Rodríguez":
-                        leg = Legislator(
-                                term=term,
-                                chamber='lower',
-                                district='8',
-                                full_name=name,
-                                party=party
-                                )
-                        leg.add_source(url)
-                        self.save_legislator(leg)
+                photo_url = self._get_node(
+                    member_node,
+                    './/span[@class="identity"]/img/@src')
+    
+                # Node reference for convenience.
+                info_node = self._get_node(
+                    member_node,
+                    './/span[@class="info"]')
+    
+                name_node = self._get_node(
+                    info_node,
+                    './/span[@class="name"]')
+                # Strip titles from legislator name.
+                if name_node is not None:
+                    name_text = name_node.text.strip()
+                    name_text = re.sub(r'^Hon\.[\s]*', '', name_text)
+                    name_text = re.sub(r' - .*$', '', name_text)
+                    name = ' '.join(name_text.split())
+    
+                party_node = self._get_node(
+                    info_node,
+                    './/span[@class="party"]/span')
+                if party_node is not None:
+                    party_text = party_node.text.strip()
+                    party = party_map[party_text]
+    
+                district_node = self._get_node(
+                    info_node,
+                    './/span[@class="district"]')
+                if district_node is not None:
+                    district_text = district_node.text.strip()
 
-                        special_case_still_needed = True
-                        continue
+                    try:
+                        district_number = re.search(r'0?(\d{1,2})',
+                            district_text).group(1)
+                        district = district_text
+                    except AttributeError:
+                        if "Distrito" not in district_text:
+                            district = 'At-Large'
+                        else:
+                            warning = u'{} missing district number.'
+                            self.logger.warning(warning.format(name))
 
-            # Parse the member's webpage for contact information
-            member_doc = self.lxmlize(member_url)
+                phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
 
-            (email, ) = member_doc.xpath('//a[starts-with(@href, "mailto:")]/text()')
-            phone_and_fax = [
-                    x.strip() for x in
-                    member_doc.xpath(u'//b[contains(text(), "Teléfono(s):")]/..//text()')
-                    if x.strip()
-                    ]
-            try:
-                phone_index = phone_and_fax.index(u"Teléfono(s):") + 1
-                phone = phone_and_fax[phone_index]
-            except IndexError:
-                phone = None
-            try:
-                fax_index = phone_and_fax.index(u"Fax:") + 1
-                fax = phone_and_fax[fax_index]
-            except ValueError:
-                fax = None
+                # Only grabs the first validated phone number found.
+                # Typically, representatives have multiple phone numbers.
+                phone_nodes = self._get_nodes(
+                    member_node,
+                    './/span[@class="two-columns"]//span[@class="data-type" and '
+                    'contains(text(), "Tel:")]')
+                if phone_nodes is not None:
+                    has_valid_phone = False
 
-            if missing_district_on_index_page:
-                (district, ) = member_doc.xpath('//div[@class="tbrown"]/span/b/text()')
-                district = re.search(r'Distrito 0?(\d{1,2})', district).group(1)
+                    for phone_node in phone_nodes:
+                        # Don't keep searching phone numbers if a good
+                        # one is found.
+                        if has_valid_phone:
+                            break
 
-            leg = Legislator(
+                        phone_text = phone_node.text.strip()
+                        phone_text = re.sub(r'^Tel:[\s]*', '', phone_text).strip()
+
+                        # Phone number validation.
+                        phone_match = phone_pattern.match(phone_text)
+                        if phone_match is not None:
+                            phone = phone_match.group(0)
+                            has_valid_phone = True
+    
+                fax_node = self._get_node(
+                    member_node,
+                    './/span[@class="two-columns"]//span[@class="data-type" and '
+                    'contains(text(), "Fax:")]')
+                if fax_node is not None:
+                    fax_text = fax_node.text.strip()
+                    fax_text = re.sub(r'^Fax:[\s]*', '', fax_text).strip()
+
+                    # Fax number validation.
+                    fax_match = phone_pattern.match(fax_text)
+                    if fax_match is not None:
+                        fax = fax_match.group(0)
+    
+                leg = Legislator(
                     term=term,
                     chamber='lower',
                     district=district,
                     full_name=name,
                     party=party,
                     photo_url=photo_url
-                    )
-
-            leg.add_source(url)
-            leg.add_source(member_url)
-            leg.add_office(
+                )
+    
+                leg.add_source(url)
+                leg.add_office(
                     type='capitol',
                     name='Oficina del Capitolio',
                     phone=phone,
                     fax=fax,
-                    email=email
-                    )
+                )
 
-            self.save_legislator(leg)
-
-        assert special_case_still_needed, "Lebrón Rodríguez's page is no longer broken; remove special-casing"
+                self.save_legislator(leg)
