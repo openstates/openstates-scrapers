@@ -181,7 +181,8 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     try:
                         district_number = re.search(r'0?(\d{1,2})',
                             district_text).group(1)
-                        district = district_text
+                        district = re.sub(r'^Distrito[\s]*', '',
+                            district_text).strip()
                     except AttributeError:
                         if "Distrito" not in district_text:
                             district = 'At-Large'
