@@ -45,6 +45,10 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
 
+        self.logger.info('Scraping {} {} chamber.'.format(
+            self.jurisdiction.upper(),
+            chamber))
+
         # Xpath query string format for legislative chamber.
         base_xpath = '//table[@id="ctl00_mainCopy_gridView{}Districts"]'\
             '//a[contains(@href, "SPONCODE")]/@href'
