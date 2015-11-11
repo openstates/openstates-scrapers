@@ -141,6 +141,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                 # Initialize default values for legislator attributes.
                 name      = None
                 district  = None
+                address   = None
                 party     = None
                 photo_url = None
                 phone     = None
@@ -190,6 +191,14 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                             warning = u'{} missing district number.'
                             self.logger.warning(warning.format(name))
 
+                address_node = self._get_node(
+                    info_node,
+                    './/span[@class="address"]')
+                if address_node is not None:
+                    address_text = address_node.text
+                    if address_text and not address_text.isspace():
+                        address = address_text.strip()
+
                 # Only grabs the first validated phone number found.
                 # Typically, representatives have multiple phone numbers.
                 phone_nodes = self._get_nodes(
@@ -235,6 +244,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                 legislator.add_office(
                     type='capitol',
                     name='Oficina del Capitolio',
+                    address=address,
                     phone=phone,
                     fax=fax,
                 )
