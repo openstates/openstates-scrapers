@@ -4,7 +4,6 @@ import datetime
 import lxml.html
 import logging
 from billy.scrape.legislators import LegislatorScraper, Legislator
-logger = logging.getLogger('openstates')
 
 
 class NYLegislatorScraper(LegislatorScraper):
@@ -277,7 +276,7 @@ class NYLegislatorScraper(LegislatorScraper):
             # Skip legislator if information is missing entirely.
             if info_node is None:
                 warning = 'No information found for legislator at {}.'
-                logger.warning(warning.format(legislator_url))
+                self.logger.warning(warning.format(legislator_url))
                 continue
 
             # Initialize default values for legislator attributes.
