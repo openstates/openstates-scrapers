@@ -6,7 +6,6 @@ import lxml.html
 import re
 import unicodedata
 import scrapelib
-import logging
 
 
 class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -46,11 +45,24 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return page
 
+    def validate_phone_number(self, phone_number):
+        is_valid = False
+
+        # Phone format validation regex.
+        phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
+        phone_match = phone_pattern.match(phone_number)
+        if phone_match is not None:
+            is_valid = True
+
+        return is_valid
+
     def scrape(self, chamber, term):
+        self.validate_term(term, latest_only=True)
+
         self.logger.info('Scraping {} {} chamber.'.format(
             self.jurisdiction.upper(),
             chamber))
-        self.validate_term(term, latest_only=True)
+
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
     def scrape_upper_chamber(self, term):
@@ -169,7 +181,8 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     try:
                         district_number = re.search(r'0?(\d{1,2})',
                             district_text).group(1)
-                        district = district_text
+                        district = re.sub(r'^Distrito[\s]*', '',
+                            district_text).strip()
                     except AttributeError:
                         if "Distrito" not in district_text:
                             district = 'At-Large'
@@ -177,14 +190,12 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                             warning = u'{} missing district number.'
                             self.logger.warning(warning.format(name))
 
-                phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
-
                 # Only grabs the first validated phone number found.
                 # Typically, representatives have multiple phone numbers.
                 phone_nodes = self._get_nodes(
                     member_node,
-                    './/span[@class="two-columns"]//span[@class="data-type" and '
-                    'contains(text(), "Tel:")]')
+                    './/span[@class="two-columns"]//span[@class="data-type"'
+                    'and contains(text(), "Tel:")]')
                 if phone_nodes is not None:
                     has_valid_phone = False
 
@@ -194,29 +205,24 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                         if has_valid_phone:
                             break
 
-                        phone_text = phone_node.text.strip()
-                        phone_text = re.sub(r'^Tel:[\s]*', '', phone_text).strip()
-
-                        # Phone number validation.
-                        phone_match = phone_pattern.match(phone_text)
-                        if phone_match is not None:
-                            phone = phone_match.group(0)
+                        phone_text = phone_node.text
+                        phone_text = re.sub(r'^Tel:[\s]*', '', phone_text)\
+                            .strip()
+                        if self.validate_phone_number(phone_text):
+                            phone = phone_text
                             has_valid_phone = True
     
                 fax_node = self._get_node(
                     member_node,
-                    './/span[@class="two-columns"]//span[@class="data-type" and '
-                    'contains(text(), "Fax:")]')
+                    './/span[@class="two-columns"]//span[@class="data-type"'
+                    ' and contains(text(), "Fax:")]')
                 if fax_node is not None:
-                    fax_text = fax_node.text.strip()
+                    fax_text = fax_node.text
                     fax_text = re.sub(r'^Fax:[\s]*', '', fax_text).strip()
-
-                    # Fax number validation.
-                    fax_match = phone_pattern.match(fax_text)
-                    if fax_match is not None:
-                        fax = fax_match.group(0)
+                    if self.validate_phone_number(fax_text):
+                        fax = fax_text
     
-                leg = Legislator(
+                legislator = Legislator(
                     term=term,
                     chamber='lower',
                     district=district,
@@ -225,12 +231,12 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     photo_url=photo_url
                 )
     
-                leg.add_source(url)
-                leg.add_office(
+                legislator.add_source(url)
+                legislator.add_office(
                     type='capitol',
                     name='Oficina del Capitolio',
                     phone=phone,
                     fax=fax,
                 )
 
-                self.save_legislator(leg)
+                self.save_legislator(legislator)
