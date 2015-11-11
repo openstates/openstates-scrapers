@@ -4,10 +4,10 @@ import datetime
 import lxml.html
 import logging
 from billy.scrape.legislators import LegislatorScraper, Legislator
-logger = logging.getLogger('openstates')
+from openstates.utils import LXMLMixin
 
 
-class NYLegislatorScraper(LegislatorScraper):
+class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ny'
 
     def _identify_party(self, chamber):
@@ -48,7 +48,7 @@ class NYLegislatorScraper(LegislatorScraper):
                         )
 
             # Remove non-breaking space characters
-            affiliation = re.sub("\xa0", " ", affiliation)
+            affiliation = re.sub(r'\xa0', ' ', affiliation)
 
             # Ignore the header text when parsing
             try:
@@ -242,16 +242,6 @@ class NYLegislatorScraper(LegislatorScraper):
 
         return nodes
 
-    def _get_page(self, url):
-        """
-        Prepares page retrieved from URL for xpath querying.
-        """
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        return page
-
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
@@ -261,7 +251,7 @@ class NYLegislatorScraper(LegislatorScraper):
         """
         url = 'http://www.nysenate.gov/senators-committees'
 
-        page = self._get_page(url)
+        page = self.lxmlize(url)
 
         legislator_nodes = page.xpath(
             '//div[contains(@class, "u-even") or contains(@class, "u-odd")]/a')
@@ -277,7 +267,7 @@ class NYLegislatorScraper(LegislatorScraper):
             # Skip legislator if information is missing entirely.
             if info_node is None:
                 warning = 'No information found for legislator at {}.'
-                logger.warning(warning.format(legislator_url))
+                self.logger.warning(warning.format(legislator_url))
                 continue
 
             # Initialize default values for legislator attributes.
@@ -349,7 +339,7 @@ class NYLegislatorScraper(LegislatorScraper):
             self.save_legislator(legislator)
 
     def scrape_upper_offices(self, legislator, url):
-        legislator_page = self._get_page(url)
+        legislator_page = self.lxmlize(url)
 
         legislator.add_source(url)
 
