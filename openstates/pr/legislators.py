@@ -6,7 +6,6 @@ import lxml.html
 import re
 import unicodedata
 import scrapelib
-import logging
 
 
 class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
