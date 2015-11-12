@@ -10,109 +10,147 @@ from openstates.utils import LXMLMixin
 class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ny'
 
-    def _identify_party(self, chamber):
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+    def _split_list_on_tag(self, elements, tag):
+        data = []
+        for element in elements:
+            element_class = None
+
+            try:
+                element_class = element.attrib['class']
+            except:
+                pass
+            
+            if element_class == tag:
+                yield data
+                data = []
+            else:
+                data.append(element)
+
+    def _identify_party(self):
         """
         Get the best available information on New York political party
         affiliations. Returns a dict mapping district to party for the
-        given chamber.
+        New York State Assembly.
 
         The formatting of this page is pretty abysmal, so apologies
         about the dirtiness of this method.
         """
-        # These may need to be changed, but should be mostly constant
-        NY_SEATS_IN_US_HOUSE = 27
+        # These may need to be changed, but should be mostly constant.
+        NY_US_HOUSE_SEATS = 27
         NY_STATE_SENATE_SEATS = 63
         NY_STATE_ASSEMBLY_SEATS = 150
+        SKIP_SEATS = NY_US_HOUSE_SEATS + NY_STATE_SENATE_SEATS
 
         # Download the page and ingest using lxml
-        MEMBER_LIST_URL = \
-                'http://www.elections.ny.gov:8080/reports/rwservlet?cmdkey=nysboe_incumbnt'
-        html = self.get(MEMBER_LIST_URL).text
-        doc = lxml.html.fromstring(html)
+        MEMBER_LIST_URL = 'http://www.elections.ny.gov:8080/reports/rwservlet'\
+            '?cmdkey=nysboe_incumbnt'
+
+        member_list_page = self.lxmlize(MEMBER_LIST_URL)
 
         # Map district to party affiliation
-        _congressional_affiliations = {}
+        congressional_affiliations = {}
         senate_affiliations = {}
         assembly_affiliations = {}
         district = None
         capture_district = False
         capture_party = False
-        affiliation_text = \
-                doc.xpath('/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
+        # Keeps track of place in incumbent listings.
+        entry_counter = 0
+
+        affiliation_text = self._get_nodes(
+            member_list_page,
+            '/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
         for affiliation in affiliation_text:
-
             if capture_district and capture_party:
-                raise AssertionError(
-                        "Assembly party parsing simultaneously looking for "
-                        "both district number and party name"
-                        )
+                raise AssertionError('Assembly party parsing simultaneously'\
+                    'looking for both district number and party name.')
 
-            # Remove non-breaking space characters
+            # Replace non-breaking spaces.
             affiliation = re.sub(r'\xa0', ' ', affiliation)
 
-            # Ignore the header text when parsing
+            # Ignore header text when parsing.
             try:
                 datetime.datetime.strptime(affiliation, "%B %d, %Y")
                 is_date = True
             except ValueError:
                 is_date = False
-            if is_date or \
-                    affiliation == "Elected Representatives for New York State by Office and District":
-                pass
 
-            # Otherwise, check to see if a District or Party is indicated
+            if is_date or affiliation == 'Elected Representatives for New York State by Office and District':
+                continue
+            # Otherwise, check to see if a District or Party is indicated.
             elif affiliation == u'District : ':
                 capture_district = True
+                continue 
             elif affiliation == u'Party : ':
                 capture_party = True
+                continue
 
-            # If a search has been initiated for District or Party, then capture them
-            elif capture_district:
+            # If a search has been initiated for District or Party, then
+            # capture them.
+            if capture_district:
                 district = affiliation
-                assert district, "No district found"
+                assert district, 'No district found.'
                 capture_district = False
             elif capture_party:
-                # Skip capturing of members who are at-large, such as governor
+                # Skip capturing districts of members who are at-large, such as
+                # governor.
                 if not district:
                     capture_party = False
                     continue
 
-                assert affiliation, "No party is indicated for district {}".format(district)
+                assert affiliation, 'No party is indicated for district {}'\
+                    .format(district)
 
-                # Congressional districts are listed first, then state
-                # senate, then assembly
+                # Districts listed in order: Congressional, State Senate,
+                # then State Assembly.
                 # If a repeat district is seen, assume it's from the
-                # next body in that list
-                if (not _congressional_affiliations.get(district) and
-                        int(district) <= NY_SEATS_IN_US_HOUSE):
-                    _congressional_affiliations[district] = affiliation.title()
-                elif (not senate_affiliations.get(district) and
-                        int(district) <= NY_STATE_SENATE_SEATS):
+                # next body in that list.
+                if (int(district) <= NY_US_HOUSE_SEATS and\
+                    not congressional_affiliations.get(district)):
+                    congressional_affiliations[district] = affiliation.title()
+                elif (int(district) <= NY_STATE_SENATE_SEATS and\
+                    not senate_affiliations.get(district)):
                     senate_affiliations[district] = affiliation.title()
-                elif (not assembly_affiliations.get(district) and
-                        int(district) <= NY_STATE_ASSEMBLY_SEATS):
+                elif (int(district) <= NY_STATE_ASSEMBLY_SEATS and\
+                    not assembly_affiliations.get(district)):
                     assembly_affiliations[district] = affiliation.title()
                 else:
-                    raise AssertionError(
-                            "District {} appears too many times in party document".
-                            format(district)
-                            )
+                    message = 'District {} appears too many times in party '\
+                        'document.'
+                    raise AssertionError(message.format(district))
 
                 district = None
                 capture_party = False
-
+                entry_counter += 1                
             else:
-                raise AssertionError(
-                        "Assembly party parsing found inappropriate text: "
-                        "'{}'".format(affiliation)
-                        )
+                message = 'Assembly party parsing found bad text: "{}"'
+                raise AssertionError(message.format(affiliation))
 
-        if chamber == 'upper':
-            return senate_affiliations
-        elif chamber == 'lower':
-            return assembly_affiliations
-        else:
-            raise AssertionError("Unknown chamber passed to party parser")
+        return assembly_affiliations
 
     def _parse_office(self, office_node):
         """
@@ -218,37 +256,10 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return office
 
-    def _get_node(self, base_node, xpath_query):
-        """
-        Attempts to return only the first node found for an xpath query. Meant
-        to cut down on exception handling boilerplate.
-        """
-        try:
-            node = base_node.xpath(xpath_query)[0]
-        except IndexError:
-            node = None
-
-        return node
-
-    def _get_nodes(self, base_node, xpath_query):
-        """
-        Attempts to return all nodes found for an xpath query. Meant to cut
-        down on exception handling boilerplate.
-        """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
-
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
     def scrape_upper_chamber(self, term):
-        """
-        Finds legislators from the upper chamber of the NY senate.
-        """
         url = 'http://www.nysenate.gov/senators-committees'
 
         page = self.lxmlize(url)
@@ -368,89 +379,76 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 legislator.add_office(**office)
 
     def scrape_lower_chamber(self, term):
-        url = "http://assembly.state.ny.us/mem/?sh=email"
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        # full_names = []
+        url = 'http://assembly.state.ny.us/mem/?sh=email'
 
-        def _split_list_on_tag(lis, tag):
-            data = []
-            for entry in lis:
-                if entry.attrib['class'] == tag:
-                    yield data
-                    data = []
-                else:
-                    data.append(entry)
+        page = self.lxmlize(url)
 
-        party_by_district = self._identify_party('lower')
+        district_affiliations = self._identify_party()
 
-        for row in _split_list_on_tag(page.xpath(
-                "//div[@id='maincontainer']/div[contains(@class, 'email')]"),
-                "emailclear"
-                ):
+        assembly_member_nodes = self._get_nodes(
+            page,
+            '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
+        for assembly_member_node in self._split_list_on_tag(
+            assembly_member_nodes, 'emailclear'):
             try:
-                name, district, email = row
+                name_node, district_node, email_node = assembly_member_node
             except ValueError:
-                name, district = row
-                email = None
+                name_node, district_node = assembly_member_node
+                email_node = None
 
-            link = name.xpath(".//a[contains(@href, '/mem/')]")
-            if link != []:
-                link = link[0]
-            else:
-                link = None
-
-            if email is not None:
-            # XXX: Missing email from a record on the page
-            # as of 12/11/12. -- PRT
-                email = email.xpath(".//a[contains(@href, 'mailto')]")
-                if email != []:
-                    email = email[0]
-                    email = email.text_content().strip()
-                else:
-                    email = None
-
-            name = link.text.strip()
+            name_anchor = self._get_node(
+                name_node,
+                './/a[contains(@href, "/mem/")]')
+            name = name_anchor.text.strip()
+            # Skip non-seats.
             if name == 'Assembly Members':
                 continue
-
-            # empty seats
             if 'Assembly District' in name:
                 continue
 
-            district = link.xpath("string(../following-sibling::"
-                                  "div[@class = 'email2'][1])")
-            district = district.rstrip('rthnds')
+            if email_node is not None:
+                email_anchor = self._get_node(
+                    email_node,
+                    './/a[contains(@href, "mailto")]')
+                if email_anchor is not None:
+                    email = email_anchor.text.strip()
 
-            party = party_by_district[district].strip()
+            if district_node is not None:
+                district = district_node.text.rstrip('rthnds')
 
-            photo_url = "http://assembly.state.ny.us/mem/pic/%03d.jpg" % \
-                    int(district)
-            leg_url = link.get('href')
+            party = district_affiliations[district].strip()
+            if not party or party is None:
+                self.logger.warn('Vacant seat in District {}.'.format(district))
+                continue
 
-            legislator = Legislator(term, 'lower', district, name,
-                                    party=party,
-                                    url=leg_url,
-                                    photo_url=photo_url)
+            photo_url = 'http://assembly.state.ny.us/mem/pic/{0:03d}.jpg'\
+                .format(int(district))
+
+            legislator_url = name_anchor.get('href')
+
+            legislator = Legislator(
+                term,
+                'lower',
+                district,
+                name,
+                party=party,
+                url=legislator_url,
+                photo_url=photo_url)
             legislator.add_source(url)
 
-            # Legislator
-            self.scrape_lower_offices(leg_url, legislator, email)
+            self.scrape_lower_offices(legislator_url, legislator, email)
 
             self.save_legislator(legislator)
 
     def scrape_lower_offices(self, url, legislator, email=None):
         legislator.add_source(url)
 
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
+        page = self.lxmlize(url)
 
         offices = False
 
-        for data in doc.xpath('//div[@class="officehdg"]'):
+        for data in page.xpath('//div[@class="officehdg"]'):
             data = (data.xpath('text()'),
                     data.xpath('following-sibling::div[1]/text()'))
             ((office_name,), address) = data
