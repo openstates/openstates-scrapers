@@ -35,16 +35,6 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return nodes
 
-    def _get_page(self, url):
-        """
-        Prepares page retrieved from URL for xpath querying.
-        """
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        return page
-
     def validate_phone_number(self, phone_number):
         is_valid = False
 
