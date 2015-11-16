@@ -1,69 +1,156 @@
 import csv
+import re
+import lxml.html
 from collections import defaultdict
 from cStringIO import StringIO
-
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
+from openstates.utils import LXMLMixin
 
-import lxml.html
-import xlrd
 
-class MNLegislatorScraper(LegislatorScraper):
+class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'mn'
-    latest_only = True
 
-    _parties = {'DFL': 'Democratic-Farmer-Labor',
-                'R': 'Republican'}
+    _parties = {
+        'DFL': 'Democratic-Farmer-Labor',
+        'R': 'Republican',
+    }
+
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+    def _validate_phone_number(self, phone_number):
+        is_valid = False
+
+        # Phone format validation regex.
+        phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
+        phone_match = phone_pattern.match(phone_number)
+        if phone_match is not None:
+            is_valid = True
+
+        return is_valid
+
+    def _validate_email_address(self, email_address):
+        is_valid = False
+
+        email_pattern = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.'
+            r'[a-zA-Z]{2,}\b')
+        email_match = email_pattern.match(email_address)
+        if email_match is not None:
+            is_valid = True
+
+        return is_valid
 
     def scrape(self, chamber, term):
-        if chamber == 'lower':
-            self.scrape_house(term)
-        else:
-            self.scrape_senate(term)
+        getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
-    def scrape_house(self, term):
-        URL = 'http://www.house.leg.state.mn.us/members/meminfo.xls'
-        xls, _ = self.urlretrieve(URL)
-        wb = xlrd.open_workbook(xls)
-        sh = wb.sheet_by_index(0)
+    def scrape_lower_chamber(self, term):
+        url = 'http://www.house.leg.state.mn.us/members/hmem.asp'
 
-        headers = [x.value for x in sh.row(0)]
-        assert headers == [
-                'district_id', 'party',
-                'first name', 'last name', 'longname',
-                'SOB_room', 'SOB_city_state_ZIP', 'SOB_office_phone',
-                'perfered_interim_mailing_address', 'perfered__interimmailing_city', 'state', 'perfered__interim_mailing_zip',
-                'emailalias'
-                ]
+        page = self.lxmlize(url)
 
-        for row_num in range(1, sh.nrows):
-            leg = Legislator(
-                    term=term,
-                    chamber='lower',
-                    district=sh.cell_value(row_num, 0).lstrip("0"),
-                    full_name=sh.cell_value(row_num, 4)[len("Rep. "): ],
-                    party=self._parties[sh.cell_value(row_num, 1)]
-                    )
-            leg.add_source(URL)
+        legislator_nodes = self._get_nodes(
+            page,
+            '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr')
 
-            leg.add_office(
-                    type='capitol',
-                    name="Capitol Office",
-                    address="{0}\n{1}".format(sh.cell_value(row_num, 5), sh.cell_value(row_num, 6)),
-                    phone=sh.cell_value(row_num, 7),
-                    email=sh.cell_value(row_num, 12) + "@house.mn"
-                    )
-            if sh.cell_value(row_num, 5) != sh.cell_value(row_num, 8):
-                assert sh.cell_value(row_num, 10) == "Minnesota"
-                leg.add_office(
-                        type='district',
-                        name="District Office",
-                        address="{0}\n{1}, MN {2}".format(sh.cell_value(row_num, 8), sh.cell_value(row_num, 9), sh.cell_value(row_num, 11))
-                        )
+        for legislator_node in legislator_nodes:
+            photo_url = self._get_node(
+                legislator_node,
+                './td[1]/a/@href')
 
-            self.save_legislator(leg)
+            info_nodes = self._get_nodes(
+                legislator_node,
+                './td[2]/p/a')
+            #self.logger.debug(info_nodes)
 
-    def scrape_senate(self, term):
+            name_text = self._get_node(
+                info_nodes[0],
+                './b/text()')
+            self.logger.debug(name_text)
+
+            name_match = re.search(r'^.+\(', name_text)
+            name = name_match.group(0)
+            name = name.replace('(', '').strip()
+            self.logger.debug('name: ' + name)
+
+            district_match = re.search(r'\([0-9]{2}[A-Z]', name_text)
+            district_text = district_match.group(0)
+            district = district_text.replace('(', '').strip()
+            self.logger.debug('district: ' + district)
+
+            party_match = re.search(r'[A-Z]+\)$', name_text)
+            party_text = party_match.group(0)
+            party_text = party_text.replace(')', '').strip()
+            party = self._parties[party_text]
+            self.logger.debug('party: ' + party)
+
+            info_texts = self._get_nodes(
+                legislator_node,
+                './td[2]/p/text()[preceding-sibling::br]')
+            address = '\n'.join((info_texts[0], info_texts[1]))
+            self.logger.debug(address)
+
+            phone_text = info_texts[2]
+            if self._validate_phone_number(phone_text):
+                phone = phone_text
+            self.logger.debug('phone: ' + phone)
+
+            # E-mail markup is screwed-up and inconsistent.
+            try:
+                email_node = info_nodes[1]
+                email_text = email_node.text
+            except IndexError:
+                # Primarily for Dan Fabian.
+                email_node = info_texts[4]
+                self.logger.debug(info_texts)
+
+            email_text = email_text.replace('Email: ', '').strip()
+            if self._validate_email_address(email_text):
+                email = email_text
+            self.logger.debug('email: ' + email)
+
+            legislator = Legislator(
+                term=term,
+                chamber='lower',
+                district=district,
+                full_name=name,
+                party=party,
+                email=email,
+            )
+            legislator.add_source(url)
+
+            legislator.add_office(
+                type='capitol',
+                name="Capitol Office",
+                address=address,
+                phone=phone,
+                email=email,
+             )
+
+            self.save_legislator(legislator)
+
+    def scrape_upper_chamber(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
         doc = lxml.html.fromstring(self.get(index_url).text)
         doc.make_links_absolute(index_url)
@@ -120,8 +207,6 @@ class MNLegislatorScraper(LegislatorScraper):
                 leg.add_office('district', 'District Office',
                            address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
                            email=email)
-
-
 
             leg.add_source(csv_url)
             leg.add_source(index_url)
