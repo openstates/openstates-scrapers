@@ -56,13 +56,12 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 './/td[1]/a')
 
             if name_node is not None:
-                self.logger.debug(name_node)
                 name_text = name_node.text.strip()
 
                 last_name, delimiter, first_name = name_text.partition(',')
 
                 if last_name is not None and first_name is not None:
-                    name = ' '.join([first_name, last_name])
+                    name = ' '.join([first_name, last_name]).strip()
                 else:
                     raise ValueError('Unable to parse name: {}'.format(
                         name_text))
