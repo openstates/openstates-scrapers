@@ -1,55 +1,115 @@
 import re
 import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 
-def scrub(text):
-    '''Squish whitespace and kill \xa0.
-    '''
-    return re.sub(r'[\s\xa0]+', ' ', text)
-
-
-class OKLegislatorScraper(LegislatorScraper):
+class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ok'
     latest_only = True
 
+    _parties = {'R': 'Republican', 'D': 'Democratic'}
+
+    def _get_node(self, base_node, xpath_query):
+        """
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def _get_nodes(self, base_node, xpath_query):
+        """
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+
+    def _scrub(self, text):
+        """Squish whitespace and kill \xa0."""
+        return re.sub(r'[\s\xa0]+', ' ', text)
+
     def scrape(self, chamber, term):
-        if chamber == 'lower':
-            self.scrape_lower(term)
-        else:
-            self.scrape_upper(term)
+        getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
-    def scrape_lower(self, term):
+    def scrape_lower_chamber(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
-        for tr in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_RadGrid1_ctl00']/tbody/tr")[0:]:
-            name = tr.xpath('.//td[1]/a')[0].text.strip()
 
-            if name.startswith('House District'):
-                self.warning("skipping %s %s" % (name, leg_url))
-                continue
+        page = self.lxmlize(url)
 
-            district = tr.xpath('.//td[3]')[0].text_content().strip()
-            party = tr.xpath('.//td[4]')[0].text_content().strip()
-            party = {'R': 'Republican', 'D': 'Democratic'}[party]
+        legislator_nodes = self._get_nodes(
+            page,
+            '//table[@id="ctl00_ContentPlaceHolder1_RadGrid1_ctl00"]/tbody/tr')
 
-            leg_url = 'http://www.okhouse.gov/District.aspx?District=' + district
-            leg_doc = lxml.html.fromstring(self.get(leg_url, headers={
-                'referer': leg_url
-            }).content)
-            leg_doc.make_links_absolute(leg_url)
-            photo_url = leg_doc.xpath('//a[contains(@href, "HiRes")]/@href')[0]
+        for legislator_node in legislator_nodes:
+            name_node = self._get_node(
+                legislator_node,
+                './/td[1]/a')
 
-            leg = Legislator(term, 'lower', district, name, party=party,
-                             photo_url=photo_url, url=leg_url)
-            leg.add_source(url)
-            leg.add_source(leg_url)
+            if name_node is not None:
+                self.logger.debug(name_node)
+                name_text = name_node.text.strip()
+
+                last_name, delimiter, first_name = name_text.partition(',')
+
+                if last_name is not None and first_name is not None:
+                    name = ' '.join([first_name, last_name])
+                else:
+                    raise ValueError('Unable to parse name: {}'.format(
+                        name_text))
+
+                if name.startswith('House District'):
+                    continue
+
+            district_node = self._get_node(
+                legislator_node,
+                './/td[3]')
+
+            if district_node is not None:
+                district = district_node.text.strip()
+
+            party_node = self._get_node(
+                legislator_node,
+                './/td[4]')
+
+            if party_node is not None:
+                party_text = party_node.text.strip()
+
+            party = self._parties[party_text]
+
+            legislator_url = 'http://www.okhouse.gov/District.aspx?District=' + district
+
+            legislator_page = self.lxmlize(legislator_url)
+
+            photo_url = self._get_node(
+                legislator_page,
+                '//a[contains(@href, "HiRes")]/@href')
+
+            legislator = Legislator(
+                full_name=name,
+                term=term,
+                chamber='lower',
+                district=district,
+                party=party,
+                photo_url=photo_url,
+            )
+
+            legislator.add_source(url)
+            legislator.add_source(legislator_url)
 
             # Scrape offices.
-            self.scrape_lower_offices(leg_doc, leg)
+            self.scrape_lower_offices(legislator_page, legislator)
 
-            self.save_legislator(leg)
+            self.save_legislator(legislator)
 
     def scrape_lower_offices(self, doc, legislator):
 
@@ -64,7 +124,7 @@ class OKLegislatorScraper(LegislatorScraper):
             xpath = '//*[contains(@id, "CapitolRoom")]/text()'
             room = address_div.xpath(xpath)
             if room:
-                parts = map(scrub, list(address_div.itertext()))
+                parts = map(self._scrub, list(address_div.itertext()))
                 parts = [x.strip() for x in parts if x.strip()]
                 phone = parts.pop()
                 parts = [parts[0], 'Room ' + room[0], parts[-1]]
@@ -97,7 +157,7 @@ class OKLegislatorScraper(LegislatorScraper):
             office = dict(name='District Office', type='district', address=district_address)
             legislator.add_office(**office)
 
-    def scrape_upper(self, term):
+    def scrape_upper_chamber(self, term):
         url = "http://oksenate.gov/Senators/Default.aspx"
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -142,7 +202,7 @@ class OKLegislatorScraper(LegislatorScraper):
         col1, col2 = table.xpath('tr[2]/td')
 
         # Add the capitol office.
-        col1 = map(scrub, col1.itertext())
+        col1 = map(self._scrub, col1.itertext())
         while True:
             # Throw away anything after the email address.
             last = col1[-1]
@@ -164,7 +224,7 @@ class OKLegislatorScraper(LegislatorScraper):
             fax=None, email=None, phone=phone)
         legislator.add_office(**office)
 
-        col2 = map(scrub, col2.itertext())
+        col2 = map(self._scrub, col2.itertext())
         if len(col2) < 2:
             return
 
@@ -174,5 +234,3 @@ class OKLegislatorScraper(LegislatorScraper):
             address='\n'.join(col2),
             fax=None, email=None, phone=phone)
         legislator.add_office(**office)
-
-
