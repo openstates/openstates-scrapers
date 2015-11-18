@@ -61,7 +61,9 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 last_name, delimiter, first_name = name_text.partition(',')
 
                 if last_name is not None and first_name is not None:
-                    name = ' '.join([first_name, last_name]).strip()
+                    first_name = first_name.strip()
+                    last_name = last_name.strip()
+                    name = ' '.join([first_name, last_name])
                 else:
                     raise ValueError('Unable to parse name: {}'.format(
                         name_text))
@@ -94,6 +96,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 '//a[@id="ctl00_ContentPlaceHolder1_imgHiRes"]/@href')
 
             legislator = Legislator(
+                _scraped_name=name_text,
                 full_name=name,
                 term=term,
                 chamber='lower',
