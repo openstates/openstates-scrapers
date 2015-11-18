@@ -148,11 +148,15 @@ metadata = dict(
             ],
             'start_year': 2013, 'end_year': 2014
         },
-        {'name': '52',
+        {
+            'name': '52',
             'sessions': [
-            '52nd-1st-regular',
+                '52nd-1st-regular',
+                '52nd-1st-special',
+                '52nd-2nd-regular',
             ],
-            'start_year': 2015, 'end_year': 2016
+            'start_year': 2015,
+            'end_year': 2016
         },
         ],
         session_details={
@@ -516,11 +520,23 @@ metadata = dict(
                  '_scraped_name': 'Fifty-first Legislature - Second Special Session'
                 },
             '52nd-1st-regular':
-                {'type': 'special', 'session_id': 114,
+                {'type': 'primary', 'session_id': 114,
                  'display_name': '52nd Legislature - 1st Regular Session',
                  '_scraped_name': 'Fifty-second Legislature - First Regular Session'
-                }
-                # get session id from http://www.azleg.gov/SelectSession.asp select
+                },
+            '52nd-1st-special': {
+                'type': 'special',
+                'session_id': 116, # Yes, this is weirdly out of order.
+                 'display_name': '52nd Legislature - 1st Special Session',
+                 '_scraped_name': 'Fifty-second Legislature - First Special Session',
+            },
+            '52nd-2nd-regular': {
+                'type': 'primary',
+                'session_id': 115,
+                'display_name': '52nd Legislature - 2nd Regular Session',
+                '_scraped_name': 'Fifty-second Legislature - Second Regular Session',
+            },
+            # get session id from http://www.azleg.gov/SelectSession.asp select
         },
         _ignored_scraped_sessions=[
             'Forty-second Legislature - First Regular Session',
