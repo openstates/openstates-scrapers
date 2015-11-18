@@ -91,7 +91,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             photo_url = self._get_node(
                 legislator_page,
-                '//a[contains(@href, "HiRes")]/@href')
+                '//a[@id="ctl00_ContentPlaceHolder1_imgHiRes"]/@href')
 
             legislator = Legislator(
                 full_name=name,
