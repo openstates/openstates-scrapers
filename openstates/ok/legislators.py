@@ -10,30 +10,6 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
     _parties = {'R': 'Republican', 'D': 'Democratic'}
 
-    def _get_node(self, base_node, xpath_query):
-        """
-        Attempts to return only the first node found for an xpath query. Meant
-        to cut down on exception handling boilerplate.
-        """
-        try:
-            node = base_node.xpath(xpath_query)[0]
-        except IndexError:
-            node = None
-
-        return node
-
-    def _get_nodes(self, base_node, xpath_query):
-        """
-        Attempts to return all nodes found for an xpath query. Meant to cut
-        down on exception handling boilerplate.
-        """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
-
     def _scrub(self, text):
         """Squish whitespace and kill \xa0."""
         return re.sub(r'[\s\xa0]+', ' ', text)
@@ -46,12 +22,12 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        legislator_nodes = self._get_nodes(
+        legislator_nodes = self.get_nodes(
             page,
             '//table[@id="ctl00_ContentPlaceHolder1_RadGrid1_ctl00"]/tbody/tr')
 
         for legislator_node in legislator_nodes:
-            name_node = self._get_node(
+            name_node = self.get_node(
                 legislator_node,
                 './/td[1]/a')
 
@@ -71,14 +47,14 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 if name.startswith('House District'):
                     continue
 
-            district_node = self._get_node(
+            district_node = self.get_node(
                 legislator_node,
                 './/td[3]')
 
             if district_node is not None:
                 district = district_node.text.strip()
 
-            party_node = self._get_node(
+            party_node = self.get_node(
                 legislator_node,
                 './/td[4]')
 
@@ -91,7 +67,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             legislator_page = self.lxmlize(legislator_url)
 
-            photo_url = self._get_node(
+            photo_url = self.get_node(
                 legislator_page,
                 '//a[@id="ctl00_ContentPlaceHolder1_imgHiRes"]/@href')
 

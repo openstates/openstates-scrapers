@@ -3,20 +3,63 @@ import lxml.html
 
 
 class LXMLMixin(object):
-    """
-    Mixin for adding in LXML helper functions throughout Open States' code.
-
-      - lxmlize
-         Take a URL, load the URL into an LXML object, and make links
-         absolute.
-    """
+    """Mixin for adding LXML helper functions to Open States code."""
 
     def lxmlize(self, url):
+        """Parses document into an LXML object and makes links absolute.
+
+        Args:
+            url (str): URL of the document to parse.
+        Returns:
+            Element: Document node representing the page.
+        """
         try:
             text = self.get(url).text
         except requests.exceptions.SSLError:
-            self.warning("`self.lxmlize()` failed due to SSL error, trying an unverified `requests.get()`")
+            self.warning('`self.lxmlize()` failed due to SSL error, trying'\
+                'an unverified `requests.get()`')
             text = requests.get(url, verify=False).text
+
         page = lxml.html.fromstring(text)
         page.make_links_absolute(url)
+
         return page
+
+    def get_node(self, base_node, xpath_query):
+        """Searches for node in an element tree.
+
+        Attempts to return only the first node found for an xpath query. Meant
+        to cut down on exception handling boilerplate.
+
+        Args:
+            base_node (Element): Document node to begin querying from.
+            xpath_query (str): XPath query to define nodes to search for.
+        Returns:
+            Element: First node found that matches the query.
+        """
+        try:
+            node = base_node.xpath(xpath_query)[0]
+        except IndexError:
+            node = None
+
+        return node
+
+    def get_nodes(self, base_node, xpath_query):
+        """Searches for nodes in an element tree.
+
+        Attempts to return all nodes found for an xpath query. Meant to cut
+        down on exception handling boilerplate.
+
+        Args:
+            base_node (Element): Document node to begin querying from.
+            xpath_query (str): Xpath query to define nodes to search for.
+        Returns:
+            List[Element]: All nodes found that match the query.
+        """
+        try:
+            nodes = base_node.xpath(xpath_query)
+        except IndexError:
+            nodes = None
+
+        return nodes
+

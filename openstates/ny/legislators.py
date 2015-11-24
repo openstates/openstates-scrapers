@@ -10,30 +10,6 @@ from openstates.utils import LXMLMixin
 class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ny'
 
-    def _get_node(self, base_node, xpath_query):
-        """
-        Attempts to return only the first node found for an xpath query. Meant
-        to cut down on exception handling boilerplate.
-        """
-        try:
-            node = base_node.xpath(xpath_query)[0]
-        except IndexError:
-            node = None
-
-        return node
-
-    def _get_nodes(self, base_node, xpath_query):
-        """
-        Attempts to return all nodes found for an xpath query. Meant to cut
-        down on exception handling boilerplate.
-        """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
-
     def _split_list_on_tag(self, elements, tag):
         data = []
         for element in elements:
@@ -81,7 +57,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         # Keeps track of place in incumbent listings.
         entry_counter = 0
 
-        affiliation_text = self._get_nodes(
+        affiliation_text = self.get_nodes(
             member_list_page,
             '/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
         for affiliation in affiliation_text:
@@ -156,7 +132,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         """
         Gets the contact information from the provided office.
         """
-        office_name_text = self._get_node(
+        office_name_text = self.get_node(
             office_node,
             './/span[@itemprop="name"]/text()')
 
@@ -189,7 +165,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             return None
 
         # Get office street address.
-        street_address_text = self._get_node(
+        street_address_text = self.get_node(
             office_node,
             './/div[@class="street-address"][1]/'
             'span[@itemprop="streetAddress"][1]/text()')
@@ -198,7 +174,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             street_address = street_address_text.strip()
 
         # Get office city.
-        city_text = self._get_node(
+        city_text = self.get_node(
             office_node,
             './/span[@class="locality"][1]/text()')
 
@@ -206,7 +182,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             city = city_text.strip()
 
         # Get office state.
-        state_text = self._get_node(
+        state_text = self.get_node(
             office_node,
             './/span[@class="region"][1]/text()')
 
@@ -214,7 +190,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             state = state_text.strip()
 
         # Get office postal code.
-        zip_code_text = self._get_node(
+        zip_code_text = self.get_node(
             office_node,
             './/span[@class="postal-code"][1]/text()')
 
@@ -232,7 +208,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             address = None
 
         # Get office phone number.
-        phone_node = self._get_node(
+        phone_node = self.get_node(
             office_node,
             './/div[@class="tel"]/span[@itemprop="telephone"]')
 
@@ -240,7 +216,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             phone = phone_node.text.strip()
 
         # Get office fax number.
-        fax_node = self._get_node(
+        fax_node = self.get_node(
             office_node,
             './/div[@class="tel"]/span[@itemprop="faxNumber"]')
 
@@ -271,7 +247,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             legislator_url = legislator_node.attrib['href']
 
             # Find element containing senator data.
-            info_node = self._get_node(
+            info_node = self.get_node(
                 legislator_node,
                 './/div[@class="nys-senator--info"]')
 
@@ -288,7 +264,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             photo_url = None
 
             # Find legislator's name.
-            name_node = self._get_node(
+            name_node = self.get_node(
                 info_node,
                 'h4[@class="nys-senator--name"]')
 
@@ -299,7 +275,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             # Find legislator's district number.
-            district_node = self._get_node(
+            district_node = self.get_node(
                 info_node,
                 './/span[@class="nys-senator--district"]')
 
@@ -308,7 +284,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 district = re.sub(r'\D', '', district_text)
 
             # Find legislator's party affiliation.
-            party_node = self._get_node(
+            party_node = self.get_node(
                 district_node,
                 './/span[@class="nys-senator--party"]')
 
@@ -324,7 +300,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                         .format(party_text))
 
             # Find legislator's profile photograph.
-            photo_node = self._get_node(
+            photo_node = self.get_node(
                 legislator_node,
                 './/div[@class="nys-senator--thumb"]/img')
 
@@ -355,7 +331,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         legislator.add_source(url)
 
         # Find legislator e-mail address.
-        email_node = self._get_node(
+        email_node = self.get_node(
             legislator_page,
             '//div[contains(concat(" ", normalize-space(@class), " "), '
             '" c-block--senator-email ")]/div/a[contains(@href, "mailto:")]')
@@ -368,7 +344,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             email = None
 
         # Parse all offices.
-        office_nodes = self._get_nodes(
+        office_nodes = self.get_nodes(
             legislator_page,
             '//div[@class="adr"]')
 
@@ -385,7 +361,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         district_affiliations = self._identify_party()
 
-        assembly_member_nodes = self._get_nodes(
+        assembly_member_nodes = self.get_nodes(
             page,
             '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
@@ -397,7 +373,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 name_node, district_node = assembly_member_node
                 email_node = None
 
-            name_anchor = self._get_node(
+            name_anchor = self.get_node(
                 name_node,
                 './/a[contains(@href, "/mem/")]')
             name = name_anchor.text.strip()
@@ -408,7 +384,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             if email_node is not None:
-                email_anchor = self._get_node(
+                email_anchor = self.get_node(
                     email_node,
                     './/a[contains(@href, "mailto")]')
                 if email_anchor is not None:
