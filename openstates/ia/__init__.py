@@ -1,17 +1,17 @@
+import re
 import datetime
 import lxml.html
+import requests
 from billy.utils.fulltext import text_after_line_numbers
 from .bills import IABillScraper
 from .legislators import IALegislatorScraper
 from .events import IAEventScraper
 from .votes import IAVoteScraper
-
+import logging
 
 #IA is https but we're getting InsecureRequestWarning on every page
 #probably due to an issue with urllib3, so shutting them up for now:
-# import urllib3
-# urllib3.disable_warnings()
-
+requests.packages.urllib3.disable_warnings()
 
 settings = dict(SCRAPELIB_TIMEOUT=240)
 
@@ -72,20 +72,21 @@ metadata = dict(
 
 def session_list():
     def url_xpath(url, path):
-        import requests
-        import lxml.html
         doc = lxml.html.fromstring(requests.get(url, verify=False).text)
         return doc.xpath(path)
 
-    import re
     sessions = url_xpath(
         'https://www.legis.iowa.gov/legislation/findLegislation',
-        "//section[@class='grid_6']//li/a/text()"
+        "//section[@class='grid_6']//li/a/text()[normalize-space()]"
     )
+#    for session in sessions:
+#        logging.debug(session)
     sessions = [x[0] for x in filter(lambda x: x != [], [
-        re.findall("(.*) \(", session)
+        re.findall(r'^.*Assembly: [0-9]+', session)
         for session in sessions
     ])]
+    logging.debug(sessions)
+
     return sessions
 
 def extract_text(doc, data):
