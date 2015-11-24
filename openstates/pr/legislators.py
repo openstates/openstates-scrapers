@@ -1,39 +1,15 @@
 # -*- coding: utf-8 -*-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.utils import LXMLMixin
 import lxml.html
 import re
 import unicodedata
 import scrapelib
+from billy.scrape import NoDataForPeriod
+from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
 
 class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'pr'
-
-    def _get_node(self, base_node, xpath_query):
-        """
-        Attempts to return only the first node found for an xpath query. Meant
-        to cut down on exception handling boilerplate.
-        """
-        try:
-            node = base_node.xpath(xpath_query)[0]
-        except IndexError:
-            node = None
-
-        return node
-
-    def _get_nodes(self, base_node, xpath_query):
-        """
-        Attempts to return all nodes found for an xpath query. Meant to cut
-        down on exception handling boilerplate.
-        """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
 
     def validate_phone_number(self, phone_number):
         is_valid = False
@@ -122,7 +98,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        member_nodes = self._get_nodes(
+        member_nodes = self.get_nodes(
             page,
             '//div[@class="info-block"][1]//a[@class="opener"]')
 
@@ -137,16 +113,16 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                 phone     = None
                 fax       = None
 
-                photo_url = self._get_node(
+                photo_url = self.get_node(
                     member_node,
                     './/span[@class="identity"]/img/@src')
     
                 # Node reference for convenience.
-                info_node = self._get_node(
+                info_node = self.get_node(
                     member_node,
                     './/span[@class="info"]')
     
-                name_node = self._get_node(
+                name_node = self.get_node(
                     info_node,
                     './/span[@class="name"]')
                 # Strip titles from legislator name.
@@ -156,14 +132,14 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     name_text = re.sub(r' - .*$', '', name_text)
                     name = ' '.join(name_text.split())
     
-                party_node = self._get_node(
+                party_node = self.get_node(
                     info_node,
                     './/span[@class="party"]/span')
                 if party_node is not None:
                     party_text = party_node.text.strip()
                     party = party_map[party_text]
     
-                district_node = self._get_node(
+                district_node = self.get_node(
                     info_node,
                     './/span[@class="district"]')
                 if district_node is not None:
@@ -181,7 +157,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                             warning = u'{} missing district number.'
                             self.logger.warning(warning.format(name))
 
-                address_node = self._get_node(
+                address_node = self.get_node(
                     info_node,
                     './/span[@class="address"]')
                 if address_node is not None:
@@ -191,7 +167,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
                 # Only grabs the first validated phone number found.
                 # Typically, representatives have multiple phone numbers.
-                phone_nodes = self._get_nodes(
+                phone_nodes = self.get_nodes(
                     member_node,
                     './/span[@class="two-columns"]//span[@class="data-type"'
                     'and contains(text(), "Tel:")]')
@@ -211,7 +187,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                             phone = phone_text
                             has_valid_phone = True
     
-                fax_node = self._get_node(
+                fax_node = self.get_node(
                     member_node,
                     './/span[@class="two-columns"]//span[@class="data-type"'
                     ' and contains(text(), "Fax:")]')

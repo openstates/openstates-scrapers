@@ -1,30 +1,96 @@
 # -*- coding: utf-8 -*-
 import re
-
 import os
-
 from billy.scrape.committees import CommitteeScraper, Committee
 from billy.scrape.utils import convert_pdf
 from openstates.utils import LXMLMixin
-
-
-def clean_spaces(s):
-    """ remove \xa0, collapse spaces, strip ends """
-    if s is not None:
-        return " ".join(s.split())
 
 
 class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'pr'
     latest_only = True
 
-    def scrape(self, chamber, term):
-        if chamber == 'upper':
-            self.scrape_upper()
-        elif chamber == 'lower':
-            self.scrape_lower()
+    def _clean_spaces(self, string):
+        """ Remove \xa0, collapse spaces, strip ends. """
+        if string is not None:
+            return ' '.join(string.split())
 
-    def scrape_upper(self):
+    def _match_title(self, member):
+        # Regexes should capture both gendered forms.
+        title_regex = {
+            'chairman': r', President.*$',
+            'vice chairman': r', Vice President.*$',
+            'secretary': r', Secretari.*$'
+        }
+
+        for title in title_regex:
+            matched_title = None
+            match = re.search(title_regex[title], member)
+
+            if match is not None:
+                matched_title = title
+                member = re.sub(title_regex[title], '', member)
+                break
+
+        return member, matched_title
+
+    def scrape(self, chamber, term):
+        getattr(self, 'scrape_' + chamber + '_chamber')()
+
+    def scrape_lower_chamber(self):
+        url = 'http://www.tucamarapr.org/dnncamara/ActividadLegislativa/'\
+            'ComisionesyProyectosEspeciales.aspx'
+
+        page = self.lxmlize(url)
+
+        # Retrieve links to committee pages.
+        links = self.get_nodes(
+            page,
+            '//a[contains(@id, "lnkCommission")]')
+
+        for link in links:
+            self.scrape_lower_committee(link.text, link.get('href'))
+
+    def scrape_lower_committee(self, committee_name, url):
+        page = self.lxmlize(url)
+
+        committee_name = committee_name.strip()
+        committee = Committee('lower', committee_name)
+        committee.add_source(url)
+
+        info_node = self.get_node(
+            page,
+            './/div[@id = "dnn_ctr1109_ViewWebCommission_WebCommission1_'
+            'pnlCommission"]')
+
+        # This will likely capture empty text nodes as well.
+        members = self.get_nodes(
+            info_node,
+            './/div[@class="two-cols com"]/div[@class="col"]//text()'
+            '[normalize-space() and preceding-sibling::br]')
+
+        member_count = 0
+
+        for member in members:
+            member = re.sub(r'Hon\.\s*', '', member).strip()
+
+            # Skip empty nodes.
+            if not member:
+                continue
+
+            member, title = self._match_title(member)
+
+            if title is not None:
+                committee.add_member(member, title)
+            else:
+                committee.add_member(member)
+            
+            member_count += 1
+
+        if member_count > 0:
+            self.save_committee(committee)
+
+    def scrape_upper_chamber(self):
         url = 'http://senado.pr.gov/comisiones/Pages/default.aspx'
         doc = self.lxmlize(url)
         for link in doc.xpath('//a[contains(@href, "ComposicionComisiones")]/@href'):
@@ -116,42 +182,3 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
             self.save_committee(comm)
 
         os.remove(filename)
-
-    def scrape_lower(self):
-        url = 'http://www.camaraderepresentantes.org/comisiones.asp'
-        doc = self.lxmlize(url)
-        for link in doc.xpath('//a[contains(@href, "comisiones2")]'):
-            self.scrape_lower_committee(link.text, link.get('href'))
-
-    def scrape_lower_committee(self, name, url):
-        com = Committee('lower', name)
-        com.add_source(url)
-        doc = self.lxmlize(url)
-
-        contact, directiva, reps = doc.xpath('//div[@class="sbox"]/div[2]')
-        # all members are tails of images (they use img tags for bullets)
-        # first three members are in the directiva div
-        chair = directiva.xpath('b[text()="Presidente:"]/following-sibling::img[1]')
-        vchair = directiva.xpath('b[text()="Vice Presidente:"]/following-sibling::img[1]')
-        sec = directiva.xpath('b[text()="Secretario(a):"]/following-sibling::img[1]')
-        member = 0
-        if chair and chair[0].tail is not None:
-            chair = chair[0].tail
-            com.add_member(clean_spaces(chair), 'chairman')
-            member += 1
-        if vchair and vchair[0].tail is not None:
-            vchair = vchair[0].tail
-            com.add_member(clean_spaces(vchair), 'vice chairman')
-            member += 1
-        if sec and sec is not None:
-            sec = sec[0].tail
-            com.add_member(clean_spaces(sec), 'secretary')
-            member += 1
-
-        for img in reps.xpath('.//img'):
-            member_name = clean_spaces(img.tail)
-            if member_name is not None:
-                com.add_member(member_name)
-                member += 1
-        if member > 0:
-            self.save_committee(com)

@@ -16,30 +16,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
         'R': 'Republican',
     }
 
-    def _get_node(self, base_node, xpath_query):
-        """
-        Attempts to return only the first node found for an xpath query. Meant
-        to cut down on exception handling boilerplate.
-        """
-        try:
-            node = base_node.xpath(xpath_query)[0]
-        except IndexError:
-            node = None
-
-        return node
-
-    def _get_nodes(self, base_node, xpath_query):
-        """
-        Attempts to return all nodes found for an xpath query. Meant to cut
-        down on exception handling boilerplate.
-        """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
-
     def _validate_phone_number(self, phone_number):
         is_valid = False
 
@@ -70,21 +46,21 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        legislator_nodes = self._get_nodes(
+        legislator_nodes = self.get_nodes(
             page,
             '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr')
 
         for legislator_node in legislator_nodes:
-            photo_url = self._get_node(
+            photo_url = self.get_node(
                 legislator_node,
                 './td[1]/a/@href')
 
-            info_nodes = self._get_nodes(
+            info_nodes = self.get_nodes(
                 legislator_node,
                 './td[2]/p/a')
             #self.logger.debug(info_nodes)
 
-            name_text = self._get_node(
+            name_text = self.get_node(
                 info_nodes[0],
                 './b/text()')
             self.logger.debug(name_text)
@@ -105,7 +81,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             party = self._parties[party_text]
             self.logger.debug('party: ' + party)
 
-            info_texts = self._get_nodes(
+            info_texts = self.get_nodes(
                 legislator_node,
                 './td[2]/p/text()[preceding-sibling::br]')
             address = '\n'.join((info_texts[0], info_texts[1]))
