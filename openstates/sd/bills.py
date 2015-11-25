@@ -1,11 +1,9 @@
 import re
 import datetime
-
+import lxml.html
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-
-import lxml.html
 
 
 class SDBillScraper(BillScraper):
