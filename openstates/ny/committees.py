@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
 import lxml.html
-import logging
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
@@ -186,7 +185,7 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 else:
                     warning = ('Could not find the name of the chair for the'
                         ' {} committee')
-                    logger.warning(warning.format(committee_name))
+                    self.logger.warning(warning.format(committee_name))
 
                 # Attempt to retrieve committee chair's role (explicitly).
                 member_role_text = self.get_node(
@@ -201,17 +200,17 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                     # to check for.
                     warning = ('Could not find the role of the chair for the'
                         ' {} committee')
-                    logger.warning(warning.format(committee_name))
+                    self.logger.warning(warning.format(committee_name))
 
                 if member_name is not None and member_role is not None:
                     committee.add_member(member_name, member_role)
             else:
                 warning = ('Could not find information for the chair of the'
                     ' {} committee.')
-                logger.warning(warning.format(committee_name))
+                self.logger.warning(warning.format(committee_name))
         else:
             warning = 'Missing chairperson for the {} committee.'
-            logger.warning(warning.format(committee_name))
+            self.logger.warning(warning.format(committee_name))
 
         # Get list of regular committee members.
         member_nodes = self.get_nodes(
@@ -237,6 +236,6 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
             else:
                 warning = ('Could not find the name of a member in the {}'
                     ' committee')
-                logger.warning(warning.format(committee_name))
+                self.logger.warning(warning.format(committee_name))
 
         return committee
