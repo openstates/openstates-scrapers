@@ -1,8 +1,6 @@
-from billy.scrape.legislators import Legislator, LegislatorScraper
-
 import re
 import lxml.html
-
+from billy.scrape.legislators import Legislator, LegislatorScraper
 
 CHAMBER_MOVES = {
     "A. Benton \"Ben\" Chafin-Elect": "upper",
@@ -25,7 +23,7 @@ class VALegislatorScraper(LegislatorScraper):
 
     def scrape_for_session(self, chamber, session, term):
         site_id = self.metadata['session_details'][session]['site_id']
-        url = 'http://leg6.state.va.us/%s/mbr/MBR.HTM' % site_id
+        url = 'http://lis.virginia.gov/%s/mbr/MBR.HTM' % site_id
 
         if chamber == 'lower':
             column = 'lColLt'
