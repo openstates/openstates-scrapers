@@ -55,7 +55,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
         for legislator_node in legislator_nodes:
             photo_url = self.get_node(
                 legislator_node,
-                './td[1]/a/@href')
+                './td[1]/a/img/@src')
 
             info_nodes = self.get_nodes(
                 legislator_node,
@@ -108,6 +108,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 full_name=name,
                 party=party,
                 email=email,
+                photo_url=photo_url,
             )
             legislator.add_source(url)
 
