@@ -50,6 +50,8 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             page,
             '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr')
 
+        need_special_email_case = False
+
         for legislator_node in legislator_nodes:
             photo_url = self.get_node(
                 legislator_node,
@@ -58,39 +60,33 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             info_nodes = self.get_nodes(
                 legislator_node,
                 './td[2]/p/a')
-            #self.logger.debug(info_nodes)
 
             name_text = self.get_node(
                 info_nodes[0],
                 './b/text()')
-            self.logger.debug(name_text)
 
             name_match = re.search(r'^.+\(', name_text)
             name = name_match.group(0)
             name = name.replace('(', '').strip()
-            self.logger.debug('name: ' + name)
 
             district_match = re.search(r'\([0-9]{2}[A-Z]', name_text)
             district_text = district_match.group(0)
             district = district_text.replace('(', '').strip()
-            self.logger.debug('district: ' + district)
 
             party_match = re.search(r'[A-Z]+\)$', name_text)
             party_text = party_match.group(0)
             party_text = party_text.replace(')', '').strip()
             party = self._parties[party_text]
-            self.logger.debug('party: ' + party)
 
             info_texts = self.get_nodes(
                 legislator_node,
-                './td[2]/p/text()[preceding-sibling::br]')
+                './td[2]/p/text()[normalize-space() and preceding-sibling'
+                '::br]')
             address = '\n'.join((info_texts[0], info_texts[1]))
-            self.logger.debug(address)
 
             phone_text = info_texts[2]
             if self._validate_phone_number(phone_text):
                 phone = phone_text
-            self.logger.debug('phone: ' + phone)
 
             # E-mail markup is screwed-up and inconsistent.
             try:
@@ -98,13 +94,12 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 email_text = email_node.text
             except IndexError:
                 # Primarily for Dan Fabian.
-                email_node = info_texts[4]
-                self.logger.debug(info_texts)
+                email_node = info_texts[3]
+                need_special_email_case = True
 
             email_text = email_text.replace('Email: ', '').strip()
             if self._validate_email_address(email_text):
                 email = email_text
-            self.logger.debug('email: ' + email)
 
             legislator = Legislator(
                 term=term,
@@ -125,6 +120,9 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
              )
 
             self.save_legislator(legislator)
+
+        if not need_special_email_case:
+            self.logger.warning('Special e-mail handling no longer required.')
 
     def scrape_upper_chamber(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
