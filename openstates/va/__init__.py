@@ -108,10 +108,11 @@ metadata = {
         },
         '2016': {
             'start_date': datetime.date(2016, 1, 13),
-            'site_id': '141',
+            'site_id': '161',
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016 Session',
         },
+
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2009 Session', '2015 Session',
