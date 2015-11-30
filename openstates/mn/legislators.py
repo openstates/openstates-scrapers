@@ -71,7 +71,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             district_match = re.search(r'\([0-9]{2}[A-Z]', name_text)
             district_text = district_match.group(0)
-            district = district_text.replace('(', '').strip()
+            district = district_text.replace('(', '').lstrip('0').strip()
 
             party_match = re.search(r'[A-Z]+\)$', name_text)
             party_text = party_match.group(0)
