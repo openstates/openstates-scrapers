@@ -36,6 +36,7 @@ metadata = dict(
         '2014': {'type': 'primary',
                  'display_name': '2014 Regular Session'},
         '2015': {'type': 'primary',
+                 '_scraped_name': '2015 - 98th General Assembly - 1st Regular Session',
                  'display_name': '2015 Regular Session'},
     },
     feature_flags=["subjects", 'influenceexplorer'],
