@@ -1,5 +1,6 @@
-from billy.scrape.legislators import LegislatorScraper, Legislator
+import re
 import lxml.html
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 def get_field(doc, key):
     # get text_content of parent of the element containing the key
@@ -30,7 +31,11 @@ class DCLegislatorScraper(LegislatorScraper):
             doc.make_links_absolute(url)
 
             descriptor = doc.xpath('//p[@class="head-descriptor"]/text()')[0]
-            name = doc.xpath('//h2/text()')[0]
+            title_name = doc.xpath('//h2/text()')[0]
+
+            #removes the title that is prepended to the name
+            name = re.sub(r'^Councilmember ', '', title_name)
+
             if 'Chairman' in descriptor:
                 district = 'Chairman'
             else:
@@ -62,11 +67,23 @@ class DCLegislatorScraper(LegislatorScraper):
 
             email = doc.xpath('//a[starts-with(text(), "Send an email")]/@href')[0].split(':')[1]
 
-            legislator = Legislator(term, 'upper', district, name,
-                                    party=party, url=url,
-                                    photo_url=photo_url)
-            legislator.add_office('capitol', 'Council Office',
-                                  address=office_address, phone=phone,
-                                  fax=fax, email=email)
+            legislator = Legislator(
+                term,
+                'upper',
+                district,
+                name,
+                party=party,
+                url=url,
+                photo_url=photo_url)
+
+            legislator.add_office(
+                'capitol',
+                'Council Office',
+                address=office_address,
+                phone=phone,
+                fax=fax,
+                email=email)
+
             legislator.add_source(url)
+
             self.save_legislator(legislator)
