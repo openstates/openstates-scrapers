@@ -52,7 +52,7 @@ metadata = dict(
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=[
-        '107th General Assembly', '106th General Assembly',
+        '107th General Assembly',
         '105th General Assembly', '104th General Assembly',
         '103rd General Assembly', '102nd General Assembly',
         '101st General Assembly', '100th General Assembly',
@@ -62,7 +62,7 @@ metadata = dict(
 
 
 def session_list():
-    # Special sessions are aviable in the archive, but not in current session.
+    # Special sessions are available in the archive, but not in current session.
     # Solution is to scrape special session as part of regular session
     from billy.scrape.utils import url_xpath
     sessions = [
