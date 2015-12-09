@@ -30,7 +30,11 @@ class DCLegislatorScraper(LegislatorScraper):
             doc.make_links_absolute(url)
 
             descriptor = doc.xpath('//p[@class="head-descriptor"]/text()')[0]
-            name = doc.xpath('//h2/text()')[0]
+            title_name = doc.xpath('//h2/text()')[0]
+
+            name = re.sub('Councilmember ', '', title_name)
+            #removes the title that is prepended to the name
+
             if 'Chairman' in descriptor:
                 district = 'Chairman'
             else:
