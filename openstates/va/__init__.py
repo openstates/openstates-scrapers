@@ -35,12 +35,6 @@ metadata = {
             'start_year': 2014,
             'end_year': 2015,
         },
-        {
-            'name': '2016-2017',
-            'sessions': ['2016'],
-            'start_year': 2016,
-            'end_year': 2017,
-        },
     ],
     'session_details': {
         '2010': {
@@ -106,31 +100,37 @@ metadata = {
             'display_name': '2015, 1st Special Session',
             '_scraped_name': '2015 Special Session I',
         },
-        '2016': {
-            'start_date': datetime.date(2016, 1, 13),
-            'site_id': '161',
-            'display_name': '2016 Regular Session',
-            '_scraped_name': '2016 Session',
-        },
-
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': ['2009 Session', '2015 Session',
-                                  '2009 Special Session I', '2008 Session',
-                                  '2008 Special Session I',
-                                  '2008 Special Session II',
-                                  '2007 Session', '2006 Session',
-                                  '2006 Special Session I', '2005 Session',
-                                  '2004 Session', '2004 Special Session I',
-                                  '2004 Special Session II', '2003 Session',
-                                  '2002 Session', '2001 Session',
-                                  '2001 Special Session I', '2000 Session',
-                                  '1999 Session', '1998 Session',
-                                  '1998 Special Session I', '1997 Session',
-                                  '1996 Session', '1995 Session',
-                                  '1994 Session', '1994 Special Session I',
-                                  '1994 Special Session II']
-
+    '_ignored_scraped_sessions': [
+        '2016 Session',
+        '2009 Session', 
+        '2009 Special Session I',
+        '2008 Session',
+        '2008 Special Session I',
+        '2008 Special Session II',
+        '2007 Session',
+        '2006 Session',
+        '2006 Special Session I',
+        '2005 Session',
+        '2004 Session',
+        '2004 Special Session I',
+        '2004 Special Session II',
+        '2003 Session',
+        '2002 Session',
+        '2001 Session',
+        '2001 Special Session I',
+        '2000 Session',
+        '1999 Session',
+        '1998 Session',
+        '1998 Special Session I',
+        '1997 Session',
+        '1996 Session',
+        '1995 Session',
+        '1994 Session',
+        '1994 Special Session I',
+        '1994 Special Session II',
+    ]
 }
 
 def session_list():
