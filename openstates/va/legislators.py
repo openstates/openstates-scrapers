@@ -131,19 +131,22 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             phone = None
             email = None
             for li in ul.getchildren():
-                text = li.text_content()
-                if re.match('\(\d{3}\)', text):
-                    phone = text
-                elif text.startswith('email:'):
-                    email = text.strip('email: ').strip()
-                else:
-                    address.append(text)
-                office_type = ('capitol' if 'Capitol Square' in address
-                        else 'district')
-                name = ('Capitol Office' if office_type == 'capitol'
-                        else 'District Office')
-            leg.add_office(office_type, name, address='\n'.join(address),
-                           phone=phone, email=email)
+                self.debug(li)
+                if li is not None:
+                    text = li.text_content()
+                    if re.match('\(\d{3}\)', text):
+                        phone = text
+                    elif text.startswith('email:'):
+                        email = text.strip('email: ').strip()
+                    else:
+                        address.append(text)
+                    office_type = ('capitol' if 'Capitol Square' in address
+                            else 'district')
+                    name = ('Capitol Office' if office_type == 'capitol'
+                            else 'District Office')
+                    self.debug('\n'.join(address))
+                    leg.add_office(office_type, name, address='\n'
+                        .join(address), phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,
