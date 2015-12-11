@@ -86,9 +86,15 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         if photo_url in blank_urls:
             photo_url = ''
 
-        if name in CHAMBER_MOVES:
-            if chamber != CHAMBER_MOVES[name]:
-                return  # Skip bad chambers.
+        elect = False
+        elect_match = re.search(r'( - Elect)$', name)
+        if elect_match is not None:
+            self.debug(name + ' is elect')
+            elect = True
+
+        if elect or\
+            (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
+            return
 
         if "vacated" in name.lower():
             self.logger.warning("Seat seems to have been vacated: '{}'".format(name))
