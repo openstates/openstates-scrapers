@@ -131,7 +131,6 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             phone = None
             email = None
             for li in ul.getchildren():
-                self.debug(li)
                 if li is not None:
                     text = li.text_content()
                     if re.match('\(\d{3}\)', text):
@@ -144,7 +143,6 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
                             else 'district')
                     name = ('Capitol Office' if office_type == 'capitol'
                             else 'District Office')
-                    self.debug('\n'.join(address))
                     leg.add_office(office_type, name, address='\n'
                         .join(address), phone=phone, email=email)
 
