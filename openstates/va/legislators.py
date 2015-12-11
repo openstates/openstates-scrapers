@@ -149,8 +149,8 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
                             else 'district')
                     name = ('Capitol Office' if office_type == 'capitol'
                             else 'District Office')
-                    leg.add_office(office_type, name, address='\n'
-                        .join(address), phone=phone, email=email)
+
+            leg.add_office(office_type, name, address='\n'.join(address), phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,
