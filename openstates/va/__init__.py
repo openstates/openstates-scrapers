@@ -116,6 +116,13 @@ metadata = {
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2016 Session',
+        '2014 Session',
+        '2014 Session',
+        '2013 Session',
+        '2012 Session',
+        '2013 Session',
+        '2012 Session',
+        '2010 Session',
         '2009 Session', 
         '2009 Special Session I',
         '2008 Session',
@@ -144,6 +151,7 @@ metadata = {
         '1994 Special Session II',
     ]
 }
+
 
 def session_list():
     from billy.scrape.utils import url_xpath
