@@ -87,7 +87,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             photo_url = ''
 
         elect = False
-        elect_match = re.search(r'( - Elect)$', name)
+        elect_match = re.search(r'(- Elect)$', name)
         if elect_match is not None:
             self.debug(name + ' is elect')
             elect = True
