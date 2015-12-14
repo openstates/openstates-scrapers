@@ -89,7 +89,6 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         elect = False
         elect_match = re.search(r'(- Elect)$', name)
         if elect_match is not None:
-            self.debug(name + ' is elect')
             elect = True
 
         if elect or\
