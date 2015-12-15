@@ -2,6 +2,7 @@ import datetime
 import lxml.html
 import logging
 from billy.utils.fulltext import text_after_line_numbers
+from billy.scrape.utils import url_xpath
 from .bills import VABillScraper
 from .legislators import VALegislatorScraper
 
@@ -104,12 +105,15 @@ metadata = {
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
+        '2016 Session',
+        '2014 Special Session I',
         '2014 Session',
-        '2014 Session',
+        '2013 Special Session I',
         '2013 Session',
+        '2012 Special Session I',
         '2012 Session',
-        '2013 Session',
-        '2012 Session',
+        '2011 Special Session I',
+        '2011 Session',
         '2010 Session',
         '2009 Session', 
         '2009 Special Session I',
@@ -142,17 +146,11 @@ metadata = {
 
 
 def session_list():
-    from billy.scrape.utils import url_xpath
-
     ignored_sessions = metadata.get('_ignored_scraped_sessions', [])
 
     sessions = url_xpath( 'http://lis.virginia.gov/',
         "//div[@id='sLink']//select/option/text()")
     sessions = [s.strip() for s in sessions if 'Session' in s]
-
-    for s in sessions[:]:
-        if s in ignored_sessions:
-            sessions.remove(s)
 
     return sessions
 
