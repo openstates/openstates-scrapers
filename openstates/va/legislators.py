@@ -53,6 +53,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             if 'resigned' in link.text:
                 self.log('skipping %s' % link.text)
                 continue
+            
             self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
@@ -130,26 +131,26 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             photo_url=photo_url,
         )
         leg.add_source(url)
-
-        for ul in doc.xpath('//ul[@class="linkNon"]'):
+ 
+        for ul in doc.xpath('//ul[@class="linkNon" and normalize-space()]'):
             address = []
             phone = None
             email = None
             for li in ul.getchildren():
-                if li is not None:
-                    text = li.text_content()
-                    if re.match('\(\d{3}\)', text):
-                        phone = text
-                    elif text.startswith('email:'):
-                        email = text.strip('email: ').strip()
-                    else:
-                        address.append(text)
-                    office_type = ('capitol' if 'Capitol Square' in address
-                            else 'district')
-                    name = ('Capitol Office' if office_type == 'capitol'
-                            else 'District Office')
+                text = li.text_content()
+                if re.match('\(\d{3}\)', text):
+                    phone = text
+                elif text.startswith('email:'):
+                    email = text.strip('email: ').strip()
+                else:
+                    address.append(text)
+                office_type = ('capitol' if 'Capitol Square' in address
+                        else 'district')
+                name = ('Capitol Office' if office_type == 'capitol'
+                        else 'District Office')
 
-            leg.add_office(office_type, name, address='\n'.join(address), phone=phone, email=email)
+            leg.add_office(office_type, name, address='\n'.join(address),
+                phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,
