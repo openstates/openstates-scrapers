@@ -1,5 +1,5 @@
 import lxml.html
-import datetime as dt
+import datetime
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
@@ -20,10 +20,12 @@ class MOLegislatorScraper(LegislatorScraper):
     def scrape(self, chamber, term):
         sessions = term.split('-')
         for session in sessions:
-            if int(session) > 2015:  # int(dt.datetime.now().year):
-                self.log("Not running session %s, it's in the future." % (
-                    session
-                ))
+            session_start_date = self.metadata['session_details'][session]\
+                ['start_date']
+
+            if session_start_date > datetime.date.today():
+                self.log('{} session has not begun - ignoring.'.format(
+                    session))
                 continue
 
             if chamber == 'upper':
