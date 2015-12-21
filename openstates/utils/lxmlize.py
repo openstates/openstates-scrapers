@@ -56,10 +56,4 @@ class LXMLMixin(object):
         Returns:
             List[Element]: All nodes found that match the query.
         """
-        try:
-            nodes = base_node.xpath(xpath_query)
-        except IndexError:
-            nodes = None
-
-        return nodes
-
+        return base_node.xpath(xpath_query)
