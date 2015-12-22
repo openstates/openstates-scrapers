@@ -29,7 +29,15 @@ metadata = {
                 "2014",
                 "2015",
             ]
-        }
+        },
+        {
+            "name": "2016-2019",
+            "start_year": 2016,
+            "end_year": 2019,
+            "sessions": [
+                "2016"
+            ]
+        }        
     ],
     "name": "Louisiana",
     "legislature_url": "http://www.legis.la.gov/",
@@ -80,6 +88,11 @@ metadata = {
             'display_name': '2015 Regular Session',
             '_scraped_name': '2015 Regular Session',
         },
+        "2016": {
+            "type": "primary",
+            'display_name': '2016 Regular Session',
+            '_scraped_name': '2016 Regular Session',
+        },        
     },
     "legislature_name": "Louisiana Legislature",
     'chambers': {
