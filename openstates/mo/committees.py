@@ -1,37 +1,39 @@
-import datetime as dt
+import datetime as datetime
 import lxml.html
 import xlrd
 import os
-
 from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.utils import LXMLMixin
 
 
-class MOCommitteeScraper(CommitteeScraper):
+class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
+
     jurisdiction = 'mo'
-    reps_url_base = 'http://www.house.mo.gov/'
-    senate_url_base = 'http://www.senate.mo.gov/'
-    no_members_text = 'This Committee does not have any members'
+    _reps_url_base = 'http://www.house.mo.gov/'
+    _senate_url_base = 'http://www.senate.mo.gov/'
+    _no_members_text = 'This Committee does not have any members'
 
-    def scrape(self, chamber, term_name):
-        session = None
-        if chamber == 'upper':
-            self.scrape_senate_committees(term_name, chamber)
+    def scrape(self, chamber, term):
+        self.validate_term(term, latest_only=True)
+        sessions = term.split('-')
 
-        elif chamber == 'lower':
-            #joint committees scraped as part of lower
-            self.validate_term(term_name, latest_only=True)
-            self.scrape_reps_committees(term_name, chamber)
+        for session in sessions:
+            session_start_date = self.metadata['session_details'][session]\
+                ['start_date']
 
-    def scrape_senate_committees(self, term_name, chamber):
-        years = [ t[2:] for t in term_name.split('-') ]
-        for year in years:
-            if int(year) > int(str(dt.datetime.now().year)[2:]):
-                self.log("Not running session %s, it's in the future." % (
-                    term_name
-                ))
+            if session_start_date > datetime.date.today():
+                self.log('{} session has not begun - ignoring.'.format(
+                    session))
                 continue
+
+            #joint committees scraped as part of lower
+            getattr(self, '_scrape_' + chamber + '_chamber')(session, chamber)
+
+    def _scrape_upper_chamber(self, session, chamber):
+            self.log('Scraping upper chamber for committees.')
+
             url = '{base}{year}info/com-standing.htm'.format(
-                                            base=self.senate_url_base, year=year)
+                base=self._senate_url_base, year=session[2:])
             page_string = self.get(url).text
             page = lxml.html.fromstring(page_string)
             comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
@@ -89,8 +91,10 @@ class MOCommitteeScraper(CommitteeScraper):
                 self.save_committee(committee)
 
 
-    def scrape_reps_committees(self, term_name, chamber):
-        url = '{base}ActiveCommittees.aspx'.format(base=self.reps_url_base)
+    def _scrape_lower_chamber(self, session, chamber):
+        self.log('Scraping lower chamber for committees.')
+
+        url = '{base}ActiveCommittees.aspx'.format(base=self._reps_url_base)
         page_string = self.get(url).text
         page = lxml.html.fromstring(page_string)
         table = page.xpath('//div[@class="lightened"]/table[1]')[0]
@@ -103,7 +107,7 @@ class MOCommitteeScraper(CommitteeScraper):
             if len(committee_parts) > 0:
                 status = committee_parts[1].strip()
             committee_url = tr.xpath('td/a')[0].attrib.get('href')
-            committee_url = '{base}{url}'.format(base=self.reps_url_base,
+            committee_url = '{base}{url}'.format(base=self._reps_url_base,
                                                  url=committee_url)
             actual_chamber = chamber
             if 'joint' in committee_name.lower():
@@ -131,7 +135,7 @@ class MOCommitteeScraper(CommitteeScraper):
                     mem_code = mem_links[0].attrib.get('href')
                 # Output is "Rubble, Barney, Neighbor"
                 mem_parts = mem_tr.text_content().strip().split(',')
-                if self.no_members_text in mem_parts:
+                if self._no_members_text in mem_parts:
                     continue
                 mem_name = (mem_parts[1].strip() + ' ' +
                             mem_parts[0].strip())

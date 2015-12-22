@@ -507,5 +507,3 @@ class MOBillScraper(BillScraper, LXMLMixin):
             self.warn('WARNINGS:')
             for url in self._bad_urls:
                 self.warn('{}'.format(url))
-
-
