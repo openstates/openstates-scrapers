@@ -98,14 +98,9 @@ class NMBillScraper(BillScraper):
 
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        if session == '2015':
-            fname = 'LegInfo15'
-            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo15.*zip)'
-        elif session == '2015S':
-            fname = 'LegInfo15S'
-            fname_re = '(\d{2}-\d{2}-\d{2}  \d{2}:\d{2}(?:A|P)M) .* (LegInfo15S.*zip)'
-        else:
-            raise ValueError('no zip file present for %s' % session)
+        fname = 'LegInfo{}'.format(session[2:])
+        fname_re = '(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
+            '({fname}.*zip)'.format(fname=fname)
 
         # use listing to get latest modified LegInfo zip
         listing = self.get(ftp_base).text
