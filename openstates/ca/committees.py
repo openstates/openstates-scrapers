@@ -81,6 +81,7 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
 
                 c = c.replace("Committee on ", "").replace(" Committee", "")
                 c = Committee(_chamber, c)
+                self.info(u'Saving {} committee.'.format(c['committee']))
                 c.add_source(_url)
                 c.add_source(url)
                 for member, role in self.scrape_lower_members(_url):
@@ -88,23 +89,32 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
 
                 _found = False
                 if not c['members']:
-                    for member, role in self.scrape_lower_members(
-                            _url + '/membersstaff'):
-                        _found = True
-                        c.add_member(member, role)
-                    if _found:
-                        source = _url + '/membersstaff'
-                        c.add_source(source)
+                    try:
+                        for member, role in self.scrape_lower_members(
+                                _url + '/membersstaff'):
+                            _found = True
+                            c.add_member(member, role)
+                        if _found:
+                            source = _url + '/membersstaff'
+                            c.add_source(source)
+                    except requests.exceptions.HTTPError:
+                        self.error(u"Unable to access member list for {} "
+                            "committee.".format(c['committee']))
 
                 if c['members']:
                     self.save_committee(c)
                 else:
-                    self.warning("No members found: {}".format(c))
+                    self.warning(u"No members found for {} committee."
+                        .format(c['committee']))
 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
         for subcom in div.xpath('div/div[@class="item-list"]'):
-            committee = subcom.xpath('h4/text()')[0]
+            committee = self.get_node(subcom, 'h4/text()')
+
+            if committee is None:
+                continue
+
             names = subcom.xpath('descendant::a/text()')
             names = map(strip, names)
             urls = subcom.xpath('descendant::a/@href')
@@ -119,18 +129,23 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
 
                 _found = False
                 if not c['members']:
-                    for member, role in self.scrape_lower_members(
+                    try:
+                        for member, role in self.scrape_lower_members(
                             _url + '/membersstaff'):
-                        _found = True
-                        c.add_member(member, role)
-                    if _found:
-                        source = _url + '/membersstaff'
-                        c.add_source(source)
+                            _found = True
+                            c.add_member(member, role)
+                        if _found:
+                            source = _url + '/membersstaff'
+                            c.add_source(source)
+                    except requests.exceptions.HTTPError:
+                        self.error(u"Unable to access member list for {} subcommittee."
+                            .format(c['subcommittee']))
 
                 if c['members']:
                     self.save_committee(c)
                 else:
-                    self.warning("No members found: {}".format(c))
+                    self.warning(u"No members found for {} subcommittee of {} "
+                        "committee".format(c['subcommittee'], c['committee']))
 
     def scrape_lower_members(self, url):
         ''' Scrape the members from this page. '''
