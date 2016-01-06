@@ -1,10 +1,11 @@
+import re
+from billy.scrape.utils import url_xpath
 from billy.utils.fulltext import worddata_to_text
 from .bills import KYBillScraper
 from .legislators import KYLegislatorScraper
 from .committees import KYCommitteeScraper
 from .events import KYEventScraper
 from .votes import KYVoteScraper
-
 
 metadata = dict(
     name='Kentucky',
@@ -32,7 +33,7 @@ metadata = dict(
         dict(
             name='2015-2016', start_year=2015, end_year=2016,
             sessions=[
-                '2015RS',
+                '2015RS', '2016RS',
             ]
         ),
     ],
@@ -66,15 +67,23 @@ metadata = dict(
                    'display_name': '2015 Regular Session',
                    '_scraped_name': '2015 Regular Session',
                   },
+        '2016RS': {'type': 'primary',
+                   'display_name': '2016 Regular Session',
+                   '_scraped_name': '2016 Regular Session',
+                  },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
     _ignored_scraped_sessions=[],
 )
 
+
 def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.lrc.ky.gov/legislation.htm',
-                     '//a[contains(@href, "record.htm")]/text()')
+    sessions = url_xpath('http://www.lrc.ky.gov/legislation.htm',
+        '//a[contains(@href, "record.htm")]/text()[normalize-space()]')
+    for index, session in enumerate(sessions):
+        sessions[index] = re.sub(r'[\r\n\t]+', '', session)
+
+    return sessions
 
 def extract_text(doc, data):
     return worddata_to_text(data)
