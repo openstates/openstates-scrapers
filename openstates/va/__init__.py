@@ -6,7 +6,9 @@ from billy.scrape.utils import url_xpath
 from .bills import VABillScraper
 from .legislators import VALegislatorScraper
 
-settings = dict(SCRAPELIB_RPM=40)
+settings = {
+    'SCRAPELIB_RPM': 40
+}
 
 metadata = {
     'name': 'Virginia',
@@ -40,8 +42,8 @@ metadata = {
         {
             'name': '2016-2017',
             'sessions': ['2016'],
-            'start_year': '2016',
-            'end_year': '2017',
+            'start_year': 2016,
+            'end_year': 2017,
         },
     ],
     'session_details': {
@@ -98,18 +100,21 @@ metadata = {
         },
         '2015': {
             'start_date': datetime.date(2015, 1, 14),
+            'end_date': datetime.date(2015, 2, 27),
             'site_id': '151',
             'display_name': '2015 Regular Session',
             '_scraped_name': '2015 Session',
         },
         '2015specialI': {
             'start_date': datetime.date(2015, 8, 17),
+            'end_date': datetime.date(2015, 8, 17),
             'site_id': '151',
             'display_name': '2015, 1st Special Session',
             '_scraped_name': '2015 Special Session I',
         },
         '2016': {
             'start_date': datetime.date(2016, 1, 13),
+            'end_date': datetime.date(2016, 3, 12),
             'site_id': '161',
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016 Session',
@@ -159,11 +164,9 @@ metadata = {
 
 
 def session_list():
-    ignored_sessions = metadata.get('_ignored_scraped_sessions', [])
-
     sessions = url_xpath( 'http://lis.virginia.gov/',
         "//div[@id='sLink']//select/option/text()")
-    sessions = [s.strip() for s in sessions if 'Session' in s]
+    sessions = [s.strip() for s in sessions if 'Session' in s] 
 
     return sessions
 
@@ -171,5 +174,5 @@ def session_list():
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
     text = ' '.join(x.text_content()
-                    for x in doc.xpath('//div[@id="mainC"]/p'))
+        for x in doc.xpath('//div[@id="mainC"]/p'))
     return text

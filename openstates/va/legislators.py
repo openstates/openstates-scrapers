@@ -87,13 +87,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         if photo_url in blank_urls:
             photo_url = ''
 
-        elect = False
-        elect_match = re.search(r'(- Elect)$', name)
-        if elect_match is not None:
-            elect = True
-
-        if elect or\
-            (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
+        if (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
             return
 
         if "vacated" in name.lower():
@@ -121,6 +115,9 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         party_district_line = doc.xpath('//h3/font/text()')[0]
         party, district = party_district_re.match(party_district_line).groups()
 
+        # Scrub status from name.
+        name = re.sub(r'(- Elect)$', '', name).strip()
+
         leg = Legislator(
             term=term,
             chamber=chamber,
@@ -131,7 +128,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             photo_url=photo_url,
         )
         leg.add_source(url)
- 
+
         for ul in doc.xpath('//ul[@class="linkNon" and normalize-space()]'):
             address = []
             phone = None
