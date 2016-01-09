@@ -389,11 +389,16 @@ class INBillScraper(BillScraper):
             
             #versions and votes
             for version in bill_json["versions"][::-1]:
-                version_json = client.get("bill_version",
+                try:
+                    version_json = client.get("bill_version",
                                         session=session,
                                         bill_id=version["billName"],
                                         version_id=version["printVersionName"])
 
+                except scrapelib.HTTPError:
+                    self.logger.warning("Bill version does not seem to exist.")
+                    continue
+                
                 self.deal_with_version(version_json,bill,proxy)
 
 
