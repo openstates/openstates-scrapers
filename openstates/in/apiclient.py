@@ -5,7 +5,15 @@ import urlparse
 import functools
 from OpenSSL.SSL import SysCallError
 
+"""
+API key must be passed as a header. You need the following headers to get JSON:
+Authorization = your_apikey
+Accept = "application/json"
 
+If you're trying to hit api links through your browser you
+need to install a header-modifying extension to do this, on firefox:
+https://addons.mozilla.org/en-US/firefox/addon/modify-headers/
+"""
 class BadApiResponse(Exception):
     '''Raised if the service returns a service code higher than 400,
     other than 429. Makes the response object avaible as exc.resp
