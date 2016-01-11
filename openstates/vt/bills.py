@@ -16,7 +16,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
         HTML_TAGS_RE = r'<.*?>'
 
         year_slug = session[5: ]
-        
+
         # Load all bills and resolutions via the private API
         bills_url = \
                 'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
@@ -169,7 +169,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     action_type = 'bill:passed'
                     chambers_passed.add("H")
                 elif actor == 'upper' and \
-                        any(x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
+                        any(x.lower().startswith(' aspassed') or x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
                     action_type = 'bill:passed'
                     chambers_passed.add("S")
                 else:
@@ -202,7 +202,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                 for member in roll_call:
                     (member_name, _district) = member['MemberName'].split(" of ")
                     member_name = member_name.strip()
-                    
+
                     if member['MemberVote'] == "Yea":
                         roll_call_yea.append(member_name)
                     elif member['MemberVote'] == "Nay":
