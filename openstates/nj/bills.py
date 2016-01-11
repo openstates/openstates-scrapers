@@ -236,7 +236,7 @@ class NJBillScraper(BillScraper, MDBMixin):
                 doc_name += ' ' + rec['Comment']
 
             if rec['DocType'] in self._version_types:
-                if htm_url.endswith('HTM'):
+                if htm_url.endswith('HTM') or htm_url.endswith('HTMX'):
                     mimetype = 'text/html'
                 elif htm_url.endswith('wpd'):
                     mimetype = 'application/vnd.wordperfect'
