@@ -29,7 +29,8 @@ class NVLegislatorScraper(LegislatorScraper):
 
         for item in resp:
             # empty district
-            if 'District No' in item['FullName']:
+            empty_names = ['District No', 'Vacant']
+            if any(name in item['FullName'] for name in empty_names):
                 continue
             last, first = item['FullName'].split(",", 1)
             item['FullName'] = "{first} {last}".format(last=last,
