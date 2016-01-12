@@ -30,65 +30,65 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             getattr(self, '_scrape_' + chamber + '_chamber')(session, chamber)
 
     def _scrape_upper_chamber(self, session, chamber):
-            self.log('Scraping upper chamber for committees.')
+        self.log('Scraping upper chamber for committees.')
 
-            url = '{base}{year}info/com-standing.htm'.format(
-                base=self._senate_url_base, year=session[2:])
-            page_string = self.get(url).text
-            page = lxml.html.fromstring(page_string)
-            comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
+        url = '{base}{year}info/com-standing.htm'.format(
+            base=self._senate_url_base, year=session[2:])
+        page_string = self.get(url).text
+        page = lxml.html.fromstring(page_string)
+        comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
 
-            for comm_link in comm_links:
-                if "Assigned bills" in comm_link.text_content():
+        for comm_link in comm_links:
+            if "Assigned bills" in comm_link.text_content():
+                continue
+
+            comm_link = comm_link.attrib['href']
+
+            if not "comm" in comm_link:
+                continue
+
+            comm_page = lxml.html.fromstring(self.get(comm_link).text)
+            comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
+            comm_name = comm_name.replace(' Committee', '')
+            comm_name = comm_name.strip()
+
+            committee = Committee(chamber, comm_name)
+
+            members = comm_page.xpath("//div[@id='mainContent']//li/a")
+            for member in members:
+                mem_link = member.attrib["href"]
+                if not "members" in mem_link:
+                    continue
+                mem_parts = member.text_content().strip().split(',')
+                mem_name = mem_parts[0]
+
+                #this one time, MO forgot the comma between
+                #the member and his district. Very rarely relevant
+                try:
+                    int(mem_name[-4:-2]) #the district's # is in this position
+                except ValueError:
+                    pass
+                else:
+                    mem_name = " ".join(mem_name.split(" ")[0:-1]) #member name fixed
+
+                    #ok, so this next line. We don't care about
+                    #the first 2 elements of mem_parts anymore
+                    #so whatever. But if the member as a role, we want
+                    #to make sure there are 3 elements in mem_parts and
+                    #the last one is actually the role. This sucks, sorry.
+                    mem_parts.append(mem_parts[-1])
+
+                mem_role = 'member'
+                if len(mem_parts) > 2:
+                    mem_role = mem_parts[2].lower()
+
+                if mem_name == "":
                     continue
 
-                comm_link = comm_link.attrib['href']
-
-                if not "comm" in comm_link:
-                    continue
-
-                comm_page = lxml.html.fromstring(self.get(comm_link).text)
-                comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
-                comm_name = comm_name.replace(' Committee', '')
-                comm_name = comm_name.strip()
-
-                committee = Committee(chamber, comm_name)
-
-                members = comm_page.xpath("//div[@id='mainContent']//li/a")
-                for member in members:
-                    mem_link = member.attrib["href"]
-                    if not "members" in mem_link:
-                        continue
-                    mem_parts = member.text_content().strip().split(',')
-                    mem_name = mem_parts[0]
-
-                    #this one time, MO forgot the comma between
-                    #the member and his district. Very rarely relevant
-                    try:
-                        int(mem_name[-4:-2]) #the district's # is in this position
-                    except ValueError:
-                        pass
-                    else:
-                        mem_name = " ".join(mem_name.split(" ")[0:-1]) #member name fixed
-
-                        #ok, so this next line. We don't care about
-                        #the first 2 elements of mem_parts anymore
-                        #so whatever. But if the member as a role, we want
-                        #to make sure there are 3 elements in mem_parts and
-                        #the last one is actually the role. This sucks, sorry.
-                        mem_parts.append(mem_parts[-1])
-
-                    mem_role = 'member'
-                    if len(mem_parts) > 2:
-                        mem_role = mem_parts[2].lower()
-
-                    if mem_name == "":
-                        continue
-
-                    committee.add_member(mem_name, role=mem_role)
-                committee.add_source(url)
-                committee.add_source(comm_link)
-                self.save_committee(committee)
+                committee.add_member(mem_name, role=mem_role)
+            committee.add_source(url)
+            committee.add_source(comm_link)
+            self.save_committee(committee)
 
 
     def _scrape_lower_chamber(self, session, chamber):
