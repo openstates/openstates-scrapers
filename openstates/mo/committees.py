@@ -1,4 +1,5 @@
 import datetime as datetime
+import re
 import lxml.html
 import xlrd
 import os
@@ -7,11 +8,13 @@ from openstates.utils import LXMLMixin
 
 
 class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
-
     jurisdiction = 'mo'
+
     _reps_url_base = 'http://www.house.mo.gov/'
     _senate_url_base = 'http://www.senate.mo.gov/'
     _no_members_text = 'This Committee does not have any members'
+    # Committee page markup changed in 2016.
+    _is_post_2015 = False
 
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
@@ -25,6 +28,9 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                 self.log('{} session has not begun - ignoring.'.format(
                     session))
                 continue
+            elif session_start_date >= self.metadata['session_details']\
+                ['2016']['start_date']:
+                self._is_post_2015 = True
 
             #joint committees scraped as part of lower
             getattr(self, '_scrape_' + chamber + '_chamber')(session, chamber)
@@ -32,11 +38,20 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
     def _scrape_upper_chamber(self, session, chamber):
         self.log('Scraping upper chamber for committees.')
 
-        url = '{base}{year}info/com-standing.htm'.format(
-            base=self._senate_url_base, year=session[2:])
-        page_string = self.get(url).text
-        page = lxml.html.fromstring(page_string)
-        comm_links = page.xpath('//div[@id = "mainContent"]//p/a')
+        if self._is_post_2015:
+            url = '{base}{year}web/standing-committees'.format(
+                base=self._senate_url_base, year=session[2:])
+            comm_container_id = 'primary'
+        else:
+            url = '{base}{year}info/com-standing.htm'.format(
+                base=self._senate_url_base, year=session[2:])
+            comm_container_id = 'mainContent'
+
+        page = self.lxmlize(url)
+
+        comm_links = self.get_nodes(
+            page,
+            '//div[@id = "{}"]//p/a'.format(comm_container_id))
 
         for comm_link in comm_links:
             if "Assigned bills" in comm_link.text_content():
@@ -44,23 +59,48 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
 
             comm_link = comm_link.attrib['href']
 
-            if not "comm" in comm_link:
-                continue
+            if self._is_post_2015:
+                if not "web" in comm_link:
+                    continue
+            else:
+                if not "comm" in comm_link:
+                    continue
 
-            comm_page = lxml.html.fromstring(self.get(comm_link).text)
-            comm_name = comm_page.xpath("//div[@id='mainContent']/p/text()")[0].strip()
+            comm_page = self.lxmlize(comm_link)
+
+            if self._is_post_2015:
+                comm_name = self.get_node(
+                    comm_page,
+                    '//h2[@class="entry-title"]/text()')
+                members = self.get_nodes(
+                    comm_page,
+                    '//div[@id="bwg_standart_thumbnails_0"]/a')
+            else:
+                comm_name = self.get_node(
+                    comm_page,
+                    '//div[@id="mainContent"]/p/text()')
+                members = self.get_nodes(
+                    comm_page,
+                    '//div[@id="mainContent"]//td/a')
+
             comm_name = comm_name.replace(' Committee', '')
             comm_name = comm_name.strip()
 
             committee = Committee(chamber, comm_name)
 
-            members = comm_page.xpath("//div[@id='mainContent']//li/a")
             for member in members:
                 mem_link = member.attrib["href"]
-                if not "members" in mem_link:
+                if not "mem" in mem_link:
                     continue
+
+                if self._is_post_2015:
+                    mem_parts = self.get_node(
+                        member,
+                        './/span[@class="bwg_title_spun2_0"]')
+
                 mem_parts = member.text_content().strip().split(',')
-                mem_name = mem_parts[0]
+                # Senator title stripping mainly for post-2015.
+                mem_name = re.sub('^Senator[\s]+', '', mem_parts[0])
 
                 #this one time, MO forgot the comma between
                 #the member and his district. Very rarely relevant
@@ -89,7 +129,6 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             committee.add_source(url)
             committee.add_source(comm_link)
             self.save_committee(committee)
-
 
     def _scrape_lower_chamber(self, session, chamber):
         self.log('Scraping lower chamber for committees.')
@@ -120,7 +159,6 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             committee_name = committee_name.replace('Joint', '')
             committee_name = committee_name.replace(' Committee', '')
             committee_name = committee_name.strip()
-
 
             committee = Committee(actual_chamber, committee_name, status=status)
             committee_page_string = self.get(committee_url).text
