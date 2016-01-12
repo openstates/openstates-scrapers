@@ -144,7 +144,8 @@ metadata = {
 def session_list():
     return url_xpath(
         'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
-        '//a[contains(text(), "Session")]/text()')
+        '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
+        '(text(), "Session")]/text()')
 
 
 def extract_text(doc, data):
