@@ -106,6 +106,7 @@ metadata = {
             'end_date': datetime.date(2015, 12, 19),
             'display_name': '29th Special Session (2015)',
             '_scraped_name': u'29th (2015) Special Session\xa0\xa0(click to close)',
+            '_committee_session': '29th2015Special',
             'slug': '29th2015Special',
         },
     },
