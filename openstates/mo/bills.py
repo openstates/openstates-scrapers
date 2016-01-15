@@ -172,6 +172,7 @@ class MOBillScraper(BillScraper):
 
         # stored on a separate page
         versions_url = bill_page.xpath('//*[@id="hlFullBillText"]')
+
         if len(versions_url) > 0 and versions_url[0].attrib.has_key('href'):
             self.parse_senate_bill_versions(bill, versions_url[0].attrib['href'])
 
@@ -182,13 +183,20 @@ class MOBillScraper(BillScraper):
         versions_page = self.get(url).text
         versions_page = lxml.html.fromstring(versions_page)
         version_tags = versions_page.xpath('//li/font/a')
+
+        # fixes for new session b/c of change in page structure
+        if len(version_tags) == 0:
+            version_tags = versions_page.xpath('//tr/td/a[not(@id="hlReturnBill")]')
+
         for version_tag in version_tags:
             description = version_tag.text_content()
+            
             pdf_url = version_tag.attrib['href']
             if pdf_url.endswith('pdf'):
                 mimetype = 'application/pdf'
             else:
                 mimetype = None
+            
             bill.add_version(description, pdf_url, mimetype=mimetype,
                              on_duplicate='use_new')
 
