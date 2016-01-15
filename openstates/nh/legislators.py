@@ -1,8 +1,6 @@
 import re
-
-from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
-
+from billy.scrape.legislators import LegislatorScraper, Legislator
 
 chamber_map = {'House': 'lower', 'Senate': 'upper'}
 party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent'}
@@ -43,7 +41,7 @@ class NHLegislatorScraper(LegislatorScraper):
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5, com6) = line.split('\t')
+             com4, com5, com6, com7) = line.split('*')
 
             chamber = chamber_map[chamber]
 
