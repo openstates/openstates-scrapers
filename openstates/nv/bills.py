@@ -1,15 +1,15 @@
 import re
 from datetime import datetime
 from collections import defaultdict
-
+import lxml.html
+import scrapelib
 from .utils import chamber_name, parse_ftp_listing
+from openstates.utils import LXMLMixin
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import VoteScraper, Vote
 
-import lxml.html
-import scrapelib
 
-class NVBillScraper(BillScraper):
+class NVBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'nv'
 
     _classifiers = (
@@ -101,7 +101,10 @@ class NVBillScraper(BillScraper):
                 root = lxml.html.fromstring(page)
 
                 bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                title = root.xpath('string(/html/body/div[@id="content"]/table[2]/tr[4]/td)')
+                title = self.get_node(
+                    root,
+                    '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
+                    'b[contains(text(), "By:")]]/td/em/text()')
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
@@ -121,7 +124,6 @@ class NVBillScraper(BillScraper):
                 for leg in secondary:
                     bill.add_sponsor('cosponsor', leg)
 
-
                 minutes_count = 2
                 for mr in root.xpath('//table[4]/tr/td[3]/a'):
                     minutes =  mr.xpath("string(@href)")
@@ -136,7 +138,6 @@ class NVBillScraper(BillScraper):
                 self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
                 self.save_bill(bill)
-
 
 
     def scrape_assem_bills(self, chamber, insert, session, year):
@@ -156,7 +157,10 @@ class NVBillScraper(BillScraper):
                 root.make_links_absolute("http://www.leg.state.nv.us/")
 
                 bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
-                title = root.xpath('string(/html/body/div[@id="content"]/table[2]/tr[4]/td)')
+                title = self.get_node(
+                    root,
+                    '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
+                    'b[contains(text(), "By:")]]/td/em/text()')
 
                 bill = Bill(session, chamber, bill_id, title,
                             type=bill_type)
@@ -208,17 +212,33 @@ class NVBillScraper(BillScraper):
     def scrape_sponsors(self, page):
         primary = []
         sponsors = []
+
         doc = lxml.html.fromstring(page)
-        for b in doc.xpath('//div[@id="content"]/table[2]/tr[3]/td/b'):
-            name = b.text.strip()
+        # These bold tagged elements should contain the primary sponsors.
+        b_nodes = self.get_nodes(
+            doc,
+            '//div[@id="content"]/table/tr/td[contains(./b/text(), "By:")]/b/'
+            'text()')
+
+        for b in b_nodes:
+            name = b.strip()
             # add these as sponsors (excluding junk text)
             if name not in ('By:', 'Bolded'):
                 primary.append(name)
+        
+        nb_nodes = self.get_nodes(
+            doc,
+            '//div[@id="content"]/table/tr/td[contains(./b/text(), "By:")]/text()')
 
         # tail of last b has remaining sponsors
-        for name in b.tail.split(', '):
-            if name.strip() and "name indicates primary sponsorship)" not in name:
-                sponsors.append(name.strip())
+        for node in nb_nodes:
+            if node == ' name indicates primary sponsorship)':
+                continue
+            names = re.sub('([\(\r\t\n\s])', '', node).split(',')
+
+            for name in names:
+                if name:
+                    sponsors.append(name.strip())
 
         return primary, sponsors
 

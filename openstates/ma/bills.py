@@ -66,6 +66,11 @@ class MABillScraper(BillScraper):
             title = doc.xpath('//h2/span/text()')[0].strip()
             desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
 
+            #for resoltions that do not always have a typical title
+            if (title == ''):
+                title = doc.xpath('//*[@id="billDetail"]/div[2]/p')[0].text_content().strip()
+
+
             # create bill
             bill = Bill(session, chamber, bill_id, title, summary=desc)
             bill.add_source(bill_url)

@@ -1,21 +1,16 @@
 from datetime import datetime
 import re
-
 import lxml.html
-
+import scrapelib
+import actions
 from openstates.utils import LXMLMixin
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
-import scrapelib
-import actions
 
 class DEBillScraper(BillScraper, LXMLMixin):
- 
     jurisdiction = 'de'
-
     categorizer = actions.Categorizer()
-
 
     def separate_names(self,text):
         text = text.replace("&nbsp","")
@@ -35,7 +30,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
             vote_documents[vote_name] = v.attrib["href"]
 
     def scrape_bill(self,link,chamber,session):
-
         legislation_types = {
             'House Bill': 'HB',
             'House Concurrent Resolution': 'HCR',
@@ -92,7 +86,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
         #there are no classes/ids or anything, so we're going to loop
         #through the individual tables and look for keywords
         #in the first td to tell us what we're looking at
-        tables = page.xpath(".//table")
+        tables = page.xpath('.//div[@id="page_content"]/table')
 
         bill_documents = {}
         action_list = []
@@ -101,13 +95,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
         bill_text_avail = False
 
         for table in tables:
-            tds = table.xpath(".//td")
+            tds = table.xpath('.//td')
             if len(tds) == 0:
                 #some kind of empty table for formatting reasons
                 continue
             title_text = tds[0].text_content().strip().lower()
 
-            if "primary sponsor" in title_text:
+            if title_text.startswith('primary sponsor'):
                 pri_sponsor_text = tds[1].text_content()
                 primary_sponsors = self.separate_names(pri_sponsor_text)
                 #sometimes additional sponsors are in a 3rd td
@@ -119,20 +113,21 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     if not "on behalf of all representatives" in add_spons_text.lower():
                         addl_sponsors = self.separate_names(add_spons_text)
 
-            elif "co-sponsor" in title_text:
+            elif title_text.startswith('co-sponsor'):
                 cosponsor_text = tds[1].text_content()
                 if "none..." in cosponsor_text.lower():
                     cosponsors = []
                     continue
                 cosponsors = self.separate_names(cosponsor_text)
 
-            elif "long title" in title_text:
+            elif title_text.startswith('long title'):
                 bill_title = tds[1].text_content().strip()
 
-            elif "amendment" in title_text:
-                amendments = tds[1].xpath(".//a")
+            elif title_text.startswith('amendment'):
+                amendments = tds[1].xpath('.//a')
                 for a in amendments:
                     amm = a.text
+                    self.logger.debug(amm)
                     amm_text = "Amendment".format(amm.strip())
                     amm_slg = "+".join(amm.split())
                     amm_link = text_base_url.format(session=session,
@@ -146,7 +141,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                                 self.find_vote(tds,vote_documents,"Amendment: ")
 
 
-            elif "engrossed version" in title_text:
+            elif title_text.startswith('engrossed version'):
                 if tds[1].text_content().strip():
                     engrossment_base = "http://legis.delaware.gov/LIS/lis{session}.nsf/EngrossmentsforLookup/{bill_id}/$file/Engross.html?open"
                     engrossment_link = engrossment_base.format(session=session,
@@ -154,7 +149,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
                     if bill_url not in bill_documents.values():
                         bill_documents["Engrossed Version"] = engrossment_link
 
-            elif "substituted" in title_text:
+            elif title_text.startswith('substituted'):
                 content = tds[1].text_content().strip()
                 if ("Substitute" in content and
                     not "Original" in content):
@@ -172,13 +167,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                         if bill_url not in bill_documents.values():
                             bill_documents["Bill Text"] = bill_url
 
-            elif "fiscal" in title_text:
+            elif title_text.startswith('fiscal notes'):
                 pass
                 #skipping fiscal notes for now, they are really ugly
                 #but leaving in as a placeholder so we can remember to
                 #do this someday, if we feel like it
 
-            elif "committee" in title_text:
+            elif title_text.startswith('committee reports'):
                 pass
                 #the committee reports let a legislator
                 #comment on a bill. They can comment as
@@ -189,10 +184,10 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 #appear in the bill's action history as being
                 #reported out of committee
 
-            elif "voting" in title_text:
+            elif title_text.startswith('voting'):
                 self.find_vote(tds,vote_documents)
                 
-            elif "actions history" in title_text:
+            elif title_text.startswith('actions history'):
                 action_list = tds[1].text_content().split("\n")
 
         sub_versions = []
@@ -329,7 +324,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
         bill.add_source(link)
 
         return bill
-
 
     def scrape(self,chamber,session):
         bill_codes = {"lower":[1,2,3,4],"upper":[5,6,7,8]}

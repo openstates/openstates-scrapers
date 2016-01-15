@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 import scrapelib
 
-
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
@@ -22,7 +21,6 @@ class INBillScraper(BillScraper):
 
     categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
-
 
     def make_html_source(self,session,bill_id):
         url = "http://iga.in.gov/legislative/{}/".format(session)
@@ -52,8 +50,6 @@ class INBillScraper(BillScraper):
         url += str(int(bill_num))
         return url
 
-
-
     def get_name(self,random_json):
         #got sick of doing this everywhere
         return random_json["firstName"] + " " + random_json["lastName"]
@@ -78,12 +74,10 @@ class INBillScraper(BillScraper):
             lines = text.split("\n")
             os.remove(path)
 
-
             chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
             vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
-
 
             passed = None
 
@@ -143,7 +137,6 @@ class INBillScraper(BillScraper):
             assert len(vote["other_votes"]) == vote["other_count"],\
                 "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"]))
             
-
             #indiana only has simple majorities even for veto overrides
             #if passage status isn't the same as yes>no, then we should look!
             if vote["passed"] != (vote["yes_count"] > vote["no_count"]):
@@ -197,11 +190,11 @@ class INBillScraper(BillScraper):
         votes = version["rollcalls"]
         self.process_votes(votes,bill,proxy)
 
-
     def scrape(self, session, chambers):
         
         api_base_url = "https://api.iga.in.gov"
         proxy = {"url":"http://in.proxy.openstates.org"}
+
         #ah, indiana. it's really, really hard to find
         #pdfs in their web interface. Super easy with
         #the api, but a key needs to be passed
@@ -209,7 +202,6 @@ class INBillScraper(BillScraper):
         #viewable to the public and our scrapers,
         #sunlight's put up a proxy service at this link
         #using our api key for pdf document access.
-
 
         client = ApiClient(self)
         r = client.get("bills",session=session)
@@ -224,10 +216,13 @@ class INBillScraper(BillScraper):
                 disp_bill_id = bill_id[:idx]+" "+str(int(bill_id[idx:]))
                 break
 
-
             bill_link = b["link"]
             api_source = api_base_url + bill_link
-            bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
+            try:
+                bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
+            except scrapelib.HTTPError:
+                self.logger.warning('Bill could not be accessed. Skipping.')
+                continue
             
             title = bill_json["title"]
             if title == "NoneNone":
@@ -242,7 +237,6 @@ class INBillScraper(BillScraper):
             if not title:
                 title = bill_id
                 self.logger.warning("Bill is missing a title, using bill id instead.")
-
 
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
             bill = Bill(session,original_chamber,disp_bill_id,title)
@@ -331,7 +325,6 @@ class INBillScraper(BillScraper):
                     committee = d.split("committee on")[-1].strip()
                     action_type.append("committee:referred")
 
-
                 if "committee report" in d:
                     if "pass" in d:
                         action_type.append("committee:passed")
@@ -346,10 +339,8 @@ class INBillScraper(BillScraper):
                     if "withdraw" in d:
                         action_type.append("amendment:withdrawn")
 
-
                 if "signed by the governor" in d:
                     action_type.append("governor:signed")
-
 
                 if ("not substituted for majority report" in d
                     or "returned to the house" in d
@@ -380,23 +371,22 @@ class INBillScraper(BillScraper):
                 else:
                     bill.add_action(action_chamber,action_desc,date,type=action_type)
 
-
-
             #subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             bill["subjects"] = subjects
 
-            
             #versions and votes
             for version in bill_json["versions"][::-1]:
-                version_json = client.get("bill_version",
+                try:
+                    version_json = client.get("bill_version",
                                         session=session,
                                         bill_id=version["billName"],
                                         version_id=version["printVersionName"])
 
+                except scrapelib.HTTPError:
+                    self.logger.warning("Bill version does not seem to exist.")
+                    continue
+                
                 self.deal_with_version(version_json,bill,proxy)
 
-
-
             self.save_bill(bill)
-

@@ -1,12 +1,13 @@
+import re
+import scrapelib
+import zipfile
+import csv
+import os
 from datetime import datetime
 from .utils import chamber_name, MDBMixin
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
-import scrapelib
-import zipfile
-import csv
-import os
 
 class NJBillScraper(BillScraper, MDBMixin):
     jurisdiction = 'nj'
@@ -236,6 +237,10 @@ class NJBillScraper(BillScraper, MDBMixin):
                 doc_name += ' ' + rec['Comment']
 
             if rec['DocType'] in self._version_types:
+                # Clean HTMX links.
+                if htm_url.endswith('HTMX'):
+                    htm_url = re.sub('X$', '', htm_url)
+
                 if htm_url.endswith('HTM'):
                     mimetype = 'text/html'
                 elif htm_url.endswith('wpd'):

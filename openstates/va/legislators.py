@@ -53,6 +53,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             if 'resigned' in link.text:
                 self.log('skipping %s' % link.text)
                 continue
+            
             self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
@@ -86,9 +87,8 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         if photo_url in blank_urls:
             photo_url = ''
 
-        if name in CHAMBER_MOVES:
-            if chamber != CHAMBER_MOVES[name]:
-                return  # Skip bad chambers.
+        if (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
+            return
 
         if "vacated" in name.lower():
             self.logger.warning("Seat seems to have been vacated: '{}'".format(name))
@@ -115,6 +115,9 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         party_district_line = doc.xpath('//h3/font/text()')[0]
         party, district = party_district_re.match(party_district_line).groups()
 
+        # Scrub status from name.
+        name = re.sub(r'(- Elect)$', '', name).strip()
+
         leg = Legislator(
             term=term,
             chamber=chamber,
@@ -126,7 +129,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         )
         leg.add_source(url)
 
-        for ul in doc.xpath('//ul[@class="linkNon"]'):
+        for ul in doc.xpath('//ul[@class="linkNon" and normalize-space()]'):
             address = []
             phone = None
             email = None
@@ -142,8 +145,9 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
                         else 'district')
                 name = ('Capitol Office' if office_type == 'capitol'
                         else 'District Office')
+
             leg.add_office(office_type, name, address='\n'.join(address),
-                           phone=phone, email=email)
+                phone=phone, email=email)
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,
