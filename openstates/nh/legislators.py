@@ -52,11 +52,6 @@ class NHLegislatorScraper(LegislatorScraper):
             middle = middle.strip()
             last = last.strip('"')
 
-            if last == "TRUE":
-                assert fullname == '"True, Chris"'
-                last = "True"
-                special_case_used = True
-
             if middle:
                 full = '%s %s %s' % (first, middle, last)
             else:
@@ -107,5 +102,3 @@ class NHLegislatorScraper(LegislatorScraper):
 
             leg.add_source(url)
             self.save_legislator(leg)
-
-        assert special_case_used, "Remove special casing for Chris True"
