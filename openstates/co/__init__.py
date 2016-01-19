@@ -23,7 +23,7 @@ metadata = dict(
          'sessions': ['2013A', '2014A'],
          'start_year': 2013, 'end_year': 2014},
         {'name': '2015-2016',
-         'sessions': ['2015A',],
+         'sessions': ['2015A', '2016A'],
          'start_year': 2015, 'end_year': 2016},
         ],
     session_details={
