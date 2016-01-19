@@ -23,7 +23,7 @@ metadata = dict(
          'sessions': ['2013A', '2014A'],
          'start_year': 2013, 'end_year': 2014},
         {'name': '2015-2016',
-         'sessions': ['2015A',],
+         'sessions': ['2015A', '2016A'],
          'start_year': 2015, 'end_year': 2016},
         ],
     session_details={
@@ -58,9 +58,18 @@ metadata = dict(
              'display_name': '2015 Regular Session',
             '_scraped_name': "2015 Regular Session",
          },
+        '2016A': {
+            'type'         : 'primary',
+             'display_name': '2016 Regular Session',
+            '_scraped_name': "2016 Regular Session",
+         },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions = [
+        '2013 Legislative Session',
+        '2012 First Special Session',
+        '2012 Legislative Session',
+        '2011 Legislative Session',
         '2010 Legislative Session',
         '2009 Legislative Session',
         '2008 Legislative Session',
@@ -83,7 +92,7 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     import re
-    tags = url_xpath('http://www.leg.state.co.us/clics/clics2011a/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
+    tags = url_xpath('http://www.leg.state.co.us/clics/clics2014a/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
         "//font/text()")
     sessions = []
     regex = "2[0-9][0-9][0-9]\ .*\ Session"
@@ -93,7 +102,7 @@ def session_list():
         for session in sess:
             sessions.append( session )
 
-    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2015A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
+    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2016A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
         "//font/text()")
     for tag in tags:
         sess = re.findall(regex, tag)
