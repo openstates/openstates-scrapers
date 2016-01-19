@@ -74,7 +74,7 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015', '2015spcl'],
+            'sessions': ['2015', '2015spcl', '2016'],
         },
     ],
     'session_details': {
@@ -188,6 +188,13 @@ metadata = {
             'display_name': '65th Legislature, 1st Extraordinary Session (2015)',
             '_scraped_name': '2015 Extraordinary Session Information',
         },
+        '2016' : {
+            'type': 'primary',
+            'start_date': datetime.date(2016, 1, 11),
+            'end_date': datetime.date(2016, 3, 25),
+            'display_name': '63rd Legislature, 2nd Regular Session (2016)',
+            '_scraped_name': '2016 Session Information',
+        }        
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': [
