@@ -108,7 +108,7 @@ metadata = {
         '2015specialI': {
             'start_date': datetime.date(2015, 8, 17),
             'end_date': datetime.date(2015, 8, 17),
-            'site_id': '151',
+            'site_id': '152',
             'display_name': '2015, 1st Special Session',
             '_scraped_name': '2015 Special Session I',
         },
@@ -133,7 +133,7 @@ metadata = {
         '2011 Special Session I',
         '2011 Session',
         '2010 Session',
-        '2009 Session', 
+        '2009 Session',
         '2009 Special Session I',
         '2008 Session',
         '2008 Special Session I',
@@ -166,7 +166,7 @@ metadata = {
 def session_list():
     sessions = url_xpath( 'http://lis.virginia.gov/',
         "//div[@id='sLink']//select/option/text()")
-    sessions = [s.strip() for s in sessions if 'Session' in s] 
+    sessions = [s.strip() for s in sessions if 'Session' in s]
 
     return sessions
 
