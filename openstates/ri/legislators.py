@@ -62,8 +62,9 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             slug = re.match(
-                "(?P<class>sen|rep)-(?P<slug>.*)@rilin\.state\.ri\.us", d['email']
+                "(?P<class>sen|rep)-(?P<slug>.*)@(rilin\.state\.ri\.us|rilegislature\.gov)", d['email']
             )
+            
             if 'asp' in d['email']:
                 d['email'] = None
 
