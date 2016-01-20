@@ -124,6 +124,9 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             if homepage_url is not None:
                 kwargs['url'] = homepage_url
 
+            if d['address'] is '':
+                d['address'] = 'No Address Found'
+
             leg = Legislator(term, chamber, district_name, full_name,
                              '', '', '',
                              translate[d['party']],
