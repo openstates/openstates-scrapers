@@ -415,6 +415,10 @@ class NMBillScraper(BillScraper):
 
         # all links but first one
         for fname in doc.xpath('//a/text()')[1:]:
+            # if a COPY continue 
+            if re.search('- COPY', fname):
+                continue 
+
             # Delete any errant words found following the file name
             fname = fname.split(" ")[0]
 
