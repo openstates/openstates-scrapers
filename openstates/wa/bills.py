@@ -364,7 +364,7 @@ class WABillScraper(BillScraper, LXMLMixin):
                 else:
                     # Sometimes an action just refers to meeting that's a
                     # week in the future.`
-                    if 'scheduled for' in action['action'].lower():
+                    if re.search('scheduled for|placed on', action['action'].lower()):
                         continue
                     msg = 'Found an action date that was in the future.'
                     raise Exception(msg)
