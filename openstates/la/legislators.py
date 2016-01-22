@@ -54,6 +54,9 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         address = "\n".join(info[party_index + 2:phone_index - 1])
         address = address.replace("\r", "")
 
+        if not address:
+            address = "No Address Found"
+        
         fax_index = info.index("Fax") + 1
         fax = info[fax_index]
         assert (sum(c.isdigit() for c in fax) == 9,
@@ -77,7 +80,6 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
                        email=email)
 
         leg.add_source(url)
-
         self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
