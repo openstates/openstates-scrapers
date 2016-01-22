@@ -1,32 +1,44 @@
+import datetime
 import lxml.html
 from .bills import CTBillScraper
 from .legislators import CTLegislatorScraper
 from .events import CTEventScraper
 
-settings = dict(SCRAPELIB_RPM = 20)
+settings = {
+    'SCRAPELIB_RPM': 20
+}
 
-metadata = dict(
-    name='Connecticut',
-    capitol_timezone='America/New_York',
-    abbreviation='ct',
-    legislature_name='Connecticut General Assembly',
-    legislature_url='http://www.cga.ct.gov/',
-    chambers = {
+metadata = {
+    'name': 'Connecticut',
+    'abbreviation': 'ct',
+    'legislature_name': 'Connecticut General Assembly',
+    'legislature_url': 'http://www.cga.ct.gov/',
+    'capitol_timezone': 'America/New_York',
+    'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
-    terms=[
-        {'name': '2011-2012',
-         'sessions': ['2011', '2012'],
-         'start_year': 2011, 'end_year': 2012},
-        {'name': '2013-2014',
-         'sessions': ['2013', '2014'],
-         'start_year': 2013, 'end_year': 2014},
-        {'name': '2015-2016',
-         'sessions': ['2015'],
-         'start_year': 2015, 'end_year': 2016},
+    'terms': [
+        {
+            'name': '2011-2012',
+            'start_year': 2011,
+            'end_year': 2012,
+            'sessions': ['2011', '2012'],
+        },
+        {
+            'name': '2013-2014',
+            'start_year': 2013,
+            'end_year': 2014,
+            'sessions': ['2013', '2014'],
+        },
+        {
+            'name': '2015-2016',
+            'start_year': 2015,
+            'end_year': 2016,
+            'sessions': ['2015', '2016'],
+        },
     ],
-    session_details={
+    'session_details': {
         '2011': {
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011',
@@ -47,12 +59,24 @@ metadata = dict(
             'display_name': '2015 Regular Session',
             '_scraped_name': '2015',
         },
+        '2016': {
+            'display_name': '2016 Regular Session',
+            'start_date': datetime.date(2016, 2, 3),
+            'end_date': datetime.date(2016, 5, 4),
+            '_scraped_name': '2016',
+        },
     },
-    feature_flags=['subjects', 'events', 'influenceexplorer'],
-    _ignored_scraped_sessions=[
-            '2005', '2006', '2007', '2008', '2009', '2010'
-            ]
-)
+    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
+    '_ignored_scraped_sessions': [
+        '2010',
+        '2009',
+        '2008',
+        '2007',
+        '2006',
+        '2005',
+    ],
+}
+
 
 def session_list():
     import scrapelib
@@ -62,6 +86,7 @@ def session_list():
     for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac"):
         sessions.remove(not_session_name)
     return sessions
+
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)
