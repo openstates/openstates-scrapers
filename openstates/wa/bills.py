@@ -368,9 +368,10 @@ class WABillScraper(BillScraper, LXMLMixin):
                         continue
 
                     # temporary fix for SB 5255 b/c of wrong date
-                    if bill['bill_id'] == 'SB 5255':
+                    if bill['bill_id'] == 'SB 5255' and\
+                        action['action'] == 'Placed on second reading.':
                         action['date'] = datetime.datetime(
-                            year=date.year - 1, month=date.month, day=date.day)
+                            year=2015, month=date.month, day=date.day)
                         continue 
 
                     msg = 'Found an action date that was in the future.'
