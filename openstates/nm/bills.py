@@ -522,10 +522,10 @@ class NMBillScraper(BillScraper):
             #         line = line.replace(y.format(x), " ")
 
             if not in_votes:
-                dmatch = re.search('DATE: (\d{2}-\d{2}-\d{2})', line)
+                dmatch = re.search('DATE:\s+(\d{2}/\d{2}/\d{2})', line)
                 if dmatch:
                     date = dmatch.groups()[0]
-                    vote['date'] = datetime.strptime(date, '%m-%d-%y')
+                    vote['date'] = datetime.strptime(date, '%m/%d/%y')
 
                 els = re.findall("YES.*NO.*ABS.*EXC", line)
                 if els != []:
@@ -602,14 +602,13 @@ class NMBillScraper(BillScraper):
                         else:
                             raise ValueError("Bad parse")
 
-
         if not isinstance(vote['date'], datetime):
             return None
 
         return vote
 
     # house totals
-    HOUSE_TOTAL_RE = re.compile('\s+Absent:\s+(\d+)\s+Yeas:\s+(\d+)\s+Nays:\s+(\d+)\s+Excused:\s+(\d+)')
+    HOUSE_TOTAL_RE = re.compile('\s+YEAS:\s+(\d+)\s+NAYS:\s+(\d+)\s+EXCUSED:\s+(\d+)\s+ABSENT:\s+(\d+)')
 
     def parse_house_vote(self, url):
         """ house votes are pdfs that can be converted to text, require some
@@ -628,10 +627,10 @@ class NMBillScraper(BillScraper):
             return None
 
         date = re.findall('(\d+/\d+/\d+)', text)[0]
-        date = datetime.strptime(date, '%m/%d/%y')
+        date = datetime.strptime(date, '%m/%d/%Y')
 
         # get totals
-        absent, yea, nay, exc = self.HOUSE_TOTAL_RE.findall(text)[0]
+        yea, nay, exc, absent = self.HOUSE_TOTAL_RE.findall(text)[0]
 
         # make vote (faked passage indicator)
         vote = Vote('lower', date, 'house passage', int(yea) > int(nay),
