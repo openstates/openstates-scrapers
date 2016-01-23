@@ -366,6 +366,13 @@ class WABillScraper(BillScraper, LXMLMixin):
                     # week in the future.`
                     if 'scheduled for' in action['action'].lower():
                         continue
+
+                    # temporary fix for SB 5255 b/c of wrong date
+                    if bill['bill_id'] == 'SB 5255':
+                        action['date'] = datetime.datetime(
+                            year=date.year - 1, month=date.month, day=date.day)
+                        continue 
+
                     msg = 'Found an action date that was in the future.'
                     raise Exception(msg)
 
