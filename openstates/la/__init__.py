@@ -17,6 +17,7 @@ metadata = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
+    # Louisiana legislators serve four-year terms.
     'terms': [
         {
             'name': '2008-2011',
@@ -27,7 +28,7 @@ metadata = {
                 '2010',
                 '2011 1st Extraordinary Session',
                 '2011',
-            ]
+            ],
         },
         {
             'name': '2012-2015',
@@ -38,9 +39,16 @@ metadata = {
                 '2013',
                 '2014',
                 '2015',
+            ],
+        },
+        {
+            'name': '2016-2019',
+            'start_year': 2016,
+            'end_year': 2019,
+            'sessions': [
                 '2016',
-            ]
-        }
+            ],
+        },
     ],
     'session_details': {
         '2009': {
@@ -59,27 +67,37 @@ metadata = {
         },
         '2011 1st Extraordinary Session': {
             'type': 'special',
+            'start_date': datetime.date(2011, 3, 20),
+            'end_date': datetime.date(2011, 4, 13),
             'display_name': '2011, 1st Extraordinary Session',
             '_id': '111es',
             '_scraped_name': '2011 First Extraordinary Session',
         },
         '2011': {
             'type': 'primary',
+            'start_date': datetime.date(2011, 4, 25),
+            'end_date': datetime.date(2011, 6, 23),
             'display_name': '2011 Regular Session',
             '_scraped_name': '2011 Regular Session',
         },
         '2012': {
             'type': 'primary',
+            'start_date': datetime.date(2012, 3, 12),
+            'end_date': datetime.date(2012, 6, 4),
             'display_name': '2012 Regular Session',
             '_scraped_name': '2012 Regular Session',
         },
         '2013': {
             'type': 'primary',
+            'start_date': datetime.date(2013, 4, 8),
+            'end_date': datetime.date(2013, 6, 6),
             'display_name': '2013 Regular Session',
             '_scraped_name': '2013 Regular Session',
         },
         '2014': {
             'type': 'primary',
+            'start_date': datetime.date(2014, 3, 10),
+            'end_date': datetime.date(2014, 6, 2),
             'display_name': '2014 Regular Session',
             '_scraped_name': '2014 Regular Session',
         },
