@@ -134,7 +134,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             if not passed and votes['yes_count'] > votes['no_count']:
                 self.logger.warning("The bill got a majority but did not pass. Could be worth confirming.")
             
-            vote = Vote(motion=motion,
+            vote = Vote(motion=re.sub('\xad', '-', motion),
                         passed=passed,
                         chamber=chamber, date=date,
                         session=session, bill_id=bill_id,
