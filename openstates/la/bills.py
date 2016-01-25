@@ -239,6 +239,12 @@ class LABillScraper(BillScraper, LXMLMixin):
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
             date += "/%s" % (session)  # Session is April --> June. Prefiles
             # look like they're in January at earliest.
+
+            #required to remove the special session extended name, this will remove any characters, including and following a space
+            if (re.search('\s(.*)', date) is not None):
+                m = re.search('\s(.*)', date)
+                date = date[:m.start()]
+
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             chamber = {"S": "upper", "H": "lower", "J": 'joint'}[chamber]
 
