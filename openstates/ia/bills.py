@@ -25,7 +25,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
         session_id = self.metadata['session_details'][session]['number']
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = self.lxmlize(url))
+        doc = self.lxmlize(url)
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
@@ -57,7 +57,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
         url = (base_url % (session_id, bill_offset))
-        page = self.lxmlize(url))
+        page = self.lxmlize(url)
 
         if chamber == 'upper':
             bname = 'senateBills'
