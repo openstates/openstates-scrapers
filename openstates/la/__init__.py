@@ -56,6 +56,7 @@ metadata = {
             'start_date': datetime.date(2010, 4, 27),
             'end_date': datetime.date(2010, 6, 24),
             'display_name': '2009 Regular Session',
+            '_id': '09RS',
             '_scraped_name': '2009 Regular Session',
         },
         '2010': {
@@ -63,6 +64,7 @@ metadata = {
             'start_date': datetime.date(2010, 3, 29),
             'end_date': datetime.date(2010, 6, 21),
             'display_name': '2010 Regular Session',
+            '_id': '10RS',
             '_scraped_name': '2010 Regular Session',
         },
         '2011 1st Extraordinary Session': {
@@ -70,7 +72,7 @@ metadata = {
             'start_date': datetime.date(2011, 3, 20),
             'end_date': datetime.date(2011, 4, 13),
             'display_name': '2011, 1st Extraordinary Session',
-            '_id': '111es',
+            '_id': '111ES',
             '_scraped_name': '2011 First Extraordinary Session',
         },
         '2011': {
@@ -78,6 +80,7 @@ metadata = {
             'start_date': datetime.date(2011, 4, 25),
             'end_date': datetime.date(2011, 6, 23),
             'display_name': '2011 Regular Session',
+            '_id': '11RS',
             '_scraped_name': '2011 Regular Session',
         },
         '2012': {
@@ -85,6 +88,7 @@ metadata = {
             'start_date': datetime.date(2012, 3, 12),
             'end_date': datetime.date(2012, 6, 4),
             'display_name': '2012 Regular Session',
+            '_id': '12RS',
             '_scraped_name': '2012 Regular Session',
         },
         '2013': {
@@ -92,6 +96,7 @@ metadata = {
             'start_date': datetime.date(2013, 4, 8),
             'end_date': datetime.date(2013, 6, 6),
             'display_name': '2013 Regular Session',
+            '_id': '13RS',
             '_scraped_name': '2013 Regular Session',
         },
         '2014': {
@@ -99,6 +104,7 @@ metadata = {
             'start_date': datetime.date(2014, 3, 10),
             'end_date': datetime.date(2014, 6, 2),
             'display_name': '2014 Regular Session',
+            '_id': '14RS',
             '_scraped_name': '2014 Regular Session',
         },
         '2015': {
@@ -106,6 +112,7 @@ metadata = {
             'start_date': datetime.date(2015, 4, 13),
             'end_date': datetime.date(2015, 6, 11),
             'display_name': '2015 Regular Session',
+            '_id': '15RS',
             '_scraped_name': '2015 Regular Session',
         },
         '2016': {
