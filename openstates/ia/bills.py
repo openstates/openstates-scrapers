@@ -1,11 +1,9 @@
 import re
 import datetime
-from collections import defaultdict
-
-from billy.scrape.bills import BillScraper, Bill
-
 import lxml.html
-
+from collections import defaultdict
+from billy.scrape.bills import BillScraper, Bill
+from openstates.utils import LXMLMixin
 from .scraper import InvalidHTTPSScraper
 
 
@@ -14,7 +12,7 @@ def get_popup_url(link):
     return re.match(r'openWin\("(.*)"\)$', onclick).group(1)
 
 
-class IABillScraper(InvalidHTTPSScraper, BillScraper):
+class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
     jurisdiction = 'ia'
 
     _subjects = defaultdict(list)
@@ -27,7 +25,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
         session_id = self.metadata['session_details'][session]['number']
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = lxml.html.fromstring(self.get(url).text)
+        doc = self.lxmlize(url))
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
@@ -59,8 +57,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
         url = (base_url % (session_id, bill_offset))
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
+        page = self.lxmlize(url))
 
         if chamber == 'upper':
             bname = 'senateBills'
@@ -78,18 +75,18 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
             self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
 
     def scrape_bill(self, chamber, session, session_id, bill_id, url):
-        sidebar = lxml.html.fromstring(self.get(url).text)
-        
+        sidebar = self.lxmlize(url)
+
         try:
-            hist_url = 'https://www.legis.iowa.gov' + sidebar.xpath("//a[contains(., 'Bill History')]")[0].attrib['href']
+            hist_url = sidebar.xpath('//a[contains(., "Bill History")]')[0].attrib['href']
         except IndexError:
             # where is it?
             return
 
-        page = lxml.html.fromstring(self.get(hist_url).text)
-        page.make_links_absolute(hist_url)
+        page = self.lxmlize(hist_url)
 
-        title = page.xpath("string(//div[@id='content']/div[@class='divideVert']/div[not(@class)])").strip()
+        title = page.xpath('string(//div[@id="content"]/div[@class='
+            '"divideVert"]/div[not(@class)])').strip()
 
         if title == '':
             self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
@@ -111,7 +108,10 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
         bill.add_source(hist_url)
 
         # base url for text version (version_abbrev, session_id, bill_id)
-        base_version_url = 'https://www.legis.iowa.gov/docs/publications/LG%s/%s/%s.pdf'
+        version_html_url_template = 'https://www.legis.iowa.gov/docs/'\
+            'publications/LG{}/{}/attachments/{}.html'
+        version_pdf_url_template = 'https://www.legis.iowa.gov/docs/'\
+            'publications/LG{}/{}/{}.pdf'
         
         # get pieces of version_link
         vpieces = sidebar.xpath('//select[@id="billVersions"]/option')
@@ -120,15 +120,23 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper):
                 version_name = version.text 
                 version_abbrev = version.xpath('string(@value)')
 
-                version_url = base_version_url % (version_abbrev.upper(), session_id, bill_id.replace(' ', ''))
+                # Get HTML document of bill version.
+                version_html_url = version_html_url_template.format(
+                    version_abbrev.upper(),
+                    session_id,
+                    bill_id.replace(' ', ''))
 
-                bill.add_version(version_name, version_url,
-                                 mimetype='application/pdf')
-        else:
-            bill.add_version('Introduced',
-                sidebar.xpath('//a[contains(@title, "PDF")]/@href')[0],
-                             mimetype='application/pdf'
-                            )
+                bill.add_version(version_name, version_html_url,
+                    mimetype='text/html')
+
+                # Get PDF document of bill version.
+                version_pdf_url = version_pdf_url_template.format(
+                    version_abbrev.upper(),
+                    session_id,
+                    bill_id.replace(' ', ''))
+
+                bill.add_version(version_name, version_pdf_url,
+                    mimetype='application/pdf')
 
         sponsors_str = page.xpath("string(//div[@id='content']/div[@class='divideVert']/div[@class='divideVert'])").strip()
         if re.search('^By ', sponsors_str):
