@@ -12,7 +12,7 @@ import os
 import re
 
 
-URL = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?r=%s1*"
+URL = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*"
 
 bill_types = {
     "upper": ["SB", "SCR"],
@@ -40,8 +40,9 @@ class LABillScraper(BillScraper, LXMLMixin):
         ret.make_links_absolute(form.action)
         return ret
 
-    def bill_pages(self, bill_type):
-        page = self.lxmlize(URL % (bill_type))
+    def bill_pages(self, session_id, bill_type):
+        url = URL.format(session_id, bill_type)
+        page = self.lxmlize(url)
         yield page
 
         while True:
@@ -65,15 +66,16 @@ class LABillScraper(BillScraper, LXMLMixin):
         return page.xpath("//a")
 
     def scrape(self, chamber, session):
+        session_id = self.metadata['session_details'][session]['_id']
+
         for bill_type in bill_types[chamber]:
-            for bill_page in self.bill_pages(bill_type):
+            for bill_page in self.bill_pages(session_id, bill_type):
                 for bill in bill_page.xpath(
                         "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"):
                     self.scrape_bill_page(chamber,
-                                          session,
-                                          bill.attrib['href'],
-                                          bill_type)
-
+                        session,
+                        bill.attrib['href'],
+                        bill_type)
 
     def get_one_xpath(self, page, xpath):
         ret = page.xpath(xpath)
@@ -234,12 +236,14 @@ class LABillScraper(BillScraper, LXMLMixin):
             # Some bills don't have any votes
             pass
 
-
         for action in actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
-            date += "/%s" % (session)  # Session is April --> June. Prefiles
-            # look like they're in January at earliest.
-            date = dt.datetime.strptime(date, "%m/%d/%Y")
+            session_year = self.metadata['session_details'][session]\
+                ['start_date'].year
+            # Session is April -> June. Prefiles look like they're in
+            # January at earliest.
+            date += '/{}'.format(session_year)
+            date = dt.datetime.strptime(date, '%m/%d/%Y')
             chamber = {"S": "upper", "H": "lower", "J": 'joint'}[chamber]
 
             cat = []
