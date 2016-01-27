@@ -37,22 +37,27 @@ metadata = dict(
             'name': '2015-2016',
             'sessions': [
                 '2015 Regular Session',
+                '2016 Regular Session',
             ],
             'start_year' : 2015,
             'end_year'   : 2016
         },
      ],
     session_details={
+        '2016 Regular Session' : {
+            'display_name'  : '2016 Regular Session',
+            '_scraped_name' : '2016'
+        },
         '2015 Regular Session' : {
-            'display_name'  : '2015-2016 Regular Session',
+            'display_name'  : '2015 Regular Session',
             '_scraped_name' : '2015'
         },
         '2014 Regular Session' : {
-            'display_name'  : '2013-2014 Regular Session',
+            'display_name'  : '2014 Regular Session',
             '_scraped_name' : '2014'
         },
         '2013 Regular Session' : {
-            'display_name'  : '2013-2014 Regular Session',
+            'display_name'  : '2013 Regular Session',
             '_scraped_name' : '2013'
         },
         '2011 Regular Session' : {
