@@ -59,7 +59,7 @@ class WYBillScraper(BillScraper, LXMLMixin):
                "BillReference.aspx?type=%s" % (session, chamber_abbrev))
         page = self.lxmlize(url)
 
-        for tr in page.xpath("//table[@id='ctl00_cphContent_gvBills']//tr")[1:]:
+        for tr in page.xpath("//table[contains(@id,'cphContent_gvBills')]//tr")[1:]:
             bill_id = tr.xpath("string(td[1])").strip()
             title = tr.xpath("string(td[2])").strip()
 
