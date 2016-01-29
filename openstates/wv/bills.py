@@ -298,7 +298,7 @@ class WVBillScraper(BillScraper):
         http://www.legis.state.wv.us/legisdocs/2013/RS/votes/senate/02-26-0001.pdf
         '''
         counts = dict(re.findall(r'(Yea|Nay|Absent): (\d+)', text))
-        text = text.split('\n\n\n')[-2]
+        text = text.split('\n\n\n')[-3]
         lines = filter(None, text.splitlines())
         actual_vote = collections.defaultdict(int)
         for line in lines:
