@@ -55,7 +55,8 @@ class LACommitteeScraper(CommitteeScraper):
                 role = "Vice-Chairman"
 
             name = link.xpath('string()')
-            name = name.replace('Senator ', '').strip()
+            name = name.replace('Senator ', '')
+            name = re.sub('[\s]{2,}', ' ', name).strip()
 
             committee.add_member(name, role)
 
