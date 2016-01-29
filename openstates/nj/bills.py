@@ -197,6 +197,9 @@ class NJBillScraper(BillScraper, MDBMixin):
             bill_type = rec["BillType"].strip()
             bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
+            if bill_id not in bill_dict:
+                self.warning('unknown bill %s in sponsor database' % bill_id)
+                continue
             bill = bill_dict[bill_id]
             name = rec["Sponsor"]
             sponsor_type = rec["Type"]
@@ -370,6 +373,9 @@ class NJBillScraper(BillScraper, MDBMixin):
             bill_type = rec["BillType"].strip()
             bill_number = int(rec["BillNumber"])
             bill_id = bill_type + str(bill_number)
+            if bill_id not in bill_dict:
+                self.warning('unknown bill %s in action database' % bill_id)
+                continue
             bill = bill_dict[bill_id]
             action = rec["Action"]
             date = rec["DateAction"]
@@ -385,6 +391,9 @@ class NJBillScraper(BillScraper, MDBMixin):
         subject_csv = self.access_to_csv('BillSubj')
         for rec in subject_csv:
             bill_id = rec['BillType'].strip() + str(int(rec['BillNumber']))
+            if bill_id not in bill_dict:
+                self.warning('unknown bill %s in subject database' % bill_id)
+                continue
             bill = bill_dict.get(bill_id)
             if bill:
                 bill.setdefault('subjects', []).append(rec['SubjectKey'])
