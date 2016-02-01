@@ -94,13 +94,13 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             phone_number_text = self.get_node(
                 info_node,
-                './tr[3]/td[2]').text_content()
+                './tr[4]/td[2]').text_content()
 
             phone_number = phone_number_text.strip()
 
             fax_number_text = self.get_node(
                 info_node,
-                './tr[4]/td[2]').text_content()
+                './tr[5]/td[2]').text_content()
 
             fax_number = fax_number_text.strip()
 
