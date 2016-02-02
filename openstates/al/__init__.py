@@ -21,7 +21,7 @@ metadata =  {
          'end_year': 2014,
         },
         {'name': '2015-2018',
-         'sessions': ['2016rs', '2015os','2015rs', 'First Special Session 2015', 'Second Special Session 2015'],
+         'sessions': ['2015os','2015rs', 'First Special Session 2015', 'Second Special Session 2015', '2016rs'],
          'start_year': 2015,
          'end_year': 2018,
         }
