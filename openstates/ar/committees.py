@@ -142,13 +142,20 @@ class ARCommitteeScraper(CommitteeScraper):
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
-        for tr in page.xpath('//table[@class="dxgvTable"]/tr'):
-            if tr.xpath('string(td[1])').strip():
-                mtype = tr.xpath('string(td[1])').strip()
-            else:
+        member_nodes = page.xpath('//table[@class="dxgvTable"]/tr')
+
+        for member_node in member_nodes:
+            # Skip empty rows.
+            if member_node.attrib['class'] == 'dxgvEmptyDataRow':
+                continue
+
+            mtype = member_node.xpath('string(td[1])').strip()
+
+            if not mtype:
                 mtype = 'member'
 
-            member = tr.xpath('string(td[3])').split()
+            member = member_node.xpath('string(td[3])').split()
+
             title = member[0]
             member = ' '.join(member[1:])
 
