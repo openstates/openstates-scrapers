@@ -1,4 +1,3 @@
-import re
 from collections import defaultdict
 
 from billy.scrape.legislators import Legislator, LegislatorScraper
@@ -107,16 +106,36 @@ class KYLegislatorScraper(LegislatorScraper):
         leg.add_source(member_url)
 
         address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
+
         phone = None
+        fax   = None
         phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
         for num in phone_numbers:
             if num.startswith('Annex: '):
-                phone = num.replace('Annex: ', '')
+                num = num.replace('Annex: ', '')
+                if num.endswith(' (fax)'):
+                    fax = num.replace(' (fax)', '')
+                else:
+                    phone = num
+
+
+        emails = doc.xpath(
+            '//div[@id="EmailAddresses"]//span[@class="bioText"]//a/text()'
+        )
+        email = reduce(
+            lambda match, address: address if '@lrc.ky.gov' in str(address) else match,
+            [None] + emails
+        )
 
         if address.strip() == "":
             self.warning("Missing Capitol Office!!")
         else:
-            leg.add_office('capitol', 'Capitol Office', address=address,
-                           phone=phone)
+            leg.add_office(
+                'capitol', 'Capitol Office',
+                address=address,
+                phone=phone,
+                fax=fax,
+                email=email
+            )
 
         self.save_legislator(leg)
