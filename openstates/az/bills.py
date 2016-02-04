@@ -19,7 +19,9 @@ SPONSOR_TYPES = {'P': ('primary', 'P'),
 
 # This string of hot garbage appears when a document hasn't been posted yet.
 hot_garbage_404_fail = ('The Requested Document Has Not Been '
-                        'Posted To The Web Site Yet.')
+                        'Posted To The Web Site Yet.'
+                        '|There Are No Documents For [A-Z\d]+'
+                        '|The page cannot be displayed because an internal server error has occurred.')
 
 class AZBillScraper(BillScraper):
     def accept_response(self, response):
@@ -47,7 +49,7 @@ class AZBillScraper(BillScraper):
 
         docs_for_bill = self.get(url).text
 
-        if hot_garbage_404_fail in docs_for_bill:
+        if re.search(hot_garbage_404_fail, docs_for_bill):
             # Bailing here will prevent the bill from being saved, which
             # occurs in the scrape_actions method below.
             return
@@ -147,7 +149,7 @@ class AZBillScraper(BillScraper):
         action_url = BASE_URL + 'FormatDocument.asp?inDoc=/legtext/%s/bills/%so.asp' % (ses_num, bill_id.lower())
         action_page = self.get(action_url).text
 
-        if hot_garbage_404_fail in action_page:
+        if re.search(hot_garbage_404_fail, action_page):
             # This bill has no actions yet, but that
             # happened frequently with pre-filed bills
             # before the 2013 session, so skipping probably
