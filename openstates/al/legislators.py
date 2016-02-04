@@ -56,7 +56,8 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             name_text = self.get_node(
                 legislator_page,
-                '//span[@id="ContentPlaceHolder1_lblMember"]').text_content()
+                '//span[@id="ContentPlaceHolder1_lblMember"]').text_content()\
+                .encode('utf-8')
 
             # This just makes processing the text easier.
             name_text = name_text.lower()
@@ -79,13 +80,13 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             party_text = self.get_node(
                 info_node,
-                './tr[1]/td[2]').text_content()
+                './tr[1]/td[2]').text_content().encode('utf-8')
 
             party = self._parties[party_text.strip()]
 
             district_text = self.get_node(
                 info_node,
-                './tr[2]/td[2]').text_content()
+                './tr[2]/td[2]').text_content().encode('utf-8')
 
             if chamber == 'upper':
                 district = district_text.replace('Senate District', '').strip()
@@ -94,26 +95,26 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             phone_number_text = self.get_node(
                 info_node,
-                './tr[4]/td[2]').text_content()
+                './tr[4]/td[2]').text_content().encode('utf-8')
 
             phone_number = phone_number_text.strip()
 
             fax_number_text = self.get_node(
                 info_node,
-                './tr[5]/td[2]').text_content()
+                './tr[5]/td[2]').text_content().encode('utf-8')
 
             fax_number = fax_number_text.strip()
 
             suite_text = self.get_node(
                 info_node,
-                './tr[7]/td[2]').text_content()
+                './tr[7]/td[2]').text_content().encode('utf-8')
 
             office_address = '{}\n11 S. Union Street\nMontgomery, AL 36130'\
                 .format(suite_text)
 
             email_text = self.get_node(
                 info_node,
-                './tr[11]/td[2]').text_content()
+                './tr[11]/td[2]').text_content().encode('utf-8')
 
             email_address = email_text.strip()
 
