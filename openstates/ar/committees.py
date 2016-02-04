@@ -142,7 +142,7 @@ class ARCommitteeScraper(CommitteeScraper):
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
-        for tr in page.xpath('//table[@class="dxgvTable"]/tr[position()>1]'):
+        for tr in page.xpath('//table[@class="dxgvTable"]/tr'):
             if tr.xpath('string(td[1])').strip():
                 mtype = tr.xpath('string(td[1])').strip()
             else:
