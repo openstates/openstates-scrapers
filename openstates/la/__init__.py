@@ -127,6 +127,7 @@ metadata = {
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
         '2016 Organizational Session',
+        '2016 First Extraordinary Session',
         '2015 Regular Session',
         '2014 Regular Session',
         '2013 Regular Session',
