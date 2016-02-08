@@ -140,7 +140,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             # get name
             name = main_link.text_content().split(' (')[0]
             leg = leg_data[name]
-            leg['leg_url'] = main_link.get('href')
+            leg['url'] = main_link.get('href')
             leg['photo_url'] = td.xpath('./preceding-sibling::td/a/img/@src')[0]
             if 'mailto:' in email.get('href'):
                 leg['email'] = email.get('href').replace('mailto:', '')
