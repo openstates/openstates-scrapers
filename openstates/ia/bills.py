@@ -83,7 +83,11 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             # where is it?
             return
 
-        page = self.lxmlize(hist_url)
+        try:
+            page = self.lxmlize(hist_url)
+        except:
+            self.warning("URL: %s gives us a 500 error. Aborting." % url)
+            return 
 
         title = page.xpath('string(//div[@id="content"]/div[@class='
             '"divideVert"]/div[not(@class)])').strip()
