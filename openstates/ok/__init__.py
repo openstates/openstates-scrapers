@@ -57,7 +57,7 @@ metadata = dict(
             },
          '2015-2016':
             {'display_name': '2015-2016 Regular Session',
-             'session_id': '1500',
+             'session_id': '1600',
              '_scraped_name': '2016 Regular Session',
             },
         },
