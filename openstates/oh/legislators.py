@@ -159,7 +159,7 @@ class OHLegislatorScraper(LegislatorScraper):
                 if chamber == 'lower' else \
                 'sd{0:0{width}}@ohiosenate.gov'
             ).format(int(district), width=2)
-            print email
+
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=homepage, photo_url=img)
 
