@@ -140,6 +140,10 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             # get name
             name = main_link.text_content().split(' (')[0]
             leg = leg_data[name]
+            leg['office_phone'] = filter(
+                lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string),
+                td.xpath('.//p/text()'))[0].strip()
+
             leg['url'] = main_link.get('href')
             leg['photo_url'] = td.xpath('./preceding-sibling::td/a/img/@src')[0]
             if 'mailto:' in email.get('href'):
@@ -169,11 +173,11 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                              **leg_data[name]
                             )
             row["Zipcode"] = row["Zipcode"].strip()
-            
+
             if 'Martin Luther King' in row['Address2']:\
                 leg.add_office('capitol', 'Capitol Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                               address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                               email=email, phone=leg['office_phone'])
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
                            address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
