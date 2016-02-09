@@ -52,6 +52,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
             'S adopted'        : 'bill:passed',
             'Truly Agreed To and Finally Passed' : 'bill:passed',
             'Third Read and Passed' : 'bill:passed',
+            'Signed by Governor' : 'governor:signed',
             'Approved by Governor'  : 'governor:signed',
         }
         found_action = 'other'
