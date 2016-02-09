@@ -154,12 +154,19 @@ class OHLegislatorScraper(LegislatorScraper):
                 )[-1].split(".", 1)[0]
 
             full_name = re.sub("\s+", " ", full_name).strip()
+            email = (
+                'rep{0:0{width}}@ohiohouse.gov' \
+                if chamber == 'lower' else \
+                'sd{0:0{width}}@ohiosenate.gov'
+            ).format(int(district), width=2)
+
             leg = Legislator(term, chamber, district, full_name,
                              party=party, url=homepage, photo_url=img)
 
             leg.add_office('capitol', 'Capitol Office',
                            address=office,
-                           phone=phone)
+                           phone=phone,
+                           email=email)
 
             self.scrape_homepage(leg, chamber, homepage, term)
 
