@@ -13,7 +13,7 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
             index_url = 'http://www.leg.wa.gov/house/representatives/Pages/default.aspx'
         doc = self.lxmlize(index_url)
 
-	# Email addresses are listed on a separate page.
+        # Email addresses are listed on a separate page.
         email_list_url = 'http://app.leg.wa.gov/memberemail/Default.aspx'
         email_doc = self.lxmlize(email_list_url)
 
@@ -39,6 +39,7 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
                 party=party,
                 photo_url=photo_url
             )
+            leg['url'] = member.xpath('.//a[contains(text(), "Home Page")]/@href')[0]
 
             capitol_office = member.xpath('.//div[@class="memberColumnTitle" and text()=" Olympia Office"]/parent::div[1]/text()')
             capitol_office = [l.strip() for l in capitol_office if l.strip()]
