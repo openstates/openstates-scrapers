@@ -105,7 +105,7 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
         email_node = self.get_node(
             info_node,
             './/a[@id="ctl00_mainCopy_formViewLegislator_linkEmail"]')
-        if email is not None:
+        if email_node.text is not None:
             email = email_node.text.strip()
 
         capitol_address_node = self.get_node(
@@ -129,13 +129,14 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         district_address_node = self.get_node(
             info_node,
-            xpath.format('lblAddress'))
-        if district_address_node is not None:
-            district_address = '\n'.join(district_address_node.text.strip())
+            xpath.format('lblAddress')).xpath('text()')
+        if district_address_node:
+            district_address = '\n'.join(district_address_node)
 
         district_phone_node = self.get_node(
             info_node,
-            xpath.format('lblHomePhone'))
+            xpath.format('lblHomePhone')) \
+            or self.get_node(info_node, xpath.format('lblOfficePhone'))
         if district_phone_node is not None:
             district_phone_text = district_phone_node.text
             if district_phone_text is not None:
@@ -150,6 +151,10 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
             full_name=full_name,
             party=party,
             photo_url=photo_url)
+
+        if email:
+            legislator['email'] = email
+
         legislator.add_source(url)
 
         legislator.add_office(
