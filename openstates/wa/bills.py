@@ -113,7 +113,8 @@ class WABillScraper(BillScraper, LXMLMixin):
 
                 (bill_number, is_substitute, substitute_num, is_engrossed,
                     engrossed_num, document_title) = re.search(r'''(?x)
-                    ^(\d+)  # Bill number
+                    (?:[[A-Z]+]){0,1} # Occasional doc doesnt start with number
+                    (\d+)  # Bill number
                     (-S(\d)?)?  # Substitution indicator
                     (\.E(\d)?)?  # Engrossment indicator
                     \s?(.*?)  # Document name
