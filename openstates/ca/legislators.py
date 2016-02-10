@@ -83,14 +83,19 @@ class CALegislatorScraper(LegislatorScraper):
         leg = Legislator(term, chamber, full_name=name, party=party, district=district,
                          photo_url=photo_url, url=url)
 
-        for addr in div.xpath('.//div[@class="views-field-field-senate-offices-value"]//p'):
+        for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-capitol-office")]//p'):
             addr, phone = addr.text_content().split('; ')
-            leg.add_office('capitol', 'Senate Office', address=addr, phone=phone)
-        for addr in div.xpath('.//div[@class="views-field-field-senate-district-offices-value"]//p'):
+            leg.add_office(
+                'capitol', 'Senate Office',
+                address=addr.strip(), phone=phone.strip())
+
+        for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-district-office")]//p'):
             for addr in addr.text_content().strip().splitlines():
                 try:
                     addr, phone = addr.strip().replace(u'\xa0', ' ').split('; ')
-                    leg.add_office('district', 'District Office', address=addr, phone=phone)
+                    leg.add_office(
+                        'district', 'District Office',
+                        address=addr.strip(), phone=phone.strip())
                 except ValueError:
                     addr = addr.strip().replace(u'\xa0', ' ')
                     leg.add_office('district', 'District Office', address=addr)
@@ -107,21 +112,21 @@ class CALegislatorScraper(LegislatorScraper):
         xpath = 'td[contains(@class, "views-field-field-%s-%s")]%s'
 
         xp = {
-            'url':       [('lname-value-1', '/a/@href'),
-                          ('member-lname-value-1', '/a/@href')],
-            'district':  [('district-value', '/text()')],
-            'party':     [('party-value', '/text()')],
-            'full_name': [('feedbackurl-value', '/a/text()')],
-            'address':   [('feedbackurl-value', '/p/text()'),
-                          ('feedbackurl-value', '/p/font/text()')]
+            'url':       [('lname-sort', '/a[not(contains(text(), "edit"))]/@href')],
+            'district':  [('district', '/text()')],
+            'party':     [('party', '/text()')],
+            'full_name': [('office-information', '/a[not(contains(text(), "edit"))]/text()')],
+            'address':   [('office-information', '/p/text()'),
+                          ('office-information', '/p/font/text()')]
             }
 
         titles = {'upper': 'senator', 'lower': 'member'}
 
         funcs = {
-            'full_name': lambda s: s.replace('Contact Senator', '').strip(),
+            'full_name': lambda s: re.sub( # "Assembly" is misspelled once
+                r'Contact Assembl?y Member', '', s).strip(),
             'address': parse_address,
-            }
+        }
 
         rubberstamp = lambda _: _
         tr_xpath = tr.xpath
@@ -131,7 +136,6 @@ class CALegislatorScraper(LegislatorScraper):
                 f = funcs.get(k, rubberstamp)
                 vals = (titles[chamber],) + vals
                 vals = map(f, map(strip, tr_xpath(xpath % vals)))
-
                 res[k].extend(vals)
 
         # Photo.
