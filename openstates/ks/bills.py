@@ -1,28 +1,20 @@
 import re
-import os
 import datetime
 import json
-import subprocess
-
+import requests
 import lxml.html
 import scrapelib
-
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from billy.scrape import NoDataForPeriod
-
-
 import ksapi
+
 
 class KSBillScraper(BillScraper):
     jurisdiction = 'ks'
     latest_only = True
 
     def scrape(self, chamber, session):
-        # check for abiword
-        if os.system('which abiword') != 0:
-            raise EnvironmentError('abiword is required for KS scraping')
-
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
@@ -166,19 +158,8 @@ class KSBillScraper(BillScraper):
         else:
             raise ValueError("couldn't parse date: " + vote_date)
 
-
-        vote_doc, resp = self.urlretrieve(vote_url)
-
-        try:
-            subprocess.check_call('timeout 10 abiword --to=ksvote.txt %s' % vote_doc,
-                                  shell=True, cwd='/tmp/')
-        except subprocess.CalledProcessError:
-            # timeout failed, some documents hang abiword
-            self.error('abiword hung for longer than 10s on conversion')
-            return
-        vote_lines = open('/tmp/ksvote.txt').readlines()
-
-        os.remove(vote_doc)
+        vote_doc = self.get(vote_url).text
+        vote_lines = vote_doc.splitlines()
 
         comma_or_and = re.compile(', |\sand\s')
         comma_or_and_jrsr = re.compile(', (?!Sr.|Jr.)|\sand\s')
