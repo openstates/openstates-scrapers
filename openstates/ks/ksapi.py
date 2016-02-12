@@ -144,6 +144,7 @@ action_codes = {
     'fa_fabc_105': ['bill:failed', 'bill:substituted'],
     'fa_fabc_104': 'bill:failed',
     'intro_ibc_157': 'bill:introduced',
+    'intro_ibc_158': 'bill:introduced',
     'intro_ibc_156': 'bill:filed',
     'fa_fabc_905': 'bill:passed',
     'intro_ires_681': 'bill:introduced',
