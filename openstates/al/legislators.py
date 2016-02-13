@@ -46,8 +46,11 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
             # Set identifiers internal to AlisonDB.
             # Have to do this to OID_SPONSOR because they don't know
             # how to HTML and I'm making links absolute out of convenience.
-            oid_sponsor = legislator_node.attrib['longdesc'].split('/')[-1]
-            oid_person = legislator_node.attrib['alt']
+            try:
+                oid_sponsor = legislator_node.attrib['longdesc'].split('/')[-1]
+                oid_person = legislator_node.attrib['alt']
+            except KeyError:
+                continue
 
             legislator_url = legislator_url_template.format(
                 oid_sponsor=oid_sponsor, oid_person=oid_person)
