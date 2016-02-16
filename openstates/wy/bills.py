@@ -204,7 +204,8 @@ class WYBillScraper(BillScraper, LXMLMixin):
 
                         passed = (('Passed' in action or
                                    'Do Pass' in action or
-                                   'Did Concur' in action) and
+                                   'Did Concur' in action or
+                                   'Referred to' in action) and
                                   'Failed' not in action)
                         vote = Vote(actor, date, action, passed, int(ayes),
                                     int(nays), int(exc) + int(abs) + int(con))
