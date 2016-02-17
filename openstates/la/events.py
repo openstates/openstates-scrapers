@@ -1,40 +1,9 @@
 import re
 import pytz
 import datetime
-
+import lxml.html
 from billy.scrape.events import EventScraper, Event
 from openstates.utils import LXMLMixin
-
-import lxml.html
-
-
-def parse_datetime(s, year):
-    dt = None
-
-    s = re.sub("\s+", " ", s).strip()
-
-    match = re.match(r"[A-Z][a-z]{2,2} \d+, \d\d:\d\d (AM|PM)", s)
-    if match:
-        dt = datetime.datetime.strptime(match.group(0), "%b %d, %I:%M %p")
-
-    if dt:
-        return dt.replace(year=int(year))
-
-    if dt is None:
-        if s.endswith(","):
-            s, _ = s.rsplit(" ", 1)
-        formats = ["%b %d, %Y, %I:%M %p",
-                    "%b %d, %Y %I:%M %p"]
-
-        for f in formats:
-            try:
-                dt = datetime.datetime.strptime(s, f)
-            except ValueError:
-                pass
-            else:
-                return dt
-
-    raise ValueError("Bad date string: %s" % s)
 
 
 class LAEventScraper(EventScraper, LXMLMixin):
@@ -148,52 +117,48 @@ class LAEventScraper(EventScraper, LXMLMixin):
         self.save_event(event)
 
     def scrape_house_weekly_schedule(self, session):
-        url = "http://house.louisiana.gov/H_Sched/Hse_Sched_Weekly.htm"
+        url = "http://house.louisiana.gov/H_Sched/Hse_MeetingSchedule.aspx"
         page = self.lxmlize(url)
 
-        for link in page.xpath("//img[@alt = 'See Agenda in pdf']/.."):
+        meeting_rows = page.xpath('//table[@id = "table229"]/tr')
+
+        valid_meetings = [row for row in meeting_rows if row.xpath(
+            './td[1]')[0].text_content().replace(u'\xa0', '') and row.xpath(
+            './td/a/img[contains(@src, "PDF-AGENDA.png")]')]
+
+        for meeting in valid_meetings:
             try:
-                guid = link.attrib['href']
+                guid = meeting.xpath('./td/a[descendant::img[contains(@src, '
+                    '"PDF-AGENDA.png")]]/@href')[0]
+                self.logger.debug(guid)
             except KeyError:
                 continue  # Sometimes we have a dead link. This is only on
                 # dead entries.
 
-            committee = link.xpath("string(../../td[1])").strip()
-
-            when_and_where = link.xpath("string(../../td[2])").strip()
-            when_and_where = re.sub("\s+", " ", when_and_where).strip()
-            if "@" in when_and_where:
+            committee_name = meeting.xpath('./td[1]/text()')[0].strip()
+            meeting_string = meeting.xpath('./td[2]/text()')[0]
+            if "@" in meeting_string:
                 continue  # Contains no time data.
-
-            if when_and_where.strip() == "":
-                continue
-
-            info = re.match(
-                r"(?P<when>.*) (?P<where>L|F|N|H|C.*-.*?)",
-                when_and_where
-            ).groupdict()
-
-            when_and_where = info['when']
-            location = info['where']
+            date, time, location = ([s.strip() for s in meeting_string.split(
+                ',') if s] + [None]*3)[:3]
+            self.logger.debug(location)
 
             year = datetime.datetime.now().year
-            when = parse_datetime(when_and_where, year)  # We can only scrape
-            # when = self._tz.localize(when)
+            datetime_string = ' '.join((date, str(year), time))
+            when = datetime.datetime.strptime(datetime_string,
+                '%b %d %Y %I:%M %p')
+            when = self._tz.localize(when)
 
-            bills = self.scrape_bills(when_and_where)
-
-            description = 'Committee Meeting: %s' % committee
+            description = 'Committee Meeting: {}'.format(committee_name)
+            self.logger.debug(description)
 
             event = Event(session, when, 'committee:meeting',
-                          description, location=location)
+                description, location=location)
             event.add_source(url)
-            event.add_participant('host', committee, 'committee',
-                                  chamber='lower')
-            event.add_document("Agenda", guid, type='agenda',
-                               mimetype="application/pdf")
-            for bill in bills:
-                event.add_related_bill(bill, description=when_and_where,
-                                       type='consideration')
+            event.add_participant('host', committee_name, 'committee',
+                chamber='lower')
+            event.add_document('Agenda', guid, type='agenda',
+                mimetype='application/pdf')
             event['link'] = guid
 
             self.save_event(event)
