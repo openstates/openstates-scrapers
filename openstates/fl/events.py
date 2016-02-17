@@ -17,8 +17,7 @@ class FLEventScraper(EventScraper):
         page = self.get(url).text
         feed = feedparser.parse(page)
 
-        for entry in feed['entries']:
-            
+        for entry in feed['entries']:            
             #The feed breaks the RSS standard by making the pubdate the actual event's date, not the RSS item publish date
             when = datetime.datetime(*entry['published_parsed'][:6])
 
@@ -27,6 +26,6 @@ class FLEventScraper(EventScraper):
 
             event = Event(session, when, 'committee:meeting',
                               desc, location)
-            event.add_source(url)
+            event.add_source(entry['link'])
 
             self.save_event(event)
