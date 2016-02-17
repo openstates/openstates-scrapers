@@ -185,8 +185,9 @@ class NJBillScraper(BillScraper, MDBMixin):
 
             bill = Bill(str(session), chamber, bill_id, title,
                         type=self._bill_types[bill_type[1:]])
-            if rec['IdenticalBillNumber']:
+            if rec['IdenticalBillNumber'].strip():
                 bill.add_companion(rec['IdenticalBillNumber'].split()[0])
+
             # TODO: last session info is in there too
             bill_dict[bill_id] = bill
 
