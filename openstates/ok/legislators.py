@@ -14,6 +14,17 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         """Squish whitespace and kill \xa0."""
         return re.sub(r'[\s\xa0]+', ' ', text)
 
+    def _extract_phone(self, office_info):
+        try:
+            phone = filter(
+                lambda string: re.search(
+                    r'\(\d{3}\) \d{3}-\d{4}|\d{3}.\d{3}.\d{4}', string),
+                office_info)[0].strip()
+        except IndexError:
+            phone = None
+
+        return phone
+
     def _extract_email(self, doc):
         xpath = '//div[@class="districtheadleft"]' \
                 + '/b[contains(text(), "Email:")]' \
@@ -177,6 +188,8 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             self.scrape_upper_offices(leg, url)
             self.save_legislator(leg)
 
+
+
     def scrape_upper_offices(self, legislator, url):
         url = url.replace('aspx', 'html')
         html = self.get(url).text
@@ -210,10 +223,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         else:
             email = None
 
-        phone = filter(
-            lambda string: re.search(
-                r'\(\d{3}\) \d{3}-\d{4}|\d{3}.\d{3}.\d{4}', string),
-            col1)[0].strip()
+        capitol_phone = self._extract_phone(col1)
 
         address_lines = map(
             lambda line: line.strip(),
@@ -225,16 +235,18 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             name='Capitol Office',
             type='capitol',
             address='\n'.join(address_lines),
-            fax=None, email=email, phone=phone)
+            fax=None, email=email, phone=capitol_phone)
         legislator.add_office(**office)
 
         col2 = map(self._scrub, col2.itertext())
         if len(col2) < 2:
             return
 
+        district_phone = self._extract_phone(col2)
+
         office = dict(
             name='District Office',
             type='district',
             address='\n'.join(col2),
-            fax=None, email=None, phone=phone)
+            fax=None, email=None, phone=district_phone)
         legislator.add_office(**office)
