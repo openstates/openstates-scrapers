@@ -173,18 +173,18 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                             )
             row["Zipcode"] = row["Zipcode"].strip()
 
-            if 'Martin Luther King' in row['Address2']:\
+            if 'Martin Luther King' in row['Address2']:
                 leg.add_office('capitol', 'Capitol Office',
-                               address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
-                               email=email, phone=leg['office_phone'])
+                    address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email, phone=leg.get('office_phone'))
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                    address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email)
             else:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                    address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email)
 
             leg.add_source(csv_url)
             leg.add_source(index_url)
