@@ -143,9 +143,8 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             leg['office_phone'] = filter(
                 lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string),
                 td.xpath('.//p/text()'))[0].strip()
-
             leg['url'] = main_link.get('href')
-            leg['photo_url'] = td.xpath('./preceding-sibling::td/a/img/@src')[0]
+            leg['photo_url'] = td.xpath('./preceding-sibling::td//img/@src')[0]
             if 'mailto:' in email.get('href'):
                 leg['email'] = email.get('href').replace('mailto:', '')
 
