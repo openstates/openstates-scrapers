@@ -15,13 +15,24 @@ import re
 URL = "http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*"
 
 bill_types = {
-    "upper": ["SB", "SCR"],
-    "lower": ["HB", "HCR"]
+    "upper": [],
+    "lower": []
 }
 
 
 class LABillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'la'
+
+    def get_bill_types(self, session_id):
+        page = self.lxmlize("http://www.legis.la.gov/legis/BillSearch.aspx?sid=%s" % session_id)
+        select_options = page.xpath("//select[contains(@id, 'InstTypes')]/option")
+
+        for option in select_options:
+            type_text = option.text
+            if type_text.startswith('S'):
+                bill_types["upper"].append(type_text)
+            elif type_text.startswith('H'):
+                bill_types["lower"].append(type_text)
 
     def do_post_back(self, page, event_target, event_argument):
         form = page.xpath("//form[@id='aspnetForm']")[0]
@@ -67,6 +78,10 @@ class LABillScraper(BillScraper, LXMLMixin):
 
     def scrape(self, chamber, session):
         session_id = self.metadata['session_details'][session]['_id']
+
+        # if bill_types not set, get bill types
+        if bill_types[chamber] == []:
+            self.get_bill_types(session_id)
 
         for bill_type in bill_types[chamber]:
             for bill_page in self.bill_pages(session_id, bill_type):

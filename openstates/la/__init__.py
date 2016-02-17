@@ -47,6 +47,7 @@ metadata = {
             'end_year': 2019,
             'sessions': [
                 '2016',
+                '2016 1st Extraordinary Session'
             ],
         },
     ],
@@ -122,12 +123,19 @@ metadata = {
             'display_name': '2016 Regular Session',
             '_id': '16RS',
             '_scraped_name': '2016 Regular Session',
-        }
+        },
+        '2016 1st Extraordinary Session': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 2, 14),
+            'end_date': datetime.date(2016, 3, 9),
+            'display_name': '2016, 1st Extraordinary Session',
+            '_id': '161ES',
+            '_scraped_name': '2016 First Extraordinary Session',
+        },
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
         '2016 Organizational Session',
-        '2016 First Extraordinary Session',
         '2015 Regular Session',
         '2014 Regular Session',
         '2013 Regular Session',
