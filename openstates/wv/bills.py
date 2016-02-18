@@ -298,11 +298,11 @@ class WVBillScraper(BillScraper):
         http://www.legis.state.wv.us/legisdocs/2013/RS/votes/senate/02-26-0001.pdf
         '''
         counts = dict(re.findall(r'(Yea|Nay|Absent): (\d+)', text))
-        text = text.split('\n\n\n')[-3]
         lines = filter(None, text.splitlines())
         actual_vote = collections.defaultdict(int)
         for line in lines:
-            vals = re.findall(r'(Y|N|A)\s+((?:\S+ ?)+)', line)
+            vals = re.findall(r'(?<!\w)(Y|N|A)\s+((?:\S+ ?)+)', line)
+            print vals
             for vote_val, name in vals:
                 vote_val = vote_val.strip()
                 name = name.strip()
