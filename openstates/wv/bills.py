@@ -302,7 +302,6 @@ class WVBillScraper(BillScraper):
         actual_vote = collections.defaultdict(int)
         for line in lines:
             vals = re.findall(r'(?<!\w)(Y|N|A)\s+((?:\S+ ?)+)', line)
-            print vals
             for vote_val, name in vals:
                 vote_val = vote_val.strip()
                 name = name.strip()
