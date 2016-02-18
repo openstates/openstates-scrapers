@@ -5,7 +5,7 @@ from collections import defaultdict
 from cStringIO import StringIO
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
-from openstates.utils import LXMLMixin
+from openstates.utils import LXMLMixin, validate_email_address
 
 
 class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -27,16 +27,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return is_valid
 
-    def _validate_email_address(self, email_address):
-        is_valid = False
-
-        email_pattern = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.'
-            r'[a-zA-Z]{2,}\b')
-        email_match = email_pattern.match(email_address)
-        if email_match is not None:
-            is_valid = True
-
-        return is_valid
 
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
@@ -98,7 +88,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 need_special_email_case = True
 
             email_text = email_text.replace('Email: ', '').strip()
-            if self._validate_email_address(email_text):
+            if validate_email_address(email_text):
                 email = email_text
 
             legislator = Legislator(
