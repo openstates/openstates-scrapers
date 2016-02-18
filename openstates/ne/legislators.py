@@ -34,13 +34,16 @@ class NELegislatorScraper(LegislatorScraper, LXMLMixin):
                     info_node,
                     './h2/text()[normalize-space()]')
                 full_name = re.sub(r'^Sen\.[\s]+', '', full_name).strip()
-                self.debug(full_name)
                 if full_name == 'Seat Vacant':
                     continue
 
                 address_node = self.get_node(
                     info_node,
                     './address[@class="feature-content"]')
+
+                email = self.get_node(
+                    address_node,
+                    './a[starts-with(@href, "mailto:")]/text()')
 
                 contact_text_nodes = self.get_nodes(
                     address_node,
@@ -59,19 +62,6 @@ class NELegislatorScraper(LegislatorScraper, LXMLMixin):
                         phone = re.sub('^Phone:[\s]+', '', text)
                         continue
 
-                    email_match = re.search(r'Email:', text)
-
-                    if email_match:
-                        email_text = self.get_node(
-                            address_node,
-                            './a[starts-with(@href, "mailto:")]/text()'
-                            '[normalize-space()]')
-
-                        if email_text:
-                            email = re.sub('^Email:[\s]+', '', email_text)
-
-                        continue
-
                     # If neither a phone number nor e-mail address.
                     address_sections.append(text)
 
@@ -85,7 +75,10 @@ class NELegislatorScraper(LegislatorScraper, LXMLMixin):
                 party = 'Nonpartisan'
 
                 leg = Legislator(term, 'upper', str(district), full_name,
-                    party=party, url=rep_url, photo_url=photo_url)
+                                 party=party, url=rep_url, photo_url=photo_url)
+                if email:
+                    leg['email'] = email
+
                 leg.add_source(rep_url)
                 leg.add_office('capitol', 'Capitol Office', address=address,
                     phone=phone, email=email)

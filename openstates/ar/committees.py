@@ -142,13 +142,20 @@ class ARCommitteeScraper(CommitteeScraper):
         comm = Committee(chamber, name, subcommittee=subcommittee)
         comm.add_source(url)
 
-        for tr in page.xpath('//table[@class="dxgvTable"]/tr[position()>1]'):
-            if tr.xpath('string(td[1])').strip():
-                mtype = tr.xpath('string(td[1])').strip()
-            else:
+        member_nodes = page.xpath('//table[@class="dxgvTable"]/tr')
+
+        for member_node in member_nodes:
+            # Skip empty rows.
+            if member_node.attrib['class'] == 'dxgvEmptyDataRow':
+                continue
+
+            mtype = member_node.xpath('string(td[1])').strip()
+
+            if not mtype:
                 mtype = 'member'
 
-            member = tr.xpath('string(td[3])').split()
+            member = member_node.xpath('string(td[3])').split()
+
             title = member[0]
             member = ' '.join(member[1:])
 
@@ -162,13 +169,18 @@ class ARCommitteeScraper(CommitteeScraper):
 
             comm.add_member(member, mtype, chamber=mchamber)
 
-        for a in page.xpath('//ul/li/a'):
+        for a in page.xpath('//table[@id="ctl00_m_g_a194465c_f092_46df_b753_'
+            '354150ac7dbd_ctl00_tblContainer"]//ul/li/a'):
             sub_name = a.text.strip()
             sub_url = urlescape(a.attrib['href'])
             self.scrape_committee(chamber, name, sub_url,
-                                  subcommittee=sub_name)
+                subcommittee=sub_name)
 
         if not comm['members']:
-            self.warning('not saving empty committee %s' % name)
+            if subcommittee:
+                self.warning('Not saving empty subcommittee {}.'.format(
+                    subcommittee))
+            else:
+                self.warning('Not saving empty committee {}.'.format(name))
         else:
             self.save_committee(comm)

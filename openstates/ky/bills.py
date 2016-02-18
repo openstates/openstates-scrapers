@@ -151,61 +151,72 @@ class KYBillScraper(BillScraper, LXMLMixin):
             bill.add_sponsor('primary', link.text.strip())
 
         for line in actions:
-            action = line.strip()
-            if (not action or action == 'last action' or
-                'Prefiled' in action or 'vetoed' in action):
-                continue
+            line_actions = line.strip().split(';')
 
-            if self._is_post_2016:
-                action_date = action.split('-')[0].strip().replace(',', '')
-            else:
-                action_date = "%s %s" % (action.split('-')[0], session[0:4])
+            for index, action in enumerate(line_actions):
+                if (not action or action == 'last action' or
+                    'Prefiled' in action or 'vetoed' in action):
+                    continue
 
-            action_date = datetime.datetime.strptime(
-                action_date, '%b %d %Y')
+                action_date_text = line.split('-')[0].strip()
+                if self._is_post_2016:
+                    action_date_string = action_date_text.replace(',', '')
+                else:
+                    action_date_string = '{} {}'.format(action_date_text,
+                        session[0:4])
 
-            action = '-'.join(action.split('-')[1:]).strip()
+                action_date = datetime.datetime.strptime(
+                    action_date_string, '%b %d %Y')
 
-            if action.endswith('House') or action.endswith('(H)'):
-                actor = 'lower'
-            elif action.endswith('Senate') or action.endswith('(S)'):
-                actor = 'upper'
-            else:
-                actor = chamber
+                # Separate out the date if first action on the line.
+                if index == 0:
+                    action = '-'.join(action.split('-')[1:]).strip()
 
-            atype = []
-            if action.startswith('introduced in'):
-                atype.append('bill:introduced')
-                if '; to ' in action:
+                if action.endswith('House') or action.endswith('(H)'):
+                    actor = 'lower'
+                elif action.endswith('Senate') or action.endswith('(S)'):
+                    actor = 'upper'
+                else:
+                    actor = chamber
+
+                atype = []
+                if 'introduced in' in action:
+                    atype.append('bill:introduced')
+                    if 'to ' in action:
+                        atype.append('committee:referred')
+                elif 'signed by Governor' in action:
+                    atype.append('governor:signed')
+                elif re.match(r'^to [A-Z]', action):
                     atype.append('committee:referred')
-            elif action.startswith('signed by Governor'):
-                atype.append('governor:signed')
-            elif re.match(r'^to [A-Z]', action):
-                atype.append('committee:referred')
-            elif action == 'adopted by voice vote':
-                atype.append('bill:passed')
-
-            if '1st reading' in action:
-                atype.append('bill:reading:1')
-            if '3rd reading' in action:
-                atype.append('bill:reading:3')
-                if 'passed' in action:
+                elif action == 'adopted by voice vote':
                     atype.append('bill:passed')
-            if '2nd reading' in action:
-                atype.append('bill:reading:2')
 
-            if 'R' in bill_id and 'adopted by voice vote' in action:
-                atype.append('bill:passed')
+                if '1st reading' in action:
+                    atype.append('bill:reading:1')
+                if '3rd reading' in action:
+                    atype.append('bill:reading:3')
+                    if 'passed' in action:
+                        atype.append('bill:passed')
+                if '2nd reading' in action:
+                    atype.append('bill:reading:2')
 
-            amendment_re = (r'floor amendments?( \([a-z\d\-]+\))*'
-                            r'( and \([a-z\d\-]+\))? filed')
-            if re.search(amendment_re, action):
-                atype.append('amendment:introduced')
+                if 'R' in bill_id and 'adopted by voice vote' in action:
+                    atype.append('bill:passed')
 
-            if not atype:
-                atype = ['other']
+                amendment_re = (r'floor amendments?( \([a-z\d\-]+\))*'
+                                r'( and \([a-z\d\-]+\))? filed')
+                if re.search(amendment_re, action):
+                    atype.append('amendment:introduced')
 
-            bill.add_action(actor, action, action_date, type=atype)
+                if not atype:
+                    atype = ['other']
+
+                # Capitalize the first letter of the action for nicer
+                # display. capitalize() won't work for this because it
+                # lowercases all other letters.
+                action = action[0].upper() + action[1:]
+
+                bill.add_action(actor, action, action_date, type=atype)
 
         try:
             votes_link = page.xpath(

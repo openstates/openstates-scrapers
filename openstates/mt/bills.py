@@ -157,10 +157,13 @@ class MTBillScraper(BillScraper, LXMLMixin):
 
         # Get the top data table.
         for tr in status_page.xpath('//tr'):
-            tds = tr.xpath("td")
+            tds = tr.xpath('td')
             try:
                 key = tds[0].text_content().lower()
-                val = join(tds[1].text_content().strip().split())
+                if (key == 'primary sponsor:'):
+                    val = re.sub(r'[\s]+', ' ', tds[1].xpath('./a/text()')[0])
+                else:
+                    val = join(tds[1].text_content().strip().split())
             except IndexError:
                 continue
             if not key.startswith('('):

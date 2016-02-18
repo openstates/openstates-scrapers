@@ -1,6 +1,7 @@
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 
+import re
 import lxml.html
 from scrapelib import HTTPError
 
@@ -54,7 +55,8 @@ class LACommitteeScraper(CommitteeScraper):
                 role = "Vice-Chairman"
 
             name = link.xpath('string()')
-            name = name.replace('Senator ', '').strip()
+            name = name.replace('Senator ', '')
+            name = re.sub('[\s]{2,}', ' ', name).strip()
 
             committee.add_member(name, role)
 
@@ -149,6 +151,11 @@ class LACommitteeScraper(CommitteeScraper):
                 except HTTPError:
                     self.logger.warning("Link not working, skipping.")
                     continue
+
+                # check for no record found
+                if re.search('No records returned.', text):
+                    self.logger.warning("No record found, skipping.")
+                    continue 
 
                 chamber = 'joint' if comm_name.startswith('Joint') else 'lower'
                 committee = Committee(chamber, comm_name)

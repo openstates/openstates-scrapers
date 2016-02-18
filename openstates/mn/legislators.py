@@ -5,7 +5,7 @@ from collections import defaultdict
 from cStringIO import StringIO
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
-from openstates.utils import LXMLMixin
+from openstates.utils import LXMLMixin, validate_email_address
 
 
 class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -27,16 +27,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return is_valid
 
-    def _validate_email_address(self, email_address):
-        is_valid = False
-
-        email_pattern = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.'
-            r'[a-zA-Z]{2,}\b')
-        email_match = email_pattern.match(email_address)
-        if email_match is not None:
-            is_valid = True
-
-        return is_valid
 
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
@@ -98,7 +88,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 need_special_email_case = True
 
             email_text = email_text.replace('Email: ', '').strip()
-            if self._validate_email_address(email_text):
+            if validate_email_address(email_text):
                 email = email_text
 
             legislator = Legislator(
@@ -140,8 +130,11 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             # get name
             name = main_link.text_content().split(' (')[0]
             leg = leg_data[name]
-            leg['leg_url'] = main_link.get('href')
-            leg['photo_url'] = td.xpath('./preceding-sibling::td/a/img/@src')[0]
+            leg['office_phone'] = filter(
+                lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string),
+                td.xpath('.//p/text()'))[0].strip()
+            leg['url'] = main_link.get('href')
+            leg['photo_url'] = td.xpath('./preceding-sibling::td//img/@src')[0]
             if 'mailto:' in email.get('href'):
                 leg['email'] = email.get('href').replace('mailto:', '')
 
@@ -169,19 +162,19 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                              **leg_data[name]
                             )
             row["Zipcode"] = row["Zipcode"].strip()
-            
-            if 'Martin Luther King' in row['Address2']:\
+
+            if 'Martin Luther King' in row['Address2']:
                 leg.add_office('capitol', 'Capitol Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                    address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email, phone=leg.get('office_phone'))
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                    address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email)
             else:
                 leg.add_office('district', 'District Office',
-                           address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
-                           email=email)
+                    address='{Address}\n{City}, {State} {Zipcode}'.format(**row),
+                    email=email)
 
             leg.add_source(csv_url)
             leg.add_source(index_url)

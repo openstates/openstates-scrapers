@@ -162,6 +162,11 @@ class MELegislatorScraper(LegislatorScraper):
         wb = xlrd.open_workbook(fn)
         sh = wb.sheet_by_index(0)
 
+        LEGISLATOR_ROSTER_URL = \
+            'http://legisweb1.mainelegislature.org/wp/senate/senators/'
+        roster_doc = lxml.html.fromstring(self.get(LEGISLATOR_ROSTER_URL).text)
+        roster_doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
+
         for rownum in xrange(1, sh.nrows):
             # get fields out of mapping
             d = {}
@@ -190,15 +195,14 @@ class MELegislatorScraper(LegislatorScraper):
             district = d['district'].split('.')[0]
 
             # Determine legislator's URL to get their photo
-            LEGISLATOR_ROSTER_URL = \
-                    'http://legisweb1.mainelegislature.org/wp/senate/senators/'
-            html = self.get(LEGISLATOR_ROSTER_URL).text
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
 
             URL_XPATH = '//address[contains(text(), "(District {})")]/a/@href'. \
                     format(district)
-            (leg_url, ) = doc.xpath(URL_XPATH)
+
+            try:
+                (leg_url, ) = roster_doc.xpath(URL_XPATH)
+            except ValueError:
+                continue # Seat is vacant
 
             leg = Legislator(term, chamber, district, full_name,
                              first_name=d['first_name'],

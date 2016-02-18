@@ -52,6 +52,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
             'S adopted'        : 'bill:passed',
             'Truly Agreed To and Finally Passed' : 'bill:passed',
             'Third Read and Passed' : 'bill:passed',
+            'Signed by Governor' : 'governor:signed',
             'Approved by Governor'  : 'governor:signed',
         }
         found_action = 'other'
@@ -184,6 +185,11 @@ class MOBillScraper(BillScraper, LXMLMixin):
         versions_page = self.get(url).text
         versions_page = lxml.html.fromstring(versions_page)
         version_tags = versions_page.xpath('//li/font/a')
+        
+        # some pages are updated and use different structure
+        if not version_tags:
+            version_tags = versions_page.xpath('//tr/td/a[contains(@href, ".pdf")]')
+
         for version_tag in version_tags:
             description = version_tag.text_content()
             pdf_url = version_tag.attrib['href']

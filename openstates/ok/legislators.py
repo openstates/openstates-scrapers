@@ -1,7 +1,7 @@
 import re
-import lxml.html
+import lxml
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.utils import LXMLMixin
+from openstates.utils import LXMLMixin, validate_email_address
 
 
 class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -13,6 +13,47 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     def _scrub(self, text):
         """Squish whitespace and kill \xa0."""
         return re.sub(r'[\s\xa0]+', ' ', text)
+
+    def _clean_office_info(self, office_info):
+        office_info = map(self._scrub, office_info.itertext())
+        # Throw away anything after any email address, phone number, or
+        # address lines.
+        while office_info:
+            last = office_info[-1]
+            if '@' not in last \
+                and ', OK' not in last \
+                and not re.search(r'[\d\-\(\) ]{7,}', last):
+                office_info.pop()
+            else:
+                break
+        return office_info
+
+    def _extract_phone(self, office_info):
+        phone = None
+
+        for line in office_info:
+            phone_match = re.search(r'''(\(\d{3}\) \d{3}-\d{4}|
+                \d{3}.\d{3}.\d{4})''', line)
+            if phone_match is not None:
+                phone = phone_match.group(1).strip()
+
+        return phone
+
+    def _extract_email(self, doc):
+        xpath = '//div[@class="districtheadleft"]' \
+                + '/b[contains(text(), "Email:")]' \
+                + '/../following-sibling::div' \
+                + '/script/text()'
+        script = doc.xpath(xpath)[0]
+        line = filter(
+            lambda line: '+ "@" +' in line,
+            script.split('\r\n'))[0]
+        parts = re.findall(r'"(.+?)"', line)
+
+        email = ''.join(parts)
+
+        return email if validate_email_address(email) else None
+
 
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
@@ -79,6 +120,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 district=district,
                 party=party,
                 photo_url=photo_url,
+                url=legislator_url
             )
 
             legislator.add_source(url)
@@ -114,12 +156,10 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             if not phone:
                 phone = None
 
-            # Set the email on the legislator object.
-            try:
-                xpath = '//a[contains(@href, "mailto")]/@href'
-                email = doc.xpath(xpath)[0][7:]
-            except IndexError:
-                email = None
+            # Get the email address, extracted from a series of JS
+            # "document.write" lines.
+            email = self._extract_email(doc)
+            legislator['email'] = email
 
             office = dict(
                 name='Capitol Office', type='capitol', phone=phone, email=email, address=address)
@@ -141,7 +181,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        for a in doc.xpath('//table[@summary]')[1].xpath('.//td//a[contains(@href, "biographies")]'):
+        for a in doc.xpath('//table[@summary]')[0].xpath('.//td//a[contains(@href, "biographies")]'):
             tail = a.xpath('..')[0].tail
             if tail:
                 district = tail.split()[1]
@@ -152,12 +192,8 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 self.warning("District {} appears to be empty".format(district))
                 continue
             else:
-                name, party = a.text.rsplit(None, 1)
-
-            if party == '(D)':
-                party = 'Democratic'
-            elif party == '(R)':
-                party = 'Republican'
+                match = re.match(r'(.+) \(([A-Z])\)', a.text.strip())
+                name, party = match.group(1), self._parties[match.group(2)]
 
             url = a.get('href')
 
@@ -165,6 +201,8 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             leg.add_source(url)
             self.scrape_upper_offices(leg, url)
             self.save_legislator(leg)
+
+
 
     def scrape_upper_offices(self, legislator, url):
         url = url.replace('aspx', 'html')
@@ -178,37 +216,63 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             if table.tag == 'table':
                 break
         col1, col2 = table.xpath('tr[2]/td')
+        lxml.etree.strip_tags(col1, 'sup')
+        lxml.etree.strip_tags(col2, 'sup')
 
-        # Add the capitol office.
-        col1 = map(self._scrub, col1.itertext())
-        while True:
-            # Throw away anything after the email address.
-            last = col1[-1]
-            if '@' not in last and not re.search(r'[\d\-\(\) ]{7,}', last):
-                col1.pop()
-            else:
-                break
+        capitol_office_info = self._clean_office_info(col1)
 
         # Set email on the leg object.
-        email = col1.pop()
-        legislator['email'] = email
+        if '@' in capitol_office_info[-1]:
+            email = capitol_office_info.pop()
+            legislator['email'] = email
+        else:
+            email = None
 
-        # Next line is the phone number.
-        phone = col1.pop()
+        capitol_phone = self._extract_phone(capitol_office_info)
+
+        capitol_address_lines = map(
+            lambda line: line.strip(),
+            filter(
+                lambda string: re.search(r', OK|Lincoln Blvd|Room \d', string),
+                capitol_office_info))
+
         office = dict(
             name='Capitol Office',
             type='capitol',
-            address='\n'.join(col1),
-            fax=None, email=None, phone=phone)
+            address='\n'.join(capitol_address_lines),
+            fax=None,
+            email=email,
+            phone=capitol_phone)
+
         legislator.add_office(**office)
 
-        col2 = map(self._scrub, col2.itertext())
-        if len(col2) < 2:
+        district_office_info = self._clean_office_info(col2)
+
+        # This probably isn't a valid district office at less than two lines.
+        if len(district_office_info) < 2:
             return
+
+        district_address_lines = []
+        for line in district_office_info:
+            district_address_lines.append(line.strip())
+            if 'OK' in line:
+                break
+
+        if 'OK' in district_address_lines[-1]:
+            district_address = '\n'.join(filter(lambda line: line,
+                district_address_lines))
+        else:
+            district_address = None
+        #self.logger.debug(district_address)
+
+        district_phone = self._extract_phone(district_office_info)
 
         office = dict(
             name='District Office',
             type='district',
-            address='\n'.join(col2),
-            fax=None, email=None, phone=phone)
+            address=district_address,
+            fax=None,
+            email=None,
+            phone=district_phone)
+
         legislator.add_office(**office)

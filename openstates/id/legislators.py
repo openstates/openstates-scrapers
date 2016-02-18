@@ -18,6 +18,15 @@ class IDLegislatorScraper(LegislatorScraper):
     """Legislator data seems to be available for the current term only."""
     jurisdiction = 'id'
 
+    def _extract_email(self, contact_form):
+        legislator_id = re.search(r'(\d+)', contact_form).group(1)
+        contact_page = self.get(contact_form).text
+        pattern = re.compile(r'legislators.email%s = "(.+?)";' % legislator_id)
+        email = pattern.search(contact_page).group(1)
+
+        return email
+
+
     def scrape_sub(self, chamber, term, district, sub_url):
         "Scrape basic info for a legislator's substitute."
         page = self.get(sub_url).text
@@ -55,6 +64,7 @@ class IDLegislatorScraper(LegislatorScraper):
         for row in base_table[0].xpath('tr'):
             img_url = row.xpath('string(.//img/@src)')
             contact_form, additional_info_url = row.xpath('.//a/@href')
+            email = self._extract_email(contact_form)
             if "Substitute" in row.text_content():
                 # it seems like the sub always follows the person who he/she
                 # is filling in for.
@@ -81,7 +91,7 @@ class IDLegislatorScraper(LegislatorScraper):
             if pieces[0].startswith(u'(Served '):
                 pieces.pop(0)
 
-            address = pieces.pop(0).strip()
+            address = re.sub(r'(\d{5})', r'ID \1', pieces.pop(0).strip())
             assert re.match(r'.*\d{5}', address), "Address potentially invalid: {}".format(address)
 
             phone = None
@@ -102,10 +112,13 @@ class IDLegislatorScraper(LegislatorScraper):
                              chamber,
                              district,
                              full_name,
-                             party=party)
+                             party=party,
+                             email=email)
 
             leg.add_office('district',
                            'District Office',
+                           address=address,
+                           email=email,
                            fax=fax if fax else None,
                            phone=phone if phone else None)
 

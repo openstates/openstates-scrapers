@@ -41,7 +41,7 @@ metadata = {
             'name': '2016-2019',
             'start_year': 2016, 'end_year': 2019,
             'sessions': [
-                '2016',
+                '2016', '20161E'
             ],
         },
     ],
@@ -124,6 +124,10 @@ metadata = {
             'end_date': datetime.date(2016, 5, 8),
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016 Regular Session',
+        },
+        '20161E': {
+            'display_name': '2016 First Extraordinary Session',
+            '_scraped_name': '2016 First Extraordinary Session'
         },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
