@@ -34,7 +34,7 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
 
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):             
+        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):
             comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
             
