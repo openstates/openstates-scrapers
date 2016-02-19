@@ -6,7 +6,6 @@ from .scraper import InvalidHTTPSScraper
 
 import lxml.html
 
-
 class IAEventScraper(InvalidHTTPSScraper, EventScraper):
     jurisdiction = 'ia'
 
@@ -35,12 +34,14 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
 
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for link in page.xpath("//a[contains(@id, 'linkCommittee')]"):
-            comm = link.text.strip()
+        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):             
+            comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
-            location = link.xpath("string(../../td[3])")
+            
+            location = link.xpath("string(./td[3]/text())").strip()
 
-            when = link.xpath("string(../../td[1])").strip()
+            when = link.xpath("string(./td[1]/span[1]/text())").strip()
+            
             if 'cancelled' in when.lower() or "upon" in when.lower():
                 continue
             if "To Be Determined" in when:
