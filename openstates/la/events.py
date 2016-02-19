@@ -136,7 +136,8 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 # dead entries.
 
             committee_name = meeting.xpath('./td[1]/text()')[0].strip()
-            meeting_string = meeting.xpath('./td[2]/text()')[0]
+            meeting_string = meeting.xpath('./td[2]')[0].text_content()
+            
             if "@" in meeting_string:
                 continue  # Contains no time data.
             date, time, location = ([s.strip() for s in meeting_string.split(
