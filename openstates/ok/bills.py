@@ -123,7 +123,7 @@ class OKBillScraper(BillScraper):
             version_url = link.attrib['href']
             name = link.text.strip()
 
-            if 'COMMITTEE REPORTS' in version_url:
+            if re.search('COMMITTEE REPORTS|SCHEDULED CCR', version_url):
                 bill.add_document(name, version_url, mimetype='application/pdf')
                 continue
 
