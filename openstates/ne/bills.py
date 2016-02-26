@@ -69,6 +69,13 @@ class NEBillScraper(BillScraper, LXMLMixin):
         introduced_by = self.get_node(
             bill_page,
             '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/a[1]/text()')
+
+        if not introduced_by:
+            introduced_by = self.get_node(
+                bill_page,
+                '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/text()')
+            introduced_by = introduced_by.split('Introduced By:')[1].strip()
+
         bill.add_sponsor('primary', introduced_by)
 
         action_nodes = self.get_nodes(
