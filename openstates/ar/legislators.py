@@ -31,10 +31,6 @@ class ARLegislatorScraper(LegislatorScraper):
             member_url = urlescape(a.attrib['href'])
             self.scrape_member(chamber, term, member_url)
 
-        if self._remove_special_case is True:
-            raise AssertionError(
-                "Remove David Johnson special case")
-
     def scrape_member(self, chamber, term, member_url):
         page = self.get(member_url).text
         root = lxml.html.fromstring(page)
@@ -51,11 +47,6 @@ class ARLegislatorScraper(LegislatorScraper):
         full_name = ' '.join(name_and_party[1:-1])
 
         party = name_and_party[-1]
-
-        if ' '.join(name_and_party[1:]) == 'David Johnson' and "(" not in party:
-            full_name = ' '.join(name_and_party[1:])
-            party = 'Democratic'
-            self._remove_special_case = False
 
         elif party == '(R)':
             party = 'Republican'
