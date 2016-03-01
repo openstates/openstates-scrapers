@@ -158,6 +158,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             ('Present', 'skip'),
             ('Amendment', DONE),
             ('Resolution', DONE),
+            ('The senate joint resolution', DONE),
             ('Bill', DONE),
 
             # House journal.
