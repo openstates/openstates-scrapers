@@ -5,7 +5,7 @@ from billy.scrape.actions import Rule, BaseCategorizer
 _categorizer_rules = (
     Rule([u'Amendment #\\S+ \\((?P<legislator>.+?)\\) bundle YES adopted'],
          [u'amendment:passed']),
-    Rule([u'(?i)Signed by (the )Governor'], [u'committee:referred']),
+    Rule([u'(?i)Signed by (the )Governor(.*)'], [u'governor:signed']),
     Rule([u'Accompanied (by )?(?P<bill_id>[SH]\\S+)'], []),
     Rule([u'Discharged to the committee on (?P<committees>.+)'],
          [u'committee:referred']),
@@ -76,4 +76,3 @@ _categorizer_rules = (
 
 class Categorizer(BaseCategorizer):
     rules = _categorizer_rules
-

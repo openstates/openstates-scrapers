@@ -83,6 +83,8 @@ class MABillScraper(BillScraper):
                 if actor_txt:
                     actor = chamber_map[actor_txt]
                 action = act_row.xpath('./td[@headers="bAction"]')[0].text_content().strip()
+                # from here (MABillScraper namespace) we import categorizer from actions.py which
+                # imports categorizer from billy.scrape.actions.BaseCategorizer
                 attrs = self.categorizer.categorize(action)
                 bill.add_action(actor, action, date, **attrs)
 
