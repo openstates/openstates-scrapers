@@ -119,8 +119,15 @@ class OKBillScraper(BillScraper):
             bill.add_action(**attrs)
 
         version_table = page.xpath("//table[contains(@id, 'Versions')]")[0]
+        # Keep track of already seen versions to prevent processing duplicates.
+        version_urls = []
         for link in version_table.xpath(".//a[contains(@href, '.PDF')]"):
             version_url = link.attrib['href']
+            if version_url in version_urls:
+                self.logger.warning('Skipping duplicate version URL.')
+                continue
+            else:
+                version_urls.append(version_url)
             name = link.text.strip()
 
             if re.search('COMMITTEE REPORTS|SCHEDULED CCR', version_url, re.IGNORECASE):
