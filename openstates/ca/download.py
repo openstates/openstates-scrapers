@@ -286,9 +286,15 @@ def get_contents():
         date = date.replace('  ', ' ')
         try:
             date = datetime.strptime(date, '%b %d %Y')
-        except ValueError:
-            date = datetime.strptime(date, '%b %d %H:%M')
-            date = date.replace(year=datetime.now().year)
+        except ValueError as e:
+            #The string "Feb 29 21:32" breaks the parser due to a Feb 29 without a (leap) year.
+            if re.match('Feb 29',date):
+                date = '%s %s' % (date, '2016')
+                date = datetime.strptime(date, '%b %d %H:%M %Y')
+            else: 
+                date = datetime.strptime(date, '%b %d %H:%M')
+                date = date.replace(year=datetime.now().year)
+            
         resp[filename] = date
     return resp
 
