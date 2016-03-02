@@ -287,8 +287,8 @@ def get_contents():
         try:
             date = datetime.strptime(date, '%b %d %Y')
         except ValueError:
-            date = datetime.strptime(date, '%b %d %H:%M')
-            date = date.replace(year=datetime.now().year)
+            date = ' '.join([date, str(datetime.now().year)])
+            date = datetime.strptime(date, '%b %d %H:%M %Y')
         resp[filename] = date
     return resp
 
