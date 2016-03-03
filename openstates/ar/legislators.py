@@ -48,7 +48,7 @@ class ARLegislatorScraper(LegislatorScraper):
 
         party = name_and_party[-1]
 
-        elif party == '(R)':
+        if party == '(R)':
             party = 'Republican'
         elif party == '(D)':
             party = 'Democratic'
