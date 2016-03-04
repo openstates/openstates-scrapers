@@ -80,7 +80,6 @@ class NHBillScraper(BillScraper):
             bill_id = line[10]
 
             if body == body_code[chamber] and session_yr == session:
-                print "%s %s" % (expanded_bill_id, bill_id)
                 if expanded_bill_id.startswith('CACR'):
                     bill_type = 'constitutional amendment'
                 elif expanded_bill_id.startswith('PET'):
