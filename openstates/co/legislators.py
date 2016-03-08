@@ -27,9 +27,17 @@ def clean_input( line ):
 class COLegislatorScraper(LegislatorScraper):
     jurisdiction = 'co'
 
-    def get_district_list(self, chamber, session ):
-        session = session[:4] + "A"
+    def _get_latest_session_from_term(self, term):
+        '''Determines latest session from metadata.'''
+        sessions = [s for s in [t for t in self.metadata['terms'] if t['name']\
+            == term][-1]['sessions']]
 
+        # We're assuming the last session in the term is the current one.
+        latest_session = sessions[-1]
+
+        return latest_session
+
+    def _get_district_list(self, chamber, session):
         chamber = {
             "upper" : "%5Ce.%20Senate%20Districts%20&%20Members",
             "lower" : "h.%20House%20Districts%20&%20Members"
@@ -37,6 +45,7 @@ class COLegislatorScraper(LegislatorScraper):
 
         url = "http://www.leg.state.co.us/clics/clics" + session + \
             "/directory.nsf/Pink%20Book/" + chamber + "?OpenView&Start=1"
+
         return url
 
     def scrape_directory(self, next_page, chamber, session):
@@ -159,16 +168,17 @@ class COLegislatorScraper(LegislatorScraper):
         ret['occupation'] = occupation
         return ret
 
-    def scrape(self, chamber, session):
-        url = self.get_district_list(chamber, session)
-        people_pages = self.scrape_directory( url, chamber, session )
+    def scrape(self, chamber, term):
+        session = self._get_latest_session_from_term(term)
+        url = self._get_district_list(chamber, session)
+        people_pages = self.scrape_directory(url, chamber, session)
 
         for person in people_pages:
             district = person
             p_url = people_pages[district]
-            metainf = self.process_person( p_url )
+            metainf = self.process_person(p_url)
 
-            p = Legislator( session, chamber, district, metainf['name'],
+            p = Legislator(term, chamber, district, metainf['name'],
                 party=metainf['party'],
                 # some additional things the website provides:
                 occupation=metainf['occupation'],
@@ -177,11 +187,12 @@ class COLegislatorScraper(LegislatorScraper):
 
             phone = metainf['number'] if 'number' in metainf else None
             email = metainf['email'] if 'email' in metainf else None
-            p.add_office('capitol', 'Capitol Office',
-                             phone=phone,
-                             address='200 E. Colfax\nDenver, CO 80203',
-                             email=email
-                            )
+            p.add_office(
+                'capitol',
+                'Capitol Office',
+                phone=phone,
+                address='200 E. Colfax\nDenver, CO 80203',
+                email=email)
 
-            p.add_source( p_url )
-            self.save_legislator( p )
+            p.add_source(p_url)
+            self.save_legislator(p)
