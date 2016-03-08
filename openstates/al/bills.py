@@ -55,16 +55,16 @@ class ALBillScraper(BillScraper):
             return False
 
         # Almost all GET requests should _not_ get redirected
-        elif (response.request.method == 'GET' and
-              response.status_code == 302 and
+        elif (response.status_code == 302 and
+              response.request.method == 'GET' and
               'ALISONLogin.aspx' not in response.request.url):
             return False
 
         # Standard GET responses must have an ASP.NET VIEWSTATE
         # If they don't, it means the page is a trivial error message
-        elif (response.request.method == 'GET' and
-              not lxml.html.fromstring(response.text).xpath(
-                  '//input[@id="__VIEWSTATE"]/@value')):
+        elif (not lxml.html.fromstring(response.text).xpath(
+                  '//input[@id="__VIEWSTATE"]/@value') and
+              response.request.method == 'GET'):
             return False
 
         else:
@@ -323,6 +323,10 @@ class ALBillScraper(BillScraper):
                 (action_text, ) = action.xpath('td[4]/font/text()')
                 action_type = _categorize_action(action_text)
 
+                # check for occasional extra last row
+                if not action_chamber.strip():
+                    continue 
+                    
                 # The committee cell is just an abbreviation, so get its name
                 actor = self.CHAMBERS[action_chamber]
                 try:
