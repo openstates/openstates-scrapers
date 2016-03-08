@@ -3,8 +3,9 @@ import HTMLParser
 from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 from scrapelib import HTTPError
+from openstates.utils import LXMLMixin
 
-class TNLegislatorScraper(LegislatorScraper):
+class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'tn'
 
     def scrape(self, chamber, term):
@@ -27,8 +28,7 @@ class TNLegislatorScraper(LegislatorScraper):
         else:
             chamber_url = root_url + url_chamber_name + '/members/'
 
-        page = self.get(chamber_url).text
-        page = lxml.html.fromstring(page)
+        page = self.lxmlize(chamber_url)
 
         for row in page.xpath("//tr"):
 
@@ -40,8 +40,6 @@ class TNLegislatorScraper(LegislatorScraper):
             if 'Vacant' in vacancy_check:
                 self.logger.warning("Vacant Seat")
                 continue
-
-
 
             partyInit = row.xpath('td[3]')[0].text.split()[0]
             party = parties[partyInit]
@@ -61,16 +59,16 @@ class TNLegislatorScraper(LegislatorScraper):
 
             email = HTMLParser.HTMLParser().unescape(
                     row.xpath('td[1]/a/@href')[0][len("mailto:"): ])
-            member_url = (root_url + url_chamber_name + '/members/'
-                          + abbr + district + '.html')
+            member_url = (root_url + url_chamber_name + '/members/' + abbr +
+                district + '.html')
             member_photo_url = (root_url + url_chamber_name +
-                                '/members/images/' + abbr + district +
-                                '.jpg')
+                '/members/images/' + abbr + district + '.jpg')
 
             try:
                 member_page = self.get(member_url, follow_redirects=False).text
             except TypeError:
                 try:
+                    member_url = row.xpath('td[2]/a/@href')[0]
                     member_page = self.get(member_url).text
                 except HTTPError:
                     self.logger.warning("page doesn't exist")
