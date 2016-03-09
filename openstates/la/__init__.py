@@ -46,8 +46,8 @@ metadata = {
             'start_year': 2016,
             'end_year': 2019,
             'sessions': [
-                '2016',
-                '2016 1st Extraordinary Session'
+                '2016 1st Extraordinary Session',
+                '2016'
             ],
         },
     ],
