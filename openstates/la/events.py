@@ -124,7 +124,8 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
         valid_meetings = [row for row in meeting_rows if row.xpath(
             './td[1]')[0].text_content().replace(u'\xa0', '') and row.xpath(
-            './td/a/img[contains(@src, "PDF-AGENDA.png")]')]
+            './td/a/img[contains(@src, "PDF-AGENDA.png")]') and 'Not Meeting' not in row.xpath(
+            './td[2]')[0].text_content()]
 
         for meeting in valid_meetings:
             try:
@@ -137,7 +138,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
             committee_name = meeting.xpath('./td[1]/text()')[0].strip()
             meeting_string = meeting.xpath('./td[2]')[0].text_content()
-            
+
             if "@" in meeting_string:
                 continue  # Contains no time data.
             date, time, location = ([s.strip() for s in meeting_string.split(
