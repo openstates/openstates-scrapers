@@ -5,7 +5,8 @@ from collections import defaultdict
 from cStringIO import StringIO
 from billy.scrape.legislators import Legislator, LegislatorScraper
 from billy.scrape import NoDataForPeriod
-from openstates.utils import LXMLMixin, validate_email_address
+from openstates.utils import LXMLMixin, validate_phone_number,\
+    validate_email_address
 
 
 class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -15,17 +16,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
         'DFL': 'Democratic-Farmer-Labor',
         'R': 'Republican',
     }
-
-    def _validate_phone_number(self, phone_number):
-        is_valid = False
-
-        # Phone format validation regex.
-        phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
-        phone_match = phone_pattern.match(phone_number)
-        if phone_match is not None:
-            is_valid = True
-
-        return is_valid
 
     def scrape(self, chamber, term):
         getattr(self, '_scrape_' + chamber + '_chamber')(term)
@@ -74,7 +64,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             address = '\n'.join((info_texts[0], info_texts[1]))
 
             phone_text = info_texts[2]
-            if self._validate_phone_number(phone_text):
+            if validate_phone_number(phone_text):
                 phone = phone_text
 
             # E-mail markup is screwed-up and inconsistent.
