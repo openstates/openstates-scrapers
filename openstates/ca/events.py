@@ -137,6 +137,7 @@ _committee_nr = {
     62L: u'Senate Budget and Fiscal Review',
     64L: u'Senate Environmental Quality',
     66L: u'Senate Veterans Affairs',
+    68L: u'Senate Public Health and Developmental Services'
     69L: u'Senate Banking and Financial Institutions',
     70L: u'Senate Insurance',
     71L: u'Senate Energy, Utilities and Communications',
