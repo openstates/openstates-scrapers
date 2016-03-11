@@ -27,7 +27,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return is_valid
 
-
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
@@ -163,9 +162,19 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
                             )
             row["Zipcode"] = row["Zipcode"].strip()
 
-            if 'Martin Luther King' in row['Address2']:
+            # Accommodate for multiple address column naming conventions.
+            address1_fields = [row.get('Address'), row.get('Office Building')]
+            address2_fields = [row.get('Address2'), row.get('Office Address')]
+            row['Address'] = next((a for a in address1_fields if a is not
+                None), False)
+            row['Address2'] = next((a for a in address2_fields if a is not
+                None), False)
+
+            if (a in row['Address2'] for a in ['95 University Avenue W',
+                '100 Rev. Dr. Martin Luther King']):
                 leg.add_office('capitol', 'Capitol Office',
-                    address='{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row),
+                    address='{Room} {Address}\n{Address2}\n{City}, {State} '\
+                        '{Zipcode}'.format(Room=row['Rm. Number'], **row),
                     email=email, phone=leg.get('office_phone'))
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
