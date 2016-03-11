@@ -1,6 +1,19 @@
 from .lxmlize import LXMLMixin
 import re
 
+
+def validate_phone_number(phone_number):
+    is_valid = False
+
+    # Phone format validation regex.
+    phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
+    phone_match = phone_pattern.match(phone_number)
+    if phone_match is not None:
+        is_valid = True
+
+    return is_valid
+
+
 def validate_email_address(email_address):
     is_valid = False
 
