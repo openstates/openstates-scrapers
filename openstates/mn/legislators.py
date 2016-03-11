@@ -28,9 +28,9 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
         return is_valid
 
     def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')(term)
+        getattr(self, '_scrape_' + chamber + '_chamber')(term)
 
-    def scrape_lower_chamber(self, term):
+    def _scrape_lower_chamber(self, term):
         url = 'http://www.house.leg.state.mn.us/members/hmem.asp'
 
         page = self.lxmlize(url)
@@ -114,7 +114,7 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
         if not need_special_email_case:
             self.logger.warning('Special e-mail handling no longer required.')
 
-    def scrape_upper_chamber(self, term):
+    def _scrape_upper_chamber(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
         doc = lxml.html.fromstring(self.get(index_url).text)
         doc.make_links_absolute(index_url)
