@@ -22,7 +22,7 @@ metadata = {
             'name': '2011-2012',
             'start_year': 2011,
             'end_year': 2012,
-            'sessions': ['2011', '2012', '2012B'],
+            'sessions': ['2011', '2012', '2012B', '2012O'],
         },
         {
             'name': '2013-2014',
@@ -58,6 +58,13 @@ metadata = {
             'end_date': datetime.date(2012, 3, 28),
             'display_name': '2012 Extraordinary Apportionment Session',
             '_scraped_name': '2012B',
+        },
+        '2012O': {
+            'type': 'organizational',
+            'start_date': datetime.date(2012, 11, 20),
+            'end_date': datetime.date(2012, 11, 20),
+            'display_name': '2012 Organizational Session',
+            '_scraped_name': '2012O',
         },
         '2013': {
             'type': 'primary',
@@ -125,7 +132,7 @@ metadata = {
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': [
-        '2010O', '2010A', '2012O', '2010',
+        '2010O', '2010A', '2010',
     ],
 }
 
