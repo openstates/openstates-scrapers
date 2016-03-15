@@ -149,6 +149,8 @@ class FLBillScraper(BillScraper, LXMLMixin):
                     atype.append('bill:passed')
                 elif action.startswith('CS passed'):
                     atype.append('bill:passed')
+                elif action.startswith('Approved by Gov'):
+                    atype.apend('governor:signed')
 
                 bill.add_action(actor, action, date, type=atype)
 
