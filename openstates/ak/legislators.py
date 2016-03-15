@@ -21,10 +21,7 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         email = bio['Email']
         district = bio['District']
-        party = bio['Party']
-
-        if party == 'Democrat':
-            party = 'Democratic'
+        party = self._party_map[bio['Party']]
 
         leg = Legislator(
             term = term,
@@ -90,3 +87,10 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         for link in page.xpath('//ul[@class="item lists"]/li/a/@href'):
             self._scrape_legislator(chamber, term, link)
+
+    def __init__(self):
+        self._party_map = {
+            'Democrat': 'Democratic',
+            'Republican': 'Republican',
+            'Non Affiliated': 'Independent',
+        }

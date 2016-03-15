@@ -130,7 +130,7 @@ metadata = {
             '_scraped_name': '2016',
         },
     },
-    'feature_flags': ['influenceexplorer'],
+    'feature_flags': ['events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
         '2010O', '2010A', '2010',
     ],
