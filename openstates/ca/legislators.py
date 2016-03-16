@@ -15,7 +15,7 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     if ';' not in s:
         return []
 
-    fields = 'city zip phone'.split()
+    fields = 'city state_zip phone'.split()
     vals = split(s)
     res = []
     while True:
@@ -29,6 +29,7 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
                 res.append((_field, _value))
     if vals:
         res.append(('street', ', '.join(vals)))
+    print res
     return res
 
 
@@ -116,8 +117,8 @@ class CALegislatorScraper(LegislatorScraper):
             'district':  [('district', '/text()')],
             'party':     [('party', '/text()')],
             'full_name': [('office-information', '/a[not(contains(text(), "edit"))]/text()')],
-            'address':   [('office-information', '/p/text()'),
-                          ('office-information', '/p/font/text()')]
+            'address':   [('office-information', '/h3/following-sibling::text()'),
+                          ('office-information', '/p/text()')]
             }
 
         titles = {'upper': 'senator', 'lower': 'member'}
@@ -156,7 +157,7 @@ class CALegislatorScraper(LegislatorScraper):
         for address in addresses[:]:
 
             # Toss results that don't have required keys.
-            if not set(['street', 'city', 'zip']) < set(address):
+            if not set(['street', 'city', 'state_zip']) < set(address):
                 if address in addresses:
                     addresses.remove(address)
 
@@ -175,13 +176,13 @@ class CALegislatorScraper(LegislatorScraper):
 
             for office in offices:
                 street = office['street']
-                street = '%s\n%s, %s %s' % (street, office['city'], 'CA',
-                                            office['zip'])
+                state_zip = re.sub(r'\s+', ' ', office['state_zip'])
+                street = '%s\n%s, %s' % (street, office['city'], state_zip)
                 office['address'] = street
                 office['fax'] = None
                 office['email'] = None
 
-                del office['street'], office['city'], office['zip']
+                del office['street'], office['city'], office['state_zip']
 
         res['offices'] = offices
         del res['address']
