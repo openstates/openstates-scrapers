@@ -29,7 +29,6 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
                 res.append((_field, _value))
     if vals:
         res.append(('street', ', '.join(vals)))
-    print res
     return res
 
 
