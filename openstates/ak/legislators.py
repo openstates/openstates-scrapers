@@ -78,6 +78,12 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
         self.save_legislator(leg)
 
     def scrape(self, chamber, term):
+        self._party_map = {
+            'Democrat': 'Democratic',
+            'Republican': 'Republican',
+            'Non Affiliated': 'Independent',
+        }
+
         if chamber == 'upper':
             url = 'http://senate.legis.state.ak.us/'
         else:
@@ -87,10 +93,3 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         for link in page.xpath('//ul[@class="item lists"]/li/a/@href'):
             self._scrape_legislator(chamber, term, link)
-
-    def __init__(self):
-        self._party_map = {
-            'Democrat': 'Democratic',
-            'Republican': 'Republican',
-            'Non Affiliated': 'Independent',
-        }
