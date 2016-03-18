@@ -131,10 +131,9 @@ class FLLegislatorScraper(LegislatorScraper):
         for div in page.xpath('//div[@class="rep_listing1"]'):
             link = div.xpath('.//div[@class="rep_style"]/a')[0]
             name = link.text_content().strip()
-
-            if 'Vacant' in name or \
-                    'Resigned' in name or \
-                    'Pending' in name:
+            term_details = div.xpath(
+                './/div[@class="term_style"]')[0].text_content()
+            if 'Resigned' in term_details:
                 continue
 
             party = div.xpath('.//div[@class="party_style"]/text()')[0].strip()
