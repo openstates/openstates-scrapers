@@ -241,6 +241,7 @@ class TNBillScraper(BillScraper):
             bill_type = 'joint resolution'
         elif 'R' in bill_id:
             bill_type = 'resolution'
+            
 
         primary_chamber = 'lower' if 'H' in bill_id else 'upper'
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
