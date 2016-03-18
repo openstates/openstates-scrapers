@@ -72,9 +72,13 @@ class INBillScraper(BillScraper):
             passed = None
 
             for res,val in result_types.items():
-                if res in lines[3].upper():
-                    passed = val
-                    break
+                # We check multiple lines now because the result of the
+                # roll call vote as parsed can potentially be split.
+                # PDF documents suck.
+                for line in lines[3:5]:
+                    if res in line.upper():
+                        passed = val
+                        break
 
             if passed is None:
                 raise AssertionError("Missing bill passage type")
