@@ -22,8 +22,15 @@ def check_response(method):
             response = method(self, *args, **kwargs)
         except scrapelib.HTTPError as e:
             if e.response.status_code == 429:
-                self.handle_429(e.response)
-                return method(self, *args, **kwargs).json()
+                attempts = kwargs['attempts'] if 'attempts' in kwargs else args[1] if len(args) > 1 else 1
+                max_attempts = kwargs['max_attempts'] if 'max_attempts' in kwargs else args[2] if len(args) > 2 else 5
+
+                if attempts < max_attempts:
+                    self.handle_429(e.response)
+                    kwargs.update({'attempts': attempts + 1, 'max_attempts': max_attempts})
+                    return method(self, *args, **kwargs).json()
+                else:
+                    raise e
             raise e
 
         return response.json()
@@ -37,7 +44,7 @@ class ThrottleWrapper(object):
         self.scraper = scraper
 
     @check_response
-    def get(self, url):
+    def get(self, url, attempts=1, max_attempts=5):
         return self.scraper.get(url)
 
     def handle_429(self, resp):
