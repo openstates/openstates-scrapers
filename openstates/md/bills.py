@@ -358,8 +358,11 @@ class MDBillScraper(BillScraper):
         sponsors = sponsors.replace('Senator ', '')
         sponsors = sponsors.replace('Senators ', '')
         sponsor_type = 'primary'
+
         for sponsor in re.split(', (?:and )?', sponsors):
-            #self.debug('sponsor: %s', sponsor)
+            sponsor = sponsor.strip()
+            if not sponsor:
+                continue
             bill.add_sponsor(sponsor_type, sponsor)
             sponsor_type = 'cosponsor'
 
