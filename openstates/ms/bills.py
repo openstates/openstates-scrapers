@@ -239,6 +239,7 @@ class MSBillScraper(BillScraper):
             ('Nays--', no_votes),
             ('Absent or those not voting--', other_votes),
             ('Absent and those not voting--', other_votes),
+            ('Not Voting--', other_votes),
             ('Voting Present--', other_votes),
             ('Present--', other_votes),
             ('DISCLAIMER', None),
