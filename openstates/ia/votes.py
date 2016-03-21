@@ -34,12 +34,25 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
 
                 for url in urls:
                     _, filename = url.rsplit('/', 1)
+                    journal_template = '%Y%m%d_{}.pdf'
                     try:
-                        date = datetime.strptime(filename, '%m-%d-%Y.pdf')
+                        if chamber == 'upper':
+                            journal_format = journal_template.format('SJNL')
+                        elif chamber == 'lower':
+                            journal_format = journal_template.format('HJNL')
+                        else:
+                            raise ValueError('Unknown chamber: {}'.format(
+                                chamber))
+
+                        date = datetime.strptime(filename, journal_format)
+                        self.scrape_journal(url, chamber, session, date)
                     except ValueError:
-                        msg = "%s doesn't smell like a date. Skipping."
-                        self.logger.info(msg % filename)
-                    self.scrape_journal(url, chamber, session, date)
+                        journal_format = '%m-%d-%Y.pdf'
+                        try:
+                            date = datetime.strptime(filename, journal_format)
+                        except:
+                            msg = '{} doesn\'t smell like a date. Skipping.'
+                            self.logger.info(msg.format(filename))
 
     def scrape_journal(self, url, chamber, session, date):
 
