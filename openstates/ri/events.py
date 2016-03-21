@@ -64,7 +64,7 @@ class RIEventScraper(EventScraper, LXMLMixin):
             datetime = date
         else:
             datetime = "%s %s" % ( date, time )
-        if "CANCELLED" in datetime:
+        if "CANCELLED" in datetime.upper():
             return
 
         event_desc = "Meeting Notice"
