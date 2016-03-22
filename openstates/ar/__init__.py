@@ -112,6 +112,7 @@ metadata = {
     },
     'feature_flags': ['influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
+        'Fiscal Session, 2016',
         'Regular Session, 2009',
         'Fiscal Session, 2010',
         'Regular Session, 2007',

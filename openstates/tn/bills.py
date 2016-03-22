@@ -190,30 +190,28 @@ class TNBillScraper(BillScraper):
     jurisdiction = 'tn'
 
     def scrape(self, term, chambers):
-        #types of bills
-        abbrs = ['HB', 'HJR', 'HR', 'SB', 'SJR', 'SR']
 
-        for abbr in abbrs:
-            if 'B' in abbr:
-                bill_type = 'bill'
-            elif 'JR' in abbr:
-                bill_type = 'joint resolution'
-            else:
-                bill_type = 'resolution'
-
-            bill_listing = 'http://wapp.capitol.tn.gov/apps/indexes/BillIndex.aspx?StartNum=%s0001&EndNum=%s9999' % (abbr, abbr)
-
+        #The index page gives us links to the paginated bill pages
+        index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
+        index_list_page = self.get(index_page).text
+        index_list_page = lxml.html.fromstring(index_list_page)
+        index_list_page.make_links_absolute(index_page)
+        
+        for bill_listing in index_list_page.xpath('//td[contains(@class,"webindex")]/a'):
+            
+            bill_listing = bill_listing.attrib['href'] 
+       
             bill_list_page = self.get(bill_listing).text
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
             for bill_link in bill_list_page.xpath(
-                    '//h1[text()="Legislation"]/following-sibling::div/'
-                    'div/div/div/label//a/@href'
-                    ):
-                self.scrape_bill(term, bill_link, bill_type)
+                '//h1[text()="Legislation"]/following-sibling::div/'
+                'div/div/div/label//a/@href'
+                ):
+                self.scrape_bill(term, bill_link)
 
-    def scrape_bill(self, term, bill_url, bill_type):
+    def scrape_bill(self, term, bill_url):
 
         page = self.get(bill_url).text
         page = lxml.html.fromstring(page)
@@ -229,13 +227,21 @@ class TNBillScraper(BillScraper):
         # checking if there is a matching bill
         if secondary_bill_id:
             secondary_bill_id = secondary_bill_id[0].text
-
             # swap ids if * is in secondary_bill_id
             if '*' in secondary_bill_id:
                 bill_id, secondary_bill_id = secondary_bill_id, bill_id
                 secondary_bill_id = secondary_bill_id.strip()
+            secondary_bill_id = secondary_bill_id.replace('  ',' ')
+            
+        bill_id = bill_id.replace('*', '').replace('  ',' ').strip()
 
-        bill_id = bill_id.replace('*', '').strip()
+        if 'B' in bill_id:
+            bill_type = 'bill'
+        elif 'JR' in bill_id:
+            bill_type = 'joint resolution'
+        elif 'R' in bill_id:
+            bill_type = 'resolution'
+            
 
         primary_chamber = 'lower' if 'H' in bill_id else 'upper'
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'

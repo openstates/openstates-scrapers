@@ -65,14 +65,15 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 '/members/images/' + abbr + district + '.jpg')
 
             try:
-                member_page = self.get(member_url, follow_redirects=False).text
-            except TypeError:
+                member_page = self.get(member_url, allow_redirects=False).text
+            except (TypeError, HTTPError):
                 try:
                     member_url = row.xpath('td[2]/a/@href')[0]
-                    member_page = self.get(member_url).text
-                except HTTPError:
-                    self.logger.warning("page doesn't exist")
+                    member_page = self.get(member_url, allow_redirects=False).text
+                except (TypeError, HTTPError):
+                    self.logger.warning("Valid member page does not exist.")
                     continue
+
             member_page = lxml.html.fromstring(member_page)
             try:
                 name = member_page.xpath('body/div/div/h1/text()')[0]

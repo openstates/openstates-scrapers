@@ -13,28 +13,19 @@ class FLEventScraper(EventScraper):
         self.scrape_upper_events(session)
 
     def scrape_upper_events(self, session):
-        url = "http://flsenate.gov/Session/DailyCalendarRSS.cfm?format=rss"
+        url = "https://www.flsenate.gov/Tracker/RSS/DailyCalendar"
         page = self.get(url).text
         feed = feedparser.parse(page)
 
-        for entry in feed['entries']:
-            if 'Committee' not in entry['summary']:
-                continue
+        for entry in feed['entries']:            
+            #The feed breaks the RSS standard by making the pubdate the actual event's date, not the RSS item publish date
+            when = datetime.datetime(*entry['published_parsed'][:6])
 
-            date = datetime.datetime(*entry['updated_parsed'][:6])
-            match = re.match(r'(\d+):(\d+)', entry['title'])
-            if match:
-                when = datetime.datetime(date.year, date.month,
-                                         date.day,
-                                         int(match.group(1)),
-                                         int(match.group(2)),
-                                         0)
+            desc = entry['summary'].split(' - ')[0]
+            location = entry['summary'].split(' - ')[1]
 
-                desc = entry['summary'].split(' - ')[0]
-                location = entry['summary'].split(' - ')[1]
-
-                event = Event(session, when, 'committee:meeting',
+            event = Event(session, when, 'committee:meeting',
                               desc, location)
-                event.add_source(url)
+            event.add_source(entry['link'])
 
-                self.save_event(event)
+            self.save_event(event)

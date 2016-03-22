@@ -22,40 +22,30 @@ class INBillScraper(BillScraper):
     categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
 
-    def make_html_source(self,session,bill_id):
-        url = "http://iga.in.gov/legislative/{}/".format(session)
-        urls = {
-            "hb":"bills/house/",
-            "hr":"resolutions/house/simple/",
-            "hcr":"resolutions/house/concurrent/",
-            "hjr":"resolutions/house/joint/",
-            "hc":"resolutions/house/concurrent/",
-            "hj":"resolutions/house/joint/",
-            "sb":"bills/senate/",
-            "sr":"resolutions/senate/simple/",
-            "scr":"resolutions/senate/concurrent/",
-            "sjr":"resolutions/senate/joint/",
-            "sc":"resolutions/senate/concurrent/",
-            "sj":"resolutions/senate/joint/"
-            }
-        bill_id = bill_id.lower()
+    def _get_bill_id_components(self, bill_id):
+        bill_prefix = ''.join([c for c in bill_id if c.isalpha()])
+        bill_number = ''.join([c for c in bill_id if c.isdigit()])
 
-        bill_prefix = "".join([c for c in bill_id if c.isalpha()])
-        bill_num = "".join([c for c in bill_id if c.isdigit()])
+        return (bill_prefix, bill_number)
+
+    def _get_name(self,random_json):
+        #got sick of doing this everywhere
+        return ' '.join([random_json["firstName"], random_json["lastName"]])
+
+    def _get_bill_url(self, session, bill_id):
+        bill_prefix, bill_number = self._get_bill_id_components(bill_id)
+
+        url_template = 'http://iga.in.gov/legislative/{}/{}/{}'
 
         try:
-            url += urls[bill_prefix]
+            url_segment = self._bill_prefix_map[bill_prefix]['url_segment']
         except KeyError:
-            raise AssertionError("Unknown bill type {}, don't know how to make url".format(bill_id))
-        url += str(int(bill_num))
-        return url
+            raise AssertionError('Unknown bill type {}, don\'t know how to '
+                'make url.'.format(bill_id))
 
-    def get_name(self,random_json):
-        #got sick of doing this everywhere
-        return random_json["firstName"] + " " + random_json["lastName"]
+        return url_template.format(session, url_segment, bill_number)
 
-    def process_votes(self,rollcalls,bill,proxy):
-
+    def _process_votes(self,rollcalls,bill,proxy):
         result_types = {
             'FAILED': False,
             'DEFEATED': False,
@@ -82,9 +72,13 @@ class INBillScraper(BillScraper):
             passed = None
 
             for res,val in result_types.items():
-                if res in lines[3].upper():
-                    passed = val
-                    break
+                # We check multiple lines now because the result of the
+                # roll call vote as parsed can potentially be split.
+                # PDF documents suck.
+                for line in lines[3:5]:
+                    if res in line.upper():
+                        passed = val
+                        break
 
             if passed is None:
                 raise AssertionError("Missing bill passage type")
@@ -139,8 +133,21 @@ class INBillScraper(BillScraper):
             
             #indiana only has simple majorities even for veto overrides
             #if passage status isn't the same as yes>no, then we should look!
-            if vote["passed"] != (vote["yes_count"] > vote["no_count"]):
-                raise AssertionError("Vote count doesn't agree with vote passage status")
+            bill_type = bill['type'][0]
+
+            vote_invalid = False
+            # It seems resolutions may be passed without a recorded vote.
+            # Don't understand why there's a roll call then, but hey.
+            if 'resolution' in bill_type:
+                if vote['passed'] != (vote['yes_count'] >= vote['no_count']):
+                    vote_invalid = True
+            else:
+                if vote['passed'] != (vote['yes_count'] > vote['no_count']):
+                    vote_invalid = True
+            
+            if vote_invalid:
+                raise AssertionError('Vote count doesn\'t agree with vote '
+                    'passage status.')
 
             bill.add_vote(vote)
 
@@ -188,10 +195,60 @@ class INBillScraper(BillScraper):
 
         #votes
         votes = version["rollcalls"]
-        self.process_votes(votes,bill,proxy)
+        self._process_votes(votes,bill,proxy)
 
     def scrape(self, session, chambers):
-        
+        self._bill_prefix_map = {
+            'HB':  {
+                'type': 'bill',
+                'url_segment': 'bills/house',
+            },
+            'HR':  {
+                'type': 'resolution',
+                'url_segment': 'resolutions/house/simple',
+            },
+            'HCR': {
+                'type': 'concurrent resolution',
+                'url_segment': 'resolutions/house/concurrent',
+            },
+            'HJR': {
+                'type': 'joint resolution',
+                'url_segment': 'resolutions/house/joint'
+            },
+            'HC': {
+                'type': 'concurrent resolution',
+                'url_segment': 'resolutions/house/concurrent',
+            },
+            'HJ': {
+                'type': 'joint resolution',
+                'url_segment': 'resolutions/house/joint',
+            },
+            'SB': {
+                'type': 'bill',
+                'url_segment': 'bills/senate',
+            },
+            'SR': {
+                'type': 'resolution',
+                'url_segment': 'resolutions/senate/simple',
+            },
+            'SCR': {
+                'type': 'concurrent resolution',
+                'url_segment': 'resolutions/senate/concurrent',
+            },
+            'SJR': {
+                'type': 'joint resolution',
+                'url_segment': 'resolutions/senate/joint',
+            },
+            'SC': {
+                'type': 'concurrent resolution',
+                'url_segment': 'resolutions/senate/concurrent',
+            },
+            'SJ': {
+                'type': 'joint resolution',
+                'url_segment': 'resolutions/senate/joint',
+            },
+        }
+
         api_base_url = "https://api.iga.in.gov"
         proxy = {"url":"http://in.proxy.openstates.org"}
 
@@ -238,35 +295,43 @@ class INBillScraper(BillScraper):
                 title = bill_id
                 self.logger.warning("Bill is missing a title, using bill id instead.")
 
+            bill_prefix = self._get_bill_id_components(bill_id)[0]
+
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
-            bill = Bill(session,original_chamber,disp_bill_id,title)
-            
-            bill.add_source(self.make_html_source(session,bill_id))
+            bill_type = self._bill_prefix_map[bill_prefix]['type']
+            bill = Bill(
+                session,
+                original_chamber,
+                disp_bill_id,
+                title,
+                type=bill_type)
+
+            bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
 
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
             for s in bill_json["authors"]:
                 bill.add_sponsor("primary",
-                    self.get_name(s),
+                    self._get_name(s),
                     chamber=positions[s["position_title"]],
                     official_type="author")
 
             for s in bill_json["coauthors"]:
                 bill.add_sponsor("cosponsor",
-                    self.get_name(s),
+                    self._get_name(s),
                     chamber=positions[s["position_title"]],
                     official_type="coauthor")
 
             for s in bill_json["sponsors"]:
                 bill.add_sponsor("primary",
-                    self.get_name(s),
+                    self._get_name(s),
                     chamber=positions[s["position_title"]],
                     official_type="sponsor")
 
             for s in bill_json["cosponsors"]:
                 bill.add_sponsor("cosponsor",
-                    self.get_name(s),
+                    self._get_name(s),
                     chamber=positions[s["position_title"]],
                     official_type="cosponsor")
 

@@ -50,6 +50,19 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
         for member in members:
             guid = member['Id']
             member_info = backoff(self.sservice.GetMember, guid)
+
+            # Check to see if the member has vacated; skip if so:
+            try:
+                legislative_service = next(service for service
+                    in member_info['SessionsInService']['LegislativeService']
+                    if service['Session']['Id'] == sid)
+            except IndexError:
+                raise Exception("Something very bad is going on with the "
+                                "Legislative service")
+
+            if legislative_service['DateVacated']:
+                continue
+
             nick_name, first_name, middle_name, last_name = (
                 member_info['Name'][x] for x in [
                     'Nickname', 'First', 'Middle', 'Last'
@@ -63,37 +76,27 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
             else:
                 full_name = "%s %s" % (first_name, last_name)
 
-            legislative_service = []
-            for leg_service in member_info['SessionsInService']['LegislativeService']:
-                if leg_service['Session']['Id'] == sid:
-                    legislative_service = leg_service
+            party = legislative_service['Party']
 
-            if legislative_service:
-                party = legislative_service['Party']
+            if party == 'Democrat':
+                party = 'Democratic'
 
-                if party == 'Democrat':
-                    party = 'Democratic'
+            elif party.strip() == '':
+                party = 'other'
 
-                if party.strip() == '':
-                    party = 'other'
+            chamber, district = (
+                legislative_service['District'][x] for x in [
+                    'Type', 'Number'
+                ]
+            )
 
-                chamber, district = (
-                    legislative_service['District'][x] for x in [
-                        'Type', 'Number'
-                    ]
-                )
+            chamber = {
+                "House": 'lower',
+                "Senate": 'upper'
+            }[chamber]
 
-                chamber = {
-                    "House": 'lower',
-                    "Senate": 'upper'
-                }[chamber]
-
-                url, photo = self.scrape_homepage(HOMEPAGE_URLS[chamber],
-                                                  {"code": guid, "sid": sid})
-
-            else:
-                raise Exception("Something very bad is going on with the "
-                                "Legislative service")
+            url, photo = self.scrape_homepage(HOMEPAGE_URLS[chamber],
+                                              {"code": guid, "sid": sid})
 
 
             legislator = Legislator(

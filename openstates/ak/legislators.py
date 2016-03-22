@@ -21,10 +21,7 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         email = bio['Email']
         district = bio['District']
-        party = bio['Party']
-
-        if party == 'Democrat':
-            party = 'Democratic'
+        party = self._party_map[bio['Party']]
 
         leg = Legislator(
             term = term,
@@ -81,6 +78,12 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
         self.save_legislator(leg)
 
     def scrape(self, chamber, term):
+        self._party_map = {
+            'Democrat': 'Democratic',
+            'Republican': 'Republican',
+            'Non Affiliated': 'Independent',
+        }
+
         if chamber == 'upper':
             url = 'http://senate.legis.state.ak.us/'
         else:
