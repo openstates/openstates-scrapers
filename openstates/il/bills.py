@@ -289,7 +289,10 @@ class ILBillScraper(BillScraper, LXMLMixin):
     def fetch_pdf_lines(self, href):
         # download the file
         fname, resp = self.urlretrieve(href)
-        pdflines = [line.decode('utf-8') for line in convert_pdf(fname, 'text').splitlines()]
+        try:
+            pdflines = [line.decode('utf-8') for line in convert_pdf(fname, 'text').splitlines()]
+        except:
+            pdflines = [line.decode('ISO-8859-1') for line in convert_pdf(fname, 'text').splitlines()]
         os.remove(fname)
         return pdflines
 
