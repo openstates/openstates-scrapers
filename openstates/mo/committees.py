@@ -71,7 +71,8 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             if self._is_post_2015:
                 comm_name = self.get_node(
                     comm_page,
-                    '//h2[@class="entry-title"]/text()')
+                    '//h1[@class="entry-title"]/text()')
+
                 members = self.get_nodes(
                     comm_page,
                     '//div[@id="bwg_standart_thumbnails_0"]/a')
