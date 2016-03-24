@@ -98,12 +98,9 @@ class MSLegislatorScraper(LegislatorScraper):
             if leg_name in ('Lataisha Jackson', 'John G. Faulkner'):
                 assert not party, "Remove special-casing for this Democrat without a listed party: {}".format(leg_name)
                 party = 'Democratic'
-            elif leg_name in ('James W. Mathis'):
+            elif leg_name in ('James W. Mathis', 'J. Walter Michel'):
                 assert not party, "Remove special-casing for this Republican without a listed party: {}".format(leg_name)
                 party = 'Republican'
-            elif leg_name in ('J. Walter Michel'):
-                self.warning('Skipping inadequate legislator profile.')
-                return 
             elif party == 'D':
                 party = 'Democratic'
             elif party == 'R':
