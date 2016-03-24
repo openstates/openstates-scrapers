@@ -101,6 +101,9 @@ class MSLegislatorScraper(LegislatorScraper):
             elif leg_name in ('James W. Mathis'):
                 assert not party, "Remove special-casing for this Republican without a listed party: {}".format(leg_name)
                 party = 'Republican'
+            elif leg_name in ('J. Walter Michel'):
+                self.warning('Skipping inadequate legislator profile.')
+                return 
             elif party == 'D':
                 party = 'Democratic'
             elif party == 'R':
@@ -146,4 +149,5 @@ class MSLegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
         except scrapelib.HTTPError, e:
             self.warning(str(e))
+
 
