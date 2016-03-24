@@ -235,10 +235,19 @@ class ALBillScraper(BillScraper):
                 title = "[No title given by state]"
             bill['title'] = title
 
+            # Code to fix the session in the case of Special Sessions, which breaks version_url_base
+            version_url_session = self.session
+            first_session_string = "First Special Session"
+            if version_url_session[:len(first_session_string)] == first_session_string:
+                version_url_session = version_url_session[len(first_session_string)+1:] + "FS"
+            second_session_string = "Second Special Session"
+            if version_url_session[:len(second_session_string)] == second_session_string:
+                version_url_session = version_url_session[len(second_session_string)+1:] + "SS"
+
             version_url_base = (
                 'http://alisondb.legislature.state.al.us/ALISON/'
                 'SearchableInstruments/{0}/PrintFiles/{1}-'.
-                format(self.session, bill_id))
+                format(version_url_session, bill_id))
             versions = bill_doc.xpath(
                 '//table[@class="box_versions"]/tr/td[2]/font/text()')
             for version in versions:
@@ -325,8 +334,8 @@ class ALBillScraper(BillScraper):
 
                 # check for occasional extra last row
                 if not action_chamber.strip():
-                    continue 
-                    
+                    continue
+
                 # The committee cell is just an abbreviation, so get its name
                 actor = self.CHAMBERS[action_chamber]
                 try:
