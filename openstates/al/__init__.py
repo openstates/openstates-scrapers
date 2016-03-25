@@ -15,13 +15,13 @@ metadata =  {
     },
     'terms': [
         {'name': '2011-2014',
-         'sessions': ['2011rs','2012rs', 'First Special Session 2012',
+         'sessions': ['2011rs','2012rs', '2012fs',
                       '2013rs', '2014rs'],
          'start_year': 2011,
          'end_year': 2014,
         },
         {'name': '2015-2018',
-         'sessions': ['2015os','2015rs', 'First Special Session 2015', 'Second Special Session 2015', '2016rs'],
+         'sessions': ['2015os','2015rs', '2015fs', '2015ss', '2016rs'],
          'start_year': 2015,
          'end_year': 2018,
         }
@@ -40,7 +40,7 @@ metadata =  {
             'type': 'primary',
             '_scraped_name': 'Regular Session 2012',
         },
-        'First Special Session 2012': {
+        '2012fs': {
             'display_name': 'First Special Session 2012',
             'internal_id': '1060',
             'type': 'special',
@@ -70,13 +70,13 @@ metadata =  {
             'type': 'primary',
             '_scraped_name': 'Regular Session 2015',
         },
-        'First Special Session 2015': {
+        '2015fs': {
             'display_name': 'First Special Session 2015',
             'internal_id': '1066',
             'type': 'special',
             '_scraped_name': 'First Special Session 2015',
         },
-        'Second Special Session 2015': {
+        '2015ss': {
             'display_name': 'Second Special Session 2015',
             'internal_id': '1067',
             'type': 'special',
