@@ -84,20 +84,20 @@ class NMCommitteeScraper(CommitteeScraper, LXMLMixin):
                 if m_role:
                     committee.add_member(m_name, m_role, chamber=m_chamber)
 
-            # Interim committees are collected during the scraping for joint committees,
-            # and most interim committees have members from both chambers. However, a small
-            # number of interim committees (right now, just 1) have only members from one
-            # chamber, so the chamber is set to their chamber instead of 'joint'
-            # for those committees.
-            if chamber == 'joint':
-                m_chambers = set([mem['chamber'] for mem in committee['members']])
-                if len(m_chambers) == 1:
-                    committee['chamber'] = m_chambers.pop()
-
             if not committee['members']:
                 self.warning('skipping blank committee {0} at {1}'.format(c_name, url))
             else:
                 committee.add_source(url)
+                # Interim committees are collected during the scraping for joint committees,
+                # and most interim committees have members from both chambers. However, a small
+                # number of interim committees (right now, just 1) have only members from one
+                # chamber, so the chamber is set to their chamber instead of 'joint'
+                # for those committees.
+                if chamber == 'joint':
+                    m_chambers = set([mem['chamber'] for mem in committee['members']])
+                    if len(m_chambers) == 1:
+                        committee['chamber'] = m_chambers.pop()
+
                 self.save_committee(committee)
 
         else:
