@@ -4,6 +4,15 @@ from openstates.utils import LXMLMixin
 base_url = 'http://www.nmlegis.gov:8080/Committee/'
 
 
+def clean_committee_name(name_to_clean):
+    head, separator, tail = name_to_clean.replace('House ', '')\
+        .replace('Senate ', '')\
+        .replace('Subcommittee', 'Committee')\
+        .rpartition(' Committee')
+
+    return head + tail
+
+
 class NMCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'nm'
 
@@ -48,7 +57,7 @@ class NMCommitteeScraper(CommitteeScraper, LXMLMixin):
         c_name = name_node.text_content().strip() if name_node is not None and name_node.text_content() else None
 
         if c_name:
-            committee = Committee(chamber, c_name.replace('House ', '').replace('Senate ', ''))
+            committee = Committee(chamber, clean_committee_name(c_name))
 
             members_xpath = '//table[@id="MainContent_formViewCommitteeInformation_gridViewCommitteeMembers"]' \
                             '/tbody/tr'
