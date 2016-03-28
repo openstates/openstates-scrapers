@@ -120,7 +120,7 @@ class MNBillScraper(BillScraper):
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
-                rows = doc.xpath('//table/tr')[1:]
+                rows = doc.xpath('//table[@class="guided"]/tbody/tr')[1:]
                 total_rows.extend(rows)
 
                 # Out of rows
