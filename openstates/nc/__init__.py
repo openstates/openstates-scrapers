@@ -83,10 +83,6 @@ metadata = dict(
                  'display_name': '2015-2016 Session',
                  '_scraped_name': '2015-2016 Session',
                 },
-        # '2016 Extra Session 2': {'start_date': datetime.date(2016,3,23), 'type': 'special',
-        #          'display_name': '2016 Extra Session 2',
-        #          '_scraped_name': '2016 Extra Session 2',
-        #         },
     },
     _ignored_scraped_sessions=['2016 Extra Session 2',
                              '2016 Extra Session 1',
@@ -119,4 +115,3 @@ def extract_text(doc, data):
     text = ' '.join([x.text_content() for x in
                      doc.xpath('//p[starts-with(@class, "a")]')])
     return text
-

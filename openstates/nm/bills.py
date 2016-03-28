@@ -127,12 +127,14 @@ class NMBillScraper(BillScraper):
     def access_to_csv(self, table):
         """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
-        #if you're getting an error around here while running locally
-        #make sure mdbtools is installed
-        pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
-                                close_fds=True).stdout
-        csvfile = csv.DictReader(pipe)
-        return csvfile
+        try:
+            pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
+                                    close_fds=True).stdout
+            csvfile = csv.DictReader(pipe)
+            return csvfile
+        except OSError:
+            self.warning("Failed to read mdb file. Have you installed 'mdbtools' ?")
+            raise
 
     def scrape(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
