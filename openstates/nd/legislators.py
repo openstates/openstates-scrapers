@@ -55,7 +55,7 @@ class NDLegislatorScraper(LegislatorScraper):
         address = page.xpath("//div[@class='adr']")
         if address:
             address = address[0]
-            address = re.sub("\s+", " ", address.text_content()).strip()
+            address = re.sub("[ \t]+", " ", address.text_content()).strip()
         else:
             address = None
 

@@ -68,7 +68,7 @@ class RIEventScraper(EventScraper, LXMLMixin):
             return
 
         event_desc = "Meeting Notice"
-        if "Rise of the" in datetime:
+        if "Rise of" in datetime:
             datetime = date
             kwargs["all_day"] = True
             event_desc = "Meeting Notice: Starting at {}".format(time)
