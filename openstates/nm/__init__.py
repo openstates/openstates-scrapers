@@ -3,6 +3,7 @@ import scrapelib
 import lxml.html
 from billy.scrape.utils import url_xpath
 from .bills import NMBillScraper
+from .committees import NMCommitteeScraper
 from .legislators import NMLegislatorScraper
 
 UAS = scrapelib._user_agent = "Mozilla/5.0 (compatible; %s)" % (
