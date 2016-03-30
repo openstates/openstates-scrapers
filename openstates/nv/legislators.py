@@ -55,6 +55,8 @@ class NVLegislatorScraper(LegislatorScraper):
             address2 = details['Address2']
             if address2:
                 address += ' ' + address2
+            address += '\n%s, NV %s' % (details['City'], details['Zip'])
+
             phone = details['LCBPhone']
             email = details['LCBEmail']
 

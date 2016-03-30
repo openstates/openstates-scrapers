@@ -169,28 +169,4 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
             phone=capitol_phone,
             email=email)
 
-        committees_nodes = self.get_nodes(
-            info_node,
-            '//table[@id="ctl00_mainCopy_gridViewCommittees"]/tr')
-
-        # First row node should contain header - skip.
-        for committee_node in committees_nodes[1:]:
-            role, committee, note = [x.text_content() for x in committee_node\
-                .xpath('./td')]
-            committee = committee.title()
-            if 'Interim' in note:
-                role = 'interim ' + role.lower()
-            else:
-                role = role.lower()
-            if ' Committee' in committee:
-                committee = committee.replace(" Committee", '')
-            if ' Subcommittee' in committee:
-                committee = committee.replace(' Subcommittee', '')
-            legislator.add_role(
-                'committee member',
-                term,
-                committee=committee,
-                position=role,
-                chamber=chamber)
-
         self.save_legislator(legislator)
