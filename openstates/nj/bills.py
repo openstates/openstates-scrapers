@@ -401,17 +401,18 @@ class NJBillScraper(BillScraper, MDBMixin):
             else:
                 self.warning('invalid bill id in BillSubj: %s' % bill_id)
 
-        phony_bill_count = 0
-        # save all bills at the end
-        for bill in bill_dict.itervalues():
-            # add sources
-            if not bill['actions'] and not bill['versions']:
-                self.warning('probable phony bill detected %s',
-                             bill['bill_id'])
-                phony_bill_count += 1
-            else:
-                bill.add_source('http://www.njleg.state.nj.us/downloads.asp')
-                self.save_bill(bill)
+        # QUORUM IS SKIPPING THIS - DONT PUSH TO OPENSTATES
+        # phony_bill_count = 0
+        # # save all bills at the end
+        # for bill in bill_dict.itervalues():
+        #     # add sources
+        #     if not bill['actions'] and not bill['versions']:
+        #         self.warning('probable phony bill detected %s',
+        #                      bill['bill_id'])
+        #         phony_bill_count += 1
+        #     else:
+        #         bill.add_source('http://www.njleg.state.nj.us/downloads.asp')
+        #         self.save_bill(bill)
 
-        if phony_bill_count:
-            self.warning('%s total phony bills detected', phony_bill_count)
+        # if phony_bill_count:
+        #     self.warning('%s total phony bills detected', phony_bill_count)
