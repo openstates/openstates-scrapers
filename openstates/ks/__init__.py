@@ -55,7 +55,7 @@ metadata = dict(
 def session_list():
     from billy.scrape.utils import url_xpath
     url = url_xpath('http://www.kslegislature.org/li',
-                     '//a[contains(text(), "Senate Bills")]/@href')[0]
+        '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href')[0]
     slug = url.split('/')[2]
     return [slug]
 
