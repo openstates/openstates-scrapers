@@ -56,7 +56,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
         if re.search(r'(?i)\d[AP]M$', time):
             time = time[:-2] + " " + time[-2:]
 
-        if "UPON ADJ" in ' '.join(time.split()).upper():
+        if re.search("UPON ADJ|TBA", ' '.join(time.split()).upper()):
             all_day = True
             when = datetime.datetime.strptime(date, "%B %d, %Y")
         else:
@@ -143,6 +143,14 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 continue  # Contains no time data.
             date, time, location = ([s.strip() for s in meeting_string.split(
                 ',') if s] + [None]*3)[:3]
+            
+            # check for time in date because of missing comma
+            time_srch = re.search('\d{2}:\d{2} (AM|PM)', date)
+            if time_srch:
+                location = time
+                time = time_srch.group()
+                date = date.replace(time, '')
+
             self.logger.debug(location)
 
             year = datetime.datetime.now().year
