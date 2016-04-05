@@ -33,7 +33,7 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015','2015S1']
+            'sessions': ['2015', '2015S1', '2016S2']
         },
     ],
     'session_details': {
@@ -108,6 +108,14 @@ metadata = {
             'display_name': '2015 First Extraordinary Session',
             '_scraped_name': 'First Extraordinary Session, 2015',
             'slug': '2015S1',
+        },
+        '2016S2': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 4, 6),
+            'end_date': datetime.date(2016, 4, 12),
+            'display_name': '2016 Second Extraordinary Session',
+            '_scraped_name': 'Second Extraordinary Session, 2016',
+            'slug': '2016S2',
         },
     },
     'feature_flags': ['influenceexplorer', 'events'],
