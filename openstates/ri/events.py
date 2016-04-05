@@ -1,4 +1,5 @@
 import datetime as dt
+import re 
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
@@ -53,6 +54,16 @@ class RIEventScraper(EventScraper, LXMLMixin):
         date = metainf['DATE:']
         time = metainf['TIME:']
         where = metainf['PLACE:']
+
+        # check for duration in time
+        if ' - ' in time:
+            start, end = time.split(' - ')
+            am_pm_srch = re.search('(?i)(am|pm)', end)
+            if am_pm_srch:
+                time = ' '.join([start, am_pm_srch.group().upper()])
+            else:
+                time = start 
+
         fmts = [
             "%A, %B %d, %Y",
             "%A, %B %d, %Y %I:%M %p",
