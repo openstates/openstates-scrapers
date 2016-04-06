@@ -91,9 +91,11 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
                 district_office = [l.strip() for l in district_office if l.strip()]
                 _end_of_first_address = district_office.index([l for l in district_office if re.search(r'\,\s*WA\s*\d{5}', l)][0])
                 district_address = '\n'.join(district_office[0:(_end_of_first_address + 1)])
+
                 try:
                     district_phone = district_office[(_end_of_first_address + 1)]
-                    assert re.match(r'\(\d{3}\) \d{3} \- \d{4}', district_phone)
+                    if not re.match(r'\(\d{3}\) \d{3} \- \d{4}', district_phone):
+                        district_phone = None
                 except IndexError:
                     pass
 
