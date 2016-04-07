@@ -1,142 +1,277 @@
 import re
 
-from billy.utils import urlescape
-from billy.scrape.legislators import (LegislatorScraper, Legislator,
-                                            Person)
-from .utils import clean_committee_name
-
+from billy.scrape.legislators import (LegislatorScraper, Legislator, Person)
+from .utils import extract_phone, extract_fax
 import lxml.html
-
-phone_re = re.compile('\(\d{3}\) \d{3}-\d{4}')
+import lxml.html.builder
+import name_tools
 
 
 class TXLegislatorScraper(LegislatorScraper):
     jurisdiction = 'tx'
 
     def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+        rosters = {
+            'lower': 'http://www.house.state.tx.us/members/',
+            'upper': 'http://www.senate.state.tx.us/75r/Senate/Members.htm'
+        }
 
-        if chamber == 'upper':
-            chamber_type = 'S'
-        else:
-            chamber_type = 'H'
+        roster_page = lxml.html.fromstring(
+            self.get(rosters[chamber]).text
+        )
+        roster_page.make_links_absolute(rosters[chamber])
 
-        url = ("http://www.legdir.legis.state.tx.us/members.aspx?type=%s" %
-               chamber_type)
-        page = self.get(url).text
-        root = lxml.html.fromstring(page)
+        getattr(self, '_scrape_' + chamber)(roster_page, term)
 
-        for li in root.xpath('//ul[@class="options"]/li'):
-            member_url = re.match(r"goTo\('(MemberInfo[^']+)'\);",
-                                  li.attrib['onclick']).group(1)
-            member_url = ("http://www.legdir.legis.state.tx.us/" +
-                          member_url)
-            self.scrape_member(chamber, term, member_url)
+    def _scrape_upper(self, roster_page, term):
+        member_urls = roster_page.xpath('(//table[caption])[1]//a/@href')
+        # Sort by district for easier spotting of omissions:
+        member_urls.sort(key=lambda url: int(re.search(
+            r'\d+(?=\.htm)', url).group()))
 
-    def scrape_member(self, chamber, term, member_url):
-        page = self.get(member_url).text
-        root = lxml.html.fromstring(page)
-        root.make_links_absolute(member_url)
+        for member_url in member_urls:
+            self._scrape_senator(member_url, term)
 
-        sdiv = root.xpath('//div[@class="subtitle"]')[0]
-        table = sdiv.getnext()
+        # Handle Lt. Governor (President of the Senate) separately:
+        url = 'http://www.senate.state.tx.us/75r/LtGov/Ltgov.htm'
+        page = lxml.html.fromstring(self.get(url).text)
+        name = page.xpath('//div[@class="memtitle"]/text()')[0] \
+                   .replace('Lieutenant Governor', '').strip()
 
-        photo_url = table.xpath('//img[@id="ctl00_ContentPlaceHolder1'
-                                '_imgMember"]')[0].attrib['src']
+        # A safe assumption for lack of information on official member page or
+        # party listings:
+        party = 'Republican'
 
-        td = table.xpath('//td[@valign="top"]')[0]
+        lt_governor = Person(name)
+        lt_governor.add_role('Lt. Governor', term, party=party)
+        lt_governor.add_source(url)
+        self.save_legislator(lt_governor)
 
-        type = td.xpath('string(//div[1]/strong)').strip()
+    def _scrape_senator(self, url, term):
+        page = lxml.html.fromstring(self.get(url).text)
+        name_district = page.xpath('//div[@class="memtitle"]/text()')[0]
+        name, district = re.search(r'Senator (.+): District (\d+)',
+                                   name_district).group(1, 2)
 
-        full_name = td.xpath('//div/strong/text()')
-        full_name = [re.sub(r'\s+', ' ', x).strip() for x in full_name]
-        if full_name == []:
-            self.warning("ERROR: CAN'T GET FULL NAME")
-            return
+        try:
+            party_text = re.search(
+                r'Party: ?(.+)',
+                page.xpath('//p[@class="meminfo"][1]')[0].text_content()) \
+                      .group(1).strip()
+            party = {
+                'Democrat': 'Democratic',
+                'Republican': 'Republican'
+            }[party_text]
+        except:
+            # A handful of senate pages don't list the legislators' parties, so
+            # check the parties' own listings:
+            party = self._get_party('upper', district)
 
-        full_name = full_name[-1]
+        legislator = Legislator(term, 'upper', district, name,
+                                party=party, url=url)
 
-        district = td.xpath('string(//div[3])').strip()
-        district = district.replace('District ', '')
+        legislator.add_source(url)
 
-        party = td.xpath('string(//div[4])').strip()[0]
-        if party == 'D':
-            party = 'Democratic'
-        elif party == 'R':
-            party = 'Republican'
+        offices_text = [
+            '\n'.join(line.strip() for line in office_td.itertext())
+            for office_td in page.xpath('//td[@class="memoffice"]')
+        ]
 
-        if type == 'Lt. Gov.':
-            leg = Person(full_name)
-            leg.add_role('Lt. Governor', term, party=party)
-        else:
-            leg = Legislator(term, chamber, district, full_name,
-                             party=party, photo_url=photo_url,
-                             url=member_url)
+        for office_text in offices_text:
+            mailing_address = next(
+                iter(re.findall(
+                    r'Mailing Address:.+?7\d{4}', office_text,
+                    flags=re.DOTALL | re.IGNORECASE)),
+                office_text
+            )
 
-        leg.add_source(urlescape(member_url))
+            try:
+                address = re.search(
+                    r'(?:\d+ |P\.?\s*O\.?).+7\d{4}', mailing_address,
+                    flags=re.DOTALL | re.IGNORECASE).group()
+            except AttributeError:
+                # No address was found; skip office.
+                continue
 
-        # add addresses
-        for atype, text in (('capitol', 'Capitol address'),
-                            ('district', 'District address')):
-            aspan = root.xpath("//span[. = '%s:']" % text)
-            addr = ''
-            phone = None
-            if aspan:
-                # cycle through brs
-                addr = aspan[0].tail.strip()
-                elem = aspan[0].getnext()
-                while elem is not None and elem.tag == 'br':
-                    if elem.tail:
-                        if not phone_re.match(elem.tail):
-                            addr += "\n" + elem.tail
-                        else:
-                            phone = elem.tail
-                    elem = elem.getnext()
-                # now add the addresses
-                leg.add_office(atype, text, address=addr, phone=phone)
+            phone = extract_phone(office_text)
+            fax = extract_fax(office_text)
 
-        # add committees
-        comm_div = root.xpath('//div[string() = "Committee Membership:"]'
-                              '/following-sibling::div'
-                              '[@class="rcwcontent"]')[0]
+            office_type = 'capitol' if any(
+                zip_code in address for zip_code in ('78701', '78711')
+            ) else 'district'
+            office_name = office_type.title() + ' Office'
 
-        for link in comm_div.xpath('*/a'):
-            name = link.text
+            legislator.add_office(office_type, office_name,
+                                  address=address.strip(), phone=phone,
+                                  fax=fax)
 
-            if '(Vice Chair)' in name:
-                mtype = 'vice chair'
-            elif '(Chair)' in name:
-                mtype = 'chair'
-            else:
-                mtype = 'member'
+        self.save_legislator(legislator)
 
-            name = clean_committee_name(link.text)
+    def _scrape_lower(self, roster_page, term):
+        member_urls = roster_page.xpath('//a[@class="member-img"]/@href')
+        # Sort by district for easier spotting of omissions:
+        member_urls.sort(key=lambda url: int(re.search(r'\d+$', url).group()))
 
-            # There's no easy way to determine whether a committee
-            # is joint or not using the mobile legislator directory
-            # (without grabbing a whole bunch of pages, at least)
-            # so for now we will hard-code the one broken case
-            if (name == "Oversight of HHS Eligibility System" and
-                term == '82'):
-                comm_chamber = 'joint'
-            else:
-                comm_chamber = chamber
+        # Get all and only the address of a representative's office:
+        address_re = re.compile(
+            (
+                # Every representative's address starts with a room number,
+                # street number, or P.O. Box:
+                r'(?:Room|\d+|P\.?\s*O)' +
+                # Just about anything can follow:
+                '.+?' +
+                # State and zip code (or just state) along with idiosyncratic
+                # comma placement:
+                '(?:' +
+                '|'.join([
+                    r', +(?:TX|Texas)(?: +7\d{4})?',
+                    r'(?:TX|Texas),? +7\d{4}'
+                ]) +
+                ')'
+            ),
+            flags=re.DOTALL | re.IGNORECASE
+        )
 
-            if name.startswith('Appropriations-S/C on '):
-                sub = name.replace('Appropriations-S/C on ', '')
-                leg.add_role('committee member', term,
-                             chamber=comm_chamber,
-                             committee='Appropriations',
-                             subcommittee=sub,
-                             position=mtype)
-            else:
-                leg.add_role('committee member', term,
-                             chamber=comm_chamber,
-                             committee=name,
-                             position=mtype)
+        for member_url in member_urls:
+            member_page = lxml.html.fromstring(
+                self.get(member_url).text.replace('<br>', '')
+            )
+            member_page.make_links_absolute(member_url)
 
-        if type == 'Lt. Gov.':
-            self.save_object(leg)
-        else:
-            if district:
-                self.save_legislator(leg)
+            photo_url = member_page.xpath(
+                '//img[@class="member-photo"]/@src')[0]
+            if photo_url.endswith('/.jpg'):
+                photo_url = None
+
+            scraped_name, district_text = member_page.xpath(
+                '//div[@class="member-info"]/h2/text()')
+            scraped_name = scraped_name.replace('Rep. ', '').strip()
+            district = str(self._district_re.search(district_text).group(1))
+
+            # Vacant house "members" are named after their district numbers:
+            if re.match(r'^\d+$', scraped_name):
+                continue
+
+            full_name = name_tools.canonicalize(scraped_name)
+
+            party = self._get_party('lower', district)
+
+            legislator = Legislator(term, 'lower', district, full_name,
+                                    party=party,
+                                    url=member_url, _scraped_name=scraped_name)
+            if photo_url is not None:
+                legislator['photo_url'] = photo_url
+
+            legislator.add_source(member_url)
+
+            def office_name(element):
+                return element.xpath('preceding-sibling::h4[1]/text()')[0] \
+                              .rstrip(':')
+
+            offices_text = [{
+                'name': office_name(p_tag),
+                'type': office_name(p_tag).replace(' Address', '').lower(),
+                'details': p_tag.text_content()
+            } for p_tag in member_page.xpath(
+                '//h4/following-sibling::p[@class="double-space"]')]
+
+            for office_text in offices_text:
+                details = office_text['details'].strip()
+
+                # A few member pages have blank office listings:
+                if details == '':
+                    continue
+
+                # At the time of writing, this case of multiple district
+                # offices occurs exactly once, for the representative at
+                # District 43:
+                if details.count('Office') > 1:
+                    district_offices = [
+                        district_office.strip()
+                        for district_office
+                        in re.findall(r'(\w+ Office.+?(?=\w+ Office|$))',
+                                      details, flags=re.DOTALL)
+                    ]
+                    offices_text += [{
+                        'name': re.match(r'\w+ Office', office).group(),
+                        'type': 'district',
+                        'details': re.search(
+                            r'(?<=Office).+(?=\w+ Office|$)?', office,
+                            re.DOTALL).group()
+                    } for office in district_offices]
+
+                match = address_re.search(details)
+                address = re.sub(
+                    ' +$', '',
+                    match.group().replace('\r', '').replace('\n\n', '\n'),
+                    flags=re.MULTILINE
+                )
+
+                phone_number = extract_phone(details)
+                fax_number = extract_fax(details)
+
+                legislator.add_office(office_text['type'], office_text['name'],
+                                      address=address, phone=phone_number,
+                                      fax=fax_number)
+
+            self.save_legislator(legislator)
+
+    _district_re = re.compile(r'District +(\d+)')
+    _gop_held_districts = None
+
+    def _is_republican(self, chamber, district):
+        if self._gop_held_districts is None:
+            # Glue two pages together:
+            doc = lxml.html.builder.HTML(
+                *[lxml.html.fromstring(self.get(
+                    'http://texasgop.org/leadership-directory/' + directory
+                ).text).body
+                  for directory
+                  in ['texas-house-of-representatives', 'texas-state-senate']]
+            )
+
+            query = ('//article'
+                     '[contains(@class, "rpt_leadership_body-texas-%s")]')
+
+            self._gop_held_districts = {
+                'upper': [
+                    str(self._district_re.search(elem.text_content()).group(1))
+                    for elem in doc.xpath(query % 'senate')
+                ],
+                'lower': [
+                    str(self._district_re.search(elem.text_content()).group(1))
+                    for elem in doc.xpath(query % 'house-of-representatives')
+                ]
+            }
+
+        return district in self._gop_held_districts[chamber]
+
+    _dem_held_districts = None
+
+    def _is_democrat(self, chamber, district):
+        if self._dem_held_districts is None:
+            query = ('//section'
+                     '[@class="candidates-list"]'
+                     '[contains("Texas Legislature", h2)]'
+                     '//article')
+            doc = lxml.html.fromstring(self.get(
+                'http://txdemocrats.org/party/candidates').text)
+
+            legislators = [legislator.text_content()
+                           for legislator in doc.xpath(query)]
+
+            self._dem_held_districts = {
+                'lower': [str(self._district_re.search(legislator).group(1))
+                          for legislator in legislators
+                          if 'Representative' in legislator],
+                'upper': [str(self._district_re.search(legislator).group(1))
+                          for legislator in legislators
+                          if 'Senator' in legislator]
+            }
+
+        return district in self._dem_held_districts[chamber]
+
+    def _get_party(self, chamber, district):
+        return 'Republican' if self._is_republican(chamber, district) \
+            else 'Democratic' if self._is_democrat(chamber, district) \
+            else None
