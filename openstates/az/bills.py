@@ -179,7 +179,7 @@ class AZBillScraper(BillScraper):
                 if title != bill['title']:
                     bill.add_title(title)
 
-        for table in base_table.xpath('tr/td/table'):
+        for table in base_table.xpath('tr/td/table') + root.xpath('//td[@align="left"]/table[not(@class="ContentAreaBackground")]'):
             action = table.xpath('string(tr[1]/td[1])').strip()
             if action == '':
                 action = table.xpath('string(tr[1])').strip()
