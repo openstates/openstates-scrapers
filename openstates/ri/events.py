@@ -79,11 +79,10 @@ class RIEventScraper(EventScraper, LXMLMixin):
             return
 
         event_desc = "Meeting Notice"
-        if "Rise of" in datetime:
+        if re.search("Rise of|Immediately after", datetime):
             datetime = date
             kwargs["all_day"] = True
             event_desc = "Meeting Notice: Starting at {}".format(time)
-
 
         transtable = {
             "P.M" : "PM",
