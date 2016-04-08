@@ -179,7 +179,7 @@ class AZBillScraper(BillScraper):
                 if title != bill['title']:
                     bill.add_title(title)
 
-        for table in base_table.xpath('tr/td/table'):
+        for table in base_table.xpath('tr/td/table') + root.xpath('//td[@align="left"]/table[not(@class="ContentAreaBackground")]'):
             action = table.xpath('string(tr[1]/td[1])').strip()
             if action == '':
                 action = table.xpath('string(tr[1])').strip()
@@ -295,7 +295,7 @@ class AZBillScraper(BillScraper):
                     date = utils.get_date(rows[1][1])
                 action = action + " " + get_verbose_action(act) # COW ACTION 1 DPA
                 bill.add_action(actor, action, date, type='other')
-                if rows[1][0].text_content().strip() == 'Vote Detail':
+                if len(rows) > 1 and rows[1][0].text_content().strip() == 'Vote Detail':
                     vote_url = rows[1][0].xpath('string(a/@href)')
                     self.scrape_votes(actor, vote_url, bill, date,
                                             motion=action, type='other',
