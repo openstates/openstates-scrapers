@@ -183,8 +183,8 @@ class NMBillScraper(BillScraper):
                                                       "LegNo", "SessionYear"]})
 
             bill.add_source(
-                'http://www.nmlegis.gov/lcs/legislation.aspx?Chamber='
-                "{Chamber}&LegType={LegType}&LegNo={LegNo}"
+                'http://www.nmlegis.gov:8080/Legislation/Legislation?chamber='
+                "{Chamber}&legType={LegType}&legNo={LegNo}"
                 "&year={SessionYear}".format(**data))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
@@ -262,7 +262,7 @@ class NMBillScraper(BillScraper):
             com_location_map[loc['LocationCode']] = loc['LocationDesc']
 
         # combination of tblActions and
-        # http://www.nmlegis.gov/lcs/action_abbreviations.aspx
+        # http://www.nmlegis.gov:8080/Legislation/Action_Abbreviations
         # table will break when new actions are encountered
         action_map = {
             # committee results
@@ -355,8 +355,8 @@ class NMBillScraper(BillScraper):
                 continue
 
             # ok the whole Day situation is madness, N:M mapping to real days
-            # see http://www.nmlegis.gov/lcs/lcsdocs/legis_day_chart_11.pdf
-            # first idea was to look at all Days and use the first occurance's
+            # see http://www.nmlegis.gov/lcs/lcsdocs/legis_day_chart_16.pdf
+            # first idea was to look at all Days and use the first occurrence's
             # timestamp, but this is sometimes off by quite a bit
             # instead lets just use EntryDate and take radical the position
             # something hasn't happened until it is observed
