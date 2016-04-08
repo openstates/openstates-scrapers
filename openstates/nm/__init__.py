@@ -108,8 +108,8 @@ metadata = {
 
 
 def session_list():
-    return url_xpath('http://www.nmlegis.gov:8080/',
-        '//select[@name="ctl00$MainContent$ddlSessions"]/option/text()')
+    return url_xpath('http://www.nmlegis.gov/lcs/keyword.aspx',
+        '//select[@name="ctl00$mainCopy$ddlSessions"]/option/text()')
 
 
 def extract_text(doc, data):
