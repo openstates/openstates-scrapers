@@ -295,7 +295,7 @@ class AZBillScraper(BillScraper):
                     date = utils.get_date(rows[1][1])
                 action = action + " " + get_verbose_action(act) # COW ACTION 1 DPA
                 bill.add_action(actor, action, date, type='other')
-                if rows[1][0].text_content().strip() == 'Vote Detail':
+                if len(rows) > 1 and rows[1][0].text_content().strip() == 'Vote Detail':
                     vote_url = rows[1][0].xpath('string(a/@href)')
                     self.scrape_votes(actor, vote_url, bill, date,
                                             motion=action, type='other',
