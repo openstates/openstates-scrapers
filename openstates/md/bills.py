@@ -293,9 +293,11 @@ class MDBillScraper(BillScraper):
             passed = True
         elif 'Floor Amendment' in motion:
             passed = int(yes_count) > int(no_count)
+        elif 'overridden' in motion:
+            passed = True 
+            motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
-
         vote = Vote(chamber=chamber, date=None, motion=motion,
                     yes_count=int(yes_count), no_count=int(no_count),
                     other_count=0, passed=passed)
