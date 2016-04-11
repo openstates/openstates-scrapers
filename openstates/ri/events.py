@@ -15,11 +15,6 @@ column_order = {
     "lower" : 0
 }
 
-all_day = [  # ugh, hack
-    "Rise of the House",
-    "Rise of the Senate",
-    "Rise of the House & Senate"
-]
 replace = {
     "House Joint Resolution No." : "HJR",
     "House Resolution No." : "HR",
@@ -71,18 +66,14 @@ class RIEventScraper(EventScraper, LXMLMixin):
         ]
 
         kwargs = {}
-        if time in all_day:
+        event_desc = "Meeting Notice"
+        if 'Rise' in time:
             datetime = date
+            event_desc = "Meeting Notice: Starting at {}".format(time)
         else:
             datetime = "%s %s" % ( date, time )
         if "CANCELLED" in datetime.upper():
             return
-
-        event_desc = "Meeting Notice"
-        if re.search("Rise of|Immediately after", datetime):
-            datetime = date
-            kwargs["all_day"] = True
-            event_desc = "Meeting Notice: Starting at {}".format(time)
 
         transtable = {
             "P.M" : "PM",

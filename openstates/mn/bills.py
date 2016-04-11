@@ -8,6 +8,8 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from openstates.utils import LXMLMixin
+
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
 BILL_DETAIL_URL = ('https://www.revisor.mn.gov/bills/bill.php'
@@ -24,7 +26,7 @@ BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
     '&bill_type=%s&submit_bill=GO')
 
 
-class MNBillScraper(BillScraper):
+class MNBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'mn'
 
     # For testing purposes, this will do a lite version of things.  If
@@ -156,12 +158,27 @@ class MNBillScraper(BillScraper):
         chamber = 'upper' if chamber.lower() == 'senate' else chamber
 
         # Get html and parse
-        bill_html = self.get(bill_detail_url).text
-        doc = lxml.html.fromstring(bill_html)
+        doc = self.lxmlize(bill_detail_url)
 
         # Get the basic parts of the bill
-        bill_id = doc.xpath('//h1/text()')[0]
-        bill_title = doc.xpath('//h2/following-sibling::p/text()')[0].strip()
+        bill_id = self.get_node(doc, '//h1/text()')
+        self.logger.debug(bill_id)
+        bill_title_text = self.get_node(doc, '//h2[text()[contains(.,'
+            '"Description")]]/following-sibling::p/text()')
+        if bill_title_text is not None:
+            bill_title = bill_title_text.strip()
+        else:
+            long_desc_url = self.get_node(doc, '//a[text()[contains(.,'
+                '"Long Description")]]/@href')
+            long_desc_page = self.lxmlize(long_desc_url)
+            long_desc_text = self.get_node(long_desc_page, '//h1/'
+                'following-sibling::p/text()')
+            if long_desc_text is not None:
+                bill_title = long_desc_text.strip()
+            else:
+                bill_title = 'No title found.'
+                self.logger.warning('No title found for {}.'.format(bill_id))
+        self.logger.debug(bill_title)
         bill_type = {'F': 'bill', 'R':'resolution',
                      'C': 'concurrent resolution'}[bill_id[1]]
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
