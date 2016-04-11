@@ -171,6 +171,8 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 # Separate out the date if first action on the line.
                 if index == 0:
                     action = '-'.join(action.split('-')[1:]).strip()
+                    if not action:
+                        continue
 
                 if action.endswith('House') or action.endswith('(H)'):
                     actor = 'lower'
@@ -214,7 +216,7 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 # Capitalize the first letter of the action for nicer
                 # display. capitalize() won't work for this because it
                 # lowercases all other letters.
-                action = action[0].upper() + action[1:]
+                action = (action[0].upper() + action[1:]).strip()
 
                 bill.add_action(actor, action, action_date, type=atype)
 
