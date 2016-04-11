@@ -109,7 +109,11 @@ class KYBillScraper(BillScraper, LXMLMixin):
             actions = self.get_nodes(
                 page,
                 '//div[@class="StandardText leftDivMargin"]/'
-                'div[@class="StandardText"][last()]/text()[normalize-space()]')
+                'div[@class="StandardText"][last()]//text()[normalize-space()]')
+            
+            if actions[-1] == 'vetoed':
+                actions[-2] = actions[-2] + ' vetoed'
+
         else:
             pars = version_link_node.xpath("following-sibling::p")
 
