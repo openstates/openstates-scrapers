@@ -29,8 +29,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             page,
             '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr')
 
-        need_special_email_case = False
-
         for legislator_node in legislator_nodes:
             photo_url = self.get_node(
                 legislator_node,
@@ -67,14 +65,8 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             if validate_phone_number(phone_text):
                 phone = phone_text
 
-            # E-mail markup is screwed-up and inconsistent.
-            try:
-                email_node = info_nodes[1]
-                email_text = email_node.text
-            except IndexError:
-                # Primarily for Dan Fabian.
-                email_node = info_texts[3]
-                need_special_email_case = True
+            email_node = info_nodes[1]
+            email_text = email_node.text
 
             email_text = email_text.replace('Email: ', '').strip()
             if validate_email_address(email_text):
@@ -100,9 +92,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
              )
 
             self.save_legislator(legislator)
-
-        if not need_special_email_case:
-            self.logger.warning('Special e-mail handling no longer required.')
 
     def _scrape_upper_chamber(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
