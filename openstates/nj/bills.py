@@ -405,7 +405,8 @@ class NJBillScraper(BillScraper, MDBMixin):
         # save all bills at the end
         for bill in bill_dict.itervalues():
             # add sources
-            if not bill['actions'] and not bill['versions']:
+            # QUORUM IS SKIPPING THIS - DONT PUSH TO OPENSTATES
+            if False and not bill['actions'] and not bill['versions']:
                 self.warning('probable phony bill detected %s',
                              bill['bill_id'])
                 phony_bill_count += 1
