@@ -120,7 +120,6 @@ metadata = {
         '2016F': {
             'type': 'special',
             'start_date': datetime.date(2016, 04, 13),
-            'end_date': None,
             'display_name': '2016 Fiscal Session',
             '_scraped_name': 'Fiscal Session, 2016',
             'slug': '2016F',
