@@ -95,7 +95,6 @@ class BasePageyThing(object):
             # The page doesn't provide an other_count.
             vote['other_count'] = len(vote['other_votes'])
             vote['actual_vote'] = actual_vote
-            print vote
             self.bill.add_vote(vote)
 
 
