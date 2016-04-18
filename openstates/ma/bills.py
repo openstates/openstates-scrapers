@@ -134,5 +134,5 @@ class MABillScraper(BillScraper):
                 assert bill_text_url[0].endswith('.pdf'), "Handle other mimetypes"
                 bill.add_version('Current Text', bill_text_url[0],
                                  mimetype='application/pdf')
-
+            
             self.save_bill(bill)
