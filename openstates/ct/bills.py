@@ -48,7 +48,6 @@ class CTBillScraper(BillScraper):
         for row in page:
             bill_id = row['bill_num']
             chamber = chamber_map[bill_id[0]]
-
             if not chamber in chambers:
                 continue
 
@@ -121,7 +120,7 @@ class CTBillScraper(BillScraper):
                                  link.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
-        if "VOTE/H" in url:
+        if re.search("(?i)vote/h", url):
             vote_chamber = 'lower'
             cols = (1, 5, 9, 13)
             name_offset = 3
