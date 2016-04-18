@@ -2,10 +2,12 @@ import re
 import time
 import itertools
 from datetime import datetime
+from billy.scrape.utils import convert_pdf
 
 import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 from .actions import Categorizer
 
@@ -21,6 +23,8 @@ class MABillScraper(BillScraper):
         self.raise_errors = False
 
     def scrape(self, chamber, session):
+        if chamber == 'upper':
+            return
         # for the chamber of the action
         chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint',
                        'Governor': 'executive'}
@@ -35,7 +39,8 @@ class MABillScraper(BillScraper):
             bill_id = '%s%d' % (chamber_slug[0], n)
             bill_url = 'http://www.malegislature.gov/Bills/%s/%s/%s' % (
                 session_slug, chamber_slug, bill_id)
-
+            if 'S' in bill_id:
+                continue
             # lets assume if 10 bills are missing we're done
             if skipped == 10:
                 break
@@ -134,5 +139,43 @@ class MABillScraper(BillScraper):
                 assert bill_text_url[0].endswith('.pdf'), "Handle other mimetypes"
                 bill.add_version('Current Text', bill_text_url[0],
                                  mimetype='application/pdf')
+            
+            # scrape votes
+            votes = doc.xpath('//div[@id="rollCallSummary"]/div/div[contains(@id, "rollCall")]')
+            for vote in votes:
+                roll_call_number, date_str = vote.xpath('.//div[@class="summaryContainerHeader"]/span/text()')                
+                motion = vote.xpath('.//div[@class="summaryContent"]/span/text()')[0]
+                yea_count, nay_count, present_count, absent_count, paired_count = [int(item) for item in vote.xpath('.//div[@class="summaryContent"]/table/tbody/tr/td/text()')]
+
+                chamber = 'upper' if roll_call_number.startswith('Senate') else 'lower'
+                date = datetime.strptime(date_str, "%B %d, %Y")
+                passed = yea_count > nay_count 
+                other_count = present_count + absent_count + paired_count 
+
+                vote_data = Vote(chamber, date, motion, passed, yea_count, nay_count, other_count)
+                vote_data['bill_id'] = bill_id 
+                vote_data['session'] = session
+                
+                url = vote.xpath('.//div[@class="summaryContent"]/div/p/a/@href')[0]
+                vote_data.add_source(url)
+
+                vote_file, resp = self.urlretrieve(url)
+
+                text = convert_pdf(vote_file, type='text')
+                text = text.decode('utf8').split('YEAS.')[1]
+                result_type = 'yes_votes'
+                vote_data['yes_votes'], vote_data['no_votes'], vote_data['other_votes'] = [], [], []
+                for line in text.splitlines():
+                    if 'NAY' in line:
+                        result_type = 'no_votes'
+                    elif 'ABSENT OR NOT VOTING' in line:
+                        result_type = 'other_votes'
+                    else:
+                        if not line.replace('\n', '').strip():
+                            continue 
+                        people = [re.sub(" . \d+\.", "", name).strip() for name in re.split('\s{8,}', line)]
+                        vote_data[result_type] += people
+
+                bill.add_vote(vote_data)
 
             self.save_bill(bill)
