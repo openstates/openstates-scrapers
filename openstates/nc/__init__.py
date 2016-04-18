@@ -63,7 +63,7 @@ metadata = dict(
          'sessions': ['2013'],
          'start_year': 2013, 'end_year': 2014},
          {'name': '2015-2016',
-         'sessions': ['2015'],
+         'sessions': ['2015', '2016E2'],
          'start_year': 2015, 'end_year': 2016},
         ],
     session_details={
@@ -88,8 +88,7 @@ metadata = dict(
                  '_scraped_name': '2016 Extra Session 2',
                 },
     },
-    _ignored_scraped_sessions=['2016 Extra Session 2',
-                             '2016 Extra Session 1',
+    _ignored_scraped_sessions=['2016 Extra Session 1',
                              '2008 Extra Session', '2007-2008 Session',
                              '2007 Extra Session', '2005-2006 Session',
                              '2004 Extra Session', '2003-2004 Session',
