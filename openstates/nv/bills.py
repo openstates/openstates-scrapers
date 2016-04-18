@@ -285,9 +285,11 @@ class NVBillScraper(BillScraper, LXMLMixin):
 
     def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
-        trs = root.xpath('/html/body/div/table[6]//tr')
-        assert len(trs) >= 1, "Didn't find the Final Passage Votes' table"
-
+        
+        vote_table = root.xpath('/html/body/div/table[contains(., "Final Passage Votes")]')
+        assert len(vote_table) == 1, "Didn't find the Final Passage Votes' table"
+        
+        trs = vote_table[0].xpath('.//tr')
         for tr in trs[1:]:
             links = tr.xpath('td/a[contains(text(), "Passage")]')
             if len(links) == 0:
