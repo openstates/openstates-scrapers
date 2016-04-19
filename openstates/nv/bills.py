@@ -329,6 +329,7 @@ class NVBillScraper(BillScraper, LXMLMixin):
             vote = Vote(chamber, vote_date, motion, passed, yes, no,
                         other, not_voting=not_voting, absent=absent)
 
+            vote['type'] = 'other'
             # try to get vote details
             try:
                 vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
