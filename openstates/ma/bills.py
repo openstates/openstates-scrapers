@@ -139,7 +139,7 @@ class MABillScraper(BillScraper):
                 assert bill_text_url[0].endswith('.pdf'), "Handle other mimetypes"
                 bill.add_version('Current Text', bill_text_url[0],
                                  mimetype='application/pdf')
-            
+
             # scrape votes
             votes = doc.xpath('//div[@id="rollCallSummary"]/div/div[contains(@id, "rollCall")]')
             for vote in votes:
@@ -168,14 +168,14 @@ class MABillScraper(BillScraper):
                 for line in text.splitlines():
                     if 'NAY' in line:
                         result_type = 'no_votes'
-                    elif 'ABSENT OR NOT VOTING' in line:
+                    elif re.search('PAIRED|ABSENT OR NOT VOTING|ANSWERED .PRESENT.\.', line):
                         result_type = 'other_votes'
                     else:
                         if not line.replace('\n', '').strip():
                             continue 
                         people = [re.sub(" . \d+\.", "", name).strip() for name in re.split('\s{8,}', line)]
                         vote_data[result_type] += people
-
+                print vote_data
                 bill.add_vote(vote_data)
 
             self.save_bill(bill)
