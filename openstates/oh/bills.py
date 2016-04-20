@@ -115,7 +115,7 @@ class OHBillScraper(BillScraper):
                     for bill_version in bill_versions[b].values():
                         if not bill:
                             bill_id = bill_version["number"]
-                            title = bill_version["shorttitle"] or bill_version["longtitle"]
+                            title = bill_version["shorttitle"].strip() or bill_version["longtitle"].strip()
 
                             title = title.strip()
 
