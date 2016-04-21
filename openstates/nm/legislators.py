@@ -31,8 +31,8 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         # Xpath query string format for legislator links.
         base_xpath = (
-            '//span[@id="MainContent_dataListLegislators"]//a[contains(@id, '
-            '"MainContent_dataListLegislators_linkLegislatorPicture")]/@href')
+            '//a[contains(@id, '
+            '"MainContent_listViewLegislators_linkLegislatorPicture")]/@href')
 
         legislator_urls = self.get_nodes(page, base_xpath)
 
