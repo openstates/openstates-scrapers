@@ -8,13 +8,16 @@ class NCVoteScraper(VoteScraper):
     jurisdiction = 'nc'
 
     def scrape(self, chamber, session):
+        # Unfortunately, you now have to request access to FTP.
+        # This method of retrieving votes needs to be be changed or
+        # fall back to traditional web scraping.
         if session == '2009':
             # 2009 files have a different delimiter and naming scheme.
-            vote_data_url = 'ftp://www.ncga.state.nc.us/Bill_Status/Vote Data 2009.zip'
+            vote_data_url = 'ftp://www.ncleg.net/Bill_Status/Vote Data 2009.zip'
             naming_scheme = '{session}{file_label}.txt'
             delimiter = ";"
         else:
-            vote_data_url = 'ftp://www.ncga.state.nc.us/Bill_Status/Votes%s.zip' % session
+            vote_data_url = 'ftp://www.ncleg.net/Bill_Status/Votes%s.zip' % session
             naming_scheme = '{file_label}_{session}.txt'
             delimiter = "\t"
         fname, resp = self.urlretrieve(vote_data_url)
