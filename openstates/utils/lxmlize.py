@@ -14,7 +14,7 @@ class LXMLMixin(object):
             Element: Document node representing the page.
         """
         try:
-            text = self.get(url).text
+            text = requests.get(url).text
         except requests.exceptions.SSLError:
             self.warning('`self.lxmlize()` failed due to SSL error, trying'\
                 'an unverified `requests.get()`')
