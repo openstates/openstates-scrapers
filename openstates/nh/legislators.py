@@ -37,12 +37,12 @@ class NHLegislatorScraper(LegislatorScraper):
         for line in data.splitlines():
             if line.strip() == "":
                 continue
-
+            
             (chamber, fullname, last, first, middle, county, district_num,
              seat, party, street, street2, city, astate, zipcode,
              home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5, com6) = line.split('\t')
-
+             com4, com5, com6, _) = line.split('*')
+            
             chamber = chamber_map[chamber]
 
             # skip legislators from a chamber we aren't scraping
@@ -61,6 +61,7 @@ class NHLegislatorScraper(LegislatorScraper):
             if street2:
                 address += (' ' + street2)
             address += '\n%s, %s %s' % (city, astate, zipcode)
+            address = address.strip()
 
             district = str(int(district_num))
             if county:
