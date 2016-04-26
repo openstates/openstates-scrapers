@@ -16,7 +16,7 @@ class OHBillScraper(BillScraper):
 
     def scrape(self, session, chambers):
         # Bills endpoint can sometimes take a very long time to load
-        self.timeout = 300
+        self.timeout = 1000
 
         if int(session) < 128:
             raise AssertionError("No data for period {}".format(session))
@@ -115,7 +115,7 @@ class OHBillScraper(BillScraper):
                     for bill_version in bill_versions[b].values():
                         if not bill:
                             bill_id = bill_version["number"]
-                            title = bill_version["shorttitle"] or bill_version["longtitle"]
+                            title = bill_version["shorttitle"].strip() or bill_version["longtitle"].strip()
 
                             title = title.strip()
 

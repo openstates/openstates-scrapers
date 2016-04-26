@@ -67,8 +67,9 @@ class WABillScraper(BillScraper, LXMLMixin):
             documents = doc.xpath('//a')[1:]
             for document in documents:
                 (link, ) = document.xpath('@href')
-
+                
                 (text, ) = document.xpath('text()')
+                print text 
                 (bill_num, is_substitute, substitute_num, is_engrossed,
                     engrossed_num) = re.search(r'''(?x)
                     ^(\d+)  # Bill number
@@ -108,14 +109,14 @@ class WABillScraper(BillScraper, LXMLMixin):
                    '/Htm/{1}/{2}/'.format(self.biennium,
                                           document_type,
                                           chamber))
-
+            print url
             doc = self.lxmlize(url)
             documents = doc.xpath('//a')[1:]
             for document in documents:
 
                 (link, ) = document.xpath('@href')
                 (text, ) = document.xpath('text()')
-
+                print text
                 (bill_number, is_substitute, substitute_num, is_engrossed,
                     engrossed_num, document_title) = re.search(r'''(?x)
                     (?:[[A-Z]+]){0,1} # Occasional doc doesnt start with number

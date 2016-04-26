@@ -109,7 +109,11 @@ class KYBillScraper(BillScraper, LXMLMixin):
             actions = self.get_nodes(
                 page,
                 '//div[@class="StandardText leftDivMargin"]/'
-                'div[@class="StandardText"][last()]/text()[normalize-space()]')
+                'div[@class="StandardText"][last()]//text()[normalize-space()]')
+            
+            if actions[-1] == 'vetoed':
+                actions[-2] = actions[-2] + ' vetoed'
+
         else:
             pars = version_link_node.xpath("following-sibling::p")
 
@@ -167,7 +171,7 @@ class KYBillScraper(BillScraper, LXMLMixin):
 
                 action_date = datetime.datetime.strptime(
                     action_date_string, '%b %d %Y')
-
+                
                 # Separate out the date if first action on the line.
                 if index == 0:
                     action = '-'.join(action.split('-')[1:]).strip()
@@ -217,6 +221,9 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 # display. capitalize() won't work for this because it
                 # lowercases all other letters.
                 action = (action[0].upper() + action[1:]).strip()
+                
+                if not action:
+                    continue 
 
                 bill.add_action(actor, action, action_date, type=atype)
 
