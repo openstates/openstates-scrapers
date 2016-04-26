@@ -217,8 +217,9 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 # display. capitalize() won't work for this because it
                 # lowercases all other letters.
                 action = (action[0].upper() + action[1:]).strip()
-
-                bill.add_action(actor, action, action_date, type=atype)
+                
+                if action:
+                    bill.add_action(actor, action, action_date, type=atype)
 
         try:
             votes_link = page.xpath(
