@@ -66,28 +66,36 @@ class NHBillScraper(BillScraper):
         
         #cache of all the legislators for sponsorship and votes
 
-        self.cursor.execute("SELECT TOP 5 legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
+        self.cursor.execute("SELECT TOP 5 legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
         for row in self.cursor.fetchall():
             #print row
             bill_id = row['CondensedBillNo']
             bill_title = row['LSRTitle']
             
             bill = Bill(session, chamber, bill_id, bill_title, db_id=row['legislationID'])
-            #self.scrape_actions(bill)
+            
+            status_url = 'http://www.gencourt.state.nh.us/bill_status/bill_status.aspx?lsr=%s&sy=%s&sortoption=&txtsessionyear=%s' % (row['lsr'], session, session)
+            
+            bill.add_source(status_url)
+            
+            self.scrape_actions(bill)
             self.scrape_sponsors(bill)
             self.scrape_votes(bill)
+            self.scrape_versions(bill)
+
+            print bill
+            self.save_bill(bill)
 
             
     def scrape_actions(self, bill):
-        print bill
         
         #Note: Case of legislationID is inconsistent across tables
-        self.cursor.execute("SELECT TOP 2 * FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" % (bill['db_id']))
+        self.cursor.execute("SELECT * FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" % (bill['db_id']))
         for row in self.cursor.fetchall():
             #add_action(actor, action, date, type=None, committees=None, legislators=None, **kwargs)
             actor = code_body[ row['LegislativeBody'] ]
             action = row['description']
-            date = row['date']
+            date = row['StatusDate']
             bill.add_action(actor, action, date)
             
     def scrape_sponsors(self, bill):
@@ -99,8 +107,8 @@ class NHBillScraper(BillScraper):
         for row in self.cursor.fetchall():
             
             sponsor = self.legislators[row['employeeNo']]
-            sponsor_name = ' '.join(filter(None,[sponsor['FirstName'], sponsor['MiddleName'], sponsor['LastName']]))
-
+            sponsor_name = self.legislator_name( sponsor )
+            
             if row['PrimeSponsor'] == '1':
                 sponsor_type = 'primary'
             else:
@@ -109,23 +117,64 @@ class NHBillScraper(BillScraper):
             bill.add_sponsor(sponsor_type, sponsor_name, employeeNo=sponsor['Employeeno'])
             
     def scrape_votes(self, bill):
-        #the votes tables don't reference the bill primary key legislationID, so search by the CondensedBillNo and session
-        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s'" % (bill['bill_id'], bill['session']))
-        for row in self.cursor.fetchall():   
+        # the votes table doesn't reference the bill primary key legislationID, 
+        # so search by the CondensedBillNo and session
+        
+        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s'" % (bill['bill_id'], bill['session']))
+        for row in self.cursor.fetchall():  
             chamber = code_body[ row['LegislativeBody'] ]
             
             other_count = row['Present'] + row['Absent']
-            #__init__(chamber, date, motion, passed, yes_count, no_count, other_count, type='other', **kwargs)
-
-            vote = Vote(chamber, row['VoteDate'], row['Question_Motion'], row['Yeas'], row['Nays'], other_count)        
             
+            # Question_Motion from the DB is oftentimes just an ABBR, so clean that up
+            
+            if row['Yeas'] > row['Nays']:
+                passed = True
+            else:
+                passed = False
+                
+            vote = Vote(chamber, row['VoteDate'], row['Question_Motion'], passed, row['Yeas'], row['Nays'], other_count) 
+            
+            if not self.legislators:
+                self.build_legislators()
+                
+            self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE VoteSequenceNumber = '%s'" % (row['VoteSequenceNumber']))
+            for rollcall in self.cursor.fetchall():
+                
+                voter = self.legislators[ rollcall['EmployeeNumber'] ]
+                
+                full_name = self.legislator_name( voter )
+                
+                # 1 is Yea
+                # 2 is Nay
+                # 3 is Excused
+                # 4 is Not Voting
+                # 6 is Presiding
+                # 3-6 are not counted in the totals
+                if rollcall['Vote'] == '1':
+                    vote.yes(full_name)
+                elif rollcall['Vote'] == '2':
+                    vote.no(full_name)
+                else:
+                    vote.other(full_name)
+
+            bill.add_vote(vote)
+    
+    def scrape_versions(self, bill):
+        self.cursor.execute("SELECT LegislationtextID, DocumentVersion FROM LegislationText WHERE LegislationId = '%s'" % (bill['db_id']) )
+        for row in self.cursor.fetchall():  
+            url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?id=%s&txtFormat=html' % (row['LegislationtextID'])
+            bill.add_version( row['DocumentVersion'], url, 'text/html')
+        
     def build_legislators(self):
-        #We need a map of all IDs->People for sponsors and votes
-        #Note: Legislators can sponsor bills or vote then become inactive mid-session, so don't filter by Active
+        # Build a dict that maps EmployeeID -> Legislator to simplify fetching sponsors and votes
+        # Note: Legislators can sponsor bills or vote then become inactive mid-session, 
+        # so don't filter by Active
         self.cursor.execute("SELECT PersonID, Employeeno, FirstName, LastName, MiddleName, LegislativeBody, District FROM Legislators")
-        
-        print "\nBuilding legislators \n"
-        
         for row in self.cursor.fetchall():
             #Votes go by employeeNo not PersonId, so index on that.
             self.legislators[ row['Employeeno'] ] = row
+    
+    def legislator_name(self, legislator):
+        # Turn a database Legislator row into an english name
+        return ' '.join(filter(None,[legislator['FirstName'], legislator['MiddleName'], legislator['LastName']]))
