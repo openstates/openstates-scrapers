@@ -64,11 +64,8 @@ class NHBillScraper(BillScraper):
         self.cursor = self.conn.cursor(as_dict=True)
         self.legislators = {}
         
-        #cache of all the legislators for sponsorship and votes
-
         self.cursor.execute("SELECT TOP 5 legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
         for row in self.cursor.fetchall():
-            #print row
             bill_id = row['CondensedBillNo']
             bill_title = row['LSRTitle']
             
@@ -83,7 +80,6 @@ class NHBillScraper(BillScraper):
             self.scrape_votes(bill)
             self.scrape_versions(bill)
 
-            print bill
             self.save_bill(bill)
 
             
@@ -109,7 +105,7 @@ class NHBillScraper(BillScraper):
             sponsor = self.legislators[row['employeeNo']]
             sponsor_name = self.legislator_name( sponsor )
             
-            if row['PrimeSponsor'] == '1':
+            if row['PrimeSponsor'] == 1:
                 sponsor_type = 'primary'
             else:
                 sponsor_type = 'cosponsor'
