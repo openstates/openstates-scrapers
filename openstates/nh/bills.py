@@ -147,9 +147,9 @@ class NHBillScraper(BillScraper):
                 # 4 is Not Voting
                 # 6 is Presiding
                 # 3-6 are not counted in the totals
-                if rollcall['Vote'] == '1':
+                if rollcall['Vote'] == 1:
                     vote.yes(full_name)
-                elif rollcall['Vote'] == '2':
+                elif rollcall['Vote'] == 2:
                     vote.no(full_name)
                 else:
                     vote.other(full_name)
