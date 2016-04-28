@@ -190,8 +190,7 @@ class TXLegislatorScraper(LegislatorScraper):
                         district_office.strip()
                         for district_office
                         in re.findall(r'(\w+ Office.+?(?=\w+ Office|$))',
-                                      details, flags=re.DOTALL)
-                    ]
+                                      details, flags=re.DOTALL)][1:]
                     offices_text += [{
                         'name': re.match(r'\w+ Office', office).group(),
                         'type': 'district',
