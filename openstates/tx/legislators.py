@@ -4,7 +4,6 @@ from billy.scrape.legislators import (LegislatorScraper, Legislator, Person)
 from .utils import extract_phone, extract_fax
 import lxml.html
 import lxml.html.builder
-import name_tools
 
 
 class TXLegislatorScraper(LegislatorScraper):
@@ -152,7 +151,7 @@ class TXLegislatorScraper(LegislatorScraper):
             if re.match(r'^\d+$', scraped_name):
                 continue
 
-            full_name = name_tools.canonicalize(scraped_name)
+            full_name = scraped_name
 
             party = self._get_party('lower', district)
 
@@ -166,11 +165,11 @@ class TXLegislatorScraper(LegislatorScraper):
 
             def office_name(element):
                 return element.xpath('preceding-sibling::h4[1]/text()')[0] \
-                              .rstrip(':')
+                    .replace('Address', 'Office').rstrip(':')
 
             offices_text = [{
                 'name': office_name(p_tag),
-                'type': office_name(p_tag).replace(' Address', '').lower(),
+                'type': office_name(p_tag).replace(' Office', '').lower(),
                 'details': p_tag.text_content()
             } for p_tag in member_page.xpath(
                 '//h4/following-sibling::p[@class="double-space"]')]
@@ -190,8 +189,7 @@ class TXLegislatorScraper(LegislatorScraper):
                         district_office.strip()
                         for district_office
                         in re.findall(r'(\w+ Office.+?(?=\w+ Office|$))',
-                                      details, flags=re.DOTALL)
-                    ]
+                                      details, flags=re.DOTALL)][1:]
                     offices_text += [{
                         'name': re.match(r'\w+ Office', office).group(),
                         'type': 'district',
