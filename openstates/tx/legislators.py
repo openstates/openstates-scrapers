@@ -166,11 +166,11 @@ class TXLegislatorScraper(LegislatorScraper):
 
             def office_name(element):
                 return element.xpath('preceding-sibling::h4[1]/text()')[0] \
-                              .rstrip(':')
+                    .replace('Address', 'Office').rstrip(':')
 
             offices_text = [{
                 'name': office_name(p_tag),
-                'type': office_name(p_tag).replace(' Address', '').lower(),
+                'type': office_name(p_tag).replace(' Office', '').lower(),
                 'details': p_tag.text_content()
             } for p_tag in member_page.xpath(
                 '//h4/following-sibling::p[@class="double-space"]')]
