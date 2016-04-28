@@ -4,7 +4,6 @@ from billy.scrape.legislators import (LegislatorScraper, Legislator, Person)
 from .utils import extract_phone, extract_fax
 import lxml.html
 import lxml.html.builder
-import name_tools
 
 
 class TXLegislatorScraper(LegislatorScraper):
@@ -152,7 +151,7 @@ class TXLegislatorScraper(LegislatorScraper):
             if re.match(r'^\d+$', scraped_name):
                 continue
 
-            full_name = name_tools.canonicalize(scraped_name)
+            full_name = scraped_name
 
             party = self._get_party('lower', district)
 
