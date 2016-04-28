@@ -7,7 +7,7 @@ import datetime as dt
 
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
-
+from .utils import build_legislators, legislator_name, db_cursor
 
 body_code = {'lower': 'H', 'upper': 'S'}
 code_body = {'H':'lower', 'S':'upper'}
@@ -19,9 +19,18 @@ bill_type_map = {'B': 'bill',
                  'CO': 'concurrent order',
                  'A': "address"
                 }
+
+# When a committee acts Inexpedient to Legislate, it's a committee:passed:unfavorable ,
+# because they're passing a motion to the full chamber that recommends the bill be killed.
+# When a chamber acts Inexpedient to Legislate, it's a bill:failed
+# The actions don't tell who the actor is, but they seem to always add BILL KILLED when the chamber acts
+# So keep BILL KILLED as the first action in this list to avoid subtle misclassfication bugs.
+# https://www.nh.gov/nhinfo/bills.html
 action_classifiers = [
-    ('OTP', ['bill:passed']),
-    ('OTPA', ['amendment:passed']),
+    ('BILL KILLED', 'bill:failed'),
+    ('ITL', ['committee:passed:unfavorable']),
+    ('OTP', ['committee:passed:favorable']),
+    ('OTPA', ['committee:passed:favorable']),
     ('Ought to Pass', ['bill:passed']),
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
     ('.*Ought to Pass', ['committee:passed:favorable']),
@@ -33,8 +42,6 @@ action_classifiers = [
     ('Signed', 'governor:signed'),
     ('Vetoed', 'governor:vetoed'),
 ]
-VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
-AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
 
 
 def classify_action(action):
@@ -55,16 +62,10 @@ class NHBillScraper(BillScraper):
 
     def scrape(self, chamber, session):
 
-        db_user = 'publicuser'
-        db_password = 'PublicAccess'
-        db_address = '216.177.20.245'
-        db_name = 'NHLegislatureDB'        
-        
-        self.conn = pymssql.connect(db_address, db_user, db_password, db_name)
-        self.cursor = self.conn.cursor(as_dict=True)
+        self.cursor = db_cursor()
         self.legislators = {}
         
-        self.cursor.execute("SELECT TOP 5 legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
+        self.cursor.execute("SELECT legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
         for row in self.cursor.fetchall():
             bill_id = row['CondensedBillNo']
             bill_title = row['LSRTitle']
@@ -84,26 +85,28 @@ class NHBillScraper(BillScraper):
 
             
     def scrape_actions(self, bill):
-        
-        #Note: Case of legislationID is inconsistent across tables
-        self.cursor.execute("SELECT * FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" % (bill['db_id']))
+        #Note: Casing of the legislationID column is inconsistent across tables
+        self.cursor.execute("SELECT LegislativeBody, description, StatusDate FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" % (bill['db_id']))
         for row in self.cursor.fetchall():
-            #add_action(actor, action, date, type=None, committees=None, legislators=None, **kwargs)
             actor = code_body[ row['LegislativeBody'] ]
             action = row['description']
             date = row['StatusDate']
-            bill.add_action(actor, action, date)
+            action_type = classify_action( action )
+            bill.add_action(actor, action, date, action_type)
             
     def scrape_sponsors(self, bill):
         
         if not self.legislators:
-            self.build_legislators()
+            self.legislators = build_legislators(self.cursor)
             
-        self.cursor.execute("SELECT employeeNo, PrimeSponsor FROM Sponsors WHERE LegislationId = '%s' AND SponsorWithdrawn = '0'" % (bill['db_id']))
+        self.cursor.execute("SELECT employeeNo, PrimeSponsor FROM Sponsors WHERE LegislationId = '%s' AND SponsorWithdrawn = '0' ORDER BY PrimeSponsor DESC" % (bill['db_id']))
         for row in self.cursor.fetchall():
             
-            sponsor = self.legislators[row['employeeNo']]
-            sponsor_name = self.legislator_name( sponsor )
+            # There are some invalid employeeNo in the sponsor table.
+            if row['employeeNo'] in self.legislators:
+                sponsor = self.legislators[row['employeeNo']]
+                 
+            sponsor_name = legislator_name( sponsor )
             
             if row['PrimeSponsor'] == 1:
                 sponsor_type = 'primary'
@@ -123,6 +126,11 @@ class NHBillScraper(BillScraper):
             other_count = row['Present'] + row['Absent']
             
             # Question_Motion from the DB is oftentimes just an ABBR, so clean that up
+            motions = {
+                'ITL' : 'Inexpedient to Legislate',
+                'OTP' : 'Ought to Pass',
+                'OTPA' : 'Ought to Pass (Amended)'
+            }
             
             if row['Yeas'] > row['Nays']:
                 passed = True
@@ -132,20 +140,17 @@ class NHBillScraper(BillScraper):
             vote = Vote(chamber, row['VoteDate'], row['Question_Motion'], passed, row['Yeas'], row['Nays'], other_count) 
             
             if not self.legislators:
-                self.build_legislators()
+                self.legislators = build_legislators(self.cursor)
                 
             self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE VoteSequenceNumber = '%s'" % (row['VoteSequenceNumber']))
             for rollcall in self.cursor.fetchall():
                 
                 voter = self.legislators[ rollcall['EmployeeNumber'] ]
                 
-                full_name = self.legislator_name( voter )
+                full_name = legislator_name( voter )
                 
-                # 1 is Yea
-                # 2 is Nay
-                # 3 is Excused
-                # 4 is Not Voting
-                # 6 is Presiding
+                # 1 is Yea, 2 is Nay
+                # 3 is Excused, 4 is Not Voting, 5 is Conflict of Interest, 6 is Presiding
                 # 3-6 are not counted in the totals
                 if rollcall['Vote'] == 1:
                     vote.yes(full_name)
@@ -161,16 +166,3 @@ class NHBillScraper(BillScraper):
         for row in self.cursor.fetchall():  
             url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?id=%s&txtFormat=html' % (row['LegislationtextID'])
             bill.add_version( row['DocumentVersion'], url, 'text/html')
-        
-    def build_legislators(self):
-        # Build a dict that maps EmployeeID -> Legislator to simplify fetching sponsors and votes
-        # Note: Legislators can sponsor bills or vote then become inactive mid-session, 
-        # so don't filter by Active
-        self.cursor.execute("SELECT PersonID, Employeeno, FirstName, LastName, MiddleName, LegislativeBody, District FROM Legislators")
-        for row in self.cursor.fetchall():
-            #Votes go by employeeNo not PersonId, so index on that.
-            self.legislators[ row['Employeeno'] ] = row
-    
-    def legislator_name(self, legislator):
-        # Turn a database Legislator row into an english name
-        return ' '.join(filter(None,[legislator['FirstName'], legislator['MiddleName'], legislator['LastName']]))
