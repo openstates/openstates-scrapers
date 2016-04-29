@@ -1,7 +1,6 @@
 import lxml.html
 from .bills import NHBillScraper
 from .legislators import NHLegislatorScraper
-from .events import NHEventScraper
 from . import utils
 
 metadata = {
