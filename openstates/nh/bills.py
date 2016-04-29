@@ -12,12 +12,13 @@ from .utils import build_legislators, legislator_name, db_cursor
 body_code = {'lower': 'H', 'upper': 'S'}
 code_body = {'H':'lower', 'S':'upper'}
 
-bill_type_map = {'B': 'bill',
-                 'R': 'resolution',
-                 'CR': 'concurrent resolution',
-                 'JR': 'joint resolution',
-                 'CO': 'concurrent order',
-                 'A': "address"
+bill_type_map = {'HB': 'bill',
+                 'SB' : 'bill',
+                 'HR': 'resolution',
+                 'SR': 'resolution',
+                 'CACR': 'constitutional amendment',
+                 'HJR': 'joint resolution',
+                 'SJR': 'joint resolution',
                 }
 
 # When a committee acts Inexpedient to Legislate, it's a committee:passed:unfavorable ,
@@ -27,14 +28,14 @@ bill_type_map = {'B': 'bill',
 # So keep BILL KILLED as the first action in this list to avoid subtle misclassfication bugs.
 # https://www.nh.gov/nhinfo/bills.html
 action_classifiers = [
-    ('BILL KILLED', 'bill:failed'),
+    ('BILL KILLED', ['bill:failed']),
     ('ITL', ['committee:passed:unfavorable']),
     ('OTP', ['committee:passed:favorable']),
     ('OTPA', ['committee:passed:favorable']),
     ('Ought to Pass', ['bill:passed']),
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
     ('.*Ought to Pass', ['committee:passed:favorable']),
-    ('Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
+    ('.*Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
     ('.*Inexpedient to Legislate', ['committee:passed:unfavorable']),
     ('Proposed(.*) Amendment', 'amendment:introduced'),
     ('Amendment .* Adopted', 'amendment:passed'),
@@ -68,9 +69,12 @@ class NHBillScraper(BillScraper):
         self.cursor.execute("SELECT legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " % (session, body_code[chamber]) )
         for row in self.cursor.fetchall():
             bill_id = row['CondensedBillNo']
-            bill_title = row['LSRTitle']
+            bill_title = row['LSRTitle'].replace('(New Title)','').strip()
             
-            bill = Bill(session, chamber, bill_id, bill_title, db_id=row['legislationID'])
+            if row['documenttypecode'] in bill_type_map:
+                bill_type = bill_type_map[ row['documenttypecode'] ]
+            
+            bill = Bill(session, chamber, bill_id, bill_title, db_id=row['legislationID'], type=bill_type)
             
             status_url = 'http://www.gencourt.state.nh.us/bill_status/bill_status.aspx?lsr=%s&sy=%s&sortoption=&txtsessionyear=%s' % (row['lsr'], session, session)
             
@@ -89,10 +93,13 @@ class NHBillScraper(BillScraper):
         self.cursor.execute("SELECT LegislativeBody, description, StatusDate FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" % (bill['db_id']))
         for row in self.cursor.fetchall():
             actor = code_body[ row['LegislativeBody'] ]
-            action = row['description']
-            date = row['StatusDate']
-            action_type = classify_action( action )
-            bill.add_action(actor, action, date, action_type)
+            action = row['description'].strip()
+            
+            #NH lists committee hearings in the actions table. They can be pulled with the events scraper.
+            if 'Hearing' not in action:
+                date = row['StatusDate']
+                action_type = classify_action( action )
+                bill.add_action(actor, action, date, action_type)
             
     def scrape_sponsors(self, bill):
         
@@ -105,7 +112,9 @@ class NHBillScraper(BillScraper):
             # There are some invalid employeeNo in the sponsor table.
             if row['employeeNo'] in self.legislators:
                 sponsor = self.legislators[row['employeeNo']]
-                 
+            else:
+                self.warning("Unable to match sponsor %s to EmployeeID" % row['employeeNo'])
+                
             sponsor_name = legislator_name( sponsor )
             
             if row['PrimeSponsor'] == 1:
@@ -119,50 +128,49 @@ class NHBillScraper(BillScraper):
         # the votes table doesn't reference the bill primary key legislationID, 
         # so search by the CondensedBillNo and session
         
-        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s'" % (bill['bill_id'], bill['session']))
+        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s' ORDER BY VoteDate ASC" % (bill['bill_id'], bill['session']))
         for row in self.cursor.fetchall():  
             chamber = code_body[ row['LegislativeBody'] ]
             
             other_count = row['Present'] + row['Absent']
             
             # Question_Motion from the DB is oftentimes just an ABBR, so clean that up
-            motions = {
-                'ITL' : 'Inexpedient to Legislate',
-                'OTP' : 'Ought to Pass',
-                'OTPA' : 'Ought to Pass (Amended)'
-            }
+            replacements = ('ITL', 'Inexpedient to Legislate'),('OTP','Ought to Pass'),('OTPA','Ought to Pass (Amended)')
+            motion = reduce(lambda a, kv: a.replace(*kv), replacements, row['Question_Motion'])
             
             if row['Yeas'] > row['Nays']:
                 passed = True
             else:
                 passed = False
                 
-            vote = Vote(chamber, row['VoteDate'], row['Question_Motion'], passed, row['Yeas'], row['Nays'], other_count) 
+            vote = Vote(chamber, row['VoteDate'], motion, passed, row['Yeas'], row['Nays'], other_count) 
             
             if not self.legislators:
                 self.legislators = build_legislators(self.cursor)
                 
-            self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE VoteSequenceNumber = '%s'" % (row['VoteSequenceNumber']))
+            self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE CondensedBillNo = '%s' AND VoteSequenceNumber = '%s'" % (bill['bill_id'], row['VoteSequenceNumber']))
             for rollcall in self.cursor.fetchall():
                 
-                voter = self.legislators[ rollcall['EmployeeNumber'] ]
+                if rollcall['EmployeeNumber'] in self.legislators:
+                    voter = self.legislators[ rollcall['EmployeeNumber'] ]
+                    full_name = legislator_name( voter )
                 
-                full_name = legislator_name( voter )
-                
-                # 1 is Yea, 2 is Nay
-                # 3 is Excused, 4 is Not Voting, 5 is Conflict of Interest, 6 is Presiding
-                # 3-6 are not counted in the totals
-                if rollcall['Vote'] == 1:
-                    vote.yes(full_name)
-                elif rollcall['Vote'] == 2:
-                    vote.no(full_name)
+                    # 1 is Yea, 2 is Nay
+                    # 3 is Excused, 4 is Not Voting, 5 is Conflict of Interest, 6 is Presiding
+                    # 3-6 are not counted in the totals
+                    if rollcall['Vote'] == 1:
+                        vote.yes(full_name)
+                    elif rollcall['Vote'] == 2:
+                        vote.no(full_name)
+                    else:
+                        vote.other(full_name)
                 else:
-                    vote.other(full_name)
-
+                    self.warning("Unable to match voter %s to EmployeeID" % rollcall['EmployeeNumber'])
+                    
             bill.add_vote(vote)
     
     def scrape_versions(self, bill):
-        self.cursor.execute("SELECT LegislationtextID, DocumentVersion FROM LegislationText WHERE LegislationId = '%s'" % (bill['db_id']) )
+        self.cursor.execute("SELECT LegislationtextID, DocumentVersion FROM LegislationText WHERE LegislationId = '%s' ORDER BY LegislationtextID ASC" % (bill['db_id']) )
         for row in self.cursor.fetchall():  
             url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?id=%s&txtFormat=html' % (row['LegislationtextID'])
             bill.add_version( row['DocumentVersion'], url, 'text/html')
