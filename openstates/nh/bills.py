@@ -125,10 +125,10 @@ class NHBillScraper(BillScraper):
             bill.add_sponsor(sponsor_type, sponsor_name, employeeNo=sponsor['Employeeno'])
             
     def scrape_votes(self, bill):
-        # the votes table doesn't reference the bill primary key legislationID, 
+        # The votes table doesn't reference the bill primary key legislationID, 
         # so search by the CondensedBillNo and session
         
-        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s' ORDER BY VoteDate ASC" % (bill['bill_id'], bill['session']))
+        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber, CalendarItemID FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s' ORDER BY VoteDate ASC" % (bill['bill_id'], bill['session']))
         for row in self.cursor.fetchall():  
             chamber = code_body[ row['LegislativeBody'] ]
             
@@ -147,10 +147,15 @@ class NHBillScraper(BillScraper):
             
             if not self.legislators:
                 self.legislators = build_legislators(self.cursor)
-                
-            self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE CondensedBillNo = '%s' AND VoteSequenceNumber = '%s'" % (bill['bill_id'], row['VoteSequenceNumber']))
+            
+            # Some roll calls are only in by CalendarItemID
+            # Some only by the combo of CondensedBillNo and VoteSequenceNumber
+            # VoteSequenceNumber is NOT unique on its own, only when paired with CondensedBillNo
+            if row['CalendarItemID']:    
+                self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE CalendarItemID = '%s' AND sessionyear = '%s'" % (row['CalendarItemID'], bill['session']))                
+                         
             for rollcall in self.cursor.fetchall():
-                
+
                 if rollcall['EmployeeNumber'] in self.legislators:
                     voter = self.legislators[ rollcall['EmployeeNumber'] ]
                     full_name = legislator_name( voter )
