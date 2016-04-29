@@ -16,7 +16,7 @@ def build_legislators(cursor):
 
 def legislator_name(legislator):
     # Turn an NH database Legislator row into an english name
-    return ' '.join(filter(None,[legislator['FirstName'], legislator['MiddleName'], legislator['LastName']]))
+    return ' '.join(filter(None,[legislator['FirstName'].strip(), legislator['MiddleName'].strip(), legislator['LastName'].strip()]))
 
 def db_cursor():
     db_user = 'publicuser'
