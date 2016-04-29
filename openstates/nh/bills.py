@@ -4,6 +4,7 @@ from collections import defaultdict
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 from .utils import build_legislators, legislator_name, db_cursor
+from .legacyBills import NHLegacyBillScraper
 
 body_code = {'lower': 'H', 'upper': 'S'}
 code_body = {'H': 'lower', 'S': 'upper'}
@@ -65,7 +66,15 @@ class NHBillScraper(BillScraper):
         self._subjects = defaultdict(list)
 
     def scrape(self, chamber, session):
-
+        
+        if int(session) < 2016:
+            legacy = NHLegacyBillScraper(self.metadata, self.output_dir, self.strict_validation)
+            legacy.scrape(chamber, session)
+            # This throws an error because object_count isn't being properly incremented, 
+            # even though it saves fine. So fake the output_names
+            self.output_names = ['1']
+            return
+            
         self.cursor.execute(
             "SELECT legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr, SubjectCode FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " %
             (session, body_code[chamber]))
