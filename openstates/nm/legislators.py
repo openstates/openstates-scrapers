@@ -2,7 +2,7 @@ import re
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
 
-base_url = 'http://www.nmlegis.gov:8080/Members/Legislator_List'
+base_url = 'http://www.nmlegis.gov/Members/Legislator_List'
 
 
 def extract_phone_number(phone_number):

@@ -183,7 +183,7 @@ class NMBillScraper(BillScraper):
                                                       "LegNo", "SessionYear"]})
 
             bill.add_source(
-                'http://www.nmlegis.gov:8080/Legislation/Legislation?chamber='
+                'http://www.nmlegis.gov/Legislation/Legislation?chamber='
                 "{Chamber}&legType={LegType}&legNo={LegNo}"
                 "&year={SessionYear}".format(**data))
 
@@ -262,7 +262,7 @@ class NMBillScraper(BillScraper):
             com_location_map[loc['LocationCode']] = loc['LocationDesc']
 
         # combination of tblActions and
-        # http://www.nmlegis.gov:8080/Legislation/Action_Abbreviations
+        # http://www.nmlegis.gov/Legislation/Action_Abbreviations
         # table will break when new actions are encountered
         action_map = {
             # committee results

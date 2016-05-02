@@ -108,7 +108,7 @@ metadata = {
 
 
 def session_list():
-    return url_xpath('http://www.nmlegis.gov:8080/',
+    return url_xpath('http://www.nmlegis.gov/',
                      '//select[@name="ctl00$MainContent$ddlSessions"]'
                      '/option/text()')
 
