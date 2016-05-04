@@ -111,6 +111,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             contact = self.lxmlize(contact_url)
             contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text() | //td[@class="bodyCopy"]//center/text()')
 
+            phone = None
             for el in contact_phone:
                 if len(el) <= 2 and dist == el:
                     number = contact_phone.index(el)
