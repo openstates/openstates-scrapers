@@ -109,7 +109,7 @@ class KYBillScraper(BillScraper, LXMLMixin):
             actions = self.get_nodes(
                 page,
                 '//div[@class="StandardText leftDivMargin"]/'
-                'div[@class="StandardText"][last()]/text()[normalize-space()]')
+                'div[@class="StandardText"][last()]//text()[normalize-space()]')
         else:
             pars = version_link_node.xpath("following-sibling::p")
 
@@ -154,8 +154,8 @@ class KYBillScraper(BillScraper, LXMLMixin):
             line_actions = line.strip().split(';')
 
             for index, action in enumerate(line_actions):
-                if (not action or action == 'last action' or
-                    'Prefiled' in action or 'vetoed' in action):
+                action = action.strip()
+                if not action:
                     continue
 
                 action_date_text = line.split('-')[0].strip()
@@ -165,11 +165,20 @@ class KYBillScraper(BillScraper, LXMLMixin):
                     action_date_string = '{} {}'.format(action_date_text,
                         session[0:4])
 
-                action_date = datetime.datetime.strptime(
-                    action_date_string, '%b %d %Y')
+                # This patch is super hacky, but allows us to better
+                # capture actions that screw up the formatting such as
+                # veto document links.
+                try:
+                    action_date = datetime.datetime.strptime(
+                        action_date_string, '%b %d %Y')
+                    cached_action_date = action_date
+                    used_cached_action_date = False
+                except:
+                    action_date = cached_action_date
+                    used_cached_action_date = True
 
                 # Separate out the date if first action on the line.
-                if index == 0:
+                if index == 0 and not used_cached_action_date:
                     action = '-'.join(action.split('-')[1:]).strip()
                     if not action:
                         continue
@@ -188,6 +197,19 @@ class KYBillScraper(BillScraper, LXMLMixin):
                         atype.append('committee:referred')
                 elif 'signed by Governor' in action:
                     atype.append('governor:signed')
+                elif 'vetoed' in action:
+                    atype.append('governor:vetoed')
+
+                    # Get the accompanying veto message document. There
+                    # should only be one.
+                    veto_document_link = self.get_node(page,
+                        '//div[@class="StandardText leftDivMargin"]/'
+                        'div[@class="StandardText"][last()]/a[contains(@href,'
+                        '"veto.pdf")]')
+
+                    if veto_document_link is not None:
+                        bill.add_document("Veto Message",
+                            veto_document_link.attrib['href'])
                 elif re.match(r'^to [A-Z]', action):
                     atype.append('committee:referred')
                 elif action == 'adopted by voice vote':
@@ -216,8 +238,8 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 # Capitalize the first letter of the action for nicer
                 # display. capitalize() won't work for this because it
                 # lowercases all other letters.
-                action = (action[0].upper() + action[1:]).strip()
-                
+                action = (action[0].upper() + action[1:])
+
                 if action:
                     bill.add_action(actor, action, action_date, type=atype)
 
