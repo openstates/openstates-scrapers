@@ -56,7 +56,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             for field, col_num in excel_mapping.iteritems():
                 d[field] = sh.cell(rownum, col_num).value
 
-            if d['full_name'] == "VACANT":
+            if d['full_name'].upper() == "VACANT":
                 self.warning(
                     "District {}'s seat is vacant".format(int(d['district'])))
                 continue
@@ -111,6 +111,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             contact = self.lxmlize(contact_url)
             contact_phone = contact.xpath('//tr[@valign="TOP"]//td[@class="bodyCopy"]/text() | //td[@class="bodyCopy"]//center/text()')
 
+            phone = None
             for el in contact_phone:
                 if len(el) <= 2 and dist == el:
                     number = contact_phone.index(el)
