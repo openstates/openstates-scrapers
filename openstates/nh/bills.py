@@ -9,14 +9,15 @@ from .legacyBills import NHLegacyBillScraper
 body_code = {'lower': 'H', 'upper': 'S'}
 code_body = {'H': 'lower', 'S': 'upper'}
 
-bill_type_map = {'HB': 'bill',
-                 'SB': 'bill',
-                 'HR': 'resolution',
-                 'SR': 'resolution',
-                 'CACR': 'constitutional amendment',
-                 'HJR': 'joint resolution',
-                 'SJR': 'joint resolution',
-                }
+bill_type_map = {
+    'HB': 'bill',
+    'SB': 'bill',
+    'HR': 'resolution',
+    'SR': 'resolution',
+    'CACR': 'constitutional amendment',
+    'HJR': 'joint resolution',
+    'SJR': 'joint resolution',
+}
 
 # When a Committee acts Inexpedient to Legislate, it's a committee:passed:unfavorable ,
 # because they're _passing_ a motion to the full chamber that recommends the bill be killed.
@@ -92,9 +93,12 @@ class NHBillScraper(BillScraper):
             self.output_names = ['1']
             return
             
-        self.cursor.execute(
-            "SELECT legislationnbr, documenttypecode, LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, legislationID, sessionyear, lsr, SubjectCode FROM Legislation WHERE sessionyear = %s AND LegislativeBody = '%s' " %
-            (session, body_code[chamber]))
+        self.cursor.execute("SELECT legislationnbr, documenttypecode, "
+            "LegislativeBody, LSRTitle, CondensedBillNo, HouseDateIntroduced, "
+            "legislationID, sessionyear, lsr, SubjectCode FROM Legislation "
+            "WHERE sessionyear = {} AND LegislativeBody = '{}'".format(session,
+            body_code[chamber]))
+
         for row in self.cursor.fetchall():
             bill_id = row['CondensedBillNo']
             bill_title = row['LSRTitle'].replace('(New Title)', '').strip()
@@ -110,7 +114,9 @@ class NHBillScraper(BillScraper):
                 db_id=row['legislationID'],
                 type=bill_type)
 
-            status_url = 'http://www.gencourt.state.nh.us/bill_status/bill_status.aspx?lsr=%s&sy=%s&sortoption=&txtsessionyear=%s' % (row['lsr'], session, session)
+            status_url = 'http://www.gencourt.state.nh.us/bill_status/bill_'\
+                'status.aspx?lsr={}&sy={}&sortoption=&txtsessionyear={}'\
+                .format(row['lsr'], session, session)
 
             bill.add_source(status_url)
 
@@ -124,9 +130,10 @@ class NHBillScraper(BillScraper):
 
     def scrape_actions(self, bill):
         # Note: Casing of the legislationID column is inconsistent across tables
-        self.cursor.execute(
-            "SELECT LegislativeBody, description, StatusDate FROM Docket WHERE LegislationId = '%s' ORDER BY StatusDate" %
-            (bill['db_id']))
+        self.cursor.execute("SELECT LegislativeBody, description, StatusDate "
+            "FROM Docket WHERE LegislationId = '{}' ORDER BY StatusDate"
+            .format(bill['db_id']))
+
         for row in self.cursor.fetchall():
             actor = code_body[row['LegislativeBody']]
             action = row['description'].strip()
@@ -143,11 +150,11 @@ class NHBillScraper(BillScraper):
         if not self.legislators:
             self.legislators = build_legislators(self.cursor)
 
-        self.cursor.execute(
-            "SELECT employeeNo, PrimeSponsor FROM Sponsors WHERE LegislationId = '%s' AND SponsorWithdrawn = '0' ORDER BY PrimeSponsor DESC" %
-            (bill['db_id']))
-        for row in self.cursor.fetchall():
+        self.cursor.execute("SELECT employeeNo, PrimeSponsor FROM Sponsors "
+            "WHERE LegislationId = '{}' AND SponsorWithdrawn = '0' ORDER BY "
+            "PrimeSponsor DESC".format(bill['db_id']))
 
+        for row in self.cursor.fetchall():
             # There are some invalid employeeNo in the sponsor table.
             if row['employeeNo'] in self.legislators:
                 sponsor = self.legislators[row['employeeNo']]
@@ -167,7 +174,12 @@ class NHBillScraper(BillScraper):
         # The votes table doesn't reference the bill primary key legislationID,
         # so search by the CondensedBillNo and session
 
-        self.cursor.execute("SELECT LegislativeBody, VoteDate, Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber, CalendarItemID FROM RollCallSummary WHERE CondensedBillNo = '%s' AND SessionYear='%s' ORDER BY VoteDate ASC" % (bill['bill_id'], bill['session']))
+        self.cursor.execute("SELECT LegislativeBody, VoteDate, "
+            "Question_Motion, Yeas, Nays, Present, Absent, VoteSequenceNumber, "
+            "CalendarItemID FROM RollCallSummary WHERE CondensedBillNo = '{}' "
+            "AND SessionYear='{}' ORDER BY VoteDate ASC".format(bill['bill_id'],
+            bill['session']))
+
         for row in self.cursor.fetchall():
             chamber = code_body[row['LegislativeBody']]
 
@@ -175,7 +187,8 @@ class NHBillScraper(BillScraper):
 
             # Question_Motion from the DB is oftentimes just an ABBR, so clean
             # that up
-            replacements = ('ITL', 'Inexpedient to Legislate'), ('OTP', 'Ought to Pass'), ('OTPA', 'Ought to Pass (Amended)')
+            replacements = ('ITL', 'Inexpedient to Legislate'), ('OTP',
+                'Ought to Pass'), ('OTPA', 'Ought to Pass (Amended)')
 
             motion = reduce(
                 lambda a, kv: a.replace(*kv),
@@ -194,7 +207,10 @@ class NHBillScraper(BillScraper):
             # VoteSequenceNumber is NOT unique on its own, only when paired
             # with CondensedBillNo
             if row['CalendarItemID']:
-                self.cursor.execute("SELECT EmployeeNumber, Vote FROM RollCallHistory WHERE CalendarItemID = '%s' AND sessionyear = '%s'" % (row['CalendarItemID'], bill['session']))
+                self.cursor.execute("SELECT EmployeeNumber, Vote FROM "
+                    "RollCallHistory WHERE CalendarItemID = '{}' AND "
+                    "sessionyear = '{}'".format(row['CalendarItemID'],
+                    bill['session']))
 
             for rollcall in self.cursor.fetchall():
 
@@ -212,12 +228,15 @@ class NHBillScraper(BillScraper):
                     else:
                         vote.other(full_name)
                 else:
-                    self.warning("Unable to match voter %s to EmployeeID" % rollcall['EmployeeNumber'])
+                    self.warning('Unable to match voter {} to EmployeeID'
+                        .format(rollcall['EmployeeNumber']))
 
             bill.add_vote(vote)
 
     def scrape_subjects(self, bill, subjectCode):
-        self.cursor.execute("SELECT Subject FROM Subject WHERE SubjectCode = '%s'" % (subjectCode))
+        self.cursor.execute("SELECT Subject FROM Subject WHERE SubjectCode = "
+            "'{}'".format(subjectCode))
+
         for row in self.cursor.fetchall():
             self._subjects[bill['bill_id']].append(row['Subject'])
             bill['subjects'] = [row['Subject']]
