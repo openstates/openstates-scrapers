@@ -56,6 +56,23 @@ def extract_amendment_id(action):
         return piece[0]
 
 
+def get_version_code(description):
+    version_code = None
+
+    if 'Introduced' in description:
+        version_code = 'I'
+    elif 'As Amended' in description and not '2nd committee' in description:
+        version_code = 'A'
+    elif 'As Amended' in description and '2nd committee' in description:
+        version_code = 'A2'
+    elif 'adopted by both bodies' in description:
+        version_code = 'A'
+    # Some document version texts exist in the DB, but are not used, so
+    # they do not appear here.
+    # Final version should have no code - returned as current version.
+
+    return version_code
+
 class NHBillScraper(BillScraper):
     jurisdiction = 'nh'
 
@@ -206,7 +223,24 @@ class NHBillScraper(BillScraper):
             bill['subjects'] = [row['Subject']]
 
     def scrape_versions(self, bill):
-        self.cursor.execute("SELECT LegislationtextID, DocumentVersion FROM LegislationText WHERE LegislationId = '%s' ORDER BY LegislationtextID ASC" % (bill['db_id']))
+        self.cursor.execute("SELECT LegislationID, ChamberCode, "
+            "DocumentVersion, TextDescription FROM LegislationText WHERE "
+            "LegislationId = '{}' ORDER BY LegislationtextID ASC".format(
+            bill['db_id']))
+
         for row in self.cursor.fetchall():
-            url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?id=%s&txtFormat=html' % (row['LegislationtextID'])
-            bill.add_version(row['DocumentVersion'], url, 'text/html')
+            version_code = get_version_code(row['TextDescription'])
+
+            if version_code is not None:
+                version = '{}{}'.format(row['ChamberCode'], version_code)
+            else:
+                version = ''
+
+            url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?'\
+                'id={}&v={}&txtFormat=html'.format(row['LegislationID'],
+                version)
+
+            try:
+                bill.add_version(row['DocumentVersion'], url, 'text/html')
+            except ValueError:
+                pass
