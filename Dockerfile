@@ -24,11 +24,10 @@ RUN apt-get update \
     && apt-get autoremove \
     && apt-get clean
 
+RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.utf-8
-
-RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
 
 RUN mkdir -p /opt/sunlightfoundation.com/
 ADD . /opt/sunlightfoundation.com/openstates/
