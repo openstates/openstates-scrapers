@@ -20,3 +20,7 @@ numpy
 
 #Indiana error handling
 pyopenssl
+
+#NH Database Connectivity
+#NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
+pymssql

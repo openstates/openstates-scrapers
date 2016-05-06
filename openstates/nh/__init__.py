@@ -1,6 +1,7 @@
 import lxml.html
 from .bills import NHBillScraper
 from .legislators import NHLegislatorScraper
+from . import utils
 
 metadata = {
     'abbreviation': 'nh',
@@ -48,8 +49,7 @@ metadata = {
                  '_scraped_name': '2016 Session',
                 },                
     },
-    'feature_flags': ['influenceexplorer'],
-
+    'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2013 Session'],
 }
 
