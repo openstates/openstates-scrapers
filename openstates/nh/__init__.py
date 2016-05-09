@@ -1,6 +1,7 @@
 import lxml.html
 from .bills import NHBillScraper
 from .legislators import NHLegislatorScraper
+from .committees import NHCommitteeScraper
 from . import utils
 
 metadata = {
@@ -18,7 +19,7 @@ metadata = {
          'start_year': 2011, 'end_year': 2012},
         {'name': '2013-2014', 'sessions': ['2013', '2014'],
          'start_year': 2013, 'end_year': 2014},
-        {'name': '2015-2016', 'sessions': ['2015','2016'],
+        {'name': '2015-2016', 'sessions': ['2015', '2016'],
          'start_year': 2015, 'end_year': 2016}
     ],
     'session_details': {

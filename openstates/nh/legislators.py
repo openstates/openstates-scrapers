@@ -1,104 +1,111 @@
 import re
 import lxml.html
+
 from billy.scrape.legislators import LegislatorScraper, Legislator
+from openstates.utils import LXMLMixin
 
-chamber_map = {'House': 'lower', 'Senate': 'upper'}
-party_map = {'d': 'Democratic', 'r': 'Republican', 'i': 'Independent'}
+from .utils import db_cursor
 
 
-class NHLegislatorScraper(LegislatorScraper):
+class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'nh'
     latest_only = True
 
-    def get_photo(self, url, chamber):
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
-        if chamber == 'lower':
+    chamber_map = {'H': 'lower', 'S': 'upper'}
+    inverse_chamber_map = {v: k for k, v in chamber_map.items()}
+    party_map = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
+
+    def _get_photo(self, url, chamber):
+        """Attempts to find a portrait in the given legislator profile."""
+        doc = self.lxmlize(url)
+
+        if chamber == 'upper':
+            src = doc.xpath('//div[@id="page_content"]//img[contains(@src, '
+                '"images/senators") or contains(@src, "Senator")]/@src')
+        elif chamber == 'lower':
             src = doc.xpath('//img[contains(@src, "images/memberpics")]/@src')
-        else:
-            src = doc.xpath('//img[contains(@src, "images/senators")]/@src')
+
         if src and 'nophoto' not in src[0]:
-            return src[0]
-        return ''
+            photo_url = src[0]
+        else:
+            photo_url = ''
 
-    def scrape(self, term, chambers):
-        special_case_used = False
+        return photo_url
 
-        url = 'http://gencourt.state.nh.us/downloads/Members.txt'
+    def _parse_legislators(self, chamber, term):
+        """Retrieves and returns a list of active legislators."""
+        chamber_code = NHLegislatorScraper.inverse_chamber_map[chamber]
+        query = "SELECT "\
+            "Legislators.Employeeno AS employee_no, "\
+            "Legislators.LastName AS last_name, "\
+            "Legislators.FirstName AS first_name, "\
+            "Legislators.MiddleName AS middle_name, "\
+            "Legislators.LegislativeBody AS chamber, "\
+            "County.County AS county, "\
+            "Legislators.District AS district_no, "\
+            "Legislators.party AS party, "\
+            "Legislators.street AS address1, "\
+            "Legislators.address2 AS address2, "\
+            "Legislators.city AS city, "\
+            "Legislators.state AS state, "\
+            "Legislators.zipcode AS zipcode, "\
+            "Legislators.HomePhone AS phone, "\
+            "Legislators.EMailAddress AS email "\
+            "FROM Legislators LEFT OUTER JOIN County "\
+            "ON Legislators.countycode = County.CountyID "\
+            "WHERE LegislativeBody = '{}' AND Legislators.Active = 1 "\
+            "ORDER BY Legislators.LegislativeBody ASC, "\
+            "Legislators.District ASC".format(chamber_code)
 
-        option_map = {}
-        html = self.get('http://www.gencourt.state.nh.us/house/members/memberlookup.aspx').text
-        doc = lxml.html.fromstring(html)
-        for opt in doc.xpath('//option'):
-            option_map[opt.text] = opt.get('value')
+        self.db_cursor.execute(query)
 
-        data = self.get(url).text
-        for line in data.splitlines():
-            if line.strip() == "":
-                continue
+        legislators = []
+        for row in self.db_cursor.fetchall():
+            # Capture legislator vitals.
+            first_name = row['first_name']
+            middle_name = row['middle_name']
+            last_name = row['last_name']
+            full_name = '{} {} {}'.format(first_name, middle_name, last_name)
+            full_name = re.sub(r'[\s]{2,}', ' ', full_name)
+            district = '{} {}'.format(row['county'], int(row['district_no']))
+            party = NHLegislatorScraper.party_map[row['party']]
+            email = row['email'] or ''
 
-            (chamber, fullname, last, first, middle, county, district_num,
-             seat, party, street, street2, city, astate, zipcode,
-             home_phone, office_phone, fax, email, com1, com2, com3,
-             com4, com5, com6) = line.split('\t')
+            legislator = Legislator(term, chamber, district, full_name,
+                first_name=first_name, last_name=last_name,
+                middle_name=middle_name, party=party, email=email)
 
-            chamber = chamber_map[chamber]
+            # Capture legislator office contact information.
+            district_address = '{}\n{}\n{}, {} {}'.format(row['address1'],
+                row['address2'], row['city'], row['state'], row['zipcode'])\
+                .strip()
+            home_phone = row['phone']
 
-            # skip legislators from a chamber we aren't scraping
-            if chamber not in chambers:
-                continue
+            legislator.add_office('district', 'Home Address',
+                address=district_address, phone=home_phone or None)
 
-            middle = middle.strip()
-            last = last.strip('"')
-
-            if middle:
-                full = '%s %s %s' % (first, middle, last)
-            else:
-                full = '%s %s' % (first, last)
-
-            address = street
-            if street2:
-                address += (' ' + street2)
-            address += '\n%s, %s %s' % (city, astate, zipcode)
-
-            district = str(int(district_num))
-            if county:
-                district = '%s %s' % (county, district)
-
-            # When a candidate receives enough write-in votes in the
-            # other party's primary, they are listed on the ballot as
-            # being a nominee of both parties (eg, 'd+r')
-            # Cross-reference this list for official party affiliation:
-            # http://www.gencourt.state.nh.us/House/caljourns/journals/2015/HJ_4.pdf
-
-            leg = Legislator(term, chamber, district, full, party=party_map[party])
-            leg.add_office('district', 'Home Address',
-                           address=address, phone=home_phone or None)
-            leg.add_office('district', 'Office Address',
-                           phone=office_phone or None,
-                           fax=fax or None,
-                           email=email or None)
-
+            # Retrieve legislator portrait.
+            profile_url = None
             if chamber == 'upper':
-                leg['url'] = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district%02d.aspx' % int(district_num)
+                profile_url = 'http://www.gencourt.state.nh.us/Senate/members'\
+                    '/webpages/district{}.aspx'.format(row['district_no'])
             elif chamber == 'lower':
-                code = option_map.get('{0}, {1}'.format(last, first))
-                if code:
-                    leg['url'] = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member=' + code
+                profile_url = 'http://www.gencourt.state.nh.us/house/members/'\
+                    'member.aspx?member={}'.format(row['employee_no'])
 
-            romans = r'(?i)\s([IXV]+)(?:\s|$)'
-            for com in (com1, com2, com3, com4, com5, com6):
-                com = com.strip('"')
-                if com:
-                    com_name = com.title()
-                    com_name = re.sub(romans, lambda m: m.group().upper(),
-                                      com_name)
-                    leg.add_role('committee member', term=term,
-                                 chamber=chamber, committee=com_name)
+            if profile_url:
+                legislator['photo_url'] = self._get_photo(profile_url, chamber)
+                legislator.add_source(profile_url)
 
-            if 'url' in leg:
-                leg['photo_url'] = self.get_photo(leg['url'], chamber)
+            legislators.append(legislator)
 
-            leg.add_source(url)
-            self.save_legislator(leg)
+        return legislators
+
+    def scrape(self, chamber, term):
+        self.db_cursor = db_cursor()
+
+        legislators = self._parse_legislators(chamber, term)
+
+        for legislator in legislators:
+            self.logger.debug(legislator)
+            self.save_legislator(legislator)
