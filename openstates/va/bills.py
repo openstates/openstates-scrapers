@@ -12,7 +12,7 @@ BASE_URL = 'http://lis.virginia.gov'
 class VABillScraper(BillScraper):
     jurisdiction = 'va'
 
-    vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N\)')
+    vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N( (\d{1,2})-A)?\)')
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
                  'Conference': 'conference'}
 
