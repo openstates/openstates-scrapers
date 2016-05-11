@@ -1,6 +1,7 @@
 billy
 
 # scraping
+cffi
 xlrd
 lxml>=2.2
 pytz>=2010l
