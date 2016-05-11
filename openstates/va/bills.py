@@ -12,7 +12,7 @@ BASE_URL = 'http://lis.virginia.gov'
 class VABillScraper(BillScraper):
     jurisdiction = 'va'
 
-    vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N\)')
+    vote_strip_re = re.compile(r'(.+)\((\d{1,2})-Y (\d{1,2})-N(?: (\d{1,2})-A)?\)')
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
                  'Conference': 'conference'}
 
@@ -160,7 +160,7 @@ class VABillScraper(BillScraper):
             # if action ends in (##-Y ##-N) remove that part
             vrematch = self.vote_strip_re.match(action)
             if vrematch:
-                action, y, n = vrematch.groups()
+                action, y, n, o = vrematch.groups()
                 vote = Vote(actor, date, action, int(y) > int(n),
                             int(y), int(n), 0)
                 vote_url = ali.xpath('a/@href')
@@ -171,7 +171,6 @@ class VABillScraper(BillScraper):
                 vote['other_count'] = len(vote['other_votes'])
                 #vote.validate()
                 bill.add_vote(vote)
-
 
             # categorize actions
             for pattern, atype in self._action_classifiers:
@@ -236,11 +235,16 @@ class VABillScraper(BillScraper):
 
         yeas = doc.xpath('//p[contains(text(), "YEAS--")]')
         nays = doc.xpath('//p[contains(text(), "NAYS--")]')
-        absts = doc.xpath('//p[contains(text(), "ABSTENTIONS")]')
-        #no_votes = doc.xpath('//p[contains(text(), "NOT VOTING")]')[0].text
+        # We capture "other" types of votes separately just in case we
+        # want to have the granularity later.
+        rule36 = doc.xpath('//p[contains(text(), "RULE 36--")]')
+        abstaining = doc.xpath('//p[contains(text(), "ABSTENTIONS--")]')
+        notvoting = doc.xpath('//p[contains(text(), "NOT VOTING--")]')
 
         map(vote.yes, self.split_vote(yeas))
         map(vote.no, self.split_vote(nays))
-        map(vote.other, self.split_vote(absts))
-        # don't count not voting as anything?
-        #map(vote.other, self.split_vote(no_votes))
+        # Flattening all types of other votes into a single list.
+        other_votes = []
+        map(other_votes.extend, (self.split_vote(rule36), self.split_vote(abstaining),
+            self.split_vote(notvoting)))
+        map(vote.other, other_votes)
