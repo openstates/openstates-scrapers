@@ -67,7 +67,8 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
             last_name = row['last_name']
             full_name = '{} {} {}'.format(first_name, middle_name, last_name)
             full_name = re.sub(r'[\s]{2,}', ' ', full_name)
-            district = '{} {}'.format(row['county'], int(row['district_no']))
+            district = '{} {}'.format(row['county'], int(row['district_no']))\
+                .strip()
             party = NHLegislatorScraper.party_map[row['party']]
             email = row['email'] or ''
 
@@ -107,5 +108,4 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         legislators = self._parse_legislators(chamber, term)
 
         for legislator in legislators:
-            self.logger.debug(legislator)
             self.save_legislator(legislator)
