@@ -108,5 +108,4 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         legislators = self._parse_legislators(chamber, term)
 
         for legislator in legislators:
-            self.logger.debug(legislator)
             self.save_legislator(legislator)
