@@ -3,10 +3,11 @@ import re
 import lxml.html
 import scrapelib
 import actions
-from openstates.utils import LXMLMixin
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from openstates.utils import LXMLMixin
+
 
 class DEBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'de'
@@ -48,14 +49,14 @@ class DEBillScraper(BillScraper, LXMLMixin):
         except scrapelib.HTTPError:
             self.logger.warning('404. Apparently the bill hasn\'t been posted')
             return
-        nominee = page.xpath(".//div[@id='page_header']/text()")[0]
-        if nominee.strip().lower() == "nominee information":
+        nominee = self.get_node(page, './/div[@id="page_header"]/text()')
+        if nominee is not None and nominee.strip().lower() == "nominee information":
             self.logger.info("Nominee, skipping")
             return
 
-        bill_id = page.xpath(".//div[@align='center']")
+        bill_id = self.get_node(page, './/div[@align="center" or @style="text-align:center"]')
         try:
-            bill_id = bill_id[0].text_content().strip()
+            bill_id = bill_id.text_content().strip()
         except IndexError:
             self.logger.warning("Can't find bill number, skipping")
             return
@@ -86,13 +87,21 @@ class DEBillScraper(BillScraper, LXMLMixin):
         #there are no classes/ids or anything, so we're going to loop
         #through the individual tables and look for keywords
         #in the first td to tell us what we're looking at
-        tables = page.xpath('.//div[@id="page_content"]/table')
+        tables = self.get_nodes(page, './/div[@id="page_content"]/table')
 
+        bill_title = None
+        primary_sponsors = []
+        cosponsors = []
+        bill_url = None
         bill_documents = {}
         action_list = []
         vote_documents = {}
         sub_link = None
         bill_text_avail = False
+
+        if tables is None or not tables:
+            self.logger.warning('First xpath didn\'t work.')
+            tables = self.get_nodes(page, './/table[@style="width:837.0px"]/tr')
 
         for table in tables:
             tds = table.xpath('.//td')
@@ -127,7 +136,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 amendments = tds[1].xpath('.//a')
                 for a in amendments:
                     amm = a.text
-                    self.logger.debug(amm)
                     amm_text = "Amendment".format(amm.strip())
                     amm_slg = "+".join(amm.split())
                     amm_link = text_base_url.format(session=session,
@@ -139,7 +147,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
                         if len(tds) > 1:
                             if "voting" in tds[0].text_content().lower():
                                 self.find_vote(tds,vote_documents,"Amendment: ")
-
 
             elif title_text.startswith('engrossed version'):
                 if tds[1].text_content().strip():
@@ -186,7 +193,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
             elif title_text.startswith('voting'):
                 self.find_vote(tds,vote_documents)
-                
             elif title_text.startswith('actions history'):
                 action_list = tds[1].text_content().split("\n")
 
