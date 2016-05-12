@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 import lxml.html
-import scrapelib
+import requests
 import actions
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
@@ -45,8 +45,8 @@ class DEBillScraper(BillScraper, LXMLMixin):
         base_url = "http://legis.delaware.gov"
         text_base_url = "http://legis.delaware.gov/LIS/lis{session}.nsf/vwLegislation/{bill_id}/$file/legis.html?open"
         try:
-            page = self.lxmlize(link)
-        except scrapelib.HTTPError:
+            page = self.lxmlize(link, True)
+        except requests.exceptions.HTTPError:
             self.logger.warning('404. Apparently the bill hasn\'t been posted')
             return
         nominee = self.get_node(page, './/div[@id="page_header"]/text()')
@@ -247,7 +247,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
             vote_chamber = "lower" if "house" in name.lower() else "upper"
             try:
                 self.head(doc)
-            except scrapelib.HTTPError:
+            except requests.exceptions.HTTPError:
                 self.logger.warning("could not access vote document")
                 continue
             vote_page = self.lxmlize(doc)
