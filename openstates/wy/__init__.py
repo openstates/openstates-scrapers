@@ -75,6 +75,7 @@ metadata = {
     # (http://openstates.org/wy/bills/2014/HB1/)
     # So - we avoid the new session, because we'd dupe all bills.
     '_ignored_scraped_sessions': [
+        '2016 Budget Session',
         '2014 Budget Session',
         '2010 Budget Session',
         '2009 General Session',
