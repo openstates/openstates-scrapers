@@ -32,7 +32,6 @@ RUN apt-get clean \
 RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.utf-8
 
 ENV PROJECT_PATH="/srv/openstates-web/"
 RUN mkdir -p ${PROJECT_PATH}
