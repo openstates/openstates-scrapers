@@ -26,7 +26,7 @@ metadata = {
          },
         {'name': '2015-2016',
          'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015', '2016'],
+         'sessions': ['2015', '2016', '20161S'],
          }
         ],
     'session_details': {
@@ -47,6 +47,11 @@ metadata = {
                  },
         '2016': {'display_name': '2016 Regular Session',
                  '_scraped_name': '2016'
+                 },
+        '20161S': {'display_name': '2016 First Special Session',
+                 '_scraped_name': '2016',
+                 'type':'special',
+                 '_special_name': '1X'
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
