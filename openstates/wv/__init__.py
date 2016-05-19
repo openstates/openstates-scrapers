@@ -31,26 +31,32 @@ metadata = {
         ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
-                 '_scraped_name': '2011'
+                 'type': 'primary',
+                 '_scraped_name': '2011'                
                  },
         '2012': {'display_name': '2012 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2012'
                  },
         '2013': {'display_name': '2013 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2013'
                  },
         '2014': {'display_name': '2014 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2014'
                  },
         '2015': {'display_name': '2015 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2015'
                  },
         '2016': {'display_name': '2016 Regular Session',
+                 'type': 'primary',
                  '_scraped_name': '2016'
                  },
         '20161S': {'display_name': '2016 First Special Session',
-                 '_scraped_name': '2016',
                  'type':'special',
+                 '_scraped_name': '2016',
                  '_special_name': '1X'
                  },
     },
