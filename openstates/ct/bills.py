@@ -82,12 +82,11 @@ class CTBillScraper(BillScraper):
                 pass
 
     def scrape_bill_page(self, bill):
-        id_num_only = bill['bill_id']
-        for prefix in ['HB','HR','HJ','SB','SR','SJ']:
-            id_num_only = id_num_only.replace(prefix, "")
+        # Removes leading zeroes in the bill number.
+        bill_number = ''.join(re.split('0+', bill['bill_id'], 1))
         
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
-               "&bill_num=%s&which_year=%s" % (id_num_only, bill['session']))
+               "&bill_num=%s&which_year=%s" % (bill_number, bill['session']))
 
         # Connecticut's SSL is causing problems with Scrapelib, so use Requests
         page = requests.get(url, verify=False).text
@@ -311,10 +310,11 @@ class CTBillScraper(BillScraper):
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'MemberBills')]"):
-            name = link.xpath("string(../../td[2]/a/text())").strip()
+            name = link.xpath("../../td[2]/a/text()")[0].encode('utf-8').strip()
             # we encode the URL here because there are weird characters that
             # cause problems
-            self.scrape_introducer(name, link.attrib['href'].encode('utf8'))
+            url = link.attrib['href'].encode('utf-8')
+            self.scrape_introducer(name, url)
 
     def scrape_introducer(self, name, url):
         page = self.get(url).text

@@ -26,27 +26,38 @@ metadata = {
          },
         {'name': '2015-2016',
          'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015', '2016'],
+         'sessions': ['2015', '2016', '20161S'],
          }
         ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
-                 '_scraped_name': '2011'
+                 'type': 'primary',
+                 '_scraped_name': '2011'                
                  },
         '2012': {'display_name': '2012 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2012'
                  },
         '2013': {'display_name': '2013 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2013'
                  },
         '2014': {'display_name': '2014 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2014'
                  },
         '2015': {'display_name': '2015 Regular Session',
+                'type': 'primary',
                  '_scraped_name': '2015'
                  },
         '2016': {'display_name': '2016 Regular Session',
+                 'type': 'primary',
                  '_scraped_name': '2016'
+                 },
+        '20161S': {'display_name': '2016 First Special Session',
+                 'type':'special',
+                 '_scraped_name': '2016',
+                 '_special_name': '1X'
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
