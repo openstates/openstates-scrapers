@@ -149,11 +149,12 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             row['Address2'] = next((a for a in address2_fields if a is not
                 None), False)
 
-            if (a in row['Address2'] for a in ['95 University Avenue W',
-                '100 Rev. Dr. Martin Luther King']):
+            if (a in row['Address2'] for a in ['95 University Avenue W', '100 Rev. Dr. Martin Luther King']):
+                address = '{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                if 'Rm. Number' in row:
+                    address = '{0} {1}'.format(row['Rm. Number'], address)
                 leg.add_office('capitol', 'Capitol Office',
-                    address='{Room} {Address}\n{Address2}\n{City}, {State} '\
-                        '{Zipcode}'.format(Room=row['Rm. Number'], **row),
+                    address=address,
                     email=email, phone=leg.get('office_phone'))
             elif row['Address2']:
                 leg.add_office('district', 'District Office',
