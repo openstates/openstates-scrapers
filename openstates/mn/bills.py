@@ -59,7 +59,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
         ("Received from", "bill:introduced"),
     )
 
-
     def scrape(self, chamber, session):
         """
         Scrape all bills for a given chamber and a given session.
@@ -92,7 +91,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
         for b in bills:
             self.get_bill_info(chamber, session, b['bill_url'], b['version_url'])
 
-
     def get_full_bill_list(self, chamber, session):
         """
         Uses the legislator search to get a full list of bills.  Search page
@@ -116,7 +114,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
                 # bill: Range start-end (e.g. 1-10)
                 url = BILL_SEARCH_URL % (search_chamber, search_session, start,
                     start + stride, bill_type)
-
                 # Parse HTML
                 html = self.get(url).text
                 doc = lxml.html.fromstring(html)
@@ -147,7 +144,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         return bills
 
-
     def get_bill_info(self, chamber, session, bill_detail_url, version_list_url):
         """
         Extracts all the requested info for a given bill.
@@ -159,6 +155,12 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         # Get html and parse
         doc = self.lxmlize(bill_detail_url)
+
+        # Check if bill hasn't been transmitted to the other chamber yet
+        transmit_check = self.get_node(doc, '//h1[text()[contains(.,"Bills")]]/following-sibling::ul/li/text()')
+        if transmit_check is not None and 'has not been transmitted' in transmit_check.strip():
+            self.logger.debug('Bill has not been transmitted to other chamber ... skipping {0}'.format(bill_detail_url))
+            return
 
         # Get the basic parts of the bill
         bill_id = self.get_node(doc, '//h1/text()')
@@ -208,7 +210,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         self.save_bill(bill)
 
-
     def get_bill_topics(self, chamber, session):
         """
         Uses the leg search to map topics to bills.
@@ -240,7 +241,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
             for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
                 bill = self.make_bill_id(bill)
                 self._subject_mapping[bill].append(subject)
-
 
     def extract_actions(self, bill, doc, current_chamber):
         """
@@ -343,7 +343,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         return bill
 
-
     def extract_sponsors(self, bill, doc, chamber):
         """
         Extracts sponsors from bill page.
@@ -361,7 +360,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
             bill.add_sponsor('cosponsor', leg.strip(), chamber=self.other_chamber(chamber))
 
         return bill
-
 
     def extract_versions(self, bill, doc, chamber, version_list_url):
       """
@@ -383,7 +381,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
                                    on_duplicate='use_new')
 
       return bill
-
 
     # def extract_vote_from_action(self, bill, action, chamber, action_row):
     #     """
@@ -437,7 +434,6 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         return re.sub(r'(\w+?)0*(\d+)', r'\1 \2', bill)
 
-
     def chamber_from_bill(self, bill):
         """
         Given a bill id, determine chamber.
@@ -447,13 +443,11 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         return 'lower' if bill.lower().startswith('hf') else 'upper'
 
-
     def other_chamber(self, chamber):
         """
         Given a chamber, get the other.
         """
         return 'lower' if chamber == 'upper' else 'upper'
-
 
     def search_chamber(self, chamber):
         """
@@ -461,13 +455,11 @@ class MNBillScraper(BillScraper, LXMLMixin):
         """
         return { 'lower':'House', 'upper':'Senate' }[chamber]
 
-
     def search_session(self, session):
         """
         Given session ID, make into MN site friendly search.
         """
         return self.metadata['session_details'][session]['site_id']
-
 
     def is_testing(self):
         """
