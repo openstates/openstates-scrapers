@@ -29,6 +29,7 @@ _categorizer_rules = (
     Rule(r'Approved by the Governor with item veto',
          'governor:vetoed:line-item'),
     Rule('Vetoed by Governor', 'governor:vetoed'),
+    Rule('Vetoed by the Governor','governor:vetoed'),
     Rule(r'To Governor', 'governor:received'),
 
     Rule(r'amendments concurred in', 'amendment:passed'),
