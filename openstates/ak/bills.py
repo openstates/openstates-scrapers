@@ -80,7 +80,7 @@ class AKBillScraper(BillScraper):
         for abbr in bill_abbrs:
             bill_type = bill_types[abbr[1:]]
             bill_list_url = ('http://www.legis.state.ak.us/basis/range_multi'
-                             '.asp?session=%s&bill1=%s1&bill2=%s999' %
+                             '.asp?session=%s&bill1=%s1&bill2=%s9999' %
                              (session, abbr, abbr)
                             )
             doc = lxml.html.fromstring(self.get(bill_list_url).text)
@@ -207,7 +207,10 @@ class AKBillScraper(BillScraper):
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
-
+        
+        if len(doc.xpath('//pre')) < 2:
+            return
+        
         # Find all chunks of text representing voting reports.
         votes_text = doc.xpath('//pre')[1].text_content()
         votes_text = re_vote_text.split(votes_text)
