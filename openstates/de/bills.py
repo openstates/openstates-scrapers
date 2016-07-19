@@ -250,12 +250,23 @@ class DEBillScraper(BillScraper, LXMLMixin):
             except requests.exceptions.HTTPError:
                 self.logger.warning("could not access vote document")
                 continue
+
             vote_page = self.lxmlize(doc)
-            vote_info = vote_page.xpath(".//div[@id='page_content']/p")[-1]
+
+            try:
+                vote_info = vote_page.xpath('.//div[@id="page_content"]/p')[-1]
+                vote_tds = vote_page.xpath(".//table//td")
+            except IndexError:
+                vote_info = vote_page.xpath('.//form[1]')[0]
+                vote_tds = vote_page.xpath('.//table[@border="0"]//td')
+
             yes_votes = []
             no_votes = []
-            other_votes = []                        
+            other_votes = []
+
             lines = vote_info.text_content().split("\n")
+            lines = filter(None, lines)
+
             for line in lines:
                 if line.strip().startswith("Date"):
                     date_str = " ".join(line.split()[1:4])
@@ -279,8 +290,9 @@ class DEBillScraper(BillScraper, LXMLMixin):
                         no_count = int(re.findall("No: (\d+)",line)[0])
                         other_count = int(re.findall("Not Voting: (\d+)",line)[0])
                         other_count += int(re.findall("Absent: (\d+)",line)[0])
-                        vote_tds = vote_page.xpath(".//table//td")
+
                         person_seen = False
+
                         for td in vote_tds:
                             if person_seen:
                                 person_vote = td.text_content().strip()
