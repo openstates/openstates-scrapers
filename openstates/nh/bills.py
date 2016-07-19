@@ -160,6 +160,7 @@ class NHBillScraper(BillScraper):
                 sponsor = self.legislators[row['employeeNo']]
             else:
                 self.warning("Unable to match sponsor %s to EmployeeID" % row['employeeNo'])
+                continue
 
             sponsor_name = legislator_name(sponsor)
 
