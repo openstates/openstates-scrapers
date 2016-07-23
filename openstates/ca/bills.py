@@ -14,10 +14,10 @@ from billy.scrape.votes import Vote
 from .models import CABill
 from .actions import CACategorizer
 
-
 SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
                  'COAUTHOR': 'cosponsor',
                  'PRINCIPAL_COAUTHOR': 'primary'}
+
 
 def clean_title(s):
     # replace smart quote characters
@@ -38,7 +38,6 @@ def clean_title(s):
 
 # Committee codes used in action chamber text.
 committee_data_upper = [
-    #('CZ09',  'Standing Committee on Floor Analyses'),
     ('Standing Committee on Governance and Finance',
       'CS73', [u'Gov. & F.']),
 
@@ -104,13 +103,15 @@ committee_data_upper = [
 
     ('Standing Committee on Rules',
       'CS58', [u'RLS.']),
-    ]
+
+    ('Extraordinary Committee on Transportation and Infrastructure Development',
+        'CS67', [r'T. & I.D.']),
+]
 
 committee_data_lower = [
-    # LOWER
     ('Standing Committee on Rules',
       'CX20', [u'RLS.']),
-    #('assembly floor analysis', 'CZ01', []),
+
     ('Standing Committee on Revenue and Taxation',
       'CX19', [u'REV. & TAX']),
 
@@ -195,8 +196,17 @@ committee_data_lower = [
       'CX02', [u'A. & A.R.']),
 
     ('Standing Committee on Budget',
-      'CX29', [u'BUDGET.'])
-    ]
+      'CX29', [u'BUDGET.']),
+
+    ('Standing Committee on Privacy and Consumer Protection',
+        'CX32', [u'P. & C.P.']),
+
+    ('Extraordinary Committee on Finance',
+        'CX35', [u'FINANCE']),
+
+    ('Extraordinary Committee on Public Health and Developmental Services',
+        'CX30', [u'P.H. & D.S.']),
+]
 
 committee_data_both = committee_data_upper + committee_data_lower
 
@@ -226,13 +236,15 @@ def get_committee_abbr_data():
 
 
 def get_committee_name_regex():
+    # Builds a list of all committee abbreviations.
     _committee_abbrs = map(operator.itemgetter(2), committee_data_both)
     _committee_abbrs = itertools.chain.from_iterable(_committee_abbrs)
     _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
     _committee_abbrs = map(slugify, _committee_abbrs)
-    #_committee_abbrs = map(re.escape, _committee_abbrs)
+
     _committee_abbr_regex = ['%s' % '[ .,]*'.join(list(abbr)) for abbr in _committee_abbrs]
     _committee_abbr_regex = re.compile('Com\.\s+on\s+(%s)\.?' % '|'.join(_committee_abbr_regex))
+
     return _committee_abbr_regex
 
 
