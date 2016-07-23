@@ -497,14 +497,16 @@ class CABillScraper(BillScraper):
                         if not act_str.endswith('.'):
                             act_str = act_str + '.'
 
+                # Determine which chamber the action originated from.
                 changed = False
-                for string in ['upper', 'lower', 'joint']:
-                    if actor.startswith(string):
-                        actor = string
+                for committee_chamber in ['upper', 'lower', 'joint']:
+                    if actor.startswith(committee_chamber):
+                        actor = committee_chamber
                         changed = True
                         break
                 if not changed:
                     actor = 'other'
+
                 if actor != action.actor:
                     actor_info = kwargs.get('actor_info', {})
                     actor_info['details'] = action.actor
