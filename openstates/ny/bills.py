@@ -259,12 +259,12 @@ class NYBillScraper(BillScraper):
             html_version = version + ' HTML'
             html_url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn='\
                 '{}&term={}'.format(bill_id, self.term_start_year)
-            bill.add_version(html_version, html_version, mimetype='text/html')
+            bill.add_version(html_version, html_url, on_duplicate='use_new', mimetype='text/html')
 
             pdf_version = version + ' PDF'
             pdf_url = 'http://legislation.nysenate.gov/pdf/bills/{}/{}'\
                 .format(self.term_start_year, bill_id)
-            bill.add_version(pdf_version, pdf_version,
+            bill.add_version(pdf_version, pdf_url, on_duplicate='use_new', 
                 mimetype='application/pdf')
 
         # Handling of sources follows. Sources serving either chamber
