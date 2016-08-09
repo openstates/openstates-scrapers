@@ -118,8 +118,8 @@ metadata = {
         },
         '2017RS': {
             'type': 'primary',
-            'start_date': datetime.date(2017, 1, 5),
-            'end_date': datetime.date(2017, 4, 12),
+            'start_date': datetime.date(2017, 1, 3),
+            'end_date': datetime.date(2017, 3, 30),
             'prefile_start_date': datetime.date(2016, 8, 1),
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017 Regular Session',
