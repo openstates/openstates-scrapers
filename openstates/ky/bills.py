@@ -40,18 +40,14 @@ class KYBillScraper(BillScraper, LXMLMixin):
                     self._subjects[bill.replace(' ', '')].append(subject)
 
     def scrape(self, chamber, session):
-        #if _prefiles_run:
-            #return
-            
         # Bill page markup changed starting with the 2016 regular session.
         if (self.metadata['session_details'][session]['start_date'] >=
             self.metadata['session_details']['2016RS']['start_date']):
             self._is_post_2016 = True
         
-        
-        #KY does prefiles in a seperate page    
         today = datetime.date.today()
         
+        #KY does prefiles in a seperate page            
         if ('prefile_start_date' in self.metadata['session_details'][session]
         and self.metadata['session_details'][session]['start_date'] >= today
         and self.metadata['session_details'][session]['prefile_start_date'] <= today):
