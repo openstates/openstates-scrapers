@@ -41,7 +41,7 @@ metadata = {
         },
         {
             'name': '2016-2017',
-            'sessions': ['2016'],
+            'sessions': ['2016','2017'],
             'start_year': 2016,
             'end_year': 2017,
         },
@@ -119,6 +119,13 @@ metadata = {
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016 Session',
         },
+        '2017': {
+            'start_date': datetime.date(2017, 1, 11),
+            'end_date': datetime.date(2017, 2, 9),
+            'site_id': '171',
+            'display_name': '2017 Regular Session',
+            '_scraped_name': '2017 Session',
+        },        
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
