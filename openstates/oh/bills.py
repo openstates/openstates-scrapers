@@ -70,6 +70,9 @@ class OHBillScraper(BillScraper):
                             "confer_712":"other",
                             "msg_506":"amendment:failed",
                             "receive_message_100":"bill:passed",
+                            "motion_920":"other",
+                            "concur_611":"other",
+                            "confer_735":"other"
                             }
 
 
@@ -114,10 +117,15 @@ class OHBillScraper(BillScraper):
                     bill = None
                     for bill_version in bill_versions[b].values():
                         if not bill:
+                                                        
                             bill_id = bill_version["number"]
                             title = bill_version["shorttitle"] or bill_version["longtitle"]
 
                             title = title.strip()
+                            
+                            if not len(title):
+                                self.warning("Missing title for {bill_id}".format(bill_id=bill_id))
+                                next
 
                             chamber = "lower" if "h" in bill_id else "upper"
 
@@ -290,10 +298,13 @@ class OHBillScraper(BillScraper):
                             "PH": "Passed: House",
                             "":"",
                             "ICS":"",
+                            "IC":"",
                             "RCS":"",
                             "EN":"Enacted",
                             "RCH":"Re-referred",
-                            "PHC":""
+                            "RRH":"",
+                            "PHC":"",
+                            "CR":""
                             }
 
         for item in documents:
