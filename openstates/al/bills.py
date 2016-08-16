@@ -107,23 +107,12 @@ class ALBillScraper(BillScraper):
         for _retry in range(self.retry_attempts):
             html = self.get(url=url).text
 
-            #print html
-
             doc = lxml.html.fromstring(html)
 
-            bills = doc.xpath('//table[@id="ContentPlaceHolder1_gvBills"]/tr')[1:]
-            
-            resolutions = doc.xpath(
-                '//table[@id="ContentPlaceHolder1_gvResolutions"]/tr')[1:]
+            listing = doc.xpath('//table[@id="ContentPlaceHolder1_gvBills"]/tr')[1:]
 
-            print  doc.xpath(
-                    '//span[@id="ContentPlaceHolder1_lblCount"]/font/text()'
-                    )
-
-            if bills and resolutions:
-                raise AssertionError("Found multiple bill types")
-            elif bills or resolutions:
-                return bills or resolutions
+            if listing:
+                return listing
             elif doc.xpath(
                     '//span[@id="ContentPlaceHolder1_lblCount"]/font/text()'
                     ) == ["0 Instruments", ]:
@@ -136,7 +125,6 @@ class ALBillScraper(BillScraper):
                     )
                 continue
         else:
-            #print html
             raise AssertionError("Bill list not found")
 
     def _get_bill_response(self, url):
@@ -186,18 +174,21 @@ class ALBillScraper(BillScraper):
 
         self.scrape_bill_list(BILL_LIST_URL)
 
-        #self._set_session(session)
+        self._set_session(session)
 
         # Acquire and process a list of all resolutions
         RESOLUTION_TYPE_URL = (
             'http://alisondb.legislature.state.al.us/Alison/'
-            'SESSResosBySelectedStatus.aspx')
+            'SESSResosBySelectedStatus.aspx?BODYID=1755')
         RESOLUTION_LIST_URL = (
             'http://alisondb.legislature.state.al.us/Alison/'
             'SESSResosList.aspx?STATUSCODES=Had%20First%20Reading'
             '%20House%20of%20Origin&BODY=999999')
 
-        doc = lxml.html.fromstring(self.get(url=BILL_TYPE_URL).text)
+        resText = self.get(url=RESOLUTION_TYPE_URL).text
+
+        doc = lxml.html.fromstring(resText)
+        
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath(
             '//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -207,9 +198,10 @@ class ALBillScraper(BillScraper):
             '__EVENTARGUMENT': 'Select$0',
             '__VIEWSTATE': viewstate,
             '__VIEWSTATEGENERATOR': viewstategenerator,
-            'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$'
+            'ctl00$ScriptManager1': 'tctl00$UpdatePanel1|ctl00$'
                                     'MainDefaultContent$gvStatus$ctl02$ctl00'
         }
+        
         deb = self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=True)
         
         self.scrape_bill_list(RESOLUTION_LIST_URL)
@@ -259,8 +251,10 @@ class ALBillScraper(BillScraper):
                 continue
             bill_doc = lxml.html.fromstring(bill_html)
 
-            title = bill_doc.xpath(
-                '//span[@id="ContentPlaceHolder1_lblShotTitle"]//text()')[0].strip()
+            if( bill_doc.xpath(
+                '//span[@id="ContentPlaceHolder1_lblShotTitle"]') ):
+                title = bill_doc.xpath(
+                '//span[@id="ContentPlaceHolder1_lblShotTitle"]')[0].text_content().strip()
             if not title:
                 title = "[No title given by state]"
             bill['title'] = title
