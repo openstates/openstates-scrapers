@@ -13,7 +13,12 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
 
     chamber_map = {'H': 'lower', 'S': 'upper'}
     inverse_chamber_map = {v: k for k, v in chamber_map.items()}
-    party_map = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
+    party_map = {
+        'D': 'Democratic',
+        'R': 'Republican',
+        'I': 'Independent',
+        'L': 'Libertarian',
+    }
 
     def _get_photo(self, url, chamber):
         """Attempts to find a portrait in the given legislator profile."""
