@@ -27,10 +27,22 @@ metadata = dict(
             'start_year': 2011, 'end_year': 2012},
         {'name': '108', 'sessions': ['108'],
             'start_year': 2013, 'end_year': 2014},
-        {'name': '109', 'sessions': ['109'],
+        {'name': '109', 'sessions': ['109','109s1','109s2'],
             'start_year': 2015, 'end_year': 2016},
     ],
     session_details={
+        '109s2': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 9, 12),
+            'end_date': datetime.date(2016, 9, 14),
+            'display_name': '109th Second Extraordinary Session (September 2016)',
+            '_scraped_name': '2nd Extraordinary Session (September 2016)'},  
+        '109s1': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 2, 1),
+            'end_date': datetime.date(2016, 2, 29),
+            'display_name': '109th First Extraordinary Session (February 2016)',
+            '_scraped_name': '1st Extraordinary Session (February 2015)'},                                 
         '109': {
             'type': 'primary',
             'display_name': '109th Regular Session (2015-2016)',
