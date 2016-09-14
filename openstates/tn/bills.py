@@ -203,9 +203,9 @@ class TNBillScraper(BillScraper):
         
         index_list_page = lxml.html.fromstring(index_list_page)
         index_list_page.make_links_absolute(index_page)
-                
+
         for bill_listing in index_list_page.xpath(xpath):
-                        
+
             bill_listing = bill_listing.attrib['href'] 
        
             bill_list_page = self.get(bill_listing).text
