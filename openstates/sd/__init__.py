@@ -13,7 +13,7 @@ metadata = dict(
     name = 'South Dakota',
     abbreviation = 'sd',
     legislature_name = 'South Dakota State Legislature',
-    legislature_url = 'http://legis.state.sd.us/',
+    legislature_url = 'http://www.sdlegislature.gov/',
     capitol_timezone = 'America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
@@ -93,11 +93,12 @@ metadata = dict(
 
 
 def session_list():
-    html = scrapelib.Scraper().get('http://legis.sd.gov/Legislative_Session/'
-        'Menu.aspx').text
+    html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
+                                   'Legislative_Session/Menu.aspx').text
     doc = lxml.html.fromstring(html)
-    sessions = doc.xpath('//div[@id="ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
-        '/a/div/text()')
+    sessions = doc.xpath('//div[contains(@id, '
+                         '"ContentPlaceHolder1_BlueBoxLeft")]'
+                         '//ul/li/a/div/text()')
     return sessions
 
 
