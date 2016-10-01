@@ -97,8 +97,10 @@ class NMBillScraper(BillScraper):
     categorizer = Categorizer()
 
     def _init_mdb(self, session):
+        print session[2:]
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        fname = 'LegInfo{}'.format(session[2:])
+        #session slug here?
+        fname = 'LegInfo{}'.format('16 Special')
         fname_re = '(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
             '({fname}.*zip)'.format(fname=fname)
 
@@ -114,7 +116,7 @@ class NMBillScraper(BillScraper):
         remote_file = ftp_base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it
-        mdbfile = '%s.mdb' % fname
+        mdbfile = '%s.accdb' % fname
 
         # if a new mdbfile or it has changed
         if getattr(self, 'mdbfile', None) != mdbfile:
