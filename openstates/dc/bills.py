@@ -50,6 +50,7 @@ class DCBillScraper(BillScraper):
         while len(data) > 0:
 
             for bill in data:
+                
                 bill_versions = [] #sometimes they're in there more than once, so we'll keep track
 
                 bill_id = bill["Title"]
@@ -76,12 +77,18 @@ class DCBillScraper(BillScraper):
                 bill = Bill(session,"upper", bill_id, title, type=bill_type)
 
                 #sponsors and cosponsors
-                introducers = legislation_info["Introducer"]
+                try:
+                    #sometimes there are sponsors, sometimes not.
+                    introducers = legislation_info["Introducer"]
+                except KeyError:
+                    introducers = []
+                
                 try:
                     #sometimes there are cosponsors, sometimes not.
                     cosponsors = legislation_info["CoSponsor"]
                 except KeyError:
                     cosponsors = []
+                    
                 for i in introducers:
                     sponsor_name = i["Name"]
                     #they messed up Phil Mendelson's name
