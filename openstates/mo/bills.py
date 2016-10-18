@@ -54,6 +54,8 @@ class MOBillScraper(BillScraper, LXMLMixin):
             'Third Read and Passed' : 'bill:passed',
             'Signed by Governor' : 'governor:signed',
             'Approved by Governor'  : 'governor:signed',
+            'Vetoed by Governor' : 'governor:vetoed',
+            'Legislature voted to override Governor\'s veto': 'bill:veto_override:passed',
         }
         found_action = 'other'
         for flag in flags:
