@@ -31,6 +31,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
         # Identify the index page for the given session
         sessions = self.lxmlize(
                 'http://le.utah.gov/Documents/bills.htm')
+
         session_search_text = session
         if "s" not in session.lower() and "h" not in session.lower():
             session_search_text += "GS"
@@ -135,9 +136,14 @@ class UTBillScraper(BillScraper, LXMLMixin):
                     mimetype='application/pdf'
                     )
 
-        for fiscal_link in page.xpath(
-            "//input[contains(@value, 'fnotes') and not(contains(@value, ';'))]/@value"):
-            bill.add_document("Fiscal Note", fiscal_link)
+        for related in page.xpath(
+            '//b[text()="Related Documents "]/following-sibling::ul/li/a[contains(@class,"nlink")]'):
+            href = related.xpath('@href')[0]
+            if '.fn.pdf' in href:
+                bill.add_document("Fiscal Note", href, mimetype='application/pdf')
+            else:
+                text = related.xpath('text()')[0]
+                bill.add_document(text, href, mimetype='application/pdf')
 
         subjects = []
         for link in page.xpath("//a[contains(@href, 'RelatedBill')]"):
