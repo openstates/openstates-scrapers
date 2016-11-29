@@ -294,6 +294,7 @@ class NYBillScraper(BillScraper):
         for term in reversed(self.metadata['terms']):
             if session in term['sessions']:
                 self.term_start_year = term['start_year']
+                break
 
         for bill in self._generate_bills(session):
             bill_object = self._scrape_bill(session, bill)
