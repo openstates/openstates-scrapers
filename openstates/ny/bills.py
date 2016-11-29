@@ -71,7 +71,7 @@ class NYBillScraper(BillScraper):
 
         assembly_url = (
             'http://assembly.state.ny.us/leg/?default_fld=&bn={bill_id}'
-            '&Summary=Y&Actions=Y'
+            '&Summary=Y&Actions=Y&Text=Y'
             ).format(bill_id=bill_id)
 
         return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
@@ -291,12 +291,9 @@ class NYBillScraper(BillScraper):
     def scrape(self, session, chambers):
         self.api_client = OpenLegislationAPIClient(self)
 
-        term_id = term_for_session('ny', session)
-
         for term in reversed(self.metadata['terms']):
-            if term['name'] == term_id:
+            if session in term['sessions']:
                 self.term_start_year = term['start_year']
-                break
 
         for bill in self._generate_bills(session):
             bill_object = self._scrape_bill(session, bill)
