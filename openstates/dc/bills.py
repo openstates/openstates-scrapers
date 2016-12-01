@@ -77,18 +77,25 @@ class DCBillScraper(BillScraper):
                 bill = Bill(session,"upper", bill_id, title, type=bill_type)
 
                 #sponsors and cosponsors
-                try:
-                    #sometimes there are sponsors, sometimes not.
+                if "Introducer" in legislation_info:
                     introducers = legislation_info["Introducer"]
-                except KeyError:
+                    intro_date = self.date_format(legislation_info["IntroductionDate"])
+                    bill.add_action("upper",
+                                    "Introduced",
+                                    intro_date,
+                                    type="bill:introduced")
+                else:
+                    #sometimes there are introducers, sometimes not.
+                    # Set Introducers to empty array to avoid downstream breakage, but log bills without introducers
+                    self.logger.warning("No Introducer: {0} {1}: {2}".format(bill['chamber'], bill['session'], bill['bill_id']))
                     introducers = []
-                
+
                 try:
                     #sometimes there are cosponsors, sometimes not.
                     cosponsors = legislation_info["CoSponsor"]
                 except KeyError:
                     cosponsors = []
-                    
+
                 for i in introducers:
                     sponsor_name = i["Name"]
                     #they messed up Phil Mendelson's name
