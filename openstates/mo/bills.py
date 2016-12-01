@@ -275,13 +275,12 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 self._subjects[bill_id].append(subject.text)
 
     def _parse_house_actions(self, bill, url):
-        url = re.sub("BillActions", "BillActionsPrn", url)
         bill.add_source(url)
         actions_page = self.get(url).text
         actions_page = lxml.html.fromstring(actions_page)
         rows = actions_page.xpath('//table/tr')
 
-        for row in rows[1:]:
+        for row in rows:
             # new actions are represented by having dates in the first td
             # otherwise, it's a continuation of the description from the
             # previous action
@@ -337,11 +336,19 @@ class MOBillScraper(BillScraper, LXMLMixin):
         url = re.sub("billsummary", "billsummaryprn", url)
         url = '%s/%s' % (self._senate_base_url,url)
 
+        #the URL is an iframed version now, so swap in for the actual bill page
+
+        url = url.replace('Bill.aspx','BillContent.aspx')
+        url = url.replace('&code=R','&code=R&style=new')
+
+        # http://www.house.mo.gov/Bill.aspx?bill=HB26&year=2017&code=R
+        # http://www.house.mo.gov/BillContent.aspx?bill=HB26&year=2017&code=R&style=new
+
         bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
         bill_page.make_links_absolute(url)
 
-        bill_id = bill_page.xpath('//*[@class="entry-title"]')
+        bill_id = bill_page.xpath('//*[@class="entry-title"]/div')
         if len(bill_id) == 0:
             self.log("WARNING: bill summary page is blank! (%s)" % url)
             self._bad_urls.append(url)
@@ -440,7 +447,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
         # actions_link = re.sub("content", "print", actions_link)
 
         actions_link, = bill_page.xpath(
-            "//a[contains(@href, 'BillActions.aspx')]/@href")
+            "//a[contains(@href, 'BillActionsPrn.aspx')]/@href")
         self._parse_house_actions(bill, actions_link)
 
         # get bill versions
@@ -512,6 +519,6 @@ class MOBillScraper(BillScraper, LXMLMixin):
         getattr(self, '_scrape_' + chamber + '_chamber')(year)
 
         if len(self._bad_urls) > 0:
-            self.warn('WARNINGS:')
+            self.warning('WARNINGS:')
             for url in self._bad_urls:
-                self.warn('{}'.format(url))
+                self.warning('{}'.format(url))
