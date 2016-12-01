@@ -38,7 +38,44 @@ class DCBillScraper(BillScraper):
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
-        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","CommitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        params = {
+            "request": {
+                "sEcho":2,
+                "iColumns":4,
+                "sColumns":"",
+                "iDisplayStart":0,
+                "iDisplayLength":per_page,
+                "mDataProp_0":"ShortTitle",
+                "mDataProp_1":"Title",
+                "mDataProp_2":"LegislationCategories",
+                "mDataProp_3":"Modified",
+                "iSortCol_0":0,
+                "sSortDir_0":"asc",
+                "iSortingCols":0,
+                "bSortable_0":"true",
+                "bSortable_1":"true",
+                "bSortable_2":"true",
+                "bSortable_3":"true"
+            },
+            "criteria":{
+                "Keyword":"",
+                "Category":"",
+                "SubCategoryId":"",
+                "RequestOf":"",
+                "CouncilPeriod":str(session),
+                "Introducer":"",
+                "CoSponsor":"",
+                "CommitteeReferral":"",
+                "CommitteeReferralComments":"",
+                "StartDate":"",
+                "EndDate":"",
+                "QueryLimit":100,
+                "FilterType":"",
+                "Phases":"",
+                "LegislationStatus":"0",
+                "IncludeDocumentSearch":"false"
+            }
+        }
         param_json = json.dumps(params)
         response = self.post(url,headers=headers,data=param_json)
         #the response is a terrible string-of-nested-json-strings. Yuck.
