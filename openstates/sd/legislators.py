@@ -45,7 +45,15 @@ class SDLegislatorScraper(LegislatorScraper):
             "string(//span[contains(@id, 'Occupation')])")
         occupation = occupation.strip()
 
-        (photo_url, ) = page.xpath('//img[@id="ContentPlaceHolder1_imgMember"]/@src')
+        # When legislator photos haven't yet been uploaded for a session,
+        # `img` will exist, but will be empty (ie, no `@src`)
+        (photo_element, ) = page.xpath('//img[@id="ctl00_ContentPlaceHolder1_imgMember"]')
+        try:
+            (photo_url, ) = photo_element.xpath('@src')
+            if photo_url.endswith('LegPlaceholder.png'):
+                photo_url = ''
+        except ValueError:
+            photo_url = ''
 
         office_phone = page.xpath(
             "string(//span[contains(@id, 'CapitolPhone')])").strip()
