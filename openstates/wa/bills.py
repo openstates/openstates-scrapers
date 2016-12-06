@@ -15,6 +15,8 @@ import feedparser
 
 
 class WABillScraper(BillScraper, LXMLMixin):
+    # API Docs: http://wslwebservices.leg.wa.gov/legislationservice.asmx
+
     jurisdiction = 'wa'
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
     categorizer = Categorizer()
@@ -159,6 +161,20 @@ class WABillScraper(BillScraper, LXMLMixin):
                     'mimetype': 'text/html'
                 })
 
+    def get_prefiles(self, chamber, session, year):
+        bill_id_list = []
+        url = "http://apps.leg.wa.gov/billinfo/prefiled.aspx?year={}".format(year)
+        page = self.lxmlize(url)
+
+        bill_rows = page.xpath('//table[@id="ctl00_ContentPlaceHolder1_gvPrefiled"]/tr')
+        for row in bill_rows[1:]:
+            if row.xpath('td[1]/a'):
+                bill_id = row.xpath('td[1]/a/text()')[0]
+                bill_id_list.append(bill_id)
+        
+        return bill_id_list
+
+
     def scrape(self, chamber, session):
         self.biennium = "%s-%s" % (session[0:4], session[7:9])
 
@@ -168,17 +184,20 @@ class WABillScraper(BillScraper, LXMLMixin):
         bill_id_list = []
         year = int(session[0:4])
 
+        bill_id_list = self.get_prefiles(chamber, session, year)
+
         # first go through API response and get bill list
-        for y in (year, year + 1):
+        max_year = year if int(datetime.date.today().year) < year + 1 else year + 1
+        for y in (year, max_year):
             self.build_subject_mapping(y)
             url = "%s/GetLegislationByYear?year=%s" % (self._base_url, y)
 
             try:
                 page = self.get(url)
-                page = lxml.etree.fromstring(page.content)
             except scrapelib.HTTPError:
                 continue  # future years.
 
+            page = lxml.etree.fromstring(page.content)
             for leg_info in xpath(page, "//wa:LegislationInfo"):
                 bill_id = xpath(leg_info, "string(wa:BillId)")
                 bill_num = int(bill_id.split()[1])
@@ -210,7 +229,6 @@ class WABillScraper(BillScraper, LXMLMixin):
         for bill_id in list(set(bill_id_list)):
             bill = self.scrape_bill(chamber, session, bill_id)
             bill['subjects'] = self._subjects[bill_id]
-            self.fix_prefiled_action_dates(bill)
             self.save_bill(bill)
 
     def scrape_bill(self, chamber, session, bill_id):
@@ -255,7 +273,6 @@ class WABillScraper(BillScraper, LXMLMixin):
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
         self.scrape_votes(bill)
-        self.fix_prefiled_action_dates(bill)
 
         return bill
 
@@ -278,103 +295,42 @@ class WABillScraper(BillScraper, LXMLMixin):
         session = bill['session']
         chamber = bill['chamber']
 
-        url = ("http://apps.leg.wa.gov/billinfo/summary.aspx?bill={}&year={}".
-               format(bill_num, self.biennium))
+        # GetLegislativeStatusChangesByBillNumber gives full results, unlike GetLegislativeStatusChangesByBillId
+        # http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber?biennium=2015-16&billNumber=1002&beginDate=2014-01-01&endDate=2018-12-31&chamber=senate
 
+        #Set the start date back a year to catch prefile / intro actions
+        start_date = datetime.date(int(session[0:4])-1,1,1)      
+        end_date = datetime.date(int(session[0:4]) + 1 ,12,31)
+
+        url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber?biennium={}&billNumber={}&beginDate={}&endDate={}".
+               format(self.biennium, bill_num, start_date, end_date))
         try:
-            page = self.get(url).text
+            page = self.get(url)
         except scrapelib.HTTPError, e:
             self.warning(e)
             return
 
-        if "Bill Not Found" in page:
-            return
+        page = lxml.etree.fromstring(page.content)
 
-        page = lxml.html.fromstring(page)
-        actions = page.xpath("//table")[6]
-        found_heading = False
-        out = False
-        curchamber = bill['chamber']
-        curday = None
-        curyear = None
+        for action in xpath(page, "//wa:LegislativeStatus"):
+            action_name = xpath(action, 'string(wa:HistoryLine)')
 
-        for action in actions.xpath(".//tr"):
-            if out:
-                continue
+            action_date = xpath(action, 'string(wa:ActionDate)')
+            action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S")
 
-            if not found_heading:
-                if action.xpath(".//td[@colspan='3']//b") != []:
-                    found_heading = True
+            bill_id = xpath(action, 'string(wa:BillId)')
+
+            if 'S' in bill_id:
+                if 'Governor' in bill_id or 'Laws' in bill_id or 'Effective date' in bill_id:
+                    actor = 'executive'
                 else:
-                    continue
+                    actor = 'upper'
+            elif 'H' in bill_id:
+                actor = 'lower'
 
-            if action.xpath(".//a[@href='#history']"):
-                out = True
-                continue
-
-            rows = action.xpath(".//td")
-            rows = rows[1:]
-            if len(rows) == 1:
-                txt = rows[0].text_content().strip()
-
-                session = re.findall(r"(\d{4}) (.*) SESSION", txt)
-                chamber = re.findall(r"IN THE (HOUSE|SENATE)", txt)
-
-                if session != []:
-                    session = session[0]
-                    year, session_type = session
-                    curyear = year
-
-                if chamber != []:
-                    curchamber = {
-                        "SENATE": 'upper',
-                        "HOUSE": 'lower'
-                    }[chamber[0]]
-            else:
-                _, day, action = [x.text_content().strip() for x in rows]
-
-                junk = ['(View Original Bill)',
-                        '(Committee Materials)']
-
-                for string in junk:
-                    action = action.replace(string, '').strip()
-
-                if day != "":
-                    curday = day
-                if curday is None or curyear is None:
-                    continue
-
-                for abbr in re.findall(r'([A-Z]{3,})', action):
-                    if abbr in committees_abbrs:
-                        action = action.replace(
-                            abbr, committees_abbrs[abbr], 1)
-
-                date = "%s %s" % (curyear, curday)
-                date = datetime.datetime.strptime(date, "%Y %b %d")
-                attrs = dict(actor=curchamber, date=date, action=action)
-                attrs.update(self.categorizer.categorize(action))
-                bill.add_action(**attrs)
-
-    def fix_prefiled_action_dates(self, bill):
-        '''Fix date of 'prefiled' actions.
-        '''
-        now = datetime.datetime.now()
-        for action in bill['actions']:
-            date = action['date']
-            if now < date:
-                if 'prefiled' in action['action'].lower():
-                    # Reduce the date by one year for prefiled dated in the
-                    # future.
-                    action['date'] = datetime.datetime(
-                        year=date.year - 1, month=date.month, day=date.day)
-                else:
-                    # Sometimes an action just refers to meeting that's a
-                    # week in the future.`
-                    if 'scheduled for' in action['action'].lower():
-                        continue
-
-                    msg = 'Found an action date that was in the future.'
-                    raise Exception(msg)
+            attrs = dict(actor=actor, date=action_date, action=action_name)
+            attrs.update(self.categorizer.categorize(action_name))
+            bill.add_action(**attrs)
 
     def scrape_votes(self, bill):
         bill_num = bill['bill_id'].split()[1]
