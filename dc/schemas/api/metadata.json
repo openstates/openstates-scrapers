@@ -1,0 +1,28 @@
+{"description": "API metadata response",
+ "type": "object",
+ "properties": {
+   "level": {"type": "string", "enum":["country", "state"]},
+   "name": {"type": "string"},
+   "abbreviation": {"type": "string", "pattern": "^[a-z]{2}$"},
+   "legislature_name": {"type": "string"},
+   "upper_chamber_name": {"type": "string"},
+   "upper_chamber_title": {"type": "string"},
+   "upper_chamber_term": {"type": ["integer", "string"]},
+   "terms": { "type": "array", "minItems": 1, "items":
+     {"type":"object", "properties": {
+       "name": {"type": "string"},
+       "start_year": {"type": "integer", "minimum": 1900, "maximum": 2012},
+       "end_year": {"type": "integer", "minimum": 1900, "maximum": 2020},
+       "sessions": {"type": "array", "minItems": 1,
+         "items": {"type": "string"}}
+     }}},
+   "session_details": { "type": "object", "required": false,
+     "additionalProperties": { "type": "object",
+       "properties": {
+         "type": {"type": "string", "required": false},
+         "start_date": {"type": "datetime", "required": false},
+         "end_date": {"type": "datetime", "required": false}
+       }
+     }
+   }
+}}

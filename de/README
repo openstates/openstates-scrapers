@@ -1,0 +1,55 @@
+Deleware Progress
+=====================
+
+Sources:
+http://legis.delaware.gov/
+http://legis.delaware.gov/legislature.nsf/sen?openview&nav=senate
+http://legis.delaware.gov/legislature.nsf/Reps?openview&nav=house
+http://legis.delaware.gov/LIS/LIS146.nsf/SCommittees
+http://legis.delaware.gov/LIS/LIS146.nsf/HCommittees
+
+
+
+legislators.py
+--------------
+Progress: finished
+Data scraped:
+  * term
+  * chamber
+  * district_name
+  * full_name
+
+Note: Legislator party affiliation could be obtained by scraping the linked legislator bio pages.
+
+
+committees.py
+-------------
+Progress: finished
+Data scraped:
+  * chamber
+  * membernames
+  * roles
+
+
+bills.py
+--------
+Progress: some
+
+Data scraped:
+  * chamber
+  * session
+  * bill_id
+  * title
+  * primary sponsor
+  * actions
+  * co-sponsors*
+  * additional sponsors*
+  * votes*
+
+Implementation plan: Have to scrape multiple bill lists to get URLs for actual bills, then 
+crawl those URLs to scrape bill details. Co-sponsors and additional sponsors do not appear to be 
+formatted consistently, so not including them with bill until a solid scraping strategy can be 
+determined.
+
+Vote data for each bill is being partially scraped. Action type, vote type and motion are not currently 
+being determined. The bill's name is being used in place of the motion name.

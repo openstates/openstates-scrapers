@@ -1,0 +1,192 @@
+# taken from kliss_restian_interface_guide_v5.odt
+# action codes mentioned in 10.1
+# action_codes_scrape.py opens this file
+ccac_om_370: Motion to accede adopted; appointed 
+efa_fabc_343: Emergency Final Action - Passed as amended; $vote_tally$ 
+efa_fabc_342: Emergency Final Action - Passed;  $vote_tally$ 
+cref_cref_500: Withdrawn from $committee$; Rereferred to $committee$ 
+gov_avm_336: Motion to override veto prevailed; $vote_tally$ 
+mot_cgo_200: Motion to change sequence on General Orders pending 
+mot_cgo_201: Motion to change sequence on General Orders adopted; $vote_tally$ 
+mot_cgo_202: Motion to change sequence on General Orders not adopted; $vote_tally$ 
+gov_mg_378: Aproved by Governor except line item veto of $id_line_items$ 
+fa_fabc_115: Final Action - Not adopted; $vote_tally$ 
+cr_rsc_292: Committee Report recommending substitute bill be passed by $committee$ 
+cr_rsc_276: Committee Report, be amended without recommendation by $committee$ 
+cr_rsc_274: Committee Report recommending the resolution be not adopted by $committee$ 
+cr_rsc_275: Committee Report recommending the bill be amended and be not passed by $committee$ 
+cr_rsc_273: Committee Report recommending the bill be not passed by $committee$ 
+cr_rsc_270: Substitute introduced and placed on General Orders 
+mot_tab_402: Motion to take from the table adopted; $vote_tally$ 
+mot_tab_403: Motion to take from the table not adopted; $vote_tally$ 
+mot_tab_401: Motion to lay on table adopted; $vote_tally$ 
+mot_tab_404: Motion to lay on table not adopted; $vote_tally$ 
+mot_rcon_303: Motion to Reconsider Failed $vote_tally$ 
+mot_rcon_302: Motion to Reconsider Adopted $vote_tally$ 
+ee_enrb_149: Enrolled and presented to Governor 
+cow_jcow_197: Committee of the Whole - Substitute bill be passed as amended 
+mot_pspn_405: Motion to postpone consideration to $month$ $day$ not adopted; $vote_tally$ 
+cow_jcow_211: Committee of the Whole - Enacting clause be stricken 
+cow_jcow_210: Committee of the Whole - Resolving clause be stricken 
+cow_jcow_214: Committee of the Whole - Stricken from the calendar 
+cow_jcow_695: Committee of the Whole - Now working on 
+cow_jcow_694: Committee of the Whole - Committee Report be rejected 
+cow_jcow_693: Committee of the Whole - Committee Report be rejected 
+cow_jcow_692: Committee of the Whole - Committee Report be rejected 
+cow_jcow_690: Committee of the Whole - Germaneness of the amendment was challenged 
+ccal_rcc_233: Withdrawn from Consent Calendar and placed on General Orders 
+efa_fabc_933: Emergency Final Action - Adopted by required 2/3 majority;  $vote_tally$ 
+efa_fabc_936: Emergency Final Action - Not adopted by required 2/3 majority;  $vote_tally$ 
+efa_fabc_934: Emergency Final Action - Adopted as amended by Required 2/3 Majority;  $vote_tally$ 
+cref_cref_316: Withdrawn from Calendar, Rereferred to $committee$ 
+cref_cref_315: Withdrawn from Calendar; Referred to $committee$ 
+cur_con_374: Nonconcurred with amendments; Conference Committee requested; appointed $conferee1$, $conferee2$ and $conferee3$ 
+cr_rsc_801: Committee Report recommending the appointment be not confirmed by $committee$ 
+cr_rsc_800: Committee Report recommending the appointment be confirmed by $committee$ 
+cr_rsc_802: Committee Report reporting appointment without recommendation by $committee$ 
+gov_mg_150: Approved by Governor on $date$ 
+gov_mg_151: Will become law without Governor's signature 
+gov_mg_154: Vetoed by Governor; Returned to $originating_chamber$ 
+cow_jcow_180: Committee of the Whole - Be passed 
+ar_adj_605: Motion by $motioner$ to adjourn the $chamber$ proforma until $date$ at $time$ 
+ee_enrb_888: Enrolled and presented to Secretary of State 
+cow_jcow_239: Committee of the Whole - Be adopted 
+cur_con_875: Motion to noncur with amendments and not appoint conferees adopted; $vote_tally$ (Bill is killed) 
+cur_con_876: Motion to noncurred with amendments and not appoint failed; $vote_tally$ (Remains on Calendar) 
+cur_con_873: Motion to nonconcur with amendments and appoint conferees failed; $vote_tally$ 
+fa_fabc_341: Final Action - Passed as amended; $vote_tally$ 
+fa_fabc_340: Final Action - Passed;  $vote_tally$ 
+ccac_ccr_860: Conference Committee Report not adopted $conferee1$, $conferee2$ and $conferee3$ appointed as conferees; $vote_tally$ 
+efa_fabc_115: Emergency Final Action - Not adopted;  $vote_tally$ 
+intro_iopbc_158: Received and Introduced 
+cr_rsc_291: Committee Report recommending substitute resolution be adopted by $committee$ 
+fa_fabc_116: Final Action - Substitute not adopted; $vote_tally$ 
+cow_jcow_728: Committee of the Whole - Amendment by $motioner$ was withdrawn 
+cow_jcow_727: Committee of the Whole - Amendment by $motioner$ was rejected 
+cow_jcow_726: Committee of the Whole - Amendment by $motioner$ was adopted 
+cow_jcow_725: Committee of the Whole - Substitute concurrent resolution be adopted as amended 
+mot_pspn_404: Motion to postpone indefinitely failed; $vote_tally$ 
+mot_pspn_403: Motion to postpone indefinitely adopted; $vote_tally$ 
+mot_pspn_402: Motion to postpone consideration to $month$ $day$ adopted; $vote_tally$ 
+fa_fabc_910: FA, Appointment not confirmed 
+mot_susp_216: Motion to suspend rule $rule_number$ not adopted; $vote_tally$ 
+mot_susp_214: Motion to suspend Joint Rule 4 (k) to allow consideration not adopted; $vote_tally$ 
+mot_susp_215: Motion to suspend rule 1502 not adopted; $vote_tally$ 
+cr_rsc_289: Committee Report without recommendation by $committee$ 
+ccac_ccr_375: Conference Committee Report agree to disagree adopted $conferee1$, $conferee2$ and $conferee3$ appointed as $conference_number$ conferees 
+cur_con_337: Motion to concur with amdndments in conference failed; $vote_tally$ (Remains in Conference) 
+cur_con_336: Concurred with amendments; $vote_tally$ 
+cur_con_335: Concurred with amendments in conference; $vote_tally$ 
+ref_rbc_308: Referred jointly to $committee_list$ 
+ref_rbc_307: Referred separately to $committee_list$ 
+efa_fabc_352: Emergency Final Action - Adopted as amended; $vote_tally$ 
+efa_fabc_351: Emergency Final Action - Adopted;  $vote_tally$ 
+intro_ibc_251: Adopted without roll call 
+cow_jcow_705: Committee of the Whole - Committee Report be adopted recommending substitute resolution be adopted 
+cow_jcow_704: Committee of the Whole - Committee Report be adopted recommending substitute bill be passed 
+cow_jcow_707: Committee of the Whole - Motion to Amend - Offered 
+cow_jcow_709: Committee of the Whole - Be adopted as further amended 
+cow_jcow_708: Committee of the Whole - Be passed as further amended 
+ar_adj_625: Motion by $motioner$ to adjourn the $chamber$ until $date$ 
+ar_adj_626: The $chamber$ has recessed until $time$ 
+intro_ires_251: Adopted without roll call 
+ee_eng_225: Engrossed 
+ee_eng_227: Reengrossed 
+ref_rbc_235: Referred to Committee of the Whole 
+cur_iopbc_141: Ruled materially changed and referred to $committee$ 
+mot_wd_126: Motion to withdraw from $committee$ adopted; $vote_tally$ 
+mot_wd_127: Motion to withdraw from $committee$ not adopted; $vote_tally$ 
+mot_wd_125: Motion to withdraw from $committee$ pending 
+mot_strk_505: Striken from Calendar by Rule 1507 
+mot_strk_504: Motion to strike from Calendar not adopted; $vote_tally$ 
+mot_strk_501: Motion to strike from Calendar adopted; $vote_tally$ 
+ccac_om_832: Conference Committee Report was adopted; $vote_tally$ 
+ccac_ccr_862: Motion to not adopt Conference Committee Report failed; $vote_tally$ (Remains in Conference) 
+ccac_ccr_863: Motion to not adopt Conference Committee Report passed; $vote_tally$ (Bill is killed) 
+ccac_ccr_865: Motion to not adopt Conference Committee Report failed; $vote_tally$ (Remains in Conference) 
+ccac_ccr_867: Conference Committee Report agree to disagree, not adopted 
+cow_jcow_201: Committee of the Whole - Passed over and retain a place on the calendar 
+cow_jcow_202: Committee of the Whole - Passed over and retain its place on the calendar 
+cow_jcow_203: Committee of the Whole - Committee Report be rejected 
+ccac_cc_377: Change in Conference Committee; $confereeN$ to replace $confereeN$ 
+ee_enrb_226: Enrolled 
+cow_jcow_681: Committee of the Whole - Motion to strike the resolving clause failed 
+cow_jcow_682: Committee of the Whole - Motion to strike the enacting clause failed 
+cow_jcow_683: Committee of the Whole - Motion to strike from the calendar failed 
+cow_jcow_688: Committee of the Whole - Amendment was ruled not divisible 
+cow_jcow_689: Committee of the Whole - The ruling of the chair was challenged 
+gov_avm_885: Motion to override veto failed; Veto sustained; $vote_tally$ 
+gov_avm_887: Motion to override line item veto prevailed; Line item veto $id_line_item$ overridden; $vote_tally$ 
+ref_rsc_312: Now in 
+cow_jcow_903: Committee of the Whole - $sponsor$ part $amendment_part$ $result$ 
+cow_jcow_902: Committee of the Whole - Ruling of the chair was $result$ (sustained or overruled) 
+cow_jcow_901: Committee of the Whole - Amendment by $sponsor$ ruled $result$ (germane or not germane) 
+cow_jcow_905: Committee of the Whole - Motion to recommend favorably for passage failed 
+gov_avm_128: No motion to reconsider line item veto; Veto sustained on $id_line_item$ 
+gov_avm_129: No motion to reconsider vetoed bill; Veto sustained 
+cow_jcow_191: Committee of the Whole - Be passed as amended 
+cow_jcow_192: Committee of the Whole - Be adopted as amended 
+cow_jcow_195: Committee of the Whole - Committee Report be adopted 
+cow_jcow_196: Committee of the Whole - Substitute bill be passed 
+gov_avm_125: No motion to reconsider line item vetoes; Vetoes sustained 
+mot_ref_102: Motion to refer bill to $committee$ adopted; $vote_tally$ 
+mot_ref_105: Motion to refer bill to $committee$ not adopted; $vote_tally$ 
+cref_cref_551: Withdrawn from $committee$; Referred Separately to $committee_list$ 
+cref_cref_552: Withdrawn from $committee$; Referred Jointly to $committee_list$ 
+mot_apt_301: Returned to Senate for consideration after 20 days in Committee 
+ccac_om_878: Motion to accede failed 
+efa_fabc_925: Emergency Final Action - Substitute passed;  $vote_tally$ 
+efa_fabc_926: Emergency Final Action - Substitute passed as amended;  $vote_tally$ 
+efa_fabc_923: Emergency Final Action - Substitute adopted as amended; $vote_tally$ 
+efa_fabc_922: Emergency Final Action - Substitute adopted; $vote_tally$ 
+fa_fabc_105: Final Action - Substitute not passed; $vote_tally$ 
+fa_fabc_104: Final Action - Not  passed;  $vote_tally$ 
+intro_ibc_157: Introduced 
+intro_ibc_156: Prefiled for Introduction 
+fa_fabc_905: FA, Appointment confirmed 
+intro_ires_681: Introduced 
+cref_cref_290: Withdrawn from $committee$; Referred to $committee_list$ 
+fa_fabc_352: Final Action - Adopted as amended; $vote_tally$ 
+ccac_ccr_145: Conference Committee Report agree to disagree adopted, no conferees appointed; $vote_tally$ (Bill is killed) 
+fa_fabc_351: Final Action - Adopted;  $vote_tally$ 
+mot_adv_303: Motion to move to General Orders failed; $vote_tally$ 
+mot_adv_302: Motion to move to General Orders adopted; $vote_tally$ 
+mot_adv_301: Motion to move to General Orders pending 
+efa_fabc_106: Emergency Final Action - Substitute not adopted; $vote_tally$ 
+efa_fabc_105: Emergency Final Action - Substitute not passed; $vote_tally$ 
+efa_fabc_104: Emergency Final Action - Not passed;  $vote_tally$ 
+ccac_ccr_833: Conference Committee Report not adopted; $vote_tally$ 
+ref_rbc_310: Referred to $committee$ 
+cr_rsc_283: Committee Report recommending bill be passed and placed on Consent Calendar by $committee$ 
+cr_rsc_282: Committee Report recommending bill be passed as amended by $committee$ 
+cr_rsc_281: Committee Report recommending bill be passed by $committee$ 
+cr_rsc_287: Committee Report recommending resolution be adopted and placed on Consent Calendar by $committee$ 
+cr_rsc_286: Committee Report recommending resolution be adopted as amended by $committee$ 
+cr_rsc_285: Committee Report recommending resolution be adopted by $committee$ 
+ref_rbc_500: Appointment referred to $committee$ 
+cr_rsc_288: Committee Report recommending bill be further amended and be passed as amended by $committee$ 
+ccac_ccr_883: Motion to not adopt Conference Committee Report to agree to disagree failed $vote_tally$ (Remains in Conference) 
+ccac_ccr_880: Motion to adopt Conference Committee Report to agree to disagree failed $vote_tally$ (Remains in Conference) 
+ccac_ccr_881: Motion to not adopt Conference Committee Report to agree to disagree passed $vote_tally$ (Remains in Conference) 
+cow_jcow_712: Committee of the Whole - Substitute resolution be adopted as amended 
+cow_jcow_710: Committee of the Whole - Substitute concurrent resolution be adopted 
+cow_jcow_711: Committee of the Whole - Substitute resolution be adopted 
+cow_jcow_716: Committee of the Whole - Motion to postpone consideration indefinitely $result$ (adopted or not adopted) 
+fa_fabc_925: Final Action - Adopted as amended by required 2/3 Majority;  $vote_tally$ 
+fa_fabc_924: Final Action - Adopted by required 2/3 majority;  $vote_tally$ 
+fa_fabc_926: Final Action - Not adopted by required 2/3 majority;  $vote_tally$ 
+fa_fabc_921: Final Action - Substitute passed as amended;  $vote_tally$ 
+fa_fabc_920: Final Action - Substitute passed;  $vote_tally$ 
+fa_fabc_923: Final Action - Substitute adopted as amended; $vote_tally$ 
+fa_fabc_922: Final Action - Substitute adopted;  $vote_tally$ 
+cr_rsc_821: Committee Report recommending the resolution be amended and be not adopted by $committee$ 
+cow_jcow_305: Committee of the Whole - Rereferred to $committee$ 
+cow_jcow_304: Committee of the Whole - Referred to $committee$ 
+gov_avm_349: Motion to override line item veto failed; Line item veto $id_line_item$ sustained; $vote_tally$ 
+intro_ibc_681: Introduced 
+dss_627: Now in Session 
+mot_susp_203: Motion to suspend rule 1502 adopted; $vote_tally$ 
+mot_susp_202: Motion to suspend Joint Rule 4 (k) to allow consideration adopted; $vote_tally$ 
+mot_susp_206: Motion to suspend rule $rule_number$ adopted; $vote_tally$ 
+cur_con_101: Motion to concur with amendments failed; $vote_tally$ 
+cur_om_141: Ruled materially changed and referred to $committee$
