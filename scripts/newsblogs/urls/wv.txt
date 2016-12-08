@@ -1,8 +1,0 @@
-http://www.pewstates.org/projects/stateline/headlines.rss?states=328054
-http://blogs.wvgazette.com/squawkbox/feed/
-http://dailymail.com/feeds/Statehouse%20News.xml
-http://www.wv.gov/_layouts/feed.aspx?xsl=1&web=/news&page=fa057236-2db7-4147-b6d0-d95f3025f5a2&wp=38869cd8-fc30-4334-b410-c84c890ab9a5
-http://www.legis.state.wv.us/RSS/lric_rss.cfm
-
-http://www.therepublic.com/feed/cat/2680
-http://www.legis.state.wv.us/daily_sum/today.cfm

@@ -1,6 +1,0 @@
-http://www.vtdigger.org/feed/
-http://www.politico.com/rss/2012-election.xml
-http://syndication.boston.com/news/local/vermont?mode=rss_10
-
-http://www.therepublic.com/feed/cat/2640
-http://www.pewstates.org/feeds/all.rss?states=328051

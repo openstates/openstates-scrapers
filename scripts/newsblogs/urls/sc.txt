@@ -1,8 +1,0 @@
-http://www.pewstates.org/projects/stateline/headlines.rss?states=328046
-http://www.thestate.com/politicstoday/index.rss
-http://www.thestate.com/politics/index.rss
-http://www.midlandsconnect.com/rss.aspx?stories=195157&path=news
-http://palmettopublicrecord.org/feed/
-http://www.rob-servations.com/1/feed
-
-http://www.therepublic.com/feed/cat/2590

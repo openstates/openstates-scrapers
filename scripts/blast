@@ -1,1 +1,0 @@
-python -c "from billy.core import db;db.$1.remove({'state': '$2'})"
