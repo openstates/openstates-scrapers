@@ -29,6 +29,10 @@ metadata = dict(
           'start_year': 2015,
           'end_year': 2016,
           'sessions': ['2015-2016']},
+         {'name': '2017-2018',
+          'start_year': 2017,
+          'end_year': 2018,
+          'sessions': ['2017-2018']},          
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -60,6 +64,11 @@ metadata = dict(
              'session_id': '1600',
              '_scraped_name': '2016 Regular Session',
             },
+         '2017-2018':
+            {'display_name': '2017-2018 Regular Session',
+             'session_id': '1700',
+             '_scraped_name': '2017 Regular Session',
+            },            
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[

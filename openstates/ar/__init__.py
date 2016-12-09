@@ -35,6 +35,12 @@ metadata = {
             'end_year': 2016,
             'sessions': ['2015','2015S1', '2016S2', '2016F', '2016S3'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
+        },        
     ],
     'session_details': {
         '2011': {
@@ -131,6 +137,14 @@ metadata = {
             'display_name': '2016 Third Extraordinary Session',
             '_scraped_name': 'Third Extraordinary Session, 2016',
             'slug': '2016S3',
+        },
+        '2017': {
+            'type': 'primary',
+            'start_date': datetime.date(2017, 1, 12),
+            'end_date': datetime.date(2017, 4, 22),
+            'display_name': '2017 Regular Session',
+            '_scraped_name': 'Regular Session, 2017',
+            'slug': '2017R',
         },
     },
     'feature_flags': ['influenceexplorer', 'events'],
