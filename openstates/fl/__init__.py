@@ -34,7 +34,7 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015', '2015A', '2015B', '2015C', '2016'],
+            'sessions': ['2015', '2015A', '2015B', '2015C', '2016','2017'],
         },
     ],
     'session_details': {
@@ -128,6 +128,13 @@ metadata = {
             'end_date': datetime.date(2016, 3, 11),
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016',
+        },
+        '2017': {
+            'type': 'primary',
+            'start_date': datetime.date(2017, 3, 7),
+            'end_date': datetime.date(2017, 5, 5),
+            'display_name': '2017 Regular Session',
+            '_scraped_name': '2017',
         },
     },
     'feature_flags': ['events', 'influenceexplorer'],
