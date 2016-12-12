@@ -76,7 +76,7 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             member_page = lxml.html.fromstring(member_page)
             try:
-                name = member_page.xpath('//h1/text()')[0]
+                name = member_page.xpath('//div/div/h1/text()')[0]
             except IndexError:
                 name = member_page.xpath('//div[@id="membertitle"]/h2/text()')[0]
             
