@@ -232,9 +232,11 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
             # they give us a link to the congressperson, so we might
             # as well keep it.
-            cosponsor_url = cosponsor_row.attrib['href']
-
-            bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
+            if cosponsor_row.attrib.has_key('href'):
+                cosponsor_url = cosponsor_row.attrib['href']
+                bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
+            else:
+                bill.add_sponsor('cosponsor', cosponsor)
 
     def _scrape_house_subjects(self, session):
         self.info('Collecting subject tags from lower house.')
