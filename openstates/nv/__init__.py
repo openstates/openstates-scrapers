@@ -50,8 +50,14 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['78', '2015Special29'],
+            'sessions': ['78', '2015Special29','2016Special30'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['79'],
+        },        
     ],
     'session_details': {
         '2010Special26': {
@@ -92,7 +98,7 @@ metadata = {
             '_committee_session': '28th2014Special',
             'slug': '28th2014Special',
         },
-	'78': {
+	    '78': {
             'type': 'primary',
             'start_date': datetime.date(2015, 2, 15),
             'end_date': datetime.date(2015, 6, 1),
@@ -108,6 +114,23 @@ metadata = {
             '_scraped_name': u'29th (2015) Special Session\xa0\xa0(click to close)',
             '_committee_session': '29th2015Special',
             'slug': '29th2015Special',
+        },
+        '2016Special30': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 10, 10),
+            'end_date': datetime.date(2016, 10, 14),
+            'display_name': '30th Special Session (2016)',
+            '_scraped_name': u'30th (2016) Special Session\xa0\xa0(click to close)',
+            '_committee_session': '30th2016Special',
+            'slug': '30th2016Special',
+        },      
+        '79':{
+            'type': 'primary',
+            'start_date': datetime.date(2017, 2, 15),
+            'end_date': datetime.date(2017, 6, 1),
+            'display_name': '2016 Regular Session',
+            '_scraped_name': u'79th (2017) Session\xa0\xa0(click to close)',
+            'slug': '78th2015',
         },
     },
     'feature_flags': ['subjects', 'capitol_maps', 'influenceexplorer'],

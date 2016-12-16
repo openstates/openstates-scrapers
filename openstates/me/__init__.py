@@ -27,7 +27,9 @@ metadata = dict(
         {'name': '2013-2014', 'sessions': ['126'], 'start_year': 2013,
          'end_year': 2014},
         {'name': '2015-2016', 'sessions': ['127'], 'start_year': 2015,
-         'end_year': 2016}
+         'end_year': 2016},
+        {'name': '2017-2018', 'sessions': ['128'], 'start_year': 2017,
+         'end_year': 2018},
     ],
     session_details={
         '121': {'display_name':  '121st Legislature (2003-2004)',
@@ -44,6 +46,8 @@ metadata = dict(
                 '_scraped_name': '126th Legislature'},
         '127': {'display_name':  '127th Legislature (2015-2016)',
                 '_scraped_name': '127th Legislature'},
+        '128': {'display_name':  '128th Legislature (2017-2018)',
+                '_scraped_name': '128th Legislature'},
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[]
