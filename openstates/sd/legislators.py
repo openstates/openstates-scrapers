@@ -9,7 +9,6 @@ class SDLegislatorScraper(LegislatorScraper):
     latest_only = True
 
     def scrape(self, chamber, term):
-        year = term[0:4]
         url = 'http://www.sdlegislature.gov/Legislators/default.aspx' \
               '?CurrentSession=True'
 
@@ -52,6 +51,13 @@ class SDLegislatorScraper(LegislatorScraper):
         office_phone = page.xpath(
             "string(//span[contains(@id, 'CapitolPhone')])").strip()
 
+        email = None
+
+        email_link = page.xpath('//a[@id="lnkMail"]')
+
+        if email_link:
+            email = email_link[0].attrib['href'].split(":")[1].lower()
+
         legislator = Legislator(term, chamber, district, name,
                                 party=party,
                                 occupation=occupation,
@@ -60,6 +66,9 @@ class SDLegislatorScraper(LegislatorScraper):
         kwargs = {}
         if office_phone.strip() != "":
             kwargs['phone'] = office_phone
+
+        if email and email.strip() != "":
+            kwargs['email'] = email
 
         if kwargs:
             legislator.add_office('capitol', 'Capitol Office', **kwargs)
