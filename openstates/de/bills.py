@@ -20,6 +20,76 @@ class DEBillScraper(BillScraper, LXMLMixin):
     legislators = {}
     legislators_by_short = {}
 
+    def scrape(self,chamber,session):
+        #Cache the legislators, we'll need them for sponsors and votes
+        self.scrape_legislators(session)
+
+        per_page = 50
+        page = self.post_search(session, chamber, 1, per_page)
+
+        max_results = int(page["Total"])
+        if max_results > per_page:
+            max_page = int(math.ceil(max_results / per_page))
+
+            for i in range(2, max_page):
+                page = self.post_search(session, chamber, i, per_page)
+
+    def scrape_bill(self, row, chamber, session):
+
+        bill_id = row['LegislationNumber']
+        bill_summary = row['Synopsis']
+        bill_title = row['LongTitle']
+        if row['ShortTitle']:
+            alternate_title = row['ShortTitle']
+
+        bill_type = self.classify_bill(bill_id)
+
+        bill = Bill(
+            session=session,
+            chamber=chamber,
+            bill_id=bill_id,
+            title=bill_title,
+            type=bill_type,
+            summary=bill_summary,
+        )
+
+        if row['SponsorPersonId']:
+            self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
+
+        #TODO: Is there a way get additional sponsors and cosponsors, and versions/fns via API?
+        html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(row['LegislationId'])
+        bill.add_source(html_url, mimetype='text/html')
+
+        html = self.lxmlize(html_url)
+
+        #Additional Sponsors: '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a'
+        additional_sponsors = html.xpath('//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href')
+        for sponsor_url in additional_sponsors:
+            sponsor_id = sponsor_url.replace('https://legis.delaware.gov/LegislatorDetail?personId=', '')
+            self.add_sponsor_by_legislator_id(bill, sponsor_id, 'primary')
+
+        #CoSponsors: '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a'
+        cosponsors = html.xpath('//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href')
+        for sponsor_url in cosponsors:
+            sponsor_id = sponsor_url.replace('https://legis.delaware.gov/LegislatorDetail?personId=','')
+            self.add_sponsor_by_legislator_id(bill, sponsor_id, 'cosponsor')
+
+        versions = html.xpath('//label[text()="Original Text:"]/following-sibling::div/a/@href')
+        for version in versions:
+            mimetype = self.mime_from_link(version)
+            name = 'Bill Text'
+            bill.add_version(name=name, url=version, mimetype=mimetype)
+
+        fiscals = html.xpath('//div[contains(@class,"fiscalNote")]/a/@href')
+        for fiscal in fiscals:
+            self.scrape_fiscal_note(bill, fiscal)
+
+        self.scrape_actions(bill, row['LegislationId'])
+        self.scrape_votes(bill, row['LegislationId'])
+
+        self.save_bill(bill)
+
+
     def scrape_legislators(self, session):
         search_form_url = 'https://legis.delaware.gov/json/Search/GetFullLegislatorList'
         form = {
@@ -107,62 +177,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
 
             bill.add_vote(vote)
 
-    def scrape_bill(self, row, chamber, session):
-
-        bill_id = row['LegislationNumber']
-        bill_summary = row['Synopsis']
-        bill_title = row['LongTitle']
-        if row['ShortTitle']:
-            alternate_title = row['ShortTitle']
-
-        bill_type = self.classify_bill(bill_id)
-
-        bill = Bill(
-            session=session,
-            chamber=chamber,
-            bill_id=bill_id,
-            title=bill_title,
-            type=bill_type,
-            summary=bill_summary,
-        )
-
-        if row['SponsorPersonId']:
-            self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
-
-        #TODO: Is there a way get additional sponsors and cosponsors, and versions/fns via API?
-        html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(row['LegislationId'])
-        bill.add_source(html_url, mimetype='text/html')
-
-        html = self.lxmlize(html_url)
-
-        #Additional Sponsors: '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a'
-        additional_sponsors = html.xpath('//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href')
-        for sponsor_url in additional_sponsors:
-            sponsor_id = sponsor_url.replace('https://legis.delaware.gov/LegislatorDetail?personId=', '')
-            self.add_sponsor_by_legislator_id(bill, sponsor_id, 'primary')
-
-        #CoSponsors: '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a'
-        cosponsors = html.xpath('//label[text()="Additional Sponsor(s):"]/following-sibling::div/a/@href')
-        for sponsor_url in cosponsors:
-            sponsor_id = sponsor_url.replace('https://legis.delaware.gov/LegislatorDetail?personId=','')
-            self.add_sponsor_by_legislator_id(bill, sponsor_id, 'cosponsor')
-
-        versions = html.xpath('//label[text()="Original Text:"]/following-sibling::div/a/@href')
-        for version in versions:
-            mimetype = self.mime_from_link(version)
-            name = 'Bill Text'
-            bill.add_version(name=name, url=version, mimetype=mimetype)
-
-        fiscals = html.xpath('//div[contains(@class,"fiscalNote")]/a/@href')
-        for fiscal in fiscals:
-            self.scrape_fiscal_note(bill, fiscal)
-
-        self.scrape_actions(bill, row['LegislationId'])
-        self.scrape_votes(bill, row['LegislationId'])
-
-        print bill
-        self.save_bill(bill)
-
     def add_sponsor_by_legislator_id(self, bill, legislator_id, sponsor_type):
         sponsor = self.legislators[ str(legislator_id)]
         sponsor_name = sponsor['DisplayName']
@@ -194,8 +208,8 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 action_chamber = 'upper'
             elif 'House' in row['ActionDescription']:
                 action_chamber = 'lower'
-            else:
-                action_chamber = ''
+            elif 'Governor' in row['ActionDescription']:
+                action_chamber = 'executive'
 
             attrs = self.categorizer.categorize(action_name)
 
@@ -220,20 +234,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 return name
 
         return ''
-
-    def scrape(self,chamber,session):
-        self.scrape_legislators(session)
-
-        per_page = 20
-        page = self.post_search(session, chamber, 1, per_page)
-        #print json.dumps(page, indent=4)
-
-        max_results = int(page["Total"])
-        if max_results > per_page:
-            max_page = int(math.ceil(max_results / per_page))
-
-            for i in range(2, max_page):
-                page = self.post_search(session, chamber, i, per_page)
 
     def post_search(self, session, chamber, page_number, per_page):
         search_form_url = 'https://legis.delaware.gov/json/AllLegislation/GetAllLegislation'
@@ -264,6 +264,6 @@ class DEBillScraper(BillScraper, LXMLMixin):
         elif 'PdfDocument' in link:
             return 'application/pdf'
         elif 'WordDocument' in link:
-            return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            return 'application/msword'
         else:
             return ''
