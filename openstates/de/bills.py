@@ -201,7 +201,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
         for row in page['Data']:
             action_name = row['ActionDescription']
             action_date = datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y')
-            
+
             if row['ChamberName'] != None:
                 action_chamber = self.chamber_map[row['ChamberName']]
             elif 'Senate' in row['ActionDescription']:
@@ -210,6 +210,13 @@ class DEBillScraper(BillScraper, LXMLMixin):
                 action_chamber = 'lower'
             elif 'Governor' in row['ActionDescription']:
                 action_chamber = 'executive'
+            else:
+                # Actions like 'Stricken' and 'Defeated Amendemnt'
+                # don't have a chamber in the data, so assume the bill's home chamber
+                if 'House' in bill['type'][0]:
+                    action_chamber = 'lower'
+                elif 'Senate' in bill['type'][0]:
+                    action_chamber = 'upper'
 
             attrs = self.categorizer.categorize(action_name)
 
