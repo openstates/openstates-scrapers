@@ -10,7 +10,8 @@ class SDLegislatorScraper(LegislatorScraper):
 
     def scrape(self, chamber, term):
         year = term[0:4]
-        url = 'http://legis.sd.gov/Legislators/default.aspx?CurrentSession=True'
+        url = 'http://www.sdlegislature.gov/Legislators/default.aspx' \
+              '?CurrentSession=True'
 
         if chamber == 'upper':
             search = 'Senate Members'
@@ -21,11 +22,12 @@ class SDLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for link in page.xpath("//h4[text()='%s']/../div/a" % search):
+        for link in page.xpath("//h4[text()='{}']/../div/a".format(search)):
             name = link.text.strip()
 
             self.scrape_legislator(name, chamber, term,
-                                   link.attrib['href'])
+                                   '{}&Cleaned=True'.format(
+                                       link.attrib['href']))
 
     def scrape_legislator(self, name, chamber, term, url):
         page = self.get(url).text
@@ -45,7 +47,7 @@ class SDLegislatorScraper(LegislatorScraper):
             "string(//span[contains(@id, 'Occupation')])")
         occupation = occupation.strip()
 
-        (photo_url, ) = page.xpath('//img[@id="ContentPlaceHolder1_imgMember"]/@src')
+        (photo_url, ) = page.xpath('//img[contains(@id, "_imgMember")]/@src')
 
         office_phone = page.xpath(
             "string(//span[contains(@id, 'CapitolPhone')])").strip()
@@ -92,7 +94,8 @@ class SDLegislatorScraper(LegislatorScraper):
         for link in page.xpath("//a[contains(@href, 'CommitteeMem')]"):
             comm = link.text.strip()
 
-            role = link.xpath('../following-sibling::td')[0].text_content().lower()
+            role = link.xpath('../following-sibling::td')[0]\
+                .text_content().lower()
 
             if comm.startswith('Joint'):
                 chamber = 'joint'
