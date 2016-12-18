@@ -1,3 +1,7 @@
+"""
+Colorado legislator scraper for http://www.leg.state.co.us
+"""
+
 from billy.scrape import ScrapeError, NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from billy.scrape.committees  import Committee
