@@ -3,7 +3,7 @@ import re
 import lxml.html
 import lxml.html.builder
 
-from billy.scrape.legislators import (LegislatorScraper, Legislator, Person)
+from billy.scrape.legislators import (LegislatorScraper, Legislator)
 from openstates.utils import LXMLMixin
 from .utils import extract_phone, extract_fax
 
@@ -11,14 +11,36 @@ from .utils import extract_phone, extract_fax
 class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'tx'
 
-    def _determine_district(self, text, regex):
-        match = regex.search(text)
-        if match is not None:
-            return str(match.group(1))
-        else:
-            return None
+    def __init__(self, *args, **kwargs):
+        super(TXLegislatorScraper, self).__init__(*args, **kwargs)
+
+        self.district_re = re.compile(r'District +(\d+)')
+
+        # Get all and only the address of a representative's office:
+        self.address_re = re.compile(
+            (
+                # Every representative's address starts with a room number,
+                # street number, or P.O. Box:
+                r'(?:Room|\d+|P\.?\s*O)' +
+                # Just about anything can follow:
+                '.+?' +
+                # State and zip code (or just state) along with idiosyncratic
+                # comma placement:
+                '(?:' +
+                '|'.join([
+                    r', +(?:TX|Texas)(?: +7\d{4})?',
+                    r'(?:TX|Texas),? +7\d{4}'
+                ]) +
+                ')'
+            ),
+            flags=re.DOTALL | re.IGNORECASE
+        )
 
     def _get_chamber_parties(self, chamber, term):
+        """
+        Return a dictionary that maps each district to its representative
+        party for the given legislative chamber.
+        """
         party_map = {
             'D': 'Democratic',
             'R': 'Republican',
@@ -32,7 +54,7 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         parties = {}
 
         url = ('http://www.lrl.state.tx.us/legeLeaders/members/membersearch.'
-            'cfm?leg={}&chamber={}').format(term, chamber_map[chamber])
+               'cfm?leg={}&chamber={}').format(term, chamber_map[chamber])
         page = self.lxmlize(url)
 
         rows = self.get_nodes(
@@ -63,31 +85,13 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         )
         roster_page.make_links_absolute(rosters[chamber])
 
-        self.district_re = re.compile(r'District +(\d+)')
-
-        # Get all and only the address of a representative's office:
-        self.address_re = re.compile(
-            (
-                # Every representative's address starts with a room number,
-                # street number, or P.O. Box:
-                r'(?:Room|\d+|P\.?\s*O)' +
-                # Just about anything can follow:
-                '.+?' +
-                # State and zip code (or just state) along with idiosyncratic
-                # comma placement:
-                '(?:' +
-                '|'.join([
-                    r', +(?:TX|Texas)(?: +7\d{4})?',
-                    r'(?:TX|Texas),? +7\d{4}'
-                ]) +
-                ')'
-            ),
-            flags=re.DOTALL | re.IGNORECASE
-        )
-
         getattr(self, '_scrape_' + chamber)(roster_page, term)
 
     def _scrape_upper(self, roster_page, term):
+        """
+        Retrieves a list of members of the upper legislative chamber, processes
+        them, and writes them to the database.
+        """
         member_urls = roster_page.xpath('(//table[caption])[1]//a/@href')
         # Sort by district for easier spotting of omissions:
         member_urls.sort(key=lambda url: int(re.search(
@@ -100,15 +104,20 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             self.save_legislator(legislator)
 
     def _scrape_senator(self, url, term, parties):
+        """
+        Returns a Legislator object representing a member of the upper
+        legislative chamber.
+        """
         page = lxml.html.fromstring(self.get(url).text)
+
         name_district = page.xpath('//div[@class="memtitle"]/text()')[0]
-        name, district = re.search(r'Senator (.+): District (\d+)',
-            name_district).group(1, 2)
+        name, district = re.search(
+            r'Senator (.+): District (\d+)', name_district).group(1, 2)
 
         party = parties[district]
 
-        legislator = Legislator(term, 'upper', district, name,
-            party=party, url=url)
+        legislator = Legislator(
+            term, 'upper', district, name, party=party, url=url)
 
         legislator.add_source(url)
 
@@ -141,12 +150,17 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             ) else 'district'
             office_name = office_type.title() + ' Office'
 
-            legislator.add_office(office_type, office_name,
-                address=address.strip(), phone=phone, fax=fax)
+            legislator.add_office(
+                office_type, office_name, address=address.strip(),
+                phone=phone, fax=fax)
 
         return legislator
 
     def _scrape_lower(self, roster_page, term):
+        """
+        Retrieves a list of members of the lower legislative chamber, processes
+        them, and writes them to the database.
+        """
         member_urls = roster_page.xpath('//a[@class="member-img"]/@href')
         # Sort by district for easier spotting of omissions:
         member_urls.sort(key=lambda url: int(re.search(r'\d+$', url).group()))
@@ -158,6 +172,10 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             self.save_legislator(legislator)
 
     def _scrape_representative(self, url, term, parties):
+        """
+        Returns a Legislator object representing a member of the lower
+        legislative chamber.
+        """
         #url = self.get(url).text.replace('<br>', '')
         member_page = self.lxmlize(url)
 
@@ -183,15 +201,17 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         party = parties[district]
 
         legislator = Legislator(term, 'lower', district, name,
-            party=party, url=url, _scraped_name=scraped_name)
+                                party=party, url=url,
+                                _scraped_name=scraped_name)
         if photo_url is not None:
             legislator['photo_url'] = photo_url
 
         legislator.add_source(url)
 
         def office_name(element):
+            """Returns the office address type."""
             return element.xpath('preceding-sibling::h4[1]/text()')[0] \
-                          .rstrip(':')
+                .rstrip(':')
 
         offices_text = [{
             'name': office_name(p_tag),
