@@ -322,7 +322,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
             return
         else:
             self.warning(descr)
-            raise NotImplemented("Can't see if we passed or failed")
+            raise NotImplementedError("Can't see if we passed or failed")
 
         headings = page.xpath("//b")[1:]
         votes = page.xpath("//table")
