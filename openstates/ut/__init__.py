@@ -35,7 +35,7 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015', '2015s1', '2016'],
+            'sessions': ['2015', '2015s1', '2016', '2016S2', '2016S3'],
         },
     ],
     'session_details': {
@@ -110,7 +110,20 @@ metadata = {
             'start_date': datetime.date(2016, 1, 25),
             'display_name': '2016 General Session',
             '_scraped_name': '2016 General Session',
-        }
+        },
+        #Note: There is no 2016s1, it's 2015s1
+        '2016S2': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 5, 18),
+            'display_name': '2016 2nd Special Session',
+            '_scraped_name': '2016 2nd Special Session',
+        },
+        '2016S3': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 7, 13),
+            'display_name': '2016 3rd Special Session',
+            '_scraped_name': '2016 3rd Special Session',
+        }                           
     },
     'feature_flags': ['events', 'subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [

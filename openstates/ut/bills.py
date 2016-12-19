@@ -35,11 +35,11 @@ class UTBillScraper(BillScraper, LXMLMixin):
         if "s" not in session.lower() and "h" not in session.lower():
             session_search_text += "GS"
 
-
         sessions = sessions.xpath(
                 '//p/a[contains(@href, "{}")]'.format(session_search_text))
-        
+
         session_url = ''
+
         for elem in sessions:
             if re.sub(r'\s+', " ", elem.xpath('text()')[0]) == \
                     self.metadata['session_details'][session]['_scraped_name']:
