@@ -67,7 +67,7 @@ metadata = dict(
          '2017-2018':
             {'display_name': '2017-2018 Regular Session',
              'session_id': '1700',
-             '_scraped_name': '2017 Regular Session',
+             '_scraped_name': '2017 Regular Session(mainsys)',
             },            
         },
     feature_flags=['subjects', 'influenceexplorer'],
