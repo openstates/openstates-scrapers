@@ -228,7 +228,7 @@ class WABillScraper(BillScraper, LXMLMixin):
         # de-dup bill_id
         for bill_id in list(set(bill_id_list)):
             bill = self.scrape_bill(chamber, session, bill_id)
-            bill['subjects'] = self._subjects[bill_id]
+            bill['subjects'] = list(set(self._subjects[bill_id]))
             self.save_bill(bill)
 
     def scrape_bill(self, chamber, session, bill_id):
