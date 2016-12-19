@@ -1,5 +1,5 @@
-FROM        sunlightlabs/billy:latest
-MAINTAINER  Sunlight Labs <labs-contact@sunlightfoundation.com>
+FROM        openstates/billy:latest
+MAINTAINER  James Turk <james@openstates.org>
 
 ARG DEBIAN_FRONTEND=noninteractive
 
