@@ -39,9 +39,10 @@ class ARLegislatorScraper(LegislatorScraper):
             'string(//td[@class="SiteNames"])').split()
 
         title = name_and_party[0]
-        if title == 'Representative':
+        # Account for Representative-Elect and Senator-Elect, for incoming class
+        if title.startswith('Representative'):
             chamber = 'lower'
-        elif title == 'Senator':
+        elif title.startswith('Senator'):
             chamber = 'upper'
 
         full_name = ' '.join(name_and_party[1:-1])
@@ -56,7 +57,10 @@ class ARLegislatorScraper(LegislatorScraper):
             party = 'Green'
         elif party == '(I)':
             party = 'Independent'
-
+        elif '-Elect' in title and not party.startswith('('):
+            self.warning('Member-elect is currently missing a party')
+            full_name = ' '.join(name_and_party[1:])
+            party = ''
         else:
             raise AssertionError(
                 "Unknown party ({0}) for {1}".format(party, full_name))
@@ -65,13 +69,16 @@ class ARLegislatorScraper(LegislatorScraper):
             img = root.xpath('//img[@class="SitePhotos"]')[0]
             photo_url = img.attrib['src']
         except IndexError:
-            """ Fix me after ?member=Boyd is fixed """
-            self.warning("Uch, bad photo. Ducking")
+            self.warning("No member photo found")
             photo_url = ""
 
         # Need to figure out a cleaner method for this later
         info_box = root.xpath('string(//table[@class="InfoTable"])')
-        district = re.search(r'District(.+)\r', info_box).group(1)
+        try:
+            district = re.search(r'District(.+)\r', info_box).group(1)
+        except AttributeError:
+            self.warning('Member has no district listed; skipping them')
+            return
 
         leg = Legislator(term, chamber, district, full_name, party=party,
                          photo_url=photo_url, url=member_url)
