@@ -115,6 +115,10 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
         party_district_line = doc.xpath('//h3/font/text()')[0]
         party, district = party_district_re.match(party_district_line).groups()
 
+        # Ignore placeholder legislators
+        if district == '0':
+            return
+
         # Scrub status from name.
         name = re.sub(r'(- Elect)$', '', name).strip()
 
@@ -146,8 +150,13 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
                 name = ('Capitol Office' if office_type == 'capitol'
                         else 'District Office')
 
-            leg.add_office(office_type, name, address='\n'.join(address),
-                phone=phone, email=email)
+            leg.add_office(
+                office_type,
+                name,
+                address='\n'.join([a.strip() for a in address if a.strip()]),
+                phone=phone,
+                email=email
+            )
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,
