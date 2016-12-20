@@ -52,6 +52,11 @@ metadata = dict(
                       '20152016'],
          'start_year': 2015, 'end_year': 2016,
          },
+         {
+            'name': '20172018',
+            'sessions': ['20172018'],
+            'start_year': 2017, 'end_year': 2018,
+         },         
         ],
     session_details={
         '20092010': {
@@ -128,6 +133,14 @@ metadata = dict(
         '20152016 Special Session 2': {
             'display_name': '2015-2016, 2nd Special Session',
             'type': 'special'
+        },
+        '20172018': {
+            # 'start_date': datetime.date(2013, ?, ?),
+            'display_name': '2017-2018 Regular Session',
+            '_scraped_name': "2017-2018",
+            'type': 'primary',
+            'start_date': datetime.date(2016, 12, 5),
+            'end_date': datetime.date(2017, 9, 15)
         },
     },
     feature_flags=['subjects', 'influenceexplorer'],
