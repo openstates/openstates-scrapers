@@ -301,12 +301,9 @@ def get_contents():
     for row in rows[2:]:
         date = row.xpath('string(td[3])').strip()
         if date:
-            print date
             date = datetime.strptime(date, '%d-%b-%Y %H:%M')
             filename = row.xpath('string(td[2]/a[1]/@href)')
-            print filename
             resp[filename] = date
-    print resp
     return resp
 
 def _check_call(*args):
