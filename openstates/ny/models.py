@@ -32,7 +32,11 @@ class AssemblyBillPage(LXMLMixin):
         self.bill_id = bill_id
         # This works on the assumption that the metadata term ID is
         # only the start year.
-        self.term_start_year = term_for_session('ny', session)
+        for term in reversed(scraper.metadata['terms']):
+            if session in term['sessions']:
+                self.term_start_year = term['start_year']
+                break
+
         self.letter, self.number, self.version = bill_id_parts
         self.shared_url = 'http://assembly.state.ny.us/leg/?default_fld='\
             '&bn={}&term={}'.format(self.bill_id, self.term_start_year)
