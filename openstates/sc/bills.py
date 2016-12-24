@@ -63,11 +63,11 @@ class SCBillScraper(BillScraper):
     urls = {
         'lower' : {
           'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
-          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil17.php",
+          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         },
         'upper' : {
           'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
-          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil17.php",
+          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         }
     }
 
@@ -254,7 +254,7 @@ class SCBillScraper(BillScraper):
     def scrape(self, chamber, session):
         # start with subjects
         session_code = self.metadata['session_details'][session]['_code']
-        #self.scrape_subjects(session_code)
+        self.scrape_subjects(session_code)
 
         # get bill index
         index_url = self.urls[chamber]['daily-bill-index']
@@ -281,7 +281,7 @@ class SCBillScraper(BillScraper):
                     self.scrape_details(bill_a.get('href'), session, chamber,
                                         bill_id)
 
-        prefile_url = self.urls[chamber]['prefile-index']
+        prefile_url = self.urls[chamber]['prefile-index'].format(last_two_digits_of_session_year=session[2:4])
         page = self.get(prefile_url).text
         doc = lxml.html.fromstring(page)
         doc.make_links_absolute(prefile_url)
