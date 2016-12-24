@@ -63,9 +63,11 @@ class SCBillScraper(BillScraper):
     urls = {
         'lower' : {
           'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
+          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         },
         'upper' : {
           'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
+          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         }
     }
 
@@ -264,6 +266,33 @@ class SCBillScraper(BillScraper):
 
         # visit each day and extract bill ids
         days = doc.xpath('//div/b/a/@href')
+        for day_url in days:
+            try:
+                data = self.get(day_url).text
+            except scrapelib.HTTPError:
+                continue
+
+            doc = lxml.html.fromstring(data)
+            doc.make_links_absolute(day_url)
+
+            for bill_a in doc.xpath('//p/a[1]'):
+                bill_id = bill_a.text.replace('.', '')
+                if bill_id.startswith(chamber_letter):
+                    self.scrape_details(bill_a.get('href'), session, chamber,
+                                        bill_id)
+
+        prefile_url = self.urls[chamber]['prefile-index'].format(last_two_digits_of_session_year=session[2:4])
+        page = self.get(prefile_url).text
+        doc = lxml.html.fromstring(page)
+        doc.make_links_absolute(prefile_url)
+
+        # visit each day and extract bill ids
+        days = ''
+        if chamber == 'lower':
+            days = doc.xpath('//dd[contains(text(),"House")]/a/@href')
+        else:
+            days = doc.xpath('//dd[contains(text(),"Senate")]/a/@href')
+            
         for day_url in days:
             try:
                 data = self.get(day_url).text

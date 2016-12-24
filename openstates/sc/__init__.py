@@ -26,7 +26,10 @@ metadata = dict(
         {'name': '2015-2016',
          'sessions': ['2015-2016'],
          'start_year': 2015, 'end_year': 2016},
-        ],
+        {'name': '2017-2018',
+         'sessions': ['2017-2018'],
+         'start_year': 2017, 'end_year': 2018},
+        ],     
     session_details={
         '119': {
             'start_date': datetime.date(2010, 11, 17), 'type': 'primary',
@@ -45,6 +48,14 @@ metadata = dict(
             'display_name': '2015-2016 Regular Session',
             '_code': '121',
         },
+        '2017-2018': {
+            'start_date': datetime.date(2017, 1, 10), 
+            'end_date': datetime.date(2017, 6, 1), 
+            'type': 'primary',
+            '_scraped_name': '122 - (2017-2018)',
+            'display_name': '2017-2018 Regular Session',
+            '_code': '122',
+        },        
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['118 - (2009-2010)', '117 - (2007-2008)',
