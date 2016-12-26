@@ -54,6 +54,8 @@ class MOBillScraper(BillScraper, LXMLMixin):
             'Third Read and Passed' : 'bill:passed',
             'Signed by Governor' : 'governor:signed',
             'Approved by Governor'  : 'governor:signed',
+            'Vetoed by Governor' : 'governor:vetoed',
+            'Legislature voted to override Governor\'s veto': 'bill:veto_override:passed',
         }
         found_action = 'other'
         for flag in flags:
@@ -230,9 +232,11 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
             # they give us a link to the congressperson, so we might
             # as well keep it.
-            cosponsor_url = cosponsor_row.attrib['href']
-
-            bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
+            if cosponsor_row.attrib.has_key('href'):
+                cosponsor_url = cosponsor_row.attrib['href']
+                bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
+            else:
+                bill.add_sponsor('cosponsor', cosponsor)
 
     def _scrape_house_subjects(self, session):
         self.info('Collecting subject tags from lower house.')
@@ -273,13 +277,12 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 self._subjects[bill_id].append(subject.text)
 
     def _parse_house_actions(self, bill, url):
-        url = re.sub("BillActions", "BillActionsPrn", url)
         bill.add_source(url)
         actions_page = self.get(url).text
         actions_page = lxml.html.fromstring(actions_page)
         rows = actions_page.xpath('//table/tr')
 
-        for row in rows[1:]:
+        for row in rows:
             # new actions are represented by having dates in the first td
             # otherwise, it's a continuation of the description from the
             # previous action
@@ -335,11 +338,19 @@ class MOBillScraper(BillScraper, LXMLMixin):
         url = re.sub("billsummary", "billsummaryprn", url)
         url = '%s/%s' % (self._senate_base_url,url)
 
+        #the URL is an iframed version now, so swap in for the actual bill page
+
+        url = url.replace('Bill.aspx','BillContent.aspx')
+        url = url.replace('&code=R','&code=R&style=new')
+
+        # http://www.house.mo.gov/Bill.aspx?bill=HB26&year=2017&code=R
+        # http://www.house.mo.gov/BillContent.aspx?bill=HB26&year=2017&code=R&style=new
+
         bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
         bill_page.make_links_absolute(url)
 
-        bill_id = bill_page.xpath('//*[@class="entry-title"]')
+        bill_id = bill_page.xpath('//*[@class="entry-title"]/div')
         if len(bill_id) == 0:
             self.log("WARNING: bill summary page is blank! (%s)" % url)
             self._bad_urls.append(url)
@@ -438,7 +449,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
         # actions_link = re.sub("content", "print", actions_link)
 
         actions_link, = bill_page.xpath(
-            "//a[contains(@href, 'BillActions.aspx')]/@href")
+            "//a[contains(@href, 'BillActionsPrn.aspx')]/@href")
         self._parse_house_actions(bill, actions_link)
 
         # get bill versions
@@ -510,6 +521,6 @@ class MOBillScraper(BillScraper, LXMLMixin):
         getattr(self, '_scrape_' + chamber + '_chamber')(year)
 
         if len(self._bad_urls) > 0:
-            self.warn('WARNINGS:')
+            self.warning('WARNINGS:')
             for url in self._bad_urls:
-                self.warn('{}'.format(url))
+                self.warning('{}'.format(url))

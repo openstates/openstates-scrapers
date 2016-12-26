@@ -41,6 +41,12 @@ metadata = dict(
             'start_year': 2015,
             'end_year': 2016,
         },
+        {
+            'name': '2017-2018',
+            'sessions': ['2017'],
+            'start_year': 2017,
+            'end_year': 2018,
+        },        
     ],
     # General Assembly sessions convene the Wed. following the first Mon.
     # of January and adjourn May 30.
@@ -80,6 +86,12 @@ metadata = dict(
             'end_date': datetime.date(2016,5,30),
             'display_name': '2016 Regular Session',
         },
+        '2017': {
+            'type': 'primary',
+            'start_date': datetime.date(2017,1,4),
+            'end_date': datetime.date(2017,5,12),
+            'display_name': '2017 Regular Session',
+        },        
     },
     feature_flags = ['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions = [
