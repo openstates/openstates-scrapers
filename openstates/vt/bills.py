@@ -22,13 +22,13 @@ class VTBillScraper(BillScraper, LXMLMixin):
                 'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
                 format(year_slug)
         bills_json = self.get(bills_url).text
-        bills = json.loads(bills_json)['data']
+        bills = json.loads(bills_json)['data'] or []
 
         resolutions_url = \
                 'http://legislature.vermont.gov/bill/loadAllResolutionsByChamber/{}/both'.\
                 format(year_slug)
         resolutions_json = self.get(resolutions_url).text
-        bills.extend(json.loads(resolutions_json)['data'])
+        bills.extend(json.loads(resolutions_json)['data'] or [])
 
         # Parse the information from each bill
         for info in bills:
