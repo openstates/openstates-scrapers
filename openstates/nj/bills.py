@@ -252,6 +252,7 @@ class NJBillScraper(BillScraper, MDBMixin):
                 try:
                     bill.add_version(doc_name, htm_url, mimetype=mimetype)
                 except ValueError:
+                    self.warning("Couldn't find a document for bill {}".format(bill_id))
                     pass
             else:
                 bill.add_document(doc_name, htm_url)
