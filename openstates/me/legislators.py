@@ -4,9 +4,14 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 import xlrd
 
-_party_map = {'D': 'Democratic', 'R': 'Republican', 'U': 'Independent',
-              'I': 'Independent'}
-
+_party_map = {
+    'D': 'Democratic',
+    'R': 'Republican',
+    'U': 'Independent',
+    'I': 'Independent',
+    # Common Sense Independent Party
+    'C': 'Independent'
+}
 
 class MELegislatorScraper(LegislatorScraper):
     jurisdiction = 'me'
@@ -45,7 +50,7 @@ class MELegislatorScraper(LegislatorScraper):
                     Representative\s
                     (?P<member_name>.+?)
                     \s\(
-                    (?P<party>[DRUI])
+                    (?P<party>[DRCUI])
                     -
                     (?P<district_name>.+?)
                     \)
@@ -71,7 +76,7 @@ class MELegislatorScraper(LegislatorScraper):
 
             # Add contact information from personal page
             office_address = re.search(
-                    r'<B>Address:  </B>(.+?)<P>', html, re.IGNORECASE).group(1)
+                    r'<B>Address:  </B>(.+?)\n?<P>', html, re.IGNORECASE).group(1)
 
             office_email = doc.xpath(
                     '//a[starts-with(@href, "mailto:")]/text()')
