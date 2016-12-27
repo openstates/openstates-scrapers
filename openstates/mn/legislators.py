@@ -55,10 +55,10 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             party_text = party_text.replace(')', '').strip()
             party = self._parties[party_text]
 
-            info_texts = self.get_nodes(
+            info_texts = [x.strip() for x in self.get_nodes(
                 legislator_node,
                 './td[2]/p/text()[normalize-space() and preceding-sibling'
-                '::br]')
+                '::br]') if x.strip()]
             address = '\n'.join((info_texts[0], info_texts[1]))
 
             phone_text = info_texts[2]
