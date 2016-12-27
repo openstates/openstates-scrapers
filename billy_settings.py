@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # that much with.
 
 SCRAPER_PATHS=[os.path.join(os.getcwd(), 'openstates')]
-MONGO_HOST = 'localhost'
+MONGO_HOST = os.environ.get('BILLY_MONGO_HOST', 'localhost')
 MONGO_PORT = 27017
 MONGO_DATABASE = 'fiftystates'
 
