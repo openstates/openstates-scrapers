@@ -1,8 +1,5 @@
-import datetime
-
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
-from .utils import clean_committee_name, MDBMixin
+from .utils import MDBMixin
 
 
 class NJCommitteeScraper(CommitteeScraper, MDBMixin):
@@ -51,4 +48,4 @@ class NJCommitteeScraper(CommitteeScraper, MDBMixin):
                 role = POSITIONS[member_rec["Position_on_Committee"]]
                 comm_name.add_member(leg, role=role)
 
-                self.save_committee(comm_name)
+        self.save_committee(comm_name)
