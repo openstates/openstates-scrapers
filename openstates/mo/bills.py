@@ -412,10 +412,6 @@ class MOBillScraper(BillScraper, LXMLMixin):
             bill_sponsor_link = table_rows[0][1][0].attrib['href']
         except IndexError:
             return
-
-        if bill_sponsor_link:
-            bill_sponsor_link = '%s%s' % (self._senate_base_url,bill_sponsor_link)
-
         bill.add_sponsor('primary', bill_sponsor, sponsor_link=bill_sponsor_link)
 
         # check for cosponsors
