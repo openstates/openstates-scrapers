@@ -56,11 +56,22 @@ class SCLegislatorScraper(LegislatorScraper):
                 legislator.add_office('capitol', 'Columbia Address',
                                       address=addr, phone=phone)
             except IndexError:
-                self.warning('no address for {0}'.format(full_name))
+                self.warning('no capitol address for {0}'.format(full_name))
+
+            # home address / phone
+            try:
+                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 0 0 20px;"]')[0]
+                addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+
+                phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+                phone = phone.strip()
+                legislator.add_office('district', 'Home Address',
+                                      address=addr, phone=phone)
+            except IndexError:
+                self.warning('no district address for {0}'.format(full_name))
 
             legislator.add_source(leg_url)
             legislator.add_source(url)
-
 
             # committees (skip first link)
             for com in leg_doc.xpath('//a[contains(@href, "committee.php")]')[1:]:
@@ -72,6 +83,7 @@ class SCLegislatorScraper(LegislatorScraper):
                             'Secy./Treas.': 'secretary/treasurer',
                             'V.C.': 'vice-chair',
                             '1st V.C.': 'first vice-chair',
+                            'Co 1st V.C.': 'co-first vice-chair',
                             '2nd V.C.': 'second vice-chair',
                             '3rd V.C.': 'third vice-chair',
                             'Ex.Officio Member': 'ex-officio member',
