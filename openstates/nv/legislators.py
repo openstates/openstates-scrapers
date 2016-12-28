@@ -1,11 +1,6 @@
 import json
-import datetime
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
-from .utils import clean_committee_name
-
-import lxml.html
-import scrapelib
 
 class NVLegislatorScraper(LegislatorScraper):
     jurisdiction = 'nv'
@@ -47,7 +42,7 @@ class NVLegislatorScraper(LegislatorScraper):
                     leg_id = l.split(',')[1].split("'")[1]
 
             # fetch the json used by the page
-            leg_details_url = 'https://www.leg.state.nv.us/App/Legislator/A/api/78th2015/Legislator?id=' + leg_id
+            leg_details_url = 'https://www.leg.state.nv.us/App/Legislator/A/api/{}/Legislator?id='.format(slug) + leg_id
             leg_resp = json.loads(self.get(leg_details_url).text)
             details = leg_resp['legislatorDetails']
 

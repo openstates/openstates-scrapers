@@ -16,18 +16,6 @@ metadata = {
         'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
     },
     'terms': [
-        #{'name': '2001-2002', 'start_year': 2001, 'end_year': 2002,
-        # 'sessions': ['2001Special17', '2002Special18', '71'],
-        #},
-        #{'name': '2003-2004', 'start_year': 2003, 'end_year': 2004,
-        # 'sessions': ['2003Special19', '2003Special20', '2004Special21', '72']
-        #},
-        #{'name': '2005-2006', 'start_year': 2005, 'end_year': 2006,
-        # 'sessions': ['2005Special22', '73']
-        #},
-        #{'name': '2007-2008', 'start_year': 2007, 'end_year': 2008,
-        # 'sessions': ['2007Special23', '2008Special24', '2008Special25', '74']
-        #},
         {
             'name': '2009-2010',
             'start_year': 2009,
@@ -81,20 +69,20 @@ metadata = {
         '77': {
             'type': 'primary',
             'display_name': '2013 Regular Session',
-            '_scraped_name': u'77th (2013) Session\xa0\xa0(click to close)',
+            '_scraped_name': u'77th (2013) Session',
             'slug': '77th2013',
         },
         '2013Special27': {
             'type': 'special',
             'display_name': '27th Special Session (2013)',
-            '_scraped_name': u'27th (2013) Special Session\xa0\xa0(click to close)',
+            '_scraped_name': u'27th (2013) Special Session',
             '_committee_session': '77th2013',
             'slug': '27th2013Special',
         },
         '2014Special28': {
             'type': 'special',
             'display_name': '28th Special Session (2014)',
-            '_scraped_name': u'28th (2014) Special Session\xa0\xa0(click to close)',
+            '_scraped_name': u'28th (2014) Special Session',
             '_committee_session': '28th2014Special',
             'slug': '28th2014Special',
         },
@@ -103,7 +91,7 @@ metadata = {
             'start_date': datetime.date(2015, 2, 15),
             'end_date': datetime.date(2015, 6, 1),
             'display_name': '2015 Regular Session',
-            '_scraped_name': u'78th (2015) Session\xa0\xa0(click to close)',
+            '_scraped_name': u'78th (2015) Session',
             'slug': '78th2015',
         },
         '2015Special29': {
@@ -111,7 +99,7 @@ metadata = {
             'start_date': datetime.date(2015, 12, 16),
             'end_date': datetime.date(2015, 12, 19),
             'display_name': '29th Special Session (2015)',
-            '_scraped_name': u'29th (2015) Special Session\xa0\xa0(click to close)',
+            '_scraped_name': u'29th (2015) Special Session',
             '_committee_session': '29th2015Special',
             'slug': '29th2015Special',
         },
@@ -120,7 +108,7 @@ metadata = {
             'start_date': datetime.date(2016, 10, 10),
             'end_date': datetime.date(2016, 10, 14),
             'display_name': '30th Special Session (2016)',
-            '_scraped_name': u'30th (2016) Special Session\xa0\xa0(click to close)',
+            '_scraped_name': u'30th (2016) Special Session',
             '_committee_session': '30th2016Special',
             'slug': '30th2016Special',
         },      
@@ -128,9 +116,9 @@ metadata = {
             'type': 'primary',
             'start_date': datetime.date(2017, 2, 15),
             'end_date': datetime.date(2017, 6, 1),
-            'display_name': '2016 Regular Session',
-            '_scraped_name': u'79th (2017) Session\xa0\xa0(click to close)',
-            'slug': '78th2015',
+            'display_name': '2017 Regular Session',
+            '_scraped_name': u'79th (2017) Session',
+            'slug': '79th2017',
         },
     },
     'feature_flags': ['subjects', 'capitol_maps', 'influenceexplorer'],
@@ -180,7 +168,8 @@ metadata = {
 
 
 def session_list():
-    return [x.text_content() for x in
+    import re
+    return [re.sub(ur'(\xa0|\(click to close\)|\(click to open\))', '', x.text_content()) for x in
             url_xpath('http://www.leg.state.nv.us/Session/',
                       '//*[@class="MainHeading"]')]
 
