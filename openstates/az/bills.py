@@ -169,14 +169,13 @@ class AZBillScraper(BillScraper):
         bill_rows = []
         if(chamber == 'lower'):
             bill_rows = page.xpath('//div[@name="HBTable"]//tbody//tr')
-            for row in bill_rows[2:]:
+            for row in bill_rows:
                 bill_id = row.xpath('td/a/text()')[0]
                 self.scrape_bill(chamber, session, bill_id)
 
         elif (chamber == 'upper'):
             bill_rows = page.xpath('//div[@name="SBTable"]//tbody//tr')
             for row in bill_rows:
-                #print(etree.tostring(row, pretty_print=True))
                 bill_id = row.xpath('td/a/text()')[0]
                 self.scrape_bill(chamber, session, bill_id)
  
