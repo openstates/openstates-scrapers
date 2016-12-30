@@ -96,7 +96,6 @@ metadata = dict(
     },
     feature_flags = ['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions = [
-        '2016 (91st) Session',
         'Previous Years',
     ],
 )
