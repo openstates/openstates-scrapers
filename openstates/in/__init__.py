@@ -26,6 +26,8 @@ metadata = dict(
          'end_year': 2014, 'sessions': ['2013', '2014']},
         {'name': '2015-2016', 'start_year': 2015,
          'end_year': 2016, 'sessions': ['2015', '2016']},
+        {'name': '2017-2017', 'start_year': 2017,
+         'end_year': 2018, 'sessions': ['2017']},
         ],
     session_details={
         '2009': {'display_name': '2009 Regular Session',
@@ -45,6 +47,11 @@ metadata = dict(
             '_scraped_name': 'First Regular Session 119th General Assembly (2015)'},
         '2016': {'display_name': '2016 Regular Session',
             '_scraped_name': 'Second Regular Session 119th General Assembly (2016)'},
+       '2017': {'display_name': '2017 Regular Session',
+            '_scraped_name': 'First Regular Session 120th General Assembly (2017)',
+            'start_date': datetime.date(2017, 1, 9),
+            'end_date': datetime.date(2017, 4, 29)
+            },
         },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
