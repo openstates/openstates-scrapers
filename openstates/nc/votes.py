@@ -8,6 +8,11 @@ class NCVoteScraper(VoteScraper):
     jurisdiction = 'nc'
 
     def scrape(self, chamber, session):
+        # special sessions need a ftp_session set
+        if 'E' in session:
+            ftp_session = session.replace('E', '_E')
+        else:
+            ftp_session = session
         # Unfortunately, you now have to request access to FTP.
         # This method of retrieving votes needs to be be changed or
         # fall back to traditional web scraping.
@@ -17,7 +22,7 @@ class NCVoteScraper(VoteScraper):
             naming_scheme = '{session}{file_label}.txt'
             delimiter = ";"
         else:
-            vote_data_url = 'ftp://www.ncleg.net/Bill_Status/Votes%s.zip' % session
+            vote_data_url = 'ftp://www.ncleg.net/Bill_Status/Votes%s.zip' % ftp_session
             naming_scheme = '{file_label}_{session}.txt'
             delimiter = "\t"
         fname, resp = self.urlretrieve(vote_data_url)
@@ -32,7 +37,7 @@ class NCVoteScraper(VoteScraper):
         # 2: member name
         # 3-5: county, district, party
         # 6: mmUserId
-        member_file = zf.open(naming_scheme.format(file_label='Members', session=session))
+        member_file = zf.open(naming_scheme.format(file_label='Members', session=ftp_session))
         members = {}
         for line in member_file.readlines():
             data = line.split(delimiter)
@@ -56,7 +61,7 @@ class NCVoteScraper(VoteScraper):
         # 13: info
         # 20: PASSED/FAILED
         # 21: legislative day
-        vote_file = zf.open(naming_scheme.format(file_label='Votes', session=session))
+        vote_file = zf.open(naming_scheme.format(file_label='Votes', session=ftp_session))
         bill_chambers = {'H':'lower', 'S':'upper'}
         votes = {}
         for line in vote_file.readlines():
@@ -80,7 +85,7 @@ class NCVoteScraper(VoteScraper):
                                       bill_chamber=bill_chambers[data[3][0]],
                                       bill_id=data[3]+data[4], session=session)
 
-        member_vote_file = zf.open(naming_scheme.format(file_label='MemberVotes', session=session))
+        member_vote_file = zf.open(naming_scheme.format(file_label='MemberVotes', session=ftp_session))
         # 0: member id
         # 1: chamber (S/H)
         # 2: vote id
