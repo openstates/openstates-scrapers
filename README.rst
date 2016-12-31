@@ -34,6 +34,6 @@ Testing
 ====
 To run all tests::
 
-  docker run openstates/openstates --entrypoint=nosetests /srv/openstates-web/openstates
+  docker run --entrypoint=nosetests openstates/openstates /srv/openstates-web/openstates
 
 Note that Illinois (il) is the only state with tests right now.
