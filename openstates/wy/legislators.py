@@ -47,12 +47,12 @@ class WYLegislatorScraper(LegislatorScraper):
             fax = None
 
             for td in office_tds:
-                if td.startswith('Work -'):
-                    phone = td.strip('Work - ')
+                if td.startswith('Home - '):
+                    phone = td.strip('Home - ')
                 elif td.startswith('Cell -'):
                     phone = td.strip('Cell - ')
-                elif td.startswith('Home - '):
-                    phone = td.strip('Home - ')
+                elif td.startswith('Work -'):
+                    phone = td.strip('Work - ')
 
                 if td.startswith('Fax -'):
                     fax = td.strip('Fax - ')
@@ -64,14 +64,11 @@ class WYLegislatorScraper(LegislatorScraper):
                              photo_url=photo_url,
                              url=leg_url)
 
-            adr = " ".join(address)
-            if adr.strip() != "":
-                leg.add_office('district', 'Contact Information',
-                               address=adr, phone=phone, fax=fax,
-                               email=email_address)
-            else:
-                leg.add_office('district', 'Contact Information',
-                               email=email_address)
+            adr = " ".join([part.strip() for part in address]) or None
+
+            leg.add_office('district', 'Contact Information',
+                           address=adr, phone=phone, fax=fax,
+                           email=email_address)
 
             leg.add_source(url)
             leg.add_source(leg_url)
