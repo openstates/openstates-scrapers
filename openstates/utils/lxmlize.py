@@ -14,11 +14,13 @@ class LXMLMixin(object):
             Element: Document node representing the page.
         """
         try:
-            response = requests.get(url)
+            # This class is always mixed into subclasses of `billy.Scraper`,
+            # which have a `get` method defined.
+            response = self.get(url)
         except requests.exceptions.SSLError:
             self.warning('`self.lxmlize()` failed due to SSL error, trying'\
-                'an unverified `requests.get()`')
-            response = requests.get(url, verify=False)
+                'an unverified `self.get()` (i.e. `requests.get()`)')
+            response = self.get(url, verify=False)
 
         if raise_exceptions:
             response.raise_for_status()
