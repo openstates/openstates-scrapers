@@ -395,8 +395,11 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             party = district_affiliations[district].strip()
             if not party or party is None:
-                self.logger.warn('Vacant seat in District {}.'.format(district))
-                continue
+                self.warning('Party for {} (Assembly district {}) has not been listed yet'.format(name, district))
+                party = None
+                # If seats become empty, there may need to be a
+                # `continue` added back in here, assuming no name
+                # or other information was found
 
             photo_url = 'http://assembly.state.ny.us/mem/pic/{0:03d}.jpg'\
                 .format(int(district))
