@@ -15,6 +15,7 @@ import zipfile
 import subprocess
 import logging
 import urllib
+import lxml.html
 from datetime import datetime
 from os.path import join, split
 from functools import partial
@@ -32,7 +33,7 @@ MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
 MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
 
-BASE_URL = 'ftp://www.leginfo.ca.gov/pub/bill/'
+BASE_URL = 'http://downloads.leginfo.legislature.ca.gov/'
 
 
 # ----------------------------------------------------------------------------
@@ -281,15 +282,28 @@ def db_create():
 
 def get_contents():
     resp = {}
-    for line in urllib.urlopen(BASE_URL).read().splitlines()[1:]:
-        date, filename = re.match('[drwx-]{10}\s+\d\s+\d{3}\s+\d{3}\s+\d+ (\w+\s+\d+\s+\d+:?\d*) (\w+.\w+)', line).groups()
-        date = date.replace('  ', ' ')
-        try:
-            date = datetime.strptime(date, '%b %d %Y')
-        except ValueError:
-            date = ' '.join([date, str(datetime.now().year)])
-            date = datetime.strptime(date, '%b %d %H:%M %Y')
-        resp[filename] = date
+    # for line in urllib.urlopen(BASE_URL).read().splitlines()[1:]:
+    #     print line
+    #     date, filename = re.match('[drwx-]{10}\s+\d\s+\d{3}\s+\d{3}\s+\d+ (\w+\s+\d+\s+\d+:?\d*) (\w+.\w+)', line).groups()
+    #     date = date.replace('  ', ' ')
+    #     try:
+    #         date = datetime.strptime(date, '%b %d %Y')
+    #     except ValueError:
+    #         date = ' '.join([date, str(datetime.now().year)])
+    #         date = datetime.strptime(date, '%b %d %H:%M %Y')
+    #     resp[filename] = date
+    # return resp
+
+    html = urllib.urlopen(BASE_URL).read()
+    doc = lxml.html.fromstring(html)
+    #doc.make_links_absolute(BASE_URL)
+    rows = doc.xpath('//table/tr')
+    for row in rows[2:]:
+        date = row.xpath('string(td[3])').strip()
+        if date:
+            date = datetime.strptime(date, '%d-%b-%Y %H:%M')
+            filename = row.xpath('string(td[2]/a[1]/@href)')
+            resp[filename] = date
     return resp
 
 def _check_call(*args):
