@@ -20,26 +20,26 @@ metadata = {
     'capitol_timezone': 'America/New_York',
     'terms': [
         {
-            'end_year': 2010,
             'start_year': 2009,
+            'end_year': 2010,
             'name': '186',
             'sessions': ['186th']
         },
         {
-            'end_year': 2012,
             'start_year': 2011,
+            'end_year': 2012,
             'name': '187',
             'sessions': ['187th']
         },
         {
-            'end_year': 2013,
-            'start_year': 2014,
+            'start_year': 2013,
+            'end_year': 2014,
             'name': '188',
             'sessions': ['188th']
         },
         {
-            'end_year': 2015,
-            'start_year': 2016,
+            'start_year': 2015,
+            'end_year': 2016,
             'name': '189',
             'sessions': ['189th']
         }
