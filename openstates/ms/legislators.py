@@ -95,10 +95,10 @@ class MSLegislatorScraper(LegislatorScraper):
             email_name = root.xpath('string(//EMAIL_ADDRESS)').strip()
             cap_room = root.xpath('string(//CAP_ROOM)')
 
-            if leg_name in ('Lataisha Jackson', 'John G. Faulkner'):
+            if leg_name in ('Lataisha Jackson', 'John G. Faulkner', 'Abe Hudson'):
                 assert not party, "Remove special-casing for this Democrat without a listed party: {}".format(leg_name)
                 party = 'Democratic'
-            elif leg_name in ('James W. Mathis', 'J. Walter Michel'):
+            elif leg_name in ('James W. Mathis', 'Donnie Scoggin', 'John Glen Corley'):
                 assert not party, "Remove special-casing for this Republican without a listed party: {}".format(leg_name)
                 party = 'Republican'
             elif party == 'D':
@@ -146,4 +146,3 @@ class MSLegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
         except scrapelib.HTTPError, e:
             self.warning(str(e))
-
