@@ -300,7 +300,12 @@ class WIBillScraper(BillScraper):
 
 
     def add_senate_votes(self, vote, url):
-        html = self.get(url).text
+        try:
+            html = self.get(url).text
+        except scrapelib.HTTPError:
+            self.warning('No Senate Votes found for %s' % url)
+            return
+
         doc = lxml.html.fromstring(html)
 
         # what to do with the pieces
@@ -327,7 +332,12 @@ class WIBillScraper(BillScraper):
                 raise ValueError('unexpected block in vote')
 
     def add_house_votes(self, vote, url):
-        html = self.get(url).text
+        try:
+            html = self.get(url).text
+        except scrapelib.HTTPError:
+            self.warning('No House Votes found for %s' % url)
+            return
+
         doc = lxml.html.fromstring(html)
 
         header_td = doc.xpath('//td[@align="center"]')[0].text_content()
