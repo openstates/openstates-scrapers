@@ -11,7 +11,7 @@ metadata = dict(
     abbreviation='dc',
     capitol_timezone='America/New_York',
     legislature_name='Council of the District of Columbia',
-    legislature_url='http://dccouncil.washington.dc.us/',
+    legislature_url='http://dccouncil.us/',
     chambers = { 'upper': { 'name': 'Council', 'title': 'Councilmember' } },
     terms=[
         #{'name': '2005-2006', 'sessions': ['16'],
@@ -26,6 +26,8 @@ metadata = dict(
          'start_year': 2013, 'end_year': 2014},
         {'name': '2015-2016', 'sessions': ['21'],
          'start_year': 2015, 'end_year': 2016},
+        {'name': '2017-2018', 'sessions': ['22'],
+         'start_year': 2017, 'end_year': 2018},
         ],
     session_details={
         '19': {'display_name': '19th Council Period (2011-2012)',
@@ -34,6 +36,8 @@ metadata = dict(
                '_scraped_name': '20' },
         '21': {'display_name': '21st Council Period (2015-2016)',
                '_scraped_name': '21' },
+        '22': {'display_name': '22nd Council Period (2017-2018)',
+               '_scraped_name': '22' },
     },
     feature_flags=[],
     _ignored_scraped_sessions=['18', '17', '16', '15', '14', '13', '12', '11',
@@ -42,9 +46,11 @@ metadata = dict(
 )
 
 def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://dcclims1.dccouncil.us/lims/list.aspx',
-                     '//option/text()')
+    import requests
+    from .utils import decode_json
+    r = requests.post('http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/LIMSLookups', headers={'content-type': 'application/json'})
+    data = decode_json(r.json())
+    return [c['Prefix'] for c in data['d']['CouncilPeriods']]
 
 def extract_text(doc, data):
     lines = pdfdata_to_text(data).splitlines()

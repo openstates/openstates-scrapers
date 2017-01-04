@@ -79,10 +79,10 @@ class DCLegislatorScraper(LegislatorScraper):
             legislator.add_office(
                 'capitol',
                 'Council Office',
-                address=office_address,
+                address=office_address or None,
                 phone=phone,
                 fax=fax,
-                email=email)
+                email=email or None)
 
             legislator.add_source(url)
 
