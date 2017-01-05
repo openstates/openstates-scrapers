@@ -19,10 +19,16 @@ class VTBillScraper(BillScraper, LXMLMixin):
 
         # Load all bills and resolutions via the private API
         bills_url = \
-                'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
+                'http://legislature.vermont.gov/bill/loadBillsReleased/{}/'.\
                 format(year_slug)
         bills_json = self.get(bills_url).text
         bills = json.loads(bills_json)['data'] or []
+
+        bills_url = \
+                'http://legislature.vermont.gov/bill/loadBillsIntroduced/{}/'.\
+                format(year_slug)
+        bills_json = self.get(bills_url).text
+        bills.extend(json.loads(bills_json)['data'] or [])
 
         resolutions_url = \
                 'http://legislature.vermont.gov/bill/loadAllResolutionsByChamber/{}/both'.\
