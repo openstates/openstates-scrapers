@@ -3,6 +3,10 @@ MAINTAINER  James Turk <james@openstates.org>
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# add mongo 3.4 packages
+RUN echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.4 main" > /etc/apt/sources.list.d/mongodb-org-3.4.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+
 # CA requires MySQL (python-dev, mysql-server, libmysqlclient-dev) and utilities (wget, unzip)
 # NM and NJ require mdbtools
 # KS requires Abiword
@@ -19,7 +23,7 @@ RUN apt-get clean \
         libxslt1-dev \
         poppler-utils \
         s3cmd \
-        mongodb-clients \
+        mongodb-org-tools \
         mysql-server \
         libmysqlclient-dev \
         freetds-dev \
