@@ -19,7 +19,7 @@ class NEVoteScraper(VoteScraper):
     jurisdiction = 'ne'
 
     def scrape(self, session, chambers):
-        urls = {'104': ['http://www.nebraskalegislature.gov/FloorDocs/Current/PDF/Journal/r1journal.pdf',]}
+        urls = {'105': ['http://www.nebraskalegislature.gov/FloorDocs/Current/PDF/Journal/r1journal.pdf',]}
         for url in urls[session]:
             self.scrape_journal(session, url)
 
