@@ -75,12 +75,12 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape_upper(self, chamber, term):
         url = 'http://www.senate.michigan.gov/senatorinfo.html'
         doc = self.lxmlize(url)
-        for row in doc.xpath('//table[not(@id="calendar")]//tr')[3:]:
-            if len(row) != 6:
+        for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
+            if len(row) != 7:
                 continue
 
             # party, dist, member, office_phone, office_fax, office_loc
-            party, dist, member, phone, fax, loc = row.getchildren()
+            party, dist, member, contact, phone, fax, loc = row.getchildren()
             if (party.text_content().strip() == "" or
                     'Lieutenant Governor' in member.text_content()):
                 continue
@@ -97,7 +97,7 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
             leg_url = member.xpath('a/@href')[0]
             office_phone = phone.text
             office_fax = fax.text
-            
+
             office_loc = loc.text
             office_loc = re.sub(
                     ' Farnum Bldg',
