@@ -44,11 +44,27 @@ class KYBillScraper(BillScraper, LXMLMixin):
         if (self.metadata['session_details'][session]['start_date'] >=
             self.metadata['session_details']['2016RS']['start_date']):
             self._is_post_2016 = True
+        
+        today = datetime.date.today()
+        
+        #KY does prefiles in a seperate page            
+        if ('prefile_start_date' in self.metadata['session_details'][session]
+        and self.metadata['session_details'][session]['start_date'] >= today
+        and self.metadata['session_details'][session]['prefile_start_date'] <= today):
+            self.scrape_prefile_list(chamber, session)
+        else:
+            self.scrape_subjects(session)
+            self.scrape_session(chamber, session)
+            for sub in self.metadata['session_details'][session].get('sub_sessions', []):
+                self.scrape_session(chamber, sub)
 
-        self.scrape_subjects(session)
-        self.scrape_session(chamber, session)
-        for sub in self.metadata['session_details'][session].get('sub_sessions', []):
-            self.scrape_session(chamber, sub)
+    def scrape_prefile_list(self, chamber, session):
+        bill_url = 'http://www.lrc.ky.gov/record/17RS/prefiled/prefiled_bills.htm'
+        if 'upper' == chamber:
+            bill_url = 'http://www.lrc.ky.gov/record/17RS/prefiled/prefiled_sponsor_senate.htm'
+        elif 'lower' == chamber:
+            bill_url = 'http://www.lrc.ky.gov/record/17RS/prefiled/prefiled_sponsor_house.htm'
+        self.scrape_bill_list(chamber, session, bill_url)
 
     def scrape_session(self, chamber, session):
         bill_url = session_url(session) + "bills_%s.htm" % chamber_abbr(chamber)
@@ -73,6 +89,7 @@ class KYBillScraper(BillScraper, LXMLMixin):
                 else:
                     bill_id = bill_abbr + bill_id
 
+                bill_id = bill_id.replace('*','')
                 self.parse_bill(chamber, session, bill_id,
                     link.attrib['href'])
 
