@@ -2,6 +2,8 @@
 from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
 from .people import FlPersonScraper
+# TODO: this should probably be moved somewhere common
+from .common import url_xpath
 
 
 class Florida(Jurisdiction):
@@ -9,6 +11,7 @@ class Florida(Jurisdiction):
     classification = "government"
     name = "Florida"
     url = "http://myflorida.com"
+    check_sessions = True
     scrapers = {
         "bills": FlBillScraper,
         "people": FlPersonScraper,
@@ -29,7 +32,9 @@ class Florida(Jurisdiction):
         {'name': '2015 Special Session B', 'identifier': '2015B', 'classification': 'special'},
         {'name': '2015 Special Session C', 'identifier': '2015C', 'classification': 'special'},
         {'name': '2016 Regular Session', 'identifier': '2016', 'classification': 'primary'},
+        {'name': '2017 Regular Session', 'identifier': '2017', 'classification': 'primary'},
     ]
+    ignored_scraped_sessions = ['2010', '2010A', '2010O', '2012O', '2016O', '2014O']
 
     def get_organizations(self):
         legis = Organization(name="Florida Legislature", classification="legislature")
@@ -48,3 +53,6 @@ class Florida(Jurisdiction):
         yield legis
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath('http://flsenate.gov', '//option/text()')
