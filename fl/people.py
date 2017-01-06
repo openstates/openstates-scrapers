@@ -87,16 +87,16 @@ class RepList(Page):
     list_xpath = '//div[@id="MemberListing"]/div[@class="rep_listing1"]'
 
     def handle_list_item(self, item):
-        link = item.xpath('.//div[@class="rep_style"]/a')[0]
+        link = item.xpath('.//div[contains(@class, "rep_style")]/a')[0]
         name = link.text_content().strip()
 
         if 'Vacant' in name or 'Resigned' in name or 'Pending' in name:
             return
 
-        party = item.xpath('.//div[@class="party_style"]/text()')[0].strip()
+        party = item.xpath('.//div[contains(@class, "party_style")]/text()')[0].strip()
         party = {'D': 'Democratic', 'R': 'Republican'}[party]
 
-        district = item.xpath('.//div[@class="district_style"]/text()')[0].strip()
+        district = item.xpath('.//div[contains(@class, "district_style")]/text()')[0].strip()
 
         leg_url = link.get('href')
         split_url = parse.urlsplit(leg_url)

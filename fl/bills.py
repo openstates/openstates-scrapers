@@ -87,7 +87,7 @@ class LocationMatcher:
 
 
 class BillDetail(Page):
-    loc_matcher = LocationMatcher()
+    #loc_matcher = LocationMatcher()
 
     def handle_page(self):
         self.process_history()
@@ -110,7 +110,7 @@ class BillDetail(Page):
                     text = self.scrape_page(BillVersionHTML, url=version_url)
 
                 # look for place names in text
-                self.obj.extras['places'] = self.loc_matcher.match(text)
+                #self.obj.extras['places'] = self.loc_matcher.match(text)
 
                 self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
         except IndexError:
@@ -412,14 +412,17 @@ class HousePage(Page):
     def do_request(self):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r'^\w+\s(\d+\w*)$', self.kwargs['bill'].identifier).group(1)
-        session_number = {'2016': '80',
-                          '2015C': '82',
-                          '2015B': '81',
-                          '2015A': '79',
-                          '2015': '76',
-                          '2014O': '78',
-                          '2014A': '77',
-                          }[self.kwargs['bill'].legislative_session]
+        session_number = {
+            '2016': '80',
+            '2015C': '82',
+            '2015B': '81',
+            '2015A': '79',
+            '2015': '76',
+            '2014O': '78',
+            '2014A': '77',
+            '2017': '83',
+            '2016O': '84',
+        }[self.kwargs['bill'].legislative_session]
 
         form = {
             'rblChamber': 'B',
