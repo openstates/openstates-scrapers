@@ -97,10 +97,8 @@ class NMBillScraper(BillScraper):
     categorizer = Categorizer()
 
     def _init_mdb(self, session):
-        print session[2:]
         ftp_base = 'ftp://www.nmlegis.gov/other/'
-        #session slug here?
-        fname = 'LegInfo{}'.format('16 Special')
+        fname = 'LegInfo{}'.format(session[2:])
         fname_re = '(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
             '({fname}.*zip)'.format(fname=fname)
 
