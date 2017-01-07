@@ -20,28 +20,34 @@ metadata = {
     'capitol_timezone': 'America/New_York',
     'terms': [
         {
-            'start_year': 2009,
             'end_year': 2010,
+            'start_year': 2009,
             'name': '186',
             'sessions': ['186th']
         },
         {
-            'start_year': 2011,
             'end_year': 2012,
+            'start_year': 2011,
             'name': '187',
             'sessions': ['187th']
         },
         {
-            'start_year': 2013,
-            'end_year': 2014,
+            'end_year': 2013,
+            'start_year': 2014,
             'name': '188',
             'sessions': ['188th']
         },
         {
-            'start_year': 2015,
-            'end_year': 2016,
+            'end_year': 2015,
+            'start_year': 2016,
             'name': '189',
             'sessions': ['189th']
+        },
+        {
+            'end_year': 2017,
+            'start_year': 2018,
+            'name': '190',
+            'sessions': ['190th']
         }
     ],
     'name': 'Massachusetts',
@@ -68,6 +74,11 @@ metadata = {
             'display_name': '189th Legislature (2015-2016)',
             '_scraped_name': '189th',
         },
+        '190th': {
+            'type': 'primary',
+            'display_name': '190th Legislature (2017-2018)',
+            '_scraped_name': '190th',
+        },
     },
     'legislature_name': 'Massachusetts General Court',
     'chambers': {
@@ -83,10 +94,11 @@ def session_list():
     import requests
     import lxml.html
     doc = lxml.html.fromstring(requests.get(
-        'http://www.malegislature.gov/Bills/Search', verify=False).text)
-    sessions = doc.xpath("//select[@id='Input_GeneralCourtId']/option/text()")
+        'https://malegislature.gov/Bills/Search').text)
+    sessions = doc.xpath("//div[@data-refinername='lawsgeneralcourt']/div/label/text()")
 
-    sessions = [ re.sub("\(.*$", "", session).strip() for session in sessions]
+    #Remove all text between parens, like (Current) (7364)
+    sessions = list(filter(None, [re.sub(r'\([^)]*\)', "", session).strip() for session in sessions]))
     return sessions
 
 
