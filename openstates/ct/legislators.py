@@ -80,8 +80,10 @@ class CTLegislatorScraper(LegislatorScraper):
                 row['capitol street address'], row['room number'])
             email = row['email'].strip()
             if "@" not in email:
-                assert email.endswith("mailform.php"), "Problematic email found: {}".format(email)
-                email = None
+                if not email or email.endswith('mailform.php'):
+                    email = None
+                else:
+                    raise ValueError("Problematic email found: {}".format(email))
             leg.add_office('capitol', 'Capitol Office',
                            address=office_address,
                            phone=row['capitol phone'],
