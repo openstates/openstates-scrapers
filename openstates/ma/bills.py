@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
 import re
 import time
 import itertools
+import requests
 from datetime import datetime
 
 import lxml.html
@@ -13,6 +15,11 @@ from .actions import Categorizer
 class MABillScraper(BillScraper):
     jurisdiction = 'ma'
     categorizer = Categorizer()
+    session_filters = {}
+    chamber_filters = {}
+
+    chamber_map = {'lower':'House', 'upper':'Senate'}
+    chamber_map_reverse = {'House':'lower', 'Senate':'upper', 'Executive':'executive', 'Joint':'joint'}
 
     def __init__(self, *args, **kwargs):
         super(MABillScraper, self).__init__(*args, **kwargs)
@@ -20,119 +27,190 @@ class MABillScraper(BillScraper):
         # self.retry_attempts = 0
         self.raise_errors = False
 
+    def format_bill_number(self, raw):
+        return raw.replace('Bill ','').replace('.',' ').strip()
+
+    def get_refiners(self, page, refinerName):
+        # Get the possible values for each category of refiners,
+        # e.g. House, Senate for lawsbranchname (Branch)
+        filters = page.xpath("//div[@data-refinername='{}']/div/label".format(refinerName))
+
+        refiner_list = {}
+        for refiner_filter in filters:
+            label = re.sub(r'\([^)]*\)', "", refiner_filter.xpath('text()')[1]).strip()
+            refiner = refiner_filter.xpath('input/@data-refinertoken')[0].replace('"','')
+            refiner_list[label] = refiner
+        return refiner_list
+
     def scrape(self, chamber, session):
         # for the chamber of the action
-        chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint',
-                       'Governor': 'executive'}
+        #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
+        #self.scrape_bill(session,'S11',chamber)
 
-        session_slug = session[:-2]
-        chamber_slug = 'House' if chamber == 'lower' else 'Senate'
+        # Pull the search page to get the filters
+        search_url = 'https://malegislature.gov/Bills/Search'
+        page = lxml.html.fromstring(self.get(search_url).text)
 
-        # keep track of how many we've had to skip
-        skipped = 0
+        self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
+        self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
+        #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
-        for n in itertools.count(1):
-            bill_id = '%s%d' % (chamber_slug[0], n)
-            bill_url = 'http://www.malegislature.gov/Bills/%s/%s/%s' % (
-                session_slug, chamber_slug, bill_id)
+        lastPage = self.get_max_pages(session, chamber)
 
-            # lets assume if 10 bills are missing we're done
-            if skipped == 10:
-                break
+        for pageNumber in range(1, lastPage + 1):
+            bills = self.list_bills(session, chamber, pageNumber)
+            for bill in bills:
+                bill = self.format_bill_number(bill).replace(' ','')
+                self.scrape_bill(session, bill, chamber )
 
-            html = self.get(bill_url, verify=False).text
-            if 'Unable to find the Bill' in html:
-                self.warning('skipping %s' % bill_url)
-                skipped += 1
-                continue
+    def list_bills(self, session, chamber, pageNumber):
+        session_filter = self.session_filters[session]
+        chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
+        search_url = u'https://malegislature.gov/Bills/Search?SearchTerms=&Page={}&Refinements%5Blawsgeneralcourt%5D={}&&Refinements%5Blawsbranchname%5D={}'.format(
+            pageNumber, session_filter, chamber_filter)
 
-            # sometimes the site breaks, missing vital data
-            if 'billShortDesc' not in html:
-                self.warning('truncated page on %s' % bill_url)
-                time.sleep(1)
-                html = self.get(bill_url, verify=False).text
-                if 'billShortDesc' not in html:
-                    self.warning('skipping %s' % bill_url)
-                    skipped += 1
-                    continue
-                else:
-                    skipped = 0
-            else:
-                skipped = 0
+        page = lxml.html.fromstring(requests.get(search_url).text)
+        resultRows = page.xpath('//table[@id="searchTable"]/tbody/tr/td[2]/a/text()')
+        return resultRows
 
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute('http://www.malegislature.gov/')
+    def get_max_pages(self, session, chamber):
+        session_filter = self.session_filters[session]
+        try:
+            chamber_filter = self.chamber_filters[self.chamber_map[chamber]]
+        except KeyError:
+            self.warning("No bills found for %s" % chamber)
+            return 0
 
-            title = doc.xpath('//h2/span/text()')[0].strip()
-            desc = doc.xpath('//p[@class="billShortDesc"]/text()')[0]
+        search_url = u'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1&Refinements%5Blawsgeneralcourt%5D={}&&Refinements%5Blawsbranchname%5D={}'.format(
+            session_filter, chamber_filter)
 
-            #for resoltions that do not always have a typical title
-            if (title == ''):
-                title = doc.xpath('//*[@id="billDetail"]/div[2]/p')[0].text_content().strip()
+        page = lxml.html.fromstring(requests.get(search_url).text)
+
+        if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
+            maxPage = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')[0]
+            maxPage = re.sub(r'[^\d]', '', maxPage).strip()
+        else:
+            maxPage = 1
+
+        return int(maxPage)
+
+    def scrape_bill(self, session, bill_id, chamber):
+        #https://malegislature.gov/Bills/189/SD2739
+        session_for_url =  self.replace_non_digits(session)
+        bill_url = u'https://malegislature.gov/Bills/{}/{}'.format(session_for_url, bill_id)
+
+        print bill_url
+
+        try:
+            response = requests.get(bill_url)
+        except requests.exceptions.RequestException as e:
+            self.warning(u'Server Error on {}'.format(bill_url))
+            return False 
+
+        html = response.text
+
+        page = lxml.html.fromstring(html)
+
+        if page.xpath('//div[contains(@class, "followable")]/h1/text()'):
+            bill_number = page.xpath('//div[contains(@class, "followable")]/h1/text()')[0]
+        else:
+            self.warning(u'Server Error on {}'.format(bill_url))
+            return False             
+
+        bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[0]
+
+        bill_summary = ''
+        if page.xpath('//p[@id="pinslip"]/text()'):
+            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
+
+        bill_id = re.sub(r'[^S|H|\d]','',bill_id)
+
+        bill = Bill(session, chamber,bill_id, bill_title,
+                    summary=bill_summary)
+        bill.add_source(bill_url)
 
 
-            # create bill
-            bill = Bill(session, chamber, bill_id, title, summary=desc)
-            bill.add_source(bill_url)
+        #https://malegislature.gov/Bills/189/SD2739 has a presenter
+        #https://malegislature.gov/Bills/189/S2168 no sponsor
+        # Find the non-blank text of the dt following Sponsor or Presenter,
+        # including any child link text.
+        sponsor = page.xpath('//dt[text()="Sponsor:" or text()="Presenter:"]/following-sibling::dd/descendant-or-self::*/text()[normalize-space()]')
+        if sponsor:
+            sponsor = sponsor[0].strip()
+            bill.add_sponsor('primary', sponsor)
 
-            # actions
-            for act_row in doc.xpath('//tbody[@class="bgwht"]/tr'):
-                date = act_row.xpath('./td[@headers="bDate"]/text()')[0]
-                date = datetime.strptime(date, "%m/%d/%Y")
-                actor_txt = act_row.xpath('./td[@headers="bBranch"]')[0].text_content().strip()
-                if actor_txt:
-                    actor = chamber_map[actor_txt]
-                action = act_row.xpath('./td[@headers="bAction"]')[0].text_content().strip()
-                # from here (MABillScraper namespace) we import categorizer from actions.py which
-                # imports categorizer from billy.scrape.actions.BaseCategorizer
-                attrs = self.categorizer.categorize(action)
-                bill.add_action(actor, action, date, **attrs)
+        has_cosponsor = page.xpath('//a[starts-with(normalize-space(.),"Petitioners")]')
+        if has_cosponsor:
+            self.scrape_cosponsors(bill, bill_url)
 
-            # I tried to, as I was finding the sponsors, detect whether a
-            # sponsor was already known. One has to do this because an author
-            # is listed in the "Sponsors:" section and then the same person
-            # will be listed with others in the "Petitioners:" section. We are
-            # guessing that "Sponsors" are authors and "Petitioners" are
-            # co-authors. Does this make sense?
+        version = page.xpath("//div[contains(@class, 'modalBtnGroup')]/a[contains(text(), 'Download PDF') and not(@disabled)]/@href")
+        if version:
+            version_url = "https://malegislature.gov{}".format(version[0])
+            bill.add_version('Bill Text', version_url,
+                    mimetype='application/pdf')
 
-            sponsors = dict((a.get('href'), a.text) for a in
-                            doc.xpath('//p[@class="billReferral"]/a'))
-            petitioners = dict((a.get('href'), a.text) for a in
-                               doc.xpath('//div[@id="billSummary"]/p[1]/a'))
+        self.scrape_actions(bill, bill_url)
 
-            if len(sponsors) == 0:
-                spons = doc.xpath('//p[@class="billReferral"]')[0].text_content()
-                spons = spons.strip()
-                spons = spons.split("\n")
-                cspons = []
-                for s in spons:
-                    if s and s.strip() != "":
-                        cspons.append(s)
+        self.save_bill(bill)
+        #print bill
 
-                sponsors = dict((s, s) for s in cspons)
+    def scrape_cosponsors(self, bill, bill_url):
+        #https://malegislature.gov/Bills/189/S1194/CoSponsor
+        cosponsor_url = "{}/CoSponsor".format(bill_url)
+        html = self.get_as_ajax(cosponsor_url).text
+        page = lxml.html.fromstring(html)
+        cosponsor_rows = page.xpath('//tbody/tr')
+        for row in cosponsor_rows:
+            # careful, not everyone is a linked representative
+            # https://malegislature.gov/Bills/189/S740/CoSponsor
+            cosponsor_name = row.xpath('string(td[1])')
+            cosponsor_district = ''
+            if row.xpath('td[2]/text()'):
+                cosponsor_district = row.xpath('td[2]/text()')[0]
+        
+            #Filter the sponsor out of the petitioners list
+            if not any(sponsor['name'] == cosponsor_name for sponsor in bill['sponsors']):
+                bill.add_sponsor('cosponsor', cosponsor_name, district=cosponsor_district)
 
-            # remove sponsors from petitioners
-            for k in sponsors:
-                petitioners.pop(k, None)
+    def scrape_actions(self, bill, bill_url):
+        # scrape_action_page adds the actions, and also returns the Page xpath object
+        # so that we can check for a paginator
+        page = self.scrape_action_page(bill, bill_url, 1)
+        
+        max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
+        if max_page:
+            max_page = re.sub(r'[^\d]', '', max_page[0]).strip()
+            for counter in range(2, int(max_page)+1):
+                page = self.scrape_action_page(bill, bill_url, counter)
+                #https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
-            for sponsor in sponsors.values():
-                if sponsor == 'NONE':
-                    continue
-                if sponsor is None:
-                    continue
-                bill.add_sponsor('primary', sponsor)
 
-            for petitioner in petitioners.values():
-                if sponsor == 'NONE':
-                    continue
-                bill.add_sponsor('cosponsor', petitioner)
+    def scrape_action_page(self, bill, bill_url, page_number):
+        actions_url = "{}/BillHistory?pageNumber={}".format(bill_url, page_number)
+        page = lxml.html.fromstring(self.get_as_ajax(actions_url).text)
+        action_rows = page.xpath('//tbody/tr')
+        for row in action_rows:
+            action_date = row.xpath('td[1]/text()')[0]
+            action_date = datetime.strptime(action_date, '%m/%d/%Y')
 
-            bill_text_url = doc.xpath(
-                '//a[contains(@href, "/Document/Bill/{}/")]/@href'.
-                format(session_slug))
-            if bill_text_url:
-                assert bill_text_url[0].endswith('.pdf'), "Handle other mimetypes"
-                bill.add_version('Current Text', bill_text_url[0],
-                                 mimetype='application/pdf')
+            if row.xpath('td[2]/text()'):
+                action_actor = row.xpath('td[2]/text()')[0]
+                action_actor = self.chamber_map_reverse[action_actor.strip()]
 
-            self.save_bill(bill)
+            action_name = row.xpath('string(td[3])')
+
+            attrs = self.categorizer.categorize(action_name)
+
+            #TODO: categorize action
+            bill.add_action(action_actor, action_name, action_date, **attrs)
+        return page
+
+    def get_as_ajax(self, url):
+        #set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
+        s = requests.Session()
+        s.headers.update({'X-Requested-With': 'XMLHttpRequest'})
+        return s.get(url)
+
+    def replace_non_digits(self, str):
+        return re.sub(r'[^\d]', '', str).strip()
+
