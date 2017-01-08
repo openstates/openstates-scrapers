@@ -120,10 +120,16 @@ class NCBillScraper(BillScraper):
 
         # sponsors
         spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
-        for leg in spon_td.xpath('a'):
-            # type = 'primary' if 'Primary' in leg.tail else 'cosponsor'
-            name = leg.text_content().replace(u'\xa0', ' ')
-            bill.add_sponsor('primary', name, chamber=chamber)
+        # first sponsors are primary, until we see (Primary)
+        spon_type = 'primary'
+        for leg in spon_td.text_content().split('; \n'):
+            name = leg.replace(u'\xa0', ' ').strip()
+            if name.startswith('(Primary)'):
+                name = name.replace('(Primary)', '').strip()
+                spon_type = 'cosponsor'
+            if not name:
+                continue
+            bill.add_sponsor(spon_type, name, chamber=chamber)
 
         # keywords
         kw_td = doc.xpath('//th[text()="Keywords:"]/following-sibling::td')[0]
