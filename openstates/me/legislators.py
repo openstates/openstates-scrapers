@@ -84,7 +84,7 @@ class MELegislatorScraper(LegislatorScraper):
                 office_email = office_email[0]
             else:
                 office_email = None
-            
+
             business_phone = re.search(
                     r'<B>Business Telephone:  </B>(.+?)<P>', html, re.IGNORECASE)
             home_phone = re.search(
@@ -159,9 +159,7 @@ class MELegislatorScraper(LegislatorScraper):
                 'email': 12
         }
 
-        list_location = '2014/12/127th-Senate-Members2'
-        url = ('http://legisweb1.mainelegislature.org/wp/senate/'
-                'wp-content/uploads/sites/2/{}.xlsx'.format(list_location))
+        url = 'https://mainelegislature.org/uploads/visual_edit/128th-senate-members-for-distribution-1.xlsx'
         fn, result = self.urlretrieve(url)
 
         wb = xlrd.open_workbook(fn)
