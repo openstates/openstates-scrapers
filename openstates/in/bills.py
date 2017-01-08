@@ -195,7 +195,7 @@ class INBillScraper(BillScraper):
 
         #votes
         votes = version["rollcalls"]
-        #self._process_votes(votes,bill,proxy)
+        self._process_votes(votes,bill,proxy)
 
     def scrape(self, session, chambers):
         self._bill_prefix_map = {
