@@ -53,7 +53,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             if 'resigned' in link.text:
                 self.log('skipping %s' % link.text)
                 continue
-            
+
             self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
@@ -73,18 +73,15 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
 
             # Retrieve profile photo.
             profile_page = self.lxmlize(profile_url.format(lis_id))
-            photo_url = self.get_node(
-                profile_page,
-                xpath_query)
+            photo_url = self.get_node(profile_page, xpath_query)
 
         # Detect whether URL points to a blank base location.
         blank_urls = (
-            'http://memdata.virginiageneralassembly.gov/images/display_'
-            'image/',
+            'http://memdata.virginiageneralassembly.gov/images/display_image/',
             'http://virginiageneralassembly.gov/house/members/photos/',
         )
 
-        if photo_url in blank_urls:
+        if photo_url in blank_urls or photo_url is None:
             photo_url = ''
 
         if (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
