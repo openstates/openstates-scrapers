@@ -141,8 +141,6 @@ class MELegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_senators(self, chamber, term):
-        session = ((int(term[0:4]) - 2009) / 2) + 124
-
         mapping = {
                 'district': 0,
                 'first_name': 2,
@@ -166,7 +164,7 @@ class MELegislatorScraper(LegislatorScraper):
         sh = wb.sheet_by_index(0)
 
         LEGISLATOR_ROSTER_URL = \
-            'http://legisweb1.mainelegislature.org/wp/senate/senators/'
+            'https://mainelegislature.org/senate/128th-senators/9332'
         roster_doc = lxml.html.fromstring(self.get(LEGISLATOR_ROSTER_URL).text)
         roster_doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
 
@@ -199,12 +197,12 @@ class MELegislatorScraper(LegislatorScraper):
 
             # Determine legislator's URL to get their photo
 
-            URL_XPATH = '//address[contains(text(), "(District {})")]/a/@href'. \
-                    format(district)
+            URL_XPATH = '//li/a[contains(text(), "District {:02d}")]/@href'.format(int(district))
 
             try:
                 (leg_url, ) = roster_doc.xpath(URL_XPATH)
             except ValueError:
+                self.warning('vacant seat %s', district)
                 continue # Seat is vacant
 
             leg = Legislator(term, chamber, district, full_name,
