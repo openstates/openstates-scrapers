@@ -76,6 +76,12 @@ metadata = {
             'end_year': 2016,
             'sessions': ['2015', '2015spcl', '2016'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
+        },
     ],
     'session_details': {
         #'1998': {'type': 'primary',
@@ -157,67 +163,76 @@ metadata = {
             'display_name': '61st Legislature, 1st Regular Session (2011)',
             'start_date': datetime.date(2011, 1, 10),
             'end_date': datetime.date(2011, 4, 7),
-            '_scraped_name': '2011 Session Information',
+            '_scraped_name': '2011 Session',
         },
         '2012': {
             'type': 'primary',
             'display_name': '61st Legislature, 2nd Regular Session (2012)',
-            '_scraped_name': '2012 Session Information',
+            '_scraped_name': '2012 Session',
         },
         '2013': {
             'type': 'primary',
             'display_name': '62nd Legislature, 1st Regular Session (2013)',
-            '_scraped_name': '2013 Session Information',
+            '_scraped_name': '2013 Session',
         },
         '2014': {
             'type': 'primary',
             'display_name': '63nd Legislature, 1st Regular Session (2014)',
-            '_scraped_name': '2014 Session Information',
+            '_scraped_name': '2014 Session',
         },
         '2015': {
             'type': 'primary',
             'start_date': datetime.date(2015, 1, 12),
             'end_date': datetime.date(2015, 4, 10),
             'display_name': '64th Legislature, 1st Regular Session (2015)',
-            '_scraped_name': '2015 Session Information',
+            '_scraped_name': '2015 Session',
         },
         '2015spcl': {
             'type': 'special',
             'start_date': datetime.date(2015, 5, 18),
             'end_date': datetime.date(2015, 5, 18),
             'display_name': '65th Legislature, 1st Extraordinary Session (2015)',
-            '_scraped_name': '2015 Extraordinary Session Information',
+            '_scraped_name': '2015 Extraordinary Session',
         },
         '2016' : {
             'type': 'primary',
             'start_date': datetime.date(2016, 1, 11),
             'end_date': datetime.date(2016, 3, 25),
             'display_name': '63rd Legislature, 2nd Regular Session (2016)',
-            '_scraped_name': '2016 Session Information',
-        }        
+            '_scraped_name': '2016 Session',
+        },
+        '2017' : {
+            'type': 'primary',
+            'start_date': datetime.date(2016, 1, 9),
+            'end_date': datetime.date(2016, 4, 7),
+            'display_name': '64th Legislature, 1st Regular Session (2017)',
+            '_scraped_name': '2017 Session',
+        },
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': [
-        '2010 Session Information',
-        '2009 Session Information',
-        '2008 Session Information',
-        '2007 Session Information',
-        '2006 Extraordinary Session Information',
-        '2006 Session Information',
-        '2005 Session Information',
-        '2004 Session Information',
-        '2003 Session Information ',
-        '2002 Session Information ',
-        '2001 Session Information ',
-        '2000 - 1998 Session Information ',
+        '2010 Session',
+        '2009 Session',
+        '2008 Session',
+        '2007 Session',
+        '2006 Extraordinary Session',
+        '2006 Session',
+        '2005 Session',
+        '2004 Session',
+        '2003 Session',
+        '2002 Session',
+        '2001 Session',
+        '2000 Extraordinary Session', 
+        '2000 Session',
+        '1999 Session',
+        '1998 Session',
     ],
 }
 
 
 def session_list():
-    sessions = url_xpath('http://legislature.idaho.gov/priorsessions.htm',
-        '//td[@width="95%"]/ul/li/a/text()')[:-1]
-
+    sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
+        '//select[@id="ddlsessions"]/option/text()')
     return sessions
 
 
