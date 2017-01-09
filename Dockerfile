@@ -1,39 +1,47 @@
-FROM        sunlightlabs/billy:latest
-MAINTAINER  Paul R. Tagliamonte <paultag@sunlightfoundation.com>
+FROM        openstates/billy:latest
+MAINTAINER  James Turk <james@openstates.org>
 
-ENV DEBIAN_FRONTEND noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir -p /opt/sunlightfoundation.com/
-ADD . /opt/sunlightfoundation.com/openstates/
-
-# Handle interactive part of MySQL server installation
-# Cannot use debconf to set a null password, so set that later
-RUN echo mysql-server mysql-server/root_password password nicetry | debconf-set-selections
-RUN echo mysql-server mysql-server/root_password_again password nicetry | debconf-set-selections
+# add mongo 3.4 packages
+RUN echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.4 main" > /etc/apt/sources.list.d/mongodb-org-3.4.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
 
 # CA requires MySQL (python-dev, mysql-server, libmysqlclient-dev) and utilities (wget, unzip)
 # NM and NJ require mdbtools
 # KS requires Abiword
-RUN apt-get clean && apt-get update && sleep 1 && apt-get -y upgrade && apt-get install -y \
-    poppler-utils \
-    s3cmd \
-    mongodb-clients \
-    locales-all \
-    python-dev \
-    mysql-server \
-    libmysqlclient-dev \
-    mdbtools \
-    abiword \
-    wget \
-    unzip
+# NH requires FreeTDS
+RUN apt-get clean \
+    && apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+        locales \
+        python-dev \
+        libssl-dev \
+        libffi-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        poppler-utils \
+        s3cmd \
+        mongodb-org-tools \
+        mysql-server \
+        libmysqlclient-dev \
+        freetds-dev \
+        mdbtools \
+        abiword \
+        curl \
+        wget \
+        unzip
 
-RUN pip install -r /opt/sunlightfoundation.com/openstates/requirements.txt
-RUN pip install -e /opt/sunlightfoundation.com/openstates/
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=C.UTF-8
 
-RUN mysqld_safe & sleep 10 && mysql --user=root --password=nicetry -e "SET PASSWORD = PASSWORD('');" && mysqladmin shutdown
+ENV PROJECT_PATH="/srv/openstates-web/"
+RUN mkdir -p ${PROJECT_PATH}
+ADD . ${PROJECT_PATH}
+RUN echo "${PROJECT_PATH}/openstates/" > /usr/lib/python2.7/dist-packages/openstates.pth
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-
-RUN echo "/opt/sunlightfoundation.com/openstates/openstates/" > /usr/lib/python2.7/dist-packages/openstates.pth
+RUN pip install -U -r ${PROJECT_PATH}/requirements.txt
+RUN pip install -e ${PROJECT_PATH}

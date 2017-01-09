@@ -24,7 +24,7 @@ metadata = {
             'name': '2015-2018',
             'start_year': 2015,
             'end_year': 2018,
-            'sessions': ['2015os','2015rs', '2015fs', '2015ss', '2016rs'],
+            'sessions': ['2015os','2015rs', '2015fs', '2015ss', '2016rs','2016fs','2017rs'],
         }
     ],
     'session_details': {
@@ -88,6 +88,18 @@ metadata = {
             'internal_id': '1065',
             '_scraped_name': 'Regular Session 2016',
         },
+        '2016fs': {
+            'type': 'special',
+            'display_name': 'First Special Session 2016',
+            'internal_id': '1068',
+            '_scraped_name': 'First Special Session 2016',
+        },             
+        '2017rs': {
+            'type': 'primary',
+            'display_name': '2017 Regular Session',
+            'internal_id': '1069',
+            '_scraped_name': 'Regular Session 2017',
+        },        
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
@@ -132,10 +144,9 @@ def session_list():
     import requests
 
     s = requests.Session()
-    r = s.get('http://alisondb.legislature.state.al.us/alison/alisonlogin.aspx')
+    r = s.get('http://alisondb.legislature.state.al.us/alison/SelectSession.aspx')
     doc = lxml.html.fromstring(r.text)
-    options = doc.xpath('//option/text()')
-
+    options = doc.xpath('//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()')
     return options
 
 

@@ -114,7 +114,10 @@ class WYBillScraper(BillScraper, LXMLMixin):
         DESCRIPTION_RE = r'(?sm)\n\n((?:AN\s*?ACT|A JOINT RESOLUTION) .*?)\n\n'
         ACTIONS_RE = r'(?sm)\n\n(\d{1,2}/\d{1,2}/\d{4}.*)'
 
-        ext_title = re.search(DESCRIPTION_RE, all_text).group(1)
+        try:
+            ext_title = re.search(DESCRIPTION_RE, all_text).group(1)
+        except AttributeError:
+            ext_title = ''
         bill_desc = ext_title.replace('\n', ' ')
         bill_desc = re.sub("  *"," ",bill_desc.decode('utf-8')).encode('utf-8')
         bill['description'] = bill_desc

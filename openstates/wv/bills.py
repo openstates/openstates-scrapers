@@ -51,9 +51,18 @@ class WVBillScraper(BillScraper):
             orig = 's'
 
         # scrape bills
-        url = ("http://www.legis.state.wv.us/Bill_Status/"
+        if (self.metadata['session_details'][session]['type'] == 'special'):
+            url = ("http://www.legis.state.wv.us/Bill_Status/"
+               "Bills_all_bills.cfm?year=%s&sessiontype=%s"
+               "&btype=bill&orig=%s" 
+               % (self.metadata['session_details'][session]['_scraped_name'],
+               self.metadata['session_details'][session]['_special_name'],
+               orig))
+        else:
+            url = ("http://www.legis.state.wv.us/Bill_Status/"
                "Bills_all_bills.cfm?year=%s&sessiontype=RS"
                "&btype=bill&orig=%s" % (session, orig))
+               
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
@@ -67,8 +76,14 @@ class WVBillScraper(BillScraper):
                              link.attrib['href'])
 
         # scrape resolutions
-        res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?"
-                   "year=%s&sessiontype=rs&btype=res") % session
+        if (self.metadata['session_details'][session]['type'] == 'special'):
+            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s&sessiontype=%s&btype=res" 
+                % (self.metadata['session_details'][session]['_scraped_name'], 
+                self.metadata['session_details'][session]['_special_name']))
+        else:
+            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s&sessiontype=rs&btype=res" 
+                   % (self.metadata['session_details'][session]['_scraped_name']))
+                   
         doc = lxml.html.fromstring(self.get(res_url).text)
         doc.make_links_absolute(res_url)
 

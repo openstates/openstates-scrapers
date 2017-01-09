@@ -1,4 +1,5 @@
 import datetime as dt
+import re 
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.events import Event, EventScraper
@@ -14,11 +15,6 @@ column_order = {
     "lower" : 0
 }
 
-all_day = [  # ugh, hack
-    "Rise of the House",
-    "Rise of the Senate",
-    "Rise of the House & Senate"
-]
 replace = {
     "House Joint Resolution No." : "HJR",
     "House Resolution No." : "HR",
@@ -53,6 +49,16 @@ class RIEventScraper(EventScraper, LXMLMixin):
         date = metainf['DATE:']
         time = metainf['TIME:']
         where = metainf['PLACE:']
+
+        # check for duration in time
+        if ' - ' in time:
+            start, end = time.split(' - ')
+            am_pm_srch = re.search('(?i)(am|pm)', end)
+            if am_pm_srch:
+                time = ' '.join([start, am_pm_srch.group().upper()])
+            else:
+                time = start 
+
         fmts = [
             "%A, %B %d, %Y",
             "%A, %B %d, %Y %I:%M %p",
@@ -60,19 +66,14 @@ class RIEventScraper(EventScraper, LXMLMixin):
         ]
 
         kwargs = {}
-        if time in all_day:
+        event_desc = "Meeting Notice"
+        if 'Rise' in time:
             datetime = date
+            event_desc = "Meeting Notice: Starting at {}".format(time)
         else:
             datetime = "%s %s" % ( date, time )
         if "CANCELLED" in datetime.upper():
             return
-
-        event_desc = "Meeting Notice"
-        if "Rise of" in datetime:
-            datetime = date
-            kwargs["all_day"] = True
-            event_desc = "Meeting Notice: Starting at {}".format(time)
-
 
         transtable = {
             "P.M" : "PM",

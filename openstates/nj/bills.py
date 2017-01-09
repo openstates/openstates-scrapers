@@ -249,7 +249,11 @@ class NJBillScraper(BillScraper, MDBMixin):
                     mimetype = 'text/html'
                 elif htm_url.endswith('wpd'):
                     mimetype = 'application/vnd.wordperfect'
-                bill.add_version(doc_name, htm_url, mimetype=mimetype)
+                try:
+                    bill.add_version(doc_name, htm_url, mimetype=mimetype)
+                except ValueError:
+                    self.warning("Couldn't find a document for bill {}".format(bill_id))
+                    pass
             else:
                 bill.add_document(doc_name, htm_url)
 

@@ -21,9 +21,16 @@ metadata = {
         {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
          'sessions': ['2013_14']},
         {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015_16']}
+         'sessions': ['2015_16']},
+        {'name': '2017-2018', 'start_year': 2017, 'end_year': 2018,
+         'sessions': ['2017_18']}
      ],
     'session_details': {
+        '2017_18': {
+            'display_name': '2017-2018 Regular Session',
+            '_scraped_name': '2017-2018 Regular Session',
+            '_guid': 25
+        },
         '2015_16': {
             'display_name': '2015-2016 Regular Session',
             '_scraped_name': '2015-2016 Regular Session',

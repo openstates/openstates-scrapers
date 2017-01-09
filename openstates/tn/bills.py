@@ -192,16 +192,24 @@ class TNBillScraper(BillScraper):
     def scrape(self, term, chambers):
 
         #The index page gives us links to the paginated bill pages
-        index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
+        if self.metadata['session_details'][term]['type'] == 'special':
+            index_page = 'http://wapp.capitol.tn.gov/apps/indexes/SPSession1.aspx'
+            xpath = '//h4[text()="%s"]/following-sibling::table[1]/tbody/tr/td/a' % self.metadata['session_details'][term]['_scraped_name']
+        else:
+            index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
+            xpath = '//td[contains(@class,"webindex")]/a'
+        
         index_list_page = self.get(index_page).text
+        
         index_list_page = lxml.html.fromstring(index_list_page)
         index_list_page.make_links_absolute(index_page)
-        
-        for bill_listing in index_list_page.xpath('//td[contains(@class,"webindex")]/a'):
-            
+
+        for bill_listing in index_list_page.xpath(xpath):
+
             bill_listing = bill_listing.attrib['href'] 
        
             bill_list_page = self.get(bill_listing).text
+            
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 

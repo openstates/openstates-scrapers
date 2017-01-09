@@ -37,6 +37,12 @@ metadata = {
             'end_year': 2016,
             'sessions': ['2015', '2016'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
+        },
     ],
     'session_details': {
         '2011': {
@@ -65,6 +71,10 @@ metadata = {
             'end_date': datetime.date(2016, 5, 4),
             '_scraped_name': '2016',
         },
+        '2017': {
+            'display_name': '2017 Regular Session',
+            '_scraped_name': '2017',
+        },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
@@ -82,8 +92,8 @@ def session_list():
     import scrapelib
     text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
     sessions = [line.split()[-1] for line in text.splitlines()]
-    
-    for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac"):
+
+    for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac", 'FOI_1'):
         sessions.remove(not_session_name)
     return sessions
 

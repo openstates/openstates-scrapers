@@ -53,7 +53,7 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
             if 'resigned' in link.text:
                 self.log('skipping %s' % link.text)
                 continue
-            
+
             self.fetch_member(link.get('href'), link.text, term, chamber)
 
     def fetch_member(self, url, name, term, chamber):
@@ -73,18 +73,15 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
 
             # Retrieve profile photo.
             profile_page = self.lxmlize(profile_url.format(lis_id))
-            photo_url = self.get_node(
-                profile_page,
-                xpath_query)
+            photo_url = self.get_node(profile_page, xpath_query)
 
         # Detect whether URL points to a blank base location.
         blank_urls = (
-            'http://memdata.virginiageneralassembly.gov/images/display_'
-            'image/',
+            'http://memdata.virginiageneralassembly.gov/images/display_image/',
             'http://virginiageneralassembly.gov/house/members/photos/',
         )
 
-        if photo_url in blank_urls:
+        if photo_url in blank_urls or photo_url is None:
             photo_url = ''
 
         if (name in CHAMBER_MOVES and(chamber != CHAMBER_MOVES[name])):
@@ -114,6 +111,10 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
 
         party_district_line = doc.xpath('//h3/font/text()')[0]
         party, district = party_district_re.match(party_district_line).groups()
+
+        # Ignore placeholder legislators
+        if district == '0':
+            return
 
         # Scrub status from name.
         name = re.sub(r'(- Elect)$', '', name).strip()
@@ -146,8 +147,13 @@ class VALegislatorScraper(LegislatorScraper, LXMLMixin):
                 name = ('Capitol Office' if office_type == 'capitol'
                         else 'District Office')
 
-            leg.add_office(office_type, name, address='\n'.join(address),
-                phone=phone, email=email)
+            leg.add_office(
+                office_type,
+                name,
+                address='\n'.join([a.strip() for a in address if a.strip()]),
+                phone=phone,
+                email=email
+            )
 
         for com in doc.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             leg.add_role('committee member', term=term, chamber=chamber,

@@ -8,26 +8,11 @@ import scrapelib
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from .utils import decode_json
+
 
 class DCBillScraper(BillScraper):
     jurisdiction = 'dc'
-
-    def decode_json(self,stringy_json):
-        #the "json" they send is recursively string-encoded.
-        if type(stringy_json) == dict:
-            for key in stringy_json:
-                stringy_json[key] = self.decode_json(stringy_json[key])
-
-        elif type(stringy_json) == list:
-            for i in range(len(stringy_json)):
-                stringy_json[i] = self.decode_json(stringy_json[i])
-
-        elif type(stringy_json) in (str,unicode):
-            if len(stringy_json) > 0 and stringy_json[0] in ["[","{",u"[",u"{"]:
-                return self.decode_json(json.loads(stringy_json))
-        return stringy_json
-
-
 
     def scrape(self, session, chambers):
         #get member id matching for vote parsing
@@ -38,18 +23,56 @@ class DCBillScraper(BillScraper):
         headers = {"Content-Type":"application/json"}
         url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
-        params = {"request":{"sEcho":2,"iColumns":4,"sColumns":"","iDisplayStart":0,"iDisplayLength":per_page,"mDataProp_0":"ShortTitle","mDataProp_1":"Title","mDataProp_2":"LegislationCategories","mDataProp_3":"Modified","iSortCol_0":0,"sSortDir_0":"asc","iSortingCols":0,"bSortable_0":"true","bSortable_1":"true","bSortable_2":"true","bSortable_3":"true"},"criteria":{"Keyword":"","Category":"","SubCategoryId":"","RequestOf":"","CouncilPeriod":str(session),"Introducer":"","CoSponsor":"","CommitteeReferral":"","CommitteeReferralComments":"","StartDate":"","EndDate":"","QueryLimit":100,"FilterType":"","Phases":"","LegislationStatus":"0","IncludeDocumentSearch":"false"}}
+        params = {
+            "request": {
+                "sEcho":2,
+                "iColumns":4,
+                "sColumns":"",
+                "iDisplayStart":0,
+                "iDisplayLength":per_page,
+                "mDataProp_0":"ShortTitle",
+                "mDataProp_1":"Title",
+                "mDataProp_2":"LegislationCategories",
+                "mDataProp_3":"Modified",
+                "iSortCol_0":0,
+                "sSortDir_0":"asc",
+                "iSortingCols":0,
+                "bSortable_0":"true",
+                "bSortable_1":"true",
+                "bSortable_2":"true",
+                "bSortable_3":"true"
+            },
+            "criteria":{
+                "Keyword":"",
+                "Category":"",
+                "SubCategoryId":"",
+                "RequestOf":"",
+                "CouncilPeriod":str(session),
+                "Introducer":"",
+                "CoSponsor":"",
+                "CommitteeReferral":"",
+                "CommitteeReferralComments":"",
+                "StartDate":"",
+                "EndDate":"",
+                "QueryLimit":100,
+                "FilterType":"",
+                "Phases":"",
+                "LegislationStatus":"0",
+                "IncludeDocumentSearch":"false"
+            }
+        }
         param_json = json.dumps(params)
         response = self.post(url,headers=headers,data=param_json)
         #the response is a terrible string-of-nested-json-strings. Yuck.
-        response = self.decode_json(response.json()["d"])
+        response = decode_json(response.json()["d"])
         data = response["aaData"]
-        
+
         global bill_versions
 
         while len(data) > 0:
 
             for bill in data:
+
                 bill_versions = [] #sometimes they're in there more than once, so we'll keep track
 
                 bill_id = bill["Title"]
@@ -58,30 +81,43 @@ class DCBillScraper(BillScraper):
                     continue
                 bill_params = {"legislationId":bill_id}
                 bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
-                bill_info = self.decode_json(bill_info.json()["d"])["data"]
+                bill_info = decode_json(bill_info.json()["d"])["data"]
                 bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
 
 
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
-                
-                
-                
+
+
+
                 if bill_id.startswith("R") or bill_id.startswith("CER"):
                     bill_type = "resolution"
                 else:
                     bill_type = "bill"
-                
+
                 #dc has no chambers. calling it all upper
                 bill = Bill(session,"upper", bill_id, title, type=bill_type)
 
                 #sponsors and cosponsors
-                introducers = legislation_info["Introducer"]
+                if "Introducer" in legislation_info:
+                    introducers = legislation_info["Introducer"]
+                    intro_date = self.date_format(legislation_info["IntroductionDate"])
+                    bill.add_action("upper",
+                                    "Introduced",
+                                    intro_date,
+                                    type="bill:introduced")
+                else:
+                    #sometimes there are introducers, sometimes not.
+                    # Set Introducers to empty array to avoid downstream breakage, but log bills without introducers
+                    self.logger.warning("No Introducer: {0} {1}: {2}".format(bill['chamber'], bill['session'], bill['bill_id']))
+                    introducers = []
+
                 try:
                     #sometimes there are cosponsors, sometimes not.
                     cosponsors = legislation_info["CoSponsor"]
                 except KeyError:
                     cosponsors = []
+
                 for i in introducers:
                     sponsor_name = i["Name"]
                     #they messed up Phil Mendelson's name
@@ -249,7 +285,7 @@ class DCBillScraper(BillScraper):
                 votes = bill_info["VotingSummary"]
                 for vote in votes:
                     self.process_vote(vote, bill, member_ids)
-     
+
 
                 #deal with committee votes
                 if "CommitteeMarkup" in bill_info:
@@ -262,20 +298,20 @@ class DCBillScraper(BillScraper):
 
                 bill.add_source(bill_source_url)
                 self.save_bill(bill)
-            
+
             #get next page
             start_record += per_page
             params["request"]["iDisplayStart"] = start_record
             param_json = json.dumps(params)
             response = self.post(url,headers=headers,data=param_json)
-            response = self.decode_json(response.json()["d"])
+            response = decode_json(response.json()["d"])
             data = response["aaData"]
-    
+
     def get_member_ids(self):
         member_dict = {} #three levels: from session to member_id to name
         search_data_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicSearchData"
         response = self.post(search_data_url,headers={"Content-Type":"application/json"})
-        member_data = self.decode_json(response.json()['d'])["Members"]
+        member_data = decode_json(response.json()['d'])["Members"]
         for session_id, members in member_data.items():
             member_dict[session_id] = {}
             for member in members:
@@ -305,7 +341,7 @@ class DCBillScraper(BillScraper):
                 return
         else:
 
-            result = vote["VoteResult"]    
+            result = vote["VoteResult"]
 
             statuses = {"approved":True,
                     "disapproved":False,
@@ -336,7 +372,7 @@ class DCBillScraper(BillScraper):
                 v['other_count'] += 1
                 v['other_votes'].append(mem_name)
 
-        
+
 
         #the documents for the readings are inside the vote
         #level in the json, so we'll deal with them here
@@ -367,7 +403,7 @@ class DCBillScraper(BillScraper):
             t = "bill:reading:3"
         else:
             t = "other"
-        
+
         bill.add_action("upper",
                         motion,
                         date,
@@ -394,7 +430,7 @@ class DCBillScraper(BillScraper):
 
         bill.add_vote(v)
 
-        
+
 
     def process_committee_vote(self,committee_action,bill):
         try:
@@ -432,7 +468,7 @@ class DCBillScraper(BillScraper):
             doc_type = a["Type"]
             doc_name = a["Name"]
             rel_path = a["RelativePath"]
-            if doc_type and doc_name and rel_path:  
+            if doc_type and doc_name and rel_path:
                 doc_url = base_url+rel_path+"/"+doc_name
             else:
                 self.logger.warning("Bad link for document {}".format(doc_name))
@@ -445,7 +481,7 @@ class DCBillScraper(BillScraper):
             for vt in possible_version_types:
                 if vt.lower() in doc_name.lower():
                     is_version = True
-                    doc_type = vt 
+                    doc_type = vt
 
             if "amendment" in doc_name.lower():
                 doc_type = "Amendment"
@@ -457,7 +493,7 @@ class DCBillScraper(BillScraper):
                     bill.add_version(doc_type,doc_url,mimetype=mimetype)
                     bill_versions.append(doc_url)
                 continue
-                    
+
 
             bill.add_document(doc_type,doc_url,mimetype=mimetype)
 

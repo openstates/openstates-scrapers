@@ -116,9 +116,6 @@ class FLBillScraper(BillScraper, LXMLMixin):
             actor = {'Senate': 'upper', 'House': 'lower'}.get(
                 actor, actor)
 
-            if not actor:
-                continue
-
             act_text = tr.xpath("string(td[3])").strip()
             for action in act_text.split(u'\u2022'):
                 action = action.strip()
@@ -149,8 +146,24 @@ class FLBillScraper(BillScraper, LXMLMixin):
                     atype.append('bill:passed')
                 elif action.startswith('CS passed'):
                     atype.append('bill:passed')
+                elif action.startswith('Chapter No'):
+                    actor = 'executive'
+                elif action.startswith('Signed by Officers'):
+                    atype.append('governor:received')
+                    actor = 'governor'
                 elif action.startswith('Approved by Gov'):
-                    atype.apend('governor:signed')
+                    atype.append('governor:signed')
+                    actor = 'governor'
+                elif action.startswith('Vetoed by Gov'):
+                    atype.append('governor:vetoed')
+                    actor = 'governor'
+                elif action.startswith('Became Law, Governor\'s Veto notwithstanding'):
+                    atype.append("bill:veto_override:passed")
+                    #Veto overrides are rare in FL, so this is a guess, based on
+                    #http://archive.flsenate.gov/Session/index.cfm?Mode=Bills&SubMenu=1&Tab=session&BI_Mode=ViewBillInfo&BillNum=1565&Chamber=Senate&Year=2010
+
+                if not actor:
+                    self.logger.warning("%s action %s missing actor." % (bill_id, action))
 
                 bill.add_action(actor, action, date, type=atype)
 

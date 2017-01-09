@@ -33,8 +33,14 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015','2015S1']
+            'sessions': ['2015','2015S1', '2016S2', '2016F', '2016S3'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
+        },        
     ],
     'session_details': {
         '2011': {
@@ -109,10 +115,40 @@ metadata = {
             '_scraped_name': 'First Extraordinary Session, 2015',
             'slug': '2015S1',
         },
+        '2016S2': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 4, 6),
+            'end_date': datetime.date(2016, 4, 6),
+            'display_name': '2016 Second Extraordinary Session',
+            '_scraped_name': 'Second Extraordinary Session, 2016',
+            'slug': '2016S2',
+        },
+        '2016F': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 4, 13),
+            'end_date': datetime.date(2016, 5, 9),
+            'display_name': '2016 Fiscal Session',
+            '_scraped_name': 'Fiscal Session, 2016',
+            'slug': '2016F',
+        },
+        '2016S3': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 5, 19),
+            'display_name': '2016 Third Extraordinary Session',
+            '_scraped_name': 'Third Extraordinary Session, 2016',
+            'slug': '2016S3',
+        },
+        '2017': {
+            'type': 'primary',
+            'start_date': datetime.date(2017, 1, 12),
+            'end_date': datetime.date(2017, 4, 22),
+            'display_name': '2017 Regular Session',
+            '_scraped_name': 'Regular Session, 2017',
+            'slug': '2017R',
+        },
     },
     'feature_flags': ['influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
-        'Fiscal Session, 2016',
         'Regular Session, 2009',
         'Fiscal Session, 2010',
         'Regular Session, 2007',

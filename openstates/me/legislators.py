@@ -4,9 +4,14 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
 import xlrd
 
-_party_map = {'D': 'Democratic', 'R': 'Republican', 'U': 'Independent',
-              'I': 'Independent'}
-
+_party_map = {
+    'D': 'Democratic',
+    'R': 'Republican',
+    'U': 'Independent',
+    'I': 'Independent',
+    # Common Sense Independent Party
+    'C': 'Independent'
+}
 
 class MELegislatorScraper(LegislatorScraper):
     jurisdiction = 'me'
@@ -45,7 +50,7 @@ class MELegislatorScraper(LegislatorScraper):
                     Representative\s
                     (?P<member_name>.+?)
                     \s\(
-                    (?P<party>[DRUI])
+                    (?P<party>[DRCUI])
                     -
                     (?P<district_name>.+?)
                     \)
@@ -71,7 +76,7 @@ class MELegislatorScraper(LegislatorScraper):
 
             # Add contact information from personal page
             office_address = re.search(
-                    r'<B>Address:  </B>(.+?)<P>', html, re.IGNORECASE).group(1)
+                    r'<B>Address:  </B>(.+?)\n?<P>', html, re.IGNORECASE).group(1)
 
             office_email = doc.xpath(
                     '//a[starts-with(@href, "mailto:")]/text()')
@@ -79,7 +84,7 @@ class MELegislatorScraper(LegislatorScraper):
                 office_email = office_email[0]
             else:
                 office_email = None
-            
+
             business_phone = re.search(
                     r'<B>Business Telephone:  </B>(.+?)<P>', html, re.IGNORECASE)
             home_phone = re.search(
@@ -136,8 +141,6 @@ class MELegislatorScraper(LegislatorScraper):
             self.save_legislator(leg)
 
     def scrape_senators(self, chamber, term):
-        session = ((int(term[0:4]) - 2009) / 2) + 124
-
         mapping = {
                 'district': 0,
                 'first_name': 2,
@@ -154,16 +157,14 @@ class MELegislatorScraper(LegislatorScraper):
                 'email': 12
         }
 
-        list_location = '2014/12/127th-Senate-Members2'
-        url = ('http://legisweb1.mainelegislature.org/wp/senate/'
-                'wp-content/uploads/sites/2/{}.xlsx'.format(list_location))
+        url = 'https://mainelegislature.org/uploads/visual_edit/128th-senate-members-for-distribution-1.xlsx'
         fn, result = self.urlretrieve(url)
 
         wb = xlrd.open_workbook(fn)
         sh = wb.sheet_by_index(0)
 
         LEGISLATOR_ROSTER_URL = \
-            'http://legisweb1.mainelegislature.org/wp/senate/senators/'
+            'https://mainelegislature.org/senate/128th-senators/9332'
         roster_doc = lxml.html.fromstring(self.get(LEGISLATOR_ROSTER_URL).text)
         roster_doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
 
@@ -196,12 +197,12 @@ class MELegislatorScraper(LegislatorScraper):
 
             # Determine legislator's URL to get their photo
 
-            URL_XPATH = '//address[contains(text(), "(District {})")]/a/@href'. \
-                    format(district)
+            URL_XPATH = '//li/a[contains(text(), "District {:02d}")]/@href'.format(int(district))
 
             try:
                 (leg_url, ) = roster_doc.xpath(URL_XPATH)
             except ValueError:
+                self.warning('vacant seat %s', district)
                 continue # Seat is vacant
 
             leg = Legislator(term, chamber, district, full_name,

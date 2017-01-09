@@ -36,6 +36,12 @@ metadata = {
             'end_year': 2016,
             'sessions': ['2015', '2016'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
+        },        
     ],
     'session_details': {
         '2011': {
@@ -68,6 +74,11 @@ metadata = {
             'display_name': '2016 General Session',
             '_scraped_name': '2016 General Session',
         },
+        '2017': {
+            'type': 'primary',
+            'display_name': '2017 General Session',
+            '_scraped_name': '2017 General Session',
+        },
     },
     'feature_flags': ['influenceexplorer', 'events'],
     # The reason the Budget sessions are in ignore is because the budget
@@ -75,6 +86,7 @@ metadata = {
     # (http://openstates.org/wy/bills/2014/HB1/)
     # So - we avoid the new session, because we'd dupe all bills.
     '_ignored_scraped_sessions': [
+        '2016 Budget Session',
         '2014 Budget Session',
         '2010 Budget Session',
         '2009 General Session',

@@ -39,7 +39,9 @@ class NJEventScraper(EventScraper, MDBMixin):
             'JEJ': 'Joint Committee on Economic Justice and Equal Employment Opportunity',
             'LSC': 'Legislative Services Commission',
             'THIE': 'Senate Task Force on Health Insurance Exchange Implementation Committee',
-            'CASC': 'College Affordability Study Commission'
+            'CASC': 'College Affordability Study Commission',
+            'CIR': 'State Commission of Investigation',
+            'TDWI': 'Taskforce on Drinking Water Infrastructure'
         }
         self._committees = overlay
 

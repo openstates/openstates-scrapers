@@ -107,6 +107,12 @@ class MOLegislatorScraper(LegislatorScraper):
                        'gridMembers_DXMainTable")')
         table = page.xpath(table_xpath)[0]
         for tr in table.xpath('tr')[1:]:
+            # If a given term hasn't occurred yet, then ignore it
+            # Eg, in 2017, the 2018 term page will have a blank table
+            if tr.attrib.get('class') == 'dxgvEmptyDataRow':
+                self.warning('No House members found for {} term'.format(session))
+                return
+
             tds = tr.xpath('td')
             last_name = tds[0].text_content().strip()
             first_name = tds[1].text_content().strip()

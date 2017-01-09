@@ -120,10 +120,20 @@ class NCBillScraper(BillScraper):
 
         # sponsors
         spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
-        for leg in spon_td.xpath('a'):
-            type = 'primary' if 'Primary' in leg.tail else 'cosponsor'
-            name = leg.text_content().replace(u'\xa0', ' ')
-            bill.add_sponsor('primary', name, chamber=chamber)
+        # first sponsors are primary, until we see (Primary)
+        spon_type = 'primary'
+        for leg in spon_td.text_content().split('; \n'):
+            name = leg.replace(u'\xa0', ' ').strip()
+            if name.startswith('(Primary)'):
+                name = name.replace('(Primary)', '').strip()
+                spon_type = 'cosponsor'
+            if not name:
+                continue
+            bill.add_sponsor(spon_type, name, chamber=chamber)
+
+        # keywords
+        kw_td = doc.xpath('//th[text()="Keywords:"]/following-sibling::td')[0]
+        bill['subjects'] = kw_td.text_content().split(', ')
 
         # actions
         action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
@@ -152,15 +162,11 @@ class NCBillScraper(BillScraper):
 
             bill.add_action(actor, action, act_date, type=atype)
 
-        if hasattr(self, 'subject_map'):
-            subj_key = bill_id[0] + ' ' + bill_id.split(' ')[-1]
-            bill['subjects'] = self.subject_map[subj_key]
-
         self.save_bill(bill)
 
     def scrape(self, session, chambers):
-        if self.is_latest_session(session):
-            self.build_subject_map()
+        #if self.is_latest_session(session):
+        #    self.build_subject_map()
         for chamber in chambers:
             self.scrape_chamber(chamber, session)
 

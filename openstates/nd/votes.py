@@ -21,7 +21,8 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
         session_slug = {
                 '62': '62-2011',
                 '63': '63-2013',
-                '64': '64-2015'
+                '64': '64-2015',
+                '65': '65-2017',
                 }[session]
 
         # Open the index page of the session's Registers, and open each

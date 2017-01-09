@@ -8,8 +8,11 @@ from .legislators import IALegislatorScraper
 from .events import IAEventScraper
 from .votes import IAVoteScraper
 
-# Silencing unverified HTTPS request warnings.
-requests.packages.urllib3.disable_warnings()
+try:
+    # Silencing unverified HTTPS request warnings.
+    requests.packages.urllib3.disable_warnings()
+except AttributeError:
+    pass
 
 settings = dict(SCRAPELIB_TIMEOUT=240)
 

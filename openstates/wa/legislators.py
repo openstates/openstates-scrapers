@@ -96,6 +96,8 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
                     assert re.match(r'\(\d{3}\) \d{3} \- \d{4}', district_phone)
                 except IndexError:
                     pass
+                except AssertionError:
+                    pass
 
                 leg.add_office(
                     'district',

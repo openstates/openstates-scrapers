@@ -8,7 +8,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ok'
     latest_only = True
 
-    _parties = {'R': 'Republican', 'D': 'Democratic'}
+    _parties = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
 
     def _scrub(self, text):
         """Squish whitespace and kill \xa0."""

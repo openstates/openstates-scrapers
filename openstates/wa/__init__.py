@@ -26,6 +26,8 @@ metadata = dict(
          'sessions': ['2013-2014']},
         {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
          'sessions': ['2015-2016']},
+         {'name': '2017-2018', 'start_year': 2017, 'end_year': 2018,
+         'sessions': ['2017-2018']},
         ],
     session_details = {
         '2009-2010': {'display_name': '2009-2010 Regular Session',
@@ -40,6 +42,9 @@ metadata = dict(
         '2015-2016': {'display_name': '2015-2016 Regular Session',
                       '_scraped_name': '2015-16',
                      },
+        '2017-2018': {'display_name': '2017-2018 Regular Session',
+                      '_scraped_name': '2017-18',
+                     },                     
     },
     feature_flags = ['events', 'subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
@@ -56,13 +61,13 @@ metadata = dict(
          "url": 'http://static.openstates.org/capmaps/wa/f4.gif'
         },
     ],
-    _ignored_scraped_sessions=['2007-08'],
+    _ignored_scraped_sessions=['2007-08', '2005-06', '2003-04', '2001-02', '1999-00', '1997-98', '1995-96', '1993-94', '1991-92', '1989-90', '1987-88', '1985-86'],
 )
 
 def session_list():
     from billy.scrape.utils import url_xpath
     return url_xpath('http://apps.leg.wa.gov/billinfo/',
-     '//td[starts-with(@id, "ctl00_ContentPlaceHolder1_TabControl1")]/text()')
+     '//select[starts-with(@id, "ctl00_ContentPlaceHolder1_biennia")]/option/@value')
 
 def extract_text(doc, data):
     doc = lxml.html.fromstring(data)

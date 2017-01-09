@@ -10,7 +10,8 @@ class SDBillScraper(BillScraper):
     jurisdiction = 'sd'
 
     def scrape(self, chamber, session):
-        url = 'http://legis.sd.gov/Legislative_Session/Bills/default.aspx?Session=%s' % session
+        url = 'http://www.sdlegislature.gov/Legislative_Session' \
+              '/Bills/default.aspx?Session={}'.format(session)
 
         if chamber == 'upper':
             bill_abbr = 'S'

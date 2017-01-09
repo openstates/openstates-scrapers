@@ -8,6 +8,8 @@ from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 
+from openstates.utils import LXMLMixin
+
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
 BILL_DETAIL_URL = ('https://www.revisor.mn.gov/bills/bill.php'
@@ -24,7 +26,7 @@ BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
     '&bill_type=%s&submit_bill=GO')
 
 
-class MNBillScraper(BillScraper):
+class MNBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'mn'
 
     # For testing purposes, this will do a lite version of things.  If
@@ -56,7 +58,6 @@ class MNBillScraper(BillScraper):
         (" re-referred ", 'committee:referred'),
         ("Received from", "bill:introduced"),
     )
-
 
     def scrape(self, chamber, session):
         """
@@ -90,7 +91,6 @@ class MNBillScraper(BillScraper):
         for b in bills:
             self.get_bill_info(chamber, session, b['bill_url'], b['version_url'])
 
-
     def get_full_bill_list(self, chamber, session):
         """
         Uses the legislator search to get a full list of bills.  Search page
@@ -114,7 +114,6 @@ class MNBillScraper(BillScraper):
                 # bill: Range start-end (e.g. 1-10)
                 url = BILL_SEARCH_URL % (search_chamber, search_session, start,
                     start + stride, bill_type)
-
                 # Parse HTML
                 html = self.get(url).text
                 doc = lxml.html.fromstring(html)
@@ -145,7 +144,6 @@ class MNBillScraper(BillScraper):
 
         return bills
 
-
     def get_bill_info(self, chamber, session, bill_detail_url, version_list_url):
         """
         Extracts all the requested info for a given bill.
@@ -156,12 +154,33 @@ class MNBillScraper(BillScraper):
         chamber = 'upper' if chamber.lower() == 'senate' else chamber
 
         # Get html and parse
-        bill_html = self.get(bill_detail_url).text
-        doc = lxml.html.fromstring(bill_html)
+        doc = self.lxmlize(bill_detail_url)
+
+        # Check if bill hasn't been transmitted to the other chamber yet
+        transmit_check = self.get_node(doc, '//h1[text()[contains(.,"Bills")]]/following-sibling::ul/li/text()')
+        if transmit_check is not None and 'has not been transmitted' in transmit_check.strip():
+            self.logger.debug('Bill has not been transmitted to other chamber ... skipping {0}'.format(bill_detail_url))
+            return
 
         # Get the basic parts of the bill
-        bill_id = doc.xpath('//h1/text()')[0]
-        bill_title = doc.xpath('//h2/following-sibling::p/text()')[0].strip()
+        bill_id = self.get_node(doc, '//h1/text()')
+        self.logger.debug(bill_id)
+        bill_title_text = self.get_node(doc, '//h2[text()[contains(.,'
+            '"Description")]]/following-sibling::p/text()')
+        if bill_title_text is not None:
+            bill_title = bill_title_text.strip()
+        else:
+            long_desc_url = self.get_node(doc, '//a[text()[contains(.,'
+                '"Long Description")]]/@href')
+            long_desc_page = self.lxmlize(long_desc_url)
+            long_desc_text = self.get_node(long_desc_page, '//h1/'
+                'following-sibling::p/text()')
+            if long_desc_text is not None:
+                bill_title = long_desc_text.strip()
+            else:
+                bill_title = 'No title found.'
+                self.logger.warning('No title found for {}.'.format(bill_id))
+        self.logger.debug(bill_title)
         bill_type = {'F': 'bill', 'R':'resolution',
                      'C': 'concurrent resolution'}[bill_id[1]]
         bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
@@ -190,7 +209,6 @@ class MNBillScraper(BillScraper):
         bill = self.extract_versions(bill, doc, chamber, version_list_url)
 
         self.save_bill(bill)
-
 
     def get_bill_topics(self, chamber, session):
         """
@@ -223,7 +241,6 @@ class MNBillScraper(BillScraper):
             for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
                 bill = self.make_bill_id(bill)
                 self._subject_mapping[bill].append(subject)
-
 
     def extract_actions(self, bill, doc, current_chamber):
         """
@@ -326,7 +343,6 @@ class MNBillScraper(BillScraper):
 
         return bill
 
-
     def extract_sponsors(self, bill, doc, chamber):
         """
         Extracts sponsors from bill page.
@@ -344,7 +360,6 @@ class MNBillScraper(BillScraper):
             bill.add_sponsor('cosponsor', leg.strip(), chamber=self.other_chamber(chamber))
 
         return bill
-
 
     def extract_versions(self, bill, doc, chamber, version_list_url):
       """
@@ -366,7 +381,6 @@ class MNBillScraper(BillScraper):
                                    on_duplicate='use_new')
 
       return bill
-
 
     # def extract_vote_from_action(self, bill, action, chamber, action_row):
     #     """
@@ -420,7 +434,6 @@ class MNBillScraper(BillScraper):
 
         return re.sub(r'(\w+?)0*(\d+)', r'\1 \2', bill)
 
-
     def chamber_from_bill(self, bill):
         """
         Given a bill id, determine chamber.
@@ -430,13 +443,11 @@ class MNBillScraper(BillScraper):
 
         return 'lower' if bill.lower().startswith('hf') else 'upper'
 
-
     def other_chamber(self, chamber):
         """
         Given a chamber, get the other.
         """
         return 'lower' if chamber == 'upper' else 'upper'
-
 
     def search_chamber(self, chamber):
         """
@@ -444,13 +455,11 @@ class MNBillScraper(BillScraper):
         """
         return { 'lower':'House', 'upper':'Senate' }[chamber]
 
-
     def search_session(self, session):
         """
         Given session ID, make into MN site friendly search.
         """
         return self.metadata['session_details'][session]['site_id']
-
 
     def is_testing(self):
         """

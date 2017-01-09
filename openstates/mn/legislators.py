@@ -29,8 +29,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             page,
             '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr')
 
-        need_special_email_case = False
-
         for legislator_node in legislator_nodes:
             photo_url = self.get_node(
                 legislator_node,
@@ -57,24 +55,18 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             party_text = party_text.replace(')', '').strip()
             party = self._parties[party_text]
 
-            info_texts = self.get_nodes(
+            info_texts = [x.strip() for x in self.get_nodes(
                 legislator_node,
                 './td[2]/p/text()[normalize-space() and preceding-sibling'
-                '::br]')
+                '::br]') if x.strip()]
             address = '\n'.join((info_texts[0], info_texts[1]))
 
             phone_text = info_texts[2]
             if validate_phone_number(phone_text):
                 phone = phone_text
 
-            # E-mail markup is screwed-up and inconsistent.
-            try:
-                email_node = info_nodes[1]
-                email_text = email_node.text
-            except IndexError:
-                # Primarily for Dan Fabian.
-                email_node = info_texts[3]
-                need_special_email_case = True
+            email_node = info_nodes[1]
+            email_text = email_node.text
 
             email_text = email_text.replace('Email: ', '').strip()
             if validate_email_address(email_text):
@@ -100,9 +92,6 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
              )
 
             self.save_legislator(legislator)
-
-        if not need_special_email_case:
-            self.logger.warning('Special e-mail handling no longer required.')
 
     def _scrape_upper_chamber(self, term):
         index_url = 'http://www.senate.mn/members/index.php'
@@ -160,11 +149,12 @@ class MNLegislatorScraper(LegislatorScraper, LXMLMixin):
             row['Address2'] = next((a for a in address2_fields if a is not
                 None), False)
 
-            if (a in row['Address2'] for a in ['95 University Avenue W',
-                '100 Rev. Dr. Martin Luther King']):
+            if (a in row['Address2'] for a in ['95 University Avenue W', '100 Rev. Dr. Martin Luther King']):
+                address = '{Address}\n{Address2}\n{City}, {State} {Zipcode}'.format(**row)
+                if 'Rm. Number' in row:
+                    address = '{0} {1}'.format(row['Rm. Number'], address)
                 leg.add_office('capitol', 'Capitol Office',
-                    address='{Room} {Address}\n{Address2}\n{City}, {State} '\
-                        '{Zipcode}'.format(Room=row['Rm. Number'], **row),
+                    address=address,
                     email=email, phone=leg.get('office_phone'))
             elif row['Address2']:
                 leg.add_office('district', 'District Office',

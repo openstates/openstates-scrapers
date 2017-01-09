@@ -1,7 +1,5 @@
-from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
-import re
 
 class NDCommitteeScraper(CommitteeScraper):
     jurisdiction = 'nd'
@@ -15,19 +13,23 @@ class NDCommitteeScraper(CommitteeScraper):
 
         if '/joint/' in href:
             chamber = 'joint'
+        elif '/interim/' in href:
+            # Better to scrape the interim committees as joint,
+            # rather than miss them altogether
+            chamber = 'joint'
         elif '/senate/' in href:
             chamber = 'upper'
         elif '/house/' in href:
             chamber = 'lower'
         else:
-            print "XXX: Fail! %s" % (href)
+            self.warning('Failed to identify chamber for {}; skipping'.format(href))
             return
 
         cttie = Committee(chamber, name)
 
         for a in members:
             member = a.text
-            role = a.xpath("ancestor::div/h2[@class='pane-title']/text()")[0]
+            role = a.xpath("ancestor::div/h2[@class='pane-title']/text()")[0].strip()
             role = {"Legislative Members": "member",
                     "Chairman": "chair",
                     "Vice Chairman": "member"}[role]

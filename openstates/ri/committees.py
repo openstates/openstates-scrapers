@@ -1,6 +1,7 @@
 import re
 import urlparse
 import datetime
+import requests
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.committees import CommitteeScraper, Committee
@@ -28,6 +29,8 @@ class RICommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term_name):
         self.validate_term(term_name, latest_only=True)
 
+        self._session = requests.Session()
+
         if chamber == 'upper':
             self.scrape_senate_comm()
             # scrape joint committees under senate
@@ -37,15 +40,16 @@ class RICommitteeScraper(CommitteeScraper):
 
     def scrape_comm_list(self, ctype):
         url = 'http://webserver.rilin.state.ri.us/CommitteeMembers/'
-        self.log("looking for "+ctype)
-        page = self.get(url).text
+        page = self._session.get(url).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(url)
         return root.xpath("//a[contains(@href,'"+ctype+"')]")
 
     def add_members(self,comm,url):
-        page = self.get(url).text
-        self.log(comm)
+        # We do this twice because the first request should create the
+        # session cookie we need.
+        for x in range(2):
+            page = self._session.get(url).text
         root = lxml.html.fromstring(page)
         # The first <tr> in the table of members
         membertable=root.xpath('//p[@class="style28"]/ancestor::table[1]')[0]
@@ -56,7 +60,6 @@ class RICommitteeScraper(CommitteeScraper):
             "appt" : 1,
             "email" : 2
         }
-
 
         for member in members:
             name = member[order['name']].text_content().strip()

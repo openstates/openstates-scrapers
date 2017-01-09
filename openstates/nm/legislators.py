@@ -1,46 +1,40 @@
 import re
-import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
+
+base_url = 'http://www.nmlegis.gov/Members/Legislator_List'
+
+
+def extract_phone_number(phone_number):
+    phone_pattern = re.compile(r'(\(?\d{3}\)?\s?-?)?(\d{3}-?\d{4})')
+    return phone_pattern.search(phone_number).groups()
 
 
 class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'nm'
 
-    def validate_phone_number(self, phone_number):
-        is_valid = False
-
-        # Phone format validation regex.
-        phone_pattern = re.compile(r'\(?\d{3}\)?\s?-?\d{3}-?\d{4}')
-        phone_match = phone_pattern.match(phone_number)
-        if phone_match is not None:
-            is_valid = True
-
-        return is_valid
-
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
+
+        if chamber == 'upper':
+            query = '?T=S'
+        elif chamber == 'lower':
+            query = '?T=R'
 
         self.logger.info('Scraping {} {} chamber.'.format(
             self.jurisdiction.upper(),
             chamber))
 
-        # Xpath query string format for legislative chamber.
-        base_xpath = '//table[@id="ctl00_mainCopy_gridView{}Districts"]'\
-            '//a[contains(@href, "SPONCODE")]/@href'
-
-        if chamber == 'lower':
-            chamber_xpath = base_xpath.format('House')
-        elif chamber == 'upper':
-            chamber_xpath = base_xpath.format('Senate')
-
-        url = 'http://www.nmlegis.gov/lcs/districts.aspx'
+        url = '{0}{1}'.format(base_url, query)
 
         page = self.lxmlize(url)
 
-        legislator_urls = self.get_nodes(
-            page,
-            chamber_xpath)
+        # Xpath query string format for legislator links.
+        base_xpath = (
+            '//a[contains(@id, '
+            '"MainContent_listViewLegislators_linkLegislatorPicture")]/@href')
+
+        legislator_urls = self.get_nodes(page, base_xpath)
 
         for legislator_url in legislator_urls:
             # Indicators used for empty seats.
@@ -52,65 +46,76 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
     def scrape_legislator(self, chamber, term, url):
         # Initialize default values for legislator attributes.
-        full_name        = None
-        party            = None
-        photo_url        = None
-        email            = None
-        capitol_address  = None
-        capitol_phone    = None
+        full_name = None
+        party = None
+        photo_url = None
+        email = None
+        capitol_address = None
+        capitol_phone = None
+        district = None
         district_address = None
-        district_phone   = None
+        district_phone = None
 
-        # Xpath query string format for legislator information nodes.
-        xpath = './/span[@id="ctl00_mainCopy_formViewLegislator_{}"]'
+        if chamber == 'upper':
+            title_prefix = 'Senator '
+        elif chamber == 'lower':
+            title_prefix = 'Representative '
+        else:
+            title_prefix = ''
+
+        santa_fe_area_code = '(505)'
 
         page = self.lxmlize(url)
 
+        name_node = self.get_node(
+            page,
+            './/span[@id="MainContent_formViewLegislatorName'
+            '_lblLegislatorName"]')
+
+        if name_node is not None:
+            n_head, n_sep, n_party = name_node.text.rpartition(' - ')
+
+            full_name = re.sub(r'^{}'.format(title_prefix), '', n_head.strip())
+
+            if '(D)' in n_party:
+                party = 'Democratic'
+            elif '(R)' in n_party:
+                party = 'Republican'
+            elif '(DTS)' in n_party:
+                # decline to state = independent
+                party = 'Independent'
+            else:
+                raise AssertionError('Unknown party {} for {}'.format(
+                    party,
+                    full_name))
+
         info_node = self.get_node(
             page,
-            '//table[@id="ctl00_mainCopy_formViewLegislator"]')
+            '//table[@id="MainContent_formViewLegislator"]')
         if info_node is None:
             raise ValueError('Could not locate legislator data.')
 
+        photo_node = self.get_node(
+            info_node,
+            './/img[@id="MainContent_formViewLegislator_imgLegislator"]')
+        if photo_node is not None:
+            photo_url = photo_node.get('src')
+
         district_node = self.get_node(
             info_node,
-            './/a[@id="ctl00_mainCopy_formViewLegislator_linkDistrict"]')
+            './/a[@id="MainContent_formViewLegislator_linkDistrict"]')
         if district_node is not None:
             district = district_node.text.strip()
 
-        header_node = self.get_node(
-            info_node,
-            xpath.format('lblHeader'))
-        if header_node is not None:
-            full_name, party = header_node.text.strip().rsplit('-', 1)
-            full_name = full_name.replace('Representative', '').replace(
-                'Senator', '').strip()
-
-        if '(D)' in party:
-            party = 'Democratic'
-        elif '(R)' in party:
-            party = 'Republican'
-        elif '(DTS)' in party:
-            # decline to state = independent
-            party = 'Independent'
-        else:
-            raise AssertionError('Unknown party {} for {}'.format(
-                party,
-                full_name))
-
-        photo_url = self.get_node(
-            info_node,
-            './/img[@id="ctl00_mainCopy_formViewLegislator_imgLegislator"]/@src')
-
         email_node = self.get_node(
             info_node,
-            './/a[@id="ctl00_mainCopy_formViewLegislator_linkEmail"]')
-        if email_node.text is not None:
+            './/a[@id="MainContent_formViewLegislator_linkEmail"]')
+        if email_node is not None and email_node.text:
             email = email_node.text.strip()
 
         capitol_address_node = self.get_node(
             info_node,
-            xpath.format('lblCapitolRoom'))
+            './/span[@id="MainContent_formViewLegislator_lblCapitolRoom"]')
         if capitol_address_node is not None:
             capitol_address_text = capitol_address_node.text
             if capitol_address_text is not None:
@@ -119,30 +124,40 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         capitol_phone_node = self.get_node(
             info_node,
-            xpath.format('lblCapitolPhone'))
+            './/span[@id="MainContent_formViewLegislator_lblCapitolPhone"]')
         if capitol_phone_node is not None:
             capitol_phone_text = capitol_phone_node.text
-            if capitol_phone_text is not None:
+            if capitol_phone_text:
                 capitol_phone_text = capitol_phone_text.strip()
-                if self.validate_phone_number(capitol_phone_text):
-                    capitol_phone = capitol_phone_text
+                area_code, phone = extract_phone_number(capitol_phone_text)
+                if phone:
+                    capitol_phone = '{} {}'.format(
+                        area_code.strip() if area_code else santa_fe_area_code,
+                        phone)
 
         district_address_node = self.get_node(
             info_node,
-            xpath.format('lblAddress')).xpath('text()')
-        if district_address_node:
-            district_address = '\n'.join(district_address_node)
+            './/span[@id="MainContent_formViewLegislator_lblAddress"]')
+        if district_address_node is not None:
+            district_address = '\n'.join(district_address_node.xpath("text()"))
 
-        district_phone_node = self.get_node(
+        office_phone_node = self.get_node(
             info_node,
-            xpath.format('lblHomePhone')) \
-            or self.get_node(info_node, xpath.format('lblOfficePhone'))
-        if district_phone_node is not None:
-            district_phone_text = district_phone_node.text
-            if district_phone_text is not None:
-                district_phone_text = district_phone_text.strip()
-                if self.validate_phone_number(district_phone_text):
-                    district_phone = district_phone_text
+            './/span[@id="MainContent_formViewLegislator_lblOfficePhone"]')
+
+        home_phone_node = self.get_node(
+            info_node,
+            './/span[@id="MainContent_formViewLegislator_lblHomePhone"]')
+
+        if office_phone_node is not None and office_phone_node.text:
+            district_phone_text = office_phone_node.text
+        elif home_phone_node is not None and home_phone_node.text:
+            district_phone_text = home_phone_node.text
+        else:
+            district_phone_text = None
+        if district_phone_text:
+            d_area_code, d_phone = extract_phone_number(district_phone_text)
+            district_phone = '{} {}'.format(d_area_code.strip(), d_phone)
 
         legislator = Legislator(
             term=term,

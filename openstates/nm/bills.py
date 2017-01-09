@@ -183,8 +183,8 @@ class NMBillScraper(BillScraper):
                                                       "LegNo", "SessionYear"]})
 
             bill.add_source(
-                'http://www.nmlegis.gov/lcs/legislation.aspx?Chamber='
-                "{Chamber}&LegType={LegType}&LegNo={LegNo}"
+                'http://www.nmlegis.gov/Legislation/Legislation?chamber='
+                "{Chamber}&legType={LegType}&legNo={LegNo}"
                 "&year={SessionYear}".format(**data))
 
             bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
@@ -233,6 +233,8 @@ class NMBillScraper(BillScraper):
                 match = re.match('([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
+                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
+                    
                     if (chamber == "upper" and bill_type[0] == "S") or (chamber == "lower" and bill_type[0] == "H"):
                         bill_id = bill_type.replace('B', '') + bill_num
                         try:
@@ -242,9 +244,9 @@ class NMBillScraper(BillScraper):
                         else:
                             if doc_type == 'Final Version':
                                 bill.add_version(
-                                    'Final Version', url + fname, mimetype='text/html')
+                                    'Final Version', url + fname, mimetype=mimetype)
                             else:
-                                bill.add_document(doc_type, url + fname)
+                                bill.add_document(doc_type, url + fname, mimetype=mimetype)
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
@@ -262,7 +264,7 @@ class NMBillScraper(BillScraper):
             com_location_map[loc['LocationCode']] = loc['LocationDesc']
 
         # combination of tblActions and
-        # http://www.nmlegis.gov/lcs/action_abbreviations.aspx
+        # http://www.nmlegis.gov/Legislation/Action_Abbreviations
         # table will break when new actions are encountered
         action_map = {
             # committee results
@@ -355,8 +357,8 @@ class NMBillScraper(BillScraper):
                 continue
 
             # ok the whole Day situation is madness, N:M mapping to real days
-            # see http://www.nmlegis.gov/lcs/lcsdocs/legis_day_chart_11.pdf
-            # first idea was to look at all Days and use the first occurance's
+            # see http://www.nmlegis.gov/lcs/lcsdocs/legis_day_chart_16.pdf
+            # first idea was to look at all Days and use the first occurrence's
             # timestamp, but this is sometimes off by quite a bit
             # instead lets just use EntryDate and take radical the position
             # something hasn't happened until it is observed
@@ -442,11 +444,13 @@ class NMBillScraper(BillScraper):
             except KeyError:
                 self.warning('document for unknown bill %s' % fname)
                 continue
+                
+            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
 
             # no suffix = just the bill
             if suffix == '':
                 bill.add_version('introduced version', doc_path + fname,
-                                 mimetype='text/html')
+                                 mimetype=mimetype)
 
             # floor amendments
             elif re.match('F(S|H)\d', suffix):
@@ -459,7 +463,7 @@ class NMBillScraper(BillScraper):
             elif suffix.endswith('S'):
                 committee_name = suffix[:-1]
                 bill.add_version('%s substitute' % committee_name,
-                                 doc_path + fname, mimetype='text/html')
+                                 doc_path + fname, mimetype=mimetype)
             # votes
             elif 'SVOTE' in suffix:
                 vote = self.parse_senate_vote(doc_path + fname)
@@ -477,7 +481,7 @@ class NMBillScraper(BillScraper):
             elif re.match('\w{2,3,4}\d', suffix):
                 committee_name = re.match('[A-Z]+', suffix).group()
                 bill.add_document('%s committee report' % committee_name,
-                                  doc_path + fname)
+                                  doc_path + fname, mimetype=mimetype)
 
             # ignore list, mostly typos reuploaded w/ proper name
             elif suffix in ('HEC', 'HOVTE', 'GUI'):

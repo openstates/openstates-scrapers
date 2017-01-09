@@ -13,7 +13,7 @@ metadata = dict(
     name = 'South Dakota',
     abbreviation = 'sd',
     legislature_name = 'South Dakota State Legislature',
-    legislature_url = 'http://legis.state.sd.us/',
+    legislature_url = 'http://www.sdlegislature.gov/',
     capitol_timezone = 'America/Chicago',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},
@@ -43,6 +43,12 @@ metadata = dict(
             'start_year': 2015,
             'end_year': 2016,
             'sessions': ['2015', '2016']
+        },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017']
         },
     ],
     session_details = {
@@ -83,20 +89,23 @@ metadata = dict(
             'display_name': '2016 Regular Session',
             '_scraped_name': '2016 (91st) Session',
         },
+        '2017': {
+            'display_name': '2017 Regular Session',
+            '_scraped_name': '2017 (92nd) Session',
+        },
     },
     feature_flags = ['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions = [
-        '2016 (91st) Session',
         'Previous Years',
     ],
 )
 
 
 def session_list():
-    html = scrapelib.Scraper().get('http://legis.sd.gov/Legislative_Session/'
-        'Menu.aspx').text
+    html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
+                                   'Legislative_Session/Menu.aspx').text
     doc = lxml.html.fromstring(html)
-    sessions = doc.xpath('//div[@id="ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
+    sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
         '/a/div/text()')
     return sessions
 

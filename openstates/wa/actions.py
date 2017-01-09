@@ -59,7 +59,7 @@ _categorizer_rules = (
     Rule(r'^Introduced', 'bill:introduced'),
     Rule(r'^Introduced', 'bill:introduced'),
     Rule(r'Third reading, adopted', ['bill:reading:3', 'bill:passed']),
-
+    Rule(r'Prefiled for introduction', 'bill:filed'),
     Rule(r'amendment adopted', 'amendment:passed'),
     Rule(r'amendment not adopted', 'amendment:failed'),
     Rule(r"(?i)third reading, (?P<pass_fail>(passed|failed))", 'bill:reading:3'),

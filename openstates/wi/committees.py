@@ -34,7 +34,7 @@ class WICommitteeScraper(CommitteeScraper):
 
     def scrape(self, term, chambers):
         for chamber in chambers+["joint"]:
-            url = 'http://docs.legis.wisconsin.gov/2015/committees/'
+            url = 'http://docs.legis.wisconsin.gov/{}/committees/'.format(term.split('-')[0])
             if chamber == 'joint':
                 url += "joint"
             elif chamber == 'upper':

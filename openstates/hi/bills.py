@@ -40,6 +40,10 @@ def categorize_action(action):
         ('.*Passed Third Reading', 'bill:passed'),
         ('Enrolled to Governor', 'governor:received'),
         ('Act ', 'governor:signed'),
+        # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
+        ('Vetoed .* line-item', 'governor:vetoed:line-item'),
+        ('Vetoed', 'governor:vetoed'),
+        ('Veto overridden', 'bill:veto_override:passed'),
         # these are for resolutions
         ('Offered', 'bill:introduced'),
         ('Adopted', 'bill:passed'),

@@ -35,7 +35,13 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015', '2015s1', '2016'],
+            'sessions': ['2015', '2015s1', '2016', '2016S2', '2016S3', '2016S4'],
+        },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
         },
     ],
     'session_details': {
@@ -110,6 +116,31 @@ metadata = {
             'start_date': datetime.date(2016, 1, 25),
             'display_name': '2016 General Session',
             '_scraped_name': '2016 General Session',
+        },
+        #Note: There is no 2016s1, it's 2015s1
+        '2016S2': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 5, 18),
+            'display_name': '2016 2nd Special Session',
+            '_scraped_name': '2016 2nd Special Session',
+        },
+        '2016S3': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 7, 13),
+            'display_name': '2016 3rd Special Session',
+            '_scraped_name': '2016 3rd Special Session',
+        },
+        '2016S4': {
+            'type': 'special',
+            'start_date': datetime.date(2016, 11, 16),
+            'display_name': '2016 4th Special Session',
+            '_scraped_name': '2016 4th Special Session',
+        },
+        '2017': {
+            'type': 'primary',
+            'start_date': datetime.date(2017, 1, 23),
+            'display_name': '2017 General Session',
+            '_scraped_name': '2017 General Session',
         }
     },
     'feature_flags': ['events', 'subjects', 'influenceexplorer'],

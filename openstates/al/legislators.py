@@ -81,12 +81,6 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
                 legislator_page,
                 '//div[@id="ContentPlaceHolder1_TabSenator_body"]//table')
 
-            party_text = self.get_node(
-                info_node,
-                './tr[1]/td[2]').text_content().encode('utf-8')
-
-            party = self._parties[party_text.strip()]
-
             district_text = self.get_node(
                 info_node,
                 './tr[2]/td[2]').text_content().encode('utf-8')
@@ -95,6 +89,16 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
                 district = district_text.replace('Senate District', '').strip()
             elif chamber == 'lower':
                 district = district_text.replace('House District', '').strip()
+
+            party_text = self.get_node(
+                info_node,
+                './tr[1]/td[2]').text_content().encode('utf-8')
+
+            if not full_name.strip() and party_text == '()':
+                self.warning('Found empty seat, for district {}; skipping'.format(district))
+                continue
+
+            party = self._parties[party_text.strip()]
 
             phone_number_text = self.get_node(
                 info_node,
@@ -140,17 +144,12 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
                 'capitol',
                 'Capitol Office',
                 address=office_address,
-                phone=phone_number)
+                phone=phone_number,
+                fax=fax_number
+                )
 
             #match rep to sponsor_id if possible
             ln,fn = name.split(',')
-            last_fi_key = '{ln} ({fi})'.format(ln=ln.strip(), fi=fn.strip()[0])
-
-            if not oid_sponsor:
-                #can't find rep's sponsor_id, do what we can and get out!
-                self.logger.warning("Legislator {name} does not match any sponsor_id and thus will not be linked to bills or committees".format(name=rep_name))
-                self.save_legislator(leg)
-                continue
 
             self.add_committees(legislator_page, legislator, chamber, term)
 
