@@ -45,6 +45,12 @@ metadata = dict(
             'end_year': 2016,
             'sessions': ['2015-2016'],
         },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017-2018'],
+        },
     ],
     session_details = {
         '2011-2012': {
@@ -63,6 +69,11 @@ metadata = dict(
             'display_name': '2015-2016 Regular Session',
             '_scraped_name': 'General Assembly: 86',
             'number': '86',
+        },
+        '2017-2018': {
+            'display_name': '2017-2018 Regular Session',
+            '_scraped_name': 'General Assembly: 87',
+            'number': '87',
         },
     },
     feature_flags = ['events', 'influenceexplorer'],
