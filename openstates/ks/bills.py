@@ -50,7 +50,8 @@ class KSBillScraper(BillScraper):
             for sponsor in bill_data['SPONSOR_NAMES']:
                 stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
                          else 'cosponsor')
-                bill.add_sponsor(stype, sponsor)
+                if sponsor:
+                    bill.add_sponsor(stype, sponsor)
 
             # history is backwards
             for event in reversed(bill_data['HISTORY']):
@@ -83,8 +84,7 @@ class KSBillScraper(BillScraper):
             self.save_bill(bill)
 
     def scrape_html(self, bill):
-        slug = {'2013-2014': 'b2013_14',
-                '2015-2016': 'b2015_16'}[bill['session']]
+        slug = self.metadata['session_details'][bill['session']]['_scraped_name']
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/%s/measures/' % slug
         if 'resolution' in bill['type']:
