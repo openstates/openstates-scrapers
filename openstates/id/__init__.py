@@ -203,8 +203,8 @@ metadata = {
         },
         '2017' : {
             'type': 'primary',
-            'start_date': datetime.date(2016, 1, 9),
-            'end_date': datetime.date(2016, 4, 7),
+            'start_date': datetime.date(2017, 1, 9),
+            'end_date': datetime.date(2017, 4, 7),
             'display_name': '64th Legislature, 1st Regular Session (2017)',
             '_scraped_name': '2017 Session',
         },
