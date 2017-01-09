@@ -63,9 +63,7 @@ class MOLegislatorScraper(LegislatorScraper):
             leg.add_source(url)
 
             page = lxml.html.fromstring(details_page)
-            photo_url = page.xpath(
-                '//a[contains(@href, "uploads")]/img')[0]
-            photo_url = photo_url.attrib['src']
+            photo_url = page.xpath('//img[contains(@src, "uploads")]/@src')[0]
 
             contact_info = [
                 line.strip()
