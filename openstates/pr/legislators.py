@@ -92,7 +92,9 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
         # E-mail contact is now hidden behind webforms. Sadness.
 
         party_map = {'PNP': 'Partido Nuevo Progresista',
-                     'PPD': u'Partido Popular Democr\xe1tico'}
+                     'PPD': u'Partido Popular Democr\xe1tico',
+                     'PIP': u'Partido Independentista Puertorrique\u00F1o', 
+                     }
 
         url = 'http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara.aspx'
 

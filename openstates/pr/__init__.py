@@ -23,6 +23,9 @@ metadata = dict(
         {'name': '2013-2016',
          'sessions': ['2013-2016'],
          'start_year': 2013, 'end_year': 2016},
+        {'name': '2017-2020',
+         'sessions': ['2017-2020'],
+         'start_year': 2017, 'end_year': 2020},
      ],
     session_details={
         '2009-2012': {'display_name': '2009-2012 Session',
@@ -30,6 +33,9 @@ metadata = dict(
                      },
         '2013-2016': {'display_name': '2013-2016 Session',
                       '_scraped_name': '2013-2016'
+                     },
+        '2017-2020': {'display_name': '2017-2020 Session',
+                      '_scraped_name': '2017-2020'
                      },
     },
     feature_flags=[],
