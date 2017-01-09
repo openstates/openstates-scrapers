@@ -56,8 +56,10 @@ class ORBillScraper(BillScraper, LXMLMixin):
 
         ulid = 'senateBills' if chamber == 'upper' else 'houseBills'  # id of <ul>
         header = page.xpath("//ul[@id='{0}_search']".format(ulid))[0]
-        
-        bill_list_pages = header.xpath('.//ul[boolean(@data-load-action) and boolean(@id)]/@data-load-action')
+
+        #Every ul with a data-load-action and an id
+        bill_list_pages = header.xpath(".//ul[boolean(@data-load-action)"
+                                       " and boolean(@id)]/@data-load-action")
 
         bill_anchors = []
 
@@ -79,7 +81,7 @@ class ORBillScraper(BillScraper, LXMLMixin):
             bill = Bill(session, chamber, bid, title='', summary=bill_summary)
             page = self.lxmlize(a.get('href'))
             versions = page.xpath('//ul[@class="dropdown-menu"]/li/span/' +
-                    'a[contains(@title, "Get the Pdf")]/@href')
+                                  'a[contains(@title, "Get the Pdf")]/@href')
 
             measure_info = {}
             info = page.xpath("//table[@id='measureOverviewTable']/tr")
