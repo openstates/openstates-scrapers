@@ -52,13 +52,7 @@ class NMCommitteeScraper(CommitteeScraper, LXMLMixin):
 
         committee_page = self.lxmlize(url)
 
-        name_node = self.get_node(
-            committee_page,
-            '//table[@id="MainContent_formViewCommitteeInformation"]/tr//h3')
-
-        c_name = (
-            name_node.text_content().strip()
-            if name_node is not None and name_node.text_content() else None)
+        c_name = committee_page.xpath('//li/a[contains(@id, "siteMapBreadcrumbs_lnkPage_")]')[-1].text_content().strip()
 
         if c_name:
             committee = Committee(chamber, clean_committee_name(c_name))
