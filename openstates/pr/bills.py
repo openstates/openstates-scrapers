@@ -75,10 +75,12 @@ class PRBillScraper(BillScraper):
         for code, type in self.bill_types.iteritems():
             counter = itertools.count(1)
             for n in counter:
-                bill_id = '%s%s%s' % (code, chamber_letter, n)
+                bill_id = '%s%s%s' % (code, chamber_letter, str(n).zfill(4))
                 try:
                     self.scrape_bill(chamber, session, bill_id, type)
                 except NoSuchBill:
+                    if n == 1:
+                        self.warning("Found no bills of type '{}'".format(type))
                     break
 
     def parse_action(self,chamber,bill,action,action_url,date):
