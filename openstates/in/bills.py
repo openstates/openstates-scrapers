@@ -124,13 +124,13 @@ class INBillScraper(BillScraper):
                         if v.strip():
                             vote[currently_counting].append(v.strip())
 
-            assert len(vote["yes_votes"]) == vote["yes_count"],\
-                "Yes vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["yes_count"],actual=len(vote["yes_votes"]))
-            assert len(vote["no_votes"]) == vote["no_count"],\
-                "No vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["no_count"],actual=len(vote["no_votes"]))
-            assert len(vote["other_votes"]) == vote["other_count"],\
-                "Other vote counts ({count}) don't match count of actual votes ({actual})".format(count=vote["other_count"],actual=len(vote["other_votes"]))
-            
+            if len(vote["yes_votes"]) == vote["yes_count"]:
+                self.logger.warning("Yes vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["yes_count"],actual=len(vote["yes_votes"]), url=proxy_link))
+            if len(vote["no_votes"]) == vote["no_count"]:
+                self.logger.warning("No vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["no_count"],actual=len(vote["no_votes"]), url=proxy_link))
+            if len(vote["other_votes"]) == vote["other_count"]:
+                self.logger.warning("Other vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["other_count"],actual=len(vote["other_votes"]),url=proxy_link))
+
             #indiana only has simple majorities even for veto overrides
             #if passage status isn't the same as yes>no, then we should look!
             bill_type = bill['type'][0]
@@ -144,7 +144,7 @@ class INBillScraper(BillScraper):
             else:
                 if vote['passed'] != (vote['yes_count'] > vote['no_count']):
                     vote_invalid = True
-            
+
             if vote_invalid:
                 raise AssertionError('Vote count doesn\'t agree with vote '
                     'passage status.')
@@ -190,7 +190,7 @@ class INBillScraper(BillScraper):
                     continue
                 else:
                     break
-                
+
             bill.add_version(name,link,mimetype="application/pdf",date=update_date)
 
         #votes
@@ -250,7 +250,7 @@ class INBillScraper(BillScraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        proxy = {"url":"http://in.proxy.openstates.org"}
+        proxy = {"url":"http://in-proxy.openstates.org"}
 
         #ah, indiana. it's really, really hard to find
         #pdfs in their web interface. Super easy with
@@ -280,7 +280,7 @@ class INBillScraper(BillScraper):
             except scrapelib.HTTPError:
                 self.logger.warning('Bill could not be accessed. Skipping.')
                 continue
-            
+
             title = bill_json["title"]
             if title == "NoneNone":
                 title = None
@@ -352,13 +352,13 @@ class INBillScraper(BillScraper):
                 else:
                     action_chamber = "upper"
                 date = a["date"]
-                
+
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
 
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
-                
+
                 action_type = []
                 d = action_desc.lower()
                 committee = None
@@ -451,7 +451,7 @@ class INBillScraper(BillScraper):
                 except scrapelib.HTTPError:
                     self.logger.warning("Bill version does not seem to exist.")
                     continue
-                
+
                 self.deal_with_version(version_json,bill,proxy)
 
             self.save_bill(bill)
