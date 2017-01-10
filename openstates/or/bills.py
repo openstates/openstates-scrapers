@@ -10,8 +10,9 @@ import lxml.html
 class ORBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'or'
 
-    bill_directory_url = ("https://olis.leg.state.or.us/liz/{0}"
-                          "/Navigation/BillNumberSearchForm")
+    bill_directory_url = "https://olis.leg.state.or.us/liz/{0}/Measures/list/"
+    base_url = "https://olis.leg.state.or.us"
+
     bill_types = {'B': 'bill',
                   'M': 'memorial',
                   'R': 'resolution',
@@ -51,9 +52,21 @@ class ORBillScraper(BillScraper, LXMLMixin):
         self.slug = self.metadata['session_details'][session]['slug']
 
         page = self.lxmlize(self.bill_directory_url.format(self.slug.upper()))
+        page.make_links_absolute(self.base_url)
+
         ulid = 'senateBills' if chamber == 'upper' else 'houseBills'  # id of <ul>
-        bill_list = page.xpath("//ul[@id='{0}']".format(ulid))[0]
-        bill_anchors = bill_list.xpath(".//a[boolean(@title)]")
+        header = page.xpath("//ul[@id='{0}_search']".format(ulid))[0]
+
+        #Every ul with a data-load-action and an id
+        bill_list_pages = header.xpath(".//ul[boolean(@data-load-action)"
+                                       " and boolean(@id)]/@data-load-action")
+
+        bill_anchors = []
+
+        for bill_list_url in bill_list_pages:
+            bill_list_page = self.lxmlize('{}{}'.format(self.base_url, bill_list_url))
+            bill_list_page.make_links_absolute(self.base_url)
+            bill_anchors.extend(bill_list_page.xpath('//a') or [])
 
         ws = re.compile(r"\s+")
 
@@ -66,16 +79,15 @@ class ORBillScraper(BillScraper, LXMLMixin):
             bill_summary = _clean_ws(a.get('title'))
             # bill title is added below
             bill = Bill(session, chamber, bid, title='', summary=bill_summary)
-
             page = self.lxmlize(a.get('href'))
             versions = page.xpath('//ul[@class="dropdown-menu"]/li/span/' +
-                    'a[contains(@title, "Get the Pdf")]/@href')
+                                  'a[contains(@title, "Get the Pdf")]/@href')
 
             measure_info = {}
             info = page.xpath("//table[@id='measureOverviewTable']/tr")
             for row in info:
                 key, value = row.xpath("./*")
-                key = key.text.strip(": ")
+                key = key.text.replace(':','').strip()
                 measure_info[key] = value
 
             for sponsor in measure_info['Chief Sponsors'].xpath("./a"):
