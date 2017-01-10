@@ -28,7 +28,8 @@ class KSLegislatorScraper(LegislatorScraper, LXMLMixin):
             party = 'Democratic'
 
         slug = {'2013-2014': 'b2013_14',
-                '2015-2016': 'b2015_16'}[term]
+                '2015-2016': 'b2015_16',
+                '2017-2018': 'b2017_18'}[term]
         leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
 
         try:
