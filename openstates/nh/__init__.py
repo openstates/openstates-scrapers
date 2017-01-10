@@ -2,7 +2,6 @@ import lxml.html
 from .bills import NHBillScraper
 from .legislators import NHLegislatorScraper
 from .committees import NHCommitteeScraper
-from . import utils
 
 metadata = {
     'abbreviation': 'nh',
@@ -50,10 +49,10 @@ metadata = {
         '2016': {'display_name': '2016 Regular Session',
                  'zip_url': 'http://gencourt.state.nh.us/downloads/2016%20Session%20Bill%20Status%20Tables.zip',
                  '_scraped_name': '2016 Session',
-                },                
+                },
         '2017': {'display_name': '2017 Regular Session',
                  '_scraped_name': '2017 Session',
-                },  
+                },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': ['2013 Session','2017 Session Bill Status Tables Link.txt'],
