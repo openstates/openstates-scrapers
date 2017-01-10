@@ -255,7 +255,8 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             if re.search('END OF \d+ ACTIONS', action):
                 continue 
 
-            bill.add_action(actor, action, date, type=atype)
+            if '$history' not in action:
+                bill.add_action(actor, action, date, type=atype)
 
         bill['subjects'] = self._subjects[bill_id]
         self.save_bill(bill)
