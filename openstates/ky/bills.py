@@ -171,7 +171,7 @@ class KYBillScraper(BillScraper, LXMLMixin):
             elif source_url.endswith('.pdf'):
                 mimetype = 'application/pdf'
 
-            bill.add_version("Fiscal Note", source_url, mimetype=mimetype)
+            bill.add_document("Fiscal Note", source_url, mimetype=mimetype)
 
         for link in page.xpath("//a[contains(@href, 'legislator/')]"):
             bill.add_sponsor('primary', link.text.strip())
