@@ -39,12 +39,12 @@ class COBillScraper(BillScraper, LXMLMixin):
         pagination_str = page.xpath('//div[contains(@class, "view-header")]/text()')[0]
         max_results = re.search(r'of (\d+) results', pagination_str)
         max_results = int(max_results.group(1))
-
-        #max_page = int(math.ceil(max_results / 25))
+        max_page = int(math.ceil(max_results / 25.0))
 
         # We already have the first page load, so just grab later pages
-        #for i in range(1, max_page):
-        #    self.scrape_bill_list(session, chamber, i)
+        if max_page > 1:
+            for i in range(2, max_page + 1):
+                self.scrape_bill_list(session, chamber, i)
 
     def scrape_bill_list(self, session, chamber, pageNumber):
         chamber_code_map = {'lower': 1, 'upper': 2}
@@ -62,7 +62,7 @@ class COBillScraper(BillScraper, LXMLMixin):
             'view_base_path': 'bill-search',
             'view_dom_id': '54db497ce6a9943741e901a9e4ab2211',
             'pager_element': '0',
-            'page': '0',
+            'page': pageNumber,
         }
         resp = self.post(url=ajax_url, data=form, allow_redirects=True)
         resp = json.loads(resp.content)
@@ -96,15 +96,18 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         bill = Bill(session, chamber, bill_number, bill_title, summary=bill_summary)
 
-        bill.add_source('{}{}'.format(CO_URL_BASE, bill_url) )
+        bill.add_source('{}{}'.format(CO_URL_BASE, bill_url))
 
         self.scrape_sponsors(bill, page)
+        self.scrape_actions(bill, page)
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
+        self.scrape_fiscal_notes(bill, page)
         self.scrape_votes(bill, page)
 
         print bill
         self.save_bill(bill)
+        
 
     def scrape_sponsors(self, bill, page):
         chamber_map = {'Senator':'upper', 'Representative': 'lower'}
@@ -149,15 +152,15 @@ class COBillScraper(BillScraper, LXMLMixin):
         chamber_map = {'Senate':'upper', 'House': 'lower'}
 
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
-        
+
         for action in actions:
             action_date = action.xpath('td[1]/text()')[0]
             action_date = dt.datetime.strptime(action_date, '%m/%d/%Y')
-            
+
             action_chamber = action.xpath('td[2]/text()')[0]
             action_actor = chamber_map[action_chamber]
 
-            action_name = action.xpath('td[3]/span/a/@href')[0]
+            action_name = action.xpath('td[3]/text()')[0]
 
             attrs = dict(actor=action_actor, action=action_name, date=action_date)
             attrs.update(self.categorizer.categorize(action_name))
@@ -224,13 +227,19 @@ class COBillScraper(BillScraper, LXMLMixin):
             rolls = page.xpath('//tr[preceding-sibling::tr/td/div/b/font/text()="VOTE"]')
 
             count_row = rolls[-1]
-            yes_count = count_row.xpath('.//b/font[normalize-space(text())="YES:"]/../following-sibling::font[1]/text()')[0]
-            no_count = count_row.xpath('.//b/font[normalize-space(text())="NO:"]/../following-sibling::font[1]/text()')[0]
-            exc_count = count_row.xpath('.//b/font[normalize-space(text())="EXC:"]/../following-sibling::font[1]/text()')[0]
-            nv_count = count_row.xpath('.//b/font[normalize-space(text())="ABS:"]/../following-sibling::font[1]/text()')[0]
-            
-            if count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]/../following-sibling::b[1]/font/text()'):
-                final = count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]/../following-sibling::b[1]/font/text()')[0]
+            yes_count = count_row.xpath('.//b/font[normalize-space(text())="YES:"]'
+                                        '/../following-sibling::font[1]/text()')[0]
+            no_count = count_row.xpath('.//b/font[normalize-space(text())="NO:"]'
+                                       '/../following-sibling::font[1]/text()')[0]
+            exc_count = count_row.xpath('.//b/font[normalize-space(text())="EXC:"]'
+                                        '/../following-sibling::font[1]/text()')[0]
+            nv_count = count_row.xpath('.//b/font[normalize-space(text())="ABS:"]'
+                                       '/../following-sibling::font[1]/text()')[0]
+
+            if count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]'
+                               '/../following-sibling::b[1]/font/text()'):
+                final = count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]'
+                                        '/../following-sibling::b[1]/font/text()')[0]
                 passed = True if 'pass' in final.lower() or int(yes_count) > int(no_count) else False
             elif 'passed without objection' in motion.lower():
                 passed = True
@@ -242,7 +251,7 @@ class COBillScraper(BillScraper, LXMLMixin):
 
             other_count = int(exc_count) + int(nv_count)
 
-            vote = Vote(chamber, date, motion, passed, 
+            vote = Vote(chamber, date, motion, passed,
                         int(yes_count), int(no_count), int(other_count))
 
             for roll in rolls[:-2]:
