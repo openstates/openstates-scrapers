@@ -105,16 +105,18 @@ def address_from_profile_page_address_element(address_element):
     """Extract a formatted address from the address container on the profile page"""
     # Address Line 1, e.g. 200 E Colfax
     (thoroughfare_element, ) = address_element.xpath('descendant-or-self::div[contains(@class, "thoroughfare")]')
-    # Addres line 2, e.g RM 207
-    (premise_element, ) = address_element.xpath('descendant-or-self::div[contains(@class, "premise")]')
     (locality_block, ) = address_element.xpath('descendant-or-self::div[contains(@class, "locality-block")]')
-    # City, State Postal
-    thoroughfare = thoroughfare_element.text_content().strip()
-    premise = premise_element.text_content().strip()
-    locality = locality_block.text_content().strip()
 
-    return '{thoroughfare}\n{premise}\n{locality}'.format(
-        thoroughfare=thoroughfare,
-        premise=premise,
-        locality=locality,
-    )
+    address_components = []
+    # City, State Postal
+    address_components.append(thoroughfare_element.text_content().strip())
+
+    # Optional address line 2, e.g RM 207
+    premise_elements = address_element.xpath('descendant-or-self::div[contains(@class, "premise")]')
+    if premise_elements:
+        (premise_element, ) = premise_elements
+        address_components.append(premise_element.text_content().strip())
+
+    address_components.append(locality_block.text_content().strip())
+
+    return '\n'.join(address_components)
