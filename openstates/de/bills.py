@@ -37,7 +37,12 @@ class DEBillScraper(BillScraper, LXMLMixin):
     def scrape_bill(self, row, chamber, session):
 
         bill_id = row['LegislationNumber']
-        bill_summary = row['Synopsis']
+
+        if row['Synopsis']:
+            bill_summary = row['Synopsis']
+        else:
+            bill_summary = ''
+            
         bill_title = row['LongTitle']
         if row['ShortTitle']:
             alternate_title = row['ShortTitle']
