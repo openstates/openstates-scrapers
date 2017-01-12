@@ -71,7 +71,7 @@ metadata = dict(
             'type'         : 'primary',
              'display_name': '2017 Regular Session',
             '_scraped_name': "2017 Regular Session",
-            '_data_id':'31'
+            '_data_id':'10171'
          },
     },
     feature_flags=['influenceexplorer'],
