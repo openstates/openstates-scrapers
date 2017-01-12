@@ -105,9 +105,8 @@ class COBillScraper(BillScraper, LXMLMixin):
         self.scrape_fiscal_notes(bill, page)
         self.scrape_votes(bill, page)
 
-        print bill
         self.save_bill(bill)
-        
+
 
     def scrape_sponsors(self, bill, page):
         chamber_map = {'Senator':'upper', 'Representative': 'lower'}
