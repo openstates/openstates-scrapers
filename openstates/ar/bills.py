@@ -99,6 +99,8 @@ class ARBillScraper(BillScraper):
             # and negative offsets
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
             actor = {'HU': 'lower', 'SU': 'upper'}[row[-5].upper()]
+            # manual fix for crazy time value
+            row[6] = row[6].replace('.520000000', '')
             date = datetime.datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S")
             action = ','.join(row[7:-5])
 
