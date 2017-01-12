@@ -65,11 +65,13 @@ metadata = dict(
             'type'         : 'primary',
              'display_name': '2016 Regular Session',
             '_scraped_name': "2016 Regular Session",
+            '_data_id':'30'
          },
         '2017A': {
             'type'         : 'primary',
              'display_name': '2017 Regular Session',
             '_scraped_name': "2017 Regular Session",
+            '_data_id':'31'
          },
     },
     feature_flags=['influenceexplorer'],

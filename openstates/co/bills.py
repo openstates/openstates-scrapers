@@ -17,6 +17,7 @@ from .pre2016bills import COPre2016BillScraper
 CO_URL_BASE = "http://leg.colorado.gov"
 
 class COBillScraper(BillScraper, LXMLMixin):
+    jurisdiction = 'co'
     categorizer = Categorizer()
 
     def scrape(self, chamber, session):
@@ -52,7 +53,7 @@ class COBillScraper(BillScraper, LXMLMixin):
         form = {
             'field_chamber': chamber_code_map[chamber],
             'field_bill_type': 'All',
-            'field_sessions': '30',
+            'field_sessions': self.metadata['session_details'][session]['_data_id'],
             'sort_bef_combine': 'search_api_relevance DESC',
             'view_name': 'bill_search',
             'view_display_id': 'full',
@@ -95,11 +96,15 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         bill = Bill(session, chamber, bill_number, bill_title, summary=bill_summary)
 
+        bill.add_source('{}{}'.format(CO_URL_BASE, bill_url) )
+
         self.scrape_sponsors(bill, page)
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
+        self.scrape_votes(bill, page)
 
         print bill
+        self.save_bill(bill)
 
     def scrape_sponsors(self, bill, page):
         chamber_map = {'Senator':'upper', 'Representative': 'lower'}
@@ -119,14 +124,18 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         #skip the header row
         for version in versions:
-            version_date = version.xpath('td[1]/text()')[0]
+            version_date = version.xpath('td[1]/text()')[0].strip()
             #version_date = dt.datetime.strptime(version_date, '%m/%d/%Y')
             version_type = version.xpath('td[2]/text()')[0]
             version_url = version.xpath('td[3]/span/a/@href')[0]
 
             # CO can have multiple versions w/ the same url, and differing dates
             # They're sorted rev-cron so the first one is the right name/date for the PDF
-            version_name = '{} ({})'.format(version_type, version_date)
+            # They also have a number of broken dates
+            if version_date == '12/31/1969':
+                version_name = version_type
+            else:
+                version_name = '{} ({})'.format(version_type, version_date)
 
             if version_url not in seen_versions:
                 bill.add_version(
@@ -158,11 +167,16 @@ class COBillScraper(BillScraper, LXMLMixin):
         notes = page.xpath('//div[@id="bill-documents-tabs2"]//table//tbody//tr')
 
         for version in notes:
-            version_date = version.xpath('td[1]/text()')[0]
+            version_date = version.xpath('td[1]/text()')[0].strip()
             #version_date = dt.datetime.strptime(version_date, '%m/%d/%Y')
             version_type = version.xpath('td[2]/text()')[0]
             version_url = version.xpath('td[3]/span/a/@href')[0]
-            version_name = 'Fiscal Note {} ({})'.format(version_type, version_date)
+
+            # Lots of broken dates in their system
+            if version_date == '12/31/1969':
+                version_name = 'Fiscal Note {}'.format(version_type)
+            else:
+                version_name = 'Fiscal Note {} ({})'.format(version_type, version_date)
 
             bill.add_document(version_name, version_url, 'application/pdf')
 
@@ -176,37 +190,72 @@ class COBillScraper(BillScraper, LXMLMixin):
         votes = page.xpath('//div[@id="bill-documents-tabs3"]//table//tbody//tr')
 
         for vote in votes:
-            vote_url = vote.xpath('td[3]/span/a/@href')[0]
+            vote_url = vote.xpath('td[3]/a/@href')[0]
 
             parent_committee_row = vote.xpath('ancestor::ul[@class="accordion"]/li/'
                                               'a[@class="accordion-title"]/h5/text()')[0]
             parent_committee_row = parent_committee_row.strip()
 
-            date = re.search(r'(\d{2}/\d{2}/\d{4}) |', parent_committee_row)
-            print date.groups
-            # Yes, the vote day isn't on the roll call page, only the time...
-            # its in a parent of vote with class accordion-title
-            # m/d/Y |
+            # The vote day and chamber aren't on the roll call page,
+            # But they're in a header row above this one...
 
-            # the vote chamber isn't on the roll call page either
-            chamber = 'upper'
+            # e.g. 05/05/2016                  | Senate State, Veterans, & Military Affairs
+            header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
+                               parent_committee_row)
+
+            if 'Senate' in header.group('committee'):
+                chamber = 'upper'
+            elif 'House' in header.group('committee'):
+                chamber = 'lower'
+            else:
+                self.warning("No committee for %s" % header.group('committee'))
+
+            date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
+
             self.scrape_vote(bill, vote_url, chamber, date)
 
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
 
-        motion = page.xpath('//td/b/font[text()="MOTION:"]/../../following-sibling::td/text()')[0]
+        motion = page.xpath('//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
 
-        # Every table row after the one with VOTE in a td/div/b/font
-        rolls = page.xpath('//tr[preceding-sibling::tr/td/div/b/font/text()="VOTE"]')
+        if 'withdrawn' not in motion:
+            # Every table row after the one with VOTE in a td/div/b/font
+            rolls = page.xpath('//tr[preceding-sibling::tr/td/div/b/font/text()="VOTE"]')
 
-        count_row = rolls[:-1]
-        yes_count = count_row.xpath('font[3]/text()')[0]
-        no_count = count_row.xpath('font[5]/text()')[0]
-        exc_count = count_row.xpath('font[7]/text()')[0]
-        nv_count = count_row.xpath('font[9]/text()')[0]
-        other_count = int(exc_count) + int(nv_count)
+            count_row = rolls[-1]
+            yes_count = count_row.xpath('.//b/font[normalize-space(text())="YES:"]/../following-sibling::font[1]/text()')[0]
+            no_count = count_row.xpath('.//b/font[normalize-space(text())="NO:"]/../following-sibling::font[1]/text()')[0]
+            exc_count = count_row.xpath('.//b/font[normalize-space(text())="EXC:"]/../following-sibling::font[1]/text()')[0]
+            nv_count = count_row.xpath('.//b/font[normalize-space(text())="ABS:"]/../following-sibling::font[1]/text()')[0]
+            
+            if count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]/../following-sibling::b[1]/font/text()'):
+                final = count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]/../following-sibling::b[1]/font/text()')[0]
+                passed = True if 'pass' in final.lower() or int(yes_count) > int(no_count) else False
+            elif 'passed without objection' in motion.lower():
+                passed = True
+                yes_count = int(len(rolls[:-2]))
+            else:
+                self.warning("No vote breakdown found for %s" % vote_url)
+                return
 
-        for roll in rolls[:-2]:
-            voter = roll.xpath('td[2]/div/font/text()')[0]
-            voted = roll.xpath('td[3]/div/font/text()')[0]
+
+            other_count = int(exc_count) + int(nv_count)
+
+            vote = Vote(chamber, date, motion, passed, 
+                        int(yes_count), int(no_count), int(other_count))
+
+            for roll in rolls[:-2]:
+                voter = roll.xpath('td[2]/div/font')[0].text_content()
+                voted = roll.xpath('td[3]/div/font')[0].text_content().strip()
+                if voted:
+                    if 'Yes' in voted:
+                        vote.yes(voter)
+                    elif 'No' in voted:
+                        vote.no(voter)
+                    else:
+                        vote.other(voter)
+                elif 'passed without objection' in motion.lower() and voter:
+                    vote.yes(voter)
+
+            bill.add_vote(vote)
