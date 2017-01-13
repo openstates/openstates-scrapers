@@ -5,6 +5,7 @@ import scrapelib
 from collections import defaultdict
 
 import lxml.html
+from lxml import etree
 
 from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
@@ -470,6 +471,74 @@ class MOBillScraper(BillScraper, LXMLMixin):
                     mimetype = 'text/html'
                 bill.add_version(version, vurl.attrib['href'],
                                  on_duplicate='use_new', mimetype=mimetype)
+
+        # house bill versions
+        # everything between the row containing "Bill Text"" and the next div.DocHeaderRow
+        version_rows = bill_page.xpath('//div[contains(text(),"Bill Text")]/'
+                                       'following-sibling::div[contains(@class,"DocRow") '
+                                       'and count(preceding-sibling::div[contains(@class,"DocHeaderRow")])=1]')
+        for row in version_rows:
+            # some rows are just broken links, not real versions
+            if row.xpath('.//div[contains(@class,"textType")]/a/@href'):
+                version = row.xpath('.//div[contains(@class,"textType")]/a/text()')[0].strip()
+                path = row.xpath('.//div[contains(@class,"textType")]/a/@href')[0].strip()
+                if '.pdf' in path:
+                    mimetype = 'application/pdf'
+                else:
+                    mimetype = 'text/html'
+                bill.add_version(version, path,
+                                on_duplicate='use_new', mimetype=mimetype)
+
+        # house bill summaries
+        # everything between the row containing "Bill Summary"" and the next div.DocHeaderRow
+        summary_rows = bill_page.xpath('//div[contains(text(),"Bill Summary")]/'
+                                       'following-sibling::div[contains(@class,"DocRow") '
+                                       'and count(following-sibling::div[contains(@class,"DocHeaderRow")])=1]')
+
+        # if there are no amedments, we need a different xpath for summaries
+        if not summary_rows:
+           summary_rows = bill_page.xpath('//div[contains(text(),"Bill Summary")]/'
+                                         'following-sibling::div[contains(@class,"DocRow")]')
+
+        for row in reversed(summary_rows):
+            version = row.xpath('.//div[contains(@class,"textType")]/a/text()')[0].strip()
+            if version:
+                path = row.xpath('.//div[contains(@class,"textType")]/a/@href')[0].strip()
+                summary_name = 'Bill Summary ({})'.format(version)
+                if '.pdf' in path:
+                    mimetype = 'application/pdf'
+                else:
+                    mimetype = 'text/html'
+                bill.add_document(summary_name, path,
+                                on_duplicate='use_new', mimetype=mimetype)
+
+        # house bill amendments
+        amendment_rows = bill_page.xpath('//div[contains(text(),"Amendment")]/'
+                                         'following-sibling::div[contains(@class,"DocRow")]')
+
+        for row in reversed(amendment_rows):
+            version = row.xpath('.//div[contains(@class,"DocInfoCell")]/a[1]/text()')[0].strip()
+            path = row.xpath('.//div[contains(@class,"DocInfoCell")]/a[1]/@href')[0].strip()
+            summary_name = 'Amendment {}'.format(version)
+
+            defeated_icon = row.xpath('.//img[contains(@title,"Defeated")]')
+            if defeated_icon:
+                summary_name = '{} (Defeated)'.format(summary_name)
+
+            adopted_icon = row.xpath('.//img[contains(@title,"Adopted")]')
+            if adopted_icon:
+                summary_name = '{} (Adopted)'.format(summary_name)
+
+            distributed_icon = row.xpath('.//img[contains(@title,"Distributed")]')
+            if distributed_icon:
+                summary_name = '{} (Distributed)'.format(summary_name)
+
+            if '.pdf' in path:
+                mimetype = 'application/pdf'
+            else:
+                mimetype = 'text/html'
+            bill.add_version(summary_name, path,
+                             on_duplicate='use_new', mimetype=mimetype)
         self.save_bill(bill)
 
     def _scrape_upper_chamber(self, year):
