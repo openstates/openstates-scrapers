@@ -240,11 +240,11 @@ class NJBillScraper(BillScraper, MDBMixin):
             if rec['Comment']:
                 doc_name += ' ' + rec['Comment']
 
-            if rec['DocType'] in self._version_types:
-                # Clean HTMX links.
-                if htm_url.endswith('HTMX'):
-                    htm_url = re.sub('X$', '', htm_url)
+            # Clean HTMX links.
+            if htm_url.endswith('HTMX'):
+                htm_url = re.sub('X$', '', htm_url)
 
+            if rec['DocType'] in self._version_types:
                 if htm_url.endswith('HTM'):
                     mimetype = 'text/html'
                 elif htm_url.endswith('wpd'):
