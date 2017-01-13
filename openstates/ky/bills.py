@@ -93,9 +93,9 @@ class KYBillScraper(BillScraper, LXMLMixin):
             source_url = version_link_node.attrib['href']
 
             if source_url.endswith('.doc'):
-                mimetype='application/msword'
+                mimetype = 'application/msword'
             elif source_url.endswith('.pdf'):
-                mimetype='application/pdf'
+                mimetype = 'application/pdf'
 
         if self._is_post_2016:
             title_texts = self.get_nodes(
@@ -144,8 +144,34 @@ class KYBillScraper(BillScraper, LXMLMixin):
         bill.add_source(url)
 
         bill.add_version("Most Recent Version",
-            source_url,
-            mimetype=mimetype)
+                         source_url,
+                         mimetype=mimetype)
+
+        other_versions = page.xpath('//a[contains(@href, "/recorddocuments/bill/") and'
+                                    ' not(contains(@href, "/bill.pdf")) and'
+                                    ' not(contains(@href, "/bill.doc")) and'
+                                    ' not(contains(@href, "/LM.pdf"))]')
+
+        for version_link in other_versions:
+            source_url = version_link.attrib['href']
+            if source_url.endswith('.doc'):
+                mimetype = 'application/msword'
+            elif source_url.endswith('.pdf'):
+                mimetype = 'application/pdf'
+
+            version_title = version_link.xpath('text()')[0]
+            bill.add_version(version_title, source_url, mimetype=mimetype)
+
+        # LM is "Locally Mandated fiscal impact"
+        fiscal_notes = page.xpath('//a[contains(@href, "/LM.pdf")]')
+        for fiscal_note in fiscal_notes:
+            source_url = fiscal_note.attrib['href']
+            if source_url.endswith('.doc'):
+                mimetype = 'application/msword'
+            elif source_url.endswith('.pdf'):
+                mimetype = 'application/pdf'
+
+            bill.add_document("Fiscal Note", source_url, mimetype=mimetype)
 
         for link in page.xpath("//a[contains(@href, 'legislator/')]"):
             bill.add_sponsor('primary', link.text.strip())
