@@ -181,17 +181,18 @@ class NYBillScraper(BillScraper):
         bill_active_version = bill_data['amendments']['items'][active_version]
 
         # Parse sponsors.
-        if bill_data['sponsor']['rules'] == True:
-            bill.add_sponsor('primary', 'Rules Committee',
-                chamber=bill_chamber)
-        elif not bill_data['sponsor']['budget']:
-            primary_sponsor = bill_data['sponsor']['member']
-            bill.add_sponsor('primary', primary_sponsor['shortName'])
+        if bill_data['sponsor'] is not None:
+            if bill_data['sponsor']['rules'] == True:
+                bill.add_sponsor('primary', 'Rules Committee',
+                                 chamber=bill_chamber)
+            elif not bill_data['sponsor']['budget']:
+                primary_sponsor = bill_data['sponsor']['member']
+                bill.add_sponsor('primary', primary_sponsor['shortName'])
 
-            # There *shouldn't* be cosponsors if there is no sponsor.
-            cosponsors = bill_active_version['coSponsors']['items']
-            for cosponsor in cosponsors:
-                bill.add_sponsor('cosponsor', cosponsor['shortName'])
+                # There *shouldn't* be cosponsors if there is no sponsor.
+                cosponsors = bill_active_version['coSponsors']['items']
+                for cosponsor in cosponsors:
+                    bill.add_sponsor('cosponsor', cosponsor['shortName'])
 
         # List companion bill.
         same_as = bill_active_version.get('sameAs', {})
