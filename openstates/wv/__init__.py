@@ -27,12 +27,16 @@ metadata = {
         {'name': '2015-2016',
          'start_year': 2015, 'end_year': 2016,
          'sessions': ['2015', '2016', '20161S'],
-         }
+         },
+        {'name': '2017-2018',
+         'start_year': 2017, 'end_year': 2018,
+         'sessions': ['2017'],
+         },
         ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
                  'type': 'primary',
-                 '_scraped_name': '2011'                
+                 '_scraped_name': '2011'
                  },
         '2012': {'display_name': '2012 Regular Session',
                 'type': 'primary',
@@ -58,6 +62,10 @@ metadata = {
                  'type':'special',
                  '_scraped_name': '2016',
                  '_special_name': '1X'
+                 },
+        '2017': {'display_name': '2017 Regular Session',
+                 'type': 'primary',
+                 '_scraped_name': '2017'
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
