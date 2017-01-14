@@ -37,11 +37,11 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
         for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):
             comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
-            
+
             location = link.xpath("string(./td[3]/text())").strip()
 
             when = link.xpath("string(./td[1]/span[1]/text())").strip()
-            
+
             if 'cancelled' in when.lower() or "upon" in when.lower():
                 continue
             if "To Be Determined" in when:
@@ -67,7 +67,11 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
                 try:
                     when = datetime.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
                 except ValueError:
-                    when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
+                    try:
+                        when = datetime.datetime.strptime(when, "%m/%d/%Y %I %p")
+                    except ValueError:
+                        self.warning('error parsing timestamp %s', when)
+                        continue
 
             event = Event(session, when, 'committee:meeting',
                           desc, location)
