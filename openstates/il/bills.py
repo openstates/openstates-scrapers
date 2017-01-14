@@ -156,6 +156,9 @@ class ILBillScraper(BillScraper, LXMLMixin):
             yield bill_url
 
     def scrape(self, chamber, session):
+
+        #self.scrape_bill(chamber, session, 'SB', 'http://ilga.gov/legislation/BillStatus.asp?DocNum=116&GAID=13&DocTypeID=SB&LegId=84055&SessionID=88&GA=99')
+
         for doc_type in DOC_TYPES:
             doc_type = chamber_slug(chamber)+doc_type
             for bill_url in self.get_bill_urls(chamber, session, doc_type):
@@ -229,6 +232,7 @@ class ILBillScraper(BillScraper, LXMLMixin):
         # if there's more than 1 votehistory link, there are votes to grab
         if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
             votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+            print votes_url
             self.scrape_votes(session, bill, votes_url)
 
         self.save_bill(bill)
@@ -280,18 +284,25 @@ class ILBillScraper(BillScraper, LXMLMixin):
                 raise AssertionError(
                         "Date '{}' does not follow a format".format(date))
 
+            #manual fix for bad bill. TODO: better error catching here
             vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
+            if vote:
+                bill.add_vote(vote)
 
-            bill.add_vote(vote)
-
-        bill.add_source(votes_url)
+            bill.add_source(votes_url)
 
     def fetch_pdf_lines(self, href):
         # download the file
-        fname, resp = self.urlretrieve(href)
-        pdflines = [line.decode('utf-8') for line in convert_pdf(fname, 'text').splitlines()]
-        os.remove(fname)
-        return pdflines
+        try:
+            fname, resp = self.urlretrieve(href)
+            pdflines = [line.decode('utf-8') for line in convert_pdf(fname, 'text').splitlines()]
+            os.remove(fname)
+            return pdflines
+        except scrapelib.HTTPError as e:
+            assert '404' in e.args[0], "File not found: {}".format(e)
+            self.warning("404 error for vote; skipping vote")
+            return False
+
 
     def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
         warned = False
@@ -308,6 +319,9 @@ class ILBillScraper(BillScraper, LXMLMixin):
         }
 
         pdflines = self.fetch_pdf_lines(href)
+
+        if not pdflines:
+            return False
 
         yes_count = no_count = present_count = other_count = 0
         yes_votes = []
