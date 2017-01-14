@@ -19,6 +19,10 @@ metadata = dict(
             'start_year': 2015,
             'end_year': 2016,
             'sessions': ['31']},
+           {'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['32']},
            ],
     session_details={'30': {'type': 'primary',
                                    'display_name': '2013-2013 Regular Session',
@@ -27,6 +31,10 @@ metadata = dict(
                      '31': {'type': 'primary',
                                    'display_name': '2015-2016 Regular Session',
                                    '_scraped_name': '31'
+                                  },
+                     '32': {'type': 'primary',
+                                   'display_name': '2017-2018 Regular Session',
+                                   '_scraped_name': '32'
                                   },
                      },
     feature_flags=[],
