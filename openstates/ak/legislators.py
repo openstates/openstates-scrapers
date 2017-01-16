@@ -72,26 +72,39 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        items = page.xpath('//ul[@class="item lists"]/li')
-        emails = page.xpath('//a[text()="Email Me"]/text()')
-        if len(items) != len(emails):
-            raise Exception('email address - item count mismatch')
+        items = page.xpath('//ul[@class="item"]')[1].getchildren()
 
-        for item, email in zip(items, emails):
+        for item in items:
             photo_url = item.xpath('.//img/@src')[0]
             name = item.xpath('.//strong/text()')[0]
             leg_url = item.xpath('.//a/@href')[0]
+            email = item.xpath('.//a[text()="Email Me"]/@href')
+            if email:
+                email = email[0].replace('mailto:', '')
+            else:
+                self.warning('no email for ' + name)
+
+            party = district = phone = fax = None
+            skip = False
 
             for dt in item.xpath('.//dt'):
                 dd = dt.xpath('following-sibling::dd')[0].text_content()
-                if dt.text == 'Party:':
+                label = dt.text.strip()
+                if label == 'Party:':
                     party = dd
-                elif dt.text == 'District:':
+                elif label == 'District:':
                     district = dd
-                elif dt.text == 'Phone:':
+                elif label == 'Phone:':
                     phone = dd
-                elif dt.text == 'Fax:':
+                elif label == 'Fax:':
                     fax = dd
+                elif label.startswith('Deceased'):
+                    skip = True
+                    self.warning('skipping deceased ' + name)
+                    break
+
+            if skip:
+                continue
 
             leg = Legislator(
                 term=term,
