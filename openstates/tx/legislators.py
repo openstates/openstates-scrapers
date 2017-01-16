@@ -77,86 +77,58 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape(self, chamber, term):
         rosters = {
             'lower': 'http://www.house.state.tx.us/members/',
-            'upper': 'http://www.senate.state.tx.us/75r/Senate/Members.htm'
+            'upper': 'http://www.senate.texas.gov/directory.php'
         }
 
-        roster_page = lxml.html.fromstring(
-            self.get(rosters[chamber]).text
-        )
-        roster_page.make_links_absolute(rosters[chamber])
+        roster_url = rosters[chamber]
+        roster_page = lxml.html.fromstring(self.get(roster_url).text)
+        roster_page.make_links_absolute(roster_url)
 
-        getattr(self, '_scrape_' + chamber)(roster_page, term)
+        getattr(self, '_scrape_' + chamber)(roster_page, roster_url, term)
 
-    def _scrape_upper(self, roster_page, term):
-        """
-        Retrieves a list of members of the upper legislative chamber, processes
-        them, and writes them to the database.
-        """
-        member_urls = roster_page.xpath('(//table[caption])[1]//a/@href')
-        # Sort by district for easier spotting of omissions:
-        member_urls.sort(key=lambda url: int(re.search(
-            r'\d+(?=\.htm)', url).group()))
+    def _scrape_upper(self, roster_page, roster_url, term):
+        # TODO: photo_urls http://www.senate.texas.gov/members.php
 
-        parties = self._get_chamber_parties('upper', term)
-
-        for member_url in member_urls:
-            legislator = self._scrape_senator(member_url, term, parties)
-            self.save_legislator(legislator)
-
-    def _scrape_senator(self, url, term, parties):
-        """
-        Returns a Legislator object representing a member of the upper
-        legislative chamber.
-        """
-        page = lxml.html.fromstring(self.get(url).text)
-
-        name_district = page.xpath('//div[@class="memtitle"]/text()')[0]
-        name, district = re.search(
-            r'Senator (.+): District (\d+)', name_district).group(1, 2)
-
-        party = parties[district]
-
-        legislator = Legislator(
-            term, 'upper', district, name, party=party, url=url)
-
-        legislator.add_source(url)
-
-        offices_text = [
-            '\n'.join(line.strip() for line in office_td.itertext())
-            for office_td in page.xpath('//td[@class="memoffice"]')
-        ]
-
-        for office_text in offices_text:
-            mailing_address = next(
-                iter(re.findall(
-                    r'Mailing Address:.+?7\d{4}', office_text,
-                    flags=re.DOTALL | re.IGNORECASE)),
-                office_text
+        for tbl in roster_page.xpath('//table[@class="memdir"]'):
+            leg_a = tbl.xpath('.//a')[0]
+            name = leg_a.text
+            leg_url = leg_a.get('href')
+            district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail
+            party = tbl.xpath('.//span[contains(text(), "Party:")]')[0].tail
+            legislator = Legislator(
+                term, 'upper', district, name,
+                party=party,
+                url=leg_url
             )
 
-            try:
-                address = re.search(
-                    r'(?:\d+ |P\.?\s*O\.?).+7\d{4}', mailing_address,
-                    flags=re.DOTALL | re.IGNORECASE).group()
-            except AttributeError:
-                # No address was found; skip office.
-                continue
+            for addr in tbl.xpath('.//td[@headers]'):
+                fax = phone = address = None
+                lines = [addr.text]
+                for child in addr.getchildren():
+                    # when we get to span tag we just ingested a phone #
+                    if child.tag == 'span' and child.text:
+                        if 'TEL' in child.text:
+                            phone = lines.pop()
+                        elif 'FAX' in child.text:
+                            fax = lines.pop()
+                    elif child.tail:
+                        lines.append(child.tail)
 
-            phone = extract_phone(office_text)
-            fax = extract_fax(office_text)
+                address = '\n'.join(line.strip() for line in lines if line)
+                if 'CAP' in addr.get('headers'):
+                    office_type = 'capitol'
+                    office_name = 'Capitol Office'
+                else:
+                    office_type = 'district'
+                    office_name = 'District Office'
+                legislator.add_office(office_type, office_name,
+                                      address=address, phone=phone, fax=fax)
 
-            office_type = 'capitol' if any(
-                zip_code in address for zip_code in ('78701', '78711')
-            ) else 'district'
-            office_name = office_type.title() + ' Office'
+            legislator.add_source(roster_url)
+            legislator.add_source(leg_url)
+            self.save_legislator(legislator)
 
-            legislator.add_office(
-                office_type, office_name, address=address.strip(),
-                phone=phone, fax=fax)
-
-        return legislator
-
-    def _scrape_lower(self, roster_page, term):
+    def _scrape_lower(self, roster_page, roster_url, term):
         """
         Retrieves a list of members of the lower legislative chamber, processes
         them, and writes them to the database.
