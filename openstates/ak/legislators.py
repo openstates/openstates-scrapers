@@ -11,27 +11,9 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
     def _scrape_legislator(self, chamber, term, url):
         page = self.lxmlize(url)
 
-        (_title, name) = page.xpath(
-            '//div[@class="holder-legislator"]/h1/text()')
-        (photo_url, ) = page.xpath('//div[@class="bioleft"]/img/@src')
-        
         bio = page.xpath('//div[@class="bioright"]/a/..//text()')
         bio = {x.split(':')[0].strip(): x.split(':')[1].strip()
             for x in bio if x.strip()}
-
-        email = bio['Email']
-        district = bio['District']
-        party = self._party_map[bio['Party']]
-
-        leg = Legislator(
-            term = term,
-            chamber = chamber,
-            district = district,
-            full_name = name,
-            party = party,
-            photo_url = photo_url
-        )
-        leg.add_source(url)
 
         capitol_office = [
             x.strip()
@@ -75,7 +57,6 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
                     len(district_office[4]) > len('Fax:') else None,
             )
 
-        self.save_legislator(leg)
 
     def scrape(self, chamber, term):
         self._party_map = {
@@ -91,5 +72,39 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        for link in page.xpath('//ul[@class="item lists"]/li/a/@href'):
-            self._scrape_legislator(chamber, term, link)
+        items = page.xpath('//ul[@class="item lists"]/li')
+        emails = page.xpath('//a[text()="Email Me"]/text()')
+        if len(items) != len(emails):
+            raise Exception('email address - item count mismatch')
+
+        for item, email in zip(items, emails):
+            photo_url = item.xpath('.//img/@src')[0]
+            name = item.xpath('.//strong/text()')[0]
+            leg_url = item.xpath('.//a/@href')[0]
+
+            for dt in item.xpath('.//dt'):
+                dd = dt.xpath('following-sibling::dd')[0].text_content()
+                if dt.text == 'Party:':
+                    party = dd
+                elif dt.text == 'District:':
+                    district = dd
+                elif dt.text == 'Phone:':
+                    phone = dd
+                elif dt.text == 'Fax:':
+                    fax = dd
+
+            leg = Legislator(
+                term=term,
+                chamber=chamber,
+                district=district,
+                full_name=name,
+                party=self._party_map[party],
+                photo_url=photo_url,
+                email=email,
+            )
+            leg.add_source(url)
+            leg.add_source(leg_url)
+
+            # scrape offices
+
+            self.save_legislator(leg)
