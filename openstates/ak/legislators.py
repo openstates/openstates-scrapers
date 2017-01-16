@@ -8,36 +8,11 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ak'
     latest_only = True
 
-    def _scrape_legislator(self, chamber, term, url):
-        page = self.lxmlize(url)
+    def _scrape_offices(self, leg, url):
+        doc = self.lxmlize(url)
 
-        (_title, name) = page.xpath(
-            '//div[@class="holder-legislator"]/h1/text()')
-        (photo_url, ) = page.xpath('//div[@class="bioleft"]/img/@src')
-        
-        bio = page.xpath('//div[@class="bioright"]/a/..//text()')
-        bio = {x.split(':')[0].strip(): x.split(':')[1].strip()
-            for x in bio if x.strip()}
-
-        email = bio['Email']
-        district = bio['District']
-        party = self._party_map[bio['Party']]
-
-        leg = Legislator(
-            term = term,
-            chamber = chamber,
-            district = district,
-            full_name = name,
-            party = party,
-            photo_url = photo_url
-        )
-        leg.add_source(url)
-
-        capitol_office = [
-            x.strip()
-            for x in page.xpath('//div[@class="bioleft"]//text()')
-            if x.strip()
-        ]
+        capitol_office = doc.xpath('//strong[text()="Session Contact"]')[0].getparent().text_content().strip().splitlines()
+        capitol_office = [line.strip() for line in capitol_office]
 
         assert capitol_office[0] == 'Session Contact'
         assert capitol_office[3].startswith('Phone:')
@@ -53,29 +28,24 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 len(capitol_office[4]) > len('Fax:') else None,
         )
 
-        district_office = [
-            x.strip()
-            for x in page.xpath('//div[@class="bioright"][2]//text()')
-            if x.strip()
-        ]
-
-        # Some members don't have district offices listed, so skip them
-        if any('AK' in x for x in district_office):
-            assert district_office[0] == 'Interim Contact'
-            assert district_office[3].startswith('Phone:')
-            assert district_office[4].startswith('Fax:')
+        interim_office = doc.xpath('//strong[text()="Interim Contact"]')
+        if interim_office:
+            interim_office = interim_office[0].getparent().text_content().strip().splitlines()
+            interim_office = [line.strip() for line in interim_office]
+            assert interim_office[0] == 'Interim Contact'
+            assert interim_office[3].startswith('Phone:')
+            assert interim_office[4].startswith('Fax:')
 
             leg.add_office(
                 type = 'district',
                 name = 'District Office',
-                address = district_office[1] + '\n' + district_office[2],
-                phone = district_office[3][len('Phone: '): ] if
-                    len(district_office[3]) > len('Phone:') else None,
-                fax = district_office[4][len('Fax: '): ] if
-                    len(district_office[4]) > len('Fax:') else None,
+                address = interim_office[1] + '\n' + interim_office[2],
+                phone = interim_office[3][len('Phone: '): ] if
+                    len(interim_office[3]) > len('Phone:') else None,
+                fax = interim_office[4][len('Fax: '): ] if
+                    len(interim_office[4]) > len('Fax:') else None,
             )
 
-        self.save_legislator(leg)
 
     def scrape(self, chamber, term):
         self._party_map = {
@@ -91,5 +61,54 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        for link in page.xpath('//ul[@class="item lists"]/li/a/@href'):
-            self._scrape_legislator(chamber, term, link)
+        items = page.xpath('//ul[@class="item"]')[1].getchildren()
+
+        for item in items:
+            photo_url = item.xpath('.//img/@src')[0]
+            name = item.xpath('.//strong/text()')[0]
+            leg_url = item.xpath('.//a/@href')[0]
+            email = item.xpath('.//a[text()="Email Me"]/@href')
+            if email:
+                email = email[0].replace('mailto:', '')
+            else:
+                self.warning('no email for ' + name)
+
+            party = district = phone = fax = None
+            skip = False
+
+            for dt in item.xpath('.//dt'):
+                dd = dt.xpath('following-sibling::dd')[0].text_content()
+                label = dt.text.strip()
+                if label == 'Party:':
+                    party = dd
+                elif label == 'District:':
+                    district = dd
+                elif label == 'Phone:':
+                    phone = dd
+                elif label == 'Fax:':
+                    fax = dd
+                elif label.startswith('Deceased'):
+                    skip = True
+                    self.warning('skipping deceased ' + name)
+                    break
+
+            if skip:
+                continue
+
+            leg = Legislator(
+                term=term,
+                chamber=chamber,
+                district=district,
+                full_name=name,
+                party=self._party_map[party],
+                photo_url=photo_url,
+                email=email,
+                url=leg_url,
+            )
+            leg.add_source(url)
+            leg.add_source(leg_url)
+
+            # scrape offices
+            self._scrape_offices(leg, leg_url)
+
+            self.save_legislator(leg)

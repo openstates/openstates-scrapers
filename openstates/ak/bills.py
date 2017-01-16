@@ -341,5 +341,7 @@ class AKBillScraper(BillScraper):
         if 'REFERRED TO' in action:
             atype.append('committee:referred')
             action = action.replace('REFERRED TO', 'Referred to')
+        if 'Prefile released' in action:
+            atype.append('bill:filed')
 
         return action, atype
