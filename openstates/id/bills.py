@@ -202,7 +202,7 @@ class IDBillScraper(BillScraper):
             bill.add_title(short_title)
 
         # documents
-        doc_links = html.xpath('//span/a')
+        doc_links = html.xpath('//div[contains(@class,"pf-content")]//a')
         for link in doc_links:
             name = link.text_content().strip()
             href = link.get('href')
