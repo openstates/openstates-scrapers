@@ -122,9 +122,12 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     bill.add_sponsor(sponsor_type, sponsor_name)
 
             # Capture bill text versions
+            # Warning: There's a TODO in VT's source code saying 'move this to where it used to be' 
+            # so leave in the old and new positions
             versions = doc.xpath(
                     '//dl[@class="summary-table"]/dt[text()="Bill/Resolution Text"]/'
-                    'following-sibling::dd[1]/ul/li/a'
+                    'following-sibling::dd[1]/ul/li/a |'
+                    '//ul[@class="bill-path"]//a'
                     )
             for version in versions:
                 bill.add_version(
