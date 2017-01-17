@@ -71,9 +71,13 @@ class ARBillScraper(BillScraper):
                 primary = row[12]
             bill.add_sponsor('primary', primary)
 
+            # ftp://www.arkleg.state.ar.us/Bills/
+            # TODO: Keep on eye on this post 2017 to see if they apply R going forward.
+            session_code = '2017R' if session == '2017' else session
+
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
                            "%s/Public/%s.pdf" % (
-                               session, bill_id.replace(' ', '')))
+                               session_code, bill_id.replace(' ', '')))
             bill.add_version(bill_id, version_url, mimetype='application/pdf')
 
             self.scrape_bill_page(bill)
