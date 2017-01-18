@@ -2,8 +2,8 @@
 Colorado legislator scraper for http://leg.colorado.gov
 """
 
-from ..utils.email import mailto_to_email
-from ..utils.names import last_name_first_name_to_full_name
+from .utils.email import mailto_to_email
+from .utils.names import last_name_first_name_to_full_name
 
 from openstates.utils import LXMLMixin
 
