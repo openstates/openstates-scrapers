@@ -347,17 +347,15 @@ class MNBillScraper(BillScraper, LXMLMixin):
         """
         Extracts sponsors from bill page.
         """
-        sponsors = doc.xpath('//h2[text()="Authors"]/following-sibling::ul[1]/li/a/text()')
-        if sponsors:
-            primary_sponsor = sponsors[0].strip()
-            bill.add_sponsor('primary', primary_sponsor, chamber=chamber)
-            cosponsors = sponsors[1:]
-            for leg in cosponsors:
-                bill.add_sponsor('cosponsor', leg.strip(), chamber=chamber)
+        sponsors = doc.xpath('//div[@class="author"]/ul/li/a/text()')
+        for index, sponsor in enumerate(sponsors):
+            if index == 0:
+                sponsor_type = 'primary'
+            else:
+                sponsor_type = 'cosponsor'
 
-        other_sponsors = doc.xpath('//h3[contains(text(), "Authors")]/following-sibling::ul[1]/li/a/text()')
-        for leg in other_sponsors:
-            bill.add_sponsor('cosponsor', leg.strip(), chamber=self.other_chamber(chamber))
+            sponsor_name = sponsor.strip()
+            bill.add_sponsor(sponsor_type, sponsor_name, chamber=chamber)
 
         return bill
 
