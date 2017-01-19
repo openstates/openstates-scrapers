@@ -3,12 +3,10 @@ The Open States Project collects and makes available data about state legislativ
 Links
 =====
 
-* `Open States Project API <http://openstates.org/api/>`_
-* `Contributing Guidelines <http://openstates.org/contributing/>`_
-* `Code on GitHub <http://github.com/sunlightlabs/openstates/>`_
-* `Issue Tracker <http://sunlight.atlassian.net>`_
-* `Open State Project Google Group <http://groups.google.com/group/fifty-state-project>`_
-* `Sunlight Labs <http://sunlightlabs.com>`_
+* `Open States Project API <http://docs.openstates.org/api/>`_
+* `Code on GitHub <https://github.com/openstates/openstates/>`_
+* `Issue Tracker <https://github.com/openstates/openstates/issues>`_
+* `Open States Slack <http://openstates-slack.herokuapp.com>`_
 
 Getting Started
 ===============
