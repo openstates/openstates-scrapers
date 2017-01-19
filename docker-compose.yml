@@ -1,0 +1,16 @@
+version: "2"
+services:
+  openstates:
+    build: .
+    environment:
+      BILLY_MONGO_HOST: database
+    volumes:
+    - .:/srv/openstates-web
+    ports:
+    - "8000:8000"
+    depends_on:
+    - database
+  database:
+    image: mongo
+    ports:
+    - "27017:27017"
