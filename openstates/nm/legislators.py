@@ -37,10 +37,8 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
         legislator_urls = self.get_nodes(page, base_xpath)
 
         for legislator_url in legislator_urls:
-            # Indicators used for empty seats.
-            vacancy_strings = ('SNULL', 'SPONCODE=HVACA')
-            if any(x in legislator_url for x in vacancy_strings):
-                self.logger.info('Skipping vacant seat.')
+            if re.search(r'SponCode=[HS]VACA$', legislator_url, re.IGNORECASE):
+                self.warning('Skipping vacant seat.')
                 continue
             self.scrape_legislator(chamber, term, legislator_url)
 
@@ -67,12 +65,28 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
+        info_node = self.get_node(
+            page,
+            '//table[@id="MainContent_formViewLegislator"]')
+        if info_node is None:
+            raise ValueError('Could not locate legislator data.')
+
+        district_node = self.get_node(
+            info_node,
+            './/a[@id="MainContent_formViewLegislator_linkDistrict"]')
+        if district_node is not None:
+            district = district_node.text.strip()
+
         name_node = self.get_node(
             page,
             './/span[@id="MainContent_formViewLegislatorName'
             '_lblLegislatorName"]')
 
         if name_node is not None:
+            if name_node.text.strip().endswith(' Vacant'):
+                self.warning("Found vacant seat for {} district {}; skipping".format(chamber, district))
+                return
+
             n_head, n_sep, n_party = name_node.text.rpartition(' - ')
 
             full_name = re.sub(r'^{}'.format(title_prefix), '', n_head.strip())
@@ -89,23 +103,11 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
                     party,
                     full_name))
 
-        info_node = self.get_node(
-            page,
-            '//table[@id="MainContent_formViewLegislator"]')
-        if info_node is None:
-            raise ValueError('Could not locate legislator data.')
-
         photo_node = self.get_node(
             info_node,
             './/img[@id="MainContent_formViewLegislator_imgLegislator"]')
         if photo_node is not None:
             photo_url = photo_node.get('src')
-
-        district_node = self.get_node(
-            info_node,
-            './/a[@id="MainContent_formViewLegislator_linkDistrict"]')
-        if district_node is not None:
-            district = district_node.text.strip()
 
         email_node = self.get_node(
             info_node,
