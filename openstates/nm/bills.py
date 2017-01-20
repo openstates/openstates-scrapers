@@ -407,7 +407,7 @@ class NMBillScraper(BillScraper):
 
         session_path = self.metadata['session_details'][session]['slug']
 
-        if chamber_name != '':
+        if chamber_name is None:
             chamber_name = 'house' if chamber == 'lower' else 'senate'
 
         doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
@@ -439,9 +439,18 @@ class NMBillScraper(BillScraper):
 
             # adapt to bill_id format
             bill_id = bill_type.replace('B', '') + bill_num
-            try:
+            if bill_id in self.bills.keys():
                 bill = self.bills[bill_id]
-            except KeyError:
+            elif (
+                doctype == 'votes' and
+                ((bill_id.startswith('H') and chamber == 'upper') or
+                (bill_id.startswith('S') and chamber == 'lower'))
+            ):
+                # There is only one vote list URL, shared between chambers
+                # So, avoid throwing warnings upon seeing the other chamber's legislation
+                self.info('Ignoring votes on bill {} while processing the other chamber'.format(fname))
+                continue
+            else:
                 self.warning('document for unknown bill %s' % fname)
                 continue
                 
@@ -478,8 +487,8 @@ class NMBillScraper(BillScraper):
                     bill.add_vote(vote)
 
             # committee reports
-            elif re.match('\w{2,3,4}\d', suffix):
-                committee_name = re.match('[A-Z]+', suffix).group()
+            elif re.match(r'\w{2,4}\d', suffix):
+                committee_name = re.match(r'[A-Z]+', suffix).group()
                 bill.add_document('%s committee report' % committee_name,
                                   doc_path + fname, mimetype=mimetype)
 
