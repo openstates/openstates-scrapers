@@ -475,11 +475,12 @@ class NMBillScraper(BillScraper):
                                  doc_path + fname, mimetype=mimetype)
             # votes
             elif 'SVOTE' in suffix:
-                vote = self.parse_senate_vote(doc_path + fname)
-                if vote:
-                    bill.add_vote(vote)
-                else:
-                    self.warning("Bad parse on the vote")
+                # vote = self.parse_senate_vote(doc_path + fname)
+                # if vote:
+                #     bill.add_vote(vote)
+                # else:
+                #     self.warning("Bad parse on the vote")
+                self.warning('Senate vote parsing is currently not working')
 
             elif 'HVOTE' in suffix:
                 vote = self.parse_house_vote(doc_path + fname)
