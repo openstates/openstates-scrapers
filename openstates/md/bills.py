@@ -276,63 +276,65 @@ class MDBillScraper(BillScraper):
             chamber = 'lower'
 
         motion, unused_date = action_text.rsplit(' - ', 1)
-        yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
-        if 'Passed' in motion:
-            motion = motion.split(' Passed')[0]
-            passed = True
-        elif 'Adopted' in motion:
-            motion = motion.split(' Adopted')[0]
-            passed = True
-        elif 'Rejected' in motion:
-            motion = motion.split(' Rejected')[0]
-            passed = False
-        elif 'Failed' in motion:
-            motion = motion.split(' Failed')[0]
-            passed = False
-        elif 'Concur' in motion:
-            passed = True
-        elif 'Floor Amendment' in motion:
-            passed = int(yes_count) > int(no_count)
-        elif 'overridden' in motion:
-            passed = True 
-            motion = 'Veto Override'
-        else:
-            raise Exception('unknown motion: %s' % motion)
-        vote = Vote(chamber=chamber, date=None, motion=motion,
-                    yes_count=int(yes_count), no_count=int(no_count),
-                    other_count=0, passed=passed)
-        vfunc = None
 
-        nobrs = doc.xpath('//nobr/text()')
-        for text in nobrs:
-            text = text.replace(u'\xa0', ' ')
-            if text.startswith('Calendar Date: '):
-                if vote['date']:
-                    self.warning('two dates!, skipping rest of bill')
-                    break
-                vote['date'] = datetime.datetime.strptime(text.split(': ', 1)[1], '%b %d, %Y %H:%M %p')
-            elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
-                yeas, nays, nv, exc, absent = re.match('(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused \(Absent\)\s+(\d+) Absent', text).groups()
-                vote['yes_count'] = int(yeas)
-                vote['no_count'] = int(nays)
-                vote['other_count'] = int(nv) + int(exc) + int(absent)
-            elif 'Voting Yea' in text:
-                vfunc = vote.yes
-            elif 'Voting Nay' in text:
-                vfunc = vote.no
-            elif 'Not Voting' in text or 'Excused' in text:
-                vfunc = vote.other
-            elif vfunc:
-                if ' and ' in text:
-                    a, b = text.split(' and ')
-                    vfunc(a)
-                    vfunc(b)
-                else:
-                    vfunc(text)
+        if re.findall('\((\d+)-(\d+)\)', motion):
+            yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
+            if 'Passed' in motion:
+                motion = motion.split(' Passed')[0]
+                passed = True
+            elif 'Adopted' in motion:
+                motion = motion.split(' Adopted')[0]
+                passed = True
+            elif 'Rejected' in motion:
+                motion = motion.split(' Rejected')[0]
+                passed = False
+            elif 'Failed' in motion:
+                motion = motion.split(' Failed')[0]
+                passed = False
+            elif 'Concur' in motion:
+                passed = True
+            elif 'Floor Amendment' in motion:
+                passed = int(yes_count) > int(no_count)
+            elif 'overridden' in motion:
+                passed = True 
+                motion = 'Veto Override'
+            else:
+                raise Exception('unknown motion: %s' % motion)
+            vote = Vote(chamber=chamber, date=None, motion=motion,
+                        yes_count=int(yes_count), no_count=int(no_count),
+                        other_count=0, passed=passed)
+            vfunc = None
 
-        vote.validate()
-        vote.add_source(url)
-        bill.add_vote(vote)
+            nobrs = doc.xpath('//nobr/text()')
+            for text in nobrs:
+                text = text.replace(u'\xa0', ' ')
+                if text.startswith('Calendar Date: '):
+                    if vote['date']:
+                        self.warning('two dates!, skipping rest of bill')
+                        break
+                    vote['date'] = datetime.datetime.strptime(text.split(': ', 1)[1], '%b %d, %Y %H:%M %p')
+                elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
+                    yeas, nays, nv, exc, absent = re.match('(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused \(Absent\)\s+(\d+) Absent', text).groups()
+                    vote['yes_count'] = int(yeas)
+                    vote['no_count'] = int(nays)
+                    vote['other_count'] = int(nv) + int(exc) + int(absent)
+                elif 'Voting Yea' in text:
+                    vfunc = vote.yes
+                elif 'Voting Nay' in text:
+                    vfunc = vote.no
+                elif 'Not Voting' in text or 'Excused' in text:
+                    vfunc = vote.other
+                elif vfunc:
+                    if ' and ' in text:
+                        a, b = text.split(' and ')
+                        vfunc(a)
+                        vfunc(b)
+                    else:
+                        vfunc(text)
+
+            vote.validate()
+            vote.add_source(url)
+            bill.add_vote(vote)
 
 
     def scrape_bill(self, chamber, session, bill_id, url):
