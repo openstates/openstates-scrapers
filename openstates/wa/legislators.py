@@ -72,7 +72,7 @@ class WALegislatorScraper(LegislatorScraper, LXMLMixin):
                 './/tr/td/a[contains(@href, "memberEmail/{}/{}")]/parent::td/'
                 'following-sibling::td[1]/text()'.format(
                     district_num,
-                    position))
+                    position)).strip()
 
             leg.add_office(
                 'capitol',
