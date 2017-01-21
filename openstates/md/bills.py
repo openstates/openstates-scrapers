@@ -264,9 +264,6 @@ class MDBillScraper(BillScraper):
     def scrape_vote(self, bill, action_text, url):
         doc = lxml.html.fromstring(self.get(url).text)
 
-        date = None
-        yes_count = no_count = other_count = None
-
         # process action_text - might look like "Vote - Senate Floor - Third Reading Passed (46-0) - 01/16/12"
         if action_text.startswith('Vote - Senate Floor - '):
             action_text = action_text[22:]
@@ -276,7 +273,15 @@ class MDBillScraper(BillScraper):
             chamber = 'lower'
 
         motion, unused_date = action_text.rsplit(' - ', 1)
-        yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
+        try:
+            yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
+            yes_count = int(yes_count)
+            no_count = int(no_count)
+        except IndexError:
+            self.info("Motion text didn't contain vote totals, will get them from elsewhere")
+            yes_count = None
+            no_count = None
+
         if 'Passed' in motion:
             motion = motion.split(' Passed')[0]
             passed = True
@@ -292,15 +297,18 @@ class MDBillScraper(BillScraper):
         elif 'Concur' in motion:
             passed = True
         elif 'Floor Amendment' in motion:
-            passed = int(yes_count) > int(no_count)
+            if yes_count and no_count:
+                passed = yes_count > no_count
+            else:
+                passed = None
         elif 'overridden' in motion:
             passed = True 
             motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
         vote = Vote(chamber=chamber, date=None, motion=motion,
-                    yes_count=int(yes_count), no_count=int(no_count),
-                    other_count=0, passed=passed)
+                    yes_count=yes_count, no_count=no_count,
+                    other_count=None, passed=passed)
         vfunc = None
 
         nobrs = doc.xpath('//nobr/text()')
