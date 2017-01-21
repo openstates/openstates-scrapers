@@ -218,10 +218,13 @@ class IDBillScraper(BillScraper):
         sponsor_lists = bill_tables[0].text_content().split('by')
         if len(sponsor_lists) > 1:
             for sponsors in sponsor_lists[1:]:
-                for person in _split(sponsors):
-                    person = person.strip()
-                    if person != "":
-                        bill.add_sponsor('primary', person)
+                if 'COMMITTEE' in sponsors.upper():
+                    bill.add_sponsor('primary', sponsors.strip())
+                else:
+                    for person in _split(sponsors):
+                        person = person.strip()
+                        if person != "":
+                            bill.add_sponsor('primary', person)
 
         actor = chamber
         last_date = None
