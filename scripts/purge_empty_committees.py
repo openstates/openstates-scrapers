@@ -1,7 +1,7 @@
 from billy.core import db
 
 
-STATES_TO_PURGE = ['in', 'nm', 'oh', 'or']
+STATES_TO_PURGE = [s['abbreviation'] for s in db.metadata.find()]
 
 for state in STATES_TO_PURGE:
     state = state.lower()
