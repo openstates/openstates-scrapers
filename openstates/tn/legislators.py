@@ -79,17 +79,15 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
                 name = member_page.xpath('//div/div/h1/text()')[0]
             except IndexError:
                 name = member_page.xpath('//div[@id="membertitle"]/h2/text()')[0]
-            
-            if 'Speaker' in name:
-                full_name = name[8:len(name)]
-            elif 'Lt.' in name:
-                full_name = name[13:len(name)]
-            elif abbr == 'h':
-                full_name = name[len("Representative "): len(name)]
-            else:
-                full_name = name[8:len(name)]
 
-            leg = Legislator(term, chamber, district, full_name.strip(),
+            if 'Speaker' in name:
+                name = name[8:len(name)]
+            elif 'Lt.' in name:
+                name = name[13:len(name)]
+            name = name.replace('Representative ', '')
+            name = name.replace('Senator ', '')
+
+            leg = Legislator(term, chamber, district, name.strip(),
                              party=party, url=member_url,
                              photo_url=member_photo_url)
             leg.add_source(chamber_url)
