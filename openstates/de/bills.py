@@ -42,10 +42,15 @@ class DEBillScraper(BillScraper, LXMLMixin):
             bill_summary = row['Synopsis']
         else:
             bill_summary = ''
-            
+
         bill_title = row['LongTitle']
         if row['ShortTitle']:
             alternate_title = row['ShortTitle']
+
+        # TODO: re-evaluate if these should be separate bills
+        if 'SA' in bill_id or 'HA' in bill_id:
+            self.warning('skipping amendment %s', bill_id)
+            return
 
         bill_type = self.classify_bill(bill_id)
 
@@ -105,7 +110,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
             'group': '',
             'filter': '',
         }
-        response = self.post(url=search_form_url, data=form, allow_redirects=True)    
+        response = self.post(url=search_form_url, data=form, allow_redirects=True)
         page = json.loads(response.content)
         #print json.dumps(page, indent=4)
         if int(page['Total']) > 0:
@@ -172,13 +177,19 @@ class DEBillScraper(BillScraper, LXMLMixin):
             for row in roll['AssemblyMemberVotes']:
                 # AssemblyMemberId looks like it should work here,
                 # but for some sessions it's bugged to only return session
-                voter = self.legislators_by_short[str(row['ShortName'])]
+                try:
+                    voter = self.legislators_by_short[str(row['ShortName'])]
+                    name = voter['DisplayName']
+                except KeyError:
+                    self.warning('could not find legislator short name %s',
+                                 row['ShortName'])
+                    name = row['ShortName']
                 if row['SelectVoteTypeCode'] == 'Y':
-                    vote.yes(voter['DisplayName'])
+                    vote.yes(name)
                 elif row['SelectVoteTypeCode'] == 'N':
-                    vote.no(voter['DisplayName'])
+                    vote.no(name)
                 else:
-                    vote.other(voter['DisplayName'])
+                    vote.other(name)
 
             bill.add_vote(vote)
 
@@ -267,7 +278,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
         for row in page['Data']:
             self.scrape_bill(row, chamber, session)
 
-        #Return the page object so we can use it to calculate max results    
+        #Return the page object so we can use it to calculate max results
         return page
 
     def mime_from_link(self, link):
