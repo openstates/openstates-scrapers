@@ -122,7 +122,7 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     bill.add_sponsor(sponsor_type, sponsor_name)
 
             # Capture bill text versions
-            # Warning: There's a TODO in VT's source code saying 'move this to where it used to be' 
+            # Warning: There's a TODO in VT's source code saying 'move this to where it used to be'
             # so leave in the old and new positions
             versions = doc.xpath(
                     '//dl[@class="summary-table"]/dt[text()="Bill/Resolution Text"]/'
@@ -130,11 +130,12 @@ class VTBillScraper(BillScraper, LXMLMixin):
                     '//ul[@class="bill-path"]//a'
                     )
             for version in versions:
-                bill.add_version(
-                        name=version.xpath('text()')[0],
-                        url=version.xpath('@href')[0].replace(' ', '%20'),
-                        mimetype='application/pdf'
-                        )
+                if version.xpath('text()'):
+                    bill.add_version(
+                            name=version.xpath('text()')[0],
+                            url=version.xpath('@href')[0].replace(' ', '%20'),
+                            mimetype='application/pdf'
+                            )
 
             # Identify the internal bill ID, used for actions and votes
             # If there is no internal bill ID, then it has no extra information
