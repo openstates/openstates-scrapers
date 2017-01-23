@@ -52,6 +52,7 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
             'Democrat': 'Democratic',
             'Republican': 'Republican',
             'Non Affiliated': 'Independent',
+            'Not Affiliated': 'Independent',
         }
 
         if chamber == 'upper':
