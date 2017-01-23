@@ -84,7 +84,14 @@ class COBillScraper(BillScraper, LXMLMixin):
 
     def scrape_bill(self, session, chamber, bill_url):
 
-        page = self.lxmlize('{}{}'.format(CO_URL_BASE, bill_url))
+        try:
+            page = self.lxmlize('{}{}'.format(CO_URL_BASE, bill_url))
+        except scrapelib.HTTPError as e:
+            if e.response.status_code == 503:
+                self.error('Skipping %s w/ 503', bill_url)
+                return
+            else:
+                raise
 
         bill_number = page.xpath('//div[contains(@class,"field-name-field-bill-number")]'
                                  '//div[contains(@class,"field-item even")][1]/text()')[0].strip()
