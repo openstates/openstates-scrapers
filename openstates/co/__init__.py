@@ -9,8 +9,7 @@ metadata = dict(
     name='Colorado',
     abbreviation='co',
     legislature_name='Colorado General Assembly',
-    # TODO: Update to when we've implemented scrapers for all the entitites
-    legislature_url='http://www.leg.state.co.us/',
+    legislature_url='http://leg.colorado.gov/',
     capitol_timezone='America/Denver',
     chambers = {
         'upper': {'name': 'Senate', 'title': 'Senator'},

@@ -1,8 +1,6 @@
 """
 Colorado legislator scraper for http://leg.colorado.gov
 """
-
-from .utils.email import mailto_to_email
 from .utils.names import last_name_first_name_to_full_name
 
 from openstates.utils import LXMLMixin
@@ -13,6 +11,15 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID = {
     'upper': 1,
     'lower': 2,
+}
+
+UPPER_ROLE = 'Senator'
+UPPER_ADDRESS = '200 E. Colfax\nRM 346\nDenver, CO 80203'
+LOWER_ROLE = 'Representative'
+LOWER_ADDRESS = '200 E. Colfax\nRM 307\nDenver, CO 80203'
+ROLE_TO_ADDRESS = {
+    UPPER_ROLE: UPPER_ADDRESS,
+    LOWER_ROLE: LOWER_ADDRESS
 }
 
 
@@ -42,19 +49,24 @@ class COLegislatorScraper(LegislatorScraper, LXMLMixin):
             legislator, profile_url = table_row_to_legislator_and_profile_url(row, chamber, term)
             legislator_profile_page = self.lxmlize(profile_url)
             legislator['photo_url'] = get_photo_url(legislator_profile_page)
-            office_kwargs = get_office_kwargs(legislator_profile_page)
-            legislator.add_office('capitol', 'Capitol Office', **office_kwargs)
             legislator.add_source(self.legislators_url)
             legislator.add_source(profile_url)
             self.save_legislator(legislator)
 
 
+def co_address_from_role(role):
+    """Translate the role to a legislative body (upper/lower) and return the address for that body"""
+    if role in ROLE_TO_ADDRESS:
+        return ROLE_TO_ADDRESS[role]
+    raise ValueError('Unknown role "{}"'.format(role))
+
+
 # Helpers to extract from information from the main listings page
 def table_row_to_legislator_and_profile_url(table_row_element, chamber, term):
-    """Derive a Legislator from an HTML table row lxml Element, and a url for their more detailed profile page"""
-    # Ignore title and phone number elements. We're getting phone from the details page and title is in the state
-    # metadata
-    (_, name_element, district_element, party_element, _) = table_row_element.xpath('td')
+    """Derive a Legislator from an HTML table row lxml Element, and a link to their profile"""
+    td_elements = table_row_element.xpath('td')
+    (role_element, name_element, district_element, party_element, phone_element, email_element) = td_elements
+
     # Name comes in the form Last, First
     last_name_first_name = name_element.text_content().strip()
     full_name = last_name_first_name_to_full_name(last_name_first_name)
@@ -62,6 +74,19 @@ def table_row_to_legislator_and_profile_url(table_row_element, chamber, term):
     party = party_element.text_content().strip()
 
     legislator = Legislator(term, chamber, district, full_name, party=party)
+
+    role = role_element.text_content().strip()
+    address = co_address_from_role(role)
+    phone = phone_element.text_content().strip()
+    email = email_element.text_content().strip()
+
+    legislator.add_office(
+        'capitol',
+        'Capitol Office',
+        address=address,
+        phone=phone,
+        email=email,
+    )
 
     (profile_url, ) = name_element.xpath('a/@href')
 
@@ -76,47 +101,3 @@ def get_photo_url(legislator_profile_page):
     )
 
     return photo_url
-
-
-def get_office_kwargs(legislator_profile_page):
-    """Extract the kwargs to pass into `add_office` for the Legislator's office at the Capitol from the profile page"""
-    (contact_information_container, ) = legislator_profile_page.xpath('//div[contains(@class, "legislator-contact")]')
-    (address_element, ) = contact_information_container.xpath('div[contains(@class, "contact-address")]')
-    (_, phone_element) = contact_information_container.xpath('div[contains(@class, "contact-phone")]/div/div')
-    # Email address may or may not be present
-    email_address_hrefs = contact_information_container.xpath('div[@class="contact-email"]/a/@href')
-
-    address = address_from_profile_page_address_element(address_element)
-    phone = phone_element.text_content().strip()
-    if email_address_hrefs:
-        (mailto_url, ) = email_address_hrefs
-        email = mailto_to_email(mailto_url)
-    else:
-        email = None
-
-    return {
-        'address': address,
-        'email': email,
-        'phone': phone,
-    }
-
-
-def address_from_profile_page_address_element(address_element):
-    """Extract a formatted address from the address container on the profile page"""
-    # Address Line 1, e.g. 200 E Colfax
-    (thoroughfare_element, ) = address_element.xpath('descendant-or-self::div[contains(@class, "thoroughfare")]')
-    (locality_block, ) = address_element.xpath('descendant-or-self::div[contains(@class, "locality-block")]')
-
-    address_components = []
-    # City, State Postal
-    address_components.append(thoroughfare_element.text_content().strip())
-
-    # Optional address line 2, e.g RM 207
-    premise_elements = address_element.xpath('descendant-or-self::div[contains(@class, "premise")]')
-    if premise_elements:
-        (premise_element, ) = premise_elements
-        address_components.append(premise_element.text_content().strip())
-
-    address_components.append(locality_block.text_content().strip())
-
-    return '\n'.join(address_components)
