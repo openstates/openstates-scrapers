@@ -81,7 +81,10 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         }
 
         roster_url = rosters[chamber]
-        roster_page = lxml.html.fromstring(self.get(roster_url).text)
+        response = self.get(roster_url)
+        #auto detect encoding
+        response.encoding = response.apparent_encoding
+        roster_page = lxml.html.fromstring(response.text)
         roster_page.make_links_absolute(roster_url)
 
         getattr(self, '_scrape_' + chamber)(roster_page, roster_url, term)
