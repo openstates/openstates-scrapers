@@ -26,12 +26,16 @@ class NYEventScraper(EventScraper, LXMLMixin):
                 if len(tds) < 2:
                     continue
                 key, value = tds
-                if key.tag == 'th':
+
+                if key.tag == 'th' and key.get("class") == 'hrgdate':
                     date = key.text_content()
-                    date = re.sub("\s+", " ", date)
+                    date = re.sub(r"\s+", " ", date)
                     date = re.sub(".*POSTPONED NEW DATE", "", date).strip()
-                    ctty = value.xpath(".//strong")[0]
-                    ctty = ctty.text_content()
+
+                # Due to the html structure this shouldn't be an elif
+                # It needs to fire twice in the same loop iteration
+                if value.tag == 'th' and value.get("class") == 'commtitle':
+                    ctty = value.text_content()
 
                     chamber = 'other'
                     if "senate" in ctty.lower():
@@ -40,11 +44,14 @@ class NYEventScraper(EventScraper, LXMLMixin):
                         chamber = 'lower'
                     if "joint" in ctty.lower():
                         chamber = 'joint'
+
+                    coms = value.xpath('.//div[contains(@class,"comm-txt")]/text()')
+
                 elif key.tag == 'td':
                     key = key.text_content().strip()
                     value = value.text_content().strip()
                     value = value.replace(u'\x96', '-')
-                    value = re.sub("\s+", " ", value)
+                    value = re.sub(r"\s+", " ", value)
                     metainf[key] = value
 
             time = metainf['Time:']
@@ -119,10 +126,12 @@ class NYEventScraper(EventScraper, LXMLMixin):
             if 'Media Contact:' in metainf:
                 event.update(media_contact=metainf['Media Contact:'])
             event.add_source(url)
-            event.add_participant('host',
-                                  ctty,
-                                  'committee',
-                                  chamber=chamber)
+
+            for com in coms:
+                event.add_participant('host',
+                                    com.strip(),
+                                    'committee',
+                                    chamber=self.classify_committee(com))
 
             self.save_event(event)
 
@@ -133,6 +142,16 @@ class NYEventScraper(EventScraper, LXMLMixin):
     def scrape_lower(self, chamber, session):
         if chamber == 'other':
             self.lower_parse_page(url, session)
+
+    def classify_committee(self, name):
+        chamber = 'other'
+        if "senate" in name.lower():
+            chamber = 'upper'
+        if "assembly" in name.lower():
+            chamber = 'lower'
+        if "joint" in name.lower():
+            chamber = 'joint'
+        return chamber
 
     """
     def scrape_upper(self, chamber, session):
