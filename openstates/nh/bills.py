@@ -59,6 +59,11 @@ class NHBillScraper(BillScraper):
         # bill basics
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
+        self.versions_by_lsr = {} # mapping of bill ID to lsr
+
+        # pre load the mapping table of LSR -> version id
+        self.scrape_version_ids()
+
         last_line = []
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt').content.split("\n"):
             line = line.split('|')
@@ -90,7 +95,7 @@ class NHBillScraper(BillScraper):
                 elif expanded_bill_id.startswith('PET'):
                     bill_type = 'petition'
                 elif expanded_bill_id.startswith('AR') and bill_id.startswith('CACR'):
-                    bill_type = 'constitutional amendment'    
+                    bill_type = 'constitutional amendment'
                 else:
                     bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
 
@@ -100,11 +105,16 @@ class NHBillScraper(BillScraper):
                 self.bills[lsr] = Bill(session, chamber, bill_id, title,
                                        type=bill_type)
 
-                # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html                       
-                version_url = 'http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy={}&id={}&txtFormat=html'.format(session, lsr)
+                # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
+                if lsr in self.versions_by_lsr:
+                    version_id = self.versions_by_lsr[lsr]
+                    version_url = 'http://www.gencourt.state.nh.us/bill_status/' \
+                                  'billText.aspx?sy={}&id={}&txtFormat=html' \
+                                  .format(session, version_id)
 
-                self.bills[lsr].add_version('latest version', version_url,
-                                            mimetype='text/html')
+                    self.bills[lsr].add_version('latest version', version_url,
+                                                mimetype='text/html', on_duplicate='use_new')
+
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators
@@ -177,6 +187,21 @@ class NHBillScraper(BillScraper):
     def add_source(self, bill, lsr, session):
         bill_url = 'http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?lsr={}&sy={}&sortoption=&txtsessionyear={}'.format(lsr, session, session)
         bill.add_source(bill_url)
+
+    def scrape_version_ids(self):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt').content.split("\n"):
+            if len(line) < 1:
+                continue
+            # a few blank/irregular lines, irritating
+            if '|' not in line:
+                continue
+
+            line = line.split('|')
+            file_id = line[2]
+            lsr = line[0].split('-')
+            lsr = lsr[1]
+            self.versions_by_lsr[lsr] = file_id
+
 
     def scrape_votes(self, session):
         votes = {}
