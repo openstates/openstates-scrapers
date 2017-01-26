@@ -4,6 +4,7 @@ from .bills import COBillScraper
 from .legislators import COLegislatorScraper
 from .committees import COCommitteeScraper
 from .votes import COVoteScraper
+from .events import COEventScraper
 
 metadata = dict(
     name='Colorado',
