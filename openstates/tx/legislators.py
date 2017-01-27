@@ -96,7 +96,7 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             leg_a = tbl.xpath('.//a')[0]
             name = leg_a.text
             leg_url = leg_a.get('href')
-            district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail
+            district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail.lstrip('0')
             party = tbl.xpath('.//span[contains(text(), "Party:")]')[0].tail
             legislator = Legislator(
                 term, 'upper', district, name,
