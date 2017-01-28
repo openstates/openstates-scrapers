@@ -10,7 +10,9 @@ class MOLegislatorScraper(LegislatorScraper):
                             'Jefferson City, MO 65101')
     # senators_url = 'http://www.senate.mo.gov/{}info/senalpha.htm'
     # ^^^^^^^^^^^ pre-2013 URL. Keep if we need to scrape old pages.
-    _senators_url = 'http://www.senate.mo.gov/CurrentRoster.htm'
+    # _senators_url = 'http://www.senate.mo.gov/CurrentRoster.htm'
+    # ^^^^^^^^^^^ pre-2017 URL. Keep if we need to scrape the old pages.
+    _senators_url = 'http://www.senate.mo.gov/senators-listing/'
     _senator_details_url = 'http://www.senate.mo.gov/mem{:02d}'
     _reps_url = 'http://www.house.mo.gov/member.aspx'
     _rep_details_url = 'http://www.house.mo.gov/member.aspx?district={}'
@@ -29,13 +31,15 @@ class MOLegislatorScraper(LegislatorScraper):
         source_url = url
         page = self.get(url).text
         page = lxml.html.fromstring(page)
-        table = page.xpath('//*[@id="mainContent"]/table//table/tr')
+        table = page.xpath('//*[@id="content-2"]//table//tr')
         rowcount = 0
         for tr in table:
             rowcount += 1
+
             # the first two rows are headers, skip:
-            if rowcount < 2:
+            if rowcount <= 2:
                 continue
+
             tds = tr.xpath('td')
             full_name = tds[0].xpath('div/a')[0].text_content().strip()
 
@@ -63,7 +67,7 @@ class MOLegislatorScraper(LegislatorScraper):
             leg.add_source(url)
 
             page = lxml.html.fromstring(details_page)
-            photo_url = page.xpath('//img[contains(@src, "uploads")]/@src')[0]
+            photo_url = page.xpath('//*[@id="content-2"]//img[contains(@src, "uploads")]/@src')[0]
 
             contact_info = [
                 line.strip()
