@@ -39,7 +39,7 @@ class IDLegislatorScraper(LegislatorScraper):
             name = re.sub('\s+', ' ', name)
             party = _PARTY[inner.xpath('p/strong')[0].tail.strip()]
             email = inner.xpath('p/strong/a')[0].text
-            district = inner.xpath('p/a')[0].text
+            district = inner.xpath('p/a')[0].text.replace('District ', '')
             leg_url = inner.xpath('p/a/@href')[0]
 
             address = home_phone = office_phone = fax = None
