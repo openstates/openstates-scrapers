@@ -34,7 +34,13 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015', '2015A', '2015B', '2015C', '2016','2017'],
+            'sessions': ['2015', '2015A', '2015B', '2015C', '2016'],
+        },
+        {
+            'name': '2017-2018',
+            'start_year': 2017,
+            'end_year': 2018,
+            'sessions': ['2017'],
         },
     ],
     'session_details': {
@@ -139,7 +145,7 @@ metadata = {
     },
     'feature_flags': ['events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
-        '2010O', '2010A', '2010',
+        '2010O', '2010A', '2010', '2016O'
     ],
 }
 
