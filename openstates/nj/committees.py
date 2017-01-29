@@ -48,4 +48,5 @@ class NJCommitteeScraper(CommitteeScraper, MDBMixin):
                 role = POSITIONS[member_rec["Position_on_Committee"]]
                 comm_name.add_member(leg, role=role)
 
-        self.save_committee(comm_name)
+        for comm in comm_dictionary.itervalues():
+            self.save_committee(comm)
