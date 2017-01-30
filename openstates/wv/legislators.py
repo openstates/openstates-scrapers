@@ -44,12 +44,14 @@ class WVLegislatorScraper(LegislatorScraper):
         district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop().split()[1].strip().lstrip('0')
 
         party = page.xpath('//h2').pop().text_content()
-        party = re.search(r'\((R|D)[ \-\]]', party).group(1)
+        party = re.search(r'\((R|D|I)[ \-\]]', party).group(1)
 
         if party == 'D':
             party = 'Democratic'
         elif party == 'R':
             party = 'Republican'
+        elif party == 'I':
+            party = 'Independent'
 
         photo_url = page.xpath(
             "//img[contains(@src, 'images/members/')]")[0].attrib['src']
