@@ -50,6 +50,7 @@ class KSCommitteeScraper(CommitteeScraper):
                         chair_name = chair['FULLNAME']
                     else:
                         chair_name = self.parse_kpid(chair['KPID'])
+                        self.warning('no FULLNAME for %s', chair['KPID'])
                     committee.add_member(chair_name, 'chairman')
                 for vicechair in details['VICECHAIR']:
                     committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
