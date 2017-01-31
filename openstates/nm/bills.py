@@ -375,9 +375,7 @@ class NMBillScraper(BillScraper):
             chamber_name = 'house' if chamber == 'lower' else 'senate'
 
         doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
-        #doc_path = 'http://www.nmlegis.gov/Sessions/16%%20Regular/%s/%s/'
         doc_path = doc_path % (session_path, doctype, chamber_name)
-        #doc_path = doc_path % (doctype, chamber_name)
 
         html = self.get(doc_path).text
 
@@ -425,7 +423,6 @@ class NMBillScraper(BillScraper):
 
             # no suffix = just the bill
             if suffix == '':
-                continue
                 bill.add_version('introduced version', doc_path + fname,
                                  mimetype=mimetype)
 
