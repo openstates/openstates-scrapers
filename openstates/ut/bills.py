@@ -30,14 +30,14 @@ class UTBillScraper(BillScraper, LXMLMixin):
 
         # Identify the index page for the given session
         sessions = self.lxmlize(
-                'http://le.utah.gov/Documents/bills.htm')
+            'http://le.utah.gov/Documents/bills.htm')
 
         session_search_text = session
         if "s" not in session.lower() and "h" not in session.lower():
             session_search_text += "GS"
 
         sessions = sessions.xpath(
-                '//p/a[contains(@href, "{}")]'.format(session_search_text))
+            '//p/a[contains(@href, "{}")]'.format(session_search_text))
 
         session_url = ''
 
@@ -55,9 +55,9 @@ class UTBillScraper(BillScraper, LXMLMixin):
 
         # Identify all the bill lists linked from a given session's page
         bill_indices = [
-                re.sub(r'^r', "", x) for x in
-                self.lxmlize(session_url).xpath('//div[contains(@id, "0")]/@id')
-                ]
+            re.sub(r'^r', "", x) for x in
+            self.lxmlize(session_url).xpath('//div[contains(@id, "0")]/@id')
+        ]
 
         # Capture the bills from each of the bill lists
         for bill_index in bill_indices:
@@ -67,18 +67,18 @@ class UTBillScraper(BillScraper, LXMLMixin):
                 chamber = 'upper'
             else:
                 raise AssertionError(
-                        "Unknown bill type found: {}".format(bill_index))
+                    "Unknown bill type found: {}".format(bill_index))
 
             bill_index = self.lxmlize(session_url + "&bills=" + bill_index)
             bills = bill_index.xpath('//a[contains(@href, "/bills/static/")]')
 
             for bill in bills:
                 self.scrape_bill(
-                        chamber=chamber,
-                        session=session,
-                        bill_id=bill.xpath('text()')[0],
-                        url=bill.xpath('@href')[0]
-                        )
+                    chamber=chamber,
+                    session=session,
+                    bill_id=bill.xpath('text()')[0],
+                    url=bill.xpath('@href')[0]
+                )
 
     def scrape_bill(self, chamber, session, bill_id, url):
         page = self.lxmlize(url)
@@ -113,7 +113,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
             bill.add_sponsor('primary', name)
 
         floor_info = page.xpath('//div[@id="floorsponsordiv"]//text()')
-        floor_info = [ x.strip() for x in floor_info if x.strip() ]
+        floor_info = [x.strip() for x in floor_info if x.strip()]
         if len(floor_info) in (0, 1):
             # This indicates that no floor sponsor was found
             pass
@@ -126,18 +126,18 @@ class UTBillScraper(BillScraper, LXMLMixin):
             raise AssertionError("Unexpected floor sponsor HTML found")
 
         versions =  page.xpath(
-                '//b[text()="Bill Text"]/following-sibling::ul/li/'
-                'a[text() and not(text()=" ")]'
-                )
+            '//b[text()="Bill Text"]/following-sibling::ul/li/'
+            'a[text() and not(text()=" ")]'
+        )
         for version in versions:
             bill.add_version(
-                    version.xpath('text()')[0].strip(),
-                    version.xpath('following-sibling::a[1]/@href')[0],
-                    mimetype='application/pdf'
-                    )
+                version.xpath('text()')[0].strip(),
+                version.xpath('following-sibling::a[1]/@href')[0],
+                mimetype='application/pdf'
+            )
 
         for related in page.xpath(
-            '//b[text()="Related Documents "]/following-sibling::ul/li/a[contains(@class,"nlink")]'):
+                '//b[text()="Related Documents "]/following-sibling::ul/li/a[contains(@class,"nlink")]'):
             href = related.xpath('@href')[0]
             if '.fn.pdf' in href:
                 bill.add_document("Fiscal Note", href, mimetype='application/pdf')
@@ -214,7 +214,6 @@ class UTBillScraper(BillScraper, LXMLMixin):
                 type = 'committee:passed:favorable'
             else:
                 type = 'other'
-
             bill.add_action(actor, action, date, type=type,
                             _vote_id=uniqid)
 
@@ -222,7 +221,6 @@ class UTBillScraper(BillScraper, LXMLMixin):
             vote_links = row.xpath('./td[4]//a')
             for vote_link in vote_links:
                 vote_url = vote_link.attrib['href']
-
                 if not vote_url.endswith('txt'):
                     self.parse_html_vote(bill, actor, date, action,
                                          vote_url, uniqid)
@@ -230,29 +228,26 @@ class UTBillScraper(BillScraper, LXMLMixin):
                     self.parse_vote(bill, actor, date, action,
                                     vote_url, uniqid)
 
-    def scrape_committee_vote(self, bill, actor, date, motion, url, uniqid):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-        committee = page.xpath("//b")[0].text_content()
+    def scrape_committee_vote(self, bill, actor, date, motion, page, url, uniqid):
         votes = page.xpath("//table")[0]
         rows = votes.xpath(".//tr")[0]
+        if rows[0].text_content() == 'Votes:':
+            #New webste
+            rows = votes.xpath(".//tr")[2]
         yno = rows.xpath(".//td")
         if len(yno) < 3:
             yes = yno[0]
             no, other = None, None
         else:
-            yes, no, other = rows.xpath(".//td")
+            yes, no, other = rows.xpath(".//td")[:3]
 
-        def proc_block(obj):
+        def proc_block(obj, typ):
             if obj is None:
                 return {
                     "type": None,
                     "count": None,
                     "votes": []
                 }
-
-            typ = obj.xpath("./b")[0].text_content()
             votes = []
             for vote in obj.xpath(".//br"):
                 if vote.tail:
@@ -267,9 +262,9 @@ class UTBillScraper(BillScraper, LXMLMixin):
             }
 
         vote_dict = {
-            "yes": proc_block(yes),
-            "no": proc_block(no),
-            "other": proc_block(other),
+            "yes": proc_block(yes, 'yes'),
+            "no": proc_block(no, 'no'),
+            "other": proc_block(other, 'other'),
         }
 
         yes_count = vote_dict['yes']['count']
@@ -303,17 +298,20 @@ class UTBillScraper(BillScraper, LXMLMixin):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         descr = page.xpath("//b")[0].text_content()
+        if descr=='':
+            #New page method
+            descr=page.xpath("//div[@id='content']/center")[0].text
 
         if "on voice vote" in descr:
             return
 
         if "committee" in descr.lower():
             return self.scrape_committee_vote(
-                bill, actor, date, motion, url, uniqid
+                bill, actor, date, motion, page, url, uniqid
             )
+                
 
         passed = None
-
         if "Passed" in descr:
             passed = True
         elif "Failed" in descr:
