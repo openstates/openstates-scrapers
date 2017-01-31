@@ -46,7 +46,11 @@ class KSCommitteeScraper(CommitteeScraper):
                     continue
                 details = json.loads(detail_json)['content']
                 for chair in details['CHAIR']:
-                    committee.add_member(chair['FULLNAME'], 'chairman')
+                    if chair.get('FULLNAME', None):
+                        chair_name = chair['FULLNAME']
+                    else:
+                        chair_name = self.parse_kpid(chair['KPID'])
+                    committee.add_member(chair_name, 'chairman')
                 for vicechair in details['VICECHAIR']:
                     committee.add_member(vicechair['FULLNAME'], 'vice-chairman')
                 for rankedmember in details['RMMEM']:
@@ -60,3 +64,7 @@ class KSCommitteeScraper(CommitteeScraper):
                 else:
                     committee.add_source(com_url)
                     self.save_committee(committee)
+
+    def parse_kpid(self, kpid):
+        kpid_parts = kpid.split('_')
+        return ' '.join(reversed(kpid_parts[1:-1])).title()
