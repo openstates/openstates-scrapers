@@ -66,5 +66,11 @@ class KSCommitteeScraper(CommitteeScraper):
                     self.save_committee(committee)
 
     def parse_kpid(self, kpid):
+        """
+        Helper function to parse KPID given in data when FULLNAME is not available.
+
+        :param kpid: str, pre_formatted identifier in the format type_family_given_number
+        :return: str, formatted Fullname from id
+        """
         kpid_parts = kpid.split('_')
         return ' '.join(reversed(kpid_parts[1:-1])).title()
