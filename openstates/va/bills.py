@@ -151,6 +151,8 @@ class VABillScraper(BillScraper):
             date, desc = va.text.split(u' \xa0')
             desc.rsplit(' ', 1)[0]              # chop off last part
             link = va.get('href')
+            if 'http' not in link:
+                link = '{}{}'.format(BASE_URL,link)
             date = datetime.datetime.strptime(date, '%m/%d/%y')
 
             # budget bills in VA are searchable but no full text available
@@ -158,7 +160,7 @@ class VABillScraper(BillScraper):
                 self.warning('not adding budget version, bill text not available')
             else:
                 # VA duplicates reprinted bills, lets keep the original name
-                bill.add_version(desc, BASE_URL+link, date=date,
+                bill.add_version(desc, link, date=date,
                                  mimetype='text/html',
                                  on_duplicate='use_old')
 
