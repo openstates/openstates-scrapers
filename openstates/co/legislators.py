@@ -9,8 +9,8 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID = {
-    'upper': 1,
-    'lower': 2,
+    'lower': 1,
+    'upper': 2,
 }
 
 UPPER_ROLE = 'Senator'
