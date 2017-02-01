@@ -68,10 +68,13 @@ def table_row_to_legislator_and_profile_url(table_row_element, chamber, term):
     (role_element, name_element, district_element, party_element, phone_element, email_element) = td_elements
 
     # Name comes in the form Last, First
-    last_name_first_name = name_element.text_content().strip()
-    full_name = last_name_first_name_to_full_name(last_name_first_name)
+    #last_name_first_name = name_element.text_content().strip()
+    #full_name = last_name_first_name_to_full_name(last_name_first_name)
+    full_name = name_element.text_content().strip()
     district = district_element.text_content().strip()
     party = party_element.text_content().strip()
+    if party == 'Democrat':
+        party = 'Democratic'
 
     legislator = Legislator(term, chamber, district, full_name, party=party)
 
