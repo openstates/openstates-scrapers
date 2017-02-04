@@ -39,10 +39,14 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
             else:
                 state_email = None
 
+            district = info['District'].replace(" District", "")
+            if district == 'Grand Isle':
+                district = 'Chittenden-Grand Isle'
+
             leg = Legislator(
                 term=term,
                 chamber=self.CHAMBERS[info['Title']],
-                district=info['District'].replace(" District", ""),
+                district=district,
                 party=info['Party'].replace("Democrat", "Democratic"),
                 full_name="{0} {1}".format(info['FirstName'], info['LastName']),
                 photo_url=photo_url
