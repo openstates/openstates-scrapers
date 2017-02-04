@@ -43,7 +43,7 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         # We already have the first page load, so just grab later pages
         if max_page > 1:
-            for i in range(2, max_page + 1):
+            for i in range(1, max_page):
                 self.scrape_bill_list(session, chamber, i)
 
     def scrape_bill_list(self, session, chamber, pageNumber):
