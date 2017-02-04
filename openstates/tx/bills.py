@@ -103,10 +103,15 @@ class TXBillScraper(BillScraper):
                                             'bills/{}/billhistory'.
                                             format(session_code))
         for bill_url in history_files:
-            self.scrape_bill(session, bill_url)
+            if 'house' in bill_url:
+                if 'lower' in chambers:
+                    self.scrape_bill(session, bill_url)
+            elif 'senate' in bill_url:
+                if 'upper' in chambers:
+                    self.scrape_bill(session, bill_url)
 
     def scrape_bill(self, session, history_url):
-        history_xml = self.get(history_url).text.encode('ascii', 'ignore')
+        history_xml = self.get(history_url).content
         root = etree.fromstring(history_xml)
 
         bill_title = root.findtext("caption")
