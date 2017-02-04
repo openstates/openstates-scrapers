@@ -33,32 +33,36 @@ class TXCommitteeScraper(CommitteeScraper, LXMLMixin):
             # Capture table with committee membership data.
             details_table = self.get_node(committee_page,
                 '//div[@id="content"]//table[2]')
-            # Skip the first row because it currently contains only headers.
-            detail_rows = self.get_nodes(details_table, './tr')[1:]
+            if details_table is not None:
+                # Skip the first row because it currently contains only headers
+                detail_rows = self.get_nodes(details_table, './tr')[1:]
+                for detail_row in detail_rows:
+                    label_text = self.get_node(detail_row, './td[1]//text()')
 
-            for detail_row in detail_rows:
-                label_text = self.get_node(detail_row, './td[1]//text()')
+                    if label_text:
+                        label_text = label_text.strip().rstrip(':')
 
-                if label_text:
-                    label_text = label_text.strip().rstrip(':')
+                    if label_text in ('Chair', 'Vice Chair'):
+                        member_role = 'chair'
+                    else:
+                        member_role = 'member'
 
-                if label_text in ('Chair', 'Vice Chair'):
-                    member_role = 'chair'
-                else:
-                    member_role = 'member'
+                    member_name_text = self.get_node(detail_row, 
+                        './td[2]/a/text()')
 
-                member_name_text = self.get_node(detail_row, './td[2]/a/text()')
 
-                # Clean titles from member names.
-                if chamber == 'upper':
-                    member_name = re.sub('^Sen\.[\s]*', '', member_name_text)
-                elif chamber == 'lower':
-                    member_name = re.sub('^Rep\.[\s]*', '', member_name_text)
+                    # Clean titles from member names.
+                    if chamber == 'upper':
+                        member_name = re.sub('^Sen\.[\s]*', '', 
+                            member_name_text)
+                    elif chamber == 'lower':
+                        member_name = re.sub('^Rep\.[\s]*', '', 
+                            member_name_text)
 
-                # Collapse multiple whitespaces in member names.
-                member_name = re.sub('[\s]{2,}', ' ', member_name).strip()
+                    # Collapse multiple whitespaces in member names.
+                    member_name = re.sub('[\s]{2,}', ' ', member_name).strip()
 
-                committee.add_member(member_name, member_role)
+                    committee.add_member(member_name, member_role)
 
             committee.add_source(committee_list_url)
             committee.add_source(committee_page_url)
