@@ -3,7 +3,9 @@ services:
   openstates:
     build: .
     environment:
-      BILLY_MONGO_HOST: database
+    - BILLY_MONGO_HOST=database
+    - NEW_YORK_API_KEY
+    - INDIANA_API_KEY
     volumes:
     - .:/srv/openstates-web
     ports:
