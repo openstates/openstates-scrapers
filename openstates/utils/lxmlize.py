@@ -1,6 +1,6 @@
 import requests
 import lxml.html
-
+from lxml.html import HtmlElement
 
 class LXMLMixin(object):
     """Mixin for adding LXML helper functions to Open States code."""
@@ -18,7 +18,7 @@ class LXMLMixin(object):
             # which have a `get` method defined.
             response = self.get(url)
         except requests.exceptions.SSLError:
-            self.warning('`self.lxmlize()` failed due to SSL error, trying'\
+            self.warning('`self.lxmlize()` failed due to SSL error, trying'
                 'an unverified `self.get()` (i.e. `requests.get()`)')
             response = self.get(url, verify=False)
 
@@ -61,4 +61,9 @@ class LXMLMixin(object):
         Returns:
             List[Element]: All nodes found that match the query.
         """
-        return base_node.xpath(xpath_query)
+        if isinstance(base_node, HtmlElement):
+            return base_node.xpath(xpath_query)
+        else:
+            self.logger.warning("Invalid type for base_node: {}"
+                                 .format(type(base_node)))
+            return []
