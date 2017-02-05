@@ -1,6 +1,7 @@
+import re
+import string
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
-import re
 
 
 def itergraphs(elements, break_):
@@ -19,8 +20,10 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'or'
 
     URLs = {
-        "lower": "http://www.oregonlegislature.gov/house/Pages/RepresentativesAll.aspx",
-        "upper": "http://www.oregonlegislature.gov/senate/Pages/SenatorsAll.aspx",
+        "lower": "http://www.oregonlegislature.gov/house/Pages/" +
+                 "RepresentativesAll.aspx",
+        "upper": "http://www.oregonlegislature.gov/senate/Pages/" +
+                 "SenatorsAll.aspx",
     }
 
     def scrape(self, chamber, term):
@@ -42,9 +45,9 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             h2, = h2s
             # Need to remove weird Unicode spaces from their names
-            name = " ".join(h2.text.split())
-            name = re.sub(r'^\W?(Senator|Representative)\W?(?=[A-Z])', "", name)
-
+            name = ''.join(s for s in h2.text if s in string.printable)
+            name = re.sub(r'^\W?(Senator|Representative)\W?(?=[A-Z])',
+                          "", name)
             photo_block, = photo_block
             # (The <td> before ours was the photo)
             img, = photo_block.xpath("*")
@@ -69,7 +72,8 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                             value = value.tail
                     elif len(kvpair) == 3:
                         k1, k2, value = kvpair
-                        # As seen with a <stong><strong>Email:</strong></strong>
+                        # As seen with a
+                        # <stong><strong>Email:</strong></strong>
                         t = lambda x: x.text_content().strip()
                         assert t(k1) == "" or t(k2) == ""
                         if t(k1) != "":
@@ -77,8 +81,9 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                         else:
                             key = k2
                     else:
-                        # Never seen text + an <a> tag, perhaps this can happen.
-                        raise ValueError("Too many elements. Something changed")
+                        # Never seen text + an <a> tag, perhaps this can happen
+                        raise ValueError("Too many elements. " +
+                                         "Something changed")
 
                     key = key.text_content().strip(" :")
                     if value is None:
@@ -95,7 +100,8 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
             info['District'] = info['District'].encode(
                 'ascii', 'ignore').strip()
 
-            info['Party'] = info['Party'].strip(": ").replace(u"\u00a0","")
+            info['Party'] = info['Party'].strip(": ").replace(
+                u"\u00a0", "")
 
             leg = Legislator(term=term,
                              url=h2.attrib['href'],
@@ -114,6 +120,7 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                            name='Capitol Office',
                            address=info['Capitol Address'],
                            phone=phone,
-                           email=info['Email'].attrib['href'].replace("mailto:",""))
+                           email=info['Email'].attrib['href']
+                                .replace("mailto:", ""))
 
             self.save_legislator(leg)
