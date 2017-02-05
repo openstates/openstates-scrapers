@@ -79,7 +79,7 @@ class AZLegislatorScraper(LegislatorScraper):
                               + "\nPhoenix, AZ 85007"
 
             phone = phone.text_content().strip()
-            if not phone.startswith('602'):
+            if '602' not in re.findall(r'(\d+)', phone):
                 phone = "602-" + phone
 
             leg = Legislator(term, chamber, district, full_name=name,
