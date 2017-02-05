@@ -1,8 +1,7 @@
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from lxml import html
+import re
 
-import re, datetime
 
 class AZLegislatorScraper(LegislatorScraper):
     jurisdiction = 'az'
@@ -80,30 +79,30 @@ class AZLegislatorScraper(LegislatorScraper):
                               + "\nPhoenix, AZ 85007"
 
             phone = phone.text_content().strip()
-            if not phone.startswith('602'):
+            if '602' not in re.findall(r'(\d+)', phone):
                 phone = "602-" + phone
 
             leg = Legislator(term, chamber, district, full_name=name,
-                                party=party, url=link,
-                                photo_url=photo_url)
+                             party=party, url=link,
+                             photo_url=photo_url)
 
             leg.add_office('capitol', 'Capitol Office', address=address,
                            phone=phone, email=email)
 
             if position:
-                leg.add_role( position, term, chamber=chamber,
+                leg.add_role(position, term, chamber=chamber,
                              district=district, party=party)
 
             leg.add_source(url)
 
-            #Probably just get this from the committee scraper
-            #self.scrape_member_page(link, session, chamber, leg)
+            # Probably just get this from the committee scraper
+            # self.scrape_member_page(link, session, chamber, leg)
             self.save_legislator(leg)
 
     def scrape_member_page(self, url, session, chamber, leg):
         html = self.get(url).text
         root = html.fromstring(html)
-        #get the committee membership
+        # get the committee membership
         c = root.xpath('//td/div/strong[contains(text(), "Committee")]')
         for row in c.xpath('ancestor::table[1]')[1:]:
             name = row[0].text_content().strip()
