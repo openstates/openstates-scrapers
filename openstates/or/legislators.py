@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
+import re
+import unicodedata
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
-import re
 
 
 def itergraphs(elements, break_):
@@ -41,10 +43,15 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             h2, = h2s
+            name = h2.text
             # Need to remove weird Unicode spaces from their names
-            name = " ".join(h2.text.split())
-            name = re.sub(r'^\W?(Senator|Representative)\W?(?=[A-Z])', "", name)
+            if isinstance(name, unicode):
+                name = "".join(c for c in name
+                               if unicodedata.category(c)[0] != "C")
 
+            name = " ".join(name.split())
+            name = re.sub(r'^\W?(Senator|Representative)\W?(?=[A-Z])',
+                          "", name)
             photo_block, = photo_block
             # (The <td> before ours was the photo)
             img, = photo_block.xpath("*")

@@ -21,6 +21,10 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
         sessions = term.split('-')
 
         for session in sessions:
+            # The second session in a two year term might not have details yet
+            if session not in self.metadata['session_details']:
+                continue
+
             session_start_date = self.metadata['session_details'][session]\
                 ['start_date']
 
@@ -54,7 +58,8 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             '//div[@id = "{}"]//p/a'.format(comm_container_id))
 
         for comm_link in comm_links:
-            if "Assigned bills" in comm_link.text_content():
+            # Normalize to uppercase - varies between "Assigned bills" and "Assigned Bills"
+            if "ASSIGNED BILLS" in comm_link.text_content().upper():
                 continue
 
             comm_link = comm_link.attrib['href']
