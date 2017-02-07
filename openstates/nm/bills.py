@@ -440,7 +440,10 @@ class NMBillScraper(BillScraper):
                                  doc_path + fname, mimetype=mimetype)
             # votes
             elif 'SVOTE' in suffix:
-                sv_text=self.scrape_vote(doc_path + fname)
+                sv_text = self.scrape_vote(doc_path + fname)
+                if not sv_text:
+                    continue
+
                 vote = self.parse_senate_vote(sv_text, doc_path + fname)
                 if vote:
                     bill.add_vote(vote)
@@ -448,7 +451,9 @@ class NMBillScraper(BillScraper):
                     self.warning("Bad parse on the vote")
 
             elif 'HVOTE' in suffix:
-                hv_text=self.scrape_vote(doc_path + fname)
+                hv_text = self.scrape_vote(doc_path + fname)
+                if not hv_text:
+                    continue
                 vote = self.parse_house_vote(hv_text, doc_path + fname)
                 if vote:
                     bill.add_vote(vote)
@@ -472,7 +477,11 @@ class NMBillScraper(BillScraper):
     def scrape_vote(self, url, local=False):
         """Retrieves or uses local copy of vote pdf and converts into XML."""
         if not local:
-            url, resp = self.urlretrieve(url)
+            try:
+                url, resp = self.urlretrieve(url)
+            except scrapelib.HTTPError:
+                self.warning("Request failed: {}".format(url))
+                return
         v_text = convert_pdf(url, 'xml')
         os.remove(url)
         return v_text
