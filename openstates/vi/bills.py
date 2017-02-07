@@ -166,6 +166,8 @@ class VIBillScraper(BillScraper, LXMLMixin):
             title=title,
             type='bill'
         )
+
+        bill.add_source(bill_page_url)
         
         self.parse_versions(bill, bill_page, bill_no)
         
