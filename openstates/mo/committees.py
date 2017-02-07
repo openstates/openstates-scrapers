@@ -1,8 +1,6 @@
-import datetime as datetime
+import datetime
 import re
 import lxml.html
-import xlrd
-import os
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
@@ -19,20 +17,22 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
     def scrape(self, chamber, term):
         self.validate_term(term, latest_only=True)
         sessions = term.split('-')
-
         for session in sessions:
-            session_start_date = self.metadata['session_details'][session]\
-                ['start_date']
+            if session not in self.metadata['session_details']:
+                # Weird situation due to how the scraper is setup to deal
+                # with a website change
+                continue
+            sessionYear = self.metadata['session_details'][session]
+            session_start_date = sessionYear['start_date']
 
             if session_start_date > datetime.date.today():
                 self.log('{} session has not begun - ignoring.'.format(
                     session))
                 continue
-            elif session_start_date >= self.metadata['session_details']\
-                ['2016']['start_date']:
+            elif session_start_date.year > 2015:
                 self._is_post_2015 = True
 
-            #joint committees scraped as part of lower
+            # joint committees scraped as part of lower
             getattr(self, '_scrape_' + chamber + '_chamber')(session, chamber)
 
     def _scrape_upper_chamber(self, session, chamber):
@@ -54,16 +54,15 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             '//div[@id = "{}"]//p/a'.format(comm_container_id))
 
         for comm_link in comm_links:
-            if "Assigned bills" in comm_link.text_content():
+            if "assigned bills" in comm_link.text_content().lower():
                 continue
 
             comm_link = comm_link.attrib['href']
-
             if self._is_post_2015:
-                if not "web" in comm_link:
+                if "web" not in comm_link:
                     continue
             else:
-                if not "comm" in comm_link:
+                if "comm" not in comm_link:
                     continue
 
             comm_page = self.lxmlize(comm_link)
@@ -90,7 +89,7 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
 
             for member in members:
                 mem_link = member.attrib["href"]
-                if not "mem" in mem_link:
+                if "mem" not in mem_link:
                     continue
 
                 if self._is_post_2015:
@@ -102,20 +101,22 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                 # Senator title stripping mainly for post-2015.
                 mem_name = re.sub('^Senator[\s]+', '', mem_parts[0])
 
-                #this one time, MO forgot the comma between
-                #the member and his district. Very rarely relevant
+                # this one time, MO forgot the comma between
+                # the member and his district. Very rarely relevant
                 try:
-                    int(mem_name[-4:-2]) #the district's # is in this position
+                    # the district's # is in this position
+                    int(mem_name[-4:-2])
                 except ValueError:
                     pass
                 else:
-                    mem_name = " ".join(mem_name.split(" ")[0:-1]) #member name fixed
+                    # member name fixed
+                    mem_name = " ".join(mem_name.split(" ")[0:-1])
 
-                    #ok, so this next line. We don't care about
-                    #the first 2 elements of mem_parts anymore
-                    #so whatever. But if the member as a role, we want
-                    #to make sure there are 3 elements in mem_parts and
-                    #the last one is actually the role. This sucks, sorry.
+                    # ok, so this next line. We don't care about
+                    # the first 2 elements of mem_parts anymore
+                    # so whatever. But if the member as a role, we want
+                    # to make sure there are 3 elements in mem_parts and
+                    # the last one is actually the role. This sucks, sorry.
                     mem_parts.append(mem_parts[-1])
 
                 mem_role = 'member'
@@ -141,7 +142,7 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
         trs = table.xpath('tr')[:-1]
         for tr in trs:
             committee_parts = [part.strip()
-                                for part in tr.text_content().split(',')]
+                               for part in tr.text_content().split(',')]
             committee_name = committee_parts[0].title().strip()
             if len(committee_parts) > 0:
                 status = committee_parts[1].strip()
@@ -160,10 +161,10 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             committee_name = committee_name.replace(' Committee', '')
             committee_name = committee_name.strip()
 
-            committee = Committee(actual_chamber, committee_name, status=status)
+            committee = Committee(actual_chamber, committee_name,
+                                  status=status)
             committee_page_string = self.get(committee_url).text
-            committee_page = lxml.html.fromstring(
-                                committee_page_string)
+            committee_page = lxml.html.fromstring(committee_page_string)
             # First tr has the title (sigh)
             mem_trs = committee_page.xpath('id("memGroup")/tr')[1:]
             for mem_tr in mem_trs:
@@ -186,7 +187,7 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                     mem_role = ', '.join(
                         [p.strip() for p in mem_parts[2:]]).lower()
                 committee.add_member(mem_name, role=mem_role,
-                                    _code=mem_code)
+                                     _code=mem_code)
             committee.add_source(url)
             committee.add_source(committee_url)
             self.save_committee(committee)
