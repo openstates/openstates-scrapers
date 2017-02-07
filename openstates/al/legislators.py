@@ -11,7 +11,7 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
     _base_url = 'http://www.legislature.state.al.us/aliswww/ISD/'
     _parties = {
         '(D)': 'Democratic',
-        '(R)': 'Republican', 
+        '(R)': 'Republican',
         '(I)': 'Independent',
     }
 
@@ -84,6 +84,7 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
             district_text = self.get_node(
                 info_node,
                 './tr[2]/td[2]').text_content().encode('utf-8')
+            district_text = district_text.replace('&nbsp;', u'')
 
             if chamber == 'upper':
                 district = district_text.replace('Senate District', '').strip()
@@ -108,9 +109,9 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             fax_number_text = self.get_node(
                 info_node,
-                './tr[5]/td[2]').text_content().encode('utf-8')
+                './tr[5]/td[2]').text_content()
 
-            fax_number = fax_number_text.strip()
+            fax_number = fax_number_text.strip().replace(u'u00a0', u'')
 
             suite_text = self.get_node(
                 info_node,
@@ -145,7 +146,7 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
                 'Capitol Office',
                 address=office_address,
                 phone=phone_number,
-                fax=fax_number
+                fax=fax_number or None
                 )
 
             #match rep to sponsor_id if possible
@@ -178,7 +179,7 @@ class ALLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             role_text = self.get_node(row, './td[3]').text_content()
             role = role_text.strip()
-            
+
             legislator.add_role('committee member',
                 term=term,
                 chamber=chamber,
