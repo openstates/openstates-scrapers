@@ -24,7 +24,7 @@ class INBillScraper(BillScraper):
 
     def _get_bill_id_components(self, bill_id):
         bill_prefix = ''.join([c for c in bill_id if c.isalpha()])
-        bill_number = ''.join([c for c in bill_id if c.isdigit()])
+        bill_number = ''.join([c for c in bill_id if c.isdigit()]).lstrip('0')
 
         return (bill_prefix, bill_number)
 
