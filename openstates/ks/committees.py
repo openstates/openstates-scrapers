@@ -8,6 +8,11 @@ from billy.scrape.committees import Committee, CommitteeScraper
 
 import ksapi
 
+# The recommendation is to have one API reqeust every 5 seconds.
+# We still had BadStatus errors (maybe from their 429 page) at that rate, so reduced to once every 6 seconds
+KANSAS_API_MAXIMUM_RPM = 60 / 6
+
+
 class KSCommitteeScraper(CommitteeScraper):
     jurisdiction = 'ks'
     latest_only = True
@@ -15,6 +20,9 @@ class KSCommitteeScraper(CommitteeScraper):
     def scrape(self, chamber, term):
         # some committees, 500, let them go
         self.retry_attempts = 0
+
+        if self.requests_per_minute > KANSAS_API_MAXIMUM_RPM:
+            self.requests_per_minute = KANSAS_API_MAXIMUM_RPM
 
         self.scrape_current(chamber, term)
 
