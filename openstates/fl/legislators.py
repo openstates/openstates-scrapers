@@ -42,7 +42,7 @@ class FLLegislatorScraper(LegislatorScraper):
                 phone = None
             if re.search(r'(?i)open\s+\w+day', address_lines[0]):
                 address_lines = address_lines[1: ]
-            assert ", FL" in address_lines[-1]
+            assert ", FL" in address_lines[-1] or address_lines[-1] == 'TBD'
             address = "\n".join(address_lines)
             address = re.sub(r'\s{2,}', " ", address)
 
