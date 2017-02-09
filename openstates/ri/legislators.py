@@ -10,11 +10,11 @@ import xlrd
 
 excel_mapping = {
     'district': 0,
-    'town_represented': 2,
-    'full_name': 3,
-    'party': 4,
-    'address': 5,
-    'email': 6,
+    'town_represented': 1,
+    'full_name': 2,
+    'party': 3,
+    'address': 4,
+    'email': 5,
 }
 
 class RILegislatorScraper(LegislatorScraper, LXMLMixin):
