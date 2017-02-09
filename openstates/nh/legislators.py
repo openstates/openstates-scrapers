@@ -38,13 +38,13 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         # Capture legislator vitals.
         first_name = row['FirstName']
         middle_name = row['MiddleName']
-        last_name = row['lastname']
+        last_name = row['LastName']
         full_name = '{} {} {}'.format(first_name, middle_name, last_name)
         full_name = re.sub(r'[\s]{2,}', ' ', full_name)
 
-        district = '{} {}'.format(row['county'], int(row['District'])).strip()
-        party = self.party_map[row['party']]
-        email = row['EMailAddress1']
+        district = '{} {}'.format(row['County'], int(row['District'])).strip()
+        party = self.party_map[row['party'].upper()]
+        email = row['WorkEmail']
 
         legislator = Legislator(term, chamber, district, full_name,
                                 first_name=first_name, last_name=last_name,
@@ -52,8 +52,8 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
                                 email=email)
 
         # Capture legislator office contact information.
-        district_address = '{}\n{}\n{}, {} {}'.format(row['street'],
-            row['address2'], row['city'], row['state'], row['zipcode']).strip()
+        district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
+            row['address2'], row['city'], row['State'], row['Zipcode']).strip()
 
         legislator.add_office('district', 'Home Address',
                               address=district_address)
