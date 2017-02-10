@@ -1,5 +1,4 @@
 import re
-import lxml.html
 from openstates.utils import LXMLMixin
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
@@ -7,14 +6,16 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 PARTY = {'R': 'Republican',
          'D': 'Democratic'}
 
-class DELegislatorScraper(LegislatorScraper,LXMLMixin):
+
+class DELegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'de'
 
     def scrape(self, chamber, term):
 
         url = {
             'upper': 'https://legis.delaware.gov/json/Senate/GetSenators',
-            'lower': 'https://legis.delaware.gov/json/House/GetRepresentatives',
+            'lower': 'https://legis.delaware.gov/json/House/' +
+                     'GetRepresentatives',
             }[chamber]
         source_url = {
             'upper': 'https://legis.delaware.gov/Senate',
@@ -24,13 +25,21 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
         data = self.post(url).json()['Data']
 
         for item in data:
-            leg_url = 'https://legis.delaware.gov/LegislatorDetail?personId={}'.format(item['PersonId'])
+            if item['PersonFullName'] is None:
+                # Vacant district
+                self.warning(
+                    'District {} was detected as vacant'.format(
+                        item['DistrictNumber']
+                    )
+                )
+                continue
+
+            leg_url = 'https://legis.delaware.gov/' +\
+                      'LegislatorDetail?personId={}'.format(item['PersonId'])
             leg = Legislator(term, chamber,
-                             district=item['DistrictNumber'],
-                             full_name=item['DisplayName'],
+                             district=str(item['DistrictNumber']),
+                             full_name=item['PersonFullName'],
                              party=PARTY[item['PartyCode']],
-                             first_name=item['FirstName'],
-                             last_name=item['LastName'],
                              url=leg_url,
                              )
             self.scrape_contact_info(leg, leg_url)
@@ -46,7 +55,8 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
         address = phone = email = None
 
         for label in doc.xpath('//label'):
-            value = label.xpath('following-sibling::div')[0].text_content().strip()
+            value = label.xpath('following-sibling::div'
+                                )[0].text_content().strip()
             if label.text == 'Email Address:':
                 email = value
             elif label.text == 'Legislative Address:':
@@ -55,6 +65,5 @@ class DELegislatorScraper(LegislatorScraper,LXMLMixin):
                 phone = value
 
         leg.add_office('capitol', 'Capitol Office',
-                        address=address, phone=phone, email=email)
+                       address=address, phone=phone, email=email)
         leg['email'] = email or ''
-
