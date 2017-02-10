@@ -8,6 +8,14 @@ import lxml.html
 class WVCommitteeScraper(CommitteeScraper):
     jurisdiction = "wv"
 
+    # Manually resolved links between subcommittees and parent committees.
+    subcommittee_parent_map = {
+        'Post Audits Subcommittee': 'Government and Finance',
+        'Parks, Recreation and Natural Resources Subcommittee': \
+            'Government and Finance',
+        'Tax Reform Subcommittee A': 'Joint Tax Reform',
+    }
+
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber)()
 
@@ -63,7 +71,16 @@ class WVCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        comm = Committee('joint', name)
+        if 'Subcommittee' in name:
+            # Check whether the parent committee is manually defined first
+            # before attempting to automatically resolve it.
+            parent = WVCommitteeScraper.subcommittee_parent_map.get(name, None)
+            if parent is None:
+                parent = name.partition('Subcommittee')[0].strip()
+
+            comm = Committee('joint', parent, subcommittee=name)
+        else:
+            comm = Committee('joint', name)
         comm.add_source(url)
 
         xpath = '//a[contains(@href, "?member=")]'
