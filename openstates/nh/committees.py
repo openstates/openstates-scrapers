@@ -1,9 +1,10 @@
 import re
 
 from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.utils import LXMLMixin
 
 
-class NHCommitteeScraper(CommitteeScraper):
+class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'nh'
     committees_url = 'http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt'
 
@@ -38,6 +39,10 @@ class NHCommitteeScraper(CommitteeScraper):
         chamber = self._parse_chamber(code)
         committee = Committee(chamber, name)
         committee.add_source(url)
+        if chamber == 'lower':
+            self._parse_members_house(committee, url)
+        else:
+            self._parse_members_senate(committee, url)
         return committee
 
     def _parse_code(self, code):
@@ -48,6 +53,35 @@ class NHCommitteeScraper(CommitteeScraper):
 
     def _parse_chamber(self, code):
         return self._chamber_map[code[0].lower()]
+
+    def _parse_members_house(self, committee, url):
+        page = self.lxmlize(url)
+        links = page.xpath('//a[contains(@href, "members/member")]')
+        for link in links:
+            name = re.sub(r'\s+', ' ', link.text_content()).replace(u'\xa0', ' ').strip()
+            role = 'member'
+            parent = link.getparent()
+            if parent.attrib.get('width') == '38%':
+                role = parent.getprevious().text_content().strip(':').lower()
+            committee.add_member(name, role)
+
+    def _parse_members_senate(self, committee, url):
+        page = self.lxmlize(url)
+        links = page.xpath('//a[contains(@href, "members/webpages")]')
+        names = [link.text_content().strip() for link in links]
+        if not names:
+            return
+        rows = [
+            each.strip()
+            for each in links[0].getparent().text_content().strip().split('\r\n')
+            if each.strip()
+        ]
+        while rows:
+            name = rows.pop(0).replace(u'\xa0', ' ')
+            role = 'member'
+            if rows and rows[0] not in names:
+                role = rows.pop(0).lower()
+            committee.add_member(name, role)
 
     def scrape(self, chamber, term):
         for committee in self._parse_committees_text(chamber):
