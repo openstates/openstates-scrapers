@@ -139,9 +139,8 @@ class MABillScraper(BillScraper):
             sponsor = sponsor[0].strip()
             bill.add_sponsor('primary', sponsor)
 
-        has_cosponsor = page.xpath('//a[starts-with(normalize-space(.),"Petitioners")]')
-        if has_cosponsor:
-            self.scrape_cosponsors(bill, bill_url)
+        self.scrape_cosponsors(bill, bill_url)
+            
 
         version = page.xpath("//div[contains(@class, 'modalBtnGroup')]/a[contains(text(), 'Download PDF') and not(@disabled)]/@href")
         if version:
