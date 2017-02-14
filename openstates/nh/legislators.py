@@ -8,6 +8,9 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'nh'
     latest_only = True
     members_url = 'http://www.gencourt.state.nh.us/downloads/Members.txt'
+    lookup_url = 'http://www.gencourt.state.nh.us/house/members/memberlookup.aspx'
+    house_profile_url = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member={}'
+    senate_profile_url = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district{}.aspx'
 
     chamber_map = {'H': 'lower', 'S': 'upper'}
     party_map = {
@@ -34,7 +37,7 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return photo_url
 
-    def _parse_legislator(self, row, chamber, term):
+    def _parse_legislator(self, row, chamber, term, seat_map):
         # Capture legislator vitals.
         first_name = row['FirstName']
         middle_name = row['MiddleName']
@@ -59,15 +62,19 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
                               address=district_address)
 
         # Retrieve legislator portrait.
-        #profile_url = None
-        #if chamber == 'upper':
-        #    profile_url = 'http://www.gencourt.state.nh.us/Senate/members/webpages/district{:02d}.aspx'.format(row['District'])
-        #elif chamber == 'lower':
-        #    profile_url = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member={}'.format(row['employee_no'])
+        profile_url = None
+        if chamber == 'upper':
+            profile_url = self.senate_profile_url.format(row['District'])
+        elif chamber == 'lower':
+            try:
+                seat_number = seat_map[row['seatno']]
+                profile_url = self.house_profile_url.format(seat_number)
+            except KeyError:
+                pass
 
-        #if profile_url:
-        #    legislator['photo_url'] = self._get_photo(profile_url, chamber)
-        #    legislator.add_source(profile_url)
+        if profile_url:
+            legislator['photo_url'] = self._get_photo(profile_url, chamber)
+            legislator.add_source(profile_url)
 
         return legislator
 
@@ -79,9 +86,25 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         for line in lines[1:]:
             yield dict(zip(header, line.split('\t')))
 
+    def _parse_seat_map(self):
+        """Get mapping between seat numbers and legislator identifiers."""
+        seat_map = {}
+        page = self.lxmlize(self.lookup_url)
+        options = page.xpath('//select[@id="member"]/option')
+        for option in options:
+            member_url = self.house_profile_url.format(option.attrib['value'])
+            member_page = self.lxmlize(member_url)
+            table = member_page.xpath('//table[@id="Table1"]')
+            if table:
+                res = re.search(r'seat #:(\d+)', table[0].text_content(), re.IGNORECASE)
+                if res:
+                    seat_map[res.groups()[0]] = option.attrib['value']
+        return seat_map
+
     def scrape(self, chamber, term):
+        seat_map = self._parse_seat_map()
         for row in self._parse_members_txt():
             if self.chamber_map[row['LegislativeBody']] == chamber:
-                leg = self._parse_legislator(row, chamber, term)
+                leg = self._parse_legislator(row, chamber, term, seat_map)
                 leg.add_source(self.members_url)
                 self.save_legislator(leg)
