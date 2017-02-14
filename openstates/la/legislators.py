@@ -56,7 +56,7 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
 
         if not address:
             address = "No Address Found"
-        
+
         fax_index = info.index("Fax") + 1
         fax = info[fax_index]
         assert (sum(c.isdigit() for c in fax) == 9,
@@ -148,7 +148,9 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         url = "http://house.louisiana.gov/H_Reps/H_Reps_FullInfo.aspx"
         page = self.lxmlize(url)
         meta = ["name", "dist", "office", "phone"]
-        for tr in page.xpath("//table[@id='body_ListView1_itemPlaceholderContainer']//tr")[1:]:
+        for tr in page.xpath(
+                "//table[@id='body_ListView1_itemPlaceholderContainer']//tr"
+                )[1:]:
             ths = tr.xpath("./th")
             if ths == []:
                 continue
