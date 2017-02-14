@@ -156,9 +156,9 @@ class BillDetail(Page):
 
                 atype = []
                 if action.startswith('Referred to'):
-                    atype.append('committee-referral')
+                    atype.append('referral-committee')
                 elif action.startswith('Favorable by'):
-                    atype.append('committee-passage')
+                    atype.append('committee-passage-favorable')
                 elif action == "Filed":
                     atype.append("filing")
                 elif action.startswith("Withdrawn"):
