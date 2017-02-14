@@ -96,29 +96,28 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape_lower_legislator(self, url, leg_info, term):
         page = self.lxmlize(url)
 
-        name = page.xpath('//div[@class="FullName"]/text()')[0].strip()
+        name = page.xpath(
+            '//span[@id="body_FormView5_FULLNAMELabel"]/text()'
+            )[0].strip()
         if name.startswith("District ") or name.startswith("Vacant "):
             self.warning("Seat is vacant: {}".format(name))
             return
 
-        photo = xpath_one(page, '//a[@rel="lightbox"]').attrib['href']
-        infoblk = xpath_one(
-            page, '//td/b[contains(text(), "CAUCUS/DELEGATION MEMBERSHIP")]')
-        infoblk = infoblk.getparent()
-        cty = xpath_one(infoblk, "./b[contains(text(), 'ASSIGNMENTS')]")
-        cty = cty.getnext()
-
+        photo = page.xpath(
+            '//img[contains(@src, "/h_reps/RepPics")]'
+            )[0].attrib['src']
         party_flags = {
             "Democrat": "Democratic",
             "Republican": "Republican",
             "Independent": "Independent"
         }
         party_info = page.xpath(
-            '//div[@class="FullName"]//following-sibling::text()[1]')
-        (party_info, ) = [x.strip() for x in party_info if x.strip()]
-        party_info = party_info.split('-')[0].strip()
+            '//span[@id="body_FormView5_PARTYAFFILIATIONLabel"]/text()'
+            )[0].strip()
         party = party_flags[party_info]
-
+        email = page.xpath(
+            '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
+            )[0].strip()
         kwargs = {"url": url,
                   "party": party,
                   "photo_url": photo}
@@ -132,7 +131,7 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         kwargs = {
             "address": leg_info['office'],
             "phone": leg_info['phone'],
-            "email": leg_info['email'],
+            "email": email,
         }
         for key in kwargs.keys():
             if not kwargs[key].strip():
@@ -146,17 +145,17 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         self.save_legislator(leg)
 
     def scrape_lower(self, chamber, term):
-        url = "http://house.louisiana.gov/H_Reps/H_Reps_FullInfo.asp"
+        url = "http://house.louisiana.gov/H_Reps/H_Reps_FullInfo.aspx"
         page = self.lxmlize(url)
-        meta = ["name", "dist", "office", "phone", "email"]
-        for tr in page.xpath("//table[@id='table61']//tr"):
-            tds = tr.xpath("./td")
-            if tds == []:
+        meta = ["name", "dist", "office", "phone"]
+        for tr in page.xpath("//table[@id='body_ListView1_itemPlaceholderContainer']//tr")[1:]:
+            ths = tr.xpath("./th")
+            if ths == []:
                 continue
 
             info = {}
             for i in range(0, len(meta)):
-                info[meta[i]] = tds[i].text_content().strip()
+                info[meta[i]] = ths[i].text_content().strip()
 
             hrp = tr.xpath(
                 ".//a[contains(@href, 'H_Reps')]")[0].attrib['href']
