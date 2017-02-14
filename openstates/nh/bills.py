@@ -1,20 +1,21 @@
-import os
 import re
-import zipfile
 import datetime as dt
 
 from billy.scrape.bills import Bill, BillScraper
 from billy.scrape.votes import Vote
 
+from openstates.nh.legacyBills import NHLegacyBillScraper
+
 
 body_code = {'lower': 'H', 'upper': 'S'}
-bill_type_map = {'B': 'bill',
-                 'R': 'resolution',
-                 'CR': 'concurrent resolution',
-                 'JR': 'joint resolution',
-                 'CO': 'concurrent order',
-                 'A': "address"
-                }
+bill_type_map = {
+    'B': 'bill',
+    'R': 'resolution',
+    'CR': 'concurrent resolution',
+    'JR': 'joint resolution',
+    'CO': 'concurrent order',
+    'A': 'address',
+}
 action_classifiers = [
     ('Ought to Pass', ['bill:passed']),
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
@@ -51,7 +52,7 @@ class NHBillScraper(BillScraper):
         if int(session) < 2017:
             legacy = NHLegacyBillScraper(self.metadata, self.output_dir, self.strict_validation)
             legacy.scrape(chamber, session)
-            # This throws an error because object_count isn't being properly incremented, 
+            # This throws an error because object_count isn't being properly incremented,
             # even though it saves fine. So fake the output_names
             self.output_names = ['1']
             return
@@ -59,7 +60,7 @@ class NHBillScraper(BillScraper):
         # bill basics
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
-        self.versions_by_lsr = {} # mapping of bill ID to lsr
+        self.versions_by_lsr = {}  # mapping of bill ID to lsr
 
         # pre load the mapping table of LSR -> version id
         self.scrape_version_ids()
@@ -121,7 +122,7 @@ class NHBillScraper(BillScraper):
         self.legislators = {}
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt').content.split("\n"):
             if len(line) < 1:
-                continue 
+                continue
 
             line = line.split('|')
             employee_num = line[0]
@@ -139,7 +140,7 @@ class NHBillScraper(BillScraper):
         # sponsors
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt').content.split("\n"):
             if len(line) < 1:
-                continue 
+                continue
 
             session_yr, lsr, seq, employee, primary = line.strip().split('|')
 
@@ -156,7 +157,7 @@ class NHBillScraper(BillScraper):
         # actions
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
             if len(line) < 1:
-                continue 
+                continue
             # a few blank/irregular lines, irritating
             if '|' not in line:
                 continue
@@ -209,7 +210,7 @@ class NHBillScraper(BillScraper):
 
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content:
             if len(line) < 2:
-                continue 
+                continue
 
             if line.strip() == "":
                 continue
@@ -247,7 +248,7 @@ class NHBillScraper(BillScraper):
         for line in  self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt').content:
             if len(line) < 2:
                 continue
-            
+
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | HB309  | Yea |1/4/2012 8:27:03 PM
             session_yr, body, v_num, employee, bill_id, vote \
@@ -264,7 +265,7 @@ class NHBillScraper(BillScraper):
                     continue
 
                 vote = vote.strip()
-                if not body+v_num in votes:
+                if body+v_num not in votes:
                     self.warning("Skipping processing this vote:")
                     self.warning("Bad ID: %s" % ( body+v_num ) )
                     continue

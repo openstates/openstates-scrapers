@@ -3,6 +3,8 @@ import re
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
+from openstates.nh import legacy_committees
+
 
 class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'nh'
@@ -18,6 +20,10 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
              'committees/committee_details.aspx?cc={}',
         'h': 'http://www.gencourt.state.nh.us/house/'
              'committees/committeedetails.aspx?code={}',
+    }
+    _role_map = {
+        'chairman': 'chair',
+        'v chairman': 'vice chair',
     }
 
     def _parse_committees_text(self, chamber):
@@ -60,10 +66,14 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
         for link in links:
             name = re.sub(r'\s+', ' ', link.text_content()).replace(u'\xa0', ' ').strip()
             role = 'member'
-            parent = link.getparent()
-            if parent.attrib.get('width') == '38%':
-                role = parent.getprevious().text_content().strip(':').lower()
-            committee.add_member(name, role)
+            # Check whether member has a non-default role
+            for ancestor in link.iterancestors():
+                if ancestor.tag == 'table':
+                    if ancestor.attrib.get('id') == 'Table2':
+                        header = link.getparent().getprevious()
+                        role = header.text_content().strip(':').lower()
+                    break
+            committee.add_member(name, self._parse_role(role))
 
     def _parse_members_senate(self, committee, url):
         page = self.lxmlize(url)
@@ -71,6 +81,7 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
         names = [link.text_content().strip() for link in links]
         if not names:
             return
+        # Get intermingled list of members and roles
         rows = [
             each.strip()
             for each in links[0].getparent().text_content().strip().split('\r\n')
@@ -81,8 +92,19 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
             role = 'member'
             if rows and rows[0] not in names:
                 role = rows.pop(0).lower()
-            committee.add_member(name, role)
+            committee.add_member(name, self._parse_role(role))
+
+    def _parse_role(self, role):
+        key = role.lower().replace('.', '')
+        return self._role_map.get(key, 'member')
 
     def scrape(self, chamber, term):
+        years = [int(year) for year in term.split('-')]
+        if years[0] < 2017:
+            return legacy_committees.NHCommitteeScraper(
+                self.metadata,
+                self.output_dir,
+                self.strict_validation,
+            ).scrape(chamber, term)
         for committee in self._parse_committees_text(chamber):
             self.save_committee(committee)
