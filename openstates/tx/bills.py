@@ -279,7 +279,8 @@ class TXBillScraper(BillScraper, LXMLMixin):
                                  cosponsor,
                                  official_type='cosponsor')
 
-        self._get_companion(bill)
+        if root.findtext('companions'):
+            self._get_companion(bill)
 
         self.save_bill(bill)
 
