@@ -5,7 +5,6 @@ services:
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
-    - CA_DOWNLOAD=true
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     volumes:

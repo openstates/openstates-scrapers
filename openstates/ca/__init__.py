@@ -1,4 +1,3 @@
-import os
 import datetime
 import lxml.html
 from .bills import CABillScraper
@@ -181,11 +180,3 @@ def extract_text(doc, data):
         div = doc.xpath(xpath)
         if div:
             return div[0].text_content()
-
-
-if os.environ.get('CA_DOWNLOAD'):
-    from . import download
-    download.db_drop()
-    download.db_create()
-    contents = download.get_contents()
-    download.get_current_year(contents)
