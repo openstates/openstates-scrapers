@@ -71,8 +71,11 @@ rules = (
     Rule(u'(?i)refer (un)?amended to (?P<committees>.+)',
          [u'committee:referred']),
     Rule(u'(?i)\S+ Committee on (?P<committees>.+?) Refer (un)amended'),
+    Rule(u'Assigned to (<?P<committees>.+?)', 'committee:referred'),
     Rule(u'Second Reading Passed', [u'bill:reading:2']),
-    Rule(u'Third Reading Passed', ['bill:reading:3', 'bill:passed'])
+    Rule(u'Third Reading Passed', ['bill:reading:3', 'bill:passed']),
+    Rule(u'to Senate Committee of the Whole', 'committee:passed', actor='upper'),
+    Rule(u'to House Committee of the Whole', 'committee:passed', actor='lower')
     )
 
 committees_rgx = '(%s)' % '|'.join(
