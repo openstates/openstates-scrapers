@@ -1,3 +1,4 @@
+import os
 import datetime
 import lxml.html
 from .bills import CABillScraper
@@ -13,7 +14,7 @@ metadata = dict(
     capitol_timezone='America/Los_Angeles',
     legislature_name='California State Legislature',
     legislature_url='http://www.legislature.ca.gov/',
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assemblymember'},
     },
@@ -157,7 +158,7 @@ metadata = dict(
         '1997-1998',
         '1995-1996',
         '1993-1994'
-        ]
+    ]
 )
 
 
@@ -180,3 +181,11 @@ def extract_text(doc, data):
         div = doc.xpath(xpath)
         if div:
             return div[0].text_content()
+
+
+if os.environ.get('CA_DOWNLOAD'):
+    from . import download
+    download.db_drop()
+    download.db_create()
+    contents = download.get_contents()
+    download.get_current_year(contents)

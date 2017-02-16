@@ -4,6 +4,8 @@ services:
     build: .
     environment:
     - BILLY_MONGO_HOST=database
+    - MYSQL_HOST=mysql
+    - CA_DOWNLOAD=true
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     volumes:
@@ -16,3 +18,9 @@ services:
     image: mongo
     ports:
     - "27017:27017"
+  mysql:
+    image: mysql
+    ports:
+    - "3306:3306"
+    environment:
+    - MYSQL_DATABASE=capublic
