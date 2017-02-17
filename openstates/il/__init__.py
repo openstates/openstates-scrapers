@@ -1,9 +1,9 @@
 # encoding=utf-8
 from pupa.scrape import Jurisdiction, Organization
-from .vote_events import IlVoteEventScraper
-from .bills import IlBillScraper
+#from .vote_events import IlVoteEventScraper
+#from .bills import IlBillScraper
 from .people import IlPersonScraper
-from .events import IlEventScraper
+#from .events import IlEventScraper
 
 
 class Il(Jurisdiction):

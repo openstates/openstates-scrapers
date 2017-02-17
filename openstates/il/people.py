@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pupa.scrape import Scraper
 from pupa.scrape import Person
 import lxml.html
@@ -14,6 +16,20 @@ BIRTH_DATES = {'Daniel Biss' : '1977-08-27'}
 
 class IlPersonScraper(Scraper):
     def scrape(self):
+        for legislator, terms in self.legislators().values():
+            for chamber, district, term, party in terms:
+                if chamber == 'upper':
+                    role = 'Senator'
+                else:
+                    role = 'Representative'
+                legislator.add_term(role, chamber, district=district)
+
+            
+            yield legislator
+
+    def legislators(self):
+        legs = {}
+    
         for member, chamber, term, url in self._memberships():
             name, _, _, district, party = member.xpath('td')
             district = district.text
@@ -31,13 +47,14 @@ class IlPersonScraper(Scraper):
             if name.endswith('*'):
                 name = name.strip('*')
                 continue
-            
-            p = Person(name,
-                       district=district,
-                       primary_org=chamber, 
-                       role=CHAMBER_ROLES[chamber],
-                       party=party)
 
+            if name in legs:
+                p, terms = legs[name]
+                terms.append((chamber, district, term, party))
+            else :
+                p = Person(name)
+                legs[name] = p, [(chamber, district, term, party)]
+            
             p.add_source(url)
 
             birth_date = BIRTH_DATES.get(name, None)
@@ -55,13 +72,13 @@ class IlPersonScraper(Scraper):
             if hotgarbage in leg_html:
                 # The legislator's bio isn't available yet.
                 self.logger.warning('No legislator bio available for ' + name)
-                yield p
                 continue
 
 
             photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
             p.image = photo_url
 
+            p.contact_details = []
             # email
             email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
@@ -73,22 +90,14 @@ class IlPersonScraper(Scraper):
             for location, xpath in offices.items():
                 table = leg_doc.xpath(xpath)
                 if table:
-                    addr, phone, fax = self._table_to_office(table[3])
-                    if addr:
-                        p.add_contact_detail(type='address', value=addr, note=location)
-                    if phone:
-                        p.add_contact_detail(type='voice', value=phone, note=location)
-                    if fax:
-                        p.add_contact_detail(type='fax', value=fax, note=location)
+                    for type, value in self._table_to_office(table[3]):
+                        p.add_contact_detail(type=type, value=value, note=location)
 
-
-            yield p
+        return legs
 
     # function for turning an IL contact info table to office details
     def _table_to_office(self, table):
         addr = ''
-        phone = None
-        fax = None
         for row in table.xpath('tr'):
             row = row.text_content().strip()
             # skip rows that aren't part of address
@@ -96,20 +105,21 @@ class IlPersonScraper(Scraper):
                 continue
             # fax number row ends with FAX
             elif 'FAX' in row:
-                fax = row.replace(' FAX', '')
+                yield 'fax', row.replace(' FAX', '')
             # phone number starts with ( [make it more specific?]
             elif row.startswith('('):
-                phone = row
+                yield 'voice', row
             # everything else is an address
             else:
                 addr += (row + '\n')
 
-        return addr, phone, fax
+        if addr:
+            yield 'address', addr
             
         
 
     def _memberships(self):
-        for term in range(99, 100):
+        for term in range(93, 100):
             for chamber, base_url in CHAMBER_URLS.items():
                 url = base_url.format(term=term)
                 
