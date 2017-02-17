@@ -1,4 +1,5 @@
 from collections import defaultdict
+import itertools
 
 from pupa.scrape import Scraper
 from pupa.scrape import Person
@@ -17,12 +18,12 @@ BIRTH_DATES = {'Daniel Biss' : '1977-08-27'}
 class IlPersonScraper(Scraper):
     def scrape(self):
         for legislator, terms in self.legislators().values():
-            for chamber, district, term, party in terms:
-                if chamber == 'upper':
-                    role = 'Senator'
-                else:
-                    role = 'Representative'
-                legislator.add_term(role, chamber, district=district)
+            for chamber, district, start, end, party in self._join_contiguous(terms):
+                role = CHAMBER_ROLES[chamber]
+                legislator.add_term(role, chamber,
+                                    district=district,
+                                    start_date=str(start),
+                                    end_date=str(end))
 
             
             yield legislator
@@ -116,8 +117,6 @@ class IlPersonScraper(Scraper):
         if addr:
             yield 'address', addr
             
-        
-
     def _memberships(self):
         for term in range(93, 100):
             for chamber, base_url in CHAMBER_URLS.items():
@@ -129,3 +128,17 @@ class IlPersonScraper(Scraper):
 
                 for row in page.xpath('//table')[4].xpath('tr')[2:]:
                     yield row, chamber, term, url
+
+    def _join_contiguous(self, terms):
+        joined_terms = []
+        terms = sorted(terms, key=lambda x : x[2])
+        for chamber, district, term, party in terms:
+            year = 1917 + term
+            if not joined_terms or (chamber, district, year - 1, party) != previous:
+                joined_terms.append([chamber, district, year, year, party])
+            else:
+                joined_terms[-1][3] = year
+
+            previous = (chamber, district, year, party)
+
+        return joined_terms
