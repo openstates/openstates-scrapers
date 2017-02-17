@@ -1,5 +1,7 @@
 data
 cache
+_cache
+_data
 *.pyc
 *.DS_Store
 *~
