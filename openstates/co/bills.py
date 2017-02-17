@@ -110,6 +110,7 @@ class COBillScraper(BillScraper, LXMLMixin):
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
         self.scrape_fiscal_notes(bill, page)
+        self.scrape_committee_report(bill, page)
         self.scrape_votes(bill, page)
 
         self.save_bill(bill)
@@ -195,6 +196,12 @@ class COBillScraper(BillScraper, LXMLMixin):
             note_url = note[0]
             bill.add_document("Research Note", note_url, 'application/pdf')
 
+    def scrape_committee_report(self, bill, page):
+        note = page.xpath('//a[text()="Committee Report"]/@href')
+        if note:
+            note_url = note[0]
+            bill.add_version("Committee Amendment", note_url, 'application/pdf')
+
     def scrape_votes(self, bill, page):
         votes = page.xpath('//div[@id="bill-documents-tabs3"]//table//tbody//tr')
 
@@ -217,7 +224,8 @@ class COBillScraper(BillScraper, LXMLMixin):
             elif 'House' in header.group('committee'):
                 chamber = 'lower'
             else:
-                self.warning("No committee for %s" % header.group('committee'))
+                self.warning("No chamber for %s" % header.group('committee'))
+                chamber = bill['chamber']
 
             date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
 
