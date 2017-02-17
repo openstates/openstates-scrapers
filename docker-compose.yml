@@ -1,17 +1,16 @@
 version: "2"
 services:
-  openstates:
+  scrape:
     build: .
     environment:
     - BILLY_MONGO_HOST=database
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     volumes:
-    - .:/srv/openstates-web
-    ports:
-    - "8000:8000"
+    - .:/opt/openstates/openstates/
     depends_on:
     - database
+    entrypoint: /opt/openstates/openstates/scrape.sh
   database:
     image: mongo
     ports:

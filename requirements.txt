@@ -1,27 +1,27 @@
-billy
 
-# scraping
-cffi
+# common
 xlrd
 lxml>=2.2
 pytz>=2010l
 feedparser>=4.1
+
 # California
-SQLAlchemy>=0.5.3
-MySQL-python
-# GA
-suds
-chardet
+#SQLAlchemy>=0.5.3
+#MySQL-python
+
+# Georgia
+#suds
+#chardet
 
 # Massachussetts votes
-sh
--e git://github.com/twneale/tater.git#egg=tater
-numpy
-# python-opencv
+#sh
+#-e git://github.com/twneale/tater.git#egg=tater
+#numpy
+#python-opencv
 
-#Indiana error handling
-pyopenssl
+# Indiana error handling
+#pyopenssl
 
-#NH Database Connectivity
-#NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
-pymssql
+# NH Database Connectivity
+# NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
+#pymssql
