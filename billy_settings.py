@@ -8,7 +8,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # not the root. This throws openstates.utils off, and isn't worth fiddling
 # that much with.
 
-SCRAPER_PATHS=[os.path.join(os.getcwd(), 'openstates')]
+# removed scraper paths for pupa2billy since we need to do weird things
+# SCRAPER_PATHS=[os.path.join(os.getcwd(), 'openstates')]
+
 MONGO_HOST = os.environ.get('BILLY_MONGO_HOST', 'localhost')
 MONGO_PORT = 27017
 MONGO_DATABASE = 'fiftystates'

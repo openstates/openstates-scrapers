@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ev
+set -e
 
 #PUPA_ENV=~/.virtualenvs/pupa
 #BILLY_ENV=~/.virtualenvs/openstates
@@ -9,7 +9,7 @@ set -ev
 state=$1
 shift
 
-export PYTHONPATH=/opt/openstates/openstates/openstates/:./openstates
+export PYTHONPATH=./openstates
 $PUPA_ENV/bin/pupa update $state --scrape "$@"
 export PUPA_DATA_DIR='../openstates/_data'
 export PYTHONPATH=./billy_metadata/
