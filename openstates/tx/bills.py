@@ -2,13 +2,15 @@ import datetime
 import ftplib
 import re
 import time
+import urlparse
 import xml.etree.cElementTree as etree
 
 from billy.scrape import ScrapeError
 from billy.scrape.bills import BillScraper, Bill
+from openstates.utils import LXMLMixin
 
 
-class TXBillScraper(BillScraper):
+class TXBillScraper(BillScraper, LXMLMixin):
     jurisdiction = 'tx'
     _FTP_ROOT = 'ftp.legis.state.tx.us'
     CHAMBERS = {'H': 'lower', 'S': 'upper'}
@@ -19,6 +21,10 @@ class TXBillScraper(BillScraper):
         'H': 'House Committee Report',
         'F': 'Enrolled'
     }
+    companion_url = (
+        'http://www.legis.state.tx.us/BillLookup/Companions.aspx'
+        '?LegSess={}&Bill={}'
+    )
 
     def _get_ftp_files(self, root, dir_):
         ''' Recursively traverse an FTP directory, returning all files '''
@@ -54,10 +60,7 @@ class TXBillScraper(BillScraper):
     def scrape(self, session, chambers):
         self.validate_session(session)
 
-        session_code = session
-        if len(session_code) == 2:
-            session_code = session_code + 'R'
-        assert len(session_code) == 3, "Unable to handle the session name"
+        session_code = self._format_session(session)
 
         self.versions = []
         version_files = self._get_ftp_files(self._FTP_ROOT,
@@ -276,4 +279,32 @@ class TXBillScraper(BillScraper):
                                  cosponsor,
                                  official_type='cosponsor')
 
+        if root.findtext('companions'):
+            self._get_companion(bill)
+
         self.save_bill(bill)
+
+    def _get_companion(self, bill):
+        url = self.companion_url.format(
+            self._format_session(bill['session']),
+            self._format_bill_id(bill['bill_id']),
+        )
+        page = self.lxmlize(url)
+        links = page.xpath('//table[@id="Table6"]//a')
+        for link in links:
+            parsed = urlparse.urlparse(link.attrib['href'])
+            query = urlparse.parse_qs(parsed.query)
+            bill.add_companion(
+                query['Bill'][0],
+                query['LegSess'][0],
+                self.CHAMBERS[query['Bill'][0][0]],
+            )
+
+    def _format_session(self, session):
+        if len(session) == 2:
+            session = session + 'R'
+        assert len(session) == 3, "Unable to handle the session name"
+        return session
+
+    def _format_bill_id(self, bill_id):
+        return bill_id.replace(' ', '')
