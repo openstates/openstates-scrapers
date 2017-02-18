@@ -121,10 +121,11 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         kwargs = {"url": url,
                   "party": party,
                   "photo_url": photo}
+        district = leg_info['dist'].replace('Dist', '').strip()
 
         leg = Legislator(term,
                          'lower',
-                         leg_info['dist'],
+                         district,
                          leg_info['name'],
                          **kwargs)
 
