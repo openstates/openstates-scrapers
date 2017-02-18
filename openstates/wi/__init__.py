@@ -124,7 +124,7 @@ metadata = {
         },
         '2017 Regular Session': {
             'start_date': datetime.date(2017, 1, 3),
-            'end_date': datetime.date(2017, 1, 11),
+            'end_date': datetime.date(2018, 5, 23),
             'type': 'primary',
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017 Regular Session',
@@ -134,6 +134,8 @@ metadata = {
                       'events', 
                       'influenceexplorer'],
     '_ignored_scraped_sessions': [
+        # The WI Website has multiple special sessions in the system with no data.
+        'January 2017 Special Session',
         'February 2015 Extraordinary Session',
         '2007 Regular Session', 'April 2008 Special Session',
         'March 2008 Special Session', 'December 2007 Special Session',

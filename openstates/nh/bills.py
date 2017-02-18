@@ -61,9 +61,11 @@ class NHBillScraper(BillScraper):
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
         self.versions_by_lsr = {}  # mapping of bill ID to lsr
+        self.amendments_by_lsr = {}
 
         # pre load the mapping table of LSR -> version id
         self.scrape_version_ids()
+        self.scrape_amendments()
 
         last_line = []
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt').content.split("\n"):
@@ -115,6 +117,19 @@ class NHBillScraper(BillScraper):
 
                     self.bills[lsr].add_version('latest version', version_url,
                                                 mimetype='text/html', on_duplicate='use_new')
+
+
+                # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
+                if lsr in self.amendments_by_lsr:
+                    amendment_id = self.amendments_by_lsr[lsr]
+                    amendment_url = 'http://www.gencourt.state.nh.us/bill_status/' \
+                                  'billText.aspx?sy={}&id={}&txtFormat=amend' \
+                                  .format(session, amendment_id)
+                    amendment_name = 'Amendment #{}'.format(amendment_id)
+
+                    self.bills[lsr].add_version(amendment_name, amendment_url,
+                                                mimetype='application/pdf', on_duplicate='use_new')
+
 
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
@@ -203,6 +218,21 @@ class NHBillScraper(BillScraper):
             lsr = lsr[1]
             self.versions_by_lsr[lsr] = file_id
 
+    def scrape_amendments(self):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
+            if len(line) < 1:
+                continue
+            # a few blank/irregular lines, irritating
+            if '|' not in line:
+                continue
+
+            line = line.split('|')
+            lsr = line[1]
+
+            amendment_regex = re.compile(r'Amendment # (\d{4}-\d+\w)', re.IGNORECASE)
+
+            for match in amendment_regex.finditer(line[5]):
+                self.amendments_by_lsr[lsr] = match.group(1)
 
     def scrape_votes(self, session):
         votes = {}
