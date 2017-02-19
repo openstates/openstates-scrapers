@@ -14,6 +14,7 @@ class HouseComDetail(Page):
         name = name.replace(' [D]', '')
         name = name.replace(' [R]', '')
         name = name.replace(' [I]', '')
+        name = name.strip()
         return name
 
     def handle_page(self):
@@ -44,7 +45,7 @@ class SenComList(Page):
 
 class SenComDetail(Page):
     def clean_name(self, member):
-        member = member.replace('Senator ', '')
+        member = member.replace('Senator ', '').strip()
         member = member.replace(' (D)', '')
         member = member.replace(' (R)', '')
         member = member.replace(' (I)', '')
