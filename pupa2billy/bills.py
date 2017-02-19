@@ -26,7 +26,7 @@ ACTION_MAPPING = {
     'committee-failure': 'committee:failed',
     'committee-passage': 'committee:passed',
     'committee-passage-favorable': 'committee:passed:favorable',
-    'committee-passage-unfavorable':'committee:passed:unfavorable',
+    'committee-passage-unfavorable': 'committee:passed:unfavorable',
     'reading-1': 'bill:reading:1',
     'reading-2': 'bill:reading:2',
     'reading-3': 'bill:reading:3',

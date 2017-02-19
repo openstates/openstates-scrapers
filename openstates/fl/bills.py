@@ -1,6 +1,4 @@
 import re
-import os
-import csv
 import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
@@ -71,24 +69,7 @@ class BillList(Page):
         yield bill
 
 
-class LocationMatcher:
-
-    def __init__(self):
-        self.places = []
-        with open(os.path.join(os.path.dirname(__file__), 'places.csv')) as places:
-            place_csv = csv.DictReader(places)
-            for row in place_csv:
-                self.places.append(row['name'])
-
-        self.regex = '|'.join('\W{}\W'.format(p) for p in self.places)
-
-    def match(self, text):
-        # strip non-match chars off (b/c of 100-group limit on regex)
-        return list({word[1:-1] for word in re.findall(self.regex, text)})
-
-
 class BillDetail(Page):
-    #loc_matcher = LocationMatcher()
 
     def handle_page(self):
         self.process_history()
@@ -109,9 +90,6 @@ class BillDetail(Page):
                 elif version_url.endswith('HTML'):
                     mimetype = 'text/html'
                     text = self.scrape_page(BillVersionHTML, url=version_url)
-
-                # look for place names in text
-                #self.obj.extras['places'] = self.loc_matcher.match(text)
 
                 self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
         except IndexError:
