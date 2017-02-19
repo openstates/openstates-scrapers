@@ -27,6 +27,7 @@ RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
 RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa
 
 ENV PYTHONIOENCODING 'utf-8'
