@@ -2,6 +2,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
 from .people import FlPersonScraper
+from .committees import FlCommitteeScraper
 # TODO: this should probably be moved somewhere common
 from .common import url_xpath
 
@@ -15,6 +16,7 @@ class Florida(Jurisdiction):
     scrapers = {
         "bills": FlBillScraper,
         "people": FlPersonScraper,
+        "committees": FlCommitteeScraper,
     }
     parties = [{'name': 'Republican'},
                {'name': 'Democratic'}]
