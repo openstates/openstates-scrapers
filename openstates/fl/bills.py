@@ -2,6 +2,7 @@ import re
 import os
 import csv
 import datetime
+from urllib.parse import urlencode
 from collections import defaultdict
 from pupa.scrape import Scraper, Bill, VoteEvent
 from .base import Page, PDF, Spatula
@@ -425,15 +426,11 @@ class HousePage(Page):
         }[self.kwargs['bill'].legislative_session]
 
         form = {
-            'rblChamber': 'B',
-            'ddlSession': session_number,
-            'ddlBillList': '-1',
-            'txtBillNumber': bill_number,
-            'ddlSponsor': '-1',
-            'ddlReferredTo': '-1',
-            'SubmittedByControl': '',
+            'Chamber': 'B',
+            'SessionId': session_number,
+            'BillNumber': bill_number,
         }
-        return self.scraper.post(self.url, data=form)
+        return self.scraper.get(self.url + '?' + urlencode(form))
 
     def handle_list_item(self, item):
         yield from self.scrape_page_items(HouseBillPage, item, bill=self.kwargs['bill'])
