@@ -5,6 +5,7 @@ import shutil
 import importlib
 from .legislators import PupaLegislatorScraper
 from .bills import PupaBillScraper
+from .votes import PupaVoteScraper
 from .settings import BILLY_DATA_DIR
 
 
@@ -21,9 +22,13 @@ if __name__ == '__main__':
     juris_dir = os.path.join(BILLY_DATA_DIR, jurisdiction)
     os.makedirs(os.path.join(juris_dir, 'legislators'))
     os.makedirs(os.path.join(juris_dir, 'bills'))
+    os.makedirs(os.path.join(juris_dir, 'votes'))
 
     ls = PupaLegislatorScraper(metadata, juris_dir, jurisdiction=jurisdiction)
     ls.scrape()
 
     bs = PupaBillScraper(metadata, juris_dir, jurisdiction=jurisdiction)
     bs.scrape()
+
+    vs = PupaVoteScraper(metadata, juris_dir, jurisdiction=jurisdiction)
+    vs.scrape()

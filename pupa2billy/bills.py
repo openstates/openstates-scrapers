@@ -1,5 +1,5 @@
 import datetime
-from .utils import get_json, parse_psuedo_id
+from .utils import get_json, parse_psuedo_id, parse_date
 from billy.scrape.bills import BillScraper, Bill
 
 
@@ -36,10 +36,6 @@ ACTION_MAPPING = {
 }
 
 
-def _date(date):
-    return datetime.datetime.strptime('2017-01-01', '%Y-%m-%d')
-
-
 def _action_categories(categories):
     return [ACTION_MAPPING[c] for c in categories if c != 'other']
 
@@ -64,7 +60,7 @@ class PupaBillScraper(BillScraper):
             actor = parse_psuedo_id(action['organization_id'])['classification']
             bill.add_action(actor,
                             action['description'],
-                            _date(action['date']),
+                            parse_date(action['date']),
                             type=_action_categories(action['classification']))
             # TODO: related entities
 
@@ -80,13 +76,13 @@ class PupaBillScraper(BillScraper):
             for link in version['links']:
                 bill.add_version(version['note'], link['url'],
                                  mimetype=link['media_type'],
-                                 date=_date(version['date']))
+                                 date=parse_date(version['date']))
 
         for doc in data['documents']:
             for link in doc['links']:
                 bill.add_document(doc['note'], link['url'],
                                   mimetype=link['media_type'],
-                                  date=_date(doc['date']))
+                                  date=parse_date(doc['date']))
 
         for title in data['other_titles']:
             bill.add_title(title)
