@@ -9,7 +9,7 @@ set -e
 state=$1
 shift
 
-export PYTHONPATH=./openstates
+export PYTHONPATH=./scrapers
 $PUPA_ENV/bin/pupa update $state --scrape "$@"
 export PUPA_DATA_DIR='../openstates/_data'
 export PYTHONPATH=./billy_metadata/
