@@ -507,7 +507,12 @@ class SubjectPDF(PDF):
 
 class FlBillScraper(Scraper, Spatula):
 
-    def scrape(self, session):
+    def scrape(self, session=None):
+        # TODO: there should probably be an easy way to do this in pupa
+        if not session:
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            self.info('no session specified, using', session)
+
         subject_url = ('http://www.leg.state.fl.us/data/session/{}/citator/Daily/subindex.pdf'
                        .format(session))
         subjects = self.scrape_page(SubjectPDF, subject_url)
