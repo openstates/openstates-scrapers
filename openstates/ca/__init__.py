@@ -13,7 +13,7 @@ metadata = dict(
     capitol_timezone='America/Los_Angeles',
     legislature_name='California State Legislature',
     legislature_url='http://www.legislature.ca.gov/',
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assemblymember'},
     },
@@ -157,7 +157,7 @@ metadata = dict(
         '1997-1998',
         '1995-1996',
         '1993-1994'
-        ]
+    ]
 )
 
 

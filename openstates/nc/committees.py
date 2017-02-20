@@ -17,10 +17,23 @@ class NCCommitteeScraper(CommitteeScraper):
             mtype, members = row.getchildren()
             if mtype.text == 'Members':
                 for m in members.getchildren():
-                    committee.add_member(m.text)
+                    member_name = self._clean_member_name(m.text)
+                    committee.add_member(member_name)
             else:
-                committee.add_member(members.text_content(), mtype.text)
+                member_name = self._clean_member_name(members.text_content())
+                committee.add_member(member_name, mtype.text)
 
+    def _clean_member_name(self, name):
+        """Names are displayed as "Office. LastName", e.g. "Rep. Adamsa". This strips the "Office. "
+
+        This helps the NameMatcher in billy link this to the correct legislator.
+        """
+        for prefix in ['Rep. ', 'Sen. ']:
+            if name.startswith(prefix):
+                return name.replace(prefix, '')
+
+        # If none hit, return the name as is
+        return name
 
     def scrape(self, term, chambers):
         base_url = 'http://www.ncga.state.nc.us/gascripts/Committees/Committees.asp?bPrintable=true&sAction=ViewCommitteeType&sActionDetails='

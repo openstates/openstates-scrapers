@@ -219,6 +219,11 @@ class LABillScraper(BillScraper, LXMLMixin):
         except IndexError:
             versions = []
 
+        try:
+            amendments = sbp("Amendments")
+        except IndexError:
+            amendments = []
+
         title = page.xpath(
             "//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
         actions = page.xpath(
@@ -244,6 +249,11 @@ class LABillScraper(BillScraper, LXMLMixin):
         for version in versions:
             bill.add_version(version.text,
                              version.attrib['href'],
+                             mimetype="application/pdf")
+
+        for amendment in amendments:
+            bill.add_version(amendment.text,
+                             amendment.attrib['href'],
                              mimetype="application/pdf")
 
         flags = {

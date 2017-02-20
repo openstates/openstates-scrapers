@@ -1,42 +1,48 @@
-FROM        ubuntu:latest
+FROM        openstates/billy:latest
 MAINTAINER  James Turk <james@openstates.org>
 
-RUN apt-get update && apt-get install -y \
-    python2.7 \
-    python-pip \
-    python-lxml \
-    libssl-dev \
-    python-dev \
-    python3-dev \
-    poppler-utils \
-    python-virtualenv \
-    python3.5 \
-    git \
-    libpq-dev \
-    libgeos-dev \
-    s3cmd \
-    freetds-dev \
-    curl \
-    wget \
-    unzip
+ARG DEBIAN_FRONTEND=noninteractive
 
+# add mongo 3.4 packages
+RUN echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.4 main" > /etc/apt/sources.list.d/mongodb-org-3.4.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
 
-RUN mkdir -p /opt/openstates/
+# CA requires MySQL (python-dev, mysql-server, libmysqlclient-dev) and utilities (wget, unzip)
+# NM and NJ require mdbtools
+# KS requires Abiword
+# NH requires FreeTDS
+RUN apt-get clean \
+    && apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+        locales \
+        python-dev \
+        libssl-dev \
+        libffi-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        poppler-utils \
+        s3cmd \
+        mongodb-org-tools \
+        mysql-server \
+        libmysqlclient-dev \
+        freetds-dev \
+        mdbtools \
+        abiword \
+        curl \
+        wget \
+        unzip
 
-RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
-RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=C.UTF-8
 
-RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa
+ENV PROJECT_PATH="/srv/openstates-web/"
+RUN mkdir -p ${PROJECT_PATH}
+ADD . ${PROJECT_PATH}
+RUN echo "${PROJECT_PATH}/openstates/" > /usr/lib/python2.7/dist-packages/openstates.pth
 
-ENV PYTHONIOENCODING 'utf-8'
-ENV LANG 'en_US.UTF-8'
-ENV BILLY_ENV /opt/openstates/venv-billy/
-ENV PUPA_ENV /opt/openstates/venv-pupa/
-
-ADD . /opt/openstates/openstates
-RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
-
-WORKDIR /opt/openstates/openstates/
-ENTRYPOINT [/opt/openstates/openstates/scrape.sh]
+RUN pip install -U pip
+RUN /usr/local/bin/pip install -U -r ${PROJECT_PATH}/requirements.txt
+RUN /usr/local/bin/pip install -e ${PROJECT_PATH}

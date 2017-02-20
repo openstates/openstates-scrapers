@@ -27,6 +27,9 @@ import _mysql_exceptions
 from billy.core import settings
 
 
+MYSQL_HOST = getattr(settings, 'MYSQL_HOST', 'localhost')
+MYSQL_HOST = os.environ.get('MYSQL_HOST', MYSQL_HOST)
+
 MYSQL_USER = getattr(settings, 'MYSQL_USER', 'root')
 MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
 
@@ -64,7 +67,7 @@ def db_drop():
     logger.info('dropping capublic...')
 
     try:
-        connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD, db='capublic')
+        connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db='capublic')
     except _mysql_exceptions.OperationalError:
         # The database doesn't exist.
         logger.info('...no such database. Bailing.')
@@ -169,7 +172,7 @@ def load(folder, sql_name=partial(re.compile(r'\.dat$').sub, '.sql')):
     logger.info('Loading data from %s...' % folder)
     os.chdir(folder)
 
-    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
+    connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic', local_infile=1)
     connection.autocommit(True)
 
@@ -232,7 +235,7 @@ def delete_session(session_year):
 
     logger.info('Deleting all data for session year %s...' % session_year)
 
-    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD,
+    connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD,
                                  db='capublic')
     connection.autocommit(True)
     cursor = connection.cursor()
@@ -263,7 +266,7 @@ def db_create():
         # so we have to split them up.
         sql_statements = f.read().split(';')
 
-    connection = MySQLdb.connect(user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+    connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
     connection.autocommit(True)
     cursor = connection.cursor()
 
