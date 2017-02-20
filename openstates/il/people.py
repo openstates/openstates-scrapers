@@ -1,8 +1,7 @@
 from collections import defaultdict
 import itertools
 
-from pupa.scrape import Scraper
-from pupa.scrape import Person
+from pupa.scrape import Scraper, Person
 import lxml.html
 
 CHAMBER_URLS = {
@@ -118,7 +117,7 @@ class IlPersonScraper(Scraper):
             yield 'address', addr
             
     def _memberships(self):
-        for term in range(93, 100):
+        for term in range(93, 101):
             for chamber, base_url in CHAMBER_URLS.items():
                 url = base_url.format(term=term)
                 

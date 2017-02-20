@@ -4,7 +4,7 @@ from pupa.scrape import Jurisdiction, Organization
 #from .bills import IlBillScraper
 from .people import IlPersonScraper
 #from .events import IlEventScraper
-
+from .committees import IlCommitteeScraper
 
 class Il(Jurisdiction):
     division_id = "ocd-division/country:us/state:il"
@@ -14,9 +14,26 @@ class Il(Jurisdiction):
     scrapers = {
         #"vote_events": IlVoteEventScraper,
         #"bills": IlBillScraper,
-        "people": IlPersonScraper,
+        #"people": IlPersonScraper,
         #"events": IlEventScraper,
+        "organizations": IlCommitteeScraper,
     }
+    
+    parties = [{'name': 'Republican'},
+               {'name': 'Democratic'}]
+
+    legislative_sessions = [
+        {'name': '93rd Regular Session', 'identifier': '93rd', 'classification' : 'primary'},
+        {'name': '93rd Special Session', 'identifier': '93rd-special', 'classification' : 'special'},
+        {'name': '94th Regular Session', 'identifier': '94th', 'classification' : 'primary'},
+        {'name': '95th Regular Session', 'identifier': '95th', 'classification' : 'primary'},
+        {'name': '95th Special Session', 'identifier': '95th-special', 'classification' : 'special'},
+        {'name': '96th Special Session', 'identifier': '96th', 'classification' : 'primary'},
+        {'name': '96th Special Session', 'identifier': '96th-special', 'classification' : 'special'},
+        {'name': '97th Special Session', 'identifier': '97th', 'classification' : 'primary'},
+        {'name': '98th Special Session', 'identifier': '98th', 'classification' : 'primary'},
+        {'name': '99th Special Session', 'identifier': '99th', 'classification' : 'primary'},
+        {'name': '100th Special Session', 'identifier': '100th', 'classification' : 'primary'},]
 
     def get_organizations(self):
         legis = Organization(name="Illinois General Assembly", classification="legislature")

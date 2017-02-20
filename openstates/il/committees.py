@@ -1,11 +1,9 @@
-from billy.scrape.committees import CommitteeScraper, Committee
-
+from pupa.scrape import Scraper, Organization
 import lxml.html
 
-class ILCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'il'
+class IlCommitteeScraper(Scraper):
 
-    def scrape_members(self, com, url):
+    def scrape_members(self, o, url):
         data = self.get(url).text
         if 'No members added' in data:
             return
@@ -18,11 +16,13 @@ class ILCommitteeScraper(CommitteeScraper):
             role = tds[0].text_content().replace(':','').strip().lower()
 
             name = tds[1].text_content().strip()
-            com.add_member(name, role)
+            o.add_member(name, role)
 
 
-    def scrape(self, chamber, term):
-        chamber_name = 'senate' if chamber == 'upper' else 'house'
+    def scrape(self):
+        #chamber_name = 'senate' if chamber == 'upper' else 'house'
+        chamber_name = 'senate'
+        chamber = 'upper'
 
         url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
         html = self.get(url).text
@@ -36,21 +36,27 @@ class ILCommitteeScraper(CommitteeScraper):
             code = a.getparent().getnext()
             if code is None:
                 #committee doesn't have a code, maybe it's a taskforce?
-                com = Committee(chamber, name)
+                o = Organization(name,
+                                 classification='committee',
+                                 chamber=chamber)
 
             else:
                 code = code.text_content().strip()
 
+
                 if 'Sub' in name:
-                    com = Committee(chamber, top_level_com, name, code=code)
+                    o = Organization(name,
+                                     classification='committee',
+                                     parent_id={'name' : top_level_com})
                 else:
                     top_level_com = name
-                    com = Committee(chamber, name, code=code)
+                    o = Organization(name,
+                                     classification='committee',
+                                     chamber=chamber)
 
             com_url = a.get('href')
-            self.scrape_members(com, com_url)
-            com.add_source(com_url)
-            if not com['members']:
-                self.log('skipping empty committee on {0}'.format(com_url))
-            else:
-                self.save_committee(com)
+            o.add_source(com_url)
+
+            self.scrape_members(o, com_url)
+            if o._related:
+                yield o

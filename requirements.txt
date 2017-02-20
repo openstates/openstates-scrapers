@@ -8,9 +8,9 @@ pytz>=2010l
 feedparser>=4.1
 # California
 SQLAlchemy>=0.5.3
-MySQL-python
+#MySQL-python
 # GA
-suds
+#suds
 chardet
 
 # Massachussetts votes
