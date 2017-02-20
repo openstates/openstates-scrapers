@@ -8,8 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # check billy_metadata first, in case this is just a pupa import
 SCRAPER_PATHS = [
-    os.path.join(os.getcwd(), 'billy_metadata')
-    os.path.join(os.getcwd(), 'openstates')
+    os.path.join(os.getcwd(), 'openstates'),
+    os.path.join(os.getcwd(), 'billy_metadata'),
 ]
 
 MONGO_HOST = os.environ.get('BILLY_MONGO_HOST', 'localhost')

@@ -1,7 +1,22 @@
 version: "3"
 services:
-  scrape:
+  openstates:
     build: .
+    environment:
+    - BILLY_MONGO_HOST=database
+    - MYSQL_HOST=mysql
+    - NEW_YORK_API_KEY
+    - INDIANA_API_KEY
+    volumes:
+    - .:/srv/openstates-web
+    ports:
+    - "8000:8000"
+    depends_on:
+    - database
+  scrape:
+    build:
+        context: .
+        dockerfile: Dockerfile-pupa
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
