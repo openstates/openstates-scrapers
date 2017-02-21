@@ -55,8 +55,13 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
             row['address2'], row['city'], row['State'], row['Zipcode']).strip()
 
+        phone = row['Phone'].strip()
+        if not phone:
+            phone = None
+
         legislator.add_office('district', 'Home Address',
-                              address=district_address)
+                              address=district_address,
+                              phone=phone)
 
         # Retrieve legislator portrait.
         #profile_url = None
