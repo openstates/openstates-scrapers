@@ -30,7 +30,6 @@ class HouseComList(Page):
                 chamber = None
 
 
-
 class HouseComDetail(Page):
 
     def clean_name(self, name):

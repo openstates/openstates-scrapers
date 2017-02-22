@@ -26,7 +26,7 @@ services:
     - .:/opt/openstates/openstates/
     depends_on:
     - database
-    entrypoint: /opt/openstates/openstates/scrape.sh
+    entrypoint: /opt/openstates/openstates/pupa-scrape.sh
   database:
     image: mongo
     ports:

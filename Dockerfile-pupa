@@ -39,4 +39,4 @@ ADD . /opt/openstates/openstates
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
 
 WORKDIR /opt/openstates/openstates/
-ENTRYPOINT [/opt/openstates/openstates/scrape.sh]
+ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]
