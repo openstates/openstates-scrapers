@@ -22,8 +22,12 @@ class PupaCommitteeScraper(CommitteeScraper):
         if data['classification'] != 'committee':
             return
 
-        chamber = parse_psuedo_id(data['parent_id'])['classification']
-        com = Committee(chamber, data['name'])
+        parent = parse_psuedo_id(data['parent_id'])
+        chamber = parent['classification']
+        if 'name' in parent:
+            com = Committee(chamber, parent['name'], subcommittee=data['name'])
+        else:
+            com = Committee(chamber, data['name'])
 
         for member in self.memberships[data['_id']]:
             com.add_member(member['person_name'], role=member['role'])
