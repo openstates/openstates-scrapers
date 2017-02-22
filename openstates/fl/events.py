@@ -26,6 +26,7 @@ class FlEventScraper(Scraper):
             event = Event(name=desc,
                           start_time=when,
                           timezone=self.tz.zone,
+                          description=desc,
                           location_name=location)
 
             event.add_source(entry['link'])
