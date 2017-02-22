@@ -72,7 +72,8 @@ class SenList(Page):
 
         leg_url = item.get('href')
 
-        leg = Person(name=name, district=district, party=party, primary_org='upper', role='Senator')
+        leg = Person(name=name, district=district, party=party,
+                     primary_org='upper', role='Senator')
         leg.add_link(leg_url)
         leg.add_source(self.url)
         leg.add_source(leg_url)

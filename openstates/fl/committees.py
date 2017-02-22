@@ -1,5 +1,6 @@
-from pupa.scrape import Scraper, Organization, Person
+from pupa.scrape import Scraper, Organization
 from .base import Spatula, Page
+
 
 class HouseComList(Page):
     url = "http://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
@@ -34,6 +35,7 @@ class HouseComDetail(Page):
         comm.add_source(self.url)
 
         yield comm
+
 
 class SenComList(Page):
     url = "http://www.flsenate.gov/Committees/"

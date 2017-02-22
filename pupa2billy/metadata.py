@@ -4,17 +4,17 @@ from utils import get_json
 def make_metadata(abbr):
     j = get_json(abbr, 'jurisdiction')[0]
 
-    orgs = get_json(abbr, 'organization')
-    lower = None
-    upper = None
-    legislature = None
-    for org in orgs:
-        if org['classification'] == 'legislature':
-            legislature = org['name']
-        elif org['classification'] == 'lower':
-            lower = org['name']
-        elif org['classification'] == 'upper':
-            upper = org['name']
+    # orgs = get_json(abbr, 'organization')
+    # lower = None
+    # upper = None
+    # legislature = None
+    # for org in orgs:
+    #     if org['classification'] == 'legislature':
+    #         legislature = org['name']
+    #     elif org['classification'] == 'lower':
+    #         lower = org['name']
+    #     elif org['classification'] == 'upper':
+    #         upper = org['name']
 
     session_details = {
         s['identifier']: {

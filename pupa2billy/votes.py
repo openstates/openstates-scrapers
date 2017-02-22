@@ -14,7 +14,6 @@ class PupaVoteScraper(VoteScraper):
         chamber = parse_psuedo_id(bill['from_organization'])['classification']
         return chamber, bill['identifier']
 
-
     def __init__(self, *args, **kwargs):
         self.jurisdiction = kwargs.pop('jurisdiction')
         super(PupaVoteScraper, self).__init__(*args, **kwargs)
@@ -45,7 +44,8 @@ class PupaVoteScraper(VoteScraper):
                     yes_count=yes_count,
                     no_count=no_count,
                     other_count=other_count,
-                    type='other', #data['motion_classification'],
+                    # TODO: was data['motion_classification'],
+                    type='other',
                     session=data['legislative_session'],
                     bill_chamber=bill_chamber,
                     bill_id=bill_id,

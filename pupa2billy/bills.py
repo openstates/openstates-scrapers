@@ -1,4 +1,3 @@
-import datetime
 from .utils import get_json, parse_psuedo_id, parse_date
 from billy.scrape.bills import BillScraper, Bill
 
