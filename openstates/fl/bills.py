@@ -3,7 +3,7 @@ import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
 from pupa.scrape import Scraper, Bill, VoteEvent
-from .base import Page, PDF, Spatula
+from spatula import Page, PDF, Spatula
 
 
 class StartPage(Page):

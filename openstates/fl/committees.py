@@ -1,5 +1,5 @@
 from pupa.scrape import Scraper, Organization
-from .base import Spatula, Page
+from spatula import Spatula, Page
 
 
 class HouseComList(Page):
