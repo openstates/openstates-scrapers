@@ -2,8 +2,8 @@
 
 set -e
 
-#PUPA_ENV=~/.virtualenvs/pupa
-#BILLY_ENV=~/.virtualenvs/openstates
+PUPA_ENV=~/.virtualenvs/pupa
+BILLY_ENV=~/.virtualenvs/openstates
 
 # copy use shift to get rid of first param, pass rest to pupa update
 state=$1
