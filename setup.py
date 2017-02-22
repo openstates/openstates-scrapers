@@ -4,9 +4,9 @@ from setuptools import setup
 long_description = open('README.rst').read()
 
 setup(name='openstates',
-      version='1.3.0',
+      version='2017',
       author="James Turk",
-      author_email="jturk@sunlightfoundation.com",
+      author_email="james@openstates.org",
       license="GPL v3",
       url="http://openstates.org",
       description='Open States',
