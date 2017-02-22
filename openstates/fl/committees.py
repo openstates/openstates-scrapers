@@ -13,23 +13,25 @@ class HouseComList(Page):
 
         for item in self.doc.xpath(self.list_xpath):
             cssclass = item.attrib.get('class', '')
-            com = self.scrape_page(HouseComDetail, item.attrib['href'],
-                                   parent=parent)
-            com = next(com)
+            name = item.text_content().strip()
+
             if 'parentcommittee' in cssclass:
-                parent = com
-                yield com
-            elif 'Subcommittee' in item.text_content():
-                yield com
-            else:
-                raise ValueError('unknown element:', item.attrib)
+                parent = None
+                chamber = 'lower'
+
+            comm = Organization(name=name, classification="committee",
+                                chamber=chamber, parent_id=parent)
+            yield self.scrape_page(HouseComDetail, item.attrib['href'],
+                                   obj=comm)
+
+            # parent for next time
+            if 'parentcommittee' in cssclass:
+                parent = {'name': name, 'classification': 'lower'}
+                chamber = None
+
 
 
 class HouseComDetail(Page):
-
-    def __init__(self, scraper, url, obj=None, parent=None):
-        super().__init__(scraper, url)
-        self.parent = parent
 
     def clean_name(self, name):
         name = name.replace(' [D]', '')
@@ -40,25 +42,20 @@ class HouseComDetail(Page):
 
     def handle_page(self):
         name = self.doc.xpath('//h1[@class="cd_ribbon"]')[0].text
-        comm = Organization(name=name,
-                            classification="committee",
-                            chamber="lower" #if not self.parent else None,
-                            #parent_id=self.parent if self.parent else None,
-                            )
 
         for lm in self.doc.xpath('//div[@class="cd_LeaderMember"]'):
             role = lm.xpath('.//div[@class="cd_LeaderTitle"]')[0].text_content().strip()
             name = lm.xpath('.//span[@class="cd_LeaderTitle"]/a')[0].text_content().strip()
             name = self.clean_name(name)
-            comm.add_member(name, role=role)
+            self.obj.add_member(name, role=role)
 
         for cm in self.doc.xpath('//p[@class="cd_committeemembers"]//a'):
             name = self.clean_name(cm.text_content())
-            comm.add_member(name)
+            self.obj.add_member(name)
 
-        comm.add_source(self.url)
+        self.obj.add_source(self.url)
 
-        yield comm
+        yield self.obj
 
 
 class SenComList(Page):
