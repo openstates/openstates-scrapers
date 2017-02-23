@@ -78,7 +78,8 @@ class IDLegislatorScraper(LegislatorScraper):
             phones = get_phones(inner)
             leg.add_office('district', 'District Office',
                            address=get_address(inner), fax=get_fax(inner),
-                           phone=phones.get('office'))
+                           phone=phones.get('home') or phones.get('business'))
+            leg.add_office('capitol', 'Capitol Office', phone=phones.get('office'))
 
             leg.add_source(url)
             leg['photo_url'] = img_url
