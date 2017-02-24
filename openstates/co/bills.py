@@ -156,7 +156,9 @@ class COBillScraper(BillScraper, LXMLMixin):
                 seen_versions.append(version_url)
 
     def scrape_actions(self, bill, page):
-        chamber_map = {'Senate':'upper', 'House': 'lower'}
+        chamber_map = {'Senate':'upper', 'House': 'lower',
+                       'Governor':'executive',
+                       }
 
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
 
