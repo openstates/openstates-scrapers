@@ -69,12 +69,14 @@ class SDLegislatorScraper(LegislatorScraper):
         if office_phone.strip() != "":
             kwargs['phone'] = office_phone
 
-        if email and email.strip() != "":
-            # South Dakota protects their email addresses from scraping using
-            # some JS code that runs on page load
-            # Until that code is run, all their email addresses are listed as
-            # *@example.com; so, fix this
-            kwargs['email'] = re.sub(r'@example\.com$', '@sdlegislature.gov', email)
+        # SD is hiding their email addresses entirely in JS now, so
+        # search through <script> blocks looking for them
+        for script in page.xpath('//script'):
+            if script.text:
+                match = re.search(r'([\w.]+@sdlegislature\.gov)', script.text)
+                if match:
+                    kwargs['email'] = match.group(0)
+                    break
 
         if kwargs:
             legislator.add_office('capitol', 'Capitol Office', **kwargs)
