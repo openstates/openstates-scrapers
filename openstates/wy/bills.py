@@ -112,7 +112,6 @@ class WYBillScraper(BillScraper, LXMLMixin):
         # Split the digest's text into sponsors, description, and actions
         SPONSOR_RE = r'(?sm)Sponsored By:\s+(.*?)\n\n'
         DESCRIPTION_RE = r'(?sm)\n\n((?:AN\s*?ACT|A JOINT RESOLUTION) .*?)\n\n'
-        ACTIONS_RE = r'(?sm)\n\n(\d{1,2}/\d{1,2}/\d{4}.*)'
 
         try:
             ext_title = re.search(DESCRIPTION_RE, all_text).group(1)
@@ -144,8 +143,7 @@ class WYBillScraper(BillScraper, LXMLMixin):
 
         # initial actor is bill chamber
         actor = bill['chamber']
-        actions = []
-        action_lines = re.search(ACTIONS_RE, all_text).group(1).split('\n')
+        action_lines = re.search(action_re, all_text).group(1).split('\n')
         action_lines = iter(action_lines)
         for line in action_lines:
             line = clean_line(line)
