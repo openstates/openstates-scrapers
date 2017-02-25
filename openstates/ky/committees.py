@@ -42,7 +42,7 @@ class KYCommitteeScraper(CommitteeScraper):
 
             for link in links:
                 self.scrape_committee(chamber, link)
-                
+
 
     def scrape_committee(self, chamber, link, parent_comm=None):
         home_link = link.attrib["href"]
@@ -62,17 +62,17 @@ class KYCommitteeScraper(CommitteeScraper):
         comm_url = home_link.replace(
             'home.htm', 'members.htm')
         self.scrape_members(comm, comm_url)
-        
+
 
         if comm['members']:
             self.save_committee(comm)
         else:
             self.logger.warning("Empty committee, skipping.")
-        
+
         #deal with subcommittees
         if parent_comm is None:
             #checking parent_comm so we don't look for subcommittees
-            #in subcommittees leaving us exposed to infinity 
+            #in subcommittees leaving us exposed to infinity
             page = self.get(home_link).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(home_link)
@@ -101,6 +101,8 @@ class KYCommitteeScraper(CommitteeScraper):
                 role = 'co-chair'
             elif link.tail.strip() == '[Vice Chair]':
                 role = 'vice chair'
+            elif link.tail.strip() == '[Co-Chair Designate]':
+                role = 'co-chair designate'
             elif link.tail.strip() in ['[ex officio]', '[non voting ex officio]', '[Liaison Member]']:
                 role = 'member'
             else:
