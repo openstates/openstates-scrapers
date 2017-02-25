@@ -23,6 +23,8 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
             person = details.xpath('./h4')[0].text_content()
             # This page does random weird things with whitepace to names
             person = ' '.join(person.strip().split())
+            if not person:
+                continue
             role = details.xpath('./span[@class="member-role"]')
             if role:
                 role = roles[role[0].text]
