@@ -36,10 +36,15 @@ class FLLegislatorScraper(LegislatorScraper):
                     if x.strip()
                     ]
 
+            if re.search(r'\bTBD\b', ' '.join(address_lines)):
+                # office marked TBD, no data here
+                return
+
             if re.search(PHONE_RE, address_lines[-1]):
                 phone = address_lines.pop()
             else:
                 phone = None
+
             if re.search(r'(?i)open\s+\w+day', address_lines[0]):
                 address_lines = address_lines[1: ]
             assert ", FL" in address_lines[-1]
@@ -128,15 +133,21 @@ class FLLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for div in page.xpath('//div[@class="rep_listing1"]'):
-            link = div.xpath('.//div[@class="rep_style"]/a')[0]
+        for div in page.xpath('//div[contains(@class, "rep_listing1")]'):
+            links = div.xpath('.//div[contains(@class, "rep_style")]/a')
+            if links:
+                link = links[0]
+            else:
+                raise Exception("Failed to find link in rep listing: %s" %
+                                (lxml.html.tostring(div),))
+                
             name = link.text_content().strip()
             term_details = div.xpath(
-                './/div[@class="term_style"]')[0].text_content()
+                './/div[contains(@class, "term_style")]')[0].text_content()
             if 'Resigned' in term_details:
                 continue
 
-            party = div.xpath('.//div[@class="party_style"]/text()')[0].strip()
+            party = div.xpath('.//div[contains(@class, "party_style")]/text()')[0].strip()
             if party == 'D':
                 party = 'Democratic'
             elif party == 'R':
@@ -146,7 +157,7 @@ class FLLegislatorScraper(LegislatorScraper):
                         "Unknown party found: {}".format(party))
 
             district = div.xpath(
-                    './/div[@class="district_style"]/text()')[0].strip()
+                    './/div[contains(@class, "district_style")]/text()')[0].strip()
 
             leg_url = link.get('href')
             split_url = urlparse.urlsplit(leg_url)
