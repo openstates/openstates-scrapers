@@ -25,7 +25,6 @@ class MemberDetail(Page):
         self.obj.add_party(PARTY_MAP[party])
 
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
-            # TODO(jmcarp) Restore chamber and term
             self.obj.add_membership(com)
 
 class SenateDetail(MemberDetail):
@@ -37,11 +36,6 @@ class DelegateDetail(MemberDetail):
     chamber = 'lower'
 
 class MemberList(Page):
-    url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'
-
-    def do_request(self):
-        return self.scraper.get(self.url.format(self.site_id))
-
     def handle_list_item(self, item):
         name = item.text
 
@@ -88,15 +82,17 @@ class SenateList(MemberList):
     chamber = 'upper'
     detail_page = SenateDetail
     list_xpath = '//div[@class="lColRt"]/ul/li/a'
-    site_id = '171'
 
 class DelegateList(MemberList):
     chamber = 'lower'
     detail_page = DelegateDetail
     list_xpath = '//div[@class="lColLt"]/ul/li/a'
-    site_id = '171'
 
 class VaPersonScraper(Scraper, Spatula):
-    def scrape(self):
-        yield from self.scrape_page_items(SenateList)
-        yield from self.scrape_page_items(DelegateList)
+    def scrape(self, session=None):
+        if not session:
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            self.info('no session specified, using', session)
+        url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(session)
+        yield from self.scrape_page_items(SenateList, url=url)
+        yield from self.scrape_page_items(DelegateList, url=url)
