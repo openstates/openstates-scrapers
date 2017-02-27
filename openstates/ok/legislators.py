@@ -44,7 +44,10 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 + '/b[contains(text(), "Email:")]' \
                 + '/../following-sibling::div' \
                 + '/script/text()'
-        script = doc.xpath(xpath)[0]
+        script = doc.xpath(xpath)
+        if not script:
+            return ''
+        script = script[0]
         line = filter(
             lambda line: '+ "@" +' in line,
             script.split('\r\n'))[0]
@@ -52,7 +55,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         email = ''.join(parts)
 
-        return email if validate_email_address(email) else None
+        return email if validate_email_address(email) else ''
 
 
     def scrape(self, chamber, term):
@@ -159,10 +162,12 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             # Get the email address, extracted from a series of JS
             # "document.write" lines.
             email = self._extract_email(doc)
-            legislator['email'] = email
 
-            office = dict(
-                name='Capitol Office', type='capitol', phone=phone, email=email, address=address)
+            office = dict(name='Capitol Office', type='capitol', phone=phone,
+                          address=address)
+            if email:
+                legislator['email'] = email
+                office['email'] = email
 
             legislator.add_office(**office)
 
