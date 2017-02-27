@@ -16,7 +16,7 @@ class Va(Jurisdiction):
     url = "http://virginiageneralassembly.gov/"
     scrapers = {
         "people": VaPersonScraper,
-        # "bills": VaBillScraper,
+        "bills": VaBillScraper,
     }
 
     legislative_sessions = [
