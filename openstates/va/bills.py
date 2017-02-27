@@ -250,9 +250,8 @@ class BillDetailPage(Page, Spatula):
                         cached_action = action
                         continue
 
-                if vote is None:
-                    raise ValueError('Cannot save an empty vote.')
-                yield vote
+                if vote is not None:
+                    yield vote
             else:
                 # If this action isn't a vote, but the last one was,
                 # there's obviously no additional vote data to match.
