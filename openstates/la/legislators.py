@@ -25,6 +25,9 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
                    ]
         who = re.search(r'(?u)^\s*Senator\s*(.*?)\s*$', who).group(1)
 
+        if 'Vacant' in who:
+            return
+
         (district, ) = [x for x in
                         page.xpath('//tr/td/font/text()') if
                         x.strip().startswith("District - ")
