@@ -71,7 +71,7 @@ def names(el):
     text = (el.text or '') + (el.tail or '')
 
     names = []
-    for name in re.split(r'[,;]', text):
+    for name in text.split(';'):
         name = name.strip().replace('\r\n', '').replace('  ', ' ')
 
         if not name:
@@ -106,6 +106,11 @@ def votes(root, session):
         yield vote
     for vote in viva_voce_votes(root, session):
         yield vote
+
+
+def first_int(res):
+    if res is not None:
+        return int(next(group for group in res.groups() if group is not None))
 
 
 class BaseVote(object):
@@ -149,11 +154,14 @@ class BaseVote(object):
             return 'upper'
 
 
+# Note: Vote count patterns are inconsistent across journals and may follow the
+# pattern "145 Yeas, 0 Nays" (http://www.journals.house.state.tx.us/HJRNL/85R/HTML/85RDAY02FINAL.HTM)
+# or "Yeas 20, Nays 10" (http://www.journals.senate.state.tx.us/SJRNL/85R/HTML/85RSJ02-08-F.HTM)
 class MaybeVote(BaseVote):
-    yeas_pattern = re.compile(r'yeas\W+(\d+)', re.IGNORECASE)
-    nays_pattern = re.compile(r'nays\W+(\d+)', re.IGNORECASE)
-    present_pattern = re.compile(r'(\d+)\W+present', re.IGNORECASE)
-    record_pattern = re.compile(r'\(record\W+(\d+)\)', re.IGNORECASE)
+    yeas_pattern = re.compile(r'yeas\s+(\d+)|(\d+)\s+yeas', re.IGNORECASE)
+    nays_pattern = re.compile(r'nays\s+(\d+)|(\d+)\s+nays', re.IGNORECASE)
+    present_pattern = re.compile(r'present|s+(\d+)|(\d+)\s+present', re.IGNORECASE)
+    record_pattern = re.compile(r'\(record\s+(\d+)\)', re.IGNORECASE)
     passed_pattern = re.compile(r'(adopted|passed|prevailed)', re.IGNORECASE)
     check_prev_pattern = re.compile(r'the (motion|resolution)', re.IGNORECASE)
     votes_pattern = re.compile(r'^(yeas|nays|present|absent)', re.IGNORECASE)
@@ -178,22 +186,22 @@ class MaybeVote(BaseVote):
     @property
     def yeas(self):
         res = self.yeas_pattern.search(self.text)
-        return int(res.groups()[0]) if res else None
+        return first_int(res)
 
     @property
     def nays(self):
         res = self.nays_pattern.search(self.text)
-        return int(res.groups()[0]) if res else None
+        return first_int(res)
 
     @property
     def present(self):
         res = self.present_pattern.search(self.text)
-        return int(res.groups()[0]) if res else None
+        return first_int(res)
 
     @property
     def record(self):
         res = self.record_pattern.search(self.text)
-        return int(res.groups()[0]) if res else None
+        return first_int(res)
 
     @property
     def votes(self):
