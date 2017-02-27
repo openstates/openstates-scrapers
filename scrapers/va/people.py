@@ -3,7 +3,7 @@ import re
 from pupa.scrape import Scraper
 from pupa.scrape import Person
 
-from .base import Page, Spatula
+from spatula import Page, Spatula
 
 CHAMBER_MOVES = {
     "A. Benton \"Ben\" Chafin-Elect": "upper",
