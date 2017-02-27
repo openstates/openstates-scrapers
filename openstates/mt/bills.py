@@ -278,7 +278,7 @@ class MTBillScraper(BillScraper, LXMLMixin):
 
         res = defaultdict(dict)
 
-        url = 'http://leg.mt.gov/bills/%d/' % year
+        url = 'http://leg.mt.gov/bills/%d/BillPdf/' % year
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
