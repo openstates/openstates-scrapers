@@ -221,6 +221,11 @@ class COBillScraper(BillScraper, LXMLMixin):
             header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
                                parent_committee_row)
 
+            # Some vote headers have missing information, so we cannot save the vote information
+            if not header:
+                self.warning("No date and committee information available in the vote header.")
+                return
+
             if 'Senate' in header.group('committee'):
                 chamber = 'upper'
             elif 'House' in header.group('committee'):
