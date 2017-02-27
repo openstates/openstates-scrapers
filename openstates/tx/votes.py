@@ -6,11 +6,10 @@ import datetime
 import scrapelib
 import collections
 
-import tx
-
+import lxml.html
 from billy.scrape.votes import VoteScraper, Vote
 
-import lxml.html
+import tx
 
 
 def prev_tag(el):
@@ -258,7 +257,8 @@ def record_votes(root, session):
             continue
 
         v = Vote(None, None, 'motion', mv.passed,
-            mv.yeas or 0, mv.nays or 0, mv.present or 0)
+            len(mv.votes['yeas']), len(mv.votes['nays']),
+            len(mv.votes['present'] + mv.votes['absent']))
         v['bill_id'] = mv.bill_id
         v['bill_chamber'] = mv.chamber
         v['is_amendment'] = mv.is_amendment
