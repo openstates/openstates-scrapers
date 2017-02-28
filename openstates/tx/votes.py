@@ -158,10 +158,10 @@ class BaseVote(object):
 # pattern "145 Yeas, 0 Nays" (http://www.journals.house.state.tx.us/HJRNL/85R/HTML/85RDAY02FINAL.HTM)
 # or "Yeas 20, Nays 10" (http://www.journals.senate.state.tx.us/SJRNL/85R/HTML/85RSJ02-08-F.HTM)
 class MaybeVote(BaseVote):
-    yeas_pattern = re.compile(r'yeas\s+(\d+)|(\d+)\s+yeas', re.IGNORECASE)
-    nays_pattern = re.compile(r'nays\s+(\d+)|(\d+)\s+nays', re.IGNORECASE)
-    present_pattern = re.compile(r'present|s+(\d+)|(\d+)\s+present', re.IGNORECASE)
-    record_pattern = re.compile(r'\(record\s+(\d+)\)', re.IGNORECASE)
+    yeas_pattern = re.compile(r'yeas[\s\xa0]+(\d+)|(\d+)[\s\xa0]+yeas', re.IGNORECASE)
+    nays_pattern = re.compile(r'nays[\s\xa0]+(\d+)|(\d+)[\s\xa0]+nays', re.IGNORECASE)
+    present_pattern = re.compile(r'present[\s\xa0]+(\d+)|(\d+)[\s\xa0]+present', re.IGNORECASE)
+    record_pattern = re.compile(r'\(record[\s\xa0]+(\d+)\)', re.IGNORECASE)
     passed_pattern = re.compile(r'(adopted|passed|prevailed)', re.IGNORECASE)
     check_prev_pattern = re.compile(r'the (motion|resolution)', re.IGNORECASE)
     votes_pattern = re.compile(r'^(yeas|nays|present|absent)', re.IGNORECASE)
@@ -264,9 +264,8 @@ def record_votes(root, session):
         if not mv.is_valid:
             continue
 
-        v = Vote(None, None, 'motion', mv.passed,
-            len(mv.votes['yeas']), len(mv.votes['nays']),
-            len(mv.votes['present'] + mv.votes['absent']))
+        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed,
+                 mv.yeas or 0, mv.nays or 0, mv.present or 0)
         v['bill_id'] = mv.bill_id
         v['bill_chamber'] = mv.chamber
         v['is_amendment'] = mv.is_amendment
@@ -290,12 +289,12 @@ def viva_voce_votes(root, session):
         if not mv.is_valid:
             continue
 
-        v = Vote(None, None, 'motion', mv.passed, 0, 0, 0)
+        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed, 0, 0, 0)
         v['bill_id'] = mv.bill_id
         v['bill_chamber'] = mv.chamber
         v['is_amendment'] = mv.is_amendment
         v['session'] = session[0:2]
-        v['method'] = 'record'
+        v['method'] = 'viva voce'
 
         yield v
 
