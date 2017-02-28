@@ -1,0 +1,42 @@
+FROM        ubuntu:latest
+MAINTAINER  James Turk <james@openstates.org>
+
+RUN apt-get update && apt-get install -y \
+    python2.7 \
+    python-pip \
+    python-lxml \
+    libssl-dev \
+    python-dev \
+    python3-dev \
+    poppler-utils \
+    python-virtualenv \
+    python3.5 \
+    git \
+    libpq-dev \
+    libgeos-dev \
+    s3cmd \
+    freetds-dev \
+    curl \
+    wget \
+    unzip
+
+
+RUN mkdir -p /opt/openstates/
+
+RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
+RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
+
+RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa
+
+ENV PYTHONIOENCODING 'utf-8'
+ENV LANG 'en_US.UTF-8'
+ENV BILLY_ENV /opt/openstates/venv-billy/
+ENV PUPA_ENV /opt/openstates/venv-pupa/
+
+ADD . /opt/openstates/openstates
+RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements-new.txt
+
+WORKDIR /opt/openstates/openstates/
+ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]
