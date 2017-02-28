@@ -9,6 +9,13 @@ services:
     - INDIANA_API_KEY
     volumes:
     - .:/srv/openstates-web
+    depends_on:
+    - database
+  openstates.org:
+    image: openstates/openstates.org
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+    - MONGO_HOST=database
     ports:
     - "8000:8000"
     depends_on:
