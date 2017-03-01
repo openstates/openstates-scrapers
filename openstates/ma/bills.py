@@ -99,8 +99,6 @@ class MABillScraper(BillScraper):
         session_for_url =  self.replace_non_digits(session)
         bill_url = u'https://malegislature.gov/Bills/{}/{}'.format(session_for_url, bill_id)
 
-        print bill_url
-
         try:
             response = requests.get(bill_url)
         except requests.exceptions.RequestException as e:
@@ -115,7 +113,7 @@ class MABillScraper(BillScraper):
             bill_number = page.xpath('//div[contains(@class, "followable")]/h1/text()')[0]
         else:
             self.warning(u'Server Error on {}'.format(bill_url))
-            return False             
+            return False
 
         bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[0]
 
@@ -123,7 +121,7 @@ class MABillScraper(BillScraper):
         if page.xpath('//p[@id="pinslip"]/text()'):
             bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
 
-        bill_id = re.sub(r'[^S|H|\d]','',bill_id)
+        bill_id = re.sub(r'[^S|H|D|\d]','',bill_id)
 
         bill = Bill(session, chamber,bill_id, bill_title,
                     summary=bill_summary)
@@ -139,9 +137,8 @@ class MABillScraper(BillScraper):
             sponsor = sponsor[0].strip()
             bill.add_sponsor('primary', sponsor)
 
-        has_cosponsor = page.xpath('//a[starts-with(normalize-space(.),"Petitioners")]')
-        if has_cosponsor:
-            self.scrape_cosponsors(bill, bill_url)
+        self.scrape_cosponsors(bill, bill_url)
+
 
         version = page.xpath("//div[contains(@class, 'modalBtnGroup')]/a[contains(text(), 'Download PDF') and not(@disabled)]/@href")
         if version:
@@ -152,7 +149,6 @@ class MABillScraper(BillScraper):
         self.scrape_actions(bill, bill_url)
 
         self.save_bill(bill)
-        #print bill
 
     def scrape_cosponsors(self, bill, bill_url):
         #https://malegislature.gov/Bills/189/S1194/CoSponsor
@@ -167,7 +163,7 @@ class MABillScraper(BillScraper):
             cosponsor_district = ''
             if row.xpath('td[2]/text()'):
                 cosponsor_district = row.xpath('td[2]/text()')[0]
-        
+
             #Filter the sponsor out of the petitioners list
             if not any(sponsor['name'] == cosponsor_name for sponsor in bill['sponsors']):
                 bill.add_sponsor('cosponsor', cosponsor_name, district=cosponsor_district)
@@ -176,7 +172,7 @@ class MABillScraper(BillScraper):
         # scrape_action_page adds the actions, and also returns the Page xpath object
         # so that we can check for a paginator
         page = self.scrape_action_page(bill, bill_url, 1)
-        
+
         max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
         if max_page:
             max_page = re.sub(r'[^\d]', '', max_page[0]).strip()

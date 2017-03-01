@@ -128,8 +128,14 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             if d['address'] is '':
                 d['address'] = 'No Address Found'
 
+            # RI is very fond of First M. Last name formats and
+            # they're being misparsed upstream, so fix here
+            (first, middle, last) = ('','','')
+            if re.match(r'^\S+\s[A-Z]\.\s\S+$', full_name):
+                (first, middle, last) = full_name.split()
+                
             leg = Legislator(term, chamber, district_name, full_name,
-                             '', '', '',
+                             first, last, middle,
                              translate[d['party']],
                              **kwargs)
 

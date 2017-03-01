@@ -13,6 +13,20 @@ services:
     - "8000:8000"
     depends_on:
     - database
+  scrape:
+    build:
+        context: .
+        dockerfile: Dockerfile-pupa
+    environment:
+    - BILLY_MONGO_HOST=database
+    - MYSQL_HOST=mysql
+    - NEW_YORK_API_KEY
+    - INDIANA_API_KEY
+    volumes:
+    - .:/opt/openstates/openstates/
+    depends_on:
+    - database
+    entrypoint: /opt/openstates/openstates/pupa-scrape.sh
   database:
     image: mongo
     ports:

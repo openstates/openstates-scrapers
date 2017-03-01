@@ -156,7 +156,9 @@ class COBillScraper(BillScraper, LXMLMixin):
                 seen_versions.append(version_url)
 
     def scrape_actions(self, bill, page):
-        chamber_map = {'Senate':'upper', 'House': 'lower'}
+        chamber_map = {'Senate':'upper', 'House': 'lower',
+                       'Governor':'executive',
+                       }
 
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
 
@@ -218,6 +220,11 @@ class COBillScraper(BillScraper, LXMLMixin):
             # e.g. 05/05/2016                  | Senate State, Veterans, & Military Affairs
             header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
                                parent_committee_row)
+
+            # Some vote headers have missing information, so we cannot save the vote information
+            if not header:
+                self.warning("No date and committee information available in the vote header.")
+                return
 
             if 'Senate' in header.group('committee'):
                 chamber = 'upper'
