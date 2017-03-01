@@ -78,9 +78,9 @@ class MALegislatorScraper(LegislatorScraper):
         party = party.strip()
         district = clean_district(district.strip())
 
-        if party == 'Democrat':
+        if party in ('D', 'Democrat', 'Democratic'):
             party = 'Democratic'
-        elif party == 'R':
+        elif party in ('R', 'Republican'):
             party = 'Republican'
         else:
             party = 'Other'
