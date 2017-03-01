@@ -1,189 +1,104 @@
-import os
 import re
 import datetime
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
-import lxml.html
-
-from openstates.utils import LXMLMixin
+from urllib.parse import urlencode
+from collections import defaultdict
+from pupa.scrape import Scraper, Bill, VoteEvent
+from spatula import Page, PDF, Spatula
 
 
-class FLBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'fl'
-    CHAMBERS = {'H': 'lower', 'S': 'upper'}
+class StartPage(Page):
 
-    def scrape(self, session, chambers):
-        session_number = self.get_session_number(session)
-        self.validate_session(session)
-        url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(
-            session)
-
-        page = self.lxmlize(url)
+    def handle_page(self):
         try:
-            page_count = int(page.xpath(
-                "//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
+            pages = int(self.doc.xpath("//a[contains(., 'Next')][1]/preceding::a[1]/text()")[0])
         except IndexError:
-            if not page.xpath('//div[@class="ListPagination"]/span'):
+            if not self.doc.xpath('//div[@class="ListPagination"]/span'):
                 raise AssertionError("No bills found for the session")
-            elif set(page.xpath('//div[@class="ListPagination"]/span/text()')) != set(["1"]):
+            elif set(self.doc.xpath('//div[@class="ListPagination"]/span/text()')) != set(["1"]):
                 raise AssertionError("Bill list pagination needed but not used")
             else:
-                self.warning(
-                    "Pagination not used; "
-                    "make sure there're only a few bills for this session")
-            page_count = 1
+                self.scraper.warning("Pagination not used; "
+                                     "make sure there are only a few bills for this session")
+            pages = 1
 
-        for page_number in range(1, page_count + 1):
-            page_url = (url + '&PageNumber={}'.format(page_number))
-            page = self.lxmlize(page_url)
+        for page_number in range(1, pages + 1):
+            page_url = (self.url + '&PageNumber={}'.format(page_number))
+            yield from self.scrape_page_items(BillList, url=page_url,
+                                              session=self.kwargs['session'],
+                                              subjects=self.kwargs['subjects'],
+                                              )
 
-            link_path = "//a[contains(@href, '/Session/Bill/{}/')]".format(
-                session)
-            for link in page.xpath(link_path):
-                bill_id = link.text.strip()
-                title = link.xpath(
-                    "string(../following-sibling::td[1])").strip()
-                sponsor = link.xpath(
-                    "string(../following-sibling::td[2])").strip()
-                bill_url = link.attrib['href'] + '/ByCategory'
-                self.scrape_bill(session, session_number,
-                                 bill_id, title, sponsor, bill_url)
 
-    def accept_response(self, response):
-        normal = super(FLBillScraper, self).accept_response(response)
-        bill_check = True
-        text_check = True
+class BillList(Page):
+    list_xpath = "//a[contains(@href, '/Session/Bill/')]"
 
-        if not response.url.lower().endswith('pdf'):
-            if response.url.startswith("http://flsenate.gov/Session/Bill/20"):
-                bill_check = "tabBodyVoteHistory" in response.text
+    def handle_list_item(self, item):
+        bill_id = item.text.strip()
+        title = item.xpath("string(../following-sibling::td[1])").strip()
+        sponsor = item.xpath("string(../following-sibling::td[2])").strip()
+        bill_url = item.attrib['href'] + '/ByCategory'
 
-            text_check = (
-                'he page you have requested has encountered an error.'
-                not in response.text)
-
-        valid = (normal and
-                 bill_check and
-                 text_check)
-        if not valid:
-            raise Exception('Response was invalid')
-        return valid
-
-    def scrape_bill(self, session, session_number, bill_id, title, sponsor,
-                    url):
-        try:
-            html = self.get(url).text
-        except:
-            return
-        page = lxml.html.fromstring(html)
-        page.make_links_absolute(url)
-
-        bill = Bill(session, self.CHAMBERS[bill_id[0]], bill_id, title)
-        bill.add_source(url)
-
-        sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
-        bill.add_sponsor('primary', sponsor)
-
-        hist_table = page.xpath(
-            "//div[@id = 'tabBodyBillHistory']//table")[0]
-
-        if bill_id.startswith('SB ') or \
-                bill_id.startswith('HB ') or \
-                bill_id.startswith('SPB ') or \
-                bill_id.startswith('HPB '):
+        if bill_id.startswith(('SB ', 'HB ', 'SPB ', 'HPB ')):
             bill_type = 'bill'
-        elif bill_id.startswith('HR ') or bill_id.startswith('SR '):
+        elif bill_id.startswith(('HR ', 'SR ')):
             bill_type = 'resolution'
-        elif bill_id.startswith('HJR ') or bill_id.startswith('SJR '):
+        elif bill_id.startswith(('HJR ', 'SJR ')):
             bill_type = 'joint resolution'
-        elif bill_id.startswith('SCR ') or bill_id.startswith('HCR '):
+        elif bill_id.startswith(('SCR ', 'HCR ')):
             bill_type = 'concurrent resolution'
-        elif bill_id.startswith('SM ') or bill_id.startswith('HM '):
+        elif bill_id.startswith(('SM ', 'HM ')):
             bill_type = 'memorial'
         else:
-            raise Exception('Failed to identify bill type.')
+            raise ValueError('Failed to identify bill type.')
 
-        bill['type'] = [bill_type]
+        bill = Bill(bill_id, self.kwargs['session'], title,
+                    chamber='lower' if bill_id[0] == 'H' else 'upper',
+                    classification=bill_type)
+        bill.add_source(bill_url)
 
-        for tr in hist_table.xpath("tbody/tr"):
-            date = tr.xpath("string(td[1])")
-            date = datetime.datetime.strptime(
-                date, "%m/%d/%Y").date()
+        # normalize id from HB 0004 to H4
+        subj_bill_id = re.sub('(H|S)\w+ 0*(\d+)', r'\1\2', bill_id)
+        bill.subject = list(self.kwargs['subjects'][subj_bill_id])
 
-            actor = tr.xpath("string(td[2])")
-            actor = {'Senate': 'upper', 'House': 'lower'}.get(
-                actor, actor)
+        sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
+        for sp in sponsor.split(', '):
+            bill.add_sponsorship(sp, 'primary', 'person', True)
 
-            act_text = tr.xpath("string(td[3])").strip()
-            for action in act_text.split(u'\u2022'):
-                action = action.strip()
-                if not action:
-                    continue
+        yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
 
-                action = re.sub(r'-(H|S)J\s+(\d+)$', '',
-                                action)
+        yield bill
 
-                atype = []
-                if action.startswith('Referred to'):
-                    atype.append('committee:referred')
-                elif action.startswith('Favorable by'):
-                    atype.append('committee:passed')
-                elif action == "Filed":
-                    atype.append("bill:filed")
-                elif action.startswith("Withdrawn"):
-                    atype.append("bill:withdrawn")
-                elif action.startswith("Died"):
-                    atype.append("bill:failed")
-                elif action.startswith('Introduced'):
-                    atype.append('bill:introduced')
-                elif action.startswith('Read 2nd time'):
-                    atype.append('bill:reading:2')
-                elif action.startswith('Read 3rd time'):
-                    atype.append('bill:reading:3')
-                elif action.startswith('Adopted'):
-                    atype.append('bill:passed')
-                elif action.startswith('CS passed'):
-                    atype.append('bill:passed')
-                elif action.startswith('Chapter No'):
-                    actor = 'executive'
-                elif action.startswith('Signed by Officers'):
-                    atype.append('governor:received')
-                    actor = 'governor'
-                elif action.startswith('Approved by Gov'):
-                    atype.append('governor:signed')
-                    actor = 'governor'
-                elif action.startswith('Vetoed by Gov'):
-                    atype.append('governor:vetoed')
-                    actor = 'governor'
-                elif action.startswith('Became Law, Governor\'s Veto notwithstanding'):
-                    atype.append("bill:veto_override:passed")
-                    #Veto overrides are rare in FL, so this is a guess, based on
-                    #http://archive.flsenate.gov/Session/index.cfm?Mode=Bills&SubMenu=1&Tab=session&BI_Mode=ViewBillInfo&BillNum=1565&Chamber=Senate&Year=2010
 
-                if not actor:
-                    self.logger.warning("%s action %s missing actor." % (bill_id, action))
+class BillDetail(Page):
 
-                bill.add_action(actor, action, date, type=atype)
+    def handle_page(self):
+        self.process_history()
+        self.process_versions()
+        self.process_analysis()
+        yield from self.process_votes()
+        yield from self.scrape_page_items(HousePage, bill=self.obj)
 
+    def process_versions(self):
         try:
-            version_table = page.xpath(
-                "//div[@id = 'tabBodyBillText']/table")[0]
+            version_table = self.doc.xpath("//div[@id = 'tabBodyBillText']/table")[0]
             for tr in version_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 version_url = tr.xpath("td/a[1]")[0].attrib['href']
                 if version_url.endswith('PDF'):
                     mimetype = 'application/pdf'
+                    text = self.scrape_page(BillVersionPDF, url=version_url)
                 elif version_url.endswith('HTML'):
                     mimetype = 'text/html'
-                bill.add_version(name, version_url, mimetype=mimetype)
-        except IndexError:
-            self.log("No version table for %s" % bill_id)
+                    text = self.scrape_page(BillVersionHTML, url=version_url)
 
+                self.obj.add_version_link(name, version_url, media_type=mimetype, text=text)
+        except IndexError:
+            self.obj.extras['places'] = []   # set places to something no matter what
+            self.scraper.warning("No version table for {}".format(self.obj.identifier))
+
+    def process_analysis(self):
         try:
-            analysis_table = page.xpath(
-                "//div[@id = 'tabBodyAnalyses']/table")[0]
+            analysis_table = self.doc.xpath("//div[@id = 'tabBodyAnalyses']/table")[0]
             for tr in analysis_table.xpath("tbody/tr"):
                 name = tr.xpath("string(td[1])").strip()
                 name += " -- " + tr.xpath("string(td[3])").strip()
@@ -192,12 +107,59 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 if date:
                     name += " (%s)" % date
                 analysis_url = tr.xpath("td/a")[0].attrib['href']
-                bill.add_document(name, analysis_url)
+                self.obj.add_document_link(name, analysis_url, on_duplicate='ignore')
         except IndexError:
-            self.log("No analysis table for %s" % bill_id)
+            self.scraper.warning("No analysis table for {}".format(self.obj.identifier))
 
-        vote_tables = page.xpath(
-            "//div[@id = 'tabBodyVoteHistory']//table")
+    def process_history(self):
+        hist_table = self.doc.xpath("//div[@id = 'tabBodyBillHistory']//table")[0]
+
+        for tr in hist_table.xpath("tbody/tr"):
+            date = tr.xpath("string(td[1])")
+            date = datetime.datetime.strptime(date, "%m/%d/%Y").date().isoformat()
+
+            actor = tr.xpath("string(td[2])")
+            if not actor:
+                actor = None
+            chamber = {'Senate': 'upper', 'House': 'lower'}.get(actor, None)
+            if chamber:
+                actor = None
+
+            act_text = tr.xpath("string(td[3])").strip()
+            for action in act_text.split(u'\u2022'):
+                action = action.strip()
+                if not action:
+                    continue
+
+                action = re.sub(r'-(H|S)J\s+(\d+)$', '', action)
+
+                atype = []
+                if action.startswith('Referred to'):
+                    atype.append('referral-committee')
+                elif action.startswith('Favorable by'):
+                    atype.append('committee-passage-favorable')
+                elif action == "Filed":
+                    atype.append("filing")
+                elif action.startswith("Withdrawn"):
+                    atype.append("withdrawal")
+                elif action.startswith("Died"):
+                    atype.append("failure")
+                elif action.startswith('Introduced'):
+                    atype.append('introduction')
+                elif action.startswith('Read 2nd time'):
+                    atype.append('reading-2')
+                elif action.startswith('Read 3rd time'):
+                    atype.append('reading-3')
+                elif action.startswith('Adopted'):
+                    atype.append('passage')
+                elif action.startswith('CS passed'):
+                    atype.append('passage')
+
+                self.obj.add_action(action, date, organization=actor, chamber=chamber,
+                                    classification=atype)
+
+    def process_votes(self):
+        vote_tables = self.doc.xpath("//div[@id='tabBodyVoteHistory']//table")
 
         for vote_table in vote_tables:
             for tr in vote_table.xpath("tbody/tr"):
@@ -205,110 +167,60 @@ class FLBillScraper(BillScraper, LXMLMixin):
                 if vote_date.isalpha():
                     vote_date = tr.xpath("string(td[2])").strip()
                 try:
-                    vote_date = datetime.datetime.strptime(
-                        vote_date, "%m/%d/%Y %H:%M %p").date()
+                    vote_date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %H:%M %p"
+                                                           ).strftime("%Y-%m-%d %H:%M:00")
                 except ValueError:
-                    msg = 'Got bogus vote date: %r'
-                    self.logger.warning(msg % vote_date)
+                    self.scraper.logger.warning('bad vote date: {}'.format(vote_date))
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                 if "SenateVote" in vote_url:
-                    self.scrape_floor_vote('upper', bill, vote_date, vote_url)
+                    yield from self.scrape_page_items(FloorVote, vote_url,
+                                                      date=vote_date, chamber='upper',
+                                                      bill=self.obj)
                 elif "HouseVote" in vote_url:
-                    self.scrape_floor_vote('lower', bill, vote_date, vote_url)
+                    yield from self.scrape_page_items(FloorVote, vote_url,
+                                                      date=vote_date, chamber='lower',
+                                                      bill=self.obj)
                 else:
-                    self.scrape_uppper_committee_vote(
-                        bill, vote_date, vote_url)
+                    yield from self.scrape_page_items(UpperComVote, vote_url,
+                                                      date=vote_date, bill=self.obj)
         else:
-            self.log("No vote table for %s" % bill_id)
+            self.scraper.warning("No vote table for {}".format(self.obj.identifier))
 
-        self.scrape_lower_committee_votes(session_number, bill)
 
-        self.save_bill(bill)
+class BillVersionHTML(Page):
+    def handle_page(self):
+        text = self.doc.xpath('//pre')[0].text_content()
+        text = re.sub('\n\s*\d+\s*', ' ', text)
+        text = re.sub('\s+', ' ', text)
+        return text
 
-    def scrape_uppper_committee_vote(self, bill, date, url):
-        (path, resp) = self.urlretrieve(url)
-        text = convert_pdf(path, 'text')
-        lines = text.split("\n")
-        os.remove(path)
 
-        (_, motion) = lines[5].split("FINAL ACTION:")
-        motion = motion.strip()
-        if not motion:
-            self.warning("Vote appears to be empty")
-            return
+class BillVersionPDF(PDF):
+    def handle_page(self):
+        # newlines followed by numbers and lots of spaces
+        text = re.sub('\n\s*\d+\s*', ' ', self.text)
+        flhor_re = '\s+'.join('FLORIDA HOUSE OF REPRESENTATIVES')
+        text = re.sub(flhor_re, ' ', text)
+        # collapse spaces
+        text = re.sub('\s+', ' ', text)
+        return text
 
-        vote_top_row = [
-            lines.index(x) for x in lines if
-            re.search(r'^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$', x)][0]
-        yea_columns_end = lines[vote_top_row].index("Yea") + len("Yea")
-        nay_columns_begin = lines[vote_top_row].index("Nay")
 
-        votes = {'yes': [], 'no': [], 'other': []}
-        for line in lines[(vote_top_row + 1):]:
-            if line.strip():
-                member = re.search(r'''(?x)
-                        ^\s+(?:[A-Z\-]+)?\s+  # Possible vote indicator
-                        ([A-Z][a-z]+  # Name must have lower-case characters
-                        [\w\-\s]+)  # Continue looking for the rest of the name
-                        (?:,[A-Z\s]+?)?  # Leadership has an all-caps title
-                        (?:\s{2,}.*)?  # Name ends when many spaces are seen
-                        ''', line).group(1)
-                # Usually non-voting members won't even have a code listed
-                # Only a couple of codes indicate an actual vote:
-                # "VA" (vote after roll call) and "VC" (vote change)
-                did_vote = bool(
-                    re.search(r'^\s+(X|VA|VC)\s+[A-Z][a-z]', line))
-                if did_vote:
-                    # Check where the "X" or vote code is on the page
-                    vote_column = len(line) - len(line.lstrip())
-                    if vote_column <= yea_columns_end:
-                        votes['yes'].append(member)
-                    elif vote_column >= nay_columns_begin:
-                        votes['no'].append(member)
-                    else:
-                        raise AssertionError(
-                            "Unparseable vote found for {0} in {1}:\n{2}".
-                            format(member, url, line))
-                else:
-                    votes['other'].append(member)
-
-            # End loop as soon as no more members are found
-            else:
-                break
-
-        totals = re.search(
-            r'(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS', text).groups()
-        yes_count = int(totals[0])
-        no_count = int(totals[1])
-        passed = (yes_count > no_count)
-        other_count = len(votes['other'])
-
-        vote = Vote('upper', date, motion, passed, yes_count, no_count,
-                    other_count)
-        vote.add_source(url)
-        vote['yes_votes'] = votes['yes']
-        vote['no_votes'] = votes['no']
-        vote['other_votes'] = votes['other']
-
-        vote.validate()
-        bill.add_vote(vote)
-
-    def scrape_floor_vote(self, chamber, bill, date, url):
-        (path, resp) = self.urlretrieve(url)
-        text = convert_pdf(path, 'text')
-        lines = text.split("\n")
-        os.remove(path)
-
+class FloorVote(PDF):
+    def handle_page(self):
         MOTION_INDEX = 4
         TOTALS_INDEX = 6
         VOTE_START_INDEX = 9
 
-        motion = lines[MOTION_INDEX].strip()
+        if len(self.lines) < 2:
+            self.scraper.warning("Bad PDF! " + self.url)
+            return
+
+        motion = self.lines[MOTION_INDEX].strip()
         # Sometimes there is no motion name, only "Passage" in the line above
-        if (not motion and
-                not lines[MOTION_INDEX - 1].startswith("Calendar Page:")):
-            motion = lines[MOTION_INDEX - 1]
+        if (not motion and not self.lines[MOTION_INDEX - 1].startswith("Calendar Page:")):
+            motion = self.lines[MOTION_INDEX - 1]
             MOTION_INDEX -= 1
             TOTALS_INDEX -= 1
             VOTE_START_INDEX -= 1
@@ -317,23 +229,32 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
         for _extra_motion_line in range(2):
             MOTION_INDEX += 1
-            if lines[MOTION_INDEX].strip():
-                motion = "{}, {}".format(motion, lines[MOTION_INDEX].strip())
+            if self.lines[MOTION_INDEX].strip():
+                motion = "{}, {}".format(motion, self.lines[MOTION_INDEX].strip())
                 TOTALS_INDEX += 1
                 VOTE_START_INDEX += 1
             else:
                 break
 
-        (yes_count, no_count, other_count) = [int(x) for x in re.search(
-            r'^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$',
-            lines[TOTALS_INDEX]).groups()]
-        passed = (yes_count > no_count)
+        (yes_count, no_count, nv_count) = [
+            int(x) for x in re.search(r'^\s+Yeas - (\d+)\s+Nays - (\d+)\s+Not Voting - (\d+)\s*$',
+                                      self.lines[TOTALS_INDEX]).groups()
+        ]
+        result = 'pass' if yes_count > no_count else 'fail'
 
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                    other_count)
-        vote.add_source(url)
+        vote = VoteEvent(start_date=self.kwargs['date'],
+                         chamber=self.kwargs['chamber'],
+                         bill=self.kwargs['bill'],
+                         motion_text=motion,
+                         result=result,
+                         classification='passage',
+                         )
+        vote.add_source(self.url)
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('not voting', nv_count)
 
-        for line in lines[VOTE_START_INDEX:]:
+        for line in self.lines[VOTE_START_INDEX:]:
             if not line.strip():
                 break
 
@@ -344,128 +265,257 @@ class FLBillScraper(BillScraper, LXMLMixin):
 
             # Votes follow the pattern of:
             # [vote code] [member name]-[district number]
-            for member in re.findall(r'\s*Y\s+(.*?)-\d{1,3}\s*', line):
-                vote.yes(member)
-            for member in re.findall(r'\s*N\s+(.*?)-\d{1,3}\s*', line):
-                vote.no(member)
-            for member in re.findall(r'\s*(?:EX|AV)\s+(.*?)-\d{1,3}\s*', line):
-                vote.other(member)
+            for vtype, member in re.findall(r'\s*(Y|N|EX|AV)\s+(.*?)-\d{1,3}\s*', line):
+                vtype = {'Y': 'yes', 'N': 'no', 'EX': 'excused', 'AV': 'abstain'}[vtype]
+                vote.vote(vtype, member)
 
-        try:
-            vote.validate()
-        except ValueError:
+        # check totals line up
+        yes_count = no_count = nv_count = 0
+        for vc in vote.counts:
+            if vc['option'] == 'yes':
+                yes_count = vc['value']
+            elif vc['option'] == 'no':
+                no_count = vc['value']
+            else:
+                nv_count += vc['value']
+
+        for vr in vote.votes:
+            if vr['option'] == 'yes':
+                yes_count -= 1
+            elif vr['option'] == 'no':
+                no_count -= 1
+            else:
+                nv_count -= 1
+
+        if yes_count != 0 or no_count != 0:
+            raise ValueError('vote count incorrect: ' + self.url)
+
+        if nv_count != 0:
             # On a rare occasion, a member won't have a vote code,
             # which indicates that they didn't vote. The totals reflect
             # this.
-            self.logger.info("Votes don't add up; looking for additional ones")
-            for line in lines[VOTE_START_INDEX:]:
+            self.scraper.info("Votes don't add up; looking for additional ones")
+            for line in self.lines[VOTE_START_INDEX:]:
                 if not line.strip():
                     break
-                for member in re.findall(
-                        r'\s{8,}([A-Z][a-z\'].*?)-\d{1,3}', line):
-                    vote.other(member)
+                for member in re.findall(r'\s{8,}([A-Z][a-z\'].*?)-\d{1,3}', line):
+                    vote.vote('not voting', member)
+        yield vote
 
-        vote.validate()
-        bill.add_vote(vote)
 
-    def get_session_number(self, session):
-        '''
-        The House uses a session number in its forms, so need to be
-        able to ascertain this from the session name
-        '''
+class UpperComVote(PDF):
 
-        session_number = None
+    def handle_page(self):
+        (_, motion) = self.lines[5].split("FINAL ACTION:")
+        motion = motion.strip()
+        if not motion:
+            self.scraper.warning("Vote appears to be empty")
+            return
 
-        house_url = 'http://www.myfloridahouse.gov/Sections/Bills/bills.aspx'
-        doc = self.lxmlize(house_url)
-        session_options = doc.xpath('//select[@id="ddlSession"]/option')
-        for option in session_options:
+        vote_top_row = [self.lines.index(x) for x in self.lines if
+                        re.search(r'^\s+Yea\s+Nay.*?(?:\s+Yea\s+Nay)+$', x)][0]
+        yea_columns_end = self.lines[vote_top_row].index("Yea") + len("Yea")
+        nay_columns_begin = self.lines[vote_top_row].index("Nay")
 
-            option_name = option.text_content().strip()
-            option_slug = option_name.split(' ')[-1]
-            if option_slug == session:
-                assert session_number is None, "Multiple sessions found"
-                session_number = option.attrib['value']
+        votes = {'yes': [], 'no': [], 'other': []}
+        for line in self.lines[(vote_top_row + 1):]:
+            if line.strip():
+                member = re.search(r'''(?x)
+                        ^\s+(?:[A-Z\-]+)?\s+    # Possible vote indicator
+                        ([A-Z][a-z]+            # Name must have lower-case characters
+                        [\w\-\s]+)              # Continue looking for the rest of the name
+                        (?:,[A-Z\s]+?)?         # Leadership has an all-caps title
+                        (?:\s{2,}.*)?           # Name ends when many spaces are seen
+                        ''', line).group(1)
+                # sometimes members have trailing X's from other motions in the
+                # vote sheet we aren't collecting
+                member = re.sub('(\s+X)+', '', member)
+                # Usually non-voting members won't even have a code listed
+                # Only a couple of codes indicate an actual vote:
+                # "VA" (vote after roll call) and "VC" (vote change)
+                did_vote = bool(re.search(r'^\s+(X|VA|VC)\s+[A-Z][a-z]', line))
+                if did_vote:
+                    # Check where the "X" or vote code is on the page
+                    vote_column = len(line) - len(line.lstrip())
+                    if vote_column <= yea_columns_end:
+                        votes['yes'].append(member)
+                    elif vote_column >= nay_columns_begin:
+                        votes['no'].append(member)
+                    else:
+                        raise ValueError("Unparseable vote found for {0} in {1}:\n{2}"
+                                         .format(member, self.url, line))
+                else:
+                    votes['other'].append(member)
 
-        return session_number
+            # End loop as soon as no more members are found
+            else:
+                break
 
-    def scrape_lower_committee_votes(self, session_number, bill):
-        '''
-        House committee roll calls are not available on the Senate's
-        website. Furthermore, the House uses an internal ID system in
-        its URLs, making accessing those pages non-trivial.
+        totals = re.search(r'(?msu)\s+(\d{1,3})\s+(\d{1,3})\s+.*?TOTALS', self.text).groups()
+        yes_count = int(totals[0])
+        no_count = int(totals[1])
+        result = 'pass' if (yes_count > no_count) else 'fail'
 
-        This function will fetch all the House committee votes for the
-        given bill, and add the votes to that object.
-        '''
+        vote = VoteEvent(start_date=self.kwargs['date'],
+                         bill=self.kwargs['bill'],
+                         chamber='upper',
+                         motion_text=motion,
+                         classification='committee',
+                         result=result
+                         )
+        vote.add_source(self.url)
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('other', len(votes['other']))
 
-        house_url = 'http://www.myfloridahouse.gov/Sections/Bills/bills.aspx'
+        # set voters
+        for vtype, voters in votes.items():
+            for voter in voters:
+                vote.vote(vtype, voter)
 
+        yield vote
+
+
+class HousePage(Page):
+    '''
+    House committee roll calls are not available on the Senate's
+    website. Furthermore, the House uses an internal ID system in
+    its URLs, making accessing those pages non-trivial.
+
+    This will fetch all the House committee votes for the
+    given bill, and add the votes to that object.
+    '''
+    url = 'http://www.myfloridahouse.gov/Sections/Bills/bills.aspx'
+    list_xpath = '//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href'
+
+    def do_request(self):
         # Keep the digits and all following characters in the bill's ID
-        bill_number = re.search(r'^\w+\s(\d+\w*)$', bill['bill_id']).group(1)
+        bill_number = re.search(r'^\w+\s(\d+\w*)$', self.kwargs['bill'].identifier).group(1)
+        session_number = {
+            '2017': '83',
+            '2016': '80',
+            '2015C': '82',
+            '2015B': '81',
+            '2015A': '79',
+            '2015': '76',
+            '2014O': '78',
+            '2014A': '77',
+            '2016O': '84',
+        }[self.kwargs['bill'].legislative_session]
 
         form = {
-            'rblChamber': 'B',
-            'ddlSession': session_number,
-            'ddlBillList': '-1',
-            'txtBillNumber': bill_number,
-            'ddlSponsor': '-1',
-            'ddlReferredTo': '-1',
-            'SubmittedByControl': '',
+            'Chamber': 'B',
+            'SessionId': session_number,
+            'BillNumber': bill_number,
         }
-        doc = lxml.html.fromstring(self.post(url=house_url, data=form).text)
-        doc.make_links_absolute(house_url)
+        return self.scraper.get(self.url + '?' + urlencode(form))
 
-        (bill_link, ) = doc.xpath(
-            '//a[contains(@href, "/Bills/billsdetail.aspx?BillId=")]/@href')
-        bill_doc = self.lxmlize(bill_link)
-        links = bill_doc.xpath('//a[text()="See Votes"]/@href')
+    def handle_list_item(self, item):
+        yield from self.scrape_page_items(HouseBillPage, item, bill=self.kwargs['bill'])
 
-        for link in links:
-            vote_doc = self.lxmlize(link)
 
-            (date, ) = vote_doc.xpath(
-                '//span[@id="ctl00_ContentPlaceHolder1_lblDate"]/text()')
-            date = datetime.datetime.strptime(
-                date, '%m/%d/%Y %I:%M:%S %p').date()
+class HouseBillPage(Page):
+    list_xpath = '//a[text()="See Votes"]/@href'
 
-            totals = vote_doc.xpath('//table//table')[-1].text_content()
-            totals = re.sub(r'(?mu)\s+', " ", totals).strip()
-            (yes_count, no_count, other_count) = [int(x) for x in re.search(
-                r'(?m)Total Yeas:\s+(\d+)\s+Total Nays:\s+(\d+)\s+'
-                'Total Missed:\s+(\d+)', totals).groups()]
-            passed = yes_count > no_count
+    def handle_list_item(self, item):
+        yield from self.scrape_page_items(HouseComVote, item, bill=self.kwargs['bill'])
 
-            (committee, ) = vote_doc.xpath(
-                '//span[@id="ctl00_ContentPlaceHolder1_lblCommittee"]/text()')
-            (action, ) = vote_doc.xpath(
-                '//span[@id="ctl00_ContentPlaceHolder1_lblAction"]/text()')
-            motion = "{} ({})".format(action, committee)
 
-            vote = Vote('lower', date, motion, passed, yes_count, no_count,
-                        other_count)
-            vote.add_source(link)
+class HouseComVote(Page):
 
-            for member_vote in vote_doc.xpath('//table//table//table//td'):
-                if not member_vote.text_content().strip():
-                    continue
+    def handle_page(self):
+        (date, ) = self.doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDate"]/text()')
+        date = datetime.datetime.strptime(date, '%m/%d/%Y %I:%M:%S %p'
+                                          ).isoformat().replace('T', ' ')
 
-                (member, ) = member_vote.xpath('span[2]//text()')
-                (member_vote, ) = member_vote.xpath('span[1]//text()')
+        totals = self.doc.xpath('//table//table')[-1].text_content()
+        totals = re.sub(r'(?mu)\s+', " ", totals).strip()
+        (yes_count, no_count, other_count) = [int(x) for x in re.search(
+            r'(?m)Total Yeas:\s+(\d+)\s+Total Nays:\s+(\d+)\s+'
+            'Total Missed:\s+(\d+)', totals).groups()]
+        result = 'pass' if yes_count > no_count else 'fail'
 
-                if member_vote == "Y":
-                    vote.yes(member)
-                elif member_vote == "N":
-                    vote.no(member)
-                elif member_vote == "-":
-                    vote.other(member)
-                # Parenthetical votes appear to not be counted in the
-                # totals for Yea, Nay, _or_ Missed
-                elif re.search(r'\([YN]\)', member_vote):
-                    continue
-                else:
-                    raise IndexError("Unknown vote type found: {}".format(
-                        member_vote))
+        (committee, ) = self.doc.xpath(
+            '//span[@id="ctl00_ContentPlaceHolder1_lblCommittee"]/text()')
+        (action, ) = self.doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblAction"]/text()')
+        motion = "{} ({})".format(action, committee)
 
-            vote.validate()
-            bill.add_vote(vote)
+        vote = VoteEvent(start_date=date,
+                         bill=self.kwargs['bill'],
+                         chamber='lower',
+                         motion_text=motion,
+                         result=result,
+                         classification='committee',
+                         )
+        vote.add_source(self.url)
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('not voting', other_count)
+
+        for member_vote in self.doc.xpath('//table//table//table//td'):
+            if not member_vote.text_content().strip():
+                continue
+
+            (member, ) = member_vote.xpath('span[2]//text()')
+            (member_vote, ) = member_vote.xpath('span[1]//text()')
+
+            if member_vote == "Y":
+                vote.yes(member)
+            elif member_vote == "N":
+                vote.no(member)
+            elif member_vote == "-":
+                vote.vote('not voting', member)
+            # Parenthetical votes appear to not be counted in the
+            # totals for Yea, Nay, _or_ Missed
+            elif re.search(r'\([YN]\)', member_vote):
+                continue
+            else:
+                raise ValueError("Unknown vote type found: {}".format(member_vote))
+
+        yield vote
+
+
+class SubjectPDF(PDF):
+    pdftotext_type = 'text-nolayout'
+
+    def handle_page(self):
+        """
+            sort of a state machine
+
+            after a blank line if there's an all caps phrase that's the new subject
+
+            if a line contains (H|S)(\d+) that bill gets current subject
+        """
+        subjects = defaultdict(set)
+
+        SUBJ_RE = re.compile('^[A-Z ,()]+$')
+        BILL_RE = re.compile('[HS]\d+(?:-[A-Z])?')
+
+        subject = None
+
+        for line in self.lines:
+            if SUBJ_RE.match(line):
+                subject = line.lower().strip()
+            elif subject and BILL_RE.findall(line):
+                for bill in BILL_RE.findall(line):
+                    # normalize bill id to [SH]#
+                    bill = bill.replace('-', '')
+                    subjects[bill].add(subject)
+
+        return subjects
+
+
+class FlBillScraper(Scraper, Spatula):
+
+    def scrape(self, session=None):
+        # TODO: there should probably be an easy way to do this in pupa
+        if not session:
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            self.info('no session specified, using', session)
+
+        subject_url = ('http://www.leg.state.fl.us/data/session/{}/citator/Daily/subindex.pdf'
+                       .format(session))
+        subjects = self.scrape_page(SubjectPDF, subject_url)
+
+        url = "http://flsenate.gov/Session/Bills/{}?chamber=both".format(session)
+        yield from self.scrape_page_items(StartPage, url, session=session, subjects=subjects)
