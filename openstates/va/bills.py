@@ -49,6 +49,7 @@ class SubjectPage(Page, Spatula):
                 subjects[bill_id].append(link.text)
         return subjects
 
+
 class SubjectBillListPage(Page, Spatula):
     def handle_page(self):
         for bill in self.doc.xpath('//ul[@class="linkSect"]/li'):
@@ -57,6 +58,7 @@ class SubjectBillListPage(Page, Spatula):
         next_url = self.doc.xpath('//a/b[text()="More..."]/../@href')
         if next_url:
             yield from self.scrape_page_items(SubjectBillListPage, url=next_url[0])
+
 
 class BillListPage(Page, Spatula):
     def handle_page(self):
@@ -74,9 +76,11 @@ class BillListPage(Page, Spatula):
                 'H': 'lower',
                 'S': 'upper',
             }[bill_id[0]]
-            bill_type = {'B': 'bill',
-                            'J': 'joint resolution',
-                            'R': 'resolution'}[bill_id[1]]
+            bill_type = {
+                'B': 'bill',
+                'J': 'joint resolution',
+                'R': 'resolution'
+            }[bill_id[1]]
             bill = Bill(bill_id, self.kwargs['session'], desc,
                         chamber=chamber, classification=bill_type)
 
@@ -96,6 +100,7 @@ class BillListPage(Page, Spatula):
         if next_url:
             yield from self.scrape_page_items(BillListPage, url=next_url[0], **self.kwargs)
 
+
 class BillSponsorPage(Page, Spatula):
     def handle_page(self):
         for slist in self.doc.xpath('//ul[@class="linkSect"]'):
@@ -113,6 +118,7 @@ class BillSponsorPage(Page, Spatula):
                 self.obj.add_sponsorship(name, type, 'person', type == 'primary')
                 yield self.obj
 
+
 class BillDetailPage(Page, Spatula):
 
     vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y (\d+)-N(?: (\d+)-A)?\)')
@@ -121,7 +127,11 @@ class BillDetailPage(Page, Spatula):
 
     def handle_page(self):
         # TODO(jmcarp) Restore summary
-        # summary = self.doc.xpath('//h4[starts-with(text(), "SUMMARY")]/following-sibling::p/text()')
+        # summary = self.doc.xpath('/'.join([
+        #     '//h4[starts-with(text(), "SUMMARY")]',
+        #     '/following-sibling::p',
+        #     'text()',
+        # ])
         # if summary and summary[0].strip():
         #     self.obj['summary'] = summary[0].strip()
 
@@ -214,19 +224,19 @@ class BillDetailPage(Page, Spatula):
                 elif cached_vote is not None:
                     if vote_action.startswith(u'VOTE:'):
                         counts = {count['option']: count['value'] for count in cached_vote.counts}
-                        if (vote_url
-                            and counts['yes'] == y
-                            and counts['no'] == n
-                            and counts['other'] == o):
+                        if (vote_url and
+                                counts['yes'] == y and
+                                counts['no'] == n and
+                                counts['other'] == o):
                             vote = cached_vote
                             list(self.scrape_page_items(VotePage, url=vote_url[0], obj=vote))
                             vote.add_source(vote_url[0])
                             action = cached_action
                     elif cached_vote.motion_text.startswith('VOTE:'):
                         counts = {count['option']: count['value'] for count in cached_vote.counts}
-                        if (counts['yes'] == y
-                            and counts['no'] == n
-                            and counts['other'] == o):
+                        if (counts['yes'] == y and
+                                counts['no'] == n and
+                                counts['other'] == o):
                             vote = cached_vote
                             vote['motion'] = vote_action
                     else:
@@ -271,7 +281,9 @@ class BillDetailPage(Page, Spatula):
             # if matched a 'None' atype, don't add the action
             chamber = None  # TODO: populate
             if atype:
-                self.obj.add_action(action, date, organization=actor, chamber=chamber, classification=atype)
+                self.obj.add_action(action, date, organization=actor, chamber=chamber,
+                                    classification=atype)
+
 
 class VotePage(Page):
     def handle_page(self):
@@ -307,9 +319,14 @@ class VotePage(Page):
                 # lookahead and don't split if comma precedes initials
                 # Also, Bell appears as Bell, Richard B. and Bell, Robert P.
                 # and so needs the lookbehind assertion.
-                return [x.strip() for x in re.split('(?<!Bell), (?!\w\.\w?\.?)', pieces[1]) if x.strip()]
+                return [
+                    x.strip()
+                    for x in re.split('(?<!Bell), (?!\w\.\w?\.?)', pieces[1])
+                    if x.strip()
+                ]
         else:
             return []
+
 
 class VaBillScraper(Scraper, Spatula):
     def scrape(self, session=None):
@@ -317,12 +334,14 @@ class VaBillScraper(Scraper, Spatula):
             session = self.jurisdiction.legislative_sessions[-1]['identifier']
             self.info('no session specified, using', session)
         url = BASE_URL + URL_PATTERNS['list'].format(session)
-        subjects = self.scrape_page(SubjectPage, url=BASE_URL + URL_PATTERNS['subjects'].format(session))
-        yield from self.scrape_page_items(BillListPage, url=url, session=session, subjects=subjects)
+        subject_url = BASE_URL + URL_PATTERNS['subjects'].format(session)
+        subjects = self.scrape_page(SubjectPage, url=subject_url)
+        yield from self.scrape_page_items(BillListPage, url=url, session=session,
+                                          subjects=subjects)
 
     def accept_response(self, response):
         # check for rate limit pages
         normal = super().accept_response(response)
         return (normal and
-            'Sorry, your query could not be processed' not in response.text
-            and 'the source database is temporarily unavailable' not in response.text)
+                'Sorry, your query could not be processed' not in response.text and
+                'the source database is temporarily unavailable' not in response.text)

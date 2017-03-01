@@ -60,9 +60,14 @@ class Va(Jurisdiction):
 
     def get_session_list(self):
         scraper = scrapelib.Scraper(requests_per_minute=40)
-        vals = url_xpath('http://lis.virginia.gov', '//div[@id = "sLink"]//option[@value != "01"]/@value', requester=scraper)
+        vals = url_xpath(
+            'http://lis.virginia.gov',
+            '//div[@id = "sLink"]//option[@value != "01"]/@value',
+            requester=scraper,
+        )
         sessions = [get_session_id(val, scraper) for val in vals]
         return [session for session in sessions if session is not None]
+
 
 cgi_pattern = 'http://lis.virginia.gov/cgi-bin/legp604.exe?ses=171&typ=lnk=val={}'
 session_pattern = re.compile('lis\.virginia\.gov\/(\d+)\/lis\.htm')

@@ -27,13 +27,16 @@ class MemberDetail(Page):
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             self.obj.add_membership(com)
 
+
 class SenateDetail(MemberDetail):
     role = 'Senator'
     chamber = 'upper'
 
+
 class DelegateDetail(MemberDetail):
     role = 'Delegate'
     chamber = 'lower'
+
 
 class MemberList(Page):
     def handle_list_item(self, item):
@@ -53,9 +56,11 @@ class MemberList(Page):
         list(self.scrape_page(self.detail_page, item.get('href'), obj=leg))
         return leg
 
+
 party_district_pattern = re.compile(r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
 def get_party_district(text):
     return party_district_pattern.match(text).groups()
+
 
 lis_id_patterns = {
     'upper': re.compile(r'(S[0-9]+$)'),
@@ -66,6 +71,7 @@ def get_lis_id(chamber, url):
     match = re.search(lis_id_patterns[chamber], url)
     if match.groups:
         return match.group(1)
+
 
 name_elect_pattern = re.compile(r'(- Elect)$')
 name_resigned_pattern = re.compile(r'-(Resigned|Member) (\d{1,2}/\d{1,2})?')
@@ -78,15 +84,18 @@ def clean_name(name):
         name = name.rsplit('-')[0]
     return name, action, date
 
+
 class SenateList(MemberList):
     chamber = 'upper'
     detail_page = SenateDetail
     list_xpath = '//div[@class="lColRt"]/ul/li/a'
 
+
 class DelegateList(MemberList):
     chamber = 'lower'
     detail_page = DelegateDetail
     list_xpath = '//div[@class="lColLt"]/ul/li/a'
+
 
 class VaPersonScraper(Scraper, Spatula):
     def scrape(self, session=None):
