@@ -129,10 +129,18 @@ class UTBillScraper(BillScraper, LXMLMixin):
             '//b[text()="Bill Text"]/following-sibling::ul/li/'
             'a[text() and not(text()=" ")]'
         )
+
         for version in versions:
+
+            # sometimes the href is on the following <a> tag and the tag we
+            # have has an onclick
+            url = version.get('href')
+            if not url:
+                url = version.xpath('following-sibling::a[1]/@href')[0]
+
             bill.add_version(
                 version.xpath('text()')[0].strip(),
-                version.xpath('following-sibling::a[1]/@href')[0],
+                url,
                 mimetype='application/pdf'
             )
 
@@ -309,7 +317,7 @@ class UTBillScraper(BillScraper, LXMLMixin):
             return self.scrape_committee_vote(
                 bill, actor, date, motion, page, url, uniqid
             )
-                
+
 
         passed = None
         if "Passed" in descr:
