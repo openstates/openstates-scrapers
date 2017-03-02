@@ -121,7 +121,10 @@ class BillSponsorPage(Page, Spatula):
 
 class BillDetailPage(Page, Spatula):
 
-    vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y (\d+)-N(?: (\d+)-A)?\)')
+    # There's a weird catch-all for numerals after the dash in the Yes
+    # count. That's because we've actually encountered this.
+    # There's also a catch-all for dashes before the number in No count
+    vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y -?(\d+)-N(?: (\d+)-A)?\)')
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
                  'Conference': 'conference'}
 
