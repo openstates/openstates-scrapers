@@ -1,6 +1,6 @@
 import datetime
 from pupa.scrape import Jurisdiction, Organization
-
+from .people import NCPersonScraper
 
 class NorthCarolina(Jurisdiction):
     division_id = "ocd-division/country:us/state:nc"
@@ -8,6 +8,7 @@ class NorthCarolina(Jurisdiction):
     name = "North Carolina"
     url = "TODO"
     scrapers = {
+        'people': NCPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -17,82 +18,66 @@ class NorthCarolina(Jurisdiction):
     {
         "_scraped_name": "2017-2018 Session",
         "classification": "primary",
-        "end_date": None,
         "identifier": "2017",
         "name": "2017-2018 Session",
-        "start_date": None
     },
     {
         "_scraped_name": "2016 Extra Session 5",
         "classification": "special",
-        "end_date": None,
         "identifier": "2015E5",
         "name": "2016 Extra Session 5",
-        "start_date": None
     },
     {
         "_scraped_name": "2016 Extra Session 4",
         "classification": "special",
-        "end_date": None,
         "identifier": "2015E4",
         "name": "2016 Extra Session 4",
-        "start_date": None
     },
     {
         "_scraped_name": "2016 Extra Session 3",
         "classification": "special",
-        "end_date": None,
         "identifier": "2015E3",
         "name": "2016 Extra Session 3",
-        "start_date": None
     },
     {
         "_scraped_name": "2016 Extra Session 2",
         "classification": "special",
-        "end_date": None,
         "identifier": "2015E2",
         "name": "2016 Extra Session 2",
-        "start_date": None
     },
     {
         "_scraped_name": "2016 Extra Session 1",
         "classification": "special",
-        "end_date": None,
         "identifier": "2015E1",
         "name": "2016 Extra Session 1",
-        "start_date": None
     },
     {
         "_scraped_name": "2015-2016 Session",
         "classification": "primary",
-        "end_date": None,
         "identifier": "2015",
         "name": "2015-2016 Session",
-        "start_date": datetime.date(2015, 1, 30)
+        "start_date": "2015-01-30"
     },
     {
         "_scraped_name": "2013-2014 Session",
         "classification": "primary",
-        "end_date": None,
         "identifier": "2013",
         "name": "2013-2014 Session",
-        "start_date": datetime.date(2013, 1, 30)
+        "start_date": "2013-01-30"
     },
     {
         "_scraped_name": "2011-2012 Session",
         "classification": "primary",
-        "end_date": None,
         "identifier": "2011",
         "name": "2011-2012 Session",
-        "start_date": datetime.date(2011, 1, 26)
+        "start_date": "2011-01-26"
     },
     {
         "_scraped_name": "2009-2010 Session",
         "classification": "primary",
-        "end_date": None,
         "identifier": "2009",
         "name": "2009-2010 Session",
-        "start_date": datetime.date(2009, 1, 28)
+        "start_date": "2009-01-28"
     }
 ]
     ignored_scraped_sessions = [

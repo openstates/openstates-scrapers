@@ -9,7 +9,7 @@ import importlib
 class DatetimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.date):
-            return repr(obj)
+            return obj.strftime('%Y-%m-%d')
         return json.JSONEncoder.default(self, obj)
 
 
@@ -90,19 +90,21 @@ class {classname}(Jurisdiction):
         yield upper
         yield lower"""
 
-    sessions = [
-        {'identifier': k,
-            'classification': v['type'],
-            'name': v['display_name'],
-            '_scraped_name': v['_scraped_name'],
-            'start_date': v.get('start_date'),
-            'end_date': v.get('end_date'),
-         }
-        for k, v in sorted(metadata['session_details'].items(), reverse=True)
-    ]
+    sessions = []
+    for k, v in sorted(metadata['session_details'].items(), reverse=True):
+        s = {'identifier': k,
+             'classification': v['type'],
+             'name': v['display_name'],
+             '_scraped_name': v['_scraped_name'],
+             }
+        if v.get('start_date'):
+            s['start_date'] = v.get('start_date')
+        if v.get('end_date'):
+            s['end_date'] = v.get('end_date')
+        sessions.append(s)
+
     sessions = json.dumps(sessions, sort_keys=True, indent=4,
                           cls=DatetimeEncoder, separators=(',', ': '))
-    sessions = sessions.replace('"datetime', 'datetime').replace(')"', ')')
     sessions = sessions.replace('null', 'None')
 
     ignored = '        ' + '\n        '.join(
