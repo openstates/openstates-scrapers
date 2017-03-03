@@ -1,4 +1,4 @@
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Scraper, Person
 import lxml.html
 
 party_map = {'Dem': 'Democratic',
@@ -19,14 +19,15 @@ def get_table_item(doc, name):
     else:
         return None
 
-class NCLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'nc'
+class NCPersonScraper(Scraper):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
 
-    def scrape(self, term, chambers):
-        for chamber in chambers:
-            self.scrape_chamber(chamber, term)
-
-    def scrape_chamber(self, chamber, term):
+    def scrape_chamber(self, chamber):
         url = "http://www.ncga.state.nc.us/gascripts/members/"\
             "memberListNoPic.pl?sChamber="
 
@@ -76,12 +77,20 @@ class NCLegislatorScraper(LegislatorScraper):
             capitol_phone = capitol_phone.strip() or None
 
             # save legislator
-            legislator = Legislator(term, chamber, district, full_name,
-                                    photo_url=photo_url, party=party,
-                                    url=link, notice=notice)
-            legislator.add_source(link)
-            legislator.add_office('district', 'District Office',
-                                  address=address, phone=phone)
-            legislator.add_office('capitol', 'Capitol Office',
-                                  address=capitol_address, phone=capitol_phone, email=capitol_email)
-            self.save_legislator(legislator)
+            person = Person(name=full_name, district=district,
+                            party=party, primary_org=chamber,
+                            image=photo_url)
+            person.extras['notice'] = notice
+            person.add_link(link)
+            person.add_source(link)
+            if address:
+                person.add_contact_detail(type='address', value=address, note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone, note='District Office')
+            if capitol_address:
+                person.add_contact_detail(type='address', value=capitol_address, note='Capitol Office')
+            if capitol_phone:
+                person.add_contact_detail(type='voice', value=capitol_phone, note='Capitol Office')
+            if capitol_email:
+                person.add_contact_detail(type='email', value=capitol_email, note='Capitol Office')
+            yield person
