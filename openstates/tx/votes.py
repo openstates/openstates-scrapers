@@ -4,13 +4,22 @@ import uuid
 import urlparse
 import datetime
 import scrapelib
+import collections
+
+import lxml.html
+from billy.scrape.votes import VoteScraper, Vote
 
 import tx
 
-from billy.scrape.votes import VoteScraper, Vote
-from .utils import parse_ftp_listing
 
-import lxml.html
+def prev_tag(el):
+    """
+    Return previous tag, skipping <br>s.
+    """
+    el = el.getnext()
+    while el.tag == 'br':
+        el = el.getnext()
+    return el
 
 
 def next_tag(el):
@@ -79,26 +88,17 @@ def names(el):
 
         names.append(name)
 
-    # First name will have stuff to ignore before an mdash
-    names[0] = names[0].split(u'\u2014')[1].strip()
-    # Get rid of trailing '.'
-    names[-1] = names[-1][0:-1]
+    if names:
+        # First name will have stuff to ignore before an mdash
+        names[0] = clean_name(names[0]).strip()
+        # Get rid of trailing '.'
+        names[-1] = names[-1][0:-1]
 
     return names
 
 
-def get_motion(match):
-    if match.group('type') == 'passed' or match.group('type') == 'adopted':
-        return 'final passage'
-    else:
-        return 'to ' + match.group('to')
-
-
-def get_type(motion):
-    if motion == 'final passage':
-        return 'passage'
-    else:
-        return 'other'
+def clean_name(name):
+    return re.split(ur'[\u2014:]', name)[-1]
 
 
 def votes(root, session):
@@ -108,137 +108,195 @@ def votes(root, session):
         yield vote
 
 
-def record_votes(root, session):
-    for el in root.xpath(u'//div[starts-with(., "Yeas \u2014")]'):
-        text = ''.join(el.getprevious().getprevious().itertext())
-        text.replace('\n', ' ')
-        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,?\W+as\W+amended,?)?\W+was\W+'
-                      '(?P<type>adopted|passed'
-                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
-                      'by\W+\(Record\W+(?P<record>\d+)\):\W+'
-                      '(?P<yeas>\d+)\W+Yeas,\W+(?P<nays>\d+)\W+Nays,\W+'
-                      '(?P<present>\d+)\W+Present', text)
-        if m:
-            yes_count = int(m.group('yeas'))
-            no_count = int(m.group('nays'))
-            other_count = int(m.group('present'))
+def first_int(res):
+    if res is not None:
+        return int(next(group for group in res.groups() if group is not None))
 
-            bill_id = m.group('bill_id')
-            bill_id = bill_id.replace(u'\xa0', ' ')
-            bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
 
-            if bill_id.startswith('H') or bill_id.startswith('CSHB'):
-                bill_chamber = 'lower'
-            elif bill_id.startswith('S') or bill_id.startswith('CSSB'):
-                bill_chamber = 'upper'
-            else:
-                continue
+class BaseVote(object):
 
-            motion = get_motion(m)
+    def __init__(self, el):
+        self.el = el
 
-            vote = Vote(None, None, motion, True,
-                        yes_count, no_count, other_count)
-            vote['bill_id'] = bill_id
-            vote['bill_chamber'] = bill_chamber
-            vote['session'] = session[0:2]
-            vote['method'] = 'record'
-            vote['record'] = m.group('record')
-            vote['type'] = get_type(motion)
+    @property
+    def text(self):
+        return self.el.text_content()
 
-            for name in names(el):
-                vote.yes(name)
+    @property
+    def previous(self):
+        return self.el.getprevious().getprevious()
 
+    @property
+    def next(self):
+        return self.el.getnext().getnext()
+
+    @property
+    def is_valid(self):
+        return (
+            self.bill_id is not None and
+            self.chamber is not None
+        )
+
+    @property
+    def bill_id(self):
+        bill_id = (
+            get_bold_text(self.el) or
+            get_bold_text(self.previous)
+        )
+        return clean_bill_id(bill_id)
+
+    @property
+    def chamber(self):
+        bill_id = self.bill_id or ''
+        if bill_id.startswith('H') or bill_id.startswith('CSHB'):
+            return 'lower'
+        if bill_id.startswith('S') or bill_id.startswith('CSSB'):
+            return 'upper'
+
+
+# Note: Vote count patterns are inconsistent across journals and may follow the
+# pattern "145 Yeas, 0 Nays" (http://www.journals.house.state.tx.us/HJRNL/85R/HTML/85RDAY02FINAL.HTM)
+# or "Yeas 20, Nays 10" (http://www.journals.senate.state.tx.us/SJRNL/85R/HTML/85RSJ02-08-F.HTM)
+class MaybeVote(BaseVote):
+    yeas_pattern = re.compile(r'yeas[\s\xa0]+(\d+)|(\d+)[\s\xa0]+yeas', re.IGNORECASE)
+    nays_pattern = re.compile(r'nays[\s\xa0]+(\d+)|(\d+)[\s\xa0]+nays', re.IGNORECASE)
+    present_pattern = re.compile(r'present[\s\xa0]+(\d+)|(\d+)[\s\xa0]+present', re.IGNORECASE)
+    record_pattern = re.compile(r'\(record[\s\xa0]+(\d+)\)', re.IGNORECASE)
+    passed_pattern = re.compile(r'(adopted|passed|prevailed)', re.IGNORECASE)
+    check_prev_pattern = re.compile(r'the (motion|resolution)', re.IGNORECASE)
+    votes_pattern = re.compile(r'^(yeas|nays|present|absent)', re.IGNORECASE)
+    amendment_pattern = re.compile(r'the amendment to', re.IGNORECASE)
+
+    @property
+    def is_valid(self):
+        return (
+            super(MaybeVote, self).is_valid and
+            self.yeas is not None and
+            self.nays is not None
+        )
+
+    @property
+    def is_amendment(self):
+        return self.amendment_pattern.search(self.text) is not None
+
+    @property
+    def passed(self):
+        return bool(self.passed_pattern.search(self.text))
+
+    @property
+    def yeas(self):
+        res = self.yeas_pattern.search(self.text)
+        return first_int(res)
+
+    @property
+    def nays(self):
+        res = self.nays_pattern.search(self.text)
+        return first_int(res)
+
+    @property
+    def present(self):
+        res = self.present_pattern.search(self.text)
+        return first_int(res)
+
+    @property
+    def record(self):
+        res = self.record_pattern.search(self.text)
+        return first_int(res)
+
+    @property
+    def votes(self):
+        votes = collections.defaultdict(list)
+        el = next_tag(self.el)
+        while el.text:
+            res = re.match(self.votes_pattern, el.text)
+            if not res:
+                break
+            votes[res.groups()[0].lower()].extend(names(el))
             el = next_tag(el)
-            if el.text and el.text.startswith('Nays'):
-                for name in names(el):
-                    vote.no(name)
-                el = next_tag(el)
+        return votes
 
-            while el.text and re.match(r'Present|Absent', el.text):
-                for name in names(el):
-                    vote.other(name)
-                el = next_tag(el)
 
-            vote['other_count'] = len(vote['other_votes'])
-            yield vote
-        else:
-            pass
+class MaybeViva(BaseVote):
+    amendment_pattern = re.compile(r'the amendment to', re.IGNORECASE)
+    floor_amendment_pattern = re.compile(r'floor amendment no', re.IGNORECASE)
+    passed_pattern = re.compile(r'(adopted|passed|prevailed)', re.IGNORECASE)
+    viva_voce_pattern = re.compile(r'viva voce vote', re.IGNORECASE)
+
+    @property
+    def is_valid(self):
+        return (
+            super(MaybeViva, self).is_valid and
+            self.viva_voce_pattern.search(self.previous.text_content()) is not None
+        )
+
+    @property
+    def is_amendment(self):
+        return bool(
+            self.amendment_pattern.search(self.previous.text_content()) or
+            self.floor_amendment_pattern.search(self.text)
+        )
+
+    @property
+    def passed(self):
+        return bool(self.passed_pattern.search(self.text))
+
+
+def get_bold_text(el):
+    b = el.find('b')
+    if b is not None:
+        return b.text_content()
+
+
+def clean_bill_id(bill_id):
+    if bill_id:
+        bill_id = bill_id.replace(u'\xa0', ' ')
+        bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
+    return bill_id
+
+
+vote_selectors = [
+    '[@class = "textpara"]',
+    '[contains(translate(., "YEAS", "yeas"), "yeas")]',
+]
+def record_votes(root, session):
+    for el in root.xpath('//div{}'.format(''.join(vote_selectors))):
+        mv = MaybeVote(el)
+        if not mv.is_valid:
+            continue
+
+        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed,
+                 mv.yeas or 0, mv.nays or 0, mv.present or 0)
+        v['bill_id'] = mv.bill_id
+        v['bill_chamber'] = mv.chamber
+        v['is_amendment'] = mv.is_amendment
+        v['session'] = session[0:2]
+        v['method'] = 'record'
+
+        for each in mv.votes['yeas']:
+            v.yes(each)
+        for each in mv.votes['nays']:
+            v.no(each)
+        for each in mv.votes['present'] + mv.votes['absent']:
+            v.other(each)
+
+        yield v
 
 
 def viva_voce_votes(root, session):
     prev_id = None
     for el in root.xpath(u'//div[starts-with(., "All Members are deemed")]'):
-        text = ''.join(el.getprevious().getprevious().itertext())
-        text.replace('\n', ' ')
-        m = re.search(r'(?P<bill_id>\w+\W+\d+)(,\W+as\W+amended,)?\W+was\W+'
-                      '(?P<type>adopted|passed'
-                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
-                      'by\W+a\W+viva\W+voce\W+vote', text)
-        if m:
-            motion = get_motion(m)
-
-            # No identifier, generate our own
-            record = str(uuid.uuid1())
-
-            bill_id = m.group('bill_id')
-            bill_id = bill_id.replace(u'\xa0', ' ')
-            bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
-
-            if bill_id.startswith('H') or bill_id.startswith('CSHB'):
-                bill_chamber = 'lower'
-            elif bill_id.startswith('S') or bill_id.startswith('CSSB'):
-                bill_chamber = 'upper'
-            else:
-                continue
-
-            vote = Vote(None, None, motion, True, 0, 0, 0)
-            vote['bill_id'] = bill_id
-            vote['bill_chamber'] = bill_chamber
-            vote['session'] = session[0:2]
-            vote['method'] = 'viva voce'
-            vote['record'] = record
-            vote['type'] = get_type(motion)
-            yield vote
+        mv = MaybeViva(el)
+        if not mv.is_valid:
             continue
 
-        m = re.search('The\W+bill\W+was.+and\W+was\W+'
-                      '(?P<type>adopted|passed'
-                      '(\W+to\W+(?P<to>engrossment|third\W+reading))?)\W+'
-                      'by\W+a\W+viva\W+voce\W+vote', text)
-        if m:
-            prev_text = ''.join(el.getprevious().getprevious().itertext())
-            m2 = re.match('(HB|SB|CSHB|CSSB|HR|SR)\W+\d+', prev_text)
-            if m2:
-                bill_id = m2.group()
-                prev_id = bill_id
-            else:
-                # This is scary
-                bill_id = prev_id
+        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed, 0, 0, 0)
+        v['bill_id'] = mv.bill_id
+        v['bill_chamber'] = mv.chamber
+        v['is_amendment'] = mv.is_amendment
+        v['session'] = session[0:2]
+        v['method'] = 'viva voce'
 
-            if not bill_id:
-                continue
-
-            if bill_id.startswith('H') or bill_id.startswith('CSHB'):
-                bill_chamber = 'lower'
-            elif bill_id.startswith('S') or bill_id.startswith('CSSB'):
-                bill_chamber = 'upper'
-            else:
-                continue
-
-            bill_id = bill_id.replace(u'\xa0', ' ')
-            motion = get_motion(m)
-
-            record = str(uuid.uuid1())
-            vote = Vote(None, None, motion, True, 0, 0, 0)
-            vote['bill_id'] = bill_id
-            vote['bill_chamber'] = bill_chamber
-            vote['session'] = session[0:2]
-            vote['method'] = 'viva voce'
-            vote['record'] = record
-            vote['type'] = get_type(motion)
-
-            yield vote
-            continue
+        yield v
 
 
 class TXVoteScraper(VoteScraper):
@@ -246,8 +304,6 @@ class TXVoteScraper(VoteScraper):
     #the 84th session doesn't seem to be putting journals on the ftp
 
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
-
-
 
     def scrape(self, chamber, session):
         self.validate_session(session)
@@ -258,7 +314,6 @@ class TXVoteScraper(VoteScraper):
 
         if len(session) == 2:
             session = "%sR" % session
-
 
         #As of 1/30/15, the 84th session does not have journals on the ftp
         """
@@ -282,8 +337,8 @@ class TXVoteScraper(VoteScraper):
         #we're going to go through every day this year before today
         #and see if there were any journals that day
         today = datetime.datetime.today()
-        today = datetime.datetime(today.year,today.month,today.day)
-        journal_day = datetime.datetime(today.year,1,1)
+        today = datetime.datetime(today.year, today.month, today.day)
+        journal_day = datetime.datetime(today.year, 1, 1)
         day_num = 1
         while journal_day <= today:
             if chamber == 'lower':
@@ -302,14 +357,12 @@ class TXVoteScraper(VoteScraper):
             else:
                 self.scrape_journal(journal_url, chamber, session)
 
-
-
     def scrape_journal(self, url, chamber, session):
         if "R" in session:
             session_num = session.strip("R")
         else:
             session_num = session
-        year = tx.metadata['session_details'][session_num]['start_year']
+        year = tx.metadata['session_details'][session_num]['start_date'].year
         try:
             page = self.get(url).text
         except scrapelib.HTTPError:
@@ -317,7 +370,6 @@ class TXVoteScraper(VoteScraper):
 
         root = lxml.html.fromstring(page)
         clean_journal(root)
-
 
         if chamber == 'lower':
             div = root.xpath("//div[@class = 'textpara']")[0]
