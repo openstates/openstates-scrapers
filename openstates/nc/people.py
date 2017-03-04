@@ -8,6 +8,7 @@ party_map = {'Dem': 'Democratic',
              'R': 'Republican',
              'U': 'Unaffiliated'}
 
+
 def get_table_item(doc, name):
     # get span w/ item
     span = doc.xpath('//span[text()="{0}"]'.format(name))[0]
@@ -18,6 +19,7 @@ def get_table_item(doc, name):
                 '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
     else:
         return None
+
 
 class NCPersonScraper(Scraper):
     def scrape(self, chamber=None):
@@ -47,7 +49,7 @@ class NCPersonScraper(Scraper):
             party = party.text_content().strip("()")
             party = party_map[party]
 
-            district = district.text_content().replace("District","").strip()
+            district = district.text_content().replace("District", "").strip()
 
             notice = full_name.xpath('span')
             if notice:
@@ -84,13 +86,18 @@ class NCPersonScraper(Scraper):
             person.add_link(link)
             person.add_source(link)
             if address:
-                person.add_contact_detail(type='address', value=address, note='District Office')
+                person.add_contact_detail(type='address', value=address,
+                                          note='District Office')
             if phone:
-                person.add_contact_detail(type='voice', value=phone, note='District Office')
+                person.add_contact_detail(type='voice', value=phone,
+                                          note='District Office')
             if capitol_address:
-                person.add_contact_detail(type='address', value=capitol_address, note='Capitol Office')
+                person.add_contact_detail(type='address', value=capitol_address,
+                                          note='Capitol Office')
             if capitol_phone:
-                person.add_contact_detail(type='voice', value=capitol_phone, note='Capitol Office')
+                person.add_contact_detail(type='voice', value=capitol_phone,
+                                          note='Capitol Office')
             if capitol_email:
-                person.add_contact_detail(type='email', value=capitol_email, note='Capitol Office')
+                person.add_contact_detail(type='email', value=capitol_email,
+                                          note='Capitol Office')
             yield person
