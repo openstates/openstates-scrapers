@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import NCPersonScraper
 from .committees import NCCommitteeScraper
+from .bills import NCBillScraper
 
 
 class NorthCarolina(Jurisdiction):
@@ -11,6 +12,7 @@ class NorthCarolina(Jurisdiction):
     scrapers = {
         'people': NCPersonScraper,
         'committees': NCCommitteeScraper,
+        'bills': NCBillScraper,
     }
     parties = [
         {'name': 'Republican'},
