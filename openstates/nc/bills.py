@@ -1,13 +1,8 @@
 import datetime as dt
-
 import lxml.html
+from pupa.scrape import Scraper, Bill
 
-from billy.scrape.bills import BillScraper, Bill
-
-
-class NCBillScraper(BillScraper):
-
-    jurisdiction = 'nc'
+class NCBillScraper(Scraper):
 
     _action_classifiers = {
         'Vetoed': 'governor:vetoed',
@@ -134,11 +129,16 @@ class NCBillScraper(BillScraper):
 
             bill.add_action(actor, action, act_date, type=atype)
 
-        self.save_bill(bill)
+        return bill
 
-    def scrape(self, session, chambers):
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
-            self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
@@ -149,4 +149,4 @@ class NCBillScraper(BillScraper):
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]
-            self.scrape_bill(chamber, session, bill_id)
+            yield self.scrape_bill(chamber, session, bill_id)
