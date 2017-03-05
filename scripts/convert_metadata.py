@@ -91,7 +91,7 @@ class {classname}(Jurisdiction):
         yield lower"""
 
     sessions = []
-    for k, v in sorted(metadata['session_details'].items(), reverse=True):
+    for k, v in sorted(metadata['session_details'].items(), reverse=False):
         s = {'identifier': k,
              'classification': v['type'],
              'name': v['display_name'],
