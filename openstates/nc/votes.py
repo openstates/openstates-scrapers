@@ -1,5 +1,4 @@
 import os
-import datetime
 from zipfile import ZipFile
 from pupa.scrape import VoteEvent, Scraper
 
@@ -69,7 +68,7 @@ class NCVoteScraper(Scraper):
         # 20: PASSED/FAILED
         # 21: legislative day
         vote_file = zf.open(naming_scheme.format(file_label='Votes', session=ftp_session))
-        bill_chambers = {'H':'lower', 'S':'upper'}
+        bill_chambers = {'H': 'lower', 'S': 'upper'}
         votes = {}
         for line in vote_file.readlines():
             data = line.decode().split(delimiter)

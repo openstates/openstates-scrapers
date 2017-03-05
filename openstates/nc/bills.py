@@ -54,7 +54,8 @@ class NCBillScraper(Scraper):
         data = self.get(bill_detail_url).text
         doc = lxml.html.fromstring(data)
 
-        title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
+        title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; '
+                                  'width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
         if 'Joint Resolution' in title_div_txt:
             bill_type = 'joint resolution'
             bill_id = bill_id[0] + 'JR ' + bill_id[1:]
@@ -65,7 +66,6 @@ class NCBillScraper(Scraper):
             bill_type = 'bill'
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-        title_style_xpath = '//div[@style="text-align: center; font: bold 20px Arial; margin-top: 15px; margin-bottom: 8px;"]/text()'
         bill_title = doc.xpath('//div[@id="title"]')[0].text_content()
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
