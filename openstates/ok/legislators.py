@@ -20,9 +20,9 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         # address lines.
         while office_info:
             last = office_info[-1]
-            if '@' not in last \
-                and ', OK' not in last \
-                and not re.search(r'[\d\-\(\) ]{7,}', last):
+            if ('@' not in last
+                    and ', OK' not in last
+                    and not re.search(r'[\d\-\(\) ]{7,}', last)):
                 office_info.pop()
             else:
                 break
@@ -57,7 +57,6 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return email if validate_email_address(email) else ''
 
-
     def scrape(self, chamber, term):
         getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
@@ -77,6 +76,10 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             if name_node is not None:
                 name_text = name_node.text.strip()
+
+                # Handle seats with no current representative
+                if re.search(r'District \d+', name_text):
+                    continue
 
                 last_name, delimiter, first_name = name_text.partition(',')
 
@@ -174,7 +177,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         # District offices only have address, no other information
         district_address = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictAddress"]/text()')
         if district_address:
-            (district_city_state, ) = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictCity"]/text()')
+            district_city_state,  = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictCity"]/text()')
             district_address = "{}\n{}".format(district_address[0], district_city_state)
 
             office = dict(name='District Office', type='district', address=district_address)
@@ -193,7 +196,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             else:
                 district = a.xpath('../../span')[1].text.split()[1]
 
-            if a.text == None:
+            if a.text is None:
                 self.warning("District {} appears to be empty".format(district))
                 continue
             else:
@@ -206,8 +209,6 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             leg.add_source(url)
             self.scrape_upper_offices(leg, url)
             self.save_legislator(leg)
-
-
 
     def scrape_upper_offices(self, legislator, url):
         url = url.replace('aspx', 'html')
@@ -268,7 +269,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 district_address_lines))
         else:
             district_address = None
-        #self.logger.debug(district_address)
+        # self.logger.debug(district_address)
 
         district_phone = self._extract_phone(district_office_info)
 
