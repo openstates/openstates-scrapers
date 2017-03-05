@@ -20,54 +20,11 @@ class NorthCarolina(Jurisdiction):
     ]
     legislative_sessions = [
         {
-            "_scraped_name": "2017-2018 Session",
+            "_scraped_name": "2009-2010 Session",
             "classification": "primary",
-            "identifier": "2017",
-            "name": "2017-2018 Session",
-        },
-        {
-            "_scraped_name": "2016 Extra Session 5",
-            "classification": "special",
-            "identifier": "2015E5",
-            "name": "2016 Extra Session 5",
-        },
-        {
-            "_scraped_name": "2016 Extra Session 4",
-            "classification": "special",
-            "identifier": "2015E4",
-            "name": "2016 Extra Session 4",
-        },
-        {
-            "_scraped_name": "2016 Extra Session 3",
-            "classification": "special",
-            "identifier": "2015E3",
-            "name": "2016 Extra Session 3",
-        },
-        {
-            "_scraped_name": "2016 Extra Session 2",
-            "classification": "special",
-            "identifier": "2015E2",
-            "name": "2016 Extra Session 2",
-        },
-        {
-            "_scraped_name": "2016 Extra Session 1",
-            "classification": "special",
-            "identifier": "2015E1",
-            "name": "2016 Extra Session 1",
-        },
-        {
-            "_scraped_name": "2015-2016 Session",
-            "classification": "primary",
-            "identifier": "2015",
-            "name": "2015-2016 Session",
-            "start_date": "2015-01-30"
-        },
-        {
-            "_scraped_name": "2013-2014 Session",
-            "classification": "primary",
-            "identifier": "2013",
-            "name": "2013-2014 Session",
-            "start_date": "2013-01-30"
+            "identifier": "2009",
+            "name": "2009-2010 Session",
+            "start_date": "2009-01-28"
         },
         {
             "_scraped_name": "2011-2012 Session",
@@ -77,12 +34,55 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2011-01-26"
         },
         {
-            "_scraped_name": "2009-2010 Session",
+            "_scraped_name": "2013-2014 Session",
             "classification": "primary",
-            "identifier": "2009",
-            "name": "2009-2010 Session",
-            "start_date": "2009-01-28"
-        }
+            "identifier": "2013",
+            "name": "2013-2014 Session",
+            "start_date": "2013-01-30"
+        },
+        {
+            "_scraped_name": "2015-2016 Session",
+            "classification": "primary",
+            "identifier": "2015",
+            "name": "2015-2016 Session",
+            "start_date": "2015-01-30"
+        },
+        {
+            "_scraped_name": "2016 Extra Session 1",
+            "classification": "special",
+            "identifier": "2015E1",
+            "name": "2016 Extra Session 1",
+        },
+        {
+            "_scraped_name": "2016 Extra Session 2",
+            "classification": "special",
+            "identifier": "2015E2",
+            "name": "2016 Extra Session 2",
+        },
+        {
+            "_scraped_name": "2016 Extra Session 3",
+            "classification": "special",
+            "identifier": "2015E3",
+            "name": "2016 Extra Session 3",
+        },
+        {
+            "_scraped_name": "2016 Extra Session 4",
+            "classification": "special",
+            "identifier": "2015E4",
+            "name": "2016 Extra Session 4",
+        },
+        {
+            "_scraped_name": "2016 Extra Session 5",
+            "classification": "special",
+            "identifier": "2015E5",
+            "name": "2016 Extra Session 5",
+        },
+        {
+            "_scraped_name": "2017-2018 Session",
+            "classification": "primary",
+            "identifier": "2017",
+            "name": "2017-2018 Session",
+        },
     ]
     ignored_scraped_sessions = [
         '2008 Extra Session',
