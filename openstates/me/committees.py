@@ -1,14 +1,8 @@
 import re
-import urlparse
-import datetime
-from collections import defaultdict
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-from .utils import clean_committee_name
-
-import lxml.html
 import xlrd
+import lxml.html
+from billy.scrape.committees import CommitteeScraper, Committee
 
 
 class MECommitteeScraper(CommitteeScraper):
@@ -24,10 +18,9 @@ class MECommitteeScraper(CommitteeScraper):
             self.scrape_joint_comm()
 
     def scrape_reps_comm(self):
-        #As of 1/27/15, the committee page has the wrong
-        #session number (126th) at the top, but
-        #has newly elected people, so we're rolling with it.
-
+        # As of 1/27/15, the committee page has the wrong
+        # session number (126th) at the top, but
+        # has newly elected people, so we're rolling with it.
 
         url = 'http://legislature.maine.gov/house/hsecoms.htm'
         page = self.get(url).text
@@ -58,48 +51,29 @@ class MECommitteeScraper(CommitteeScraper):
 
             self.save_committee(committee)
 
+    senate_committee_pattern = re.compile(r'^Senator (.*?) of .*?(, Chair)?$')
+
     def scrape_senate_comm(self):
-        url = 'http://legisweb1.mainelegislature.org/wp/senate/legislative-committees/'
+        url = (
+            'http://legislature.maine.gov/committee-information/'
+            'standing-committees-of-the-senate'
+        )
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
-        committee_urls = doc.xpath('//address/a/@href')
-        for committee_url in committee_urls:
 
-            # Exclude the committee listing document
-            if committee_url.endswith('.docx'):
-                continue
-
-            html = self.get(committee_url).text
-            doc = lxml.html.fromstring(html)
-
-            (committee_name, ) = \
-                    doc.xpath('//h1[contains(@class, "entry-title")]/text()')
-            committee_name = re.sub(r'\(.*?\)', "", committee_name)
-
-            is_joint = (re.search(r'(?s)Committee Members.*Senate:.*House:.*', html))
-            if is_joint:
-                continue
-
-            committee = Committee('upper', committee_name)
-            committee.add_source(committee_url)
-
-            members = doc.xpath('//address/a/text()')
-            if not members:
-                members = doc.xpath('//p/a/text()')
-            for member in members:
-                if member.isspace():
-                    continue
-
-                member = re.sub(r'^Senator ', "", member)
-                member = re.sub(r' of .*', "", member)
-
-                if member.endswith(", Chair"):
-                    role = 'chair'
-                    member = re.sub(r', Chair', "", member)
-                else:
-                    role = 'member'
-
-                committee.add_member(member, role)
+        headings = doc.xpath('//p/strong')
+        for heading in headings:
+            committee = Committee('upper', heading.text.strip(':'))
+            committee.add_source(url)
+            par = heading.getparent().getnext()
+            while True:
+                link = par.xpath('a')
+                if len(link) == 0:
+                    break
+                res = self.senate_committee_pattern.search(link[0].text)
+                name, chair = res.groups()
+                committee.add_member(name, 'chair' if chair is not None else 'member')
+                par = par.getnext()
 
             self.save_committee(committee)
 
@@ -109,8 +83,6 @@ class MECommitteeScraper(CommitteeScraper):
 
         wb = xlrd.open_workbook(fname)
         sh = wb.sheet_by_index(0)
-
-        chamber = 'joint'
 
         # Special default dict.
         class Committees(dict):
@@ -127,7 +99,6 @@ class MECommitteeScraper(CommitteeScraper):
 
             ischair = sh.cell(rownum, 1).value
             role = 'chair' if ischair else 'member'
-            chamber = sh.cell(rownum, 2).value
             first = sh.cell(rownum, 3).value
             middle = sh.cell(rownum, 4).value
             last = sh.cell(rownum, 5).value
