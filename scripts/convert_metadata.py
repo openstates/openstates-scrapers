@@ -93,10 +93,11 @@ class {classname}(Jurisdiction):
     sessions = []
     for k, v in sorted(metadata['session_details'].items(), reverse=False):
         s = {'identifier': k,
-             'classification': v['type'],
              'name': v['display_name'],
              '_scraped_name': v['_scraped_name'],
              }
+        if v.get('type'):
+            s['classification'] = v['type']
         if v.get('start_date'):
             s['start_date'] = v.get('start_date')
         if v.get('end_date'):
