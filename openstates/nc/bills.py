@@ -90,7 +90,7 @@ class NCBillScraper(Scraper):
         spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
         # first sponsors are primary, until we see (Primary)
         spon_type = 'primary'
-        for leg in spon_td.text_content().split('; \n'):
+        for leg in spon_td.text_content().split(';'):
             name = leg.replace(u'\xa0', ' ').strip()
             if name.startswith('(Primary)'):
                 name = name.replace('(Primary)', '').strip()
