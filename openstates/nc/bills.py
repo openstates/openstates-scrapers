@@ -127,6 +127,8 @@ class NCBillScraper(Scraper):
             for pattern, atype in self._action_classifiers.items():
                 if action.startswith(pattern):
                     break
+            else:
+                atype = None
 
             bill.add_action(action, act_date, chamber=actor, classification=atype)
 
