@@ -54,9 +54,9 @@ class PupaLegislatorScraper(LegislatorScraper):
                 detail['type'] = 'phone'
             elif detail['type'] == 'email':
                 email = detail['value']
-            if detail['note'] == 'district':
+            if 'district' in detail['note'].lower():
                 district_office[detail['type']] = detail['value']
-            elif detail['note'] == 'capitol':
+            elif 'capitol' in detail['note'].lower():
                 capitol_office[detail['type']] = detail['value']
 
         leg = Legislator(term, chamber, district, name,
