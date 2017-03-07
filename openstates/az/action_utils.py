@@ -18,7 +18,7 @@ action_map = {
                      },
     'House2ndRead':{'name': 'House Second Reading',
                       'action': ['bill:reading:2']
-                     },                     
+                     },
     'House2ndWaived':{'name': 'House Second Reading Waived.',
                       'action': ['bill:reading:2']
                      },
