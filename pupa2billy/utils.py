@@ -22,4 +22,5 @@ def parse_date(date):
     try:
         return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
     except ValueError:
-        return datetime.datetime.strptime(date, '%Y-%m-%d')
+        d = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        return d
