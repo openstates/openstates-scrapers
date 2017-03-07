@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import csv
+import sys
 import json
 import datetime
 import importlib
@@ -93,10 +96,16 @@ class {classname}(Jurisdiction):
     sessions = []
     for k, v in sorted(metadata['session_details'].items(), reverse=False):
         s = {'identifier': k,
-             'classification': v['type'],
              'name': v['display_name'],
              '_scraped_name': v['_scraped_name'],
              }
+        if v.get('type'):
+            s['classification'] = v['type']
+        else:
+            print(
+                'Warning: Missing classification on session {}'.format(k),
+                file=sys.stderr,
+            )
         if v.get('start_date'):
             s['start_date'] = v.get('start_date')
         if v.get('end_date'):
@@ -129,5 +138,4 @@ class {classname}(Jurisdiction):
 
 
 if __name__ == '__main__':
-    import sys
     convert(sys.argv[1])
