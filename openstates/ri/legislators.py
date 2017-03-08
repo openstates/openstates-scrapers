@@ -49,7 +49,9 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
         for link in leg_page.xpath('//td[@class="ms-vb2"]'):
             leg_name = link.text_content().replace(source_url_title_replacement,'')
             leg_url = link.xpath("..//a")[0].attrib['href']
-            leg_source_url_map[leg_name] = leg_url
+            leg_detail_page = self.lxmlize(leg_url)
+            (leg_photo_url,) = leg_detail_page.xpath("//div[@class='ms-WPBody']//img/@src")
+            leg_source_url_map[leg_name] = (leg_url, leg_photo_url)
 
         for rownum in xrange(1, sh.nrows):
             d = {}
@@ -64,7 +66,6 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             slug = re.match(
                 "(?P<class>sen|rep)-(?P<slug>.*)@(rilin\.state\.ri\.us|rilegislature\.gov)", d['email']
             )
-            
             if 'asp' in d['email']:
                 d['email'] = None
 
@@ -106,6 +107,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
 
             kwargs = {
                 "town_represented": d['town_represented'],
+                "photo_url": leg_source_url_map[leg_name][1]
             }
 
             contact = self.lxmlize(contact_url)
@@ -133,7 +135,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             (first, middle, last) = ('','','')
             if re.match(r'^\S+\s[A-Z]\.\s\S+$', full_name):
                 (first, middle, last) = full_name.split()
-                
+
             leg = Legislator(term, chamber, district_name, full_name,
                              first, last, middle,
                              translate[d['party']],
