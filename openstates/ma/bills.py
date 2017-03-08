@@ -8,6 +8,7 @@ from datetime import datetime
 import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
 
 from .actions import Categorizer
 
@@ -54,14 +55,19 @@ class MABillScraper(BillScraper):
         self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
         self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
-
+# remove nick lines before final
         lastPage = self.get_max_pages(session, chamber)
-
+        lastPage = 1 # nick
         for pageNumber in range(1, lastPage + 1):
             bills = self.list_bills(session, chamber, pageNumber)
+            bill_count = 0 # nick
             for bill in bills:
+                # if bill > 4: didn't work
                 bill = self.format_bill_number(bill).replace(' ','')
+                if bill != 'H58':
+                    continue
                 self.scrape_bill(session, bill, chamber )
+                break # remove after testing
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -105,7 +111,7 @@ class MABillScraper(BillScraper):
             response = requests.get(bill_url)
         except requests.exceptions.RequestException as e:
             self.warning(u'Server Error on {}'.format(bill_url))
-            return False 
+            return False
 
         html = response.text
 
@@ -115,7 +121,7 @@ class MABillScraper(BillScraper):
             bill_number = page.xpath('//div[contains(@class, "followable")]/h1/text()')[0]
         else:
             self.warning(u'Server Error on {}'.format(bill_url))
-            return False             
+            return False
 
         bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[0]
 
@@ -152,7 +158,6 @@ class MABillScraper(BillScraper):
         self.scrape_actions(bill, bill_url)
 
         self.save_bill(bill)
-        #print bill
 
     def scrape_cosponsors(self, bill, bill_url):
         #https://malegislature.gov/Bills/189/S1194/CoSponsor
@@ -167,7 +172,7 @@ class MABillScraper(BillScraper):
             cosponsor_district = ''
             if row.xpath('td[2]/text()'):
                 cosponsor_district = row.xpath('td[2]/text()')[0]
-        
+
             #Filter the sponsor out of the petitioners list
             if not any(sponsor['name'] == cosponsor_name for sponsor in bill['sponsors']):
                 bill.add_sponsor('cosponsor', cosponsor_name, district=cosponsor_district)
@@ -176,7 +181,7 @@ class MABillScraper(BillScraper):
         # scrape_action_page adds the actions, and also returns the Page xpath object
         # so that we can check for a paginator
         page = self.scrape_action_page(bill, bill_url, 1)
-        
+
         max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
         if max_page:
             max_page = re.sub(r'[^\d]', '', max_page[0]).strip()
@@ -198,8 +203,38 @@ class MABillScraper(BillScraper):
                 action_actor = self.chamber_map_reverse[action_actor.strip()]
 
             action_name = row.xpath('string(td[3])')
-
             attrs = self.categorizer.categorize(action_name)
+            # House votes
+            if "Supplement" in action_name:
+                actor = "lower"
+                vote_action = action_name.split(' -')[0]
+                y = int(action_name.strip().split('-')[1].split('YEAS')[0])
+                n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
+                o = 0 # placeholder
+                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
+                bill.add_vote(cached_vote)
+
+            # Senate votes
+            if "Roll Call" in action_name:
+                actor = "upper"
+                 #placeholder
+                vote_action = action_name.split(' -')[0]
+                y = int(action_name.strip().split('Yeas')[1].split('-')[0])
+
+                n = int(action_name.strip().split('Nays')[1].split(')')[0])
+                o = 0 # placeholder
+                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
+                bill.add_vote(cached_vote)
+                bill.add_document(row.xpath('string(td[3]/a/text())'),
+                    'malegislature.gov' + row.xpath('string(td[3]/a/@href)'),
+                    mimetype='application/pdf')
+
+
+# rewrite to add source
+                #cached_vote.add_source('malegislature.gov/' + row)
+# Not parsing 'paired' for now, include other votes (not yes no)
+                #create vote object from pdf
+
 
             #TODO: categorize action
             bill.add_action(action_actor, action_name, action_date, **attrs)
@@ -213,4 +248,3 @@ class MABillScraper(BillScraper):
 
     def replace_non_digits(self, str):
         return re.sub(r'[^\d]', '', str).strip()
-
