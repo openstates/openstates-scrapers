@@ -41,6 +41,7 @@ ACTION_CLASSIFIERS = (
     ('Acts of Assembly', None),
 )
 
+
 class SubjectPage(Page, Spatula):
     def handle_page(self):
         subjects = collections.defaultdict(list)

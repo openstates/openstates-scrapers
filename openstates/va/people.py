@@ -18,6 +18,7 @@ PARTY_MAP = {
 }
 TIMEZONE = pytz.timezone('US/Eastern')
 
+
 class MemberDetail(Page):
     list_xpath = '//body'
 
@@ -70,6 +71,8 @@ class MemberList(Page):
 
 
 party_district_pattern = re.compile(r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
+
+
 def get_party_district(text):
     return party_district_pattern.match(text).groups()
 
@@ -78,6 +81,8 @@ lis_id_patterns = {
     'upper': re.compile(r'(S[0-9]+$)'),
     'lower': re.compile(r'(H[0-9]+$)'),
 }
+
+
 def get_lis_id(chamber, url):
     """Retrieve LIS ID of legislator from URL."""
     match = re.search(lis_id_patterns[chamber], url)
@@ -87,6 +92,8 @@ def get_lis_id(chamber, url):
 
 name_elect_pattern = re.compile(r'(- Elect)$')
 name_resigned_pattern = re.compile(r'-(Resigned|Member) (\d{1,2}/\d{1,2})?')
+
+
 def clean_name(name):
     name = name_elect_pattern.sub('', name).strip()
     action, date = (None, None)
