@@ -1,15 +1,15 @@
-# encoding=utf-8
-import re
-
-import scrapelib
-
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import VaPersonScraper
 from .bills import VaBillScraper
-from .common import url_xpath
 
 
-class Va(Jurisdiction):
+settings = {
+    'SCRAPELIB_RPM': 40
+}
+
+
+class Virginia(Jurisdiction):
     division_id = "ocd-division/country:us/state:va"
     classification = "government"
     name = "Virginia"
@@ -18,62 +18,170 @@ class Va(Jurisdiction):
         "people": VaPersonScraper,
         "bills": VaBillScraper,
     }
-
-    legislative_sessions = [
-        {'name': '2010 Session', 'identifier': '101', 'classification': 'primary'},
-        {'name': '2011 Session', 'identifier': '111', 'classification': 'primary'},
-        {'name': '2011 Special Session I', 'identifier': '112', 'classification': 'special'},
-        {'name': '2012 Session', 'identifier': '121', 'classification': 'primary'},
-        {'name': '2012 Special Session I', 'identifier': '122', 'classification': 'special'},
-        {'name': '2013 Session', 'identifier': '131', 'classification': 'primary'},
-        {'name': '2013 Special Session I', 'identifier': '132', 'classification': 'special'},
-        {'name': '2014 Session', 'identifier': '141', 'classification': 'primary'},
-        {'name': '2014 Special Session I', 'identifier': '142', 'classification': 'special'},
-        {'name': '2015 Session', 'identifier': '151', 'classification': 'primary'},
-        {'name': '2015 Special Session I', 'identifier': '152', 'classification': 'special'},
-        {'name': '2016 Session', 'identifier': '161', 'classification': 'primary'},
-        {'name': '2017 Session', 'identifier': '171', 'classification': 'primary'},
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
     ]
 
+    legislative_sessions = [
+        {
+            "_scraped_name": "2010 Session",
+            "identifier": "2010",
+            "name": "2010 Regular Session",
+            "start_date": "2010-01-13",
+            "site_id": "101",
+        },
+        {
+            "_scraped_name": "2011 Session",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-12",
+            "site_id": "111",
+        },
+        {
+            "_scraped_name": "2011 Special Session I",
+            "identifier": "2011specialI",
+            "name": "2011, 1st Special Session",
+            "site_id": "112",
+        },
+        {
+            "_scraped_name": "2012 Session",
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-01-11",
+            "site_id": "121",
+        },
+        {
+            "_scraped_name": "2012 Special Session I",
+            "identifier": "2012specialI",
+            "name": "2012, 1st Special Session",
+            "start_date": "2012-03-11",
+            "site_id": "122",
+        },
+        {
+            "_scraped_name": "2013 Session",
+            "identifier": "2013",
+            "name": "2013 Regular Session",
+            "start_date": "2013-01-09",
+            "site_id": "131",
+        },
+        {
+            "_scraped_name": "2013 Special Session I",
+            "identifier": "2013specialI",
+            "name": "2013, 1st Special Session",
+            "site_id": "132",
+        },
+        {
+            "_scraped_name": "2014 Session",
+            "identifier": "2014",
+            "name": "2014 Regular Session",
+            "start_date": "2014-01-09",
+            "site_id": "141",
+        },
+        {
+            "_scraped_name": "2014 Special Session I",
+            "identifier": "2014specialI",
+            "name": "2014, 1st Special Session",
+            "site_id": "142",
+        },
+        {
+            "_scraped_name": "2015 Session",
+            "end_date": "2015-02-27",
+            "identifier": "2015",
+            "name": "2015 Regular Session",
+            "start_date": "2015-01-14",
+            "site_id": "151",
+        },
+        {
+            "_scraped_name": "2015 Special Session I",
+            "end_date": "2015-08-17",
+            "identifier": "2015specialI",
+            "name": "2015, 1st Special Session",
+            "start_date": "2015-08-17",
+            "site_id": "152",
+        },
+        {
+            "_scraped_name": "2016 Session",
+            "end_date": "2016-03-12",
+            "identifier": "2016",
+            "name": "2016 Regular Session",
+            "start_date": "2016-01-13",
+            "site_id": "161",
+        },
+        {
+            "_scraped_name": "2017 Session",
+            "end_date": "2017-02-09",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-11",
+            "site_id": "171",
+        }
+    ]
     ignored_scraped_sessions = [
-        '001', '011', '012', '021', '031', '041', '042', '043', '051', '061',
-        '062', '071', '081', '082', '083', '091', '092', '941', '942', '943',
-        '951', '961', '971', '981', '982', '991'
+        '2015 Special Session I',
+        '2015 Session',
+        '2014 Special Session I',
+        '2014 Session',
+        '2013 Special Session I',
+        '2013 Session',
+        '2012 Special Session I',
+        '2012 Session',
+        '2011 Special Session I',
+        '2011 Session',
+        '2010 Session',
+        '2009 Session',
+        '2009 Special Session I',
+        '2008 Session',
+        '2008 Special Session I',
+        '2008 Special Session II',
+        '2007 Session',
+        '2006 Session',
+        '2006 Special Session I',
+        '2005 Session',
+        '2004 Session',
+        '2004 Special Session I',
+        '2004 Special Session II',
+        '2003 Session',
+        '2002 Session',
+        '2001 Session',
+        '2001 Special Session I',
+        '2000 Session',
+        '1999 Session',
+        '1998 Session',
+        '1998 Special Session I',
+        '1997 Session',
+        '1996 Session',
+        '1995 Session',
+        '1994 Session',
+        '1994 Special Session I',
+        '1994 Special Session II',
     ]
 
     def get_organizations(self):
-        legis = Organization(name='Florida Legislature', classification='legislature')
-        upper = Organization('Florida Senate', classification='upper', parent_id=legis._id)
-        lower = Organization('Florida House of Delegates', classification='lower',
-                             parent_id=legis._id)
+        legislature_name = "Virginia General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 100
+        lower_title = "Delegate"
+        upper_chamber_name = "Senate"
+        upper_seats = 40
+        upper_title = "Senator"
 
-        for n in range(1, 41):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:va/sldu:{}'.format(n))
-        for n in range(1, 101):
-            lower.add_post(label=str(n), role='Delegate',
-                           division_id='ocd-division/country:us/state:va/sldl:{}'.format(n))
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
-        yield legis
+        for n in range(1, upper_seats + 1):
+            lower.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            upper.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
         yield upper
         yield lower
-
-    def get_session_list(self):
-        scraper = scrapelib.Scraper(requests_per_minute=40)
-        vals = url_xpath(
-            'http://lis.virginia.gov',
-            '//div[@id = "sLink"]//option[@value != "01"]/@value',
-            requester=scraper,
-        )
-        sessions = [get_session_id(val, scraper) for val in vals]
-        return [session for session in sessions if session is not None]
-
-
-cgi_pattern = 'http://lis.virginia.gov/cgi-bin/legp604.exe?ses=171&typ=lnk=val={}'
-session_pattern = re.compile('lis\.virginia\.gov\/(\d+)\/lis\.htm')
-def get_session_id(val, scraper):
-    resp = scraper.head(cgi_pattern.format(val))
-    resp.raise_for_status()
-    match = session_pattern.search(resp.headers.get('Content-Location', ''))
-    if match:
-        return match.groups()[0]

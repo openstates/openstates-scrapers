@@ -1,4 +1,6 @@
 import re
+import pytz
+import datetime
 
 from pupa.scrape import Scraper
 from pupa.scrape import Person
@@ -14,6 +16,7 @@ PARTY_MAP = {
     'D': 'Democratic',
     'I': 'Independent',
 }
+TIMEZONE = pytz.timezone('US/Eastern')
 
 class MemberDetail(Page):
     list_xpath = '//body'
@@ -25,7 +28,11 @@ class MemberDetail(Page):
         self.obj.add_party(PARTY_MAP[party])
 
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
-            self.obj.add_membership(com)
+            self.obj.add_membership(
+                com,
+                start_date=maybe_date(self.kwargs['session'].get('start_date')),
+                end_date=maybe_date(self.kwargs['session'].get('end_date')),
+            )
 
 
 class SenateDetail(MemberDetail):
@@ -53,7 +60,12 @@ class MemberList(Page):
         leg.add_source(self.url)
         leg.add_source(item.get('href'))
         leg.add_link(item.get('href'))
-        list(self.scrape_page(self.detail_page, item.get('href'), obj=leg))
+        list(self.scrape_page(
+            self.detail_page,
+            item.get('href'),
+            session=self.kwargs['session'],
+            obj=leg,
+        ))
         return leg
 
 
@@ -100,8 +112,16 @@ class DelegateList(MemberList):
 class VaPersonScraper(Scraper, Spatula):
     def scrape(self, session=None):
         if not session:
-            session = self.jurisdiction.legislative_sessions[-1]['identifier']
-            self.info('no session specified, using', session)
-        url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(session)
-        yield from self.scrape_page_items(SenateList, url=url)
-        yield from self.scrape_page_items(DelegateList, url=url)
+            session = self.jurisdiction.legislative_sessions[-1]
+            self.info('no session specified, using %s', session['identifier'])
+        url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(session['site_id'])
+        yield from self.scrape_page_items(SenateList, session=session, url=url)
+        yield from self.scrape_page_items(DelegateList, session=session, url=url)
+
+
+def maybe_date(text):
+    try:
+        date = datetime.datetime.strptime(text, '%Y-%d-%m')
+        return TIMEZONE.localize(date)
+    except ValueError:
+        return ''

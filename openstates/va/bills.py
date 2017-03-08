@@ -129,14 +129,13 @@ class BillDetailPage(Page, Spatula):
                  'Conference': 'conference'}
 
     def handle_page(self):
-        # TODO(jmcarp) Restore summary
-        # summary = self.doc.xpath('/'.join([
-        #     '//h4[starts-with(text(), "SUMMARY")]',
-        #     '/following-sibling::p',
-        #     'text()',
-        # ])
-        # if summary and summary[0].strip():
-        #     self.obj['summary'] = summary[0].strip()
+        summary = self.doc.xpath('/'.join([
+            '//h4[starts-with(text(), "SUMMARY")]',
+            '/following-sibling::p',
+            'text()',
+        ]))
+        if summary and summary[0].strip():
+            self.obj.add_abstract(abstract=summary[0].strip(), note='summary')
 
         # versions
         for va in self.doc.xpath('//h4[text()="FULL TEXT"]/following-sibling::ul[1]/li/a[1]'):
@@ -334,8 +333,8 @@ class VotePage(Page):
 class VaBillScraper(Scraper, Spatula):
     def scrape(self, session=None):
         if not session:
-            session = self.jurisdiction.legislative_sessions[-1]['identifier']
-            self.info('no session specified, using', session)
+            session = self.jurisdiction.legislative_sessions[-1]['site_id']
+            self.info('no session specified, using %s', session)
         url = BASE_URL + URL_PATTERNS['list'].format(session)
         subject_url = BASE_URL + URL_PATTERNS['subjects'].format(session)
         subjects = self.scrape_page(SubjectPage, url=subject_url)
