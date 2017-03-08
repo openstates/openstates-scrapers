@@ -24,6 +24,8 @@ of ``docker run``. For example, you can limit the scrape to Tennessee's (tn) sta
 
   docker-compose run openstates tn --upper --legislators
 
+Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
+
 Testing
 =======
 To run all tests::

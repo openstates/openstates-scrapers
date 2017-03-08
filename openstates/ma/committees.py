@@ -16,8 +16,6 @@ class MACommitteeScraper(CommitteeScraper):
                            'House': 'lower',
                            'Joint': 'joint'}
 
-        foundComms = []
-
         for page_type in page_types:
             url = 'http://www.malegislature.gov/Committees/' + page_type
 
@@ -33,27 +31,15 @@ class MACommitteeScraper(CommitteeScraper):
         html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
 
-        name = doc.xpath('//span[@class="committeeShortName"]/text()')
-        if len(name) == 0:
-            self.warning("Had to skip this malformed page.")
-            return
-        # Because of http://www.malegislature.gov/Committees/Senate/S29 this
-        # XXX: hack had to be pushed in. Remove me ASAP. This just skips
-        #      malformed pages.
-
-        name = name[0]
+        name = doc.xpath('//title/text()')[0]
         com = Committee(chamber, name)
         com.add_source(url)
 
-        # get both titles and names, order is consistent
-        titles = doc.xpath('//p[@class="rankingMemberTitle"]/text()')
-        names = doc.xpath('//p[@class="rankingMemberName"]/a/text()')
-
-        for title, name in zip(titles, names):
-            com.add_member(name, title)
-
-        for member in doc.xpath('//div[@class="committeeRegularMembers"]//a/text()'):
-            com.add_member(member)
+        members = doc.xpath('//a[contains(@href, "/Legislators/Profile")]')
+        for member in members:
+            title = member.xpath('../span')
+            role = title[0].text.lower() if title else 'member'
+            com.add_member(member.text, role)
 
         if com['members']:
             self.save_committee(com)

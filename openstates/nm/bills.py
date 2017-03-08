@@ -16,13 +16,14 @@ from billy.scrape.utils import convert_pdf
 
 from .actions import Categorizer
 
-#Senate vote header
-sVoteHeader=re.compile(r'(YES)|(NO)|(ABS)|(EXC)|(REC)')
-#House vote header
-hVoteHeader=re.compile(r'(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))')
+# Senate vote header
+sVoteHeader = re.compile(r'(YES)|(NO)|(ABS)|(EXC)|(REC)')
+# House vote header
+hVoteHeader = re.compile(r'(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))')
 
-#Date regex for senate and house parser
-rDate=re.compile(r'([0-1][0-9]\/[0-3][0-9]\/\d+)')
+# Date regex for senate and house parser
+rDate = re.compile(r'([0-1][0-9]\/[0-3][0-9]\/\d+)')
+
 
 def convert_sv_char(c):
     """ logic for shifting senate vote characters to real ASCII """
@@ -36,9 +37,10 @@ def convert_sv_char(c):
         except ValueError:
             return c
 
+
 def matchHeader(rowCols, cellX):
     """ Map the data column to the header column, has to be done once for each column.
-        The columns of the headers(yes/no/etc) do not mach up *perfect* with 
+        The columns of the headers(yes/no/etc) do not mach up *perfect* with
         data in the grid due to random preceding whitespace and mixed fonts"""
     rowCols.sort()
     c = bisect_left(rowCols, cellX)
@@ -52,7 +54,7 @@ def matchHeader(rowCols, cellX):
     if after-cellX < cellX-before:
         return after
     else:
-        return before        
+        return before
 
 
 class NMBillScraper(BillScraper):
@@ -114,7 +116,6 @@ class NMBillScraper(BillScraper):
 
         self._init_mdb(session)
 
-        
         # read in sponsor & subject mappings
         sponsor_map = {}
         for sponsor in self.access_to_csv('tblSponsors'):
@@ -197,8 +198,8 @@ class NMBillScraper(BillScraper):
                 match = re.match('([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
-                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
-                    
+                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
+
                     if (chamber == "upper" and bill_type[0] == "S") or (chamber == "lower" and bill_type[0] == "H"):
                         bill_id = bill_type.replace('B', '') + bill_num
                         try:
@@ -381,12 +382,11 @@ class NMBillScraper(BillScraper):
 
         doc = lxml.html.fromstring(html)
 
-
         # all links but first one
         for fname in doc.xpath('//a/text()')[1:]:
-            # if a COPY continue 
+            # if a COPY continue
             if re.search('- COPY', fname):
-                continue 
+                continue
 
             # Delete any errant words found following the file name
             fname = fname.split(" ")[0]
@@ -406,11 +406,9 @@ class NMBillScraper(BillScraper):
             bill_id = bill_type.replace('B', '') + bill_num
             if bill_id in self.bills.keys():
                 bill = self.bills[bill_id]
-            elif (
-                doctype == 'votes' and
-                ((bill_id.startswith('H') and chamber == 'upper') or
-                (bill_id.startswith('S') and chamber == 'lower'))
-            ):
+            elif (doctype == 'votes' and (
+                    (bill_id.startswith('H') and chamber == 'upper') or
+                    (bill_id.startswith('S') and chamber == 'lower'))):
                 # There is only one vote list URL, shared between chambers
                 # So, avoid throwing warnings upon seeing the other chamber's legislation
                 self.info('Ignoring votes on bill {} while processing the other chamber'.format(fname))
@@ -418,8 +416,8 @@ class NMBillScraper(BillScraper):
             else:
                 self.warning('document for unknown bill %s' % fname)
                 continue
-                
-            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
+
+            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
 
             # no suffix = just the bill
             if suffix == '':
@@ -471,7 +469,7 @@ class NMBillScraper(BillScraper):
                 pass
             else:
                 # warn about unknown suffix
-                #we're getting some "E" suffixes, but I think those are duplicates
+                # we're getting some "E" suffixes, but I think those are duplicates
                 self.warning('unknown document suffix %s (%s)' % (suffix, fname))
 
     def scrape_vote(self, url, local=False):
@@ -485,18 +483,18 @@ class NMBillScraper(BillScraper):
         v_text = convert_pdf(url, 'xml')
         os.remove(url)
         return v_text
-            
+
     def parse_house_vote(self, sv_text, url):
         """Sets any overrides and creates the vote instance"""
         overrides = {"ONEILL": "O'NEILL"}
-        #Add new columns as they appear to be safe
+        # Add new columns as they appear to be safe
         vote = Vote('lower', '?', 'senate passage', False, 0, 0, 0)
         vote.add_source(url)
-        vote, rowHeads, saneRow=self.parse_visual_grid(vote, sv_text, overrides, hVoteHeader, rDate, 'CERTIFIED CORRECT', 'YEAS')
+        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, hVoteHeader, rDate, 'CERTIFIED CORRECT', 'YEAS')
 
-        #Sanity checks on vote data, checks that the calculated total and listed totals match
-        sane={'yes':0, 'no':0, 'other':0}
-        #Make sure the header row and sanity row are in orde
+        # Sanity checks on vote data, checks that the calculated total and listed totals match
+        sane = {'yes':0, 'no':0, 'other':0}
+        # Make sure the header row and sanity row are in orde
         sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
         startCount=-1
         for cell in saneRow:
@@ -510,118 +508,120 @@ class NMBillScraper(BillScraper):
                     sane['no']=int(cellValue)
                 else:
                     sane['other']+=int(cellValue)
-        #Make sure the parsed vote totals match up with counts in the total field
+        # Make sure the parsed vote totals match up with counts in the total field
         if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
            sane['other'] != vote['other_count']:
                 raise ValueError("Votes were not parsed correctly")
-        #Make sure the date is a date
+        # Make sure the date is a date
         if not isinstance(vote['date'], datetime):
                 raise ValueError("Date was not parsed correctly")
-        #End Sanity Check
+        # End Sanity Check
         return vote
 
     def parse_senate_vote(self, sv_text, url):
         """Sets any overrides and creates the vote instance"""
         overrides = {"ONEILL": "O'NEILL"}
-        #Add new columns as they appear to be safe
+        # Add new columns as they appear to be safe
         vote = Vote('upper', '?', 'senate passage', False, 0, 0, 0)
         vote.add_source(url)
-        vote, rowHeads, saneRow=self.parse_visual_grid(vote, sv_text, overrides, sVoteHeader, rDate, 'TOTAL', 'TOTAL')
+        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, sVoteHeader, rDate, 'TOTAL', 'TOTAL')
 
-        #Sanity checks on vote data, checks that the calculated total and listed totals match
-        sane={'yes':0, 'no':0, 'other':0}
-        #Make sure the header row and sanity row are in orde
+        # Sanity checks on vote data, checks that the calculated total and listed totals match
+        sane={'yes': 0, 'no': 0, 'other':0}
+        # Make sure the header row and sanity row are in orde
         sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
         startCount=-1
         for cell in saneRow:
-            if startCount>=0:
-                saneVote=sorted_rh[startCount][1]
+            if startCount >= 0:
+                saneVote = sorted_rh[startCount][1]
                 if 'Y' == saneVote[0]:
-                    sane['yes']=int(cell[0])
+                    sane['yes'] = int(cell[0])
                 elif 'N' == saneVote[0]:
-                    sane['no']=int(cell[0])
+                    sane['no'] = int(cell[0])
                 else:
-                    sane['other']+=int(cell[0])
-                startCount+=1
+                    sane['other'] += int(cell[0])
+                startCount += 1
             elif 'TOTAL' in cell[0]:
-                startCount=0
-        #Make sure the parsed vote totals match up with counts in the total field
+                startCount = 0
+        # Make sure the parsed vote totals match up with counts in the total field
         if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
            sane['other'] != vote['other_count']:
                 raise ValueError("Votes were not parsed correctly")
-        #Make sure the date is a date
+        # Make sure the date is a date
         if not isinstance(vote['date'], datetime):
                 raise ValueError("Date was not parsed correctly")
-        #End Sanity Check
+        # End Sanity Check
         return vote
-
 
     def parse_visual_grid(self, vote, v_text, overrides, voteHeader, rDate, tableStop, saneIden):
         """Takes a (badly)formatted pdf and converts the vote grid into an X,Y grid to match votes"""
-        rowHeads={}
-        columnMap={}
-        rows={}
-        cells=[]
-        tBegin=0
-        tStop=0
-        saneRow=0
-        #Take the mixed up text tag cells and separate header/special and non-header cells.
-        #Metadata hints that this doc is done by hand, tags appear in chrono order not visual
+        rowHeads = {}
+        columnMap = {}
+        rows = {}
+        cells = []
+        tBegin = 0
+        tStop = 0
+        saneRow = 0
+        # Take the mixed up text tag cells and separate header/special and non-header cells.
+        # Metadata hints that this doc is done by hand, tags appear in chrono order not visual
         for tag in lxml.etree.XML(v_text).xpath('//text/b')+lxml.etree.XML(v_text).xpath('//text'):
             if tag.text is None:
                 continue
-            rowValue=tag.text.strip()
+            rowValue = tag.text.strip()
             if 'top' not in tag.keys():
-                tag=tag.getparent()
-            top=int(tag.attrib['top'])
-            #name overrides
+                tag = tag.getparent()
+            top = int(tag.attrib['top'])
+            # name overrides
             if rowValue in overrides:
-                rowValue=overrides[rowValue]
+                rowValue = overrides[rowValue]
             elif 'LT. GOV' in rowValue:
-                #Special case for the senate, inconsistencies make overrides not an option
-                rowValue='LT. GOVERNOR'
+                # Special case for the senate, inconsistencies make overrides not an option
+                rowValue = 'LT. GOVERNOR'
             elif tableStop in rowValue:
-                #Set the data table end point 
-                tStop=top
-            
+                # Set the data table end point
+                tStop = top
+
             if saneIden in rowValue:
-                #Vote sanity row can be the same as the tableStop
-                saneRow=top
+                # Vote sanity row can be the same as the tableStop
+                saneRow = top
             if rDate.search(rowValue):
-                #Date formats change depending on what document is being used
-                if len(rowValue)==8:
+                # Date formats change depending on what document is being used
+                if len(rowValue) == 8:
                     vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%y')
                 else:
                     vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%Y')
             elif voteHeader.match(rowValue):
                 rowHeads[int(tag.attrib['left'])+int(tag.attrib['width'])]=rowValue
-                #Set the header begin sanity value
+                # Set the header begin sanity value
                 if tBegin == 0:
-                    tBegin=top
+                    tBegin = top
             else:
-                #Create dictionary of row params and x,y location- y:{value, x, x(offset)}
+                # Create dictionary of row params and x,y location- y:{value, x, x(offset)}
                 if top in rows:
                     rows[top].append((rowValue, int(tag.attrib['left']), int(tag.attrib['width'])))
                 else:
-                    rows[top]=[(rowValue, int(tag.attrib['left']), int(tag.attrib['width']))]
-                    
-        #Mark the votes in the datagrid
+                    rows[top] = [(rowValue, int(tag.attrib['left']), int(tag.attrib['width']))]
+
+        # Mark the votes in the datagrid
         for rowX, cells in rows.iteritems():
-            if rowX>tBegin and rowX<=tStop:
-                #Resort the row cells to go left to right, due to possile table pane switching
+            if rowX > tBegin and rowX <= tStop:
+                # Resort the row cells to go left to right, due to possile table pane switching
                 cells.sort(key=operator.itemgetter(1))
-                #Each vote grid is made up of split tables with two active columns 
+                # Each vote grid is made up of split tables with two active columns
                 for x in range(0, len(cells), 2):
                     if tableStop in cells[x][0]:
                         break
+                    if x + 1 >= len(cells):
+                        self.warning('No vote found for {}'.format(cells[x]))
+                        continue
                     if cells[x+1][1] not in columnMap:
-                        #Called one time for each column heading
-                        #Map the data grid column to the header columns
-                        columnMap[cells[x+1][1]]=matchHeader(rowHeads.keys(), cells[x+1][1]+cells[x+1][2])
-                    voteCasted=rowHeads[columnMap[cells[x+1][1]]]
-                    
-                    #Fix some odd encoding issues
-                    name=''.join(convert_sv_char(c) for c in cells[x][0])
+                        # Called one time for each column heading
+                        # Map the data grid column to the header columns
+                        columnMap[cells[x+1][1]] = matchHeader(rowHeads.keys(), cells[x+1][1]+cells[x+1][2])
+                    voteCasted = rowHeads[columnMap[cells[x+1][1]]]
+
+                    # Fix some odd encoding issues
+                    name = ''.join(convert_sv_char(c) for c in cells[x][0])
                     if 'Y' == voteCasted[0]:
                         vote.yes(name)
                     elif 'N' == voteCasted[0]:

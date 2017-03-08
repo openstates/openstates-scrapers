@@ -62,7 +62,6 @@ class AZBillScraper(BillScraper):
         self.save_bill(bill)
         #print json.dumps(page, indent=4)
 
-
     def scrape_versions(self, bill, internal_id):
         # Careful, this sends XML to a browser but JSON to machines
         # https://apps.azleg.gov/api/DocType/?billStatusId=68408
@@ -86,12 +85,15 @@ class AZBillScraper(BillScraper):
                 sponsor_type = 'primary'
             else:
                 sponsor_type = 'cosponsor'
-        
-        #Some older bills don't have the FullName key
+
+        # Some older bills don't have the FullName key
         if 'FullName' in sponsor['Legislator']:
             sponsor_name = sponsor['Legislator']['FullName']
         else:
-            sponsor_name = "{} {}".format(sponsor['Legislator']['FirstName'], sponsor['Legislator']['LastName'])
+            sponsor_name = "{} {}".format(
+                sponsor['Legislator']['FirstName'],
+                sponsor['Legislator']['LastName'],
+            )
 
         bill.add_sponsor(
             type=sponsor_type,
@@ -116,7 +118,7 @@ class AZBillScraper(BillScraper):
         """
         for action in action_utils.action_map:
             if page[action] and action_utils.action_map[action]['name'] != '':
-                print page[action]
+                print(page[action])
                 try:
                     action_date = datetime.datetime.strptime(page[action], '%Y-%m-%dT%H:%M:%S')
                     bill.add_action(
@@ -127,12 +129,10 @@ class AZBillScraper(BillScraper):
                     )
                 except ValueError:
                     self.warning("Invalid Action Time {} for {}".format(page[action], action))
-                
-
 
     def actor_from_action(self, bill, action):
         """
-        Determine the actor from the action key  
+        Determine the actor from the action key
         If the action_map = 'chamber', return the bill's home chamber
         """
         action_map = action_utils.action_chamber_map
@@ -148,7 +148,7 @@ class AZBillScraper(BillScraper):
             session_id = self.get_session_id(session)
         except KeyError:
             raise NoDataForPeriod(session)
-   
+
         #Get the bills page to start the session
         req = self.get('http://www.azleg.gov/bills/')
 
@@ -157,13 +157,13 @@ class AZBillScraper(BillScraper):
             'sessionID': session_id
         }
         req = self.post(url=session_form_url, data=form, cookies=req.cookies, allow_redirects=True)
-        
+
         bill_list_url = 'http://www.azleg.gov/bills/'
-        
+
         page = self.get(bill_list_url, cookies=req.cookies).content
-        # There's an errant close-comment that browsers handle 
+        # There's an errant close-comment that browsers handle
         # but LXML gets really confused.
-        page = page.replace('--!>','-->')
+        page = page.replace('--!>', '-->')
         page = html.fromstring(page)
 
         bill_rows = []
@@ -178,10 +178,8 @@ class AZBillScraper(BillScraper):
             for row in bill_rows:
                 bill_id = row.xpath('td/a/text()')[0]
                 self.scrape_bill(chamber, session, bill_id)
- 
+
         #TODO: MBTable - Non-bill Misc Motions?
-
-
 
     def sort_bill_actions(self, bill):
         actions = bill['actions']

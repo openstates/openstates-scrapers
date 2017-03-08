@@ -173,7 +173,7 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
                     lname = lname.rsplit("-", 1)
                     if len(lname) > 1:
                         person, count = lname
-                        if count.lower() == 'none':
+                        if count.isdigit() == False:
                             continue
 
                         names.pop(-1)

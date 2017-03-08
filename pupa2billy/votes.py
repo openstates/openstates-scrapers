@@ -8,10 +8,14 @@ from . import settings
 class PupaVoteScraper(VoteScraper):
 
     def get_bill_details(self, bill_uuid):
-        bill = json.load(open(os.path.join(settings.PUPA_DATA_DIR,
-                                           self.jurisdiction,
-                                           'bill_' + bill_uuid + '.json')))
-        chamber = parse_psuedo_id(bill['from_organization'])['classification']
+        if bill_uuid.startswith('~'):
+            bill = parse_psuedo_id(bill_uuid)
+            chamber = bill['from_organization__classification']
+        else:
+            bill = json.load(open(os.path.join(settings.PUPA_DATA_DIR,
+                                               self.jurisdiction,
+                                               'bill_' + bill_uuid + '.json')))
+            chamber = parse_psuedo_id(bill['from_organization'])['classification']
         return chamber, bill['identifier']
 
     def __init__(self, *args, **kwargs):
