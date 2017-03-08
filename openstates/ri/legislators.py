@@ -64,7 +64,7 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             slug = re.match(
                 "(?P<class>sen|rep)-(?P<slug>.*)@(rilin\.state\.ri\.us|rilegislature\.gov)", d['email']
             )
-            
+
             if 'asp' in d['email']:
                 d['email'] = None
 
@@ -133,13 +133,13 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             (first, middle, last) = ('','','')
             if re.match(r'^\S+\s[A-Z]\.\s\S+$', full_name):
                 (first, middle, last) = full_name.split()
-                
+
             leg = Legislator(term, chamber, district_name, full_name,
                              first, last, middle,
                              translate[d['party']],
                              **kwargs)
 
-            leg.add_office('district', 'Dictrict Office', address=d['address'], phone=phone, email=email)
+            leg.add_office('district', 'District Office', address=d['address'], phone=phone, email=email)
             leg.add_source(source_url)
             leg.add_source(contact_url)
             if homepage_url:
