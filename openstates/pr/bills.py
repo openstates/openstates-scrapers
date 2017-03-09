@@ -104,14 +104,14 @@ class PRBillScraper(BillScraper):
                 # versions are mentioned several times, lets use original name
                 erroneous_filename = False
                 action_url = action_url.lower().strip()
-                if action_url.endswith('.doc'):
+                if action_url.endswith(('.doc', 'dot')):
                     mimetype = 'application/msword'
                 elif action_url.endswith('.rtf'):
                     mimetype = 'application/rtf'
                 elif action_url.endswith('.pdf'):
                     mimetype = 'application/pdf'
-                elif action_url.endswith('docx'):
-                    mimetype = 'application/octet-stream'
+                elif action_url.endswith(('docx', 'dotx')):
+                    mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 elif action_url.endswith('docm'):
                     self.warning("Erroneous filename found: {}".format(action_url))
                     erroneous_filename = True

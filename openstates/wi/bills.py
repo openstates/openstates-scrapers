@@ -164,7 +164,7 @@ class WIBillScraper(BillScraper):
                  ):
 
                 bill.add_version(a.text, a.get('href'),
-                                 on_duplicate="ingore", mimetype="text/html")
+                                 on_duplicate="ignore", mimetype="text/html")
 
                 pdf = a.xpath('following-sibling::span/a/@href')[0]
                 bill.add_version(a.text, pdf,
@@ -176,7 +176,7 @@ class WIBillScraper(BillScraper):
                 extra_doc_url = a.get('href')
                 extra_doc = lxml.html.fromstring(self.get(extra_doc_url).text)
                 extra_doc.make_links_absolute(extra_doc_url)
-                for extra_a in extra_doc.xpath('//li//a'):
+                for extra_a in extra_doc.xpath('//ul[@class="docLinks"]/li//a'):
                     if extra_a.text:
                         bill.add_document(extra_a.text, extra_a.get('href'))
             else:
@@ -333,7 +333,7 @@ class WIBillScraper(BillScraper):
 
     def add_house_votes(self, vote, url):
         try:
-            html = self.get(url).text
+            html = self.get(url).content
         except scrapelib.HTTPError:
             self.warning('No House Votes found for %s' % url)
             return
@@ -341,7 +341,8 @@ class WIBillScraper(BillScraper):
         doc = lxml.html.fromstring(html)
 
         header_td = doc.xpath('//div/p[text()[contains(., "AYES")]]')[0].text_content()
-        ayes_nays = re.findall('AYES - (\d+) NAYS - (\d+)', header_td)
+        ayes_nays = re.findall(r'AYES - (\d+).*NAYS - (\d+).*', header_td)
+
         vote['yes_count'] = int(ayes_nays[0][0])
         vote['no_count'] = int(ayes_nays[0][1])
 

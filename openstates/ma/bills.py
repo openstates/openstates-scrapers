@@ -105,8 +105,6 @@ class MABillScraper(BillScraper):
         session_for_url =  self.replace_non_digits(session)
         bill_url = u'https://malegislature.gov/Bills/{}/{}'.format(session_for_url, bill_id)
 
-        print bill_url
-
         try:
             response = requests.get(bill_url)
         except requests.exceptions.RequestException as e:
@@ -129,7 +127,7 @@ class MABillScraper(BillScraper):
         if page.xpath('//p[@id="pinslip"]/text()'):
             bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
 
-        bill_id = re.sub(r'[^S|H|\d]','',bill_id)
+        bill_id = re.sub(r'[^S|H|D|\d]','',bill_id)
 
         bill = Bill(session, chamber,bill_id, bill_title,
                     summary=bill_summary)
@@ -145,9 +143,8 @@ class MABillScraper(BillScraper):
             sponsor = sponsor[0].strip()
             bill.add_sponsor('primary', sponsor)
 
-        has_cosponsor = page.xpath('//a[starts-with(normalize-space(.),"Petitioners")]')
-        if has_cosponsor:
-            self.scrape_cosponsors(bill, bill_url)
+        self.scrape_cosponsors(bill, bill_url)
+
 
         version = page.xpath("//div[contains(@class, 'modalBtnGroup')]/a[contains(text(), 'Download PDF') and not(@disabled)]/@href")
         if version:

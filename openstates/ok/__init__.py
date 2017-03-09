@@ -32,7 +32,7 @@ metadata = dict(
          {'name': '2017-2018',
           'start_year': 2017,
           'end_year': 2018,
-          'sessions': ['2017-2018']},          
+          'sessions': ['2017-2018']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -67,8 +67,8 @@ metadata = dict(
          '2017-2018':
             {'display_name': '2017-2018 Regular Session',
              'session_id': '1700',
-             '_scraped_name': '2017 Regular Session(mainsys)',
-            },            
+             '_scraped_name': '2017 Regular Session',
+            },
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
@@ -95,9 +95,11 @@ metadata = dict(
 
 def session_list():
     from billy.scrape.utils import url_xpath
-    return url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
-        "//select[@name='cbxSession']/option/text()")
-
+    sessions = url_xpath('http://webserver1.lsb.state.ok.us/WebApplication2/WebForm1.aspx',
+                        "//select[@name='cbxSession']/option/text()")
+    # OK Sometimes appends (Mainsys) to their session listings
+    sessions = [s.replace('(Mainsys)', '').strip() for s in sessions]
+    return sessions
 
 def extract_text(doc, data):
     return worddata_to_text(data)

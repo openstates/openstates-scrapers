@@ -10,11 +10,11 @@ import xlrd
 
 excel_mapping = {
     'district': 0,
-    'town_represented': 2,
-    'full_name': 3,
-    'party': 4,
-    'address': 5,
-    'email': 6,
+    'town_represented': 1,
+    'full_name': 2,
+    'party': 3,
+    'address': 4,
+    'email': 5,
 }
 
 class RILegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -128,8 +128,14 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             if d['address'] is '':
                 d['address'] = 'No Address Found'
 
+            # RI is very fond of First M. Last name formats and
+            # they're being misparsed upstream, so fix here
+            (first, middle, last) = ('','','')
+            if re.match(r'^\S+\s[A-Z]\.\s\S+$', full_name):
+                (first, middle, last) = full_name.split()
+                
             leg = Legislator(term, chamber, district_name, full_name,
-                             '', '', '',
+                             first, last, middle,
                              translate[d['party']],
                              **kwargs)
 

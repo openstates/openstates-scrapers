@@ -57,7 +57,9 @@ class SDBillScraper(BillScraper):
         for link in version_links:
             bill.add_version(link.xpath('string()').strip(),
                              link.attrib['href'],
-                             mimetype='text/html')
+                             mimetype='text/html',
+                             on_duplicate='ignore',
+                             )
 
         sponsor_links = page.xpath(
             "//td[contains(@id, 'tdSponsors')]/a")

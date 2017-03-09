@@ -169,7 +169,9 @@ class OKBillScraper(BillScraper):
             motion = header.xpath(
                 "string(following-sibling::p[%d])" % motion_index).strip()
             motion = re.sub(r'\s+', ' ', motion)
-            assert motion.strip(), "Motion text not found"
+            if not motion.strip():
+                self.warning("Motion text not found")
+                return
             match = re.match(r'^(.*) (PASSED|FAILED)$', motion)
             if match:
                 motion = match.group(1)

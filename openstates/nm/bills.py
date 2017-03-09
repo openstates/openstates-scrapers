@@ -3,9 +3,11 @@ import re
 import csv
 import zipfile
 import subprocess
+import operator
 from datetime import datetime
-
+from bisect import bisect_left
 import lxml.html
+import lxml.etree
 import scrapelib
 
 from billy.scrape.bills import BillScraper, Bill
@@ -14,69 +16,13 @@ from billy.scrape.utils import convert_pdf
 
 from .actions import Categorizer
 
-# {spaces}{vote indicator (Y/N/E/ )}{name}{lookahead:2 spaces, space-indicator}
-HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
+# Senate vote header
+sVoteHeader = re.compile(r'(YES)|(NO)|(ABS)|(EXC)|(REC)')
+# House vote header
+hVoteHeader = re.compile(r'(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))')
 
-
-def convert_sv_text(text):
-    """
-    normalize Senate vote text from pdftotext
-
-    senate votes come out of pdftotext with characters shifted in weird way
-    convert_sv_text converts that text to a readable format with junk stripped
-
-    example after decoding:
-     OFFICIALROLLCALL
-    NEWMEXICOSTATESENATE
-    FIFTIETHLEGISLATURE,FIRSTSESSION,2011
-
-    LEGISLATIVEDAY35DATE:03-09-11
-    RCS#330
-    SENATEBILL233,ASAMENDED
-      YES NO ABS EXC  YES NO ABS EXC
-     ADAIR X    LOVEJOY X
-     ASBILL X    MARTINEZ X
-     WILSONBEFFORT X    MCSORLEY X
-     BOITANO X    MORALES    X
-     BURT X    MUNOZ    X
-     CAMPOS X    NAVA X
-     CISNEROS X    NEVILLE X
-     CRAVENS X    ORTIZYPINO X
-     EICHENBERG X    PAPEN X
-     FELDMAN X    PAYNE X
-     FISCHMANN X    PINTO X
-     GARCIA X    RODRIGUEZ   X
-     GRIEGO,E. X    RUE X
-     GRIEGO,P. X    RYAN X
-     HARDEN X    SANCHEZ,B. X
-     INGLE X    SANCHEZ,M. X
-     JENNINGS X    SAPIEN X
-     KELLER   X  SHARER X
-     KERNAN X    SMITH   X
-     LEAVELL X    ULIBARRI X
-     LOPEZ    X WIRTH X
-          TOTALS=> 36 0 3 3
-
-    PASSED:36-0
-    """
-    ret_lines = []
-    for line in text.splitlines():
-        line = convert_sv_line(line)
-        if 'DCDCDC' not in line:
-            ret_lines.append(line)
-    return ret_lines
-
-
-def convert_sv_line(line):
-    """ convert a single line of the garbled vote text """
-    line = line.strip()
-    # strip out junk filler char
-    line = line.replace('\xef\x80\xa0', '')
-    # shift characters
-    line = ''.join(convert_sv_char(c) for c in line)
-    # clean up the remaining cruft
-    line = line.replace('B3', ' ').replace('oA', '').replace('o', '').replace('\x00', '')
-    return line
+# Date regex for senate and house parser
+rDate = re.compile(r'([0-1][0-9]\/[0-3][0-9]\/\d+)')
 
 
 def convert_sv_char(c):
@@ -90,6 +36,25 @@ def convert_sv_char(c):
             return chr(ord(c) - 128)
         except ValueError:
             return c
+
+
+def matchHeader(rowCols, cellX):
+    """ Map the data column to the header column, has to be done once for each column.
+        The columns of the headers(yes/no/etc) do not mach up *perfect* with
+        data in the grid due to random preceding whitespace and mixed fonts"""
+    rowCols.sort()
+    c = bisect_left(rowCols, cellX)
+    if c == 0:
+        return rowCols[0]
+    elif c == len(rowCols):
+        return rowCols[-1]
+
+    before = rowCols[c - 1]
+    after = rowCols[c]
+    if after-cellX < cellX-before:
+        return after
+    else:
+        return before
 
 
 class NMBillScraper(BillScraper):
@@ -144,7 +109,7 @@ class NMBillScraper(BillScraper):
                          'JR': 'joint resolution',
                          'M': 'memorial',
                          'R': 'resolution',
-                        }
+                         }
 
         # used for faking sources
         session_year = session[2:]
@@ -233,8 +198,8 @@ class NMBillScraper(BillScraper):
                 match = re.match('([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
-                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
-                    
+                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
+
                     if (chamber == "upper" and bill_type[0] == "S") or (chamber == "lower" and bill_type[0] == "H"):
                         bill_id = bill_type.replace('B', '') + bill_num
                         try:
@@ -419,9 +384,9 @@ class NMBillScraper(BillScraper):
 
         # all links but first one
         for fname in doc.xpath('//a/text()')[1:]:
-            # if a COPY continue 
+            # if a COPY continue
             if re.search('- COPY', fname):
-                continue 
+                continue
 
             # Delete any errant words found following the file name
             fname = fname.split(" ")[0]
@@ -441,11 +406,9 @@ class NMBillScraper(BillScraper):
             bill_id = bill_type.replace('B', '') + bill_num
             if bill_id in self.bills.keys():
                 bill = self.bills[bill_id]
-            elif (
-                doctype == 'votes' and
-                ((bill_id.startswith('H') and chamber == 'upper') or
-                (bill_id.startswith('S') and chamber == 'lower'))
-            ):
+            elif (doctype == 'votes' and (
+                    (bill_id.startswith('H') and chamber == 'upper') or
+                    (bill_id.startswith('S') and chamber == 'lower'))):
                 # There is only one vote list URL, shared between chambers
                 # So, avoid throwing warnings upon seeing the other chamber's legislation
                 self.info('Ignoring votes on bill {} while processing the other chamber'.format(fname))
@@ -453,8 +416,8 @@ class NMBillScraper(BillScraper):
             else:
                 self.warning('document for unknown bill %s' % fname)
                 continue
-                
-            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"    
+
+            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
 
             # no suffix = just the bill
             if suffix == '':
@@ -475,17 +438,25 @@ class NMBillScraper(BillScraper):
                                  doc_path + fname, mimetype=mimetype)
             # votes
             elif 'SVOTE' in suffix:
-                # vote = self.parse_senate_vote(doc_path + fname)
-                # if vote:
-                #     bill.add_vote(vote)
-                # else:
-                #     self.warning("Bad parse on the vote")
-                self.warning('Senate vote parsing is currently not working')
+                sv_text = self.scrape_vote(doc_path + fname)
+                if not sv_text:
+                    continue
 
-            elif 'HVOTE' in suffix:
-                vote = self.parse_house_vote(doc_path + fname)
+                vote = self.parse_senate_vote(sv_text, doc_path + fname)
                 if vote:
                     bill.add_vote(vote)
+                else:
+                    self.warning("Bad parse on the vote")
+
+            elif 'HVOTE' in suffix:
+                hv_text = self.scrape_vote(doc_path + fname)
+                if not hv_text:
+                    continue
+                vote = self.parse_house_vote(hv_text, doc_path + fname)
+                if vote:
+                    bill.add_vote(vote)
+                else:
+                    self.warning("Bad parse on the vote")
 
             # committee reports
             elif re.match(r'\w{2,4}\d', suffix):
@@ -498,179 +469,171 @@ class NMBillScraper(BillScraper):
                 pass
             else:
                 # warn about unknown suffix
-                #we're getting some "E" suffixes, but I think those are duplicates
+                # we're getting some "E" suffixes, but I think those are duplicates
                 self.warning('unknown document suffix %s (%s)' % (suffix, fname))
 
-    def parse_senate_vote(self, url):
-        """ senate PDFs -> garbled text -> good text -> Vote """
+    def scrape_vote(self, url, local=False):
+        """Retrieves or uses local copy of vote pdf and converts into XML."""
+        if not local:
+            try:
+                url, resp = self.urlretrieve(url)
+            except scrapelib.HTTPError:
+                self.warning("Request failed: {}".format(url))
+                return
+        v_text = convert_pdf(url, 'xml')
+        os.remove(url)
+        return v_text
+
+    def parse_house_vote(self, sv_text, url):
+        """Sets any overrides and creates the vote instance"""
+        overrides = {"ONEILL": "O'NEILL"}
+        # Add new columns as they appear to be safe
+        vote = Vote('lower', '?', 'senate passage', False, 0, 0, 0)
+        vote.add_source(url)
+        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, hVoteHeader, rDate, 'CERTIFIED CORRECT', 'YEAS')
+
+        # Sanity checks on vote data, checks that the calculated total and listed totals match
+        sane = {'yes':0, 'no':0, 'other':0}
+        # Make sure the header row and sanity row are in orde
+        sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
+        startCount=-1
+        for cell in saneRow:
+            cellValue=cell[0].split()[-1].strip()
+            if 'YEAS' in cell[0] or startCount>=0:
+                startCount+=1
+                saneVote=sorted_rh[startCount][1]
+                if 'Y' == saneVote[0]:
+                    sane['yes']=int(cellValue)
+                elif 'N' == saneVote[0]:
+                    sane['no']=int(cellValue)
+                else:
+                    sane['other']+=int(cellValue)
+        # Make sure the parsed vote totals match up with counts in the total field
+        if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
+           sane['other'] != vote['other_count']:
+                raise ValueError("Votes were not parsed correctly")
+        # Make sure the date is a date
+        if not isinstance(vote['date'], datetime):
+                raise ValueError("Date was not parsed correctly")
+        # End Sanity Check
+        return vote
+
+    def parse_senate_vote(self, sv_text, url):
+        """Sets any overrides and creates the vote instance"""
+        overrides = {"ONEILL": "O'NEILL"}
+        # Add new columns as they appear to be safe
         vote = Vote('upper', '?', 'senate passage', False, 0, 0, 0)
         vote.add_source(url)
+        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, sVoteHeader, rDate, 'TOTAL', 'TOTAL')
 
-        fname, resp = self.urlretrieve(url)
-        # this gives us the cleaned up text
-        sv_text = convert_sv_text(convert_pdf(fname, 'text'))
-        os.remove(fname)
-        in_votes = False
-        flag = None
-        overrides = {"ONEILL": "O'NEILL"}
-
-        """ #this was 2014's vote_override, adding a new one so it breaks
-        #when this comes up in the future
-        vote_override = {("SB0112SVOTE.PDF", "RYAN"): vote.other,    # Recused
-                         ("HB0144SVOTE.PDF", "SOULES"): vote.other,  # Recused
-                         ("HJR15SVOTE.PDF", "KELLER"): vote.other,   # Recused
-                        }
-        """
-
-        vote_override_2015 = {}
-
-        # use in_votes as a sort of state machine
-        for line in sv_text:
-            # not 'in_votes', get date or passage
-
-            if "bT" in line:  # Whatever generates this text renders the cross
-                # in the table as a bT
-                continue
-
-            # GARBAGE_SPECIAL = ["'", "%", "$", "&"]
-            # for x in GARBAGE_SPECIAL:
-            #     for y in [" {} ", "{} ", " {}"]:
-            #         line = line.replace(y.format(x), " ")
-
-            if not in_votes:
-                dmatch = re.search('DATE:\s+(\d{2}/\d{2}/\d{2})', line)
-                if dmatch:
-                    date = dmatch.groups()[0]
-                    vote['date'] = datetime.strptime(date, '%m/%d/%y')
-
-                els = re.findall("YES.*NO.*ABS.*EXC", line)
-                if els != []:
-                    flag = line[0]
-                    in_votes = True
-
-                if 'PASSED' in line:
-                    vote['passed'] = True
-
-            # in_votes: totals & votes
-            else:
-                if "|" not in line:
-                    self.warning("NO DELIM!!! %s", line)
-                    continue
-
-                # totals
-                if 'TOTALS' in line:
-                    # Lt. Governor voted
-                    if 'GOVERNOR' in line:
-                        _, name, y, n, a, e = [
-                            x.strip() for x in line.split("|")
-                        ][:6]
-                        assert name == "LT. GOVERNOR"
-                        if y == "X":
-                            vote.yes(name)
-                        elif n == "X":
-                            vote.no(name)
-                        elif a == "X" or e == "X":
-                            vote.other(name)
-                        else:
-                            raise ValueError("Bad parse")
-
-                    name, yes, no, abs, exc = [
-                        x.strip() for x in line.split("|")
-                    ][6:-1]
-
-                    vote['yes_count'] = int(yes)
-                    vote['no_count'] = int(no)
-                    vote['other_count'] = int(abs) + int(exc)
-                    # no longer in votes
-                    in_votes = False
-                    continue
-
-                # pull votes out
-                matches = re.match(
-                    ' ([A-Z,\'\-.]+)(\s+)X\s+([A-Z,\'\-.]+)(\s+)X', line)
-
-                votes = [x.strip() for x in line.split("|")]
-                vote1 = votes[:5]
-                vote2 = votes[5:]
-
-                for voted in [vote1, vote2]:
-                    name = "".join(voted[:2])
-                    if name in overrides:
-                        name = overrides[name]
-                        voted.pop(0)
-                        voted[0] = name
-
-                    name, yes, no, abs, exc = voted
-
-                    if "District" in name:
-                        continue
-
-                    if yes == "X":
-                        vote.yes(name)
-                    elif no == "X":
-                        vote.no(name)
-                    elif abs == "X" or exc == "X":
-                        vote.other(name)
-                    else:
-                        key = (os.path.basename(url), name)
-                        if key in vote_override_2015:
-                            vote_override_2015[key](name)
-                        else:
-                            raise ValueError("Bad parse")
-
+        # Sanity checks on vote data, checks that the calculated total and listed totals match
+        sane={'yes': 0, 'no': 0, 'other':0}
+        # Make sure the header row and sanity row are in orde
+        sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
+        startCount=-1
+        for cell in saneRow:
+            if startCount >= 0:
+                saneVote = sorted_rh[startCount][1]
+                if 'Y' == saneVote[0]:
+                    sane['yes'] = int(cell[0])
+                elif 'N' == saneVote[0]:
+                    sane['no'] = int(cell[0])
+                else:
+                    sane['other'] += int(cell[0])
+                startCount += 1
+            elif 'TOTAL' in cell[0]:
+                startCount = 0
+        # Make sure the parsed vote totals match up with counts in the total field
+        if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
+           sane['other'] != vote['other_count']:
+                raise ValueError("Votes were not parsed correctly")
+        # Make sure the date is a date
         if not isinstance(vote['date'], datetime):
-            return None
-
+                raise ValueError("Date was not parsed correctly")
+        # End Sanity Check
         return vote
 
-    # house totals
-    HOUSE_TOTAL_RE = re.compile('\s+YEAS:\s+(\d+)\s+NAYS:\s+(\d+)\s+EXCUSED:\s+(\d+)\s+ABSENT:\s+(\d+)')
-
-    def parse_house_vote(self, url):
-        """ house votes are pdfs that can be converted to text, require some
-        nasty regex to get votes out reliably """
-
-        fname, resp = self.urlretrieve(url)
-        text = convert_pdf(fname, 'text')
-        if not text.strip():
-            self.warning('image PDF %s' % url)
-            return
-        os.remove(fname)
-
-        # get date
-        if text.strip() == 'NEW MEXICO HOUSE OF REPRESENTATIVES':
-            self.warning("What the heck: %s" % (url))
-            return None
-
-        date = re.findall('(\d+/\d+/\d+)', text)[0]
-        date = datetime.strptime(date, '%m/%d/%Y')
-
-        # get totals
-        yea, nay, exc, absent = self.HOUSE_TOTAL_RE.findall(text)[0]
-
-        # make vote (faked passage indicator)
-        vote = Vote('lower', date, 'house passage', int(yea) > int(nay),
-                    int(yea), int(nay), int(absent) + int(exc))
-        vote.add_source(url)
-
-        # votes
-        real_votes = False
-        for v, name in HOUSE_VOTE_RE.findall(text):
-            # our regex is a bit broad, wait until we see 'Nays' to start
-            # and end when we see CERTIFIED or ____ signature line
-            if 'Nays' in name or 'Excused' in name:
-                real_votes = True
+    def parse_visual_grid(self, vote, v_text, overrides, voteHeader, rDate, tableStop, saneIden):
+        """Takes a (badly)formatted pdf and converts the vote grid into an X,Y grid to match votes"""
+        rowHeads = {}
+        columnMap = {}
+        rows = {}
+        cells = []
+        tBegin = 0
+        tStop = 0
+        saneRow = 0
+        # Take the mixed up text tag cells and separate header/special and non-header cells.
+        # Metadata hints that this doc is done by hand, tags appear in chrono order not visual
+        for tag in lxml.etree.XML(v_text).xpath('//text/b')+lxml.etree.XML(v_text).xpath('//text'):
+            if tag.text is None:
                 continue
-            elif 'CERTIFIED' in name or '___' in name:
-                break
-            elif real_votes and name.strip():
-                if v == 'Y':
-                    vote.yes(name)
-                elif v == 'N':
-                    vote.no(name)
-                else:   # excused/absent
-                    vote.other(name)
-        return vote
+            rowValue = tag.text.strip()
+            if 'top' not in tag.keys():
+                tag = tag.getparent()
+            top = int(tag.attrib['top'])
+            # name overrides
+            if rowValue in overrides:
+                rowValue = overrides[rowValue]
+            elif 'LT. GOV' in rowValue:
+                # Special case for the senate, inconsistencies make overrides not an option
+                rowValue = 'LT. GOVERNOR'
+            elif tableStop in rowValue:
+                # Set the data table end point
+                tStop = top
+
+            if saneIden in rowValue:
+                # Vote sanity row can be the same as the tableStop
+                saneRow = top
+            if rDate.search(rowValue):
+                # Date formats change depending on what document is being used
+                if len(rowValue) == 8:
+                    vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%y')
+                else:
+                    vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%Y')
+            elif voteHeader.match(rowValue):
+                rowHeads[int(tag.attrib['left'])+int(tag.attrib['width'])]=rowValue
+                # Set the header begin sanity value
+                if tBegin == 0:
+                    tBegin = top
+            else:
+                # Create dictionary of row params and x,y location- y:{value, x, x(offset)}
+                if top in rows:
+                    rows[top].append((rowValue, int(tag.attrib['left']), int(tag.attrib['width'])))
+                else:
+                    rows[top] = [(rowValue, int(tag.attrib['left']), int(tag.attrib['width']))]
+
+        # Mark the votes in the datagrid
+        for rowX, cells in rows.iteritems():
+            if rowX > tBegin and rowX <= tStop:
+                # Resort the row cells to go left to right, due to possile table pane switching
+                cells.sort(key=operator.itemgetter(1))
+                # Each vote grid is made up of split tables with two active columns
+                for x in range(0, len(cells), 2):
+                    if tableStop in cells[x][0]:
+                        break
+                    if x + 1 >= len(cells):
+                        self.warning('No vote found for {}'.format(cells[x]))
+                        continue
+                    if cells[x+1][1] not in columnMap:
+                        # Called one time for each column heading
+                        # Map the data grid column to the header columns
+                        columnMap[cells[x+1][1]] = matchHeader(rowHeads.keys(), cells[x+1][1]+cells[x+1][2])
+                    voteCasted = rowHeads[columnMap[cells[x+1][1]]]
+
+                    # Fix some odd encoding issues
+                    name = ''.join(convert_sv_char(c) for c in cells[x][0])
+                    if 'Y' == voteCasted[0]:
+                        vote.yes(name)
+                    elif 'N' == voteCasted[0]:
+                        vote.no(name)
+                    else:
+                        vote.other(name)
+        vote['yes_count'] = len(vote['yes_votes'])
+        vote['no_count'] = len(vote['no_votes'])
+        vote['other_count'] = len(vote['other_votes'])
+        vote['passed'] = vote['yes_count'] > vote['no_count']
+
+        return vote, rowHeads, rows[saneRow]
 
     def dedupe_docs(self):
         for bill_id, bill in self.bills.items():

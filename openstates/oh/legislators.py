@@ -1,6 +1,5 @@
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
 import lxml.html
@@ -21,12 +20,15 @@ SUBCOMMITTEES = {
     "Finance - Workforce Subcommittee": "Finance",
 
     # The House has mostly Finance, but also one more
-    "Community and Family Advancement Subcommittee on Minority Affairs": "Community and Family Advancement",
-    "Finance Subcommittee on Agriculture, Development, and Natural Resources": "Finance",
+    "Community and Family Advancement Subcommittee on Minority Affairs":
+        "Community and Family Advancement",
+    "Finance Subcommittee on Agriculture Development and Natural Resources":
+        "Finance",
     "Finance Subcommittee on Health and Human Services": "Finance",
     "Finance Subcommittee on Higher Education": "Finance",
     "Finance Subcommittee on Primary and Secondary Education": "Finance",
-    "Finance Subcommittee on Transportation": "Finance"
+    "Finance Subcommittee on Transportation": "Finance",
+    "Finance Subcommittee on State Government and Agency Review": "Finance"
 }
 
 committee_cache = {}
@@ -74,12 +76,16 @@ class OHLegislatorScraper(LegislatorScraper):
             leg['biography'] = bio
 
         fax_line = [
-                x.strip() for x in
-                page.xpath("//div[@class='contactModule']/div[@class='data']/text()")
-                if "Fax" in x
-                ]
+            x.strip() for x in
+            page.xpath(
+                "//div[@class='contactModule']/div[@class='data']/text()"
+            )
+            if "Fax" in x
+        ]
         if fax_line:
-            fax_number = re.search(r'(\(\d{3}\)\s\d{3}\-\d{4})', fax_line[0]).group(1)
+            fax_number = re.search(
+                r'(\(\d{3}\)\s\d{3}\-\d{4})', fax_line[0]
+            ).group(1)
             leg['offices'][0]['fax'] = fax_number
 
         ctties = page.xpath("//div[@class='committeeList']//a")
@@ -123,9 +129,10 @@ class OHLegislatorScraper(LegislatorScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for legislator in page.xpath("//div[contains(concat(' ', "
-                "normalize-space(@class), ' '), ' memberModule ')]"):
-
+        for legislator in page.xpath(
+                "//div[contains(concat(' ', normalize-space(@class), ' '), "
+                "' memberModule ')]"
+                ):
             img = legislator.xpath(
                 ".//div[@class='thumbnail']//img")[0].attrib['src']
             data = legislator.xpath(".//div[@class='data']")[0]
@@ -146,7 +153,7 @@ class OHLegislatorScraper(LegislatorScraper):
             if len(h3):
                 h3 = h3[0]
                 district = h3.xpath("./br")[0].tail.replace("District", ""
-                                                           ).strip()
+                                                            ).strip()
             else:
                 district = re.findall(
                     "\d+\.png",
@@ -155,8 +162,8 @@ class OHLegislatorScraper(LegislatorScraper):
 
             full_name = re.sub("\s+", " ", full_name).strip()
             email = (
-                'rep{0:0{width}}@ohiohouse.gov' \
-                if chamber == 'lower' else \
+                'rep{0:0{width}}@ohiohouse.gov'
+                if chamber == 'lower' else
                 'sd{0:0{width}}@ohiosenate.gov'
             ).format(int(district), width=2)
 

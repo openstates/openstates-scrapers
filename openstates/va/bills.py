@@ -15,7 +15,8 @@ class VABillScraper(BillScraper):
 
     # There's a weird catch-all for numerals after the dash in the Yes
     # count. That's because we've actually encountered this.
-    vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y (\d+)-N(?: (\d+)-A)?\)')
+    # There's also a catch-all for dashes before the number in No count
+    vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y -?(\d+)-N(?: (\d+)-A)?\)')
     actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
                  'Conference': 'conference'}
 
@@ -248,10 +249,10 @@ class VABillScraper(BillScraper):
                         cached_action = action
                         continue
 
-                if vote is None:
-                    raise ValueError('Cannot save an empty vote.')
-                #vote.validate()
-                bill.add_vote(vote)
+                if vote:
+                    bill.add_vote(vote)
+                else:
+                    self.error('empty vote')
             else:
                 # If this action isn't a vote, but the last one was,
                 # there's obviously no additional vote data to match.

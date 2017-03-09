@@ -22,12 +22,14 @@ committee_urls = {
         2011: 'http://leg.mt.gov/css/House/house-committees-2011.asp',
         2013: 'http://leg.mt.gov/content/Committees/Session/2013%20house%20committees%20-%20columns.pdf',
         2015: 'http://leg.mt.gov/content/Sessions/64th/2015-house-committees.pdf',
+        2017: 'http://leg.mt.gov/content/Committees/Session/2017-house-committees.pdf',
         },
 
     'upper': {
         2011: 'http://leg.mt.gov/css/Senate/senate%20committees-2011.asp',
         2013: 'http://leg.mt.gov/content/Committees/Session/2013%20senate%20committees%20-%20columns.pdf',
         2015: 'http://leg.mt.gov/content/Sessions/64th/2015-senate-committees.pdf',
+        2017: 'http://leg.mt.gov/content/Committees/Session/2017-senate-committees.pdf',
         },
 
     'joint': {

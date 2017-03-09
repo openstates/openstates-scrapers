@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
-import collections
 from operator import methodcaller
 
 import lxml.html
-import scrapelib
 import requests.exceptions
 
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
-from .utils import Urls
 
 
 strip = methodcaller('strip')
@@ -32,9 +29,6 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                  'lower': 'http://assembly.ca.gov/'}
 
     def scrape(self, chamber, term):
-        #as of 1/26, committees seem to be in place!
-        #raise Exception("CA Committees aren't in place yet")
-
         if chamber == 'lower':
             self.scrape_lower(chamber, term)
         elif chamber == 'upper':
@@ -262,6 +256,6 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                     role=mem_role if mem_role else 'member'
                 )
 
-            assert comm['members'], "No members found for committee {}".format(
-                comm_name)
+            if not comm['members']:
+                self.warning("No members found for committee {}".format(comm_name))
             self.save_committee(comm)

@@ -1,31 +1,33 @@
-import re
+import pytz
 import datetime
-
-from billy.scrape.events import EventScraper, Event
-
 import feedparser
+from pupa.scrape import Scraper, Event
 
 
-class FLEventScraper(EventScraper):
-    jurisdiction = 'fl'
+class FlEventScraper(Scraper):
+    tz = pytz.timezone("US/Eastern")
 
-    def scrape(self, chamber, session):
-        self.scrape_upper_events(session)
+    def scrape(self):
+        yield from self.scrape_upper_events()
 
-    def scrape_upper_events(self, session):
+    def scrape_upper_events(self):
         url = "https://www.flsenate.gov/Tracker/RSS/DailyCalendar"
         page = self.get(url).text
         feed = feedparser.parse(page)
-
-        for entry in feed['entries']:            
-            #The feed breaks the RSS standard by making the pubdate the actual event's date, not the RSS item publish date
+        for entry in feed['entries']:
+            # The feed breaks the RSS standard by making the pubdate the
+            # actual event's date, not the RSS item publish date
             when = datetime.datetime(*entry['published_parsed'][:6])
+            when = pytz.utc.localize(when)
 
             desc = entry['summary'].split(' - ')[0]
             location = entry['summary'].split(' - ')[1]
 
-            event = Event(session, when, 'committee:meeting',
-                              desc, location)
-            event.add_source(entry['link'])
+            event = Event(name=desc,
+                          start_time=when,
+                          timezone=self.tz.zone,
+                          description=desc,
+                          location_name=location)
 
-            self.save_event(event)
+            event.add_source(entry['link'])
+            yield event

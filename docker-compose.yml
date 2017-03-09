@@ -1,18 +1,47 @@
-version: "2"
+version: "3"
 services:
   openstates:
     build: .
     environment:
     - BILLY_MONGO_HOST=database
+    - MYSQL_HOST=mysql
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     volumes:
     - .:/srv/openstates-web
+    depends_on:
+    - database
+  openstates.org:
+    image: openstates/openstates.org
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+    - MONGO_HOST=database
     ports:
     - "8000:8000"
     depends_on:
     - database
+  scrape:
+    build:
+        context: .
+        dockerfile: Dockerfile-pupa
+    environment:
+    - BILLY_MONGO_HOST=database
+    - MYSQL_HOST=mysql
+    - NEW_YORK_API_KEY
+    - INDIANA_API_KEY
+    volumes:
+    - .:/opt/openstates/openstates/
+    depends_on:
+    - database
+    entrypoint: /opt/openstates/openstates/pupa-scrape.sh
   database:
     image: mongo
     ports:
     - "27017:27017"
+  mysql:
+    image: mysql
+    ports:
+    - "3306:3306"
+    environment:
+    - MYSQL_DATABASE=capublic
+    - MYSQL_ALLOW_EMPTY_PASSWORD=yes

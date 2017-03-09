@@ -1,0 +1,6 @@
+# common
+xlrd
+lxml>=2.2
+pytz>=2010l
+feedparser>=4.1
+spatula

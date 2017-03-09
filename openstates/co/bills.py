@@ -110,7 +110,9 @@ class COBillScraper(BillScraper, LXMLMixin):
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
         self.scrape_fiscal_notes(bill, page)
+        self.scrape_committee_report(bill, page)
         self.scrape_votes(bill, page)
+        self.scrape_amendments(bill, page)
 
         self.save_bill(bill)
 
@@ -155,7 +157,8 @@ class COBillScraper(BillScraper, LXMLMixin):
                 seen_versions.append(version_url)
 
     def scrape_actions(self, bill, page):
-        chamber_map = {'Senate':'upper', 'House': 'lower'}
+        chamber_map = {'Senate':'upper', 'House': 'lower', 
+                       'Governor':'executive'}
 
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
 
@@ -195,6 +198,61 @@ class COBillScraper(BillScraper, LXMLMixin):
             note_url = note[0]
             bill.add_document("Research Note", note_url, 'application/pdf')
 
+    def scrape_committee_report(self, bill, page):
+        note = page.xpath('//a[text()="Committee Report"]/@href')
+        if note:
+            note_url = note[0]
+            bill.add_version("Committee Amendment", note_url, 'application/pdf')
+
+    def scrape_amendments(self, bill, page):
+        # CO Amendments are Buried in their hearing summary pages as attachments
+        hearings = page.xpath('//a[text()="Hearing Summary"]/@href')
+        for hearing_url in hearings:
+            # Save the full page text for later, we'll need it for amendments
+            page_text = self.get(hearing_url).content
+            page = lxml.html.fromstring(page_text)
+
+            pdf_links = page.xpath("//main//a[contains(@href,'.pdf')]/@href")
+
+            table_text = ''
+
+            # A hearing can discuss multiple bills,
+            # so first make a list of all amendments
+            # mentioned in summary tables revelant to this bill
+
+            table_xpath = '//table[.//*[contains(text(), "{}")]]'.format(bill['bill_id'])
+            bill_tables = page.xpath(table_xpath)
+            if bill_tables:
+                for table in bill_tables:
+                    table_text += table.text_content()
+
+            amendments = re.findall(r'amendment (\w\.\d+)', table_text, re.IGNORECASE)
+
+            # Then search the full text for the string that matches Amendment Name to Attachment
+            # Not every attachment is an amendment,
+            # but they are always mentioned in the text somewhere
+            # as something like: amendment L.001 (Attachment Q)
+            for amendment in amendments:
+                references = re.findall(r'amendment ({}) \(Attachment (\w+)\)'.format(amendment),
+                                        page_text,
+                                        re.IGNORECASE)
+                for reference in references:
+                    amendment_name = 'Amendment {}'.format(reference[0])
+                    amendment_letter = reference[1]
+                    amendment_filename = 'Attach{}.pdf'.format(amendment_letter)
+
+                    # Return the first URL with amendment_filename in it, and don't error on missing
+                    amendment_url = next((url for url in pdf_links if amendment_filename in url),None)
+                    if amendment_url:
+                        bill.add_version(amendment_name,
+                                         amendment_url,
+                                         'application/pdf',
+                                         on_duplicate='use_new')
+                    else:
+                        self.warning("Didn't find attachment for %s %s",
+                                     amendment_name,
+                                     amendment_letter)
+
     def scrape_votes(self, bill, page):
         votes = page.xpath('//div[@id="bill-documents-tabs3"]//table//tbody//tr')
 
@@ -212,12 +270,18 @@ class COBillScraper(BillScraper, LXMLMixin):
             header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
                                parent_committee_row)
 
+            # Some vote headers have missing information, so we cannot save the vote information
+            if not header:
+                self.warning("No date and committee information available in the vote header.")
+                return
+
             if 'Senate' in header.group('committee'):
                 chamber = 'upper'
             elif 'House' in header.group('committee'):
                 chamber = 'lower'
             else:
-                self.warning("No committee for %s" % header.group('committee'))
+                self.warning("No chamber for %s" % header.group('committee'))
+                chamber = bill['chamber']
 
             date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
 

@@ -1,129 +1,110 @@
-import re
-from itertools import chain
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-
-import lxml.html
+from pupa.scrape import Scraper, Organization
+from spatula import Spatula, Page
 
 
-class FLCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'fl'
+class HouseComList(Page):
+    url = "http://www.myfloridahouse.gov/Sections/Committees/committees.aspx"
+    list_xpath = "//a[contains(@href, 'committeesdetail.aspx')]"
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def handle_page(self):
+        # don't use handle_page_item because we need to look back at prior
+        # element
+        parent = None
 
-        if chamber == 'upper':
-            self.scrape_upper_committees()
+        for item in self.doc.xpath(self.list_xpath):
+            cssclass = item.attrib.get('class', '')
+            name = item.text_content().strip()
+
+            if 'parentcommittee' in cssclass:
+                parent = None
+                chamber = 'lower'
+
+            comm = Organization(name=name, classification="committee",
+                                chamber=chamber, parent_id=parent)
+            yield self.scrape_page(HouseComDetail, item.attrib['href'],
+                                   obj=comm)
+
+            # parent for next time
+            if 'parentcommittee' in cssclass:
+                parent = {'name': name, 'classification': 'lower'}
+                chamber = None
+
+
+class HouseComDetail(Page):
+
+    def clean_name(self, name):
+        name = name.replace(' [D]', '')
+        name = name.replace(' [R]', '')
+        name = name.replace(' [I]', '')
+        name = name.strip()
+        return name
+
+    def handle_page(self):
+        name = self.doc.xpath('//h1[@class="cd_ribbon"]')[0].text
+
+        for lm in self.doc.xpath('//div[@class="cd_LeaderMember"]'):
+            role = lm.xpath('.//div[@class="cd_LeaderTitle"]')[0].text_content().strip()
+            name = lm.xpath('.//span[@class="cd_LeaderTitle"]/a')[0].text_content().strip()
+            name = self.clean_name(name)
+            self.obj.add_member(name, role=role)
+
+        for cm in self.doc.xpath('//p[@class="cd_committeemembers"]//a'):
+            name = self.clean_name(cm.text_content())
+            self.obj.add_member(name)
+
+        self.obj.add_source(self.url)
+
+        yield self.obj
+
+
+class SenComList(Page):
+    url = "http://www.flsenate.gov/Committees/"
+    list_xpath = "//a[contains(@href, 'Committees/Show')]/@href"
+
+    def handle_list_item(self, item):
+        return self.scrape_page(SenComDetail, item)
+
+
+class SenComDetail(Page):
+    def clean_name(self, member):
+        member = member.replace('Senator ', '').strip()
+        member = member.replace(' (D)', '')
+        member = member.replace(' (R)', '')
+        member = member.replace(' (I)', '')
+        return member
+
+    def handle_page(self):
+        name = self.doc.xpath('//h2[@class="committeeName"]')[0].text
+        if name.startswith('Appropriations Subcommittee'):
+            name = name.replace('Appropriations ', '')
+            parent = {'name': 'Appropriations', 'classification': 'upper'}
+            chamber = None
         else:
-            self.scrape_lower_committees()
+            if name.startswith('Committee on'):
+                name = name.replace('Committee on ', '')
+            parent = None
+            chamber = 'upper'
+        comm = Organization(name=name, classification="committee",
+                            chamber=chamber, parent_id=parent,
+                            )
 
-    def scrape_upper_committees(self):
-        url = "http://flsenate.gov/Committees/"
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        for dt in self.doc.xpath('//div[@id="members"]/dl/dt'):
+            role = dt.text.replace(': ', '').strip().lower()
+            member = dt.xpath('./following-sibling::dd')[0].text_content()
+            member = self.clean_name(member)
+            comm.add_member(member, role=role)
 
-        path = "//a[contains(@href, 'Committees/Show')]"
-        for link in page.xpath(path):
-            comm_name = link.text.strip()
+        for ul in self.doc.xpath('//div[@id="members"]/ul/li'):
+            member = self.clean_name(ul.text_content())
+            comm.add_member(member)
 
-            if comm_name.startswith('Joint'):
-                continue
+        comm.add_source(self.url)
 
-            if 'Subcommittee on' in comm_name:
-                comm_name, sub_name = comm_name.split(' Subcommittee on ')
-            else:
-                comm_name, sub_name = comm_name, None
+        yield comm
 
-            comm = Committee('upper', comm_name, sub_name)
-            self.scrape_upper_committee(comm, link.attrib['href'])
-            if comm['members']:
-                self.save_committee(comm)
 
-    def scrape_upper_committee(self, comm, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        comm.add_source(url)
+class FlCommitteeScraper(Scraper, Spatula):
 
-        path = "//a[contains(@href, 'Senators')]/name"
-        seen = set()
-        for name in page.xpath(path):
-            dt = name.xpath("../../preceding-sibling::dt")
-            if dt:
-                mtype = dt[0].text.strip(': \r\n\t').lower()
-            else:
-                mtype = 'member'
-
-            member = re.sub(r'\s+', ' ', name.text.strip())
-            if (member, mtype) not in seen:
-                comm.add_member(member, mtype)
-                seen.add((member, mtype))
-
-    def scrape_lower_committees(self):
-        url = ("http://www.myfloridahouse.gov/Sections/Committees/"
-               "committees.aspx")
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'CommitteeId')]"):
-            comm_name = link.text.strip()
-
-            if 'Committee' in comm_name:
-                parent = re.sub(r'Committee$', '', comm_name).strip()
-                sub = None
-            else:
-                sub = re.sub(r'Subcommittee$', '', comm_name).strip()
-
-            comm = Committee('lower', parent, sub)
-            self.scrape_lower_committee(comm, link.get('href'))
-            if comm['members']:
-                self.save_committee(comm)
-
-        for link in page.xpath('//a[contains(@href, "committees/joint")]/@href'):
-            self.scrape_joint_committee(link)
-
-    def scrape_joint_committee(self, url):
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-
-        name = doc.xpath('//h1/text()') or doc.xpath('//h2/text()')
-        name = name[0].strip()
-
-        comm = Committee('joint', name)
-        comm.add_source(url)
-
-        members = chain(doc.xpath('//a[contains(@href, "MemberId")]'),
-                        doc.xpath('//a[contains(@href, "Senators")]'))
-
-        seen = set()
-        for a in members:
-            parent_content = a.getparent().text_content()
-            if ':' in parent_content:
-                title = parent_content.split(':')[0].strip()
-            else:
-                title = 'member'
-
-            name = a.text.split(' (')[0].strip()
-            if (name, title) not in seen:
-                comm.add_member(name, title)
-                seen.add((name, title))
-
-        if comm['members']:
-            self.save_committee(comm)
-
-    def scrape_lower_committee(self, comm, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        comm.add_source(url)
-
-        for link in page.xpath("//p[@class='committeelinks']/a[contains(@href, 'MemberId')]"):
-            # strip off spaces and everything in [R/D]
-            name = link.text.strip().split(' [')[0]
-            # membership type span follows link
-            mtype = link.getnext().text_content().strip()
-            if not mtype:
-                mtype = 'member'
-
-            comm.add_member(name, mtype)
+    def scrape(self):
+        yield from self.scrape_page_items(SenComList)
+        yield from self.scrape_page_items(HouseComList)
