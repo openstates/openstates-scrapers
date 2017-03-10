@@ -135,7 +135,10 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         #skip the header row
         for version in versions:
-            version_date = version.xpath('td[1]/text()')[0].strip()
+            if version.xpath('td[1]/text()'):
+                version_date = version.xpath('td[1]/text()')[0].strip()
+            else:
+                version_date = 'None'
             #version_date = dt.datetime.strptime(version_date, '%m/%d/%Y')
             version_type = version.xpath('td[2]/text()')[0]
             version_url = version.xpath('td[3]/span/a/@href')[0]
