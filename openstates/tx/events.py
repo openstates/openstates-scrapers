@@ -102,7 +102,11 @@ class TXEventScraper(EventScraper, LXMLMixin):
 
                 # Ignore text after the datetime proper (ie, after "AM" or "PM")
                 datetime = "{} {}".format(date, time)
-                datetime = re.search(r'(?i)(.+?[ap]m).+', datetime).group(1)
+                datetime = re.search(r'(?i)(.+?[ap]m).+', datetime)
+                if not datetime:
+                    self.warning('invalid datetime: %s %s', date, time)
+                    continue
+                datetime = datetime.group(1)
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
                 self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
