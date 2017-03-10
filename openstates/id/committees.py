@@ -2,13 +2,13 @@ from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
 
 
-_COMMITTEE_URL = 'http://legislature.idaho.gov/%s/committees.cfm' # house/senate
-_JOINT_URL = 'http://legislature.idaho.gov/about/jointcommittees.htm'
+_COMMITTEE_URL = 'https://legislature.idaho.gov/committees/%scommittees/'     # house/senate
+_JOINT_URL = 'https://legislature.idaho.gov/sessioninfo/2017/joint/'
 
-_CHAMBERS = {'upper':'senate', 'lower':'house'}
-_REV_CHAMBERS = {'senate':'upper', 'house':'lower'}
-_TD_ONE = ('committee', 'description', 'office_hours', 'secretary', 'office_phone')
-_TD_TWO = ('committee', 'office_hours', 'secretary', 'office_phone')
+_CHAMBERS = {'upper': 'senate', 'lower': 'house'}
+_REV_CHAMBERS = {'senate': 'upper', 'house': 'lower'}
+_TD_ONE = ('committee', 'description', 'office_hours', 'secretary', 'office_email', 'office_phone')
+_TD_TWO = ('committee', 'office_hours', 'secretary', 'office_email', 'office_phone')
 
 
 def clean_name(name):
@@ -16,84 +16,52 @@ def clean_name(name):
 
 
 class IDCommitteeScraper(CommitteeScraper):
-    """Currently only committees from the latest regular session are
-    available through html. Membership for prior terms are available via the
-    committee minutes .pdf files at
-    http://legislature.idaho.gov/sessioninfo/2009/standingcommittees/committeeminutesindex.htm
-    and the pdfs I have encountered from Idaho convert to html
-    consistantly, so we could get membership and committee minutes if we really
-    want."""
     jurisdiction = 'id'
 
-    def get_jfac(self, name, url):
-        """gets membership info for the Joint Finance and Appropriations
-        Committee."""
-        jfac_page = self.get(url).text
-        html = lxml.html.fromstring(jfac_page)
-        table = html.xpath('body/table/tr/td[2]/table')[0]
+    def get_joint_committees_data(self, name, url):
+        page = self.get(url).text
+        html = lxml.html.fromstring(page)
         committee = Committee('joint', name)
-        for row in table.xpath('tr')[1:]:
-            senate, house = row.xpath('td/strong')
-            senate = senate.text.replace(u'\xa0', ' ')
-            house = house.text.replace(u'\xa0', ' ')
-            if ',' in senate:
-                committee.add_member(*senate.split(','), chamber='upper')
-            else:
-                committee.add_member(senate, chamber='upper')
-            if ',' in house:
-                committee.add_member(*house.split(','), chamber='lower')
-            else:
-                committee.add_member(house, chamber='lower')
-
-        committee.add_source(url)
-        self.save_committee(committee)
-
-    def get_jlfc(self, name, url):
-        """Gets info for the Joint Legislative Oversight Committee"""
-        jlfc_page = self.get(url).text
-        html = lxml.html.fromstring(jlfc_page)
-        committee = Committee('joint', name)
-        member_path = '//h3[contains(text(), "%s")]/following-sibling::p[1]'
-        for chamber in ('Senate', 'House'):
-            members = html.xpath(member_path % chamber)[0]\
-                          .text_content().replace(",\r\n",", ")
-            #that replace is because one guy had his position on the next line
-            #and this is the best I could think of.
-            members = members.split('\r\n')
-            for member in members:
-                print member
-                if member.strip() == "":
-                    continue
-                committee.add_member(*member.replace(u'\xa0', ' ').split(','),
-                                     chamber=_REV_CHAMBERS[chamber.lower()])
-        committee.add_source(url)
-        self.save_committee(committee)
-
-    def get_jmfc(self, name, url):
-        """Gets the Joint Millennium Fund Committee info"""
-        jfmc_page = self.get(url).text
-        html = lxml.html.fromstring(jfmc_page)
-        committee = Committee('joint', name)
-        table = html.xpath('//table')[2]
-        for row in table.xpath('tbody/tr'):
-            for td in row.xpath('td'):
-                member_text = td.text
-                if member_text is None:
-                    continue
-                if "Sen." in member_text:
-                    chamber = "upper"
+        table = html.xpath("//section[@class=' row-equal-height no-padding']")
+        for td in table:
+            senate_members = td.xpath('div[1]/div/div/div[2]/div/p/strong')
+            if(len(senate_members) > 0):
+                member_string = list(senate_members[0].itertext())
+                if(len(member_string) > 1):
+                    name = member_string[0]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Sen.']:
+                        if ch in name:
+                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    role = member_string[1]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', ',']:
+                        if ch in role:
+                            role = role.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    committee.add_member(name, role=role, chamber='senate')
                 else:
-                    chamber = "lower"
-                member_text = member_text.replace('\r\n', ' ').replace(u'\xa0', ' ').replace("Sen.","").replace("Rep.","").strip()
-                member = member_text.split(",")
-                if len(member) > 1:
-                    committee.add_member(member[0].strip(),role=member[1].strip(), chamber = chamber)
+                    name = member_string[0]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Sen.']:
+                        if ch in name:
+                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    committee.add_member(name, chamber='senate')
+            house_members = list(td.xpath('div[2]/div/div/div[2]/div/p/strong'))
+            if(len(house_members) > 0):
+                member_string = list(house_members[0].itertext())
+                if(len(member_string) > 1):
+                    name = member_string[0]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Rep.']:
+                        if ch in name:
+                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    role = member_string[1]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', ',']:
+                        if ch in role:
+                            role = role.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    committee.add_member(name, role=role, chamber='house')
                 else:
-                    committee.add_member(member[0].strip(), chamber = chamber)
-
-
-
-
+                    name = member_string[0]
+                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Rep.']:
+                        if ch in name:
+                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
+                    committee.add_member(name, chamber='house')
         committee.add_source(url)
         self.save_committee(committee)
 
@@ -101,66 +69,53 @@ class IDCommitteeScraper(CommitteeScraper):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
         page = self.get(url).text
         html = lxml.html.fromstring(page)
-        table = html.xpath('body/table/tr/td[2]/table')[0]
-
-        for row in table.xpath('tr')[1:]:
+        table = html.xpath('body/section[2]/div/div/div/section[2]/div[2]/div/div/div/div')[1:]
+        for row in table:
             # committee name, description, hours of operation,
             # secretary and office_phone
-            text = list(row[0].itertext())
-            if len(text) > 4:
-                com = dict(zip(_TD_ONE, text))
+            text = list(row[0].xpath('div')[0].itertext())
+            attributes =  [list(value.replace(u'\xa0', ' ')
+                           .replace('Secretary:', '').encode('ascii', 'ignore')
+                           for value in text
+                           if 'Email:' not in value and value != '\n' and 'Phone:' not in value)]
+            for i in range(len(attributes[0])):
+                if 'Room' in attributes[0][i]:
+                    attributes[0][i] = attributes[0][i].split('Room')[0].replace(', ', ' ')
+            if len(attributes[0]) > 5:
+                com = dict(zip(_TD_ONE, attributes[0]))
             else:
-                com = dict(zip(_TD_TWO, text))
+                com = dict(zip(_TD_TWO, attributes[0]))
             committee = Committee(chamber, **com)
             committee.add_source(url)
-
             # membership
-            for td in row[1:]:
-                if td.text:
-                    leg = td.text.replace(u'\xa0', ' ').strip()
-                    if leg:
-                        committee.add_member(leg)
-
-                for elem in td:
-                    position, leg = elem.text, elem.tail
-                    if position and leg:
-                        leg = leg.replace(u'\xa0', ' ').strip()
-                        if leg:
-                            committee.add_member(leg, role=position)
-                    elif leg:
-                        leg = leg.replace(u'\xa0', ' ').strip()
-                        if leg:
-                            committee.add_member(leg)
+            for td in row[1].xpath('div'):
+                td_text = list(td.itertext())
+                members = list(value
+                               for value in td_text
+                               if value != ' ' and value != '\n' and value != ',')
+            role = "member"
+            for member in members:
+                if (member in ['Chair', 'Vice Chair']):
+                    role = member.lower()
+                    continue
+                else:
+                    committee.add_member(member, role=role)
+                    role = "member"
             self.save_committee(committee)
 
     def scrape_joint_committees(self):
-        url = 'http://legislature.idaho.gov/about/jointcommittees.htm'
-        page = self.get(url).text
+        page = self.get(_JOINT_URL).text
         html = lxml.html.fromstring(page)
-        html.make_links_absolute(url)
-        joint_li = html.xpath('//td[contains(h1, "Joint")]/ul/li')
+        html.make_links_absolute(_JOINT_URL)
+        joint_li = html.xpath('//div[contains(h2, "Joint")]/ul/li')
         for li in joint_li:
             name, url = li[0].text, li[0].get('href')
-            if 'Joint Finance-Appropriations Committee' in name:
-                self.get_jfac(name, url)
-            elif 'Joint Legislative Oversight Committee' in name:
-                self.get_jlfc(name, url)
-            elif name == 'Joint Millennium Fund Committee':
-                self.get_jmfc(name, url)
-            elif name == 'Economic Outlook and Revenue Assessment Committee':
-                committee = Committee('joint', name)
-                committee.add_source(url)
-                #need to write a committee-specific scraper
-                #self.save_committee(committee)
-            else:
-                self.log('Unknown committee: %s %s' % (name, url))
-
+            self.get_joint_committees_data(name, url)
 
     def scrape(self, chamber, term):
         """
         Scrapes Idaho committees for the latest term.
         """
         self.validate_term(term, latest_only=True)
-
         self.scrape_committees(chamber)
         self.scrape_joint_committees()
