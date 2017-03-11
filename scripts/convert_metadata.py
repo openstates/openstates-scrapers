@@ -146,4 +146,5 @@ def indent_tail(text, n):
 
 
 if __name__ == '__main__':
+    sys.path.append('.')
     convert(sys.argv[1])
