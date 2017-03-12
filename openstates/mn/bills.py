@@ -295,7 +295,7 @@ class MNBillScraper(Scraper):
                             continue
 
                 # categorize actions
-                action_type = 'other'
+                action_type = Null
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
