@@ -134,7 +134,7 @@ class RepList(Page):
         yield rep
 
 
-class MnPersonScraper(Scraper, Spatula):
+class MNPersonScraper(Scraper, Spatula):
     def scrape(self):
         yield from self.scrape_page_items(SenList)
         yield from self.scrape_page_items(RepList)

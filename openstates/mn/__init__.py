@@ -1,9 +1,9 @@
 # encoding=utf-8
 from pupa.scrape import Jurisdiction, Organization
-from .bills import MnBillScraper
-from .vote_events import MnVoteEventScraper
-from .events import MnEventScraper
-from .people import MnPersonScraper
+from .bills import MNBillScraper
+from .vote_events import MNVoteEventScraper
+from .events import MNEventScraper
+from .people import MNPersonScraper
 from .common import url_xpath
 
 """
@@ -25,10 +25,10 @@ class Minnesota(Jurisdiction):
     url = "http://state.mn.us/"
     check_sessions = True
     scrapers = {
-        "bills": MnBillScraper,
-        "vote_events": MnVoteEventScraper,
-        "events": MnEventScraper,
-        "people": MnPersonScraper,
+        "bills": MNBillScraper,
+        "vote_events": MNVoteEventScraper,
+        "events": MNEventScraper,
+        "people": MNPersonScraper,
     }
     parties = [{'name': 'Republican'},
                {'name': 'Democratic-Farmer-Labor'}]
