@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .people import MIPersonScraper
+from .committees import MICommitteeScraper
 
 
 class Michigan(Jurisdiction):
@@ -10,6 +11,7 @@ class Michigan(Jurisdiction):
     url = "http://www.legislature.mi.gov"
     scrapers = {
         'people': MIPersonScraper,
+        'committees': MICommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
