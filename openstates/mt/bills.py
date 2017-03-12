@@ -420,8 +420,10 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         vote['motion'] = motion
 
+        action = vote['action']
+
         vote = VoteEvent(
-            action=vote['action'],
+            #action=vote['action'],
             chamber=vote['chamber'],
             start_date=vote['date'],
             motion_text=vote['motion'],
@@ -448,7 +450,6 @@ class MTBillScraper(Scraper, LXMLMixin):
                 vote.vote('absent', name)
 
         # code to deterimine value of `passed`
-        action = vote.action
         passed = None
 
         # some actions take a super majority, so we aren't just
