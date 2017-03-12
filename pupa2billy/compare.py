@@ -4,6 +4,7 @@ import sys
 import json
 import glob
 import itertools
+from collections import defaultdict
 
 
 class Comparator:
@@ -16,9 +17,13 @@ class Comparator:
         print(self.objtype, self.differed, 'differed out of', self.compared)
 
     def compare_json(self, key, val1, val2):
+        differed = 0
         for k, v1 in val1.items():
             v2 = val2.get(k)
-            if k == 'sponsors':
+            if self.objtype == 'bills' and k == 'votes':
+                # we'll compare votes later
+                continue
+            elif k == 'sponsors':
                 for v in itertools.chain(v1, v2):
                     v.pop('chamber', None)
             elif k == 'versions' or k == 'documents':
@@ -26,11 +31,19 @@ class Comparator:
                     v.pop('date', None)
             elif k == 'actions':
                 for v in itertools.chain(v1, v2):
-                    if 'other' in v['type']:
-                        v['type'] = [t for t in v['type'] if t != 'other']
+                    v['type'] = sorted([t for t in v['type'] if t != 'other' and t != 'amendment:tabled'])
+                for i, (a1, a2) in enumerate(zip(v1, v2)):
+                    if a1 != a2:
+                        print('action', i, 'differ', a1, '!=', a2)
+
+                # don't do the normal check for actions
+                continue
+
             if v1 != v2:
                 print(key, 'differ on', k, v1, '!=', v2)
-                self.differed += 1
+                differed = 1
+
+        self.differed += differed
         self.compared += 1
 
     def load_json(self, dirname):
@@ -68,14 +81,24 @@ class VoteComparator(Comparator):
         """ dirname => {key: jsonobj} """
         files = glob.glob(os.path.join(dirname, self.objtype) + '/*.json')
         blobs = [json.load(open(f)) for f in files]
-        all_json = {}
+        if not blobs:
+            # no votes, try loading bills
+            files = glob.glob(os.path.join(dirname, 'bills') + '/*.json')
+            bills = [json.load(open(f)) for f in files]
+            blobs = []
+            for bill in bills:
+                for v in bill.get('votes'):
+                    v['bill_id'] = bill['bill_id']
+                    blobs.append(v)
+        all_json = defaultdict(list)
         for d in blobs:
             key = (d['bill_id'], d['motion'])
-            if key in all_json:
-                # TODO: possible to fix by keeping both around and checking them
-                print('duplicate key in votes, not all votes will get checked: ', key)
-            all_json[key] = d
+            all_json[key].append(d)
         return all_json
+
+    def compare_json(self, key, val1, val2):
+        for i, (v1, v2) in enumerate(zip(val1, val2)):
+            super(VoteComparator, self).compare_json(key + (i,), v1, v2)
 
 
 def compare(dir1, dir2):
