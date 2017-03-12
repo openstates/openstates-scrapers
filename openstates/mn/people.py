@@ -37,6 +37,7 @@ class SenList(CSV):
                 lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string),
                 td.xpath('.//p/text()')
             )).strip()
+            leg['url'] = main_link.get('href')
             leg['image'] = td.xpath('./preceding-sibling::td//img/@src')[0]
             if 'mailto:' in email_link.get('href'):
                 leg['email'] = email_link.get('href').replace('mailto:', '')
@@ -54,6 +55,7 @@ class SenList(CSV):
         leg = Person(name=name, district=row['District'].lstrip('0'),
                      party=party, primary_org='upper', role='Senator',
                      image=self.extra_info[name]['image'])
+        leg.add_link(self.extra_info[name]['url'])
         leg.add_contact_detail(type='voice',
                                value=self.extra_info[name]['office_phone'])
         if 'email' in self.extra_info[name]:
@@ -101,6 +103,7 @@ class RepList(Page):
         photo_url = item.xpath('./td[1]/a/img/@src')[0]
         info_nodes = item.xpath('./td[2]/p/a')
         name_text = info_nodes[0].xpath('./b/text()')[0]
+        url = info_nodes[0].get('href')
 
         name_match = re.match(r'^(.+)\(([0-9]{2}[AB]), ([A-Z]+)\)$', name_text)
         name = name_match.group(1).strip()
@@ -126,6 +129,7 @@ class RepList(Page):
         rep = Person(name=name, district=district, party=party,
                      primary_org='lower', role='Representative',
                      image=photo_url)
+        rep.add_link(url)
         rep.add_contact_detail(type='address', value=address)
         rep.add_contact_detail(type='voice', value=phone)
         rep.add_contact_detail(type='email', value=email)
