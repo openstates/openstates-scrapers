@@ -93,17 +93,17 @@ class MTPersonScraper(Scraper):
             legislator.add_source(detail_url)
             legislator.add_source(url)
             legislator.add_link(detail_url)
-            legislator.add_contact_detail(type='address', value=address)
+            legislator.add_contact_detail(type='address', value=address, note='District Office')
 
             phone = deets.get('phone')
             fax = deets.get('fax')
             email = deets.get('email')
             if phone:
-                legislator.add_contact_detail(type='voice', value=phone)
+                legislator.add_contact_detail(type='voice', value=phone, note='District Office')
             if fax:
-                legislator.add_contact_detail(type='fax', value=fax)
+                legislator.add_contact_detail(type='fax', value=fax, note='District Office')
             if email:
-                legislator.add_contact_detail(type='email', value=email)
+                legislator.add_contact_detail(type='email', value=email, note='District Office')
 
             yield legislator
 

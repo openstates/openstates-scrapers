@@ -83,7 +83,7 @@ class MTCommitteeScraper(Scraper):
                     subcommittee = line.strip()
                     comm = Organization(name=subcommittee,
                                         parent_id={'name': committee,
-                                                   'classification': 'lower'},
+                                                   'classification': 'joint'},
                                         classification='committee',
                                         )
                 else:
