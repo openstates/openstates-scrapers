@@ -3,9 +3,8 @@ import logging
 import lxml.html
 import re
 
-from pupa.scrape import Scraper
-from pupa.scrape import Person
-from .base import Page, CSV, Spatula
+from pupa.scrape import Person, Scraper
+from spatula import Page, CSV, Spatula
 from openstates.utils import validate_phone_number, validate_email_address
 
 PARTIES = {

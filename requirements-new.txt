@@ -3,4 +3,4 @@ xlrd
 lxml>=2.2
 pytz>=2010l
 feedparser>=4.1
-spatula
+git+https://github.com/jakesturk/spatula.git
