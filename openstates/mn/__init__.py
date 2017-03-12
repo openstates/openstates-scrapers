@@ -1,6 +1,7 @@
 # encoding=utf-8
 from pupa.scrape import Jurisdiction, Organization
 from .bills import MNBillScraper
+from .committees import MNCommitteeScraper
 from .vote_events import MNVoteEventScraper
 from .events import MNEventScraper
 from .people import MNPersonScraper
@@ -26,6 +27,7 @@ class Minnesota(Jurisdiction):
     check_sessions = True
     scrapers = {
         "bills": MNBillScraper,
+        "committees": MNCommitteeScraper,
         "vote_events": MNVoteEventScraper,
         "events": MNEventScraper,
         "people": MNPersonScraper,
