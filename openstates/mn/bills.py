@@ -1,6 +1,6 @@
 import re
 import datetime
-import urlparse
+import urllib.parse
 from collections import defaultdict
 import lxml.html
 from pupa.scrape import Scraper, Bill
@@ -135,7 +135,7 @@ class MNBillScraper(Scraper):
 
             # Second column: status link
             bill_details_link = row.xpath('td[2]/a')[0]
-            bill['bill_url'] = urlparse.urljoin(BILL_DETAIL_URL_BASE,
+            bill['bill_url'] = urllib.parse.urljoin(BILL_DETAIL_URL_BASE,
                 bill_details_link.get('href'))
 
             # Version link sometimes goes to wrong place, forge it
@@ -377,7 +377,7 @@ class MNBillScraper(Scraper):
       else:
           version_doc = lxml.html.fromstring(version_html)
           for v in version_doc.xpath('//a[starts-with(@href, "text.php")]'):
-              version_url = urlparse.urljoin(VERSION_URL_BASE, v.get('href'))
+              version_url = urllib.parse.urljoin(VERSION_URL_BASE, v.get('href'))
               if 'pdf' not in version_url:
                   bill.add_version_link(v.text.strip(), version_url,
                                         media_type='text/html',
