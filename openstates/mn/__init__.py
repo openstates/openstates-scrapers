@@ -2,8 +2,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
-from .vote_events import MNVoteEventScraper
-from .events import MNEventScraper
 from .people import MNPersonScraper
 from .common import url_xpath
 
@@ -28,8 +26,6 @@ class Minnesota(Jurisdiction):
     scrapers = {
         "bills": MNBillScraper,
         "committees": MNCommitteeScraper,
-        "vote_events": MNVoteEventScraper,
-        "events": MNEventScraper,
         "people": MNPersonScraper,
     }
     parties = [{'name': 'Republican'},
