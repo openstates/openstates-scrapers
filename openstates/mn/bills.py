@@ -3,12 +3,7 @@ import datetime
 import urlparse
 from collections import defaultdict
 import lxml.html
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-
-from openstates.utils import LXMLMixin
+from pupa.scrape import Scraper, Bill
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
@@ -26,7 +21,7 @@ BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
     '&bill_type=%s&submit_bill=GO')
 
 
-class MNBillScraper(BillScraper, LXMLMixin):
+class MNBillScraper(Scraper):
     jurisdiction = 'mn'
 
     # For testing purposes, this will do a lite version of things.  If
@@ -59,7 +54,7 @@ class MNBillScraper(BillScraper, LXMLMixin):
         ("Received from", "bill:introduced"),
     )
 
-    def scrape(self, chamber, session):
+    def scrape(self, session=None, chamber=None):
         """
         Scrape all bills for a given chamber and a given session.
 
@@ -70,26 +65,33 @@ class MNBillScraper(BillScraper, LXMLMixin):
         if self.is_testing():
             self.debug('TESTING...')
 
-        # Get bill topics for matching later
-        self.get_bill_topics(chamber, session)
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-        # If testing and certain bills to test, only test those
-        if self.is_testing() and len(self.testing_bills) > 0:
-            for b in self.testing_bills:
-                bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b,
-                    session.split('-')[0])
-                version_url = VERSION_URL % (self.search_session(session)[-4:],
-                    self.search_session(session)[0], b)
-                self.get_bill_info(chamber, session, bill_url, version_url)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
 
-            return
+            # Get bill topics for matching later
+            self.get_bill_topics(chamber, session)
 
-        # Find list of all bills
-        bills = self.get_full_bill_list(chamber, session)
+            # If testing and certain bills to test, only test those
+            if self.is_testing() and len(self.testing_bills) > 0:
+                for b in self.testing_bills:
+                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b,
+                        session.split('-')[0])
+                    version_url = VERSION_URL % (self.search_session(session)[-4:],
+                        self.search_session(session)[0], b)
+                    self.get_bill_info(chamber, session, bill_url, version_url)
 
-        # Get each bill
-        for b in bills:
-            self.get_bill_info(chamber, session, b['bill_url'], b['version_url'])
+            else:
+
+                # Find list of all bills
+                bills = self.get_full_bill_list(chamber, session)
+
+                # Get each bill
+                for b in bills:
+                    yield self.get_bill_info(chamber, session, b['bill_url'], b['version_url'])
 
     def get_full_bill_list(self, chamber, session):
         """
@@ -108,7 +110,7 @@ class MNBillScraper(BillScraper, LXMLMixin):
 
         # Get total list of rows
         for bill_type in ('bill', 'concurrent', 'resolution'):
-            for start in xrange(0, total, stride):
+            for start in range(0, total, stride):
                 # body: "House" or "Senate"
                 # session: legislative session id
                 # bill: Range start-end (e.g. 1-10)
@@ -183,7 +185,8 @@ class MNBillScraper(BillScraper, LXMLMixin):
         self.logger.debug(bill_title)
         bill_type = {'F': 'bill', 'R':'resolution',
                      'C': 'concurrent resolution'}[bill_id[1]]
-        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
+        bill = Bill(bill_id, legislative_session=session, chamber=chamber,
+                    title=bill_title, classification=bill_type)
 
         # Add source
         bill.add_source(bill_detail_url)
@@ -335,10 +338,10 @@ class MNBillScraper(BillScraper, LXMLMixin):
             if 'committees' in action:
                 kwargs['committees'] = action['committees']
 
-            bill.add_action(action['action_chamber'],
-                            action['action_text'],
+            bill.add_action(action['action_text'],
                             action['action_date'],
-                            type=action['action_type'],
+                            chamber=action['action_chamber'],
+                            classification=action['action_type'],
                             **kwargs)
 
         return bill
@@ -351,11 +354,13 @@ class MNBillScraper(BillScraper, LXMLMixin):
         for index, sponsor in enumerate(sponsors):
             if index == 0:
                 sponsor_type = 'primary'
+                is_primary = True
             else:
                 sponsor_type = 'cosponsor'
+                is_primary = False
 
             sponsor_name = sponsor.strip()
-            bill.add_sponsor(sponsor_type, sponsor_name, chamber=chamber)
+            bill.add_sponsorship(sponsor_name, classification=sponsor_type, entity_type='person', primary=is_primary)
 
         return bill
 
@@ -367,16 +372,16 @@ class MNBillScraper(BillScraper, LXMLMixin):
       version_resp = self.get(version_list_url)
       version_html = version_resp.text
       if 'resolution' in version_resp.url:
-          bill.add_version('resolution text', version_resp.url,
-              mimetype='text/html')
+          bill.add_version_link('resolution text', version_resp.url,
+              media_type='text/html')
       else:
           version_doc = lxml.html.fromstring(version_html)
           for v in version_doc.xpath('//a[starts-with(@href, "text.php")]'):
               version_url = urlparse.urljoin(VERSION_URL_BASE, v.get('href'))
               if 'pdf' not in version_url:
-                  bill.add_version(v.text.strip(), version_url,
-                                   mimetype='text/html',
-                                   on_duplicate='use_new')
+                  bill.add_version_link(v.text.strip(), version_url,
+                                        media_type='text/html',
+                                        on_duplicate='ignore')
 
       return bill
 
