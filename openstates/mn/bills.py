@@ -20,6 +20,21 @@ BILL_SEARCH_URL = ('https://www.revisor.mn.gov/revisor/pages/search_status/'
     'status_result.php?body=%s&session=%s&bill=%s-%s'
     '&bill_type=%s&submit_bill=GO')
 
+# revisor.mn.gov identifiers of sessions, indexed by session name
+SITE_IDS = {
+    '86th Legislature, 2009-2010': '0862009',
+    '86th Legislature, 2010 1st Special Session': '1862010',
+    '86th Legislature, 2010 2nd Special Session': '2862010',
+    '87th Legislature, 2011-2012': '0872011',
+    '87th Legislature, 2011 1st Special Session': '1872011',
+    '87th Legislature, 2012 1st Special Session': '1872012',
+    '88th Legislature, 2013-2014': '0882013',
+    '88th Legislature, 2013 1st Special Session': '1882013',
+    '89th Legislature, 2015-2016': '0892015',
+    '89th Legislature, 2015 1st Special Session': '1892015',
+    '90th Legislature, 2017-2018': '0902017',
+}
+
 
 class MNBillScraper(Scraper):
     jurisdiction = 'mn'
@@ -218,7 +233,7 @@ class MNBillScraper(Scraper):
         Uses the leg search to map topics to bills.
         """
         search_chamber = {'lower':'House', 'upper':'Senate'}[chamber]
-        search_session = self.metadata['session_details'][session]['site_id']
+        search_session = self.search_session(session)
         self._subject_mapping = defaultdict(list)
 
         url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
@@ -462,7 +477,7 @@ class MNBillScraper(Scraper):
         """
         Given session ID, make into MN site friendly search.
         """
-        return self.metadata['session_details'][session]['site_id']
+        return SITE_IDS[session]
 
     def is_testing(self):
         """
