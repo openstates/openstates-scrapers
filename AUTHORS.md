@@ -1,13 +1,15 @@
 Open States is only possible due to the dozens of contributors that have contributed scrapers and various other fixes over the years, for a full list see:
 https://github.com/openstates/openstates/graphs/contributors
 
-Core Developers: 
+Current core developers: 
 * James Turk
 * Miles Watkins
-* Paul Tagliamonte
+* Tim Showers
 * Rachel Shorey
+* Paul Tagliamonte
 
-Core Developers Emeritus:
+Emeritus core developers:
 * Michael Stephens
 * Dan Schneiderman
 * Thom Neale
+* Andy Lo
