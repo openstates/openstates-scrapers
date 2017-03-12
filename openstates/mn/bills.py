@@ -31,27 +31,27 @@ class MNBillScraper(Scraper):
 
     # Regular expressions to match category of actions
     _categorizers = (
-        ('Introduced', 'bill:introduced'),
+        ('Introduced', 'introduction'),
         ('Introduction and first reading, referred to',
-         ['bill:introduced', 'committee:referred']),
-        ('Committee report, to pass as amended and re-refer to', ['committee:referred']),
-        ('Introduction and first reading', 'bill:introduced'),
-        ('Referred (by Chair )?to', 'committee:referred'),
-        ('Second reading', 'bill:reading:2'),
+         ['introduction', 'referral-committee']),
+        ('Committee report, to pass as amended and re-refer to', ['referral-committee']),
+        ('Introduction and first reading', 'introduction'),
+        ('Referred (by Chair )?to', 'referral-committee'),
+        ('Second reading', 'reading-2'),
         ('Comm(ittee)? report: (T|t)o pass( as amended)? and re-refer(red)? to',
-         ['committee:passed', 'committee:referred']),
-        ('Comm(ittee)? report: (T|t)o pass( as amended)?', 'committee:passed'),
-        ('Third reading Passed', 'bill:passed'),
-        ('Bill was passed', 'bill:passed'),
-        ('Third reading', 'bill:reading:3'),
-        ("Governor('s action)? (A|a)pproval", 'governor:signed'),
-        (".+? (V|v)eto", 'governor:vetoed'),
-        ("Presented to Governor", 'governor:received'),
-        ("Amended", 'amendment:passed'),
-        ("Amendments offered", 'amendment:introduced'),
-        (" repassed ", 'bill:passed'),
-        (" re-referred ", 'committee:referred'),
-        ("Received from", "bill:introduced"),
+         ['committee-passage', 'referral-committee']),
+        ('Comm(ittee)? report: (T|t)o pass( as amended)?', 'committee-passage'),
+        ('Third reading Passed', 'passage'),
+        ('Bill was passed', 'passage'),
+        ('Third reading', 'reading-3'),
+        ("Governor('s action)? (A|a)pproval", 'executive-signature'),
+        (".+? (V|v)eto", 'executive-veto'),
+        ("Presented to Governor", 'executive-receipt'),
+        ("Amended", 'amendment-passage'),
+        ("Amendments offered", 'amendment-introduction'),
+        (" repassed ", 'passage'),
+        (" re-referred ", 'referral-committee'),
+        ("Received from", "introduction"),
     )
 
     def scrape(self, session=None, chamber=None):
@@ -299,7 +299,7 @@ class MNBillScraper(Scraper):
                 for pattern, atype in self._categorizers:
                     if re.match(pattern, action_text):
                         action_type = atype
-                        if 'committee:referred' in action_type and len(committee) > 0:
+                        if 'referral-committee' in action_type and len(committee) > 0:
                             bill_action['committees'] = committee[0]
                         break
 
