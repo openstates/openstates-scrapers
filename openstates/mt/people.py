@@ -70,10 +70,8 @@ class MTPersonScraper(Scraper):
             party = {'D': 'Democratic', 'R': 'Republican'}[party_letter]
 
             # Get full name properly capped.
-            fullname = _fullname = '%s %s' % (entry['first_name'].capitalize(),
-                                              entry['last_name'].capitalize())
-
-            city_lower = entry['city'].lower()
+            fullname = '%s %s' % (entry['first_name'].capitalize(),
+                                  entry['last_name'].capitalize())
 
             # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
@@ -81,7 +79,7 @@ class MTPersonScraper(Scraper):
             # Get the office.
             address = '\n'.join([
                 entry['address'],
-                '%s, %s %s' % (entry['city'], entry['state'], entry['zip'])
+                '%s, %s %s' % (entry['city'].lower(), entry['state'], entry['zip'])
                 ])
 
             try:

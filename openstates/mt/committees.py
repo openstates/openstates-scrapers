@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-from itertools import dropwhile, takewhile
-from collections import defaultdict
-
-import lxml.html
-import scrapelib
-
+from itertools import dropwhile
 from pupa.scrape import Organization, Scraper
 from pupa.utils.generic import convert_pdf
 

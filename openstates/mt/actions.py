@@ -199,7 +199,8 @@ _categories = {
     "committee:passed": {
         'rgxs': [r'Committee Executive Action--Bill Passed',
                  r'Committee Report--Bill Passed',
-                 r'Committee Executive Action--Resolution Adopted',]
+                 r'Committee Executive Action--Resolution Adopted',
+                 ]
         },
 
     # ??? Looks like this'd require parsing
@@ -231,7 +232,8 @@ for category, data in _categories.items():
     for rgx in data['rgxs']:
         append((category, re.compile(rgx).search))
 
-ac = set([u'2nd Reading Concur Motion Failed',
+ac = set(
+    [u'2nd Reading Concur Motion Failed',
      u'2nd Reading Concur as Amended Motion Failed',
      u'2nd Reading Concurred',
      u'2nd Reading Concurred as Amended',
@@ -411,9 +413,8 @@ ac = set([u'2nd Reading Concur Motion Failed',
      u'Veto Override Vote Mail Poll in Progress',
      u'Vetoed by Governor'])
 
+
 def categorize(action, funcs=_funcs):
-    '''
-    '''
     action = action.strip('" ')
     res = set()
     for category, f in funcs:
