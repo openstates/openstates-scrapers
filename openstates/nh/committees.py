@@ -1,91 +1,110 @@
 import re
 
 from billy.scrape.committees import CommitteeScraper, Committee
+from openstates.utils import LXMLMixin
 
-from .utils import db_cursor
+from openstates.nh import legacy_committees
 
 
-class NHCommitteeScraper(CommitteeScraper):
+class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = 'nh'
+    committees_url = 'http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt'
 
+    _code_pattern = re.compile(r'[A-Z][0-9]{2}')
     _chamber_map = {
-        'upper': 'S',
-        'lower': 'H',
+        's': 'upper',
+        'h': 'lower',
+    }
+    _url_map = {
+        's': 'http://www.gencourt.state.nh.us/Senate/'
+             'committees/committee_details.aspx?cc={}',
+        'h': 'http://www.gencourt.state.nh.us/house/'
+             'committees/committeedetails.aspx?code={}',
+    }
+    _role_map = {
+        'chairman': 'chair',
+        'v chairman': 'vice chair',
     }
 
-    def _parse_committees(self, chamber):
-        """Queries and returns a dict for legislative committees."""
-        chamber_code = NHCommitteeScraper._chamber_map[chamber]
+    def _parse_committees_text(self, chamber):
+        lines = self.get(self.committees_url).text.splitlines()
+        rows = [line.split('|') for line in lines]
+        committees = [self._parse_row(row) for row in rows]
+        return [
+            committee for committee in committees
+            if committee and committee['chamber'] == chamber
+        ]
 
-        query = "SELECT "\
-            "Committees.CommitteeCode AS committee_code, "\
-            "Committees.committeename AS committee_name "\
-            "FROM Committees "\
-            "WHERE Committees.CommitteeCode LIKE '{}%' "\
-            "AND DATALENGTH(Committees.CommitteeEmailAddress) > 0"\
-            .format(chamber_code)
+    def _parse_row(self, row):
+        code, name, _ = row
+        # Handle empty code
+        if not code:
+            return None
+        code = self._parse_code(code)
+        url = self._parse_url(code)
+        chamber = self._parse_chamber(code)
+        committee = Committee(chamber, name)
+        committee.add_source(url)
+        if chamber == 'lower':
+            self._parse_members_house(committee, url)
+        else:
+            self._parse_members_senate(committee, url)
+        return committee
 
-        self.db_cursor.execute(query)
+    def _parse_code(self, code):
+        return self._code_pattern.search(code).group()
 
-        committees = {}
-        for row in self.db_cursor.fetchall():
-            # There is technically a potential for duplicated committee
-            # records to cause issues here. Haven't decided how to
-            # handle this yet, so we're throwing an exception instead.
-            if row['committee_code'] not in committees.keys():
-                committee = Committee(chamber, row['committee_name'])
-                committee_url = 'http://www.gencourt.state.nh.us/house/'\
-                    'committees/committeedetails.aspx?code={}'\
-                    .format(row['committee_code'])
-                committee.add_source(committee_url)
-                committees[row['committee_code']] = committee
-            else:
-                raise ValueError('{} committee is already present.'.format(
-                    row['committee_name']))
+    def _parse_url(self, code):
+        return self._url_map[code[0].lower()].format(code)
 
-        return committees
+    def _parse_chamber(self, code):
+        return self._chamber_map[code[0].lower()]
 
-    def _parse_committee_members(self, committees):
-        """Queries and parses the members for a given dict of committees."""
-        # Adopting the following method of parsing committee members to
-        # reduce querying. Grabs a list of members for all committees
-        # given instead of querying for each committee individually.
-        query = "SELECT "\
-            "CommitteeMembers.CommitteeCode AS committee_code, "\
-            "CommitteeMembers.comments AS comment, "\
-            "Legislators.LastName AS last_name, "\
-            "Legislators.FirstName AS first_name, "\
-            "Legislators.MiddleName AS middle_name "\
-            "FROM CommitteeMembers "\
-            "LEFT OUTER JOIN Legislators "\
-            "ON CommitteeMembers.EmployeeNumber = Legislators.Employeeno "\
-            "WHERE CommitteeMembers.CommitteeCode IN ('{}') "\
-            "AND CommitteeMembers.ActiveMember = 1 "\
-            "ORDER BY CommitteeCode ASC, SequenceNumber ASC"\
-            .format('\', \''.join(committees))
+    def _parse_members_house(self, committee, url):
+        page = self.lxmlize(url)
+        links = page.xpath('//a[contains(@href, "members/member")]')
+        for link in links:
+            name = re.sub(r'\s+', ' ', link.text_content()).replace(u'\xa0', ' ').strip()
+            role = 'member'
+            # Check whether member has a non-default role
+            for ancestor in link.iterancestors():
+                if ancestor.tag == 'table':
+                    if ancestor.attrib.get('id') == 'Table2':
+                        header = link.getparent().getprevious()
+                        role = header.text_content().strip(':').lower()
+                    break
+            committee.add_member(name, self._parse_role(role))
 
-        self.db_cursor.execute(query)
+    def _parse_members_senate(self, committee, url):
+        page = self.lxmlize(url)
+        links = page.xpath('//a[contains(@href, "members/webpages")]')
+        names = [link.text_content().strip() for link in links]
+        if not names:
+            return
+        # Get intermingled list of members and roles
+        rows = [
+            each.strip()
+            for each in links[0].getparent().text_content().strip().split('\r\n')
+            if each.strip()
+        ]
+        while rows:
+            name = rows.pop(0).replace(u'\xa0', ' ')
+            role = 'member'
+            if rows and rows[0] not in names:
+                role = rows.pop(0).lower()
+            committee.add_member(name, self._parse_role(role))
 
-        for row in self.db_cursor.fetchall():
-            committee = committees[row['committee_code']]
-            member_name = '{} {} {}'.format(row['first_name'],
-                row['middle_name'], row['last_name'])
-            member_name = re.sub(r'[\s]{2,}', ' ', member_name)
-
-            if row['comment'] in ('Chairman', 'V Chairman'):
-                member_role = 'chair'
-            else:
-                member_role = 'member'
-
-            committee.add_member(member_name, member_role)
-
-        return committees
+    def _parse_role(self, role):
+        key = role.lower().replace('.', '')
+        return self._role_map.get(key, 'member')
 
     def scrape(self, chamber, term):
-        self.db_cursor = db_cursor()
-
-        committees = self._parse_committee_members(
-            self._parse_committees(chamber))
-
-        for committee_code, committee in committees.iteritems():
+        years = [int(year) for year in term.split('-')]
+        if years[0] < 2017:
+            return legacy_committees.NHCommitteeScraper(
+                self.metadata,
+                self.output_dir,
+                self.strict_validation,
+            ).scrape(chamber, term)
+        for committee in self._parse_committees_text(chamber):
             self.save_committee(committee)

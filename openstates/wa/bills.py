@@ -208,7 +208,7 @@ class WABillScraper(BillScraper, LXMLMixin):
 
                 # Senate bills are numbered starting at 5000,
                 # House at 1000
-                if bill_num > 5000:
+                if bill_num >= 5000:
                     bill_chamber = 'upper'
                 else:
                     bill_chamber = 'lower'

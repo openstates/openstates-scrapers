@@ -5,42 +5,42 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 
 
 def clean_district(district):
-    assert not district.startswith('Consisting of'), "Bad district text"
+    mappings = {
+        1: 'First',
+        2: 'Second',
+        3: 'Third',
+        4: 'Fourth',
+        5: 'Fifth',
+        6: 'Sixth',
+        7: 'Seventh',
+        8: 'Eighth',
+        9: 'Ninth',
+        10: 'Tenth',
+        11: 'Eleventh',
+        12: 'Twelfth',
+        13: 'Thirteenth',
+        14: 'Fourteenth',
+        15: 'Fifteenth',
+        16: 'Sixteenth',
+        17: 'Seventeenth',
+        18: 'Eighteenth',
+        19: 'Nineteenth',
+        20: 'Twentieth',
+    }
+    pieces = re.match('(\d+)\w\w\s(.+)', district)
+    if pieces:
+        ordinal, rest = pieces.groups()
+        ordinal = int(ordinal)
+        if ordinal <= 20:
+            ordinal = mappings[ordinal]
+        elif ordinal < 30:
+            ordinal = 'Twenty-' + mappings[ordinal-20]
+        elif ordinal == 30:
+            ordinal = 'Thirtieth'
+        elif ordinal < 40:
+            ordinal = 'Thirty-' + mappings[ordinal-30]
+        district = '{} {}'.format(ordinal, rest)
 
-    mappings = (
-        ('\s+', ' '),
-        ('Consisting.*', ''),
-        ('Consistng.*', ''),
-        ('Consiting.*', ''),
-        (u'\xe2.*', ''),
-        ('\..*', ''),
-        ('Frist', 'First'),
-        ('Norfok', 'Norfolk'),
-        # these have a capitol T because we call title() first
-        ('8Th', 'Eighth'),
-        ('9Th', 'Ninth'),
-        ('12Th', 'Twelfth'),
-        ('16Th', 'Sixteenth'),
-        (' District', ''),
-        ('yfirst', 'y-First'),
-        ('ysecond', 'y-Second'),
-        ('ythird', 'y-Third'),
-        ('yfourth', 'y-Fourth'),
-        ('yfifth', 'y-Fifth'),
-        ('ysixth', 'y-Sixth'),
-        ('yseventh', 'y-Seventh'),
-        ('yeighth', 'y-Eighth'),
-        ('yninth', 'y-Ninth'),
-        (' And ', ' and '),
-        ('\s*-+\s*$', ''),
-        ('Thirty First', 'Thirty-First'),
-        ('Thirty Third', 'Thirty-Third')
-    )
-    district = district.title()
-    for pattern, repl in mappings:
-        district = re.sub(pattern, repl, district)
-    district = district.strip(', -')
-    district = district.strip(' -')
     return district
 
 
@@ -76,11 +76,11 @@ class MALegislatorScraper(LegislatorScraper):
 
         party, district = root.xpath('//h1/span')[1].text.split('-')
         party = party.strip()
-        district = district.strip()
+        district = clean_district(district.strip())
 
-        if party == 'Democrat':
+        if party in ('D', 'Democrat', 'Democratic'):
             party = 'Democratic'
-        elif party == 'R':
+        elif party in ('R', 'Republican'):
             party = 'Republican'
         else:
             party = 'Other'

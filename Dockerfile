@@ -39,9 +39,10 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=C.UTF-8
 
 ENV PROJECT_PATH="/srv/openstates-web/"
-RUN mkdir -p ${PROJECT_PATH}
 ADD . ${PROJECT_PATH}
+RUN find ${PROJECT_PATH} -name '*.pyc' -delete
 RUN echo "${PROJECT_PATH}/openstates/" > /usr/lib/python2.7/dist-packages/openstates.pth
 
-RUN pip install -U -r ${PROJECT_PATH}/requirements.txt
-RUN pip install -e ${PROJECT_PATH}
+RUN pip install -U pip
+RUN /usr/local/bin/pip install -U -r ${PROJECT_PATH}/requirements.txt
+RUN /usr/local/bin/pip install -e ${PROJECT_PATH}

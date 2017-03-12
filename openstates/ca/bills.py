@@ -257,9 +257,13 @@ class CABillScraper(BillScraper):
 
     _tz = pytz.timezone('US/Pacific')
 
-    def __init__(self, metadata, host='localhost', user=None, pw=None,
+    def __init__(self, metadata, host=None, user=None, pw=None,
                  db='capublic', **kwargs):
         super(CABillScraper, self).__init__(metadata, **kwargs)
+
+        if host is None:
+            host = os.environ.get('MYSQL_HOST',
+                                  getattr(settings, 'MYSQL_HOST', 'localhost'))
 
         if user is None:
             user = os.environ.get('MYSQL_USER',

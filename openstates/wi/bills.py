@@ -164,7 +164,7 @@ class WIBillScraper(BillScraper):
                  ):
 
                 bill.add_version(a.text, a.get('href'),
-                                 on_duplicate="ingore", mimetype="text/html")
+                                 on_duplicate="ignore", mimetype="text/html")
 
                 pdf = a.xpath('following-sibling::span/a/@href')[0]
                 bill.add_version(a.text, pdf,

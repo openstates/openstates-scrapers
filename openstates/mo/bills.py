@@ -188,7 +188,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
         versions_page = self.get(url).text
         versions_page = lxml.html.fromstring(versions_page)
         version_tags = versions_page.xpath('//li/font/a')
-        
+
         # some pages are updated and use different structure
         if not version_tags:
             version_tags = versions_page.xpath('//tr/td/a[contains(@href, ".pdf")]')
@@ -397,11 +397,14 @@ class MOBillScraper(BillScraper, LXMLMixin):
         self.log(bid)
 
         if bill_desc == "":
-            print("ERROR: Blank title. Skipping. {} / {} / {}".format(
-                bill_id, bill_desc, official_title
-            ))
-            # XXX: Some pages full of blank bills.
-            return
+            if int(bid[2:]) <= 20:
+                # blank bill titles early in session are approp. bills
+                bill_desc = 'Appropriations Bill'
+            else:
+                self.error("Blank title. Skipping. {} / {} / {}".format(
+                    bill_id, bill_desc, official_title
+                ))
+                return
 
         bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url,
                     bill_lr=bill_lr, official_title=official_title,

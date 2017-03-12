@@ -78,9 +78,13 @@ class CTLegislatorScraper(LegislatorScraper):
 
             office_address = "%s\nRoom %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
+            extra_office_fields = dict()
             email = row['email'].strip()
             if "@" not in email:
-                if not email or email.endswith('mailform.php'):
+                if not email:
+                    email = None
+                elif email.startswith('http://') or email.startswith('https://'):
+                    extra_office_fields['contact_form'] = email
                     email = None
                 else:
                     raise ValueError("Problematic email found: {}".format(email))
@@ -88,7 +92,8 @@ class CTLegislatorScraper(LegislatorScraper):
                            address=office_address,
                            phone=row['capitol phone'],
                            fax=(row['fax'].strip() or None),
-                           email=email)
+                           email=email,
+                           **extra_office_fields)
 
             home_address = "{}\n{}, {} {}".format(
                 row['home street address'],

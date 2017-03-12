@@ -1,5 +1,5 @@
-from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
-                        DateTime, Numeric, desc, UnicodeText)
+from sqlalchemy import (Column, Integer, String, ForeignKey,
+                        DateTime, Numeric, UnicodeText)
 from sqlalchemy.sql import and_
 from sqlalchemy.orm import backref, relation
 from sqlalchemy.ext.declarative import declarative_base
@@ -69,7 +69,7 @@ class CABillVersion(Base):
 
     @property
     def xml(self):
-        if not '_xml' in self.__dict__:
+        if '_xml' not in self.__dict__:
             self._xml = etree.fromstring(self.bill_xml.encode('utf-8'),
                                          etree.XMLParser(recover=True))
         return self._xml
