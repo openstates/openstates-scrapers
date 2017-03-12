@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import MTPersonScraper
+from .committees import MTCommitteeScraper
 
 
 class Montana(Jurisdiction):
@@ -8,7 +9,8 @@ class Montana(Jurisdiction):
     name = "Montana"
     url = "TODO"
     scrapers = {
-        'people': MTPersonScraper
+        'people': MTPersonScraper,
+        'committees': MTCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
