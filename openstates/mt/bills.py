@@ -87,9 +87,10 @@ class MTBillScraper(Scraper, LXMLMixin):
                     bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
 
         for bill_url in bill_urls:
-            bill = self.parse_bill(bill_url, session)
+            bill, votes = self.parse_bill(bill_url, session)
             if bill:
                 yield bill
+                yield from votes
 
     def parse_bill(self, bill_url, session):
 
@@ -97,7 +98,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         # Temporarily skip the differently-formatted house budget bill.
         if 'billhtml/hb0002.htm' in bill_url.lower():
-            return
+            return None, None
 
         bill = None
         try:
@@ -110,7 +111,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             if (anchor.text_content().startswith('status of') or
                     anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
-                bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
+                bill, votes = self.parse_bill_status_page(status_url, bill_url, session, chamber)
 
         if bill is None:
             # No bill was found.  Maybe something like HB0790 in the 2005 session?
@@ -121,11 +122,11 @@ class MTBillScraper(Scraper, LXMLMixin):
             laws_year = self.metadata['session_details'][session]['years'][0] % 100
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
-            bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
+            bill, votes = self.parse_bill_status_page(status_url, bill_url, session, chamber)
 
         # Get versions on the detail page.
-        versions = [a['action'] for a in bill['actions']]
-        versions = [a for a in versions if 'Version Available' in a]
+        versions = [a['description'] for a in bill.actions
+                    if 'Version Available' in a['description']]
         if not versions:
             version_name = 'Introduced'
         else:
@@ -144,7 +145,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         # Add status url as a source.
         bill.add_source(status_url)
 
-        return bill
+        return bill, votes
 
     def _get_tabledata(self, status_page):
         '''Montana doesn't currently list co/multisponsors on any of the
@@ -199,13 +200,13 @@ class MTBillScraper(Scraper, LXMLMixin):
                     title=title, classification=classification)
 
         self.add_actions(bill, status_page)
-        self.add_votes(bill, status_page, status_url)
+        votes = self.add_votes(bill, status_page, status_url)
 
         tabledata = self._get_tabledata(status_page)
 
         # Add sponsor info.
-        bill.add_sponsorhip(tabledata['primary sponsor:'][0], classification='primary',
-                            is_primary=True)
+        bill.add_sponsorship(tabledata['primary sponsor:'][0], classification='primary',
+                             entity_type='person', primary=True)
 
         # A various plus fields MT provides.
         plus_fields = [
@@ -234,7 +235,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             if len(val) == 1:
                 val = val[0]
 
-            bill[key] = val
+            bill.extras[key] = val
 
         # Add bill subjects.
         xp = '//th[contains(., "Revenue/Approp.")]/ancestor::table/tr'
@@ -246,11 +247,12 @@ class MTBillScraper(Scraper, LXMLMixin):
                 continue
             subjects.append(subj)
 
-        bill['subjects'] = subjects
+        for s in subjects:
+            bill.add_subject(s)
 
         self.add_fiscal_notes(status_page, bill)
 
-        return bill
+        return bill, list(votes)
 
     def add_actions(self, bill, status_page):
 
@@ -264,7 +266,7 @@ class MTBillScraper(Scraper, LXMLMixin):
                 actor = 'clerk' if action_name == 'Chapter Number Assigned' else ''
 
             action_name = action_name.replace("&nbsp", "")
-            action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
+            action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y').date()
             action_type = actions.categorize(action_name)
 
             if 'by senate' in action_name.lower():
@@ -299,7 +301,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         count = itertools.count(1)
         xcount = itertools.chain([1], itertools.count(1))
-        type_, id_ = bill['bill_id'].split()
+        type_, id_ = bill.identifier.split()
         version_urls = copy.copy(self.versions_dict[(type_, id_)])
         mimetype = 'application/pdf'
         version_strings = [
@@ -307,17 +309,14 @@ class MTBillScraper(Scraper, LXMLMixin):
             'Printed - New Version Available',
             'Clerical Corrections Made - New Version Available']
 
-        if bill['bill_id'] == 'HB 2':
+        if bill.identifier == 'HB 2':
             # Need to special-case this one.
             return
 
-        for i, a in enumerate(bill['actions']):
-
-            text = a['action']
-            actions = bill['actions']
+        for i, a in enumerate(bill.actions):
+            text = a['description']
             if text in version_strings:
-
-                name = actions[i - 1]['action']
+                name = bill.actions[i - 1]['description']
 
                 if 'Clerical Corrections' in text:
                     name += ' (clerical corrections made)'
@@ -361,18 +360,18 @@ class MTBillScraper(Scraper, LXMLMixin):
                     text = tr.itertext()
                     action = next(text).strip()
                     chamber, action = action.split(' ', 1)
-                    date = datetime.strptime(next(text), '%m/%d/%Y')
+                    date = datetime.strptime(next(text), '%m/%d/%Y').date()
                     vote_url = vote_url[0]
 
                     chamber = actor_map[chamber]
                     vote = dict(chamber=chamber, date=date,
                                 action=action,
-                                sources=[{'url': vote_url}])
+                                vote_url=vote_url)
 
                     # Update the vote object with voters..
                     vote = self._parse_votes(vote_url, vote, bill)
                     if vote:
-                        bill.add_vote(vote)
+                        yield vote
 
     def _parse_votes(self, url, vote, bill):
         '''Given a vote url and a vote object, extract the voters and
@@ -421,6 +420,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         vote['motion'] = motion
 
         action = vote['action']
+        vote_url = vote['vote_url']
 
         vote = VoteEvent(
             #action=vote['action'],
@@ -431,6 +431,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             classification='passage',
             bill=bill,
         )
+        vote.add_source(vote_url)
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.set_count('excused', excused_count)
@@ -491,8 +492,8 @@ class MTBillScraper(Scraper, LXMLMixin):
     def add_fiscal_notes(self, doc, bill):
 
         for link in doc.xpath('//a[contains(text(), "Fiscal Note")]'):
-            bill.add_document_link(name=link.text_content().strip(),
-                                   url=link.attrib['href'],
+            bill.add_document_link(link.text_content().strip(),
+                                   link.attrib['href'],
                                    media_type='application/pdf')
 
 
@@ -531,7 +532,7 @@ class PDFCommitteeVote(object):
             msg = 'PDF file was empty.'
             raise PDFCommitteeVoteParseError(msg)
 
-        self.text = '\n'.join(filter(None, text.splitlines()))
+        self.text = '\n'.join([line.decode() for line in text.splitlines() if line])
 
     def committee(self):
         """
@@ -582,7 +583,7 @@ class PDFCommitteeVote(object):
                 raise PDFCommitteeVoteParseError(msg)
 
         try:
-            return datetime.strptime(line, '%B %d, %Y')
+            return datetime.strptime(line, '%B %d, %Y').date()
         except ValueError:
             raise PDFCommitteeVoteParseError("Could't parse the vote date.")
 
