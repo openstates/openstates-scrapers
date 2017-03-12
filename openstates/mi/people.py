@@ -62,7 +62,9 @@ class MIPersonScraper(Scraper):
                 office
             )
 
-            person = Person(name=name, district=district, party=abbr[party], primary_org='lower')
+            photo_url = self.get_photo_url(leg_url)
+            person = Person(name=name, district=district, party=abbr[party],
+                            primary_org='lower', image=photo_url[0] if photo_url else None)
 
             person.add_link(leg_url)
             person.add_source(leg_url)
@@ -122,3 +124,12 @@ class MIPersonScraper(Scraper):
             person.add_contact_detail(type='fax', value=office_fax, note='Capitol Office')
 
             yield person
+
+    def get_photo_url(self, url):
+        data = self.get(url).text
+        doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
+        return (
+            doc.xpath('//div[contains(@class, "headshotTop")]//img/@src') +  # housedems.com
+            doc.xpath('//div[contains(@class, "widget_sp_image")]//img/@src')  # gophouse.org
+        )
