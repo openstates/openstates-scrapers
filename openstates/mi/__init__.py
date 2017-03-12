@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from .bills import MIBillScraper
 from .people import MIPersonScraper
 from .committees import MICommitteeScraper
 
@@ -10,6 +11,7 @@ class Michigan(Jurisdiction):
     name = "Michigan"
     url = "http://www.legislature.mi.gov"
     scrapers = {
+        'bills': MIBillScraper,
         'people': MIPersonScraper,
         'committees': MICommitteeScraper,
     }

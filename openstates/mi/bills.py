@@ -1,60 +1,70 @@
-import datetime
 import re
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+import math
+import pytz
+import datetime
+import collections
 
 import lxml.html
+from pupa.scrape import Scraper, Bill, VoteEvent
+
 
 BASE_URL = 'http://www.legislature.mi.gov'
+TIMEZONE = pytz.timezone('US/Eastern')
+
 
 def jres_id(n):
     """ joint res ids go from A-Z, AA-ZZ, etc. """
-    return chr(ord('A')+(n-1)%25)*((n/26)+1)
+    return chr(ord('A') + (n - 1) % 25) * (math.floor(n / 26) + 1)
 
-bill_types = {'B':'bill',
-              'R':'resolution',
-              'CR':'concurrent resolution',
-              'JR':'joint resolution'}
 
-_categorizers = {
-    'read a first time': 'bill:reading:1',
-    'read a second time': 'bill:reading:2',
-    'read a third time': 'bill:reading:3',
-    'introduced by': 'bill:introduced',
-    'passed': 'bill:passed',
-    'referred to committee': 'committee:referred',
-    'reported': 'committee:passed',
-    'received': 'bill:introduced',
-    'presented to governor': 'governor:received',
-    'presented to the governor': 'governor:received',
-    'approved by governor': 'governor:signed',
-    'approved by the governor': 'governor:signed',
-    'adopted': 'bill:passed',
-    'amendment(s) adopted': 'amendment:passed',
-    'amendment(s) defeated': 'amendment:failed',
+bill_types = {'B': 'bill',
+              'R': 'resolution',
+              'CR': 'concurrent resolution',
+              'JR': 'joint resolution'}
+
+bill_chamber_types = {
+    'upper': [('SB', 1), ('SR', 1), ('SCR', 1), ('SJR', 1)],
+    'lower': [('HB', 4001), ('HR', 1), ('HCR', 1), ('HJR', 1)]
 }
 
+_categorizers = {
+    'read a first time': 'reading-1',
+    'read a second time': 'reading-2',
+    'read a third time': 'reading-3',
+    'introduced by': 'introduction',
+    'passed': 'passage',
+    'referred to committee': 'committee-passage',
+    'reported': 'committee-passage',
+    'received': 'introduction',
+    'presented to governor': 'executive-receipt',
+    'presented to the governor': 'executive-receipt',
+    'approved by governor': 'executive-signature',
+    'approved by the governor': 'executive-signature',
+    'adopted': 'passage',
+    'amendment(s) adopted': 'amendment-passage',
+    'amendment(s) defeated': 'amendment-failure',
+}
+
+
 def categorize_action(action):
-    for prefix, atype in _categorizers.iteritems():
+    for prefix, atype in _categorizers.items():
         if action.lower().startswith(prefix):
             return atype
 
-class MIBillScraper(BillScraper):
-    jurisdiction = 'mi'
 
+class MIBillScraper(Scraper):
     def scrape_bill(self, chamber, session, bill_id):
         # try and get bill for current year
         url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
             session[:4], bill_id.replace(' ', '-'))
         html = self.get(url).text
         # if first page isn't found, try second year
-        if ('Page Not Found' in html
-                or 'The bill you are looking for is not available yet' in html):
+        if ('Page Not Found' in html or
+                'The bill you are looking for is not available yet' in html):
             html = self.get('http://legislature.mi.gov/doc.aspx?%s-%s'
-                            % (session[-4:], bill_id.replace(' ','-'))).text
-            if ('Page Not Found' in html
-                or 'The bill you are looking for is not available yet' in html):
+                            % (session[-4:], bill_id.replace(' ', '-'))).text
+            if ('Page Not Found' in html or
+                    'The bill you are looking for is not available yet' in html):
                 return None
 
         doc = lxml.html.fromstring(html)
@@ -64,18 +74,27 @@ class MIBillScraper(BillScraper):
         # get B/R/JR/CR part and look up bill type
         bill_type = bill_types[bill_id.split(' ')[0][1:]]
 
-        bill = Bill(session=session, chamber=chamber, bill_id=bill_id,
-                    title=title, type=bill_type)
+        bill = Bill(bill_id, session, title, chamber=chamber,
+                    classification=bill_type)
         bill.add_source(url)
 
         # sponsors
-        sp_type = 'primary'
-        for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a/text()'):
-            sponsor = sponsor.replace(u'\xa0', ' ')
-            bill.add_sponsor(sp_type, sponsor)
-            sp_type = 'cosponsor'
+        for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a'):
+            name = sponsor.text.replace(u'\xa0', ' ')
+            classification = (
+                'primary'
+                if sponsor.tail and 'primary' in sponsor.tail
+                else 'cosponsor'
+            )
+            bill.add_sponsorship(
+                name=name,
+                chamber=chamber,
+                entity_type='person',
+                primary=classification == 'primary',
+                classification=classification,
+            )
 
-        bill['subjects'] = doc.xpath('//span[@id="frg_billstatus_CategoryList"]/a/text()')
+        bill.subject = doc.xpath('//span[@id="frg_billstatus_CategoryList"]/a/text()')
 
         # actions (skip header)
         for row in doc.xpath('//table[@id="frg_billstatus_HistoriesGridView"]/tr')[1:]:
@@ -83,11 +102,11 @@ class MIBillScraper(BillScraper):
             date = tds[0].text_content()
             journal = tds[1].text_content()
             action = tds[2].text_content()
-            date = datetime.datetime.strptime(date, "%m/%d/%Y")
+            date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y"))
             # instead of trusting upper/lower case, use journal for actor
             actor = 'upper' if 'SJ' in journal else 'lower'
-            type = categorize_action(action)
-            bill.add_action(actor, action, date, type=type)
+            classification = categorize_action(action)
+            bill.add_action(action, date, organization=actor, classification=classification)
 
             # check if action mentions a vote
             rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)
@@ -100,71 +119,89 @@ class MIBillScraper(BillScraper):
                     chamber_name = {'upper': 'Senate', 'lower': 'House'}[actor]
                     vote_url = BASE_URL + '/documents/%s/Journal/%s/htm/%s.htm' % (
                         session, chamber_name, objectname)
-                    vote = Vote(actor, date, action, False, 0, 0, 0)
-                    self.parse_roll_call(vote, vote_url, rc_num)
+                    results = self.parse_roll_call(vote_url, rc_num)
+                    vote = VoteEvent(
+                        start_date=date,
+                        chamber=chamber,
+                        bill=bill,
+                        motion_text=action,
+                        result='pass' if len(results['yes']) > len(results['no']) else 'fail',
+                        classification='committee',
+                    )
 
                     # check the expected counts vs actual
                     count = re.search('YEAS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
-                    if count != len(vote['yes_votes']):
-                        self.warning('vote count mismatch for %s %s, %d != %d' % 
-                                     (bill_id, action, count, len(vote['yes_votes'])))
+                    if count != len(results['yes']):
+                        self.warning('vote count mismatch for %s %s, %d != %d' %
+                                     (bill_id, action, count, len(results['yes'])))
                     count = re.search('NAYS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
-                    if count != len(vote['no_votes']):
-                        self.warning('vote count mismatch for %s %s, %d != %d' % 
-                                     (bill_id, action, count, len(vote['no_votes'])))
+                    if count != len(results['no']):
+                        self.warning('vote count mismatch for %s %s, %d != %d' %
+                                     (bill_id, action, count, len(results['no'])))
 
-                    vote['yes_count'] = len(vote['yes_votes'])
-                    vote['no_count'] = len(vote['no_votes'])
-                    vote['other_count'] = len(vote['other_votes'])
-                    vote['passed'] = vote['yes_count'] > vote['no_count']
+                    vote.set_count('yes', len(results['yes']))
+                    vote.set_count('no', len(results['no']))
+                    vote.set_count('other', len(results['other']))
+
+                    for name in results['yes']:
+                        vote.yes(name)
+                    for name in results['no']:
+                        vote.no(name)
+
                     vote.add_source(vote_url)
-                    bill.add_vote(vote)
+                    yield vote
                 else:
-                    self.warning("missing journal link for %s %s" % 
+                    self.warning("missing journal link for %s %s" %
                                  (bill_id, journal))
 
         # versions
         for row in doc.xpath('//table[@id="frg_billstatus_DocumentGridTable"]/tr'):
-            version = self.parse_doc_row(row)
-            if version:
-                if version[1].endswith('.pdf'):
+            parsed = self.parse_doc_row(row)
+            if parsed:
+                name, url = parsed
+                if url.endswith('.pdf'):
                     mimetype = 'application/pdf'
-                elif version[1].endswith('.htm'):
+                elif url.endswith('.htm'):
                     mimetype = 'text/html'
-                bill.add_version(*version, mimetype=mimetype)
+                bill.add_version_link(name, url, media_type=mimetype)
 
         # documents
         for row in doc.xpath('//table[@id="frg_billstatus_HlaTable"]/tr'):
             document = self.parse_doc_row(row)
             if document:
-                bill.add_document(*document)
+                name, url = document
+                bill.add_document_link(name, url)
         for row in doc.xpath('//table[@id="frg_billstatus_SfaTable"]/tr'):
             document = self.parse_doc_row(row)
             if document:
-                bill.add_document(*document)
+                name, url = document
+                bill.add_document_link(name, url)
 
-        self.save_bill(bill)
-        return True
+        yield bill
 
-    def scrape(self, chamber, session):
-        bill_types = {
-            'upper': [('SB', 1), ('SR', 1), ('SCR', 1), ('SJR', 1)],
-            'lower': [('HB', 4001), ('HR', 1), ('HCR', 1), ('HJR', 1)]
-        }
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            self.info('no session specified, using %s', session)
 
-        for abbr, start_num in bill_types[chamber]:
-            n = start_num
-            # keep trying bills until scrape_bill returns None
-            while True:
-                if 'JR' in abbr:
-                    bill_id = '%s %s' % (abbr, jres_id(n))
-                else:
-                    bill_id = '%s %04d' % (abbr, n)
-                if not self.scrape_bill(chamber, session, bill_id):
-                    break
-                n += 1
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            for abbr, start_num in bill_chamber_types[chamber]:
+                n = start_num
+                # keep trying bills until scrape_bill returns None
+                while True:
+                    if 'JR' in abbr:
+                        bill_id = '%s %s' % (abbr, jres_id(n))
+                    else:
+                        bill_id = '%s %04d' % (abbr, n)
+                    bills = list(self.scrape_bill(chamber, session, bill_id))
+                    if not bills:
+                        break
+                    for bill in bills:
+                        yield bill
+                    n += 1
 
     def parse_doc_row(self, row):
         # first anchor in the row is HTML if present, otherwise PDF
@@ -178,7 +215,7 @@ class MIBillScraper(BillScraper):
             url = BASE_URL + a[0].get('href').replace('../', '/')
             return name, url
 
-    def parse_roll_call(self, vote, url, rc_num):
+    def parse_roll_call(self, url, rc_num):
         html = self.get(url).text
         if 'In The Chair' not in html:
             self.warning('"In The Chair" indicator not found, unable to extract vote')
@@ -195,16 +232,17 @@ class MIBillScraper(BillScraper):
                 break
 
         vtype = None
+        results = collections.defaultdict(list)
 
         # once we find the roll call, go through voters
         for p in pieces[i:]:
             # mdash: \xe2\x80\x94 splits Yeas/Nays/Excused/NotVoting
             if 'Yeas' in p:
-                vtype = vote.yes
+                vtype = 'yes'
             elif 'Nays' in p:
-                vtype = vote.no
+                vtype = 'no'
             elif 'Excused' in p or 'Not Voting' in p:
-                vtype = vote.other
+                vtype = 'other'
             elif 'Roll Call No' in p:
                 continue
             elif p.startswith('In The Chair:'):
@@ -213,6 +251,8 @@ class MIBillScraper(BillScraper):
                 # split on spaces not preceeded by commas
                 for l in re.split('(?<!,)\s+', p):
                     if l:
-                        vtype(l)
+                        results[vtype].append(l)
             else:
                 self.warning('piece without vtype set: %s', p)
+
+        return results
