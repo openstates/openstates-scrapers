@@ -5,6 +5,7 @@ import collections
 
 from spatula import Page, Spatula
 from pupa.scrape import Scraper, Bill, VoteEvent
+from .common import SESSION_SITE_IDS
 
 tz = pytz.timezone('America/New_York')
 
@@ -334,7 +335,7 @@ class VotePage(Page):
 class VaBillScraper(Scraper, Spatula):
     def scrape(self, session=None):
         if not session:
-            session = self.jurisdiction.legislative_sessions[-1]['site_id']
+            session = SESSION_SITE_IDS[self.jurisdiction.legislative_sessions[-1]['identifier']]
             self.info('no session specified, using %s', session)
         url = BASE_URL + URL_PATTERNS['list'].format(session)
         subject_url = BASE_URL + URL_PATTERNS['subjects'].format(session)

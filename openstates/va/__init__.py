@@ -29,60 +29,51 @@ class Virginia(Jurisdiction):
             "identifier": "2010",
             "name": "2010 Regular Session",
             "start_date": "2010-01-13",
-            "site_id": "101",
         },
         {
             "_scraped_name": "2011 Session",
             "identifier": "2011",
             "name": "2011 Regular Session",
             "start_date": "2011-01-12",
-            "site_id": "111",
         },
         {
             "_scraped_name": "2011 Special Session I",
             "identifier": "2011specialI",
             "name": "2011, 1st Special Session",
-            "site_id": "112",
         },
         {
             "_scraped_name": "2012 Session",
             "identifier": "2012",
             "name": "2012 Regular Session",
             "start_date": "2012-01-11",
-            "site_id": "121",
         },
         {
             "_scraped_name": "2012 Special Session I",
             "identifier": "2012specialI",
             "name": "2012, 1st Special Session",
             "start_date": "2012-03-11",
-            "site_id": "122",
         },
         {
             "_scraped_name": "2013 Session",
             "identifier": "2013",
             "name": "2013 Regular Session",
             "start_date": "2013-01-09",
-            "site_id": "131",
         },
         {
             "_scraped_name": "2013 Special Session I",
             "identifier": "2013specialI",
             "name": "2013, 1st Special Session",
-            "site_id": "132",
         },
         {
             "_scraped_name": "2014 Session",
             "identifier": "2014",
             "name": "2014 Regular Session",
             "start_date": "2014-01-09",
-            "site_id": "141",
         },
         {
             "_scraped_name": "2014 Special Session I",
             "identifier": "2014specialI",
             "name": "2014, 1st Special Session",
-            "site_id": "142",
         },
         {
             "_scraped_name": "2015 Session",
@@ -90,7 +81,6 @@ class Virginia(Jurisdiction):
             "identifier": "2015",
             "name": "2015 Regular Session",
             "start_date": "2015-01-14",
-            "site_id": "151",
         },
         {
             "_scraped_name": "2015 Special Session I",
@@ -98,7 +88,6 @@ class Virginia(Jurisdiction):
             "identifier": "2015specialI",
             "name": "2015, 1st Special Session",
             "start_date": "2015-08-17",
-            "site_id": "152",
         },
         {
             "_scraped_name": "2016 Session",
@@ -106,7 +95,6 @@ class Virginia(Jurisdiction):
             "identifier": "2016",
             "name": "2016 Regular Session",
             "start_date": "2016-01-13",
-            "site_id": "161",
         },
         {
             "_scraped_name": "2017 Session",
@@ -114,7 +102,6 @@ class Virginia(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-11",
-            "site_id": "171",
         }
     ]
     ignored_scraped_sessions = [
@@ -174,11 +161,11 @@ class Virginia(Jurisdiction):
                              parent_id=legislature._id)
 
         for n in range(1, upper_seats + 1):
-            lower.add_post(
+            upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
         for n in range(1, lower_seats + 1):
-            upper.add_post(
+            lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 

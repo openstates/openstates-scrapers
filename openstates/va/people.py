@@ -6,6 +6,8 @@ from pupa.scrape import Scraper
 from pupa.scrape import Person
 
 from spatula import Page, Spatula
+from .common import SESSION_SITE_IDS
+
 
 CHAMBER_MOVES = {
     "A. Benton \"Ben\" Chafin-Elect": "upper",
@@ -121,7 +123,9 @@ class VaPersonScraper(Scraper, Spatula):
         if not session:
             session = self.jurisdiction.legislative_sessions[-1]
             self.info('no session specified, using %s', session['identifier'])
-        url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(session['site_id'])
+        url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(
+            SESSION_SITE_IDS[session['identifier']]
+        )
         yield from self.scrape_page_items(SenateList, session=session, url=url)
         yield from self.scrape_page_items(DelegateList, session=session, url=url)
 
