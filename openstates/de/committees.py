@@ -39,20 +39,17 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
             comm_url = 'http://legis.delaware.gov/CommitteeDetail?' + \
                         'committeeId='+ str(comm_id)
             comm_page = lxml.html.fromstring(self.get(comm_url).text)
+            #all members including chair_man and vice_chair
             members = comm_page.xpath("//section[@class='section-short']/" + \
                                       "div[@class='info-horizontal']/div" + \
                                       "[@class='info-group']/div[@class" + \
                                       "='info-value']/a/text()")
 
             committee.add_member(chair_man,'Chairman')
-            committee.add_member(vice_chair,'Vice-Chairman')
-
+            committee.add_member(vice_chair,'Vice-Chair')
             for member in members:
-                if chair_man in member:
-                    committee.add_member(member,'Chairman')
-                elif vice_chair in member:
-                    committee.add_member(member,'Vice-Chairman')
-                else:
+                #vice_chair and chair_man already added.
+                if chair_man not in member and vice_chair not in member:
                     committee.add_member(member)
 
             committee.add_source(comm_url)
@@ -67,8 +64,32 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
         data = self.post(url).json()['Data']
 
         for item in data:
-            committee = Committee('joint', item['CommitteeName'])
-            committee.add_member(legislator=str(item.get('ChairName', 'No')),role='Chairman')
-            committee.add_member(legislator=str(item.get('ViceChairName', 'No')),role='Vice-Chairman')
+            comm_name = item['CommitteeName']
+            committee = Committee('joint', comm_name)
+            
+            chair_man = str(item.get('ChairName', 'No'))
+            vice_chair = str(item.get('ViceChairName', 'No'))
+            #only Sunset url is not following pattern.
+            if comm_name == 'Joint Legislative Oversight and Sunset Committee':
+                comm_url = 'http://legis.delaware.gov/Sunset'
+            else:
+                comm_url = 'http://legis.delaware.gov/' + "".join(comm_name.split())
+
+            comm_page = lxml.html.fromstring(self.get(comm_url).text)
+            #all members including chair_man and vice_chair
+            members = comm_page.xpath("//section[@class='section-short']/" + \
+                                      "div[@class='info-horizontal']/div" + \
+                                      "[@class='info-group']/div[@class" + \
+                                      "='info-value']//a/text()")
+
+            committee.add_member(chair_man,'Chairman')
+            committee.add_member(vice_chair,'Vice-Chair')
+
+            for member in members:
+                #vice_chair and chair_man already added.
+                if chair_man not in member and vice_chair not in member:
+                    committee.add_member(member)
+
+            committee.add_source(comm_url)
             committee.add_source(url)
             self.save_committee(committee)
