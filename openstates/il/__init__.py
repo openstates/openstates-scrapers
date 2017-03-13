@@ -1,9 +1,8 @@
 # encoding=utf-8
 from pupa.scrape import Jurisdiction, Organization
-#from .vote_events import IlVoteEventScraper
-#from .bills import IlBillScraper
+from .bills import IlBillScraper
 from .people import IlPersonScraper
-#from .events import IlEventScraper
+from .events import IlEventScraper
 from .committees import IlCommitteeScraper
 
 class Il(Jurisdiction):
@@ -12,10 +11,9 @@ class Il(Jurisdiction):
     name = "Illinois"
     url = "http://www.ilga.gov/"
     scrapers = {
-        #"vote_events": IlVoteEventScraper,
-        #"bills": IlBillScraper,
-        #"people": IlPersonScraper,
-        #"events": IlEventScraper,
+        "bills": IlBillScraper,
+        "people": IlPersonScraper,
+        "events": IlEventScraper,
         "organizations": IlCommitteeScraper,
     }
     

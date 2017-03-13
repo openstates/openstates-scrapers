@@ -20,43 +20,42 @@ class IlCommitteeScraper(Scraper):
 
 
     def scrape(self):
-        #chamber_name = 'senate' if chamber == 'upper' else 'house'
-        chamber_name = 'senate'
-        chamber = 'upper'
+        chambers = (('upper', 'senate'), ('lower', 'house'))
+        for chamber, chamber_name in chambers:
 
-        url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
+            url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
+            html = self.get(url).text
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
 
-        top_level_com = None
+            top_level_com = None
 
-        for a in doc.xpath('//a[contains(@href, "members.asp")]'):
-            name = a.text.strip()
-            code = a.getparent().getnext()
-            if code is None:
-                #committee doesn't have a code, maybe it's a taskforce?
-                o = Organization(name,
-                                 classification='committee',
-                                 chamber=chamber)
-
-            else:
-                code = code.text_content().strip()
-
-
-                if 'Sub' in name:
-                    o = Organization(name,
-                                     classification='committee',
-                                     parent_id={'name' : top_level_com})
-                else:
-                    top_level_com = name
+            for a in doc.xpath('//a[contains(@href, "members.asp")]'):
+                name = a.text.strip()
+                code = a.getparent().getnext()
+                if code is None:
+                    #committee doesn't have a code, maybe it's a taskforce?
                     o = Organization(name,
                                      classification='committee',
                                      chamber=chamber)
 
-            com_url = a.get('href')
-            o.add_source(com_url)
+                else:
+                    code = code.text_content().strip()
 
-            self.scrape_members(o, com_url)
-            if o._related:
-                yield o
+
+                    if 'Sub' in name:
+                        o = Organization(name,
+                                         classification='committee',
+                                         parent_id={'name' : top_level_com})
+                    else:
+                        top_level_com = name
+                        o = Organization(name,
+                                         classification='committee',
+                                         chamber=chamber)
+
+                com_url = a.get('href')
+                o.add_source(com_url)
+
+                self.scrape_members(o, com_url)
+                if o._related:
+                    yield o

@@ -1,8 +1,7 @@
 import datetime as dt
 import re
 
-from openstates.utils import LXMLMixin
-from billy.scrape.events import Event, EventScraper
+from pupa.scrape import Scraper, Event
 
 import lxml.html
 import pytz
@@ -13,16 +12,17 @@ urls = {
 }
 
 
-class ILEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'il'
-    _tz = pytz.timezone('US/Eastern')
+class IlEventScraper(Scraper):
+    localize = pytz.timezone('America/Chicago').localize
 
     def scrape_page(self, url, session, chamber):
-        page = self.lxmlize(url)
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
-        ctty_name = page.xpath("//span[@class='heading']")[0].text_content()
+        ctty_name = doc.xpath("//span[@class='heading']")[0].text_content()
 
-        tables = page.xpath("//table[@cellpadding='3']")
+        tables = doc.xpath("//table[@cellpadding='3']")
         info = tables[0]
         rows = info.xpath(".//tr")
         metainf = {}
@@ -43,15 +43,17 @@ class ILEventScraper(EventScraper, LXMLMixin):
         }
         for r in repl:
             datetime = datetime.replace(r, repl[r])
-        datetime = dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p")
+        datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
 
-        event = Event(session, datetime, 'committee:meeting',
-                      description, location=where)
+        event = Event(description,
+                      start_time=datetime,
+                      timezone='America/Chicago',
+                      location_name=where)
         event.add_source(url)
 
         if ctty_name.startswith('Hearing Notice For'):
             ctty_name.replace('Hearing Notice For', '')
-        event.add_participant('host', ctty_name, 'committee', chamber=chamber)
+        event.add_participant(ctty_name, 'organization')
 
         bills = tables[1]
         for bill in bills.xpath(".//tr")[1:]:
@@ -60,21 +62,26 @@ class ILEventScraper(EventScraper, LXMLMixin):
                 continue
             # First, let's get the bill ID:
             bill_id = tds[0].text_content()
-            event.add_related_bill(bill_id,
-                                   description=description,
-                                   type='consideration')
+            agenda_item = event.add_agenda_item(bill_id)
+            agenda_item.add_bill(bill_id)
 
-        self.save_event(event)
+        return event
 
-    def scrape(self, chamber, session):
+    def scrape(self):
+        session = '100th'
+        chamber = 'upper'
         try:
             url = urls[chamber]
         except KeyError:
             return  # Not for us.
-        page = self.lxmlize(url)
-        tables = page.xpath("//table[@width='550']")
+        html = self.get(url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
+
+        tables = doc.xpath("//table[@width='550']")
         for table in tables:
             meetings = table.xpath(".//a")
             for meeting in meetings:
-                self.scrape_page(meeting.attrib['href'],
-                                 session, chamber)
+                event = self.scrape_page(meeting.attrib['href'],
+                                         session, chamber)
+                yield event
