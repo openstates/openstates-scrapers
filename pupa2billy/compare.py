@@ -29,6 +29,9 @@ class Comparator:
             elif k == 'versions' or k == 'documents':
                 for v in itertools.chain(v1, v2):
                     v.pop('date', None)
+            elif k in ('yes_votes', 'no_votes', 'other_votes'):
+                v1 = sorted(v1)
+                v2 = sorted(v2)
             elif k == 'actions':
                 for v in itertools.chain(v1, v2):
                     v['type'] = sorted([t for t in v['type'] if t != 'other'])
@@ -97,7 +100,8 @@ class VoteComparator(Comparator):
         return all_json
 
     def compare_json(self, key, val1, val2):
-        for i, (v1, v2) in enumerate(zip(val1, val2)):
+        for i, (v1, v2) in enumerate(zip(sorted(val1, key=lambda x: (x['date'], x['yes_count'])),
+                                         sorted(val2, key=lambda x: (x['date'], x['yes_count'])))):
             super(VoteComparator, self).compare_json(key + (i,), v1, v2)
 
 

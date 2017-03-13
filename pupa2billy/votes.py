@@ -48,6 +48,7 @@ class PupaVoteScraper(VoteScraper):
                     yes_count=yes_count,
                     no_count=no_count,
                     other_count=other_count,
+                    action=data['bill_action'],
                     # TODO: was data['motion_classification'],
                     type='other',
                     session=data['legislative_session'],
