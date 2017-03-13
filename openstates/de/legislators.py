@@ -11,7 +11,6 @@ class DELegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'de'
 
     def scrape(self, chamber, term):
-
         url = {
             'upper': 'https://legis.delaware.gov/json/Senate/GetSenators',
             'lower': 'https://legis.delaware.gov/json/House/' +

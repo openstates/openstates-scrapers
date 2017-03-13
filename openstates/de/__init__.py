@@ -35,7 +35,7 @@ metadata = {
             'start_year': 2003,
             'end_year': 2004,
             'sessions': ['142'],
-        },        
+        },
         {
             'name': '2005-2006',
             'start_year': 2005,
@@ -47,7 +47,7 @@ metadata = {
             'start_year': 2007,
             'end_year': 2008,
             'sessions': ['144'],
-        },        
+        },
         {
             'name': '2009-2010',
             'start_year': 2009,
@@ -77,7 +77,7 @@ metadata = {
             'start_year': 2017,
             'end_year': 2018,
             'sessions': ['149'],
-            },            
+            },
     ],
     'session_details': {
          '140': {
@@ -99,11 +99,11 @@ metadata = {
         '144': {
             'display_name': '144th General Assembly (2007-2008)',
             '_scraped_name': '2006 - 2008 (GA 144)',
-        },        
+        },
         '145': {
             'display_name': '145th General Assembly (2009-2010)',
             '_scraped_name': '2008 - 2010 (GA 145)',
-        },               
+        },
         '146': {
             'display_name': '146th General Assembly (2011-2012)',
             '_scraped_name': '2010 - 2012 (GA 146)',
@@ -119,7 +119,7 @@ metadata = {
         '149': {
             'display_name': '149th General Assembly (2017-2018)',
             '_scraped_name': '2016 - 2018 (GA 149)',
-        },        
+        },
     },
     'feature_flags': ['events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
