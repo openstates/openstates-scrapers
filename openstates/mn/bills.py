@@ -3,7 +3,10 @@ import datetime
 import urllib.parse
 from collections import defaultdict
 import lxml.html
+
 from pupa.scrape import Scraper, Bill
+
+from openstates.utils import LXMLMixin
 
 # Base URL for the details of a given bill.
 BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
@@ -36,7 +39,7 @@ SITE_IDS = {
 }
 
 
-class MNBillScraper(Scraper):
+class MNBillScraper(Scraper, LXMLMixin):
     jurisdiction = 'mn'
 
     # For testing purposes, this will do a lite version of things.  If
