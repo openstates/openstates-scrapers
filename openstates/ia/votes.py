@@ -109,7 +109,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             # Get the motion text
             motion_re = r'''
                     ^On\sthe\squestion\s  # Precedes any motion
-                    "  # Motion is preceded by a quote mark
+                    "+  # Motion is preceded by a quote mark (or two)
                     (Shall\s.+?\??)  # The motion text begins with "Shall"
                     \s*"\s+  # Motion is followed by a quote mark
                     (?:{})?  # If the vote regards a bill, its number is listed
@@ -119,6 +119,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                     bill_re,
                     r',?.*?the\svote\swas:' if chamber == 'upper' else ''
                     )
+            print(line)
             motion = re.search(motion_re,
                                line,
                                re.VERBOSE | re.IGNORECASE).group(1)
@@ -140,13 +141,16 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             #for the bill to have passed, so check that,
             #but if the bill didn't pass, it could still be OK if it got a majority
             #eg constitutional amendments
-            assert (passed == (votes['yes_count'] > votes['no_count'])) or (not passed)
-            
+            if not ((passed == (votes['yes_count'] > votes['no_count'])) or (not passed)):
+                self.error("The bill passed without a majority?")
+                raise ValueError('invalid vote')
+
+
             #also throw a warning if the bill failed but got a majority
             #it could be OK, but is probably something we'd want to check
             if not passed and votes['yes_count'] > votes['no_count']:
                 self.logger.warning("The bill got a majority but did not pass. Could be worth confirming.")
-            
+
             vote = Vote(motion=re.sub('\xad', '-', motion),
                         passed=passed,
                         chamber=chamber, date=date,
@@ -183,6 +187,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             ('The committee', DONE),
             ('The resolution', DONE),
             ('The motion', DONE),
+            ('Division', DONE),
             ('The joint resolution', DONE),
             ('Under the', DONE)
         ]
