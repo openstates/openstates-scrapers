@@ -6,16 +6,26 @@ import lxml.html
 from pupa.scrape import Scraper, VoteEvent
 
 VOTES_URLS = {
-    '86th Legislature, 2009-2010': 'http://www.house.leg.state.mn.us/votes/getVotesls86.asp',
-    '86th Legislature, 2010 1st Special Session': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp',
-    '87th Legislature, 2011-2012': 'http://www.house.leg.state.mn.us/votes/getVotesls87.asp',
-    '87th Legislature, 2011 1st Special Session': 'http://www.house.leg.state.mn.us/votes/getVotesls8720111.asp',
-    '87th Legislature, 2012 1st Special Session': 'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
-    '88th Legislature, 2013-2014': 'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
-    '88th Legislature, 2013 1st Special Session': 'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
-    '89th Legislature, 2015-2016': 'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
-    '89th Legislature, 2015 1st Special Session': 'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
-    '90th Legislature, 2017-2018': 'http://www.house.leg.state.mn.us/votes/getVotesls90.asp',
+    '86th Legislature, 2009-2010':
+        'http://www.house.leg.state.mn.us/votes/getVotesls86.asp',
+    '86th Legislature, 2010 1st Special Session':
+        'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp',
+    '87th Legislature, 2011-2012':
+        'http://www.house.leg.state.mn.us/votes/getVotesls87.asp',
+    '87th Legislature, 2011 1st Special Session':
+        'http://www.house.leg.state.mn.us/votes/getVotesls8720111.asp',
+    '87th Legislature, 2012 1st Special Session':
+        'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
+    '88th Legislature, 2013-2014':
+        'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
+    '88th Legislature, 2013 1st Special Session':
+        'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
+    '89th Legislature, 2015-2016':
+        'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
+    '89th Legislature, 2015 1st Special Session':
+        'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
+    '90th Legislature, 2017-2018':
+        'http://www.house.leg.state.mn.us/votes/getVotesls90.asp',
 }
 
 
@@ -67,7 +77,6 @@ class MNVoteScraper(Scraper):
             self.logger.warning("Bill was missing a motion number, skipping")
             return
 
-
         vote_count = doc.xpath(".//div[@id='leg_PageContent']/div/h3/text()")[1].split()
         yeas = int(vote_count[0])
         nays = int(vote_count[3])
@@ -85,9 +94,8 @@ class MNVoteScraper(Scraper):
             self.logger.warning("No date could be found for vote on %s" % motion)
             return
 
-
         vote = VoteEvent(chamber='lower', start_date=date, motion_text=motion,
-                         result='pass' if yeas>nays else 'fail',
+                         result='pass' if yeas > nays else 'fail',
                          classification='passage',
                          legislative_session=session, bill=bill_id,
                          bill_chamber=chamber)

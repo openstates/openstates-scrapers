@@ -3,8 +3,10 @@ import re
 from pupa.scrape import Scraper, Organization
 import lxml.html
 
+
 def fix_whitespace(s):
     return re.sub(r'\s+', ' ', s)
+
 
 class MNCommitteeScraper(Scraper):
     latest_only = True
@@ -32,9 +34,13 @@ class MNCommitteeScraper(Scraper):
         parent = doc.xpath('//h4//a[contains(@href, "committee_bio")]/text()')
         if parent:
             self.log('%s is subcommittee of %s', com_name, parent[0])
-            com = Organization(com_name, chamber='upper', classification='committee', parent_id={'name': parent[0], 'classification': 'upper'})
+            com = Organization(com_name, chamber='upper',
+                               classification='committee',
+                               parent_id={'name': parent[0],
+                                          'classification': 'upper'})
         else:
-            com = Organization(com_name, chamber='upper', classification='committee')
+            com = Organization(com_name, chamber='upper',
+                               classification='committee')
 
         for link in doc.xpath('//div[@id="members"]//a[contains(@href, "member_bio")]'):
             name = link.text_content().strip()

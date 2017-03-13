@@ -33,17 +33,60 @@ class Minnesota(Jurisdiction):
     parties = [{'name': 'Republican'},
                {'name': 'Democratic-Farmer-Labor'}]
     legislative_sessions = [
-        {'name': '2009-2010', 'identifier': '86th Legislature, 2009-2010', 'classification': 'primary'},
-        {'name': '2010 1st Special Session', 'identifier': '86th Legislature, 2010 1st Special Session', 'classification': 'special'},
-        {'name': '2010 2nd Special Session', 'identifier': '86th Legislature, 2010 2nd Special Session', 'classification': 'special'},
-        {'name': '2011-2012', 'identifier': '87th Legislature, 2011-2012', 'classification': 'primary'},
-        {'name': '2011s1', 'identifier': '87th Legislature, 2011 1st Special Session', 'classification': 'special'},
-        {'name': '2012s1', 'identifier': '87th Legislature, 2012 1st Special Session', 'classification': 'special'},
-        {'name': '2013-2014', 'identifier': '88th Legislature, 2013-2014', 'classification': 'primary'},
-        {'name': '2013s1', 'identifier': '88th Legislature, 2013 1st Special Session', 'classification': 'special'},
-        {'name': '2015s1', 'identifier': '89th Legislature, 2015-2016', 'classification': 'special'},
-        {'name': '2015-2016', 'identifier': '89th Legislature, 2015 1st Special Session', 'classification': 'primary'},
-        {'name': '2017-2018', 'identifier': '90th Legislature, 2017-2018', 'classification': 'primary'},
+        {
+            'name': '2009-2010',
+            'identifier': '86th Legislature, 2009-2010',
+            'classification': 'primary'
+        },
+        {
+            'name': '2010 1st Special Session',
+            'identifier': '86th Legislature, 2010 1st Special Session',
+            'classification': 'special'
+        },
+        {
+            'name': '2010 2nd Special Session',
+            'identifier': '86th Legislature, 2010 2nd Special Session',
+            'classification': 'special'},
+        {
+            'name': '2011-2012',
+            'identifier': '87th Legislature, 2011-2012',
+            'classification': 'primary'
+        },
+        {
+            'name': '2011s1',
+            'identifier': '87th Legislature, 2011 1st Special Session',
+            'classification': 'special'
+        },
+        {
+            'name': '2012s1',
+            'identifier': '87th Legislature, 2012 1st Special Session',
+            'classification': 'special'
+        },
+        {
+            'name': '2013-2014',
+            'identifier': '88th Legislature, 2013-2014',
+            'classification': 'primary'
+        },
+        {
+            'name': '2013s1',
+            'identifier': '88th Legislature, 2013 1st Special Session',
+            'classification': 'special'
+        },
+        {
+            'name': '2015s1',
+            'identifier': '89th Legislature, 2015-2016',
+            'classification': 'special'
+        },
+        {
+            'name': '2015-2016',
+            'identifier': '89th Legislature, 2015 1st Special Session',
+            'classification': 'primary'
+        },
+        {
+            'name': '2017-2018',
+            'identifier': '90th Legislature, 2017-2018',
+            'classification': 'primary'
+        },
     ]
     ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',

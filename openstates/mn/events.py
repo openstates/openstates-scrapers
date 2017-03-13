@@ -9,6 +9,7 @@ from openstates.utils import LXMLMixin
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
+
 class MNEventScraper(Scraper, LXMLMixin):
     tz = pytz.timezone("US/Central")
     date_formats = (
@@ -163,4 +164,3 @@ class MNEventScraper(Scraper, LXMLMixin):
                         return tail
                     break
         return
-
