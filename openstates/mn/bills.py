@@ -107,7 +107,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                                                   session.split('-')[0])
                     version_url = VERSION_URL % (self.search_session(session)[-4:],
                                                  self.search_session(session)[0], b)
-                    self.get_bill_info(chamber, session, bill_url, version_url)
+                    yield self.get_bill_info(chamber, session, bill_url, version_url)
 
             else:
 
