@@ -298,16 +298,16 @@ class MNBillScraper(Scraper, LXMLMixin):
 
                 # dates are really inconsistent here, sometimes in action_text
                 try:
-                    action_date = datetime.datetime.strptime(action_date,
-                                                             '%m/%d/%Y')
+                    action_date = datetime.datetime.strptime(
+                        action_date, '%m/%d/%Y').date()
                 except ValueError:
                     try:
-                        action_date = datetime.datetime.strptime(extra,
-                                                                 '%m/%d/%y')
+                        action_date = datetime.datetime.strptime(
+                                extra, '%m/%d/%y').date()
                     except ValueError:
                         try:
                             action_date = datetime.datetime.strptime(
-                                extra, '%m/%d/%Y')
+                                extra, '%m/%d/%Y').date()
                         except ValueError:
                             self.warning('ACTION without date: %s' %
                                          action_text)
