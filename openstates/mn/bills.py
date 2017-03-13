@@ -208,7 +208,8 @@ class MNBillScraper(Scraper):
 
         # Add subjects.  Currently we are not mapping to Open States
         # standardized subjects, so use 'scraped_subjects'
-        bill['scraped_subjects'] = self._subject_mapping[bill_id]
+        # TODO: migrate to Pupa
+        # bill['scraped_subjects'] = self._subject_mapping[bill_id]
 
         # Get companion bill.
         companion = doc.xpath('//table[@class="status_info"]//tr[1]/td[2]/a[starts-with(@href, "?")]/text()')
