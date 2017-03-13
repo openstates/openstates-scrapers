@@ -1,19 +1,23 @@
 import re
 import csv
-import urlparse
-
+from urllib import parse
 import lxml.html
-
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 
 class NoDetails(Exception):
     pass
 
 
-class MTLegislatorScraper(LegislatorScraper):
+SESSION_NUMBERS = {
+    '2011': '62nd',
+    '2013': '63rd',
+    '2015': '64th',
+    '2017': '65th',
+}
 
-    jurisdiction = 'mt'
+
+class MTPersonScraper(Scraper):
 
     def url_xpath(self, url):
         # Montana's legislator page was returning valid content with 500
@@ -26,19 +30,20 @@ class MTLegislatorScraper(LegislatorScraper):
         self.raise_errors = True
         return doc
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = max(SESSION_NUMBERS.keys())
+        session_number = SESSION_NUMBERS[session]
 
-        for tdata in self.metadata['terms']:
-            if term == tdata['name']:
-                year = tdata['start_year']
-                session_number = tdata['session_number']
-                break
+        chambers = [chamber] if chamber else ['upper', 'lower']
 
-        # Fetch the csv.
-        url = 'http://leg.mt.gov/content/sessions/%s/%d%sMembers.txt' % \
-            (session_number, year, chamber == 'upper' and 'Senate' or 'House')
+        for chamber in chambers:
+            url = 'http://leg.mt.gov/content/sessions/{}/{}{}Members.txt'.format(
+                session_number, session, 'Senate' if chamber == 'upper' else 'House'
+            )
+            yield from self.scrape_legislators(url, chamber=chamber)
 
-        # Parse it.
+    def scrape_legislators(self, url, chamber):
         data = self.get(url).text
         data = data.replace('"""', '"')  # weird triple quotes
         data = data.splitlines()
@@ -56,28 +61,17 @@ class MTLegislatorScraper(LegislatorScraper):
             if not entry:
                 continue
 
-            # City.
-            entry['city'] = entry['city']
-
-            # Address.
-            entry['address'] = entry['address']
-
             # District.
             district = entry['district']
             hd_or_sd, district = district.split()
-            del entry['district']
 
             # Party.
             party_letter = entry['party']
             party = {'D': 'Democratic', 'R': 'Republican'}[party_letter]
-            entry['party'] = party
-            del entry['party']
 
             # Get full name properly capped.
-            fullname = _fullname = '%s %s' % (entry['first_name'].capitalize(),
-                                   entry['last_name'].capitalize())
-
-            city_lower = entry['city'].lower()
+            fullname = '%s %s' % (entry['first_name'].capitalize(),
+                                  entry['last_name'].capitalize())
 
             # Get any info at the legislator's detail_url.
             detail_url = district_leg_urls[hd_or_sd][district]
@@ -85,13 +79,8 @@ class MTLegislatorScraper(LegislatorScraper):
             # Get the office.
             address = '\n'.join([
                 entry['address'],
-                '%s, %s %s' % (entry['city'], entry['state'], entry['zip'])
+                '%s, %s %s' % (entry['city'].title(), entry['state'], entry['zip'])
                 ])
-
-            office = dict(
-                name='District Office', type='district', phone=None,
-                fax=None, email=None,
-                address=address)
 
             try:
                 deets = self._scrape_details(detail_url)
@@ -99,29 +88,24 @@ class MTLegislatorScraper(LegislatorScraper):
                 self.logger.warning("No details found at %r" % detail_url)
                 continue
 
-            # Add the details and delete junk.
-            entry.update(deets)
-            del entry['first_name'], entry['last_name']
-            if 'phone' in entry:
-                del entry['phone']
-            if 'fax' in entry:
-                del entry['fax']
-            if 'email' in entry:
-                del entry['email']
-
-            legislator = Legislator(term, chamber, district, fullname,
-                                    party=party)
-            legislator.update(entry)
+            legislator = Person(name=fullname, primary_org=chamber, district=district,
+                                party=party, image=entry.get('photo_url', ''))
             legislator.add_source(detail_url)
             legislator.add_source(url)
-            legislator['url'] = detail_url
+            legislator.add_link(detail_url)
+            legislator.add_contact_detail(type='address', value=address, note='District Office')
 
-            office['phone'] = deets.get('phone')
-            office['fax'] = deets.get('fax')
-            office['email'] = deets.get('email')
-            legislator.add_office(**office)
+            phone = deets.get('phone')
+            fax = deets.get('fax')
+            email = deets.get('email')
+            if phone:
+                legislator.add_contact_detail(type='voice', value=phone, note='District Office')
+            if fax:
+                legislator.add_contact_detail(type='fax', value=fax, note='District Office')
+            if email:
+                legislator.add_contact_detail(type='email', value=email, note='District Office')
 
-            self.save_legislator(legislator)
+            yield legislator
 
     def _district_legislator_dict(self):
         '''Create a mapping of districts to the legislator who represents
@@ -134,7 +118,7 @@ class MTLegislatorScraper(LegislatorScraper):
         url = 'http://leg.mt.gov/css/find%20a%20legislator.asp'
 
         # Get base url.
-        parts = urlparse.urlparse(url)
+        parts = parse.urlparse(url)
         parts._replace(path='')
         baseurl = parts.geturl()
 
@@ -152,7 +136,7 @@ class MTLegislatorScraper(LegislatorScraper):
         self.raise_errors = True
 
         # Get the new baseurl, like 'http://leg.mt.gov/css/Sessions/62nd/'
-        parts = urlparse.urlparse(url)
+        parts = parse.urlparse(url)
         path, _, _ = parts.path.rpartition('/')
         parts._replace(path=path)
         baseurl = parts.geturl()
@@ -164,8 +148,7 @@ class MTLegislatorScraper(LegislatorScraper):
             td1, td2 = tr.xpath('td')
 
             # Skip header rows and retired legislators
-            if (not td2.text_content().strip() or
-                    'Resigned' in tr.text_content()):
+            if not td2.text_content().strip() or 'Resigned' in tr.text_content():
                 continue
 
             # Get link to the member's page.
@@ -174,7 +157,6 @@ class MTLegislatorScraper(LegislatorScraper):
             # Get the members district so we can match the
             # profile page with its csv record.
             house, district = td2.text_content().split()
-
             res[house][district] = detail_url
 
         return res
@@ -183,11 +165,11 @@ class MTLegislatorScraper(LegislatorScraper):
         '''Scrape the member's bio page.
 
         Things available but not currently scraped are office address,
-        and waaay too much contanct info, including personal email, phone.
+        and waaay too much contact info, including personal email, phone.
         '''
         doc = self.url_xpath(url)
         # Get base url.
-        parts = urlparse.urlparse(url)
+        parts = parse.urlparse(url)
         parts._replace(path='')
         baseurl = parts.geturl()
 
@@ -200,7 +182,7 @@ class MTLegislatorScraper(LegislatorScraper):
         except IndexError:
             raise NoDetails('No details found at %r' % url)
 
-        details = { 'photo_url': photo_url }
+        details = {'photo_url': photo_url}
 
         # # Parse address.
         elements = list(doc.xpath('//b[contains(., "Address")]/..')[0])
@@ -234,8 +216,8 @@ class MTLegislatorScraper(LegislatorScraper):
             pass
         else:
             if email:
-                html = lxml.html.tostring(email.getparent())
-                match = re.search('[a-zA-Z0-9\.\_\%\+\-]+@\w+\.[a-z]+', html)
+                html = lxml.html.tostring(email.getparent()).decode()
+                match = re.search(r'[a-zA-Z0-9\.\_\%\+\-]+@\w+\.[a-z]+', html)
                 if match:
                     details['email'] = match.group()
 

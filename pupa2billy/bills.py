@@ -54,6 +54,7 @@ class PupaBillScraper(BillScraper):
         bill = Bill(data['legislative_session'], chamber, data['identifier'],
                     data['title'], subjects=data['subject'],
                     type=data['classification'])
+        bill.update(**data['extras'])
 
         for action in data['actions']:
             actor = parse_psuedo_id(action['organization_id'])['classification']
