@@ -2,8 +2,9 @@ import re
 import pytz
 import datetime
 
-from pupa.scrape import Scraper
 from pupa.scrape import Person
+from pupa.scrape import Scraper
+from pupa.scrape import Organization
 
 from spatula import Page, Spatula
 from .common import SESSION_SITE_IDS
@@ -31,6 +32,14 @@ class MemberDetail(Page):
         self.obj.add_party(PARTY_MAP[party])
 
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
+            org = Organization(
+                name=com,
+                chamber=self.chamber,
+                classification='committee',
+            )
+            org.add_source(self.url)
+            yield org
+
             self.obj.add_membership(
                 com,
                 start_date=maybe_date(self.kwargs['session'].get('start_date')),
@@ -63,12 +72,12 @@ class MemberList(Page):
         leg.add_source(self.url)
         leg.add_source(item.get('href'))
         leg.add_link(item.get('href'))
-        list(self.scrape_page(
+        yield from self.scrape_page(
             self.detail_page,
             item.get('href'),
             session=self.kwargs['session'],
             obj=leg,
-        ))
+        )
         return leg
 
 
