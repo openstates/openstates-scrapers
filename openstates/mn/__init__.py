@@ -4,6 +4,7 @@ from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
 from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
+from .events import MNEventScraper
 from .common import url_xpath
 
 """
@@ -29,6 +30,7 @@ class Minnesota(Jurisdiction):
         "committees": MNCommitteeScraper,
         "people": MNPersonScraper,
         "vote_events": MNVoteScraper,
+        "events": MNEventScraper,
     }
     parties = [{'name': 'Republican'},
                {'name': 'Democratic-Farmer-Labor'}]
