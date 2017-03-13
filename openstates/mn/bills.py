@@ -230,7 +230,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         # Get all versions of the bill.
         bill = self.extract_versions(bill, doc, chamber, version_list_url)
 
-        self.save_bill(bill)
+        yield bill
 
     def get_bill_topics(self, chamber, session):
         """
@@ -355,7 +355,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         for action in bill_actions:
             kwargs = {}
             if 'committees' in action:
-                kwargs['committees'] = action['committees']
+                pass  # TODO: kwargs['committees'] = action['committees']
 
             bill.add_action(action['action_text'],
                             action['action_date'],
