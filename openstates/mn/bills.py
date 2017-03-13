@@ -5,6 +5,7 @@ from collections import defaultdict
 import lxml.html
 
 from pupa.scrape import Scraper, Bill
+from pupa.utils import _make_pseudo_id
 
 from openstates.utils import LXMLMixin
 
@@ -353,15 +354,16 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         # Add acctions to bill
         for action in bill_actions:
-            kwargs = {}
-            if 'committees' in action:
-                pass  # TODO: kwargs['committees'] = action['committees']
+            act = bill.add_action(action['action_text'],
+                                  action['action_date'],
+                                  chamber=action['action_chamber'],
+                                  classification=action['action_type'])
 
-            bill.add_action(action['action_text'],
-                            action['action_date'],
-                            chamber=action['action_chamber'],
-                            classification=action['action_type'],
-                            **kwargs)
+            if 'committees' in action:
+                committee = action['committees']
+                act.add_related_entity(
+                    committee, 'organization',
+                    entity_id=_make_pseudo_id(name=committee))
 
         return bill
 
