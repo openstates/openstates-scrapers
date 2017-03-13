@@ -1,35 +1,32 @@
-from datetime import datetime as datetime
+from datetime import datetime
 import re
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import Event, EventScraper
-from openstates.utils import LXMLMixin
-
-import lxml.html
 import pytz
+from pupa.scrape import Scraper
+from pupa.scrape import Event
+
+from openstates.utils import LXMLMixin
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
-class MNEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'mn'
+class MNEventScraper(Scraper, LXMLMixin):
+    tz = pytz.timezone("US/Central")
     date_formats = (
         '%A, %B %d, %Y %I:%M %p',
         '%A, %B %d'
     )
 
-    def scrape(self, chamber, session):
-        self.session = session
-
+    def scrape(self):
         page = self.lxmlize(url)
 
         commission_meetings = page.xpath("//div[@class='Comm_item']")
-        self.scrape_meetings(commission_meetings, 'commission')
+        yield from self.scrape_meetings(commission_meetings, 'commission')
 
         house_meetings = page.xpath("//div[@class='house_item']")
-        self.scrape_meetings(house_meetings, 'house')
+        yield from self.scrape_meetings(house_meetings, 'house')
 
         senate_meetings = page.xpath("//div[@class='senate_item']")
-        self.scrape_meetings(senate_meetings, 'senate')
+        yield from self.scrape_meetings(senate_meetings, 'senate')
 
     def scrape_meetings(self, meetings, group):
         """
@@ -49,21 +46,14 @@ class MNEventScraper(EventScraper, LXMLMixin):
             location = self.get_location(meeting)
 
             if when and description and location:
-                kwargs = {}
-                if group in self.metadata['chambers'].keys():
-                    kwargs['chamber'] = group
+                event = Event(name=description, start_time=when,
+                              timezone=self.tz.zone, description=description,
+                              location_name=location)
                 agenda = self.get_agenda(meeting)
                 if agenda:
-                    kwargs['agenda'] = agenda
-
-                # Event prototype is as follows:
-                # class Event(SourcedObject):
-                #    def __init__(self, session, when, type,
-                #                 description, location, end=None, **kwargs)
-                event = Event(self.session, when, 'committee:meeting',
-                        description, location, **kwargs)
+                    event.add_agenda_item(agenda)
                 event.add_source(url)
-                self.save_event(event)
+                yield event
 
     def get_date(self, meeting):
         """
@@ -81,7 +71,7 @@ class MNEventScraper(EventScraper, LXMLMixin):
 
         for date_format in self.date_formats:
             try:
-                date = datetime.strptime(date_string, date_format)
+                date = datetime.strptime(date_string, date_format).date()
                 return date
             except ValueError:
                 pass
