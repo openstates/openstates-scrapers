@@ -27,7 +27,6 @@ class MNVoteScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-        self.validate_session(session)
 
         chambers = [chamber] if chamber else ['upper', 'lower']
 
