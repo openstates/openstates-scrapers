@@ -79,7 +79,7 @@ class MTPersonScraper(Scraper):
             # Get the office.
             address = '\n'.join([
                 entry['address'],
-                '%s, %s %s' % (entry['city'].lower(), entry['state'], entry['zip'])
+                '%s, %s %s' % (entry['city'].title(), entry['state'], entry['zip'])
                 ])
 
             try:
