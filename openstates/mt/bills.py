@@ -423,13 +423,13 @@ class MTBillScraper(Scraper, LXMLMixin):
         vote_url = vote['vote_url']
 
         vote = VoteEvent(
-            #action=vote['action'],
             chamber=vote['chamber'],
             start_date=vote['date'],
             motion_text=vote['motion'],
             result='fail',      # placeholder
             classification='passage',
             bill=bill,
+            bill_action=vote['action'],
         )
         vote.add_source(vote_url)
         vote.set_count('yes', yes_count)

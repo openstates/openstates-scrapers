@@ -31,7 +31,7 @@ class Comparator:
                     v.pop('date', None)
             elif k == 'actions':
                 for v in itertools.chain(v1, v2):
-                    v['type'] = sorted([t for t in v['type'] if t != 'other' and t != 'amendment:tabled'])
+                    v['type'] = sorted([t for t in v['type'] if t != 'other'])
                 for i, (a1, a2) in enumerate(zip(v1, v2)):
                     if a1 != a2:
                         print('action', i, 'differ', a1, '!=', a2)

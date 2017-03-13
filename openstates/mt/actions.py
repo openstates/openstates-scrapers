@@ -186,9 +186,9 @@ _categories = {
     # An amendment has been 'laid on the table' (generally
     # preventing further consideration)
     # TODO: restore this once py-ocd-django has this classification
-    #"amendment-deferral": {
-    #    'rgxs': ['Tabled in Committee'],
-    #    },
+    "amendment-deferral": {
+        'rgxs': ['Tabled in Committee'],
+        },
 
     # The bill has been referred to a committee
     "referral-committee": {
