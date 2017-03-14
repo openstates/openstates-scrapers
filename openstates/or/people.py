@@ -110,41 +110,35 @@ class ORLegislatorScraper(Scraper, LXMLMixin):
 
             info['Party'] = info['Party'].strip(": ").replace(u"\u00a0","")
 
-            # legislator obj
-            person = Person(url=h2.attrib['href'],
-                         primary_org=chamber,
-                         full_name=name,
-                         party=info['Party'],
-                         district=info['District'],
-                         image=img)
-            person.add_source(url)
 
-            capitol_phone = info.get('Capitol Phone', info.get('apitol Phone'))
-            district_phone = info.get('District Phone', info.get('apitol Phone'))
+
+            # scrape legislator details
+            phone = info.get('Capitol Phone', info.get('apitol Phone'))
             if hasattr(phone, 'text_content'):
                 phone = phone.text_content()
+            address = info['Capitol Address']
+            email = info['Email'].attrib['href'].replace("mailto:","")
+            website = info['Website'].attrib['href']
 
-            if address:
-                person.add_contact_detail(type='address', value=address,
-                                          note='District Office')
+            # save legislator
+            person = Person(name=name,
+                            primary_org=chamber,
+                            party=info['Party'],
+                            district=info['District'],
+                            image=img)
+
+            person.add_source(url)
+            person.add_link(h2.attrib['href'])
+
             if phone:
                 person.add_contact_detail(type='voice', value=phone,
-                                          note='District Office')
-            if capitol_address:
-                person.add_contact_detail(type='address', value=capitol_address,
                                           note='Capitol Office')
-            if capitol_phone:
-                person.add_contact_detail(type='voice', value=capitol_phone,
+            if address:
+                person.add_contact_detail(type='address', value=address,
                                           note='Capitol Office')
-            if capitol_email:
-                person.add_contact_detail(type='email', value=capitol_email,
-                                          note='Capitol Office')
-            person.add_contact_detail(type='phone',
-                                   value, note)
-            person.add_office(type='capitol',
-                           name='Capitol Office',
-                           address=info['Capitol Address'],
-                           phone=phone,
-                           email=info['Email'].attrib['href'].replace("mailto:",""))
+            if email:
+                person.add_contact_detail(type='email', value=email)
+            if website:
+                person.add_contact_detail(type='website', value=website)
 
-            self.save_legislator(person)
+            yield person
