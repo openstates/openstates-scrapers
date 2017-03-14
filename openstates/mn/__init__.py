@@ -36,58 +36,70 @@ class Minnesota(Jurisdiction):
                {'name': 'Democratic-Farmer-Labor'}]
     legislative_sessions = [
         {
-            'name': '2009-2010',
-            'identifier': '86th Legislature, 2009-2010',
-            'classification': 'primary'
+            '_scraped_name': '86th Legislature, 2009-2010',
+            'classification': 'primary',
+            'identifier': '2009-2010',
+            'name': '2009-2010 Regular Session'
         },
         {
-            'name': '2010 1st Special Session',
-            'identifier': '86th Legislature, 2010 1st Special Session',
-            'classification': 'special'
+            '_scraped_name': '86th Legislature, 2010 1st Special Session',
+            'classification': 'special',
+            'identifier': '2010 1st Special Session',
+            'name': '2010, 1st Special Session'
         },
         {
-            'name': '2010 2nd Special Session',
-            'identifier': '86th Legislature, 2010 2nd Special Session',
-            'classification': 'special'},
-        {
-            'name': '2011-2012',
-            'identifier': '87th Legislature, 2011-2012',
-            'classification': 'primary'
+            '_scraped_name': '86th Legislature, 2010 2nd Special Session',
+            'classification': 'special',
+            'identifier': '2010 2nd Special Session',
+            'name': '2010, 2nd Special Session'
         },
         {
-            'name': '2011s1',
-            'identifier': '87th Legislature, 2011 1st Special Session',
-            'classification': 'special'
+            '_scraped_name': '87th Legislature, 2011-2012',
+            'classification': 'primary',
+            'identifier': '2011-2012',
+            'name': '2011-2012 Regular Session'
         },
         {
-            'name': '2012s1',
-            'identifier': '87th Legislature, 2012 1st Special Session',
-            'classification': 'special'
+            '_scraped_name': '87th Legislature, 2011 1st Special Session',
+            'classification': 'special',
+            'identifier': '2011s1',
+            'name': '2011, 1st Special Session'
         },
         {
-            'name': '2013-2014',
-            'identifier': '88th Legislature, 2013-2014',
-            'classification': 'primary'
+            '_scraped_name': '87th Legislature, 2012 1st Special Session',
+            'classification': 'special',
+            'identifier': '2012s1',
+            'name': '2012, 1st Special Session'
         },
         {
-            'name': '2013s1',
-            'identifier': '88th Legislature, 2013 1st Special Session',
-            'classification': 'special'
+            '_scraped_name': '88th Legislature, 2013-2014',
+            'classification': 'primary',
+            'identifier': '2013-2014',
+            'name': '2013-2014 Regular Session'
         },
         {
-            'name': '2015s1',
-            'identifier': '89th Legislature, 2015-2016',
-            'classification': 'special'
+            '_scraped_name': '88th Legislature, 2013 1st Special Session',
+            'classification': 'special',
+            'identifier': '2013s1',
+            'name': '2013, 1st Special Session'
         },
         {
-            'name': '2015-2016',
-            'identifier': '89th Legislature, 2015 1st Special Session',
-            'classification': 'primary'
+            '_scraped_name': '89th Legislature, 2015-2016',
+            'classification': 'primary',
+            'identifier': '2015-2016',
+            'name': '2015-2016 Regular Session'
         },
         {
-            'name': '2017-2018',
-            'identifier': '90th Legislature, 2017-2018',
-            'classification': 'primary'
+            '_scraped_name': '89th Legislature, 2015 1st Special Session',
+            'classification': 'special',
+            'identifier': '2015s1',
+            'name': '2015, 1st Special Session'
+        },
+        {
+            '_scraped_name': '90th Legislature, 2017-2018',
+            'classification': 'primary',
+            'identifier': '2017-2018',
+            'name': '2017-2018 Regular Session'
         },
     ]
     ignored_scraped_sessions = [

@@ -6,25 +6,25 @@ import lxml.html
 from pupa.scrape import Scraper, VoteEvent
 
 VOTES_URLS = {
-    '86th Legislature, 2009-2010':
+    '2009-2010':
         'http://www.house.leg.state.mn.us/votes/getVotesls86.asp',
-    '86th Legislature, 2010 1st Special Session':
+    '2010 1st Special Session':
         'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp',
-    '87th Legislature, 2011-2012':
+    '2011-2012':
         'http://www.house.leg.state.mn.us/votes/getVotesls87.asp',
-    '87th Legislature, 2011 1st Special Session':
+    '2011s1':
         'http://www.house.leg.state.mn.us/votes/getVotesls8720111.asp',
-    '87th Legislature, 2012 1st Special Session':
+    '2012s1':
         'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
-    '88th Legislature, 2013-2014':
+    '2013-2014':
         'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
-    '88th Legislature, 2013 1st Special Session':
+    '2013s1':
         'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
-    '89th Legislature, 2015-2016':
+    '2015-2016':
         'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
-    '89th Legislature, 2015 1st Special Session':
+    '2015s1':
         'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
-    '90th Legislature, 2017-2018':
+    '2017-2018':
         'http://www.house.leg.state.mn.us/votes/getVotesls90.asp',
 }
 

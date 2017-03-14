@@ -32,17 +32,17 @@ BILL_SEARCH_URL = (
 
 # revisor.mn.gov identifiers of sessions, indexed by session name
 SITE_IDS = {
-    '86th Legislature, 2009-2010': '0862009',
-    '86th Legislature, 2010 1st Special Session': '1862010',
-    '86th Legislature, 2010 2nd Special Session': '2862010',
-    '87th Legislature, 2011-2012': '0872011',
-    '87th Legislature, 2011 1st Special Session': '1872011',
-    '87th Legislature, 2012 1st Special Session': '1872012',
-    '88th Legislature, 2013-2014': '0882013',
-    '88th Legislature, 2013 1st Special Session': '1882013',
-    '89th Legislature, 2015-2016': '0892015',
-    '89th Legislature, 2015 1st Special Session': '1892015',
-    '90th Legislature, 2017-2018': '0902017',
+    '2009-2010': '0862009',
+    '2010 1st Special Session': '1862010',
+    '2010 2nd Special Session': '2862010',
+    '2011-2012': '0872011',
+    '2011s1': '1872011',
+    '2012s1': '1872012',
+    '2013-2014': '0882013',
+    '2013s1': '1882013',
+    '2015-2016': '0892015',
+    '2015s1': '1892015',
+    '2017-2018': '0902017',
 }
 
 
