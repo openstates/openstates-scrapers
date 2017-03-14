@@ -66,7 +66,6 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
         for item in data:
             comm_name = item['CommitteeName']
             committee = Committee('joint', comm_name)
-            
             chair_man = str(item.get('ChairName', 'No'))
             vice_chair = str(item.get('ViceChairName', 'No'))
             #only Sunset url is not following pattern.

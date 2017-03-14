@@ -8,7 +8,7 @@ from .bills import MABillScraper
 from .legislators import MALegislatorScraper
 from .committees import MACommitteeScraper
 from .events import MAEventScraper
-# from .votes import MAVoteScraper
+from .votes import MAVoteScraper
 
 
 settings = dict(
