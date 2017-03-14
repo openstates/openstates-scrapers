@@ -1,9 +1,8 @@
 import re
 
 from pupa.scrape import Person, Scraper
-from urllib.parse import quote
-
 import lxml.html
+
 
 class ARLegislatorScraper(Scraper):
     _remove_special_case = True
@@ -72,13 +71,10 @@ class ARLegislatorScraper(Scraper):
             self.warning('Member has no district listed; skipping them')
             return
 
-        person = Person(name=full_name, district=district, party=party, primary_org=chamber)
+        person = Person(name=full_name, district=district, party=party, primary_org=chamber, image = photo_url)
         
         person.add_link(member_url)
         person.add_source(member_url)
-        # leg = Legislator(term, chamber, district, full_name, party=party,
-        #                  photo_url=photo_url, url=member_url)
-        # leg.add_source(member_url)
 
         try:
             phone = re.search(r'Phone(.+)\r', info_box).group(1)
@@ -93,9 +89,9 @@ class ARLegislatorScraper(Scraper):
         person.add_contact_detail(type='address', value=address, note='District Office')
         person.add_contact_detail(type='voice', value=phone, note='District Office')
         person.add_contact_detail(type='email', value=email, note='District Office')
-        # Will add occupation shortly
+        
         try:
-            occupation = re.search(
+            person.extras['occupation'] = re.search(
                 r'Occupation(.+)\r', info_box).group(1)
         except AttributeError:
             pass

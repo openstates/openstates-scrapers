@@ -1,6 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import ARLegislatorScraper
 
+from .committees import ARCommitteeScraper
+
+
 class Arkansas(Jurisdiction):
     division_id = "ocd-division/country:us/state:ar"
     classification = "government"
@@ -8,6 +11,7 @@ class Arkansas(Jurisdiction):
     url = "http://www.arkleg.state.ar.us"
     scrapers = {
         'people': ARLegislatorScraper,
+        'committees': ARCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
