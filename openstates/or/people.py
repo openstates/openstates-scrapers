@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import unicodedata
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
@@ -17,7 +17,7 @@ def itergraphs(elements, break_):
         yield buf
 
 
-class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
+class ORLegislatorScraper(Scraper, LXMLMixin):
     jurisdiction = 'or'
 
     URLs = {
@@ -25,7 +25,13 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
         "upper": "http://www.oregonlegislature.gov/senate/Pages/SenatorsAll.aspx",
     }
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
         url = self.URLs[chamber]
         page = self.lxmlize(url)
 
@@ -104,23 +110,41 @@ class ORLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             info['Party'] = info['Party'].strip(": ").replace(u"\u00a0","")
 
-            leg = Legislator(term=term,
-                             url=h2.attrib['href'],
-                             chamber=chamber,
-                             full_name=name,
-                             party=info['Party'],
-                             district=info['District'],
-                             photo_url=img)
-            leg.add_source(url)
+            # legislator obj
+            person = Person(url=h2.attrib['href'],
+                         primary_org=chamber,
+                         full_name=name,
+                         party=info['Party'],
+                         district=info['District'],
+                         image=img)
+            person.add_source(url)
 
-            phone = info.get('Capitol Phone', info.get('apitol Phone'))
+            capitol_phone = info.get('Capitol Phone', info.get('apitol Phone'))
+            district_phone = info.get('District Phone', info.get('apitol Phone'))
             if hasattr(phone, 'text_content'):
                 phone = phone.text_content()
 
-            leg.add_office(type='capitol',
+            if address:
+                person.add_contact_detail(type='address', value=address,
+                                          note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note='District Office')
+            if capitol_address:
+                person.add_contact_detail(type='address', value=capitol_address,
+                                          note='Capitol Office')
+            if capitol_phone:
+                person.add_contact_detail(type='voice', value=capitol_phone,
+                                          note='Capitol Office')
+            if capitol_email:
+                person.add_contact_detail(type='email', value=capitol_email,
+                                          note='Capitol Office')
+            person.add_contact_detail(type='phone',
+                                   value, note)
+            person.add_office(type='capitol',
                            name='Capitol Office',
                            address=info['Capitol Address'],
                            phone=phone,
                            email=info['Email'].attrib['href'].replace("mailto:",""))
 
-            self.save_legislator(leg)
+            self.save_legislator(person)
