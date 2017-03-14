@@ -150,7 +150,6 @@ class LABillScraper(BillScraper, LXMLMixin):
         os.remove(temp_path)
 
         vote_type = None
-        total_re = re.compile('^Total--(\d+)$')
         body = html.xpath('string(/html/body)')
 
         date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
@@ -164,7 +163,8 @@ class LABillScraper(BillScraper, LXMLMixin):
 
         for line in body.replace(u'\xa0', '\n').split('\n'):
             line = line.replace('&nbsp;', '').strip()
-            if not line:
+            # Skip blank lines and "Total --"
+            if not line or 'Total --' in line:
                 continue
 
             if line in ('YEAS', 'NAYS', 'ABSENT'):
@@ -173,10 +173,7 @@ class LABillScraper(BillScraper, LXMLMixin):
             elif line in ('Total', '--'):
                 vote_type = None
             elif vote_type:
-                match = total_re.match(line)
-                if match:
-                    vote['%s_count' % vote_type] = int(match.group(1))
-                elif vote_type == 'yes':
+                if vote_type == 'yes':
                     vote.yes(line)
                 elif vote_type == 'no':
                     vote.no(line)
