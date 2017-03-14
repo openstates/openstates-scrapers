@@ -1,10 +1,11 @@
 import re
+import lxml
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from openstates.utils import LXMLMixin
+from pupa.scrape import Person, Scraper
 
 
-class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
+
+class NHLegislatorScraper(Scraper):
     jurisdiction = 'nh'
     latest_only = True
     members_url = 'http://www.gencourt.state.nh.us/downloads/Members.txt'
@@ -19,6 +20,22 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         'I': 'Independent',
         'L': 'Libertarian',
     }
+
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
+        seat_map = self._parse_seat_map()
+        for row in self._parse_members_txt():
+            if self.chamber_map[row['LegislativeBody']] == chamber:
+                leg = self._parse_legislator(row, chamber, term, seat_map)
+                leg.add_source(self.members_url)
+                #self.save_legislator(leg)
+
 
     def _get_photo(self, url, chamber):
         """Attempts to find a portrait in the given legislator profile."""
@@ -49,10 +66,15 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         party = self.party_map[row['party'].upper()]
         email = row['WorkEmail']
 
-        legislator = Legislator(term, chamber, district, full_name,
-                                first_name=first_name, last_name=last_name,
-                                middle_name=middle_name, party=party,
-                                email=email)
+        legislator = Person(primary_org=chamber,
+                            district=district,
+                            name=full_name,
+                            first_name=first_name,
+                            last_name=last_name,
+                            middle_name=middle_name,
+                            party=party,
+                            email=email,
+                            role="legislator")
 
         # Capture legislator office contact information.
         district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
@@ -81,7 +103,7 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
             legislator['photo_url'] = self._get_photo(profile_url, chamber)
             legislator.add_source(profile_url)
 
-        return legislator
+        yield legislator
 
     def _parse_members_txt(self):
         lines = self.get(self.members_url).text.splitlines()
@@ -106,10 +128,7 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
                     seat_map[res.groups()[0]] = option.attrib['value']
         return seat_map
 
-    def scrape(self, chamber, term):
-        seat_map = self._parse_seat_map()
-        for row in self._parse_members_txt():
-            if self.chamber_map[row['LegislativeBody']] == chamber:
-                leg = self._parse_legislator(row, chamber, term, seat_map)
-                leg.add_source(self.members_url)
-                self.save_legislator(leg)
+    def lxmlize(self, url):
+        doc = self.get(url).content
+        doc = lxml.html.fromstring(doc)
+        return doc
