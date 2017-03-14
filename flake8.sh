@@ -3,5 +3,4 @@ python3 -m flake8 \
     openstates/mn \
     openstates/nc \
     openstates/mt \
-    pupa2billy \
-    billy_metadata
+    pupa2billy
