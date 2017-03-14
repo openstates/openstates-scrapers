@@ -47,7 +47,7 @@ metadata = {
     ],
     'session_details': {
         '2009-2010': {
-            'type':'primary',
+            'type': 'primary',
             'display_name': '2009-2010 Regular Session',
             '_scraped_name': '86th Legislature, 2009-2010',
         },
@@ -57,12 +57,12 @@ metadata = {
             '_scraped_name': '86th Legislature, 2010 1st Special Session',
         },
         '2010 2nd Special Session': {
-            'type':'special',
+            'type': 'special',
             'display_name': '2010, 2nd Special Session',
             '_scraped_name': '86th Legislature, 2010 2nd Special Session',
         },
         '2011-2012': {
-            'type':'primary',
+            'type': 'primary',
             'display_name': '2011-2012 Regular Session',
             '_scraped_name': '87th Legislature, 2011-2012',
         },
