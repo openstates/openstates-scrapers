@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from .people import ORPersonScraper
 
 
 class Oregon(Jurisdiction):
@@ -7,6 +8,7 @@ class Oregon(Jurisdiction):
     name = "Oregon"
     url = "https://olis.leg.state.or.us"
     scrapers = {
+        'people': ORPersonScraper,
     }
     parties = [
         {'name': 'Republican'},

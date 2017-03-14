@@ -17,7 +17,7 @@ def itergraphs(elements, break_):
         yield buf
 
 
-class ORLegislatorScraper(Scraper, LXMLMixin):
+class ORPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'or'
 
     URLs = {
@@ -32,6 +32,7 @@ class ORLegislatorScraper(Scraper, LXMLMixin):
             yield from self.scrape_chamber('upper')
             yield from self.scrape_chamber('lower')
 
+    def scrape_chamber(self, chamber):
         url = self.URLs[chamber]
         page = self.lxmlize(url)
 
@@ -51,7 +52,7 @@ class ORLegislatorScraper(Scraper, LXMLMixin):
             h2, = h2s
             name = h2.text
             # Need to remove weird Unicode spaces from their names
-            if isinstance(name, unicode):
+            if not isinstance(name, str):
                 name = "".join(c for c in name
                                if unicodedata.category(c)[0] != "C")
 
@@ -105,9 +106,8 @@ class ORLegislatorScraper(Scraper, LXMLMixin):
 
                     info[key] = value
 
-            info['District'] = info['District'].encode(
-                'ascii', 'ignore').strip()
-
+            info['District'] = str(int(info['District'].encode(
+                'ascii', 'ignore').strip()))
             info['Party'] = info['Party'].strip(": ").replace(u"\u00a0","")
 
 
@@ -139,6 +139,6 @@ class ORLegislatorScraper(Scraper, LXMLMixin):
             if email:
                 person.add_contact_detail(type='email', value=email)
             if website:
-                person.add_contact_detail(type='website', value=website)
+                person.add_contact_detail(type='url', value=website)
 
             yield person
