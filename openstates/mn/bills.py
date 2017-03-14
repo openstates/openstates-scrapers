@@ -103,8 +103,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             # If testing and certain bills to test, only test those
             if self.is_testing() and len(self.testing_bills) > 0:
                 for b in self.testing_bills:
-                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b,
-                                                  session.split('-')[0])
+                    bill_url = BILL_DETAIL_URL % (self.search_chamber(chamber), b, 2017)
                     version_url = VERSION_URL % (self.search_session(session)[-4:],
                                                  self.search_session(session)[0], b)
                     yield self.get_bill_info(chamber, session, bill_url, version_url)
