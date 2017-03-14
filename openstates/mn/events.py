@@ -47,7 +47,7 @@ class MNEventScraper(Scraper, LXMLMixin):
             location = self.get_location(meeting)
 
             if when and description and location:
-                event = Event(name=description, start_time=when,
+                event = Event(name=description, start_time=when.replace(tzinfo=self.tz),
                               timezone=self.tz.zone, description=description,
                               location_name=location)
                 agenda = self.get_agenda(meeting)
@@ -72,7 +72,7 @@ class MNEventScraper(Scraper, LXMLMixin):
 
         for date_format in self.date_formats:
             try:
-                date = datetime.strptime(date_string, date_format).date()
+                date = datetime.strptime(date_string, date_format)
                 return date
             except ValueError:
                 pass
@@ -148,7 +148,7 @@ class MNEventScraper(Scraper, LXMLMixin):
         """
         pattern = re.compile(pattern_string)
 
-        p_tags = meeting.xpath(".//p")
+        p_tags = meeting.xpath(".//*[@class='calendar_p_indent']")
         if len(p_tags) < 1:
             return
 
