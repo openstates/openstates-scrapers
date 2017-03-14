@@ -15,8 +15,8 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
         }
 
         # Mapping of term names to session numbers (see metatdata).
-        term2session = {"2015-2016": "148", "2013-2014": "147",
-                        "2011-2012": "146"}
+        term2session = {"2017-2018": "149", "2015-2016": "148", 
+                        "2013-2014": "147", "2011-2012": "146"}
 
         session = term2session[term]
 
@@ -109,4 +109,3 @@ class DECommitteeScraper(CommitteeScraper,LXMLMixin):
                 person_name = person_name.strip().strip(",").strip()
                 committee.add_member(person_name,role)
             self.save_committee(committee)
-
