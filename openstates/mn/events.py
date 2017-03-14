@@ -20,13 +20,13 @@ class MNEventScraper(Scraper, LXMLMixin):
     def scrape(self):
         page = self.lxmlize(url)
 
-        commission_meetings = page.xpath("//div[@class='Comm_item']")
+        commission_meetings = page.xpath("//div[@class='cal_item Comm_item']")
         yield from self.scrape_meetings(commission_meetings, 'commission')
 
-        house_meetings = page.xpath("//div[@class='house_item']")
+        house_meetings = page.xpath("//div[@class='cal_item house_item']")
         yield from self.scrape_meetings(house_meetings, 'house')
 
-        senate_meetings = page.xpath("//div[@class='senate_item']")
+        senate_meetings = page.xpath("//div[@class='cal_item senate_item']")
         yield from self.scrape_meetings(senate_meetings, 'senate')
 
     def scrape_meetings(self, meetings, group):
@@ -64,11 +64,11 @@ class MNEventScraper(Scraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        date_raw = meeting.xpath(".//b")
+        date_raw = meeting.xpath(".//*[@class='calendar_p_top']")
         if len(date_raw) < 1:
             return
 
-        date_string = date_raw[0].text_content().strip()
+        date_string = date_raw[0].text_content().split('**')[0].strip()
 
         for date_format in self.date_formats:
             try:
