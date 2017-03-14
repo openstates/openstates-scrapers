@@ -1,5 +1,5 @@
 import re
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 base_url = 'http://www.nmlegis.gov/Members/Legislator_List'
@@ -10,19 +10,25 @@ def extract_phone_number(phone_number):
     return phone_pattern.search(phone_number).groups()
 
 
-class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
+class NMPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'nm'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
 
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         if chamber == 'upper':
             query = '?T=S'
-        elif chamber == 'lower':
+        else:
             query = '?T=R'
 
         self.logger.info('Scraping {} {} chamber.'.format(
-            self.jurisdiction.upper(),
+            self.jurisdiction,
             chamber))
 
         url = '{0}{1}'.format(base_url, query)
@@ -40,9 +46,9 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
             if re.search(r'SponCode=[HS]VACA$', legislator_url, re.IGNORECASE):
                 self.warning('Skipping vacant seat.')
                 continue
-            self.scrape_legislator(chamber, term, legislator_url)
+            yield from self.scrape_legislator(chamber, legislator_url)
 
-    def scrape_legislator(self, chamber, term, url):
+    def scrape_legislator(self, chamber, url):
         # Initialize default values for legislator attributes.
         full_name = None
         party = None
@@ -84,7 +90,8 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         if name_node is not None:
             if name_node.text.strip().endswith(' Vacant'):
-                self.warning("Found vacant seat for {} district {}; skipping".format(chamber, district))
+                self.warning("Found vacant seat for {} district {}; skipping"
+                             .format(chamber, district))
                 return
 
             n_head, n_sep, n_party = name_node.text.rpartition(' - ')
@@ -161,29 +168,33 @@ class NMLegislatorScraper(LegislatorScraper, LXMLMixin):
             d_area_code, d_phone = extract_phone_number(district_phone_text)
             district_phone = '{} {}'.format(d_area_code.strip(), d_phone)
 
-        legislator = Legislator(
-            term=term,
-            chamber=chamber,
-            district=district,
-            full_name=full_name,
-            party=party,
-            photo_url=photo_url)
-
+        person = Person(name=full_name,
+                        district=district,
+                        party=party,
+                        primary_org=chamber,
+                        image=photo_url)
+        if district_address:
+            person.add_contact_detail(type='address',
+                                      value=district_address,
+                                      note='District Office')
+        if district_phone:
+            person.add_contact_detail(type='voice',
+                                      value=district_phone,
+                                      note='District Office')
+        if capitol_address:
+            person.add_contact_detail(type='address',
+                                      value=capitol_address,
+                                      note='Capitol Office')
+        if capitol_phone:
+            person.add_contact_detail(type='voice',
+                                      value=capitol_phone,
+                                      note='Capitol Office')
         if email:
-            legislator['email'] = email
+            person.add_contact_detail(type='email',
+                                      value=email,
+                                      note='Capitol Office')
 
-        legislator.add_source(url)
+        person.add_link(url)
+        person.add_source(url)
 
-        legislator.add_office(
-            'district',
-            'District Office',
-            address=district_address,
-            phone=district_phone)
-        legislator.add_office(
-            'capitol',
-            'Capitol Office',
-            address=capitol_address,
-            phone=capitol_phone,
-            email=email)
-
-        self.save_legislator(legislator)
+        yield person
