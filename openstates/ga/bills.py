@@ -190,7 +190,14 @@ class GABillScraper(BillScraper):
                             m = methods[how]
                         except KeyError:
                             m = vote.other
-                        m(whom['Name'])
+
+                        if whom['Name'].upper() == 'VACANT':
+                            name = whom['Name']
+                        else:
+                            # 'Name' contains a name followed by ", XXTH", e.g. "CALDWELL, JR., 55th"
+                            name, _ = whom['Name'].rsplit(', ', 1)
+
+                        m(name.strip())
 
                     bill.add_vote(vote)
 
