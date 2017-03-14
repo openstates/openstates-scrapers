@@ -1,4 +1,8 @@
+import csv
+import os
+
 from pupa.scrape import Jurisdiction, Organization
+from .people import NHPersonScraper
 
 
 class NewHampshire(Jurisdiction):
@@ -7,6 +11,7 @@ class NewHampshire(Jurisdiction):
     name = "New Hampshire"
     url = "http://gencourt.state.nh.us/"
     scrapers = {
+        'people': NHPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -25,10 +30,8 @@ class NewHampshire(Jurisdiction):
     def get_organizations(self):
         legislature_name = "New Hampshire General Court"
         lower_chamber_name = "House"
-        lower_seats = None
         lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 0
         upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
@@ -38,14 +41,21 @@ class NewHampshire(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
+        # NH names all their districts, so pull them manually.
+        csv_file = '{}/../../manual_data/districts/nh.csv'.format(os.path.dirname(__file__))
+        with open(csv_file, mode='r') as infile:
+            districts = csv.DictReader(infile)
+            for district in districts:
+                if district['chamber'] == 'lower':
+                    lower.add_post(
+                        label=district['name'],
+                        role=lower_title,
+                        division_id=district['division_id'])
+                elif district['chamber'] == 'upper':
+                    lower.add_post(
+                        label=district['name'],
+                        role=upper_title,
+                        division_id=district['division_id'])
 
         yield legislature
         yield upper

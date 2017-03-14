@@ -1,11 +1,9 @@
 import re
-import lxml
+import lxml.html
 
 from pupa.scrape import Person, Scraper
 
-
-
-class NHLegislatorScraper(Scraper):
+class NHPersonScraper(Scraper):
     jurisdiction = 'nh'
     latest_only = True
     members_url = 'http://www.gencourt.state.nh.us/downloads/Members.txt'
@@ -29,13 +27,16 @@ class NHLegislatorScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        seat_map = self._parse_seat_map()
+        # seat_map = self._parse_seat_map()
+        seat_map = {}
         for row in self._parse_members_txt():
+           #print(chamber)
+           # print(self.chamber_map[row['LegislativeBody']])
             if self.chamber_map[row['LegislativeBody']] == chamber:
-                leg = self._parse_legislator(row, chamber, term, seat_map)
-                leg.add_source(self.members_url)
+                print("MATCH")
+                legislator = self._parse_legislator(row, chamber, seat_map, self.members_url)
                 #self.save_legislator(leg)
-
+                yield legislator
 
     def _get_photo(self, url, chamber):
         """Attempts to find a portrait in the given legislator profile."""
@@ -54,7 +55,8 @@ class NHLegislatorScraper(Scraper):
 
         return photo_url
 
-    def _parse_legislator(self, row, chamber, term, seat_map):
+    def _parse_legislator(self, row, chamber, seat_map, members_url):
+        print("parsing leg")
         # Capture legislator vitals.
         first_name = row['FirstName']
         middle_name = row['MiddleName']
@@ -63,47 +65,66 @@ class NHLegislatorScraper(Scraper):
         full_name = re.sub(r'[\s]{2,}', ' ', full_name)
 
         district = '{} {}'.format(row['County'], int(row['District'])).strip()
+
+        print(district)
+
         party = self.party_map[row['party'].upper()]
         email = row['WorkEmail']
+
+        extras = {'middle_name':middle_name,
+                  'first_name':first_name,
+                  'last_name':last_name
+                  }
 
         legislator = Person(primary_org=chamber,
                             district=district,
                             name=full_name,
-                            first_name=first_name,
-                            last_name=last_name,
-                            middle_name=middle_name,
                             party=party,
-                            email=email,
                             role="legislator")
 
-        # Capture legislator office contact information.
-        district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
-            row['address2'], row['city'], row['State'], row['Zipcode']).strip()
+        if email:
+            contact_details = [{'type': 'email',
+                            'value': email,
+                            'note': '',
+                            'label': 'email'
+                            }]
+            
+            legislator.contact_details=contact_details
 
-        phone = row['Phone'].strip()
-        if not phone:
-            phone = None
+        legislator.extras = extras
 
-        legislator.add_office('district', 'Home Address',
-                              address=district_address,
-                              phone=phone)
+        legislator.add_source(self.members_url)
 
-        # Retrieve legislator portrait.
-        profile_url = None
-        if chamber == 'upper':
-            profile_url = self.senate_profile_url.format(row['District'])
-        elif chamber == 'lower':
-            try:
-                seat_number = seat_map[row['seatno']]
-                profile_url = self.house_profile_url.format(seat_number)
-            except KeyError:
-                pass
+        # # Capture legislator office contact information.
+        # district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
+        #     row['address2'], row['city'], row['State'], row['Zipcode']).strip()
 
-        if profile_url:
-            legislator['photo_url'] = self._get_photo(profile_url, chamber)
-            legislator.add_source(profile_url)
+        # phone = row['Phone'].strip()
+        # if not phone:
+        #     phone = None
 
-        yield legislator
+        # legislator.add_office('district', 'Home Address',
+        #                       address=district_address,
+        #                       phone=phone)
+
+        print( legislator)
+
+        # # Retrieve legislator portrait.
+        # profile_url = None
+        # if chamber == 'upper':
+        #     profile_url = self.senate_profile_url.format(row['District'])
+        # elif chamber == 'lower':
+        #     try:
+        #         seat_number = seat_map[row['seatno']]
+        #         profile_url = self.house_profile_url.format(seat_number)
+        #     except KeyError:
+        #         pass
+
+        # if profile_url:
+        #     legislator['photo_url'] = self._get_photo(profile_url, chamber)
+        #     legislator.add_source(profile_url)
+
+        return legislator
 
     def _parse_members_txt(self):
         lines = self.get(self.members_url).text.splitlines()
