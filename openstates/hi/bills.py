@@ -64,7 +64,8 @@ def split_specific_votes(voters):
         voters = voters.replace('Senator(s) ', '')
     elif voters.startswith('Representative(s)'):
         voters = voters.replace('Representative(s)', '')
-    return voters.split(', ')
+    # Remove trailing spaces and semicolons
+    return (v.rstrip(' ;') for v in voters.split(', '))
 
 class HIBillScraper(BillScraper):
 
