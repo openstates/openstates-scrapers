@@ -191,11 +191,12 @@ class HIBillScraper(BillScraper):
         companion = meta['Companion'].strip()
         if companion:
             b['companion'] = companion
-            prior = bill_page.xpath(
-                "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
-            if 'Carried over' in prior:
-                prior_session = '{} Regular Session'.format(str(int(session[:4])-1))
-                b.add_companion(bill_id,prior_session ,chamber)
+            
+        prior = bill_page.xpath(
+            "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
+        if 'Carried over' in prior:
+            prior_session = '{} Regular Session'.format(str(int(session[:4])-1))
+            b.add_companion(bill_id,prior_session ,chamber)
 
         for sponsor in meta['Introducer(s)']:
             b.add_sponsor(type='primary', name=sponsor)
