@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import ORPersonScraper
+from .committees import ORCommitteeScraper
 
 
 class Oregon(Jurisdiction):
@@ -9,6 +10,7 @@ class Oregon(Jurisdiction):
     url = "https://olis.leg.state.or.us"
     scrapers = {
         'people': ORPersonScraper,
+        'committees': ORCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -17,68 +19,68 @@ class Oregon(Jurisdiction):
     legislative_sessions = [
         {
             "_scraped_name": "2007 Regular Session",
-            "identifier": "2007 Regular Session",
+            "identifier": "2007R1",
             "name": "2007 Regular Session"
         },
         {
             "_scraped_name": "2008 Special Session",
-            "identifier": "2008 Special Session",
+            "identifier": "2008S1",
             "name": "2008 Special Session"
         },
         {
             "_scraped_name": "2009 Regular Session",
-            "identifier": "2009 Regular Session",
+            "identifier": "2009R1",
             "name": "2009 Regular Session"
         },
         {
             "_scraped_name": "2010 Special Session",
-            "identifier": "2010 Special Session",
+            "identifier": "2012S1",
             "name": "2010 Special Session"
         },
         {
             "_scraped_name": "2011 Regular Session",
-            "identifier": "2011 Regular Session",
+            "identifier": "2011R1",
             "name": "2011 Regular Session"
         },
         {
             "_scraped_name": "2012 Regular Session",
-            "identifier": "2012 Regular Session",
+            "identifier": "2012R1",
             "name": "2012 Regular Session"
         },
         {
             "_scraped_name": "2012 Special Session",
-            "identifier": "2012 Special Session",
+            "identifier": "2012S1",
             "name": "2012 Speical Session"
         },
         {
             "_scraped_name": "2013 Regular Session",
-            "identifier": "2013 Regular Session",
+            "identifier": "2013R1",
             "name": "2013 Regular Session"
         },
         {
             "_scraped_name": "2013 Special Session",
-            "identifier": "2013 Special Session",
+            "identifier": "2013S1",
             "name": "2013 Special Session"
         },
         {
             "_scraped_name": "2014 Regular Session",
-            "identifier": "2014 Regular Session",
+            "identifier": "2014R1",
             "name": "2014 Regular Session"
         },
         {
             "_scraped_name": "2015 Regular Session",
-            "identifier": "2015 Regular Session",
+            "identifier": "2015R1",
             "name": "2015 Regular Session"
         },
         {
             "_scraped_name": "2016 Regular Session",
-            "identifier": "2016 Regular Session",
+            "identifier": "2016R1",
             "name": "2016 Regular Session"
         },
         {
             "_scraped_name": "2017 Regular Session",
             "end_date": "2017-07-10",
-            "identifier": "2017 Regular Session",
+            "identifier": "2017R1",
             "name": "2017 Regular Session",
             "start_date": "2017-02-01"
         }
