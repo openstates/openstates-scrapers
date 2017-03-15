@@ -101,15 +101,13 @@ class MAVoteScraper(VoteScraper):
                         vote.yes(yes_members[i])
                     for i in range(0,len(no_members)):
                         vote.yes(no_members[i])
-                        
+
                     vote['session'] = session
                     vote['bill_chamber'] = chamber
                     vote['bill_id'] = str(bill_no[11:])
                     self.save_vote(vote)
-            else:
-                #No Roll Call
-                pass
 
+    #to extract data from pdf text downloaded                
     def members(self, wordList):
         final = []
         yes = []
