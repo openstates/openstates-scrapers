@@ -70,9 +70,7 @@ class MAVoteScraper(VoteScraper):
                 #urls for downloading pdfs
                 third = bill_page.xpath("//div[@class='table-responsive']/table/tbody/tr/td[@class='downloadCol']/a/@href")
 
-                y_n_counts = []
-                other_counts = []
-                pdf_urls = []
+                y_n_counts = other_counts = pdf_urls = []
 
                 for i in range(0,len(dates)):
                     dates[i] = datetime.datetime.strptime(dates[i], '%B %d, %Y')
@@ -107,11 +105,9 @@ class MAVoteScraper(VoteScraper):
                     vote['bill_id'] = str(bill_no[11:])
                     self.save_vote(vote)
 
-    #to extract data from pdf text downloaded                
+    #to extract data from pdf text downloaded
     def members(self, wordList):
-        final = []
-        yes = []
-        no = []
+        final = yes = no = []
         for i in wordList:
         	for j in i.split("\n"):
                  final.append(j)
