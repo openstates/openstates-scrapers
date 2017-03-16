@@ -78,7 +78,7 @@ class MemberList(Page):
             session=self.kwargs['session'],
             obj=leg,
         )
-        return leg
+        yield leg
 
 
 party_district_pattern = re.compile(r'\((R|D|I)\) - (?:House|Senate) District\s+(\d+)')
