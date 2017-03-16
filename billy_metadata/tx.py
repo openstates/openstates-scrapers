@@ -1,10 +1,5 @@
-import lxml.html
+import lxml
 import datetime
-from .legislators import TXLegislatorScraper
-from .committees import TXCommitteeScraper
-from .bills import TXBillScraper
-from .votes import TXVoteScraper
-from .events import TXEventScraper
 
 metadata = {
     'name': 'Texas',
