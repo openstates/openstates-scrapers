@@ -8,7 +8,7 @@ class Delaware(Jurisdiction):
     name = "Delaware"
     url = "http://legis.delaware.gov/"
     scrapers = {
-    'people': DEPersonScraper,
+        'people': DEPersonScraper,
     }
     parties = [
         {'name': 'Republican'},

@@ -2,6 +2,7 @@ import re
 import lxml.html
 from billy.scrape.legislators import LegislatorScraper, Legislator
 
+
 def get_field(doc, key):
     # get text_content of parent of the element containing the key
     elem = doc.xpath('//div[@id="member-info"]/p/strong[text()="%s"]/..' % key)
@@ -33,7 +34,7 @@ class DCLegislatorScraper(LegislatorScraper):
             descriptor = doc.xpath('//p[@class="head-descriptor"]/text()')[0]
             title_name = doc.xpath('//h2/text()')[0]
 
-            #removes the title that is prepended to the name
+            # removes the title that is prepended to the name
             name = re.sub(r'^Councilmember ', '', title_name)
 
             if 'Chairman' in descriptor:
