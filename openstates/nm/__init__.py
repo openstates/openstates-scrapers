@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import NMPersonScraper
+from .committees import NMCommitteeScraper
 
 
 class NewMexico(Jurisdiction):
@@ -8,7 +9,8 @@ class NewMexico(Jurisdiction):
     name = "New Mexico"
     url = "TODO"
     scrapers = {
-        'people': NMPersonScraper
+        'people': NMPersonScraper,
+        'committees': NMCommitteeScraper
     }
     parties = [
         {'name': 'Republican'},
