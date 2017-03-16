@@ -81,8 +81,6 @@ class DEBillScraper(Scraper, LXMLMixin):
                     chamber=chamber,
                     title=bill_title,
                     classification=bill_type)
-        print(bill)
-        print(bill.title)
         if row['SponsorPersonId']:
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
 
@@ -193,7 +191,6 @@ class DEBillScraper(Scraper, LXMLMixin):
             vote_passed = True if roll['RollCallStatus'] == 'Passed' else False
             other_count = int(roll['NotVotingCount']) + int(roll['VacantVoteCount'])
             + int(roll['AbsentVoteCount']) + int(roll['ConflictVoteCount'])
-            print(bill.identifier)
             vote = Vote(chamber=vote_chamber,
                         start_date=vote_date,
                         motion_text=vote_motion,
