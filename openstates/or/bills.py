@@ -1,13 +1,12 @@
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
+
 from openstates.utils import LXMLMixin
 
 import datetime as dt
 import re
-import lxml.html
 
 
-class ORBillScraper(BillScraper, LXMLMixin):
+class ORBillScraper(Scraper, LXMLMixin):
     jurisdiction = 'or'
 
     bill_directory_url = "https://olis.leg.state.or.us/liz/{0}/Measures/list/"
@@ -22,21 +21,21 @@ class ORBillScraper(BillScraper, LXMLMixin):
 
     action_classifiers = (
         ('.*Introduction and first reading.*',
-             ['bill:introduced', 'bill:reading:1']),
+         ['introduction', 'reading-1']),
 
-        ('.*First reading.*', ['bill:introduced', 'bill:reading:1']),
-        ('.*Second reading.*', ['bill:reading:2']),
-        ('.*Referred to .*', ['committee:referred']),
-        ('.*Assigned to Subcommittee.*', ['committee:referred']),
-        ('.*Recommendation: Do pass.*', ['committee:passed:favorable']),
-        ('.*Governor signed.*', ['governor:signed']),
-        ('.*Third reading.* Passed', ['bill:passed', 'bill:reading:3']),
-        ('.*Third reading.* Failed', ['bill:failed', 'bill:reading:3']),
-        ('.*President signed.*', ['bill:passed']),
-        ('.*Speaker signed.*', ['bill:passed']),
-        ('.*Final reading.* Adopted', ['bill:passed']),
-        ('.*Read third time .* Passed', ['bill:passed', 'bill:reading:3']),
-        ('.*Read\. .* Adopted.*', ['bill:passed']),
+        ('.*First reading.*', ['introduction', 'reading-1']),
+        ('.*Second reading.*', ['reading-2']),
+        ('.*Referred to .*', ['referral-committee']),
+        ('.*Assigned to Subcommittee.*', ['referral-committee']),
+        ('.*Recommendation: Do pass.*', ['committee-passage-favorable']),
+        ('.*Governor signed.*', ['executive-signature']),
+        ('.*Third reading.* Passed', ['passage', 'reading-3']),
+        ('.*Third reading.* Failed', ['failure', 'reading-3']),
+        ('.*President signed.*', ['passage']),
+        ('.*Speaker signed.*', ['passage']),
+        ('.*Final reading.* Adopted', ['passage']),
+        ('.*Read third time .* Passed', ['passage', 'reading-3']),
+        ('.*Read\. .* Adopted.*', ['passage']),
     )
 
     all_bills = {}
@@ -47,9 +46,18 @@ class ORBillScraper(BillScraper, LXMLMixin):
             url=url
         ).format(bill=bill_id)
 
-    def scrape(self, chamber, session):
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         self.all_bills = {}
-        self.slug = self.metadata['session_details'][session]['slug']
+        self.slug = self.metadata['session_details'][session]['slug']  # TODO: figure out this
 
         page = self.lxmlize(self.bill_directory_url.format(self.slug.upper()))
         page.make_links_absolute(self.base_url)
@@ -57,7 +65,7 @@ class ORBillScraper(BillScraper, LXMLMixin):
         ulid = 'senateBills' if chamber == 'upper' else 'houseBills'  # id of <ul>
         header = page.xpath("//ul[@id='{0}_search']".format(ulid))[0]
 
-        #Every ul with a data-load-action and an id
+        # Every ul with a data-load-action and an id
         bill_list_pages = header.xpath(".//ul[boolean(@data-load-action)"
                                        " and boolean(@id)]/@data-load-action")
 
@@ -75,10 +83,11 @@ class ORBillScraper(BillScraper, LXMLMixin):
             return ws.sub(' ', txt).strip()
 
         for a in bill_anchors:
-            bid = ws.sub('', a.text_content())  # bill id
-            bill_summary = _clean_ws(a.get('title'))
+            print(a)
+            bid = ws.sub('', a.text_content())
             # bill title is added below
-            bill = Bill(session, chamber, bid, title='', summary=bill_summary)
+            bill = Bill(bid, legislative_session=session, chamber=chamber,
+                        title='', classification=self.bill_types[a])
             page = self.lxmlize(a.get('href'))
             versions = page.xpath('//ul[@class="dropdown-menu"]/li/span/' +
                                   'a[contains(@title, "Get the Pdf")]/@href')
@@ -87,30 +96,33 @@ class ORBillScraper(BillScraper, LXMLMixin):
             info = page.xpath("//table[@id='measureOverviewTable']/tr")
             for row in info:
                 key, value = row.xpath("./*")
-                key = key.text.replace(':','').strip()
+                key = key.text.replace(':', '').strip()
                 measure_info[key] = value
 
             for sponsor in measure_info['Chief Sponsors'].xpath("./a"):
                 if sponsor.text_content().strip():
-                    bill.add_sponsor(
-                            type='primary', name=sponsor.text_content())
+                    bill.add_sponsorship(name=sponsor.text_content(),
+                                         classification='primary',
+                                         entity_type='person',
+                                         primary=True)
 
             for sponsor in measure_info['Regular Sponsors'].xpath("./a"):
                 if sponsor.text_content().strip():
-                    bill.add_sponsor(
-                            type='cosponsor', name=sponsor.text_content())
+                    bill.add_sponsorship(name=sponsor.text_content(),
+                                         classification='cosponsor',
+                                         entity_type='person',
+                                         primary=False)
 
             title = _clean_ws(measure_info['Bill Title'].text_content())
             # some bill titles need to be added manually
             if self.slug == "2013R1" and bid == "HB2010":
                 title = ("Relating to Water Resources Department contested"
                          "case proceedings.")
-            bill['title'] = title
+            bill.title = title
 
             for version in versions:
                 name = version.split("/")[-1]
-                bill.add_version(name=name, url=version,
-                                 mimetype='application/pdf')
+                bill.add_version_link(name, version, media_type='application/pdf')
 
             history_url = self.create_url('Measures/Overview/GetHistory/{bill}', bid)
             history = self.lxmlize(history_url).xpath("//table/tr")
@@ -136,8 +148,7 @@ class ORBillScraper(BillScraper, LXMLMixin):
                 if types == []:
                     types = ['other']
 
-                # actor, action, date, type, committees, legislators
-                bill.add_action(action_chamber, action, when, type=types)
+                bill.add_action(action, when, chamber=action_chamber, classification=types)
 
                 # Parse and store Vote information
                 vote_id = entry.xpath('./td/a[contains(@href, "otes-")]/@href')
@@ -146,51 +157,49 @@ class ORBillScraper(BillScraper, LXMLMixin):
                 elif "#measureVotes-" in vote_id[0]:
                     vote_id = vote_id[0].split("-")[-1]
                     vote_url = "https://olis.leg.state.or.us/liz/" + \
-                            "{0}/Measures/MeasureVotes?id={1}". \
-                            format(self.slug, vote_id)
+                               "{0}/Measures/MeasureVotes?id={1}". \
+                                   format(self.slug, vote_id)
                 else:
                     vote_id = vote_id[0].split("-")[-1]
                     vote_url = "https://olis.leg.state.or.us/liz/" + \
-                            "{0}/CommitteeReports/MajorityReport/{1}". \
-                            format(self.slug, vote_id)
+                               "{0}/CommitteeReports/MajorityReport/{1}". \
+                                   format(self.slug, vote_id)
 
                 votes = self._get_votes(vote_url)
                 if not any(len(x) for x in votes.values()):
                     self.warning("The votes webpage was empty for " +
-                            "action {0} on bill {1}.".format(action, bid))
+                                 "action {0} on bill {1}.".format(action, bid))
                     continue
 
-                passed = (
-                        float(len(votes["yes_votes"])) /
-                        (len(votes["yes_votes"]) + len(votes["no_votes"]))
-                        > 0.5
-                        )
+                yes_votes = len(votes["yes_votes"])
+                no_votes = len(votes["no_votes"])
+                other_votes = len(votes["other_votes"])
+                passed = (float(yes_votes) / (yes_votes + no_votes) > 0.5)
 
-                vote = Vote(
-                        chamber=chamber,
-                        date=when,
-                        motion=action,
-                        passed=passed,
-                        yes_count=len(votes["yes_votes"]),
-                        no_count=len(votes["no_votes"]),
-                        other_count=len(votes["other_votes"]),
+                vote = VoteEvent(
+                    start_date=when,
+                    bill_chamber=chamber,
+                    motion_text=action,
+                    classification='passage',
+                    result='pass' if passed else 'fail',
+                    legislative_session=session,
+                    bill=bid,
+                    chamber=action_chamber
+                )
+                vote.set_count('yes', yes_votes)
+                vote.set_count('no', no_votes)
+                vote.set_count('other', other_votes)
 
-                        session=session,
-                        bill_id=bid,
-                        bill_chamber=action_chamber
-                        )
-
-                vote.update(votes)
                 bill_url = "https://olis.leg.state.or.us/liz/" + \
-                        "{0}/Measures/Overview/{1}".format(self.slug, bid)
+                           "{0}/Measures/Overview/{1}".format(self.slug, bid)
                 vote.add_source(bill_url)
 
-                bill.add_vote(vote)
+                bill.add_vote_event(vote)
 
             amendments_url = self.create_url(
-                    'Measures/ProposedAmendments/{bill}', bid)
+                'Measures/ProposedAmendments/{bill}', bid)
             amendments = self.lxmlize(amendments_url).xpath(
-                    "//div[@id='amendments']/table//tr")
+                "//div[@id='amendments']/table//tr")
 
             for amendment in amendments:
                 nodes = amendment.xpath("./td")
@@ -205,18 +214,18 @@ class ORBillScraper(BillScraper, LXMLMixin):
                 name = "Ammendment %s" % (pdf_href.text_content())
 
                 adopted = adopted.text
-                bill.add_document(name=name, url=pdf_link,
-                                  adopted=adopted,
-                                  mimetype='application/pdf')
+                bill.add_document_link(name, url=pdf_link,
+                                       adopted=adopted,  # unsure
+                                       media_type='application/pdf')
 
             bill.add_source(a.get('href'))
-            self.save_bill(bill)
+            yield bill
 
     def _get_votes(self, vote_url):
         # Load the vote list page
         vote_info = self.lxmlize(vote_url)
         if any("Committee Vote" in x for
-                x in self.lxmlize(vote_url).xpath('//text()')):
+               x in self.lxmlize(vote_url).xpath('//text()')):
             vote_info = vote_info.xpath('./tbody/tr[4]/td/div')
             member_xpath = './div[1]/text()'
             vote_xpath = './div[2]/text()'
@@ -226,11 +235,11 @@ class ORBillScraper(BillScraper, LXMLMixin):
             vote_xpath = './span[2]/text()'
 
         VOTE_CATEGORIES = {
-                "Aye": "yes",
-                "Nay": "no",
-                "Exc": "other",
-                "Abs": "other"
-                }
+            "Aye": "yes",
+            "Nay": "no",
+            "Exc": "other",
+            "Abs": "other"
+        }
         votes = {}
 
         # Initialize the vote lists and counts
@@ -242,6 +251,6 @@ class ORBillScraper(BillScraper, LXMLMixin):
             for vote_cast in vote_info:
                 if vote_cast.xpath(vote_xpath)[0].startswith(category):
                     votes["{}_votes".format(VOTE_CATEGORIES[category])]. \
-                            append(vote_cast.xpath(member_xpath)[0])
+                        append(vote_cast.xpath(member_xpath)[0])
 
         return votes
