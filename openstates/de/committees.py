@@ -29,37 +29,36 @@ class DECommitteeScraper(CommitteeScraper, LXMLMixin):
             # only scrape joint comms once
             self.scrape_joint_committees(session)
 
-        # scrap upper and lower committees   
+        # scrap upper and lower committees
         url = urls[chamber] % (session,)
         self.scrape_comm(url, chamber)
 
-        def scrape_comm(self, url, chamber):
-            data = self.post(url).json()['Data']
+    def scrape_comm(self, url, chamber):
+        data = self.post(url).json()['Data']
 
-            for item in data:
-                comm_name = item['CommitteeName']
-                committee = Committee(chamber, comm_name)
-                chair_man = str(item.get('ChairName', 'No'))
-                vice_chair = str(item.get('ViceChairName', 'No'))
-                comm_id = item['CommitteeId']
-                comm_url = self.get_comm_url(chamber, comm_id, comm_name)
+        for item in data:
+            comm_name = item['CommitteeName']
+            committee = Committee(chamber, comm_name)
+            chair_man = str(item.get('ChairName', 'No'))
+            vice_chair = str(item.get('ViceChairName', 'No'))
+            comm_id = item['CommitteeId']
+            comm_url = self.get_comm_url(chamber, comm_id, comm_name)
+            members = self.scrape_member_info(comm_url)
 
-                members = self.scrape_member_info(comm_url)
+            committee.add_member(chair_man, 'Chairman')
+            committee.add_member(vice_chair, 'Vice-Chair')
 
-                committee.add_member(chair_man, 'Chairman')
-                committee.add_member(vice_chair, 'Vice-Chair')
+            for member in members:
+                # vice_chair and chair_man already added.
+                if chair_man not in member and vice_chair not in member:
+                    member = " ".join(member.split())
+                    if member:
+                        committee.add_member(member)
 
-                for member in members:
-                    # vice_chair and chair_man already added.
-                    if chair_man not in member and vice_chair not in member:
-                        member = " ".join(member.split())
-                        if member:
-                            committee.add_member(member)
+            committee.add_source(comm_url)
+            committee.add_source(url)
 
-                committee.add_source(comm_url)
-                committee.add_source(url)
-
-                self.save_committee(committee)
+            self.save_committee(committee)
 
     def scrape_joint_committees(self, session):
         chamber = 'joint'
