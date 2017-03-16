@@ -69,7 +69,7 @@ class BillListPage(Page, Spatula):
             link = bill.getchildren()[0]
             bill_id = str(link.text_content())
 
-            if not bill_id.startswith('S') or bill_id.startswith('H'):
+            if not bill_id.startswith(('S', 'H')):
                 continue
 
             # create a bill
@@ -88,7 +88,7 @@ class BillListPage(Page, Spatula):
 
             bill_url = link.get('href')
             sponsor_url = BASE_URL + URL_PATTERNS['sponsors'].format(
-                self.kwargs['session'],
+                self.kwargs['session_id'],
                 bill_id.replace(' ', ''),
             )
 
@@ -148,8 +148,7 @@ class BillDetailPage(Page, Spatula):
             link = va.get('href')
             if 'http' not in link:
                 link = '{}{}'.format(BASE_URL, link)
-            date = datetime.datetime.strptime(date, '%m/%d/%y')
-            date = tz.localize(date)
+            date = datetime.datetime.strptime(date, '%m/%d/%y').date()
 
             # budget bills in VA are searchable but no full text available
             if '+men+' in link:
@@ -175,8 +174,7 @@ class BillDetailPage(Page, Spatula):
                 continue
 
             actor = self.actor_map[actor]
-            date = datetime.datetime.strptime(date.strip(), '%m/%d/%y')
-            date = tz.localize(date)
+            date = datetime.datetime.strptime(date.strip(), '%m/%d/%y').date()
 
             # if action ends in (##-Y ##-N) remove that part
             vrematch = self.vote_strip_re.match(action)
@@ -285,7 +283,8 @@ class BillDetailPage(Page, Spatula):
             # if matched a 'None' atype, don't add the action
             chamber = None  # TODO: populate
             if atype:
-                self.obj.add_action(action, date, organization=actor, chamber=chamber,
+                self.obj.add_action(action, date,
+                                    chamber=actor,
                                     classification=atype)
 
 
@@ -335,13 +334,14 @@ class VotePage(Page):
 class VaBillScraper(Scraper, Spatula):
     def scrape(self, session=None):
         if not session:
-            session = SESSION_SITE_IDS[self.jurisdiction.legislative_sessions[-1]['identifier']]
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
             self.info('no session specified, using %s', session)
-        url = BASE_URL + URL_PATTERNS['list'].format(session)
-        subject_url = BASE_URL + URL_PATTERNS['subjects'].format(session)
+        session_id = SESSION_SITE_IDS[session]
+        url = BASE_URL + URL_PATTERNS['list'].format(session_id)
+        subject_url = BASE_URL + URL_PATTERNS['subjects'].format(session_id)
         subjects = self.scrape_page(SubjectPage, url=subject_url)
         yield from self.scrape_page_items(BillListPage, url=url, session=session,
-                                          subjects=subjects)
+                                          session_id=session_id, subjects=subjects)
 
     def accept_response(self, response):
         # check for rate limit pages
