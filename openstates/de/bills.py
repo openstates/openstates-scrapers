@@ -229,7 +229,6 @@ class DEBillScraper(Scraper, LXMLMixin):
     def add_sponsor_by_legislator_id(self, bill, legislator_id, sponsor_type):
         sponsor = self.legislators[str(legislator_id)]
         sponsor_name = sponsor['DisplayName']
-        # sponsor_district = sponsor['DistrictNumber'] #TODO
         chamber = self.chamber_codes_rev[sponsor['ChamberId']]
         bill.add_sponsorship(name=sponsor_name,
                              classification=sponsor_type,
@@ -249,11 +248,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         page = requests.post(url=actions_url, data=form, allow_redirects=True).json()
         for row in page['Data']:
             action_name = row['ActionDescription']
-            # Timezone for DE
-            #local = pytz.timezone("EST")
-            #action_date = datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y')
-            #action_date = local.localize(action_date, is_dst=None)
-            action_date=dt.datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y').strftime('%Y-%m-%d')
+            action_date = dt.datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y').strftime('%Y-%m-%d')
             if row.get('ChamberName') is not None:
                 action_chamber = self.chamber_map[row['ChamberName']]
             elif 'Senate' in row['ActionDescription']:
