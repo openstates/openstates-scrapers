@@ -291,7 +291,9 @@ class MEBillScraper(BillScraper):
         member_cell = page.xpath("//td[text() = 'Member']")[0]
         for row in member_cell.xpath("../../tr")[1:]:
             name = row.xpath("string(td[2])")
-            # name = name.split(" of ")[0]
+            # Change from name like "HELEN of Troy" to just "HELEN"
+            if " of " in name:
+                name = name.split(" of ")[0]
 
             vtype = row.xpath("string(td[4])")
             if vtype == 'Y':
