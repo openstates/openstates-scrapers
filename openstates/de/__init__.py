@@ -1,4 +1,5 @@
 from .people import DEPersonScraper
+from .bills import DEBillScraper
 from pupa.scrape import Jurisdiction, Organization
 
 
@@ -8,7 +9,8 @@ class Delaware(Jurisdiction):
     name = "Delaware"
     url = "http://legis.delaware.gov/"
     scrapers = {
-        'people': DEPersonScraper,
+
+        'bills': DEBillScraper,
     }
     parties = [
         {'name': 'Republican'},
