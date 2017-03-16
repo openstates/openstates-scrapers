@@ -48,7 +48,7 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
         for chamber in chambers:
             page = self.lxmlize(chamber_paths[chamber]['url'])
 
-            committee_urls = self.get_nodes(
+            committee_urls = committee_urls + self.get_nodes(
                 page, chamber_paths[chamber]['chamber_xpath'])
 
         for committee_url in committee_urls:
