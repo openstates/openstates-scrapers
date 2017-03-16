@@ -1,5 +1,4 @@
-from __future__ import division
-from datetime import datetime
+import datetime as dt
 import pytz
 
 # import actions
@@ -19,6 +18,7 @@ class DEBillScraper(Scraper, LXMLMixin):
     chamber_map = {'House': 'lower', 'Senate': 'upper'}
     legislators = {}
     legislators_by_short = {}
+    chamber_name = ''
 
     def scrape(self, session=None, chamber=None):
         if not session:
@@ -29,7 +29,10 @@ class DEBillScraper(Scraper, LXMLMixin):
         self.scrape_legislators(session)
 
         chambers = [chamber] if chamber else ['upper', 'lower']
+
         for chamber in chambers:
+            # cache the camber name.
+            self.chamber_name = chamber
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
@@ -38,7 +41,9 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         for row in page['Data']:
             bill = self.scrape_bill(row, chamber, session)
-            yield bill
+            # 'SA' in bill_id then bill will be none
+            if bill is not None:
+                yield bill
 
         max_results = int(page["Total"])
         if max_results > per_page:
@@ -48,7 +53,9 @@ class DEBillScraper(Scraper, LXMLMixin):
                 page = self.post_search(session, chamber, i, per_page)
                 for row in page['Data']:
                     bill = self.scrape_bill(row, chamber, session)
-                    yield bill
+                    # 'SA' in bill_id then bill will be none
+                    if bill is not None:
+                        yield bill
 
     def scrape_bill(self, row, chamber, session):
 
@@ -74,7 +81,8 @@ class DEBillScraper(Scraper, LXMLMixin):
                     chamber=chamber,
                     title=bill_title,
                     classification=bill_type)
-
+        print(bill)
+        print(bill.title)
         if row['SponsorPersonId']:
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
 
@@ -161,7 +169,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             page = requests.post(url=votes_url, data=form, allow_redirects=True).json()
             if page['Total'] > 0:
                 for row in page['Data']:
-                    self.scrape_vote(bill, row['RollCallId'], session)
+                    yield from self.scrape_vote(bill, row['RollCallId'], session)
 
     def scrape_vote(self, bill, vote_id, session):
         vote_url = 'https://legis.delaware.gov/json/RollCall/GetRollCallVoteByRollCallId'
@@ -185,7 +193,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             vote_passed = True if roll['RollCallStatus'] == 'Passed' else False
             other_count = int(roll['NotVotingCount']) + int(roll['VacantVoteCount'])
             + int(roll['AbsentVoteCount']) + int(roll['ConflictVoteCount'])
-
+            print(bill.identifier)
             vote = Vote(chamber=vote_chamber,
                         start_date=vote_date,
                         motion_text=vote_motion,
@@ -215,7 +223,8 @@ class DEBillScraper(Scraper, LXMLMixin):
                 else:
                     vote.vote('other', name)
 
-            bill.add_vote_event(vote)
+            # bill.add_vote_event(vote)
+            yield vote
 
     def add_sponsor_by_legislator_id(self, bill, legislator_id, sponsor_type):
         sponsor = self.legislators[str(legislator_id)]
@@ -241,9 +250,10 @@ class DEBillScraper(Scraper, LXMLMixin):
         for row in page['Data']:
             action_name = row['ActionDescription']
             # Timezone for DE
-            local = pytz.timezone("EST")
-            action_date = datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y')
-            action_date = local.localize(action_date, is_dst=None)
+            #local = pytz.timezone("EST")
+            #action_date = datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y')
+            #action_date = local.localize(action_date, is_dst=None)
+            action_date=dt.datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y').strftime('%Y-%m-%d')
             if row.get('ChamberName') is not None:
                 action_chamber = self.chamber_map[row['ChamberName']]
             elif 'Senate' in row['ActionDescription']:
@@ -255,9 +265,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             else:
                 # Actions like 'Stricken' and 'Defeated Amendemnt'
                 # don't have a chamber in the data, so assume the bill's home chamber
-                if 'House' in bill['type'][0]:
+                if self.chamber_name == 'lower':
                     action_chamber = 'lower'
-                elif 'Senate' in bill['type'][0]:
+                else:
                     action_chamber = 'upper'
 
             # attrs = self.categorizer.categorize(action_name)

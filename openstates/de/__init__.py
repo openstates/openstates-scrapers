@@ -9,7 +9,7 @@ class Delaware(Jurisdiction):
     name = "Delaware"
     url = "http://legis.delaware.gov/"
     scrapers = {
-
+        'people': DEPersonScraper,
         'bills': DEBillScraper,
     }
     parties = [
