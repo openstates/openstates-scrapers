@@ -1,70 +1,81 @@
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import VTBillScraper
-from .legislators import VTLegislatorScraper
-from .committees import VTCommitteeScraper
-from .events import VTEventScraper
+from pupa.scrape import Jurisdiction, Organization
 
-metadata = dict(
-    name='Vermont',
-    abbreviation='vt',
-    capitol_timezone='America/New_York',
-    legislature_name='Vermont General Assembly',
-    legislature_url='http://legislature.vermont.gov/',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator', 'term': 2},
-        'lower': {'name': 'House', 'title': 'Representative', 'term': 2},
-    },
-    terms=[{'name': '2009-2010',
-            'start_year': 2009,
-            'end_year': 2010,
-            'sessions': ['2009-2010']},
-           {'name': '2011-2012',
-            'start_year': 2011,
-            'end_year': 2012,
-            'sessions': ['2011-2012']},
-           {'name': '2013-2014',
-            'start_year': 2013,
-            'end_year': 2014,
-            'sessions': ['2013-2014']},
-           {'name': '2015-2016',
-            'start_year': 2015,
-            'end_year': 2016,
-            'sessions': ['2015-2016']},
-           {'name': '2017-2018',
-            'start_year': 2017,
-            'end_year': 2018,
-            'sessions': ['2017-2018']},
-           ],
-    session_details={'2009-2010': {'type': 'primary',
-                                   'display_name': '2009-2010 Regular Session',
-                                   '_scraped_name': '2009-2010 Session',
-                                  },
-                     '2011-2012': {'type': 'primary',
-                                   'display_name': '2011-2012 Regular Session',
-                                   '_scraped_name': '2011-2012 Session',
-                                  },
-                     '2013-2014': {'type': 'primary',
-                                   'display_name': '2013-2014 Regular Session',
-                                   '_scraped_name': '2013-2014 Session',
-                                  },
-                     '2015-2016': {'type': 'primary',
-                                   'display_name': '2015-2016 Regular Session',
-                                   '_scraped_name': '2015-2016 Session',
-                                  },
-                     '2017-2018': {'type': 'primary',
-                                   'display_name': '2017-2018 Regular Session',
-                                   '_scraped_name': '2017-2018 Session',
-                                  },
-                     },
-    feature_flags=[],
-    _ignored_scraped_sessions= ['2009 Special Session']
-)
+from .people import VTPersonScraper
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath(
-            'http://legislature.vermont.gov/bill/search/2016',
-            '//fieldset/div[@id="selected_session"]/div/select/option/text()')
 
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))
+class Vermont(Jurisdiction):
+    division_id = "ocd-division/country:us/state:vt"
+    classification = "government"
+    name = "Vermont"
+    url = "http://legislature.vermont.gov/"
+    scrapers = {
+        'people': VTPersonScraper
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2009-2010 Session",
+            "classification": "primary",
+            "identifier": "2009-2010",
+            "name": "2009-2010 Regular Session"
+        },
+        {
+            "_scraped_name": "2011-2012 Session",
+            "classification": "primary",
+            "identifier": "2011-2012",
+            "name": "2011-2012 Regular Session"
+        },
+        {
+            "_scraped_name": "2013-2014 Session",
+            "classification": "primary",
+            "identifier": "2013-2014",
+            "name": "2013-2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015-2016 Session",
+            "classification": "primary",
+            "identifier": "2015-2016",
+            "name": "2015-2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017-2018 Session",
+            "classification": "primary",
+            "identifier": "2017-2018",
+            "name": "2017-2018 Regular Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2009 Special Session"
+    ]
+
+    def get_organizations(self):
+        legislature_name = "Vermont General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 150
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 30
+        upper_title = "Senator"
+
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
