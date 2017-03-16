@@ -5,7 +5,7 @@ class Texas(Jurisdiction):
     division_id = "ocd-division/country:us/state:tx"
     classification = "government"
     name = "Texas"
-    url = "TODO"
+    url = "http://www.capitol.state.tx.us/"
     scrapers = {
     }
     parties = [
