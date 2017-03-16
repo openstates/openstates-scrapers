@@ -1,5 +1,5 @@
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import Bill, Scraper, Vote
+from billy.scrape.votes import vote
 import re
 import datetime
 from collections import defaultdict
@@ -8,27 +8,27 @@ import lxml.html
 BILLS_URL = 'http://legislature.idaho.gov/legislation/%s/minidata.htm'
 BILL_URL = 'http://legislature.idaho.gov/legislation/%s/%s.htm'
 
-_CHAMBERS = {'upper':'Senate', 'lower':'House'}
+_CHAMBERS = {'upper': 'Senate', 'lower': 'House'}
 
-_BILL_TYPES = {'CR':'concurrent resolution',
+_BILL_TYPES = {'CR': 'concurrent resolution',
               'JM': 'joint memorial', 'JR': 'joint resolution',
               'P': 'proclamation', 'R': 'resolution'}
-_COMMITTEES = { 'lower': {'Loc Gov':'Local Government',
-                     'Jud':'Judiciary, Rules and Administration',
-                     'Res/Con':'Resources and Conservation',
-                     'Com/HuRes':'Commerce and Human Resources',
-                     'Transp':'Transportation and Defense',
+_COMMITTEES = {'lower': {'Loc Gov': 'Local Government',
+                     'Jud': 'Judiciary, Rules and Administration',
+                     'Res/Con': 'Resources and Conservation',
+                     'Com/HuRes': 'Commerce and Human Resources',
+                     'Transp': 'Transportation and Defense',
                      'St Aff': 'State Affairs',
-                     'Rev/Tax':'Revenues and Taxation',
-                     'Health/Wel':'Health and Welfare',
-                     'Env':'Environment, Energy and Technology',
-                     'Bus':'Business', 'Educ':'Education',
-                     'Agric Aff':'Agricultural Affairs',
-                     'Approp': 'Appropriations','W/M': 'Ways and Means'},
+                     'Rev/Tax': 'Revenues and Taxation',
+                     'Health/Wel': 'Health and Welfare',
+                     'Env': 'Environment, Energy and Technology',
+                     'Bus': 'Business', 'Educ': 'Education',
+                     'Agric Aff': 'Agricultural Affairs',
+                     'Approp': 'Appropriations', 'W/M': 'Ways and Means'},
                 'upper': {'Agric Aff': 'Agricultural Affairs',
-                     'Com/HuRes':'Commerce and Human Resources',
-                     'Educ': 'Education', 'Fin':'Finance',
-                     'Health/Wel':'Health and Welfare',
+                     'Com/HuRes': 'Commerce and Human Resources',
+                     'Educ': 'Education', 'Fin': 'Finance',
+                     'Health/Wel': 'Health and Welfare',
                      'Jud': 'Judiciary and Rules',
                      'Loc Gov': 'Local Government and Taxation',
                      'Res/Env': 'Resources and Environment',
@@ -106,7 +106,7 @@ def get_bill_type(bill_id):
     else:
         return _BILL_TYPES[suffix[1:]]
 
-class IDBillScraper(BillScraper):
+class IDBillScraper(Scraper):
     jurisdiction = 'id'
 
     # the following are only used for parsing legislation from 2008 and earlier
@@ -136,12 +136,14 @@ class IDBillScraper(BillScraper):
                 self._subjects[a.text].append(subject)
 
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
         """
         Scrapes all the bills for a given session and chamber
         """
 
-        #url = BILLS_URL % session
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
         if int(session[:4]) < 2009:
             self.scrape_pre_2009(chamber, session)
         else:
