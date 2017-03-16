@@ -41,7 +41,7 @@ class MemberDetail(Page):
             yield org
 
             self.obj.add_membership(
-                com,
+                org,
                 start_date=maybe_date(self.kwargs['session'].get('start_date')),
                 end_date=maybe_date(self.kwargs['session'].get('end_date')),
             )
