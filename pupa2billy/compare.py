@@ -43,7 +43,7 @@ class Comparator:
                 continue
 
             if v1 != v2:
-                print(key, 'differ on', k, v1, '!=', v2)
+                print(key, 'differ on', k, str(v1).encode(), '!=', str(v2).encode())
                 differed = 1
 
         self.differed += differed
