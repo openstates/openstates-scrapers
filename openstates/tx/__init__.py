@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-
+from .people import TXPersonScraper
 
 class Texas(Jurisdiction):
     division_id = "ocd-division/country:us/state:tx"
@@ -7,6 +7,7 @@ class Texas(Jurisdiction):
     name = "Texas"
     url = "http://www.capitol.state.tx.us/"
     scrapers = {
+        'people': TXPersonScraper
     }
     parties = [
         {'name': 'Republican'},
