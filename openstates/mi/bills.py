@@ -106,7 +106,7 @@ class MIBillScraper(Scraper):
             # instead of trusting upper/lower case, use journal for actor
             actor = 'upper' if 'SJ' in journal else 'lower'
             classification = categorize_action(action)
-            bill.add_action(action, date, organization=actor, classification=classification)
+            bill.add_action(action, date, chamber=actor, classification=classification)
 
             # check if action mentions a vote
             rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)

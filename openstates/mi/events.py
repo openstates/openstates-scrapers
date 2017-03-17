@@ -86,21 +86,18 @@ class MIEventScraper(Scraper):
 
         event.add_participant(metainf['Committee']['txt'], type='committee', note='host')
 
-        # TODO(jmcarp) restore related bills
-        # agenda = metainf['Agenda']['obj']
-        # agendas = agenda.text_content().split("\r")
+        agenda = metainf['Agenda']['obj']
+        agendas = agenda.text_content().split("\r")
 
-        # related_bills = agenda.xpath("//a[contains(@href, 'getObject')]")
-        # for bill in related_bills:
-        #     description = agenda
-        #     for a in agendas:
-        #         if bill.text_content() in a:
-        #             description = a
+        related_bills = agenda.xpath("//a[contains(@href, 'getObject')]")
+        for bill in related_bills:
+            description = agenda
+            for a in agendas:
+                if bill.text_content() in a:
+                    description = a
 
-        #     event.add_bill(
-        #         bill.text_content(),
-        #         note=description,
-        #     )
+            item = event.add_agenda_item(description)
+            item.add_bill(bill.text_content())
 
         yield event
 
