@@ -1,4 +1,3 @@
-
 import datetime
 import lxml.html
 
@@ -8,7 +7,7 @@ from .bills import MABillScraper
 from .legislators import MALegislatorScraper
 from .committees import MACommitteeScraper
 from .events import MAEventScraper
-# from .votes import MAVoteScraper
+from .votes import MAVoteScraper
 
 
 settings = dict(
@@ -97,7 +96,7 @@ def session_list():
         'https://malegislature.gov/Bills/Search').text)
     sessions = doc.xpath("//div[@data-refinername='lawsgeneralcourt']/div/label/text()")
 
-    #Remove all text between parens, like (Current) (7364)
+    # Remove all text between parens, like (Current) (7364)
     sessions = list(filter(None, [re.sub(r'\([^)]*\)', "", session).strip() for session in sessions]))
     return sessions
 
