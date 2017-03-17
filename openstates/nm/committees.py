@@ -91,7 +91,7 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                         m_chamber = None
 
                     if role in ('Chair', 'Co-Chair', 'Vice Chair',
-                                'Member', 'Advisory'):
+                                'Member', 'Advisory', 'Ranking Member'):
                         if chamber == 'joint':
                             m_role = 'interim {}'.format(role.lower())
                         else:
