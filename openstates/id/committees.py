@@ -30,41 +30,33 @@ class IDCommitteeScraper(Scraper):
                 member_string = list(senate_members[0].itertext())
                 if(len(member_string) > 1):
                     name = member_string[0]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Sen.']:
-                        if ch in name:
-                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
                     role = member_string[1]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', ',']:
-                        if ch in role:
-                            role = role.replace(ch, ' ').encode('ascii', 'ignore').strip()
-                    org.add_member(name, role=role, chamber='senate')
+                    for ch in ['Sen.', ',', u'\u00a0']:
+                        name = name.replace(ch, ' ').strip()
+                        role = role.replace(ch, ' ').strip()
+                    org.add_member(name, role=role)
                 else:
-                    name = member_string[0]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Sen.']:
-                        if ch in name:
-                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
-                    org.add_member(name, chamber='senate')
+                    name = member_string[0].replace('Sen.', ' ').strip()
+                    for ch in ['Sen.', ',', u'\u00a0']:
+                        name = name.replace(ch, ' ').strip()
+                    org.add_member(name)
             house_members = list(td.xpath('div[2]/div/div/div[2]/div/p/strong'))
             if(len(house_members) > 0):
                 member_string = list(house_members[0].itertext())
                 if(len(member_string) > 1):
-                    name = member_string[0]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Rep.']:
-                        if ch in name:
-                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
-                    role = member_string[1]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', ',']:
-                        if ch in role:
-                            role = role.replace(ch, ' ').encode('ascii', 'ignore').strip()
-                    org.add_member(name, role=role, chamber='house')
+                    name = member_string[0].replace('Rep.', ' ').strip()
+                    role = member_string[1].replace(',', ' ').strip()
+                    for ch in ['Rep.', ',', u'\u00a0']:
+                        name = name.replace(ch, ' ').strip()
+                        role = role.replace(ch, ' ').strip()
+                    org.add_member(name, role=role)
                 else:
-                    name = member_string[0]
-                    for ch in ['\r\n', u'\xa0', u'\u2013', 'Rep.']:
-                        if ch in name:
-                            name = name.replace(ch, ' ').encode('ascii', 'ignore').strip()
-                    org.add_member(name, chamber='house')
+                    name = member_string[0].replace('Rep.', ' ').strip()
+                    for ch in ['Rep.', ',', u'\u00a0']:
+                        name = name.replace(ch, ' ').strip()
+                    org.add_member(name)
         org.add_source(url)
-        yield org
+        return org
 
     def scrape_committees(self, chamber):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
@@ -80,15 +72,13 @@ class IDCommitteeScraper(Scraper):
                            for value in text
                            if 'Email:' not in value and value != '\n' and 'Phone:' not in value)]
             for i in range(len(attributes[0])):
-                print(type(attributes[0][1]))
                 if 'Room' in str(attributes[0][i]):
                     attributes[0][i] = str(attributes[0][i]).split('Room')[0].replace(', ', ' ')
             if len(attributes[0]) > 5:
                 com = dict(zip(_TD_ONE, attributes[0]))
             else:
                 com = dict(zip(_TD_TWO, attributes[0]))
-            org = Organization(chamber=chamber, classification="committee", **com)
-            print(org)
+            org = Organization(chamber=chamber, classification="committee", name=str(attributes[0][0]))
             org.add_source(url)
             # membership
             for td in row[1].xpath('div'):
@@ -102,7 +92,7 @@ class IDCommitteeScraper(Scraper):
                     role = member.lower()
                     continue
                 else:
-                    org.add_member(member, role=role)
+                    org.add_member(member.strip(), role=role)
                     role = "member"
             yield org
 
@@ -113,7 +103,7 @@ class IDCommitteeScraper(Scraper):
         joint_li = html.xpath('//div[contains(h2, "Joint")]/ul/li')
         for li in joint_li:
             name, url = li[0].text, li[0].get('href')
-            self.get_joint_committees_data(name, url)
+            yield self.get_joint_committees_data(name, url)
 
     def scrape(self, chamber=None):
         """

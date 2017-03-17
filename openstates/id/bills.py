@@ -1,12 +1,12 @@
-from pupa.scrape import Bill, Scraper, Vote
-from billy.scrape.votes import vote
+from pupa.scrape import Scraper
+from pupa.scrape import Bill
 import re
 import datetime
 from collections import defaultdict
 import lxml.html
 
-BILLS_URL = 'http://legislature.idaho.gov/legislation/%s/minidata.htm'
-BILL_URL = 'http://legislature.idaho.gov/legislation/%s/%s.htm'
+BILLS_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/'
+BILL_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/%s/'
 
 _CHAMBERS = {'upper': 'Senate', 'lower': 'House'}
 
@@ -88,11 +88,12 @@ _ACTIONS = (
 def get_action(actor, text):
     # the biggest issue with actions is that some lines seem to indicate more
     # than one action
-    
 
     for pattern, action in _ACTIONS:
+        print(pattern, text)
         match = re.match(pattern, text, re.I)
         if match:
+            print(action,"0000000")
             if callable(action):
                 return action(match, actor)
             else:
@@ -126,13 +127,16 @@ class IDBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
 
         # loop through anchors
-        anchors = doc.xpath('//td[@width="95%"]//a')
+        print(doc)
+        anchors = doc.xpath('//td//a')
+        print(anchors)
         for a in anchors:
             # if anchor has a name, that's the subject
             if a.get('name'):
                 subject = a.get('name')
             # if anchor is a link to a bill, save that reference
             elif 'legislation' in a.get('href'):
+                print(a.get('href'))
                 self._subjects[a.text].append(subject)
 
 
@@ -145,10 +149,14 @@ class IDBillScraper(Scraper):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
         if int(session[:4]) < 2009:
-            self.scrape_pre_2009(chamber, session)
+            chambers = [chamber] if chamber else ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_pre_2009(chamber, session)
         else:
             self.scrape_subjects(session)
-            self.scrape_post_2009(chamber, session)
+            chambers = [chamber] if chamber else ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_post_2009(chamber, session)
 
     def scrape_post_2009(self, chamber, session):
         "scrapes legislation for 2009 and above"
@@ -166,7 +174,7 @@ class IDBillScraper(Scraper):
                                         row[0].text_content().strip())
             bill_id = " ".join(matches.groups()).strip()
             short_title = row[1].text_content().strip()
-            self.scrape_bill(chamber, session, bill_id, short_title)
+            yield self.scrape_bill(chamber, session, bill_id, short_title)
 
     def scrape_pre_2009(self, chamber, session):
         """scrapes legislation from 2008 and below."""
@@ -196,11 +204,12 @@ class IDBillScraper(Scraper):
         bill_tables = html.xpath('//table[contains(@class, "bill-table")]')
         title = bill_tables[1].text_content().strip()
         bill_type = get_bill_type(bill_id)
-        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        print(session, chamber, bill_id, bill_type)
+        bill = Bill(legislative_session=session, chamber=chamber, identifier=bill_id, title=title, classification=bill_type )
         bill.add_source(url)
-        bill['subjects'] = self._subjects[bill_id.replace(' ', '')]
+        bill.add_subject(self._subjects[bill_id.replace(' ', '')])
 
-        if short_title and bill['title'].lower() != short_title.lower():
+        if short_title and title.lower() != short_title.lower():
             bill.add_title(short_title)
 
         # documents
@@ -209,9 +218,9 @@ class IDBillScraper(Scraper):
             name = link.text_content().strip()
             href = link.get('href')
             if 'Engrossment' in name or 'Bill Text' in name:
-                bill.add_version(name, href, mimetype='application/pdf')
+                bill.add_version_link(note=name, url=href, media_type="application/pdf")
             else:
-                bill.add_document(name, href)
+                bill.add_document_link(note=name, url=href, media_type="application/pdf")
 
         def _split(string):
             return re.split(r"\w+[,|AND]\s+", string)
@@ -221,12 +230,16 @@ class IDBillScraper(Scraper):
         if len(sponsor_lists) > 1:
             for sponsors in sponsor_lists[1:]:
                 if 'COMMITTEE' in sponsors.upper():
-                    bill.add_sponsor('primary', sponsors.strip())
+                    print(sponsors)
+                    bill.add_sponsorship(name=sponsors.strip(), entity_type="organization",
+                                        primary=True, classification='primary')
                 else:
                     for person in _split(sponsors):
                         person = person.strip()
                         if person != "":
-                            bill.add_sponsor('primary', person)
+                            print(person,"person")
+                            bill.add_sponsorship(classification='primary', name=person,
+                                                entity_type="person", primary=True)
 
         actor = chamber
         last_date = None
@@ -258,14 +271,15 @@ class IDBillScraper(Scraper):
                 action = "".join(row[2].itertext())
             action = action.replace(u'\xa0', ' ').strip()
             atype = get_action(actor, action)
-            bill.add_action(actor, action, date, type=atype)
+            print(actor,'||', action,'||', date, atype)
+            bill.add_action(chamber=actor, discription=action, date=date, classification=atype)
             # after voice vote/roll call and some actions the bill is sent
             # 'to House' or 'to Senate'
             if 'to House' in action:
                 actor = 'lower'
             elif 'to Senate' in action:
                 actor = 'upper'
-        self.save_bill(bill)
+        return bill
 
     def scrape_pre_2009_bill(self, chamber, session, bill_id, short_title=''):
         """bills from 2008 and below are in a 'pre' element and is simpler to

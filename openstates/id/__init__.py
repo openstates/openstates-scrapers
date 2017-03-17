@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import IDPersonScraper
 from .committees import IDCommitteeScraper
-
+from .bills import IDBillScraper
 
 class Idaho(Jurisdiction):
     division_id = "ocd-division/country:us/state:id"
@@ -9,8 +9,8 @@ class Idaho(Jurisdiction):
     name = "Idaho"
     url = "TODO"
     scrapers = {
-        'people': IDPersonScraper,
-        'committees': IDCommitteeScraper
+        'committees': IDCommitteeScraper,
+        # 'bills': IDBillScraper
     }
     parties = [
         {'name': 'Republican'},
