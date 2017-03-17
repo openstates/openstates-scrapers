@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
-from .people import ARLegislatorScraper
 
+from .people import ARLegislatorScraper
+from .bills import ARBillScraper
 from .committees import ARCommitteeScraper
 
 
@@ -12,6 +13,7 @@ class Arkansas(Jurisdiction):
     scrapers = {
         'people': ARLegislatorScraper,
         'committees': ARCommitteeScraper,
+        'bills': ARBillScraper,
     }
     parties = [
         {'name': 'Republican'},
