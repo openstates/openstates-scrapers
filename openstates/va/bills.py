@@ -16,6 +16,7 @@ URL_PATTERNS = {
     'sponsors': '/cgi-bin/legp604.exe?{}+mbr+{}',
     'subjects': '/cgi-bin/legp604.exe?{}+sbj+SBJ',
 }
+SKIP = '~~~SKIP~~~'
 ACTION_CLASSIFIERS = (
     ('Approved by Governor', 'executive-signature'),
     ('\s*Amendment(s)? .+ agreed', 'amendment-passage'),
@@ -35,11 +36,11 @@ ACTION_CLASSIFIERS = (
     ('Read first time', 'reading-1'),
     ('Read second time', 'reading-2'),
     ('Read third time', 'reading-3'),
-    ('Senators: ', None),
-    ('Delegates: ', None),
-    ('Committee substitute printed', None),
-    ('Bill text as passed', None),
-    ('Acts of Assembly', None),
+    ('Senators: ', SKIP),
+    ('Delegates: ', SKIP),
+    ('Committee substitute printed', SKIP),
+    ('Bill text as passed', SKIP),
+    ('Acts of Assembly', SKIP),
 )
 
 
@@ -93,7 +94,7 @@ class BillListPage(Page, Spatula):
             )
 
             list(self.scrape_page_items(BillSponsorPage, url=sponsor_url, obj=bill))
-            list(self.scrape_page_items(BillDetailPage, url=bill_url, obj=bill))
+            yield from self.scrape_page_items(BillDetailPage, url=bill_url, obj=bill)
             bill.subject = self.kwargs['subjects'][bill_id]
             bill.add_source(bill_url)
             yield bill
@@ -222,6 +223,8 @@ class BillDetailPage(Page, Spatula):
                     cached_vote.set_count('other', o)
                     if vote_url:
                         cached_vote.add_source(vote_url[0])
+                    else:
+                        cached_vote.add_source(self.url)
                     continue
                 elif cached_vote is not None:
                     if vote_action.startswith(u'VOTE:'):
@@ -259,6 +262,8 @@ class BillDetailPage(Page, Spatula):
                         cached_vote.set_count('other', o)
                         if vote_url:
                             cached_vote.add_source(vote_url[0])
+                        else:
+                            cached_vote.add_source(self.url)
                         cached_action = action
                         continue
 
@@ -282,7 +287,7 @@ class BillDetailPage(Page, Spatula):
 
             # if matched a 'None' atype, don't add the action
             chamber = None  # TODO: populate
-            if atype:
+            if atype != SKIP:
                 self.obj.add_action(action, date,
                                     chamber=actor,
                                     classification=atype)
