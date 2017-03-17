@@ -5,11 +5,12 @@ from openstates.utils import LXMLMixin
 
 
 class VTPersonScraper(Scraper, LXMLMixin):
-    jurisdiction = 'vt'
     CHAMBERS = {'Senator': 'upper', 'Representative': 'lower'}
 
-    def scrape(self):
-        year_slug = self.jurisdiction.legislative_sessions[-1]['identifier'][5:]
+    def scrape(self, term=None):
+        if term is None:
+            term = self.latest_session()
+        year_slug = term[5:]
 
         # Load all members via the private API
         legislator_dump_url = (
