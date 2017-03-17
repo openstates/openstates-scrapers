@@ -1,28 +1,29 @@
 import datetime as dt
 
 from openstates.utils import LXMLMixin
-from billy.scrape.events import Event, EventScraper
+from pupa.scrape import Event, Scraper
 
 import pytz
 import lxml.html
 
 chamber_urls = {
-    "other" : [],
-    "lower" : [ "http://legis.delaware.gov/LIS/lis146.nsf/House+Meeting+Notice/?openview&count=2000" ],
-    "upper" : [ "http://legis.delaware.gov/LIS/lis146.nsf/Senate+Meeting+Notice/?openview&count=2000" ]
+    "other": [],
+    "lower": ["http://legis.delaware.gov/LIS/lis146.nsf/House+Meeting+Notice/?openview&count=2000"],
+    "upper": ["http://legis.delaware.gov/LIS/lis146.nsf/Senate+Meeting+Notice/?openview&count=2000"]
 }
 chambers = {
-    "Senate" : "upper",
-    "House"  : "lower",
-    "Joint"  : "joint"
+    "Senate": "upper",
+    "House": "lower",
+    "Joint": "joint"
 }
 
-class DEEventScraper(EventScraper, LXMLMixin):
+
+class DEEventScraper(Scraper, LXMLMixin):
     jurisdiction = 'de'
 
     _tz = pytz.timezone('US/Eastern')
 
-    def scrape_meeting_notice(self, chamber, session, url):
+    def scrape_meeting_notice(self, chamber, url):
         page = self.lxmlize(url)
         bits = page.xpath("//td[@width='96%']/table/tr")
         metainf = {}
@@ -36,19 +37,19 @@ class DEEventScraper(EventScraper, LXMLMixin):
         date_time_lbl = "Date/Time"
         # 04/25/2012 03:00:00 PM
         fmt = "%m/%d/%Y %I:%M:%S %p"
-        metainf[date_time_lbl] = dt.datetime.strptime(metainf[date_time_lbl],
-                                                     fmt)
-        event = Event(session,
-                      metainf[date_time_lbl],
-                      "committee:meeting",
-                      "Committee Meeting",
-                      chamber=chambers[metainf['Chamber']],
-                      location=metainf['Room'],
-                      chairman=metainf['Chairman'])
-        event.add_participant("host", metainf['Committee'], 'committee',
-                              chamber=chambers[metainf['Chamber']])
+        metainf[date_time_lbl] = dt.datetime.strptime(metainf[date_time_lbl], fmt)
+
+        event = Event(timezone=self._tz.zone,
+                      location_name=metainf['Room'],
+                      start_time=self._tz.localize(metainf[date_time_lbl]),
+                      name=metainf['Committee']
+                      )
+
+        event.add_participant(metainf['Committee'], type='committee', note='host')
         event.add_source(url)
 
+        # TODO what is alternative of add_related_bill ?
+        """
         agenda = page.xpath("//td[@width='96%']//font[@face='Arial']")
         agenda = [ a.text_content().strip() for a in agenda ]
         if "" in agenda:
@@ -71,15 +72,16 @@ class DEEventScraper(EventScraper, LXMLMixin):
                     description=item,
                     type="consideration"
                 )
+        """
+        yield event
 
-        self.save_event(event)
-
-    def scrape(self, chamber, session):
-        self.log(chamber)
-        urls = chamber_urls[chamber]
-        for url in urls:
-            page = self.lxmlize(url)
-            events = page.xpath("//a[contains(@href, 'OpenDocument')]")
-            for event in events:
-                self.scrape_meeting_notice(chamber, session,
-                                           event.attrib['href'])
+    def scrape(self, chamber=None):
+        chambers_ = [chamber] if chamber is not None else ['upper', 'lower', 'other']
+        # self.log(chamber)
+        for chamber in chambers_:
+            urls = chamber_urls[chamber]
+            for url in urls:
+                page = self.lxmlize(url)
+                events = page.xpath("//a[contains(@href, 'OpenDocument')]")
+                for event in events:
+                    yield from self.scrape_meeting_notice(chamber, event.attrib['href'])

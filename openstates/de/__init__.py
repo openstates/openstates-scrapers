@@ -1,5 +1,7 @@
 from .people import DEPersonScraper
 from .bills import DEBillScraper
+from .events import DEEventScraper
+
 from pupa.scrape import Jurisdiction, Organization
 
 
@@ -11,6 +13,7 @@ class Delaware(Jurisdiction):
     scrapers = {
         'people': DEPersonScraper,
         'bills': DEBillScraper,
+        'events': DEEventScraper,
     }
     parties = [
         {'name': 'Republican'},
