@@ -286,7 +286,6 @@ class BillDetailPage(Page, Spatula):
                 atype = None
 
             # if matched a 'None' atype, don't add the action
-            chamber = None  # TODO: populate
             if atype != SKIP:
                 self.obj.add_action(action, date,
                                     chamber=actor,
