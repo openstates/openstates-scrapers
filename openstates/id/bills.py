@@ -241,7 +241,7 @@ class IDBillScraper(Scraper):
             else:
                 date = last_date
 
-            date = datetime.datetime.strptime(date+ '/' + session[0:4],
+            date = datetime.datetime.strptime(date + '/' + session[0:4],
                                               "%m/%d/%Y")
             if action.startswith('House'):
                 actor = 'lower'
@@ -276,7 +276,7 @@ class IDBillScraper(Scraper):
         text = html.xpath('//pre')[0].text.split('\r\n')
 
         # title
-        title = " - ".join([ x.strip() for x in text[1].split('-') if x.isupper() ])
+        title = " - ".join([x.strip() for x in text[1].split('-') if x.isupper()])
         # bill type
         bill_type = get_bill_type(bill_id)
 
@@ -287,8 +287,8 @@ class IDBillScraper(Scraper):
             bill.add_sponsor('primary', sponsor)
 
         actor = chamber
-        self.flag() # clear last bills vote flags
-        self.vote = None #
+        self.flag()  # clear last bills vote flags
+        self.vote = None  #
 
         for line in text:
 
@@ -300,10 +300,10 @@ class IDBillScraper(Scraper):
                 # actor
                 if action_text.lower().startswith('house') or \
                    action_text.lower().startswith('senate'):
-                    actor = {'H':'lower', 'S':'upper'}[action_text[0]]
+                    actor = {'H': 'lower', 'S': 'upper'}[action_text[0]]
 
                 action = get_action(actor, action_text)
-                bill.add_action(actor,action_text, date, type=action)
+                bill.add_action(actor, action_text, date, type=action)
                 if "bill:passed" in action or "bill:failed" in action:
                     passed = False if 'FAILED' in action_text else True
                     votes = re.search(r'(\d+)-(\d+)-(\d+)', action_text)
@@ -332,19 +332,19 @@ class IDBillScraper(Scraper):
 
                 if self.ayes:
                     for name in line.replace('AYES --', '').split(','):
-                        name = name.strip()
+                        name = name.split('(')[0].strip()
                         if name:
                             self.vote.yes(name)
 
                 if self.nays:
                     for name in line.replace('NAYS --', '').split(','):
-                        name = name.strip()
+                        name = name.split('(')[0].strip()
                         if name:
                             self.vote.no(name)
 
                 if self.other:
                     for name in line.replace('Absent and excused --', '').split(','):
-                        name = name.strip()
+                        name = name.split('(')[0].strip()
                         if name:
                             self.vote.other(name)
 
@@ -354,8 +354,9 @@ class IDBillScraper(Scraper):
         if name_text:
             #both of these are unicode non-breaking spaces
             name_text = name_text.replace(u'\xa0--\xa0', '')
-            name_text = name_text.replace(u'\u00a0',' ')
-            name_list = [name.strip() for name in name_text.split(",") if name]
+            name_text = name_text.replace(u'\u00a0', ' ')
+            name_list = [name.replace(u'\u2013', '').strip() for name in name_text.split(",") if name]
+            name_list = [name.split('(')[0] for name in name_list]
             return name_list
         return []
 
@@ -364,9 +365,9 @@ class IDBillScraper(Scraper):
         takes the actor, date and row element and returns a Vote object
         """
         spans = row.xpath('.//span')
-        motion = row.text.replace(u'\u00a0'," ").replace("-","").strip()
+        motion = row.text.replace(u'\u00a0', " ").replace("-", "").strip()
         motion = motion if motion else "passage"
-        passed, yes_count, no_count, other_count = spans[0].text_content().rsplit('-',3)
+        passed, yes_count, no_count, other_count = spans[0].text_content().rsplit('-', 3)
         yes_votes = self.get_names(spans[1].tail)
         no_votes = self.get_names(spans[2].tail)
 
@@ -374,7 +375,7 @@ class IDBillScraper(Scraper):
         for span in spans[3:]:
             if span.text.startswith(('Absent', 'Excused')):
                 other_votes += self.get_names(span.tail)
-        for key, val in {'adopted': True, 'passed': True, 'failed':False}.items():
+        for key, val in {'adopted': True, 'passed': True, 'failed': False}.items():
             if key in passed.lower():
                 passed = val
                 break

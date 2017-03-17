@@ -27,6 +27,7 @@ services:
     - MYSQL_HOST=mysql
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
+    - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
     depends_on:

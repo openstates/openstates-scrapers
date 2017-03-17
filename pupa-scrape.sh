@@ -9,9 +9,9 @@ set -e
 state=$1
 shift
 
-export PYTHONPATH=./openstates &&
-$PUPA_ENV/bin/pupa update $state --scrape "$@" &&
-export PUPA_DATA_DIR='../openstates/_data' &&
-export PYTHONPATH=./billy_metadata/ &&
-$BILLY_ENV/bin/python -m pupa2billy.run $state &&
+export PYTHONPATH=./openstates
+$PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state --scrape "$@"
+export PUPA_DATA_DIR='../openstates/_data'
+export PYTHONPATH=./billy_metadata/
+$BILLY_ENV/bin/python -m pupa2billy.run $state
 $BILLY_ENV/bin/billy-update $state --import --report
