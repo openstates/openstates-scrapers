@@ -263,7 +263,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
                 person.add_contact_detail(type='address', value=address,
                                           note=office_text['name'])
             if phone_number:
-                person.add_contact_detail(type='phone', value=phone_number,
+                person.add_contact_detail(type='voice', value=phone_number,
                                           note=office_text['name'])
             if fax_number:
                 person.add_contact_detail(type='fax', value=fax_number,
