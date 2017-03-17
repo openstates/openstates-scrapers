@@ -1,6 +1,5 @@
 import re
 import lxml.html
-from pprint import pprint
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
@@ -37,17 +36,18 @@ class DECommitteeScraper(CommitteeScraper, LXMLMixin):
         data = self.post(url).json()['Data']
 
         for item in data:
-            pprint(item)
             comm_name = item['CommitteeName']
             committee = Committee(chamber, comm_name)
-            chair_man = str(item.get('ChairName', 'No'))
-            vice_chair = str(item.get('ViceChairName', 'No'))
+            chair_man = str(item['ChairName'])
+            vice_chair = str(item['ViceChairName'])
             comm_id = item['CommitteeId']
             comm_url = self.get_comm_url(chamber, comm_id, comm_name)
             members = self.scrape_member_info(comm_url)
+            if vice_chair != 'None':
+                committee.add_member(vice_chair, 'Vice-Chair')
+            if chair_man  != 'None':
+                committee.add_member(chair_man, 'Chairman')
 
-            committee.add_member(chair_man, 'Chairman')
-            committee.add_member(vice_chair, 'Vice-Chair')
 
             for member in members:
                 # vice_chair and chair_man already added.
@@ -58,7 +58,6 @@ class DECommitteeScraper(CommitteeScraper, LXMLMixin):
 
             committee.add_source(comm_url)
             committee.add_source(url)
-            #pprint(committee)
             self.save_committee(committee)
 
     def scrape_joint_committees(self, session):
