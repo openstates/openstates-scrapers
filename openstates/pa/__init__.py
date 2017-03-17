@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from .people import PALegislatorScraper
+
 settings = {'SCRAPELIB_RPM': 30}
 
 
@@ -9,6 +11,7 @@ class Pennsylvania(Jurisdiction):
     name = "Pennsylvania"
     url = "http://www.legis.state.pa.us/"
     scrapers = {
+        'people': PALegislatorScraper,
     }
     parties = [
         {'name': 'Republican'},

@@ -43,12 +43,3 @@ def vote_url(chamber, session, special, type, bill_number):
     return 'http://www.legis.state.pa.us/cfdocs/billinfo/'\
         'bill_votes.cfm?syear=%s&sind=%d&body=%s&type=%s&bn=%s' % (
         start_year(session), special, bill_abbr(chamber), type, bill_number)
-
-
-def legislators_url(chamber):
-    if chamber == 'upper':
-        return "http://www.legis.state.pa.us/cfdocs/legis/home/"\
-            "member_information/senators_alpha.cfm"
-    else:
-        return "http://www.legis.state.pa.us/cfdocs/legis/home/"\
-            "member_information/representatives_alpha.cfm"
