@@ -1,1 +1,0 @@
-In the files in this directory, each line is a JSON object. If a feed shares any line's attributes it gets skipped.

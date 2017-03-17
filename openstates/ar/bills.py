@@ -69,7 +69,8 @@ class ARBillScraper(BillScraper):
             primary = row[11]
             if not primary:
                 primary = row[12]
-            bill.add_sponsor('primary', primary)
+            if primary:
+                bill.add_sponsor('primary', primary)
 
             # ftp://www.arkleg.state.ar.us/Bills/
             # TODO: Keep on eye on this post 2017 to see if they apply R going forward.
