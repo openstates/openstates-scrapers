@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from .bills import PABillScraper
 from .people import PALegislatorScraper
+from .committees import PACommitteeScraper
 
 settings = {'SCRAPELIB_RPM': 30}
 
@@ -14,6 +15,7 @@ class Pennsylvania(Jurisdiction):
     scrapers = {
         'bills': PABillScraper,
         'people': PALegislatorScraper,
+        'committees': PACommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},

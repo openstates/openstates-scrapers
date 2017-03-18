@@ -1,6 +1,20 @@
 import datetime
 
 
+base_url = 'http://www.legis.state.pa.us'
+members_url = '{}/cfdocs/legis/home/member_information'.format(base_url)
+urls = {
+    'people': {
+        'upper': '{}/senators_alpha.cfm'.format(members_url),
+        'lower': '{}/representatives_alpha.cfm'.format(members_url),
+    },
+    'committees': {
+        'upper': '{}/senators_ca.cfm'.format(members_url),
+        'lower': '{}/representatives_ca.cfm'.format(members_url),
+    },
+}
+
+
 def bill_abbr(chamber):
     if chamber == 'upper':
         return 'S'

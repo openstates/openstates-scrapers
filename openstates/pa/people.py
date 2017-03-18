@@ -3,12 +3,7 @@ import re
 import lxml.html
 from pupa.scrape import Scraper, Person
 
-
-base_url = 'http://www.legis.state.pa.us'
-urls = {
-    'upper': '{}/cfdocs/legis/home/member_information/senators_alpha.cfm'.format(base_url),
-    'lower': '{}/cfdocs/legis/home/member_information/representatives_alpha.cfm'.format(base_url),
-}
+from . import utils
 
 
 class PALegislatorScraper(Scraper):
@@ -18,7 +13,7 @@ class PALegislatorScraper(Scraper):
             yield from self.scrape_chamber(chamber)
 
     def scrape_chamber(self, chamber):
-        leg_list_url = urls[chamber]
+        leg_list_url = utils.urls['people'][chamber]
         page = self.get(leg_list_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(leg_list_url)
