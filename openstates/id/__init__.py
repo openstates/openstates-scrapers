@@ -9,8 +9,8 @@ class Idaho(Jurisdiction):
     name = "Idaho"
     url = "TODO"
     scrapers = {
-        'committees': IDCommitteeScraper,
-        # 'bills': IDBillScraper
+        # 'committees': IDCommitteeScraper,
+         'bills': IDBillScraper
     }
     parties = [
         {'name': 'Republican'},
