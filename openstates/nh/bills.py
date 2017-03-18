@@ -238,7 +238,10 @@ class NHBillScraper(BillScraper):
         votes = {}
         last_line = []
 
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content:
+        lines = self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content.splitlines()
+
+        for line in lines:
+
             if len(line) < 2:
                 continue
 
@@ -253,7 +256,7 @@ class NHBillScraper(BillScraper):
                 else:
                     last_line = line
                     self.warning('bad vote line %s' % '|'.join(line))
-            session_yr = line[0]
+            session_yr = line[0].replace('\xef\xbb\xbf', '')
             body = line[1]
             vote_num = line[2]
             timestamp = line[3]
