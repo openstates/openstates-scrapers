@@ -3,14 +3,21 @@ from .people import IDPersonScraper
 from .committees import IDCommitteeScraper
 from .bills import IDBillScraper
 
+
 class Idaho(Jurisdiction):
+
+    """
+    IDAHO Scraper
+    """
+
     division_id = "ocd-division/country:us/state:id"
     classification = "government"
     name = "Idaho"
     url = "TODO"
     scrapers = {
-        # 'committees': IDCommitteeScraper,
-         'bills': IDBillScraper
+        'people': IDPersonScraper,
+        'committees': IDCommitteeScraper,
+        'bills': IDBillScraper
     }
     parties = [
         {'name': 'Republican'},

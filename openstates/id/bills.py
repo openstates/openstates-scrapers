@@ -166,7 +166,6 @@ class IDBillScraper(Scraper):
             short_title = row[1].text_content().strip()
             yield from self.scrape_bill(chamber, session, bill_id, short_title)
 
-
     def scrape_bill(self, chamber, session, bill_id, short_title=None):
         """
         Scrapes documents, actions, vote counts and votes for
@@ -185,8 +184,9 @@ class IDBillScraper(Scraper):
         for subject in self._subjects[bill_id.replace(' ', '')]:
             bill.add_subject(subject)
 
-        if short_title and title.lower() != short_title.lower():
-            bill.add_title(short_title)
+        # if short_title and title.lower() != short_title.lower():
+        #     print(short_title)
+        #     bill.add_title(short_title)
 
         # documents
         doc_links = html.xpath('//div[contains(@class,"pf-content")]//a')
