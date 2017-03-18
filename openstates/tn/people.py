@@ -1,15 +1,22 @@
-import HTMLParser
+import html.parser
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
 import lxml.html
+from pupa.scrape import (
+    Person,
+    Scraper,
+)
 from scrapelib import HTTPError
-from openstates.utils import LXMLMixin
 
-class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'tn'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=False)
+class TNPersonScraper(Scraper):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         root_url = 'http://www.capitol.tn.gov/'
         parties = {'D': 'Democratic', 'R': 'Republican',
                    'CCR': 'Carter County Republican',
@@ -22,13 +29,9 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
         else:
             url_chamber_name = 'house'
             abbr = 'h'
-        if term != self.metadata["terms"][-1]["sessions"][0]:
-            chamber_url = root_url + url_chamber_name
-            chamber_url += '/archives/' + term + 'GA/Members/index.html'
-        else:
-            chamber_url = root_url + url_chamber_name + '/members/'
-
-        page = self.lxmlize(chamber_url)
+        chamber_url = root_url + url_chamber_name + '/members/'
+        page_html = self.get(chamber_url).text
+        page = lxml.html.fromstring(page_html)
 
         for row in page.xpath("//tr"):
 
@@ -57,7 +60,7 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
                     if x.strip()
                     ][0]
 
-            email = HTMLParser.HTMLParser().unescape(
+            email = html.parser.HTMLParser().unescape(
                     row.xpath('td[1]/a/@href')[0][len("mailto:"): ])
             member_url = (root_url + url_chamber_name + '/members/' + abbr +
                 district + '.html')
@@ -87,15 +90,22 @@ class TNLegislatorScraper(LegislatorScraper, LXMLMixin):
             name = name.replace('Representative ', '')
             name = name.replace('Senator ', '')
 
-            leg = Legislator(term, chamber, district, name.strip(),
-                             party=party, url=member_url,
-                             photo_url=member_photo_url)
-            leg.add_source(chamber_url)
-            leg.add_source(member_url)
+            person = Person(
+                name=name.strip(),
+                image=member_photo_url,
+                primary_org=chamber,
+                district=district,
+                party=party,
+            )
+            person.add_link(member_url)
+            person.add_source(chamber_url)
+            person.add_source(member_url)
 
             # TODO: add district address from this page
-
-            leg.add_office('capitol', 'Nashville Address',
-                           address=address, phone=phone, email=email)
-
-            self.save_legislator(leg)
+            person.add_contact_detail(type='address', value=address,
+                                      note='Capitol Office')
+            person.add_contact_detail(type='email', value=email,
+                                      note='Capitol Office')
+            person.add_contact_detail(type='voice', value=phone,
+                                      note='Capitol Office')
+            yield person
