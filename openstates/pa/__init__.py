@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .bills import PABillScraper
+from .events import PAEventScraper
 from .people import PALegislatorScraper
 from .committees import PACommitteeScraper
 
@@ -14,6 +15,7 @@ class Pennsylvania(Jurisdiction):
     url = "http://www.legis.state.pa.us/"
     scrapers = {
         'bills': PABillScraper,
+        'events': PAEventScraper,
         'people': PALegislatorScraper,
         'committees': PACommitteeScraper,
     }
