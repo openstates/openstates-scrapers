@@ -1,19 +1,26 @@
 
 import lxml.html
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from apiclient import ApiClient
+from pupa.scrape import Person, Scraper
+from .apiclient import ApiClient
 from .utils import get_with_increasing_timeout
 import scrapelib
 
 
-class INLegislatorScraper(LegislatorScraper):
+class INPersonScraper(Scraper):
     jurisdiction = 'in'
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         client = ApiClient(self)
-        t = next((item for item in self.metadata["terms"] if item["name"] == term),None)
-        session = max(t["sessions"])
+        session_name = self.latest_session()
+        session = session_name[0:5]
         base_url = "http://iga.in.gov/legislative"
         api_base_url = "https://api.iga.in.gov"
         chamber_name = "Senate" if chamber == "upper" else "House"
@@ -39,16 +46,16 @@ class INLegislatorScraper(LegislatorScraper):
             phone = phone.text_content().strip()
             district = doc.xpath("//span[@class='district-heading']")[0].text.lower().replace("district","").strip()
             image_link = base_url+link.replace("legislators/","portraits/legislator_")
-            legislator = Legislator(term,
-                                    chamber,
-                                    district,
-                                    " ".join([firstname,lastname]),
+            legislator = Person(primary_org=chamber,
+                                    district=district,
+                                    name=" ".join([firstname,lastname]),
                                     party=party,
-                                    photo_url = image_link)
-            legislator.add_office('capitol', 'Capitol Office', address=address,
-                           phone=phone)
+                                    image=image_link)
+            legislator.add_contact_detail(type="address",note="Capitol Office", value=address)
+            legislator.add_contact_detail(type="voice",note="Capitol Office", value=phone)
+            legislator.add_link(html_link)
             legislator.add_source(html_link)
             legislator.add_source(api_link)
-            self.save_legislator(legislator)
+            yield legislator
 
 
