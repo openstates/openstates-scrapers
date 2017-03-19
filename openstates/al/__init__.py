@@ -1,155 +1,160 @@
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import ALBillScraper
-from .legislators import ALLegislatorScraper
+from pupa.scrape import Jurisdiction, Organization
 
 
-metadata = {
-    'name': 'Alabama',
-    'abbreviation': 'al',
-    'legislature_name': 'Alabama Legislature',
-    'legislature_url': 'http://www.legislature.state.al.us/',
-    'capitol_timezone': 'America/Chicago',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    'terms': [
+class Alabama(Jurisdiction):
+    division_id = "ocd-division/country:us/state:al"
+    classification = "government"
+    name = "Alabama"
+    url = "http://www.legislature.state.al.us/"
+    scrapers = {
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
         {
-            'name': '2011-2014',
-            'start_year': 2011,
-            'end_year': 2014,
-            'sessions': ['2011rs', '2012rs', '2012fs', '2013rs', '2014rs'],
+            "_scraped_name": "Regular Session 2011",
+            "classification": "primary",
+            "identifier": "2011rs",
+            "name": "2011 Regular Session"
         },
         {
-            'name': '2015-2018',
-            'start_year': 2015,
-            'end_year': 2018,
-            'sessions': ['2015os','2015rs', '2015fs', '2015ss', '2016rs','2016fs','2017rs'],
+            "_scraped_name": "First Special Session 2012",
+            "classification": "special",
+            "identifier": "2012fs",
+            "name": "First Special Session 2012"
+        },
+        {
+            "_scraped_name": "Regular Session 2012",
+            "classification": "primary",
+            "identifier": "2012rs",
+            "name": "2012 Regular Session"
+        },
+        {
+            "_scraped_name": "Regular Session 2013",
+            "classification": "primary",
+            "identifier": "2013rs",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "Regular Session 2014",
+            "classification": "primary",
+            "identifier": "2014rs",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "First Special Session 2015",
+            "classification": "special",
+            "identifier": "2015fs",
+            "name": "First Special Session 2015"
+        },
+        {
+            "_scraped_name": "Organizational Session 2015",
+            "classification": "primary",
+            "identifier": "2015os",
+            "name": "2015 Organizational Session"
+        },
+        {
+            "_scraped_name": "Regular Session 2015",
+            "classification": "primary",
+            "identifier": "2015rs",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "Second Special Session 2015",
+            "classification": "special",
+            "identifier": "2015ss",
+            "name": "Second Special Session 2015"
+        },
+        {
+            "_scraped_name": "First Special Session 2016",
+            "classification": "special",
+            "identifier": "2016fs",
+            "name": "First Special Session 2016"
+        },
+        {
+            "_scraped_name": "Regular Session 2016",
+            "classification": "primary",
+            "identifier": "2016rs",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "Regular Session 2017",
+            "classification": "primary",
+            "identifier": "2017rs",
+            "name": "2017 Regular Session"
         }
-    ],
-    'session_details': {
-        '2011rs': {
-            'type': 'primary',
-            'display_name': '2011 Regular Session',
-            'internal_id': '1058',
-            '_scraped_name': 'Regular Session 2011',
-        },
-        '2012rs': {
-            'type': 'primary',
-            'display_name': '2012 Regular Session',
-            'internal_id': '1059',
-            '_scraped_name': 'Regular Session 2012',
-        },
-        '2012fs': {
-            'type': 'special',
-            'display_name': 'First Special Session 2012',
-            'internal_id': '1060',
-            '_scraped_name': 'First Special Session 2012',
-        },
-        '2013rs': {
-            'type': 'primary',
-            'display_name': '2013 Regular Session',
-            'internal_id': '1061',
-            '_scraped_name': 'Regular Session 2013',
-        },
-        '2014rs': {
-            'type': 'primary',
-            'display_name': '2014 Regular Session',
-            'internal_id': '1062',
-            '_scraped_name': 'Regular Session 2014',
-        },
-        '2015os': {
-            'type': 'primary',
-            'display_name': '2015 Organizational Session',
-            'internal_id': '1063',
-            '_scraped_name': 'Organizational Session 2015',
-        },
-        '2015rs': {
-            'type': 'primary',
-            'display_name': '2015 Regular Session',
-            'internal_id': '1064',
-            '_scraped_name': 'Regular Session 2015',
-        },
-        '2015fs': {
-            'type': 'special',
-            'display_name': 'First Special Session 2015',
-            'internal_id': '1066',
-            '_scraped_name': 'First Special Session 2015',
-        },
-        '2015ss': {
-            'type': 'special',
-            'display_name': 'Second Special Session 2015',
-            'internal_id': '1067',
-            '_scraped_name': 'Second Special Session 2015',
-        },
-        '2016rs': {
-            'type': 'primary',
-            'display_name': '2016 Regular Session',
-            'internal_id': '1065',
-            '_scraped_name': 'Regular Session 2016',
-        },
-        '2016fs': {
-            'type': 'special',
-            'display_name': 'First Special Session 2016',
-            'internal_id': '1068',
-            '_scraped_name': 'First Special Session 2016',
-        },             
-        '2017rs': {
-            'type': 'primary',
-            'display_name': '2017 Regular Session',
-            'internal_id': '1069',
-            '_scraped_name': 'Regular Session 2017',
-        },        
-    },
-    'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': [
-        'Regular Session 1998',
-        'Organizational Session 1999',
-        'Regular Session 1999',
-        'First Special Session 1999',
-        'Organizational Session 2011',
-        'Second Special Session 1999',
-        'Regular Session 2000',
-        'Regular Session 2001',
-        'First Special Session 2001',
-        'Second Special Session 2001',
-        'Third Special Session 2001',
-        'Fourth Special Session 2001',
-        'Regular Session 2002',
-        'Organizational Session 2003',
-        'Regular Session 2003',
-        'First Special Session 2003',
-        'Second Special Session 2003',
-        'Regular Session 2004',
-        'First Special Session 2004',
-        'Regular Session 2005',
-        'First Special Session 2005',
-        'Regular Session 2006',
-        'Organizational Session 2007',
-        'Regular Session 2007',
-        'First Special Session 2007',
-        'Regular Session 2008',
-        'First Special Session 2008',
-        'Regular Session 2009',
-        'Regular Session 2010',
-        'First Special Session 2009',
-        'First Special Session 2010',
-        'Regular Session 2016',
-    ],
-}
+    ]
+    ignored_scraped_sessions = [
+        "Regular Session 1998",
+        "Organizational Session 1999",
+        "Regular Session 1999",
+        "First Special Session 1999",
+        "Organizational Session 2011",
+        "Second Special Session 1999",
+        "Regular Session 2000",
+        "Regular Session 2001",
+        "First Special Session 2001",
+        "Second Special Session 2001",
+        "Third Special Session 2001",
+        "Fourth Special Session 2001",
+        "Regular Session 2002",
+        "Organizational Session 2003",
+        "Regular Session 2003",
+        "First Special Session 2003",
+        "Second Special Session 2003",
+        "Regular Session 2004",
+        "First Special Session 2004",
+        "Regular Session 2005",
+        "First Special Session 2005",
+        "Regular Session 2006",
+        "Organizational Session 2007",
+        "Regular Session 2007",
+        "First Special Session 2007",
+        "Regular Session 2008",
+        "First Special Session 2008",
+        "Regular Session 2009",
+        "Regular Session 2010",
+        "First Special Session 2009",
+        "First Special Session 2010",
+        "Regular Session 2016"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "Alabama Legislature"
+        lower_chamber_name = "House"
+        lower_seats = 105
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 35
+        upper_title = "Senator"
 
-def session_list():
-    import lxml.html
-    import requests
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
-    s = requests.Session()
-    r = s.get('http://alisondb.legislature.state.al.us/alison/SelectSession.aspx')
-    doc = lxml.html.fromstring(r.text)
-    options = doc.xpath('//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()')
-    return options
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield legislature
+        yield upper
+        yield lower
 
-def extract_text(doc, data):
-    text = pdfdata_to_text(data)
-    return text_after_line_numbers(text)
+    def get_session_list(self):
+        import lxml.html
+        import requests
+
+        s = requests.Session()
+        r = s.get('http://alisondb.legislature.state.al.us/alison/SelectSession.aspx')
+        doc = lxml.html.fromstring(r.text)
+        return doc.xpath('//*[@id="ContentPlaceHolder1_gvSessions"]/tr/td/font/a/font/text()')
