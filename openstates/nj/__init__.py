@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from .people import NJPersonScraper
+from .committees import NJCommitteeScraper
 
 # don't retry- if a file isn't on FTP just let it go
 settings = dict(SCRAPELIB_RETRY_ATTEMPTS=0)
@@ -14,6 +15,7 @@ class NewJersey(Jurisdiction):
     url = "http://www.njleg.state.nj.us/"
     scrapers = {
         'people': NJPersonScraper,
+        'committees': NJCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
