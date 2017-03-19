@@ -270,6 +270,8 @@ class KYBillScraper(Scraper, LXMLMixin):
                 action = (action[0].upper() + action[1:])
 
                 action_date = timezone('America/Kentucky/Louisville').localize(action_date)
+                action_date = action_date.strftime('%Y-%m-%d')
+
                 if action:
                     bill.add_action(action, action_date, chamber=actor, classification=atype)
 
