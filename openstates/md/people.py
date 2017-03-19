@@ -80,10 +80,6 @@ class MDPersonScraper(Scraper):
             leg.add_source(url=leg_url)
             leg.add_link(url=leg_url)
 
-            # TODO Fix "TypeError: 'Person' object does not support item assignment"
-            # photo
-
-
 
             # type ['address', 'email', 'url', 'fax', 'text', 'voice', 'video', 'pager', 'textphone']
             if address:
