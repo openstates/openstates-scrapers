@@ -104,3 +104,8 @@ metadata = {
     ],
     '_partial_vote_bill_id': True,
 }
+
+def session_list():
+    return url_xpath(
+        'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
+        '//select[@name="ctl00$rilinContent$cbYear"]/option/text()')
