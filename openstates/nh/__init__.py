@@ -3,7 +3,7 @@ import os
 
 from pupa.scrape import Jurisdiction, Organization
 from .people import NHPersonScraper
-
+from .bills import NHBillScraper
 
 class NewHampshire(Jurisdiction):
     division_id = "ocd-division/country:us/state:nh"
@@ -12,6 +12,7 @@ class NewHampshire(Jurisdiction):
     url = "http://gencourt.state.nh.us/"
     scrapers = {
         'people': NHPersonScraper,
+        'bills': NHBillScraper
     }
     parties = [
         {'name': 'Republican'},

@@ -1,11 +1,8 @@
 import re
+import pytz
 import datetime as dt
 
-from pupa.scrape import Scraper, Bill
-from billy.scrape.votes import Vote
-
-from openstates.nh.legacyBills import NHLegacyBillScraper
-
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 body_code = {'lower': 'H', 'upper': 'S'}
 bill_type_map = {
@@ -17,16 +14,16 @@ bill_type_map = {
     'A': 'address',
 }
 action_classifiers = [
-    ('Ought to Pass', ['bill:passed']),
-    ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
-    ('.*Ought to Pass', ['committee:passed:favorable']),
-    ('.*Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
-    ('.*Inexpedient to Legislate', ['committee:passed:unfavorable']),
-    ('Proposed(.*) Amendment', 'amendment:introduced'),
-    ('Amendment .* Adopted', 'amendment:passed'),
-    ('Amendment .* Failed', 'amendment:failed'),
-    ('Signed', 'governor:signed'),
-    ('Vetoed', 'governor:vetoed'),
+    ('Ought to Pass', ['passage']),
+    ('Passed by Third Reading', ['reading-3', 'passage']),
+    ('.*Ought to Pass', ['committee-passage-favorable']),
+    ('.*Introduced(.*) and (R|r)eferred', ['introduction', 'referral-committee']),
+    ('.*Inexpedient to Legislate', ['committee-passage-unfavorable']),
+    ('Proposed(.*) Amendment', 'amendment-introduction'),
+    ('Amendment .* Adopted', 'amendment-passage'),
+    ('Amendment .* Failed', 'amendment-failure'),
+    ('Signed', 'executive-signature'),
+    ('Vetoed', 'executive-veto'),
 ]
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
 AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
@@ -36,7 +33,7 @@ def classify_action(action):
     for regex, classification in action_classifiers:
         if re.match(regex, action):
             return classification
-    return 'other'
+    return None
 
 
 def extract_amendment_id(action):
@@ -47,6 +44,7 @@ def extract_amendment_id(action):
 
 class NHBillScraper(Scraper):
     jurisdiction = 'nh'
+    tz = pytz.timezone('America/New_York')
 
     def scrape(self, session=None, chamber=None):
         if not session:
@@ -57,8 +55,7 @@ class NHBillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 
-
-    def scrape_chamber(chamber):
+    def scrape_chamber(self, chamber, session):
         # bill basics
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
@@ -70,11 +67,7 @@ class NHBillScraper(Scraper):
         self.scrape_amendments()
 
         last_line = []
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt').content.split("\n"):
-            line = line.split('|')
-            if len(line) < 1:
-                continue
-
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt', False):
             if len(line) < 36:
                 if len(last_line + line[1:]) == 36:
                     # combine two lines for processing
@@ -86,6 +79,8 @@ class NHBillScraper(Scraper):
                     self.warning('bad line: %s' % '|'.join(line))
                     last_line = line
                     continue
+
+            line = line.split("|")
 
             session_yr = line[0]
             lsr = line[1]
@@ -121,8 +116,8 @@ class NHBillScraper(Scraper):
                                   'billText.aspx?sy={}&id={}&txtFormat=html' \
                                   .format(session, version_id)
 
-                    self.bills[lsr].add_version('latest version', version_url,
-                                                media_type='text/html', on_duplicate='use_new')
+                    self.bills[lsr].add_version_link('latest version', version_url,
+                                                media_type='text/html', on_duplicate='ignore')
 
 
                 # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
@@ -133,19 +128,15 @@ class NHBillScraper(Scraper):
                                   .format(session, amendment_id)
                     amendment_name = 'Amendment #{}'.format(amendment_id)
 
-                    self.bills[lsr].add_version(amendment_name, amendment_url,
-                                                mimetype='application/pdf', on_duplicate='use_new')
+                    self.bills[lsr].add_version_link(amendment_name, amendment_url,
+                                                media_type='application/pdf', on_duplicate='ignore')
 
 
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators
         self.legislators = {}
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt').content.split("\n"):
-            if len(line) < 1:
-                continue
-
-            line = line.split('|')
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt'):
             employee_num = line[0]
 
             # first, last, middle
@@ -156,23 +147,19 @@ class NHBillScraper(Scraper):
 
             self.legislators[employee_num] = {'name': name,
                                               'seat': line[5]}
-            #body = line[4]
 
         # sponsors
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt').content.split("\n"):
-            if len(line) < 1:
-                continue
-
-            session_yr, lsr, seq, employee, primary = line.strip().split('|')
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt'):
+            session_yr, lsr, seq, employee, primary = line
 
             if session_yr == session and lsr in self.bills:
-                sp_type = 'primary' if primary == '1' else 'cosponsor'
+                sp_type = 'primary' if primary == True else False
                 classification = 'sponsor' if primary == '1' else 'cosponsor'
                 try:
                     # self.bills[lsr].add_sponsor(sp_type,
                     #                     self.legislators[employee]['name'],
                     #                     _code=self.legislators[employee]['seat'])
-                    bill.add_sponsorship(self.legislators[employee]['name'],
+                    self.bills[lsr].add_sponsorship(self.legislators[employee]['name'],
                                         classification=classification,
                                         entity_type='person', 
                                         primary=sp_type)
@@ -181,64 +168,48 @@ class NHBillScraper(Scraper):
 
 
         # actions
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
-            if len(line) < 1:
-                continue
-            # a few blank/irregular lines, irritating
-            if '|' not in line:
-                continue
-
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt'):
             (session_yr, lsr, timestamp, bill_id, body,
-             action, _) = line.split('|')
+             action, _) = line
 
             if session_yr == session and lsr in self.bills:
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
                                                   '%m/%d/%Y %H:%M:%S %p')
+                time = self.tz.localize(time)
                 action = action.strip()
                 atype = classify_action(action)
-                self.bills[lsr].add_action(actor, action, time, type=atype)
+                self.bills[lsr].add_action(action, time, chamber=actor, classification=atype)
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:
-                    self.bills[lsr].add_document('amendment %s' % amendment_id,
+                    self.bills[lsr].add_document_link('amendment %s' % amendment_id,
                                                  AMENDMENT_URL % amendment_id)
 
         self.scrape_votes(session)
 
-        
+        print(self.bills)
+
         # save all bills
         for bill in self.bills:
             #bill.add_source(zip_url)
             self.add_source(self.bills[bill], bill, session)
-            self.save_bill(self.bills[bill])
+            # self.save_bill(self.bills[bill])
+            print(bill)
+            yield self.bills[bill]
 
     def add_source(self, bill, lsr, session):
         bill_url = 'http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?lsr={}&sy={}&sortoption=&txtsessionyear={}'.format(lsr, session, session)
         bill.add_source(bill_url)
 
     def scrape_version_ids(self):
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt').content.split("\n"):
-            if len(line) < 1:
-                continue
-            # a few blank/irregular lines, irritating
-            if '|' not in line:
-                continue
-
-            line = line.split('|')
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt'):
             file_id = line[2]
             lsr = line[0].split('-')
             lsr = lsr[1]
             self.versions_by_lsr[lsr] = file_id
 
     def scrape_amendments(self):
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
-            if len(line) < 1:
-                continue
-            # a few blank/irregular lines, irritating
-            if '|' not in line:
-                continue
-
-            line = line.split('|')
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt'):
             lsr = line[1]
 
             amendment_regex = re.compile(r'Amendment # (\d{4}-\d+\w)', re.IGNORECASE)
@@ -250,21 +221,7 @@ class NHBillScraper(Scraper):
         votes = {}
         last_line = []
 
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content:
-            if len(line) < 2:
-                continue
-
-            if line.strip() == "":
-                continue
-
-            line = line.split('|')
-            if len(line) < 14:
-                if len(last_line + line[1:]) == 14:
-                    line = last_line
-                    self.warning('used bad vote line')
-                else:
-                    last_line = line
-                    self.warning('bad vote line %s' % '|'.join(line))
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt'):
             session_yr = line[0]
             body = line[1]
             vote_num = line[2]
@@ -282,19 +239,15 @@ class NHBillScraper(Scraper):
                                                   '%m/%d/%Y %I:%M:%S %p')
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
-                vote = Vote(actor, time, motion, passed, yeas, nays,
-                            other_count=0)
-                votes[body+vote_num] = vote
-                self.bills_by_id[bill_id].add_vote(vote)
+                # vote = VoteEvent(actor, time, motion, passed, yeas, nays,
+                #             other_count=0)
+                # votes[body+vote_num] = vote
+                # self.bills_by_id[bill_id].add_vote(vote)
 
-        for line in  self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt').content:
-            if len(line) < 2:
-                continue
-
+        for line in self.psv_to_dict('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt'):
             # 2016|H|2|330795||Yea|
             # 2012    | H   | 2    | 330795  | HB309  | Yea |1/4/2012 8:27:03 PM
-            session_yr, body, v_num, employee, bill_id, vote \
-                    = line.split('|')
+            session_yr, body, v_num, employee, bill_id, vote, vote_date, _ = line
 
             if not bill_id:
                 continue
@@ -320,3 +273,15 @@ class NHBillScraper(Scraper):
                 else:
                     votes[body+v_num].other(leg)
                     votes[body+v_num]['other_count'] += 1
+
+    def psv_to_dict(self, url, split = True):
+        for line in self.get(url).content.decode("utf-8").split("\r\n"):
+            line = line.replace("\r\n","")
+            if len(line) < 1:
+                continue
+            # a few blank/irregular lines, irritating
+            if '|' not in line:
+                continue
+            if split:
+                line = line.split('|')
+            yield line
