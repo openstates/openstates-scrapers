@@ -21,11 +21,11 @@ class MEPersonScraper(Scraper):
         if chamber == None:
             chamber = ['upper', 'lower']
         if 'upper' in chamber:
-            yield from self.scrape_senators()
+            yield from self.scrape_senators(chamber)
         if 'lower' in chamber:
-            yield from self.scrape_reps()
+            yield from self.scrape_reps(chamber)
 
-    def scrape_reps(self):
+    def scrape_reps(self, chamber):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
         page = self.get(url).text
         page = lxml.html.fromstring(page)
@@ -111,7 +111,7 @@ class MEPersonScraper(Scraper):
 
             yield person
 
-    def scrape_senators(self):
+    def scrape_senators(self, chamber):
         mapping = {
                 'district': 0,
                 'first_name': 2,
@@ -168,9 +168,9 @@ class MEPersonScraper(Scraper):
                 phone = None
 
             district = d['district'].split('.')[0]
+            party = d['party'].split('.')[0]
 
             # Determine legislator's URL to get their photo
-
             URL_XPATH = '//li/a[contains(text(), "District {:02d}")]/@href'.format(int(district))
 
             try:
@@ -184,13 +184,12 @@ class MEPersonScraper(Scraper):
             doc.make_links_absolute(leg_url)
             xpath = '//img[contains(@src, ".png")]/@src'
             photo_url = doc.xpath(xpath)
-
             if photo_url:
                 photo_url = photo_url.pop()
             else:
                 photo_url = None
 
-            person = Person(name=full_name, district=district,  image=photo_url)
+            person = Person(name=full_name, district=district,  image=photo_url, primary_org=chamber, party=party)
 
             person.add_link(leg_url)
             person.add_source(leg_url)
