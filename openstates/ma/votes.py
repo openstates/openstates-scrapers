@@ -73,7 +73,9 @@ class MAVoteScraper(VoteScraper):
                 third = bill_page.xpath("//div[@class='table-responsive']/table/tbody/tr/td" +
                                         "[@class='downloadCol']/a/@href")
 
-                y_n_counts = other_counts = pdf_urls = []
+                y_n_counts = []
+                other_counts = []
+                pdf_urls = []
 
                 for i in range(0, len(dates)):
                     dates[i] = datetime.datetime.strptime(dates[i], '%B %d, %Y')
@@ -85,6 +87,7 @@ class MAVoteScraper(VoteScraper):
                 for i in xrange(1, len(second), 2):
                     other_counts.append(map(int, re.findall(r'\d+', "".join((second[i].
                                                             replace('\r\n', '').split())))))
+
 
                 for i in range(0, len(dates)):
                     vote = BillyVote(chamber, dates[i], motions[i],
