@@ -1,10 +1,11 @@
 import datetime as dt
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import Event, EventScraper
+from pupa.scrape import (
+    Event,
+    Scraper,
+)
 from openstates.utils import LXMLMixin
 
-import lxml.html
 import pytz
 
 cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
@@ -14,10 +15,9 @@ cal_chamber_text = {
     "other" : "Joint"
 }
 
-class TNEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'tn'
-
-    _tz = pytz.timezone('US/Eastern')
+class TNEventScraper(Scraper, LXMLMixin):
+    _tz = pytz.timezone('US/Central')
+    _utc = pytz.timezone('UTC')
 
     def url_xpath(self, url, xpath):
         page = self.lxmlize(url)
@@ -40,13 +40,10 @@ class TNEventScraper(EventScraper, LXMLMixin):
             tds = tr.xpath("./*")
             billinf = tds[0].attrib['id']  # TN uses bill_ids as the id
             descr = tr.xpath("./td//p")[-1].text_content()
-            event.add_related_bill(
-                billinf,
-                description=descr,
-                type="consideration"
-            )
+            agenda_item = event.add_agenda_item(descr)
+            agenda_item.add_bill(billinf, id=billinf)
         event.add_source(url)
-        event.add_document(url=url, name="Agenda", type="agenda")
+        event.add_document("Agenda", url)
         return event
 
     def _add_agenda_list(self, url, event):
@@ -60,12 +57,17 @@ class TNEventScraper(EventScraper, LXMLMixin):
     def add_agenda(self, url, name, event):
         if "CalendarMain" in url:
             return self._add_agenda_main(url, event)
-        if "scheduledocs" in url:
-            return event.add_document(name=name, url=url, type="agenda")
-        return event.add_document(name=name, url=url, type="other")
+        return event.add_document(name, url)
 
-    def scrape(self, chamber, session):
-        chmbr = cal_chamber_text[chamber]
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber()
+
+    def scrape_chamber(self, chamber=None):
+        # If chamber is None, don't exclude any events from the results based on chamber
+        chmbr = cal_chamber_text.get(chamber)
         tables = self.url_xpath(cal_weekly_events,
                                 "//table[@class='date-table']")
         for table in tables:
@@ -84,8 +86,8 @@ class TNEventScraper(EventScraper, LXMLMixin):
                 for el in range(0, len(order)):
                     metainf[order[el]] = tds[el]
 
-                if metainf['chamber'].text_content() == chmbr:
-                    self.log("Skipping event based on chamber.")
+                if chmbr and metainf['chamber'].text_content() != chmbr:
+                    self.info("Skipping event based on chamber.")
                     continue
 
                 time = metainf['time'].text_content()
@@ -110,15 +112,22 @@ class TNEventScraper(EventScraper, LXMLMixin):
                         continue
 
                     datetime_string = datetime_string.strip()
-                    
+
                     try:
                         when = dt.datetime.strptime(datetime_string, dtfmt)
                     except ValueError:
                         when = dt.datetime.strptime(datetime_string, dtfmt_no_time)
+                    when = self._utc.localize(when)
 
-                event = Event(session, when, 'committee:meeting',
-                              description, location=location)
-                event.add_participant("host", description, 'committee', chamber=chamber)
+                event = Event(
+                    description,
+                    when,
+                    when.tzname(),
+                    location,
+                    description=description,
+                )
+                # The description is a committee name
+                event.add_committee(description)
                 event.add_source(cal_weekly_events)
 
                 agenda = metainf['agenda'].xpath(".//a")
@@ -130,4 +139,4 @@ class TNEventScraper(EventScraper, LXMLMixin):
                         agenda_url = doc.attrib['href']
                         self.add_agenda(
                             agenda_url, doc.text_content(), event)
-                self.save_event(event)
+                yield event
