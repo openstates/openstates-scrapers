@@ -1,9 +1,7 @@
+import lxml.html
 from collections import defaultdict
 
-# from billy.scrape.legislators import Legislator, LegislatorScraper
 from pupa.scrape import Person, Scraper
-
-import lxml.html
 
 
 class KYPersonScraper(Scraper):
@@ -19,7 +17,7 @@ class KYPersonScraper(Scraper):
 
     def scrape_chamber(self, chamber):
         url = 'http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper' else 'http://www.lrc.ky.gov/house/hsemembers.htm'
-        page = self.get(leg_list_url).text
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
@@ -104,16 +102,14 @@ class KYPersonScraper(Scraper):
 
         district = doc.xpath('//span[@id="districtHeader"]/text()')[0].split()[-1]
 
-        leg = Legislator(year, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url)
-
         person = Person(name=full_name, district=district, party=party, primary_org=chamber, image=photo_url)
         person.add_source(member_url)
+        person.add_link(member_url)
 
         address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
 
         phone = None
-        fax   = None
+        fax = None
         phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
         for num in phone_numbers:
             if num.startswith('Annex: '):
@@ -122,7 +118,6 @@ class KYPersonScraper(Scraper):
                     fax = num.replace(' (fax)', '')
                 else:
                     phone = num
-
 
         emails = doc.xpath(
             '//div[@id="EmailAddresses"]//span[@class="bioText"]//a/text()'
@@ -137,16 +132,10 @@ class KYPersonScraper(Scraper):
 
         if email:
             person.add_contact_detail(type='email', value=email, note='Capitol Office')
+
         if address.strip() == "":
             self.warning("Missing Capitol Office!!")
         else:
-            leg.add_office(
-                'capitol', 'Capitol Office',
-                address=address,
-                phone=phone,
-                fax=fax,
-                email=email
-            )
+            person.add_contact_detail(type='address', value=address, note='Capitol Office')
 
-
-        self.save_legislator(leg)
+        yield person
