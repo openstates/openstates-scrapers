@@ -2,11 +2,6 @@ import datetime
 import re
 from billy.scrape.utils import url_xpath
 from billy.utils.fulltext import worddata_to_text
-from .bills import KYBillScraper
-from .legislators import KYLegislatorScraper
-from .committees import KYCommitteeScraper
-from .events import KYEventScraper
-from .votes import KYVoteScraper
 
 metadata = {
     'name': 'Kentucky',
@@ -141,4 +136,3 @@ def session_list():
 
 def extract_text(doc, data):
     return worddata_to_text(data)
-

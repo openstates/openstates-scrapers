@@ -1,26 +1,29 @@
 from collections import defaultdict
 
-from billy.scrape.legislators import Legislator, LegislatorScraper
+# from billy.scrape.legislators import Legislator, LegislatorScraper
+from pupa.scrape import Person, Scraper
 
 import lxml.html
 
 
-class KYLegislatorScraper(LegislatorScraper):
+class KYPersonScraper(Scraper):
     jurisdiction = 'ky'
     latest_only = True
 
-    def scrape(self, chamber, year):
-
-        if chamber == 'upper':
-            leg_list_url = 'http://www.lrc.ky.gov/senate/senmembers.htm'
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
         else:
-            leg_list_url = 'http://www.lrc.ky.gov/house/hsemembers.htm'
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
 
+    def scrape_chamber(self, chamber):
+        url = 'http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper' else 'http://www.lrc.ky.gov/house/hsemembers.htm'
         page = self.get(leg_list_url).text
         page = lxml.html.fromstring(page)
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
-            self.scrape_member(chamber, year, link.get('href'))
+            yield from self.scrape_member(chamber, year, link.get('href'))
 
     def scrape_office_info(self, url):
         ret = {}
@@ -103,7 +106,9 @@ class KYLegislatorScraper(LegislatorScraper):
 
         leg = Legislator(year, chamber, district, full_name, party=party,
                          photo_url=photo_url, url=member_url)
-        leg.add_source(member_url)
+
+        person = Person(name=full_name, district=district, party=party, primary_org=chamber, image=photo_url)
+        person.add_source(member_url)
 
         address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
 
@@ -127,6 +132,11 @@ class KYLegislatorScraper(LegislatorScraper):
             [None] + emails
         )
 
+        if phone:
+            person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+
+        if email:
+            person.add_contact_detail(type='email', value=email, note='Capitol Office')
         if address.strip() == "":
             self.warning("Missing Capitol Office!!")
         else:
@@ -137,5 +147,6 @@ class KYLegislatorScraper(LegislatorScraper):
                 fax=fax,
                 email=email
             )
+
 
         self.save_legislator(leg)
