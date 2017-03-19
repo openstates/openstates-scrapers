@@ -4,6 +4,7 @@ import csv
 import zipfile
 import subprocess
 
+
 def clean_committee_name(comm_name):
     comm_name = comm_name.strip()
     comm_name = re.sub(' ?[-,] (Co|Vice)?[- ]?Chair$', '', comm_name)
