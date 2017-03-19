@@ -57,7 +57,7 @@ class ORBillScraper(Scraper, LXMLMixin):
 
     def scrape_chamber(self, chamber, session):
         self.all_bills = {}
-        self.slug = self.metadata['session_details'][session]['slug']  # TODO: figure out this
+        self.slug = session
 
         page = self.lxmlize(self.bill_directory_url.format(self.slug.upper()))
         page.make_links_absolute(self.base_url)
