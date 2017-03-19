@@ -5,16 +5,24 @@ import json
 
 import scrapelib
 
-from billy.scrape.bills import BillScraper, Bill
+from pupa.scrape import Scraper, Bill
 from billy.scrape.votes import Vote
 
 from .utils import decode_json
 
 
-class DCBillScraper(BillScraper):
+class DCBillScraper(Scraper):
     jurisdiction = 'dc'
 
-    def scrape(self, session, chambers):
+    def scrape(self, session=None, chambers=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+            chambers = [chamber] if chamber else ['upper']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber, session)
+
         #get member id matching for vote parsing
         member_ids = self.get_member_ids()[session]
         per_page = 10 #seems like it gives me 10 no matter what.
@@ -96,16 +104,18 @@ class DCBillScraper(BillScraper):
                     bill_type = "bill"
 
                 #dc has no chambers. calling it all upper
-                bill = Bill(session,"upper", bill_id, title, type=bill_type)
+                # bill = Bill(session,"upper", bill_id, title, type=bill_type)
+                bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=title, classification=bill_type)
 
                 #sponsors and cosponsors
                 if "Introducer" in legislation_info:
                     introducers = legislation_info["Introducer"]
                     intro_date = self.date_format(legislation_info["IntroductionDate"])
-                    bill.add_action("upper",
-                                    "Introduced",
-                                    intro_date,
-                                    type="bill:introduced")
+                    # bill.add_action("upper",
+                    #                "Introduced",
+                    #               intro_date,
+                    #                type="bill:introduced")
+                    bill.add_action("Introduced", intro_date, chamber="upper", classification="bill:introduced")
                 else:
                     #sometimes there are introducers, sometimes not.
                     # Set Introducers to empty array to avoid downstream breakage, but log bills without introducers
@@ -123,7 +133,9 @@ class DCBillScraper(BillScraper):
                     #they messed up Phil Mendelson's name
                     if sponsor_name == "Phil Pmendelson":
                         sponsor_name = "Phil Mendelson"
-                    bill.add_sponsor(name=sponsor_name,type="primary")
+                    # bill.add_sponsor(name=sponsor_name,type="primary")
+                    bill.add_sponsorship(name, classification=spon_type, entity_type='person', primary=is_primary)
+
                 for s in cosponsors:
                     sponsor_name = s["Name"]
                     if sponsor_name == "Phil Pmendelson":
@@ -157,23 +169,12 @@ class DCBillScraper(BillScraper):
                     withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
                     if withdrawn_by == "the Mayor":
 
-                        bill.add_action("executive",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn")
+                        bill.add_action("withdrawn", withdrawn_date, chamber="executive", classification="bill:withdrawn")
 
                     elif "committee" in withdrawn_by.lower():
-                        bill.add_action("upper",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn",
-                                    committees=withdrawn_by)
+                        bill.add_action("withdrawn", withdrawn_date, chamber="upper", classification="bill:withdrawn", committees=withdrawn_by)
                     else:
-                        bill.add_action("upper",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn",
-                                    legislators=withdrawn_by)
+                        bill.add_action("withdrawn", withdrawn_date, chamber="upper", classification="bill:withdrawn", legislators=withdrawn_by)
 
 
                 #deal with actions involving the mayor
@@ -185,35 +186,23 @@ class DCBillScraper(BillScraper):
                     if "TransmittedDate" in mayor:
                         transmitted_date = self.date_format(mayor["TransmittedDate"])
 
-                        bill.add_action("executive",
-                                    "transmitted to mayor",
-                                    transmitted_date,
-                                    type = "governor:received")
+                        bill.add_action("transmitted to mayor", transmitted_date, chamber="executive", classification= "governor:received")
 
                     if 'SignedDate' in mayor:
                         signed_date = self.date_format(mayor["SignedDate"])
 
-                        bill.add_action("executive",
-                                        "signed",
-                                        signed_date,
-                                        type="governor:signed")
+                        bill.add_action("signed", signed_date, chamber="executive", classification="governor:signed")
 
 
                     elif 'ReturnedDate' in mayor: #if returned but not signed, it was vetoed
                         veto_date = self.date_format(mayor["ReturnedDate"])
 
-                        bill.add_action("executive",
-                                        "vetoed",
-                                        veto_date,
-                                        type="governor:vetoed")
+                        bill.add_action("vetoed", veto_date, chamber="executive", classification="governor:vetoed")
 
                         if 'EnactedDate' in mayor: #if it was returned and enacted but not signed, there was a veto override
                             override_date = self.date_format(mayor["EnactedDate"])
 
-                            bill.add_action("upper",
-                                        "veto override",
-                                        override_date,
-                                        type="bill:veto_override:passed")
+                            bill.add_action("veto override", override_date, chamber="upper", classification="bill:veto_override:passed")
 
                     if 'AttachmentPath' in mayor:
                         #documents relating to the mayor's review
@@ -225,9 +214,7 @@ class DCBillScraper(BillScraper):
                     if "TransmittedDate" in congress:
                         transmitted_date = self.date_format(congress["TransmittedDate"])
 
-                        bill.add_action("other",
-                                    "Transmitted to Congress for review",
-                                    transmitted_date)
+                        bill.add_action("Transmitted to Congress for review", transmitted_date, chamber="other")
 
 
 
@@ -250,21 +237,13 @@ class DCBillScraper(BillScraper):
                         else:
                             committees.append(committee["Name"])
                     if committees != []:
-                        bill.add_action("upper",
-                                    "referred to committee",
-                                    date,
-                                    committees=committees,
-                                    type="committee:referred")
+                        bill.add_action("referred to committee", date, chamber="upper", committees=committees, classification="committee:referred")
 
                 if "CommitteeReferralComments" in legislation_info:
                     committees = []
                     for committee in legislation_info["CommitteeReferralComments"]:
                         committees.append(committee["Name"])
-                    bill.add_action("upper",
-                                    "comments from committee",
-                                    date,
-                                    committees=committees,
-                                    type="other")
+                    bill.add_action("comments from committee", date, chamber="upper", committees=committees, classification="other")
 
                 #deal with random docs floating around
                 docs = bill_info["OtherDocuments"]
@@ -404,10 +383,7 @@ class DCBillScraper(BillScraper):
         else:
             t = "other"
 
-        bill.add_action("upper",
-                        motion,
-                        date,
-                        type=t)
+        bill.add_action(motion, date, chamber="upper", classification=t)
 
         if "amendment" in t:
             vote["type"] = "amendment"
@@ -458,7 +434,8 @@ class DCBillScraper(BillScraper):
             passed = True
 
         vote = Vote("upper",date,"Committee Vote",passed,yes_count,no_count,other_count)
-        bill.add_vote(vote)
+        #bill.add_vote(vote)
+        bill.add_vote_event(vote)
 
 
     def add_documents(self,attachment_path,bill,is_version=False):
@@ -490,7 +467,8 @@ class DCBillScraper(BillScraper):
                 if doc_url in bill_versions:
                     self.logger.warning("Version {} has been seen multiple times. Keeping first version seen".format(doc_url))
                 else:
-                    bill.add_version(doc_type,doc_url,mimetype=mimetype)
+                    # bill.add_version(doc_type,doc_url,mimetype=mimetype)
+                    bill.add_version_link(note, url, media_type='text/html')
                     bill_versions.append(doc_url)
                 continue
 
