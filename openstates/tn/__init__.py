@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from .bills import TNBillScraper
 from .committees import TNCommitteeScraper
 from .people import TNPersonScraper
 
@@ -11,7 +12,8 @@ class Tennessee(Jurisdiction):
     url = 'http://www.capitol.tn.gov/'
     scrapers = {
         'people': TNPersonScraper,
-        'committees': TNCommitteeScraper
+        'committees': TNCommitteeScraper,
+        'bills': TNBillScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -106,3 +108,16 @@ class Tennessee(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    @property
+    def sessions_by_id(self):
+        """A map of sessions in legislative_sessions indexed by their `identifer`"""
+        if hasattr(self, '_sessions_by_id'):
+            return self._sessions_by_id
+
+        self._sessions_by_id = {
+            session['identifier']: session
+            for session in self.legislative_sessions
+        }
+
+        return self._sessions_by_id
