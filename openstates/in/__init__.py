@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import INPersonScraper
 from .committees import INCommitteeScraper
+from .bills import INBillScraper
 
 
 class Indiana(Jurisdiction):
@@ -10,7 +11,8 @@ class Indiana(Jurisdiction):
     url = "http://www.in.gov/"
     scrapers = {
         'people': INPersonScraper,
-        'committees': INCommitteeScraper
+        'committees': INCommitteeScraper,
+        'bills': INBillScraper
 
     }
     parties = [
