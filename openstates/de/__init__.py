@@ -1,6 +1,7 @@
 from .people import DEPersonScraper
 from .bills import DEBillScraper
 from .events import DEEventScraper
+from .committees import DECommitteeScraper
 
 from pupa.scrape import Jurisdiction, Organization
 
@@ -14,6 +15,7 @@ class Delaware(Jurisdiction):
         'people': DEPersonScraper,
         'bills': DEBillScraper,
         'events': DEEventScraper,
+        'committees': DECommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},

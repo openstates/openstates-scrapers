@@ -1,13 +1,21 @@
 import re
 import lxml.html
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 
-class DECommitteeScraper(CommitteeScraper, LXMLMixin):
+class DECommitteeScraper(Scraper, LXMLMixin):
     jurisdiction = "de"
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            chambers = ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber)
+
+    def scrape_chamber(self, chamber):
         urls = {
             'upper': 'http://legis.delaware.gov/json/Committees/' +
                      'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=1',
@@ -15,38 +23,32 @@ class DECommitteeScraper(CommitteeScraper, LXMLMixin):
                      'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=2',
         }
 
-        # Mapping of term names to session numbers (see metatdata).
-        term2session = {"2017-2018": "149", "2015-2016": "148",
-                        "2013-2014": "147", "2011-2012": "146",
-                        "2009-2010": "145", "2007-2008": "144",
-                        "2005-2006": "143", "2003-2004": "142",
-                        "2001-2002": "141", "1999-2000": "140"}
-
-        session = term2session[term]
+        session = self.latest_session()
+        self.info('no session specified, using %s', session)
 
         if chamber == 'lower':
             # only scrape joint comms once
-            self.scrape_joint_committees(session)
+            yield from self.scrape_joint_committees(session)
 
         # scrap upper and lower committees
         url = urls[chamber] % (session,)
-        self.scrape_comm(url, chamber)
+        yield from self.scrape_comm(url, chamber)
 
     def scrape_comm(self, url, chamber):
         data = self.post(url).json()['Data']
 
         for item in data:
             comm_name = item['CommitteeName']
-            committee = Committee(chamber, comm_name)
+            committee = Organization(name=comm_name, chamber=chamber, classification='committee')
             chair_man = str(item['ChairName'])
             vice_chair = str(item['ViceChairName'])
             comm_id = item['CommitteeId']
             comm_url = self.get_comm_url(chamber, comm_id, comm_name)
             members = self.scrape_member_info(comm_url)
             if vice_chair != 'None':
-                committee.add_member(vice_chair, 'Vice-Chair')
+                committee.add_member(vice_chair, role='Vice-Chair')
             if chair_man  != 'None':
-                committee.add_member(chair_man, 'Chairman')
+                committee.add_member(chair_man, role='Chairman')
 
 
             for member in members:
@@ -58,13 +60,13 @@ class DECommitteeScraper(CommitteeScraper, LXMLMixin):
 
             committee.add_source(comm_url)
             committee.add_source(url)
-            self.save_committee(committee)
+            yield committee
 
     def scrape_joint_committees(self, session):
         chamber = 'joint'
         url = 'http://legis.delaware.gov/json/Committees/' + \
               'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=3' % (session, )
-        self.scrape_comm(url, chamber)
+        yield from self.scrape_comm(url, chamber)
 
     def scrape_member_info(self, comm_url):
         comm_page = lxml.html.fromstring(self.get(comm_url).text)
