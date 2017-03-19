@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .people import WVPersonScraper
+from .committees import WVCommitteeScraper
 
 
 class WestVirginia(Jurisdiction):
@@ -10,6 +11,7 @@ class WestVirginia(Jurisdiction):
     url = "http://www.legis.state.wv.us/"
     scrapers = {
         'people': WVPersonScraper,
+        'committees': WVCommitteeScraper
     }
     parties = [
         {'name': 'Republican'},
