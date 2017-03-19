@@ -39,24 +39,29 @@ class KYBillScraper(Scraper, LXMLMixin):
                 for bill in sdoc.xpath('//div[@id="bul"]/a/text()'):
                     self._subjects[bill.replace(' ', '')].append(subject)
 
-    def scrape(self, chamber, session):
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.last_session()
+            self.info('no session specified, using %s', session)
         # Bill page markup changed starting with the 2016 regular session.
         if (self.metadata['session_details'][session]['start_date'] >=
             self.metadata['session_details']['2016RS']['start_date']):
             self._is_post_2016 = True
 
         self.scrape_subjects(session)
-        self.scrape_session(chamber, session)
-        for sub in self.metadata['session_details'][session].get('sub_sessions', []):
-            self.scrape_session(chamber, sub)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_session(chamber, session)
+            for sub in self.metadata['session_details'][session].get('sub_sessions', []):
+                yield from self.scrape_session(chamber, sub)
 
     def scrape_session(self, chamber, session):
         bill_url = session_url(session) + "bills_%s.htm" % chamber_abbr(chamber)
-        self.scrape_bill_list(chamber, session, bill_url)
+        yield from self.scrape_bill_list(chamber, session, bill_url)
 
         resolution_url = session_url(session) + "res_%s.htm" % (
             chamber_abbr(chamber))
-        self.scrape_bill_list(chamber, session, resolution_url)
+        yield from self.scrape_bill_list(chamber, session, resolution_url)
 
     def scrape_bill_list(self, chamber, session, url):
         bill_abbr = None
@@ -73,7 +78,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 else:
                     bill_id = bill_abbr + bill_id
 
-                self.parse_bill(chamber, session, bill_id,
+                yield from self.parse_bill(chamber, session, bill_id,
                     link.attrib['href'])
 
     def parse_bill(self, chamber, session, bill_id, url):
@@ -127,7 +132,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     self.warning('got title the dangerous way: %s' % title)
                 action_p = pars[0]
 
-            title = re.sub(ur'[\s\xa0]+', ' ', title).strip()
+            title = re.sub(r'[\s\xa0]+', ' ', title).strip()
             actions = action_p.xpath("string()").split("\n")
 
         if 'CR' in bill_id:
@@ -139,11 +144,11 @@ class KYBillScraper(Scraper, LXMLMixin):
         else:
             bill_type = 'bill'
 
-        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=title, classification=bill_type)
         bill['subjects'] = self._subjects[bill_id]
         bill.add_source(url)
 
-        bill.add_version("Most Recent Version",
+        bill.add_version_link("Most Recent Version",
                          source_url,
                          mimetype=mimetype)
 
@@ -160,7 +165,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 mimetype = 'application/pdf'
 
             version_title = version_link.xpath('text()')[0]
-            bill.add_version(version_title, source_url, mimetype=mimetype)
+            bill.add_version_link(version_title, source_url, mimetype=mimetype)
 
         # LM is "Locally Mandated fiscal impact"
         fiscal_notes = page.xpath('//a[contains(@href, "/LM.pdf")]')
@@ -171,10 +176,10 @@ class KYBillScraper(Scraper, LXMLMixin):
             elif source_url.endswith('.pdf'):
                 mimetype = 'application/pdf'
 
-            bill.add_document("Fiscal Note", source_url, mimetype=mimetype)
+            bill.add_document_link("Fiscal Note", source_url, mimetype=mimetype)
 
         for link in page.xpath("//a[contains(@href, 'legislator/')]"):
-            bill.add_sponsor('primary', link.text.strip())
+            bill.add_sponsorship(link.text.strip(), classification='Primary', entity_type='person', primary=True)
 
         for line in actions:
             line_actions = line.strip().split(';')
@@ -234,7 +239,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                         '"veto.pdf")]')
 
                     if veto_document_link is not None:
-                        bill.add_document("Veto Message",
+                        bill.add_document_link("Veto Message",
                             veto_document_link.attrib['href'])
                 elif re.match(r'^to [A-Z]', action):
                     atype.append('committee:referred')
@@ -259,7 +264,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                     atype.append('amendment:introduced')
 
                 if not atype:
-                    atype = ['other']
+                    atype = None
 
                 # Capitalize the first letter of the action for nicer
                 # display. capitalize() won't work for this because it
@@ -267,12 +272,12 @@ class KYBillScraper(Scraper, LXMLMixin):
                 action = (action[0].upper() + action[1:])
 
                 if action:
-                    bill.add_action(actor, action, action_date, type=atype)
+                    bill.add_action(action, action_date, chamber=actor, classification=atype)
 
         try:
             votes_link = page.xpath(
                 "//a[contains(@href, 'vote_history.pdf')]")[0]
-            bill.add_document("Vote History",
+            bill.add_document_link("Vote History",
                 votes_link.attrib['href'])
         except IndexError:
             # No votes
@@ -292,4 +297,4 @@ class KYBillScraper(Scraper, LXMLMixin):
                     action['date'] = action['date'].replace(year=action['date'].year-1)
                     self.debug('corrected year for %s', action['action'])
 
-        self.save_bill(bill)
+        yield bill
