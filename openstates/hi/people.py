@@ -194,21 +194,10 @@ class HIPersonScraper(Scraper):
                 print("   - PRT, Jun 23, 2014")
                 print("")
                 continue
-# this?
+
             person = Person(name=leg['name'], district=leg['district'],
                             party=leg['party'], primary_org=chamber,
                             image=leg['image'])
-
-            # REMOVE
-            # p = Legislator( session, chamber, leg['district'], leg['name'],
-            #     party=leg['party'],
-            #     # some additional things the website provides:
-            #     photo_url=leg['image'],
-            #     url=leg['homepage'])
-
-            # p.add_office('capitol', 'Capitol Office', address=leg['addr'],
-            #              phone=leg['phone'], fax=leg['fax'] or None,
-            #              email=leg['email'])
 
             for source in leg['source']:
                 person.add_source( source )
@@ -226,29 +215,12 @@ class HIPersonScraper(Scraper):
                                 chamber=ctty_chamber)
                     comm.add_member(person,role="member")
 
-                    # person.role( 'committee member',
-                    #     # term=session,
-                    #     chamber=ctty_chamber,
-                    #     committee=ctty['name'],
-                    #     position="member")
-
             except KeyError:
                 self.log( "XXX: Warning, %s has no scraped Committees" %
                     leg['name'] )
 
-            # removing
-            # self.save_legislator( p )
-
-            # adding
-            # not sure what this is it is not working
-            # person.extras['notice'] = notice
             person.add_link(leg['homepage'])
             person.add_source(leg['homepage'])
-            # only seeing one address and phone
-            # if address:
-            #     person.add_contact_detail(type='address', value=address], note='District Office')
-            # if phone:
-            #     person.add_contact_detail(type='voice', value=address, note='District Office')
             if leg['addr']:
                 person.add_contact_detail(type='address', value=leg['addr'], note='Capitol Office')
             if leg['phone']:
