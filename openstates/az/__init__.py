@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import AZPersonScraper
 from .committees import AZCommitteeScraper
 
+
 class Arizona(Jurisdiction):
     division_id = "ocd-division/country:us/state:az"
     classification = "government"
