@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 
-from billy.scrape.bills import Bill, BillScraper
+from pupa.scrape import Scraper, Bill
 from billy.scrape.votes import Vote
 
 from openstates.nh.legacyBills import NHLegacyBillScraper
@@ -45,18 +45,20 @@ def extract_amendment_id(action):
         return piece[0]
 
 
-class NHBillScraper(BillScraper):
+class NHBillScraper(Scraper):
     jurisdiction = 'nh'
 
-    def scrape(self, chamber, session):
-        if int(session) < 2017:
-            legacy = NHLegacyBillScraper(self.metadata, self.output_dir, self.strict_validation)
-            legacy.scrape(chamber, session)
-            # This throws an error because object_count isn't being properly incremented,
-            # even though it saves fine. So fake the output_names
-            self.output_names = ['1']
-            return
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+
+    def scrape_chamber(chamber):
         # bill basics
         self.bills = {}         # LSR->Bill
         self.bills_by_id = {}   # need a second table to attach votes
@@ -84,6 +86,7 @@ class NHBillScraper(BillScraper):
                     self.warning('bad line: %s' % '|'.join(line))
                     last_line = line
                     continue
+
             session_yr = line[0]
             lsr = line[1]
             title = line[2]
@@ -105,8 +108,11 @@ class NHBillScraper(BillScraper):
                 if title.startswith('('):
                     title = title.split(')', 1)[1].strip()
 
-                self.bills[lsr] = Bill(session, chamber, bill_id, title,
-                                       type=bill_type)
+                # self.bills[lsr] = Bill(session, chamber, bill_id, title,
+                #                        type=bill_type)
+
+                self.bills[lsr] = Bill(bill_id, legislative_session=session, chamber=chamber,
+                    title=title, classification=bill_type)
 
                 # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
                 if lsr in self.versions_by_lsr:
@@ -116,7 +122,7 @@ class NHBillScraper(BillScraper):
                                   .format(session, version_id)
 
                     self.bills[lsr].add_version('latest version', version_url,
-                                                mimetype='text/html', on_duplicate='use_new')
+                                                media_type='text/html', on_duplicate='use_new')
 
 
                 # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
@@ -161,10 +167,15 @@ class NHBillScraper(BillScraper):
 
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
+                classification = 'sponsor' if primary == '1' else 'cosponsor'
                 try:
-                    self.bills[lsr].add_sponsor(sp_type,
-                                        self.legislators[employee]['name'],
-                                        _code=self.legislators[employee]['seat'])
+                    # self.bills[lsr].add_sponsor(sp_type,
+                    #                     self.legislators[employee]['name'],
+                    #                     _code=self.legislators[employee]['seat'])
+                    bill.add_sponsorship(self.legislators[employee]['name'],
+                                        classification=classification,
+                                        entity_type='person', 
+                                        primary=sp_type)
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
 
@@ -194,6 +205,7 @@ class NHBillScraper(BillScraper):
 
         self.scrape_votes(session)
 
+        
         # save all bills
         for bill in self.bills:
             #bill.add_source(zip_url)
