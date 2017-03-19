@@ -1,12 +1,12 @@
 
 import lxml.html
 
-from billy.scrape.committees import CommitteeScraper, Committee
-from apiclient import ApiClient
+from pupa.scrape import Scraper, Organization
+from .apiclient import ApiClient
 from .utils import get_with_increasing_timeout
 from scrapelib import HTTPError
 
-class INCommitteeScraper(CommitteeScraper):
+class INCommitteeScraper(Scraper):
     jurisdiction = 'in'
 
     def process_special_members(self,comm,comm_json,role_name):
@@ -50,9 +50,9 @@ class INCommitteeScraper(CommitteeScraper):
         return sc_dict
         
 
-    def scrape(self,term,chambers):
-        t = next((item for item in self.metadata["terms"] if item["name"] == term),None)
-        session = max(t["sessions"])
+    def scrape(self):
+        session_name = self.latest_session()
+        session = session_name[0:5]
 
         subcomms = self.get_subcommittee_info(session)
 
@@ -91,10 +91,11 @@ class INCommitteeScraper(CommitteeScraper):
                 owning_comm = subcomms[name]
             except KeyError:
                 name = name.replace("Statutory Committee on","").strip()
-                comm = Committee(chamber,name)
+                comm = Organization(name=name,chamber=chamber,classification='committee')
             else:
                 name = name.replace("Statutory Committee on","").replace("Subcommittee","").strip()
-                comm = Committee(chamber,owning_comm,subcommittee=name)
+                parent = {"name":owning_comm, "classification":chamber}
+                comm = Organization(name=name,parent_id=parent,classification='committee')
 
             chair = self.process_special_members(comm,comm_json,"chair")
             vicechair = self.process_special_members(comm,comm_json,"viceChair")
@@ -117,4 +118,4 @@ class INCommitteeScraper(CommitteeScraper):
             
             comm.add_source(html_source)
             comm.add_source(api_source)
-            self.save_committee(comm)
+            yield comm
