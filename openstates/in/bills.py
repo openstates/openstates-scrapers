@@ -64,6 +64,10 @@ class INBillScraper(Scraper):
             chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
+            #pupa choked when I passed datetimes, so passing dates only.
+            #If we figure out how to make pupa not choke, here's the line you want:
+            ####
+            #self._tz.localize(datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p"))
             vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p").date()
 
             passed = None
@@ -162,6 +166,10 @@ class INBillScraper(Scraper):
             file_date = version["filed"]
             for d in [update_date,create_date,intro_date,file_date]:
                 try:
+                    #pupa choked when I passed datetimes, so passing dates only.
+                    #If we figure out how to make pupa not choke, here's the line you want:
+                    ####
+                    #self._tz.localize(datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S"))
                     update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S").date()
                 except TypeError:
                     continue
@@ -334,6 +342,10 @@ class INBillScraper(Scraper):
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
+                #pupa choked when I passed datetimes, so passing dates only.
+                #If we figure out how to make pupa not choke, here's the line you want:
+                ####
+                #self._tz.localize(datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S"))
                 date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S").date()
 
                 action_type = []
