@@ -6,7 +6,7 @@ import re
 class DCCommitteeScraper(Scraper):
     jurisdiction = 'dc'
 
-    def scrape(self, chamber=None):
+    def scrape(self):
         # com_url = 'http://www.dccouncil.washington.dc.us/committees'
         com_url = 'http://dccouncil.us/committees'
         data = self.get(com_url).text
@@ -27,7 +27,7 @@ class DCCommitteeScraper(Scraper):
             comm_page.make_links_absolute(url)
             
             # comm = Committee("upper",name)
-            committee = Organization(name=name, classification='committee')
+            committee = Organization(name=name, classification='committee', chamber='upper')
 
             chair = comm_page.xpath("//h3[text()='Committee Chair']/following-sibling::p")
             chair_name = chair[0].text_content().strip()
