@@ -64,13 +64,12 @@ class PALegislatorScraper(Scraper):
     def scrape_offices(self, url, doc, person, email):
         offices = False
 
-        # TODO(jmcarp) restore social media accounts
-        # account_types = ["facebook", "twitter", "youtube", "instagram", "pintrest"]
-        # soc_media_accounts = doc.xpath("//div[contains(@class,'MemberBio-SocialLinks')]/a/@href")
-        # for acct in soc_media_accounts:
-        #     for sm_site in account_types:
-        #         if sm_site in acct.lower():
-        #             legislator[sm_site] = acct
+        account_types = ["facebook", "twitter", "youtube", "instagram", "pintrest"]
+        soc_media_accounts = doc.xpath("//div[contains(@class,'MemberBio-SocialLinks')]/a/@href")
+        for acct in soc_media_accounts:
+            for sm_site in account_types:
+                if sm_site in acct.lower():
+                    person.extras[sm_site] = acct
 
         contact_chunks = doc.xpath('//address')
         if contact_chunks == []:

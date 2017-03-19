@@ -306,6 +306,10 @@ class PABillScraper(Scraper):
                 bill=bill,
             )
 
+            vote.set_count('yes', rollcall['yes_count'])
+            vote.set_count('no', rollcall['no_count'])
+            vote.set_count('other', rollcall['other_count'])
+
             for voteval in ('yes', 'no', 'other'):
                 for name in rollcall.get(voteval + '_votes', []):
                     vote.vote(voteval, name)
