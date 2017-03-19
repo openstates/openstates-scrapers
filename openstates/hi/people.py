@@ -1,6 +1,4 @@
-from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from billy.scrape.committees  import Committee
+from pupa.scrape import Person, Scraper, Organization
 
 import lxml.html
 import re, contextlib
@@ -16,8 +14,7 @@ def get_legislator_listing_url(chamber):
     return "%s/members/legislators.aspx?chamber=%s" % (HI_BASE_URL, chamber)
 
 
-class HILegislatorScraper(LegislatorScraper):
-    jurisdiction = 'hi'
+class HIPersonScraper(Scraper):
 
     def get_page( self, url ):
         html = self.get(url).text
@@ -42,7 +39,7 @@ class HILegislatorScraper(LegislatorScraper):
         chamber = chamber[0].text_content()
         ret['chamber'] = chamber
 
-        if table:
+        if table is not None:
             cttys = table.xpath( "./tr/td/a" )
             for ctty in cttys:
                 ret['ctty'].append({
@@ -179,7 +176,7 @@ class HILegislatorScraper(LegislatorScraper):
             ret[entry] = callback( els[index] )
         return ret
 
-    def scrape(self, chamber, session):
+    def scrape_chamber(self, chamber=None):
         metainf = self.scrape_leg_page(get_legislator_listing_url(chamber))
         for leg in metainf:
             try:
@@ -197,18 +194,24 @@ class HILegislatorScraper(LegislatorScraper):
                 print("   - PRT, Jun 23, 2014")
                 print("")
                 continue
+# this?
+            person = Person(name=leg['name'], district=leg['district'],
+                            party=leg['party'], primary_org=chamber,
+                            image=leg['image'])
 
-            p = Legislator( session, chamber, leg['district'], leg['name'],
-                party=leg['party'],
-                # some additional things the website provides:
-                photo_url=leg['image'],
-                url=leg['homepage'])
-            p.add_office('capitol', 'Capitol Office', address=leg['addr'],
-                         phone=leg['phone'], fax=leg['fax'] or None,
-                         email=leg['email'])
+            # REMOVE
+            # p = Legislator( session, chamber, leg['district'], leg['name'],
+            #     party=leg['party'],
+            #     # some additional things the website provides:
+            #     photo_url=leg['image'],
+            #     url=leg['homepage'])
+
+            # p.add_office('capitol', 'Capitol Office', address=leg['addr'],
+            #              phone=leg['phone'], fax=leg['fax'] or None,
+            #              email=leg['email'])
 
             for source in leg['source']:
-                p.add_source( source )
+                person.add_source( source )
 
             try:
                 for ctty in leg['ctty']:
@@ -218,13 +221,45 @@ class HILegislatorScraper(LegislatorScraper):
                     else:
                         ctty_chamber = chamber
 
-                    p.add_role( 'committee member',
-                        term=session,
-                        chamber=ctty_chamber,
-                        committee=ctty['name'],
-                        position="member")
+                    comm = Organization(name=ctty['name'],
+                                classification="committee",
+                                chamber=ctty_chamber)
+                    comm.add_member(person,role="member")
+
+                    # person.role( 'committee member',
+                    #     # term=session,
+                    #     chamber=ctty_chamber,
+                    #     committee=ctty['name'],
+                    #     position="member")
+
             except KeyError:
-                self.log( "XXX: Warning, %s has no scraped Commities" %
+                self.log( "XXX: Warning, %s has no scraped Committees" %
                     leg['name'] )
 
-            self.save_legislator( p )
+            # removing
+            # self.save_legislator( p )
+
+            # adding
+            # not sure what this is it is not working
+            # person.extras['notice'] = notice
+            person.add_link(leg['homepage'])
+            person.add_source(leg['homepage'])
+            # only seeing one address and phone
+            # if address:
+            #     person.add_contact_detail(type='address', value=address], note='District Office')
+            # if phone:
+            #     person.add_contact_detail(type='voice', value=address, note='District Office')
+            if leg['addr']:
+                person.add_contact_detail(type='address', value=leg['addr'], note='Capitol Office')
+            if leg['phone']:
+                person.add_contact_detail(type='voice', value=leg['phone'], note='Capitol Office')
+            if leg['phone']:
+                person.add_contact_detail(type='email', value=leg['phone'], note='Capitol Office')
+            yield person
+
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
