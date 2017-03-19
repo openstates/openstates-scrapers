@@ -1,6 +1,6 @@
 import sys
 
-from billy.scrape.votes import VoteScraper, Vote
+from pupa.scrape import Scraper#, Vote
 
 #import Image
 #import ImageChops
@@ -88,8 +88,7 @@ from billy.scrape.votes import VoteScraper, Vote
 #    return votes
 
 
-class KYVoteScraper(VoteScraper):
-    jurisdiction = 'ky'
+class KYVoteScraper(Scraper):
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
         pass

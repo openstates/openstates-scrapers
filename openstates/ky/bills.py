@@ -174,7 +174,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             elif source_url.endswith('.pdf'):
                 mimetype = 'application/pdf'
 
-            bill.add_document_link("Fiscal Note", source_url, mimetype=mimetype)
+            bill.add_document_link("Fiscal Note", source_url, media_type=mimetype)
 
         for link in page.xpath("//a[contains(@href, 'legislator/')]"):
             bill.add_sponsorship(link.text.strip(), classification='Primary', entity_type='person', primary=True)
@@ -292,7 +292,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             if 'introduction' in action['classification']:
                 intro_date = action['date']
                 break
-            for action in bill['actions'][:i]:
+            for action in bill.actions[:i]:
                 if action['date'] > intro_date:
                     action['date'] = action['date'].replace(year=action['date'].year-1)
                     self.debug('corrected year for %s', action['action'])

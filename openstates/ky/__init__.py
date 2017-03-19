@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import KYPersonScraper
 from .committees import KYCommitteeScraper
 from .bills import KYBillScraper
+from .votes import KYVoteScraper
 
 class Kentucky(Jurisdiction):
     division_id = "ocd-division/country:us/state:ky"
@@ -12,7 +13,8 @@ class Kentucky(Jurisdiction):
     scrapers = {
         'people': KYPersonScraper,
         'committees': KYCommitteeScraper,
-        'bills': KYBillScraper
+        'bills': KYBillScraper,
+        'votes': KYVoteScraper
     }
     parties = [
         {'name': 'Republican'},
