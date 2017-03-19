@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import OHLegislatorScraper
 
+from .events import OHEventScraper
 
 class Ohio(Jurisdiction):
     division_id = "ocd-division/country:us/state:oh"
@@ -9,6 +10,7 @@ class Ohio(Jurisdiction):
     url = "http://www.legislature.state.oh.us/"
     scrapers = {
         'people': OHLegislatorScraper,
+        'events': OHEventScraper,
     }
     parties = [
         {'name': 'Republican'},
