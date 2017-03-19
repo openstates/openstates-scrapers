@@ -38,12 +38,12 @@ git clone git@github.com:openstates/openstates.git
 # Our USB drives are 4 GB in capacity, so to fit the essentials,
 # the openstates/openstates.org image is excluded
 mkdir docker-images
-images="openstates/openstates-pupa openstates/openstates mongo mysql"
+images="openstates/openstates-pupa openstates/openstates mongo"
 for image in $images; do
 	docker pull "${image}"
 	# Need to strip the forward slash so they can act as filenames
 	filename=$(echo "${image}" | sed 's/\///g')
-	docker save --output "./docker-images/${filename}.gz" "${image}"
+	docker save --output "./docker-images/${filename}.gz" "${image}:latest"
 done
 
 # Get and build the Open States documentation
@@ -81,5 +81,5 @@ Now you can continue with the [Getting Started documentation](http://docs.openst
 
 ## Read the documentation
 
-The documentation [is available online](http://docs.openstates.org), but is also on this drive. Simply open `./documentation/_build/html/index.html` in a web browser.
+The documentation [is available online](http://docs.openstates.org), but is also on this drive. Simply open \`./documentation/_build/html/index.html\` in a web browser.
 " > ./README.md
