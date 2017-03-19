@@ -43,12 +43,12 @@ class MAVoteScraper(VoteScraper):
             max_page = 1
 
         # scraping other pages
+
         for i in range(2, max_page+1):
             url = 'https://malegislature.gov/Bills/Search?Page={}&Refinements%' \
                   '5Blawsgeneralcourt%5D={}&Refinements%5Blawsbranchname%5D=' \
                   '{}&Refinements%5Blawsfilingtype%5D=42696c6c' \
                   .format(i, session4url[session], branch)
-
             self.scrape_bill(url, chamber, session)
 
     def scrape_bill(self, url, chamber, session):
@@ -88,7 +88,6 @@ class MAVoteScraper(VoteScraper):
                     other_counts.append(map(int, re.findall(r'\d+', "".join((second[i].
                                                             replace('\r\n', '').split())))))
 
-
                 for i in range(0, len(dates)):
                     vote = BillyVote(chamber, dates[i], motions[i],
                                      y_n_counts[i][0] > y_n_counts[i][1],
@@ -116,7 +115,9 @@ class MAVoteScraper(VoteScraper):
 
     # To extract data from pdf text downloaded
     def members(self, wordList):
-        final = yes = no = []
+        final = []
+        yes = []
+        no = []
         for i in wordList:
             for j in i.split("\n"):
                 final.append(j)
