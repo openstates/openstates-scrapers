@@ -6,9 +6,6 @@ from .client import AZClient
 class AZCommitteeScraper(Scraper):
     jurisdiction = 'az'
 
-    def get_session_id(self, session):
-        return self.metadata['session_details'][session]['session_id']
-
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
@@ -19,11 +16,8 @@ class AZCommitteeScraper(Scraper):
 
     def scrape_chamber(self, chamber):
         session = self.latest_session()
-        print(session)
-        try:
-            session_id = self.get_session_id(session)
-        except KeyError:
-            raise NoDataForPeriod
+        # since we are scraping only latest_session
+        session_id = '117'
 
         client = AZClient()
         committees = client.list_committees(
