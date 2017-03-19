@@ -5,15 +5,14 @@ from collections import OrderedDict
 
 import scrapelib
 
-from billy.scrape.bills import BillScraper, Bill
+from pupa.scrape import Scraper, Bill
 from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
 
 import pytz
 import lxml.html
 
 from .actions import Categorizer
-from apiclient import ApiClient
+from .apiclient import ApiClient
 
 
 class INBillScraper(BillScraper):
@@ -149,7 +148,7 @@ class INBillScraper(BillScraper):
                 raise AssertionError('Vote count doesn\'t agree with vote '
                     'passage status.')
 
-            bill.add_vote(vote)
+            bill.add_vote_event(vote)
 
     def deal_with_version(self,version,bill,proxy):
         #documents
@@ -191,13 +190,15 @@ class INBillScraper(BillScraper):
                 else:
                     break
 
-            bill.add_version(name,link,mimetype="application/pdf",date=update_date)
+            bill.add_version_link(note=name,url=link,media_type="application/pdf",date=update_date)
 
         #votes
         votes = version["rollcalls"]
         self._process_votes(votes,bill,proxy)
 
-    def scrape(self, session, chambers):
+    def scrape(self):
+        session_name = self.latest_session()
+        session = session_name[0:5]
         self._bill_prefix_map = {
             'HB':  {
                 'type': 'bill',
@@ -299,12 +300,11 @@ class INBillScraper(BillScraper):
 
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
             bill_type = self._bill_prefix_map[bill_prefix]['type']
-            bill = Bill(
-                session,
-                original_chamber,
-                disp_bill_id,
-                title,
-                type=bill_type)
+            bill = Bill(bill_id=disp_bill_id,
+                legislative_session=session,
+                chamber=original_chamber,
+                title=title,
+                classification=bill_type)
 
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
@@ -312,28 +312,28 @@ class INBillScraper(BillScraper):
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
             for s in bill_json["authors"]:
-                bill.add_sponsor("primary",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="author")
+                bill.add_sponsorship(classifiation="author",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=True)
 
             for s in bill_json["coauthors"]:
-                bill.add_sponsor("cosponsor",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="coauthor")
+                bill.add_sponsor(classification="coauthor",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=False)
 
             for s in bill_json["sponsors"]:
-                bill.add_sponsor("primary",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="sponsor")
+                bill.add_sponsor(classification="sponsor",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=True)
 
             for s in bill_json["cosponsors"]:
-                bill.add_sponsor("cosponsor",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="cosponsor")
+                bill.add_sponsor(classification="cosponsor",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=False)
 
             #actions
             action_link = bill_json["actions"]["link"]
@@ -430,11 +430,8 @@ class INBillScraper(BillScraper):
                     self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
                     action_type = ["other"]
 
-                elif committee:
-                    bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
-
                 else:
-                    bill.add_action(action_chamber,action_desc,date,type=action_type)
+                    bill.add_action(chamber=action_chamber,description=action_desc,date=date,classification=action_type)
 
             #subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
@@ -454,4 +451,4 @@ class INBillScraper(BillScraper):
 
                 self.deal_with_version(version_json,bill,proxy)
 
-            self.save_bill(bill)
+            yield bill
