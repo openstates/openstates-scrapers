@@ -1,33 +1,28 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
-
 import lxml.html
+from pupa.scrape import Scraper, Organization
+
+from . import utils
 
 
 class CommitteeDict(dict):
 
     def __missing__(self, key):
-        (chamber, committee_name, subcommittee_name) = key
-        committee = Committee(chamber, committee_name)
-        if subcommittee_name:
-            committee['subcommittee'] = subcommittee_name
+        (chamber, committee_name) = key
+        committee = Organization(name=committee_name, chamber=chamber, classification='committee')
         self[key] = committee
         return committee
 
 
-class PACommitteeScraper(CommitteeScraper):
-    jurisdiction = 'pa'
-    latest_only = True
+class PACommitteeScraper(Scraper):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
 
-    def scrape(self, chamber, term):
-
-        if chamber == 'upper':
-            url = ('http://www.legis.state.pa.us/cfdocs/legis/'
-                   'home/member_information/senators_ca.cfm')
-        else:
-            url = ('http://www.legis.state.pa.us/cfdocs/legis/'
-                   'home/member_information/representatives_ca.cfm')
+    def scrape_chamber(self, chamber):
+        url = utils.urls['committees'][chamber]
 
         page = self.get(url).text
         page = lxml.html.fromstring(page)
@@ -38,7 +33,7 @@ class PACommitteeScraper(CommitteeScraper):
             thumbnail, bio, committee_list, _ = list(div)
             name = bio.xpath(".//a")[-1].text_content().strip()
             namey_bits = name.split()
-            party = namey_bits.pop().strip('()')
+            namey_bits.pop().strip('()')
             name = ' '.join(namey_bits).replace(' ,', ',')
 
             for li in committee_list.xpath('div/ul/li'):
@@ -46,30 +41,25 @@ class PACommitteeScraper(CommitteeScraper):
                 # Add the ex-officio members to all committees, apparently.
                 msg = 'Member ex-officio of all Standing Committees'
                 if li.text_content() == msg:
-                    for (_chamber, _, _), committee in committees.items():
+                    for (_chamber, _), committee in committees.items():
                         if chamber != _chamber:
                             continue
                         committee.add_member(name, 'member')
                     continue
 
                 # Everybody else normal.
-                subcommittee_name = None
                 committee_name = li.xpath('a/text()').pop()
                 role = 'member'
                 for _role in li.xpath('i/text()') or []:
-                    if 'subcommittee' in _role.lower():
-                        subcommittee_name, _, _role = _role.rpartition('-')
-                        subcommittee_name = re.sub(r'[\s,]+', ' ',
-                                                   subcommittee_name).strip()
                     role = re.sub(r'[\s,]+', ' ', _role).lower()
 
                 # Add the committee member.
-                key = (chamber, committee_name, subcommittee_name)
+                key = (chamber, committee_name)
                 committees[key].add_member(name, role)
 
         # Save the non-empty committees.
         for committee in committees.values():
-            if not committee['members']:
+            if not committee._related:
                 continue
             committee.add_source(url)
-            self.save_committee(committee)
+            yield committee
