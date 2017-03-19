@@ -2,7 +2,8 @@ import re
 import datetime
 from collections import defaultdict
 import lxml.html
-from billy.scrape.bills import BillScraper, Bill
+
+from pupa.scrape import Scraper, Bill
 from openstates.utils import LXMLMixin
 
 
@@ -17,8 +18,7 @@ def session_url(session):
     return "http://www.lrc.ky.gov/record/%s/" % session[2:]
 
 
-class KYBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'ky'
+class KYBillScraper(Scraper, LXMLMixin):
 
     _subjects = defaultdict(list)
     _is_post_2016 = False
