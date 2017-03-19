@@ -66,19 +66,23 @@ class MDPersonScraper(Scraper):
             else:
                 raise AssertionError('Multiple email links found on page')
 
+            img_src = ldoc.xpath('//img[@class="sponimg"]/@src')
+            if img_src:
+                photo_url=img_src[0]
+
             leg = Person(
                 primary_org=chamber,
                 district=district,
                 name=name,
-                party=party)
+                party=party,
+                image=photo_url
+            )
             leg.add_source(url=leg_url)
             leg.add_link(url=leg_url)
 
-            # TODO Fix 'TypeError: 'Person' object does not support item assignment'
+            # TODO Fix "TypeError: 'Person' object does not support item assignment"
             # photo
-            # img_src = ldoc.xpath('//img[@class="sponimg"]/@src')
-            # if img_src:
-            #     leg['image'] = img_src[0]
+
 
 
             # type ['address', 'email', 'url', 'fax', 'text', 'voice', 'video', 'pager', 'textphone']
