@@ -228,32 +228,32 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         capitol_office_info = self._clean_office_info(col1)
 
         # Set email on the leg object.
-        if '@' in capitol_office_info[-1]:
-            email = capitol_office_info.pop()
-            legislator['email'] = email
-        else:
-            email = None
+        if capitol_office_info:
+            if '@' in capitol_office_info[-1]:
+                email = capitol_office_info.pop()
+                legislator['email'] = email
+            else:
+                email = None
+        
+            capitol_phone = self._extract_phone(capitol_office_info)
 
-        capitol_phone = self._extract_phone(capitol_office_info)
+            capitol_address_lines = map(
+                lambda line: line.strip(),
+                filter(
+                    lambda string: re.search(r', OK|Lincoln Blvd|Room \d', string),
+                    capitol_office_info))
 
-        capitol_address_lines = map(
-            lambda line: line.strip(),
-            filter(
-                lambda string: re.search(r', OK|Lincoln Blvd|Room \d', string),
-                capitol_office_info))
-
-        office = dict(
-            name='Capitol Office',
-            type='capitol',
-            address='\n'.join(capitol_address_lines),
-            fax=None,
-            email=email,
-            phone=capitol_phone)
-
-        legislator.add_office(**office)
+            office = dict(
+                name='Capitol Office',
+                type='capitol',
+                address='\n'.join(capitol_address_lines),
+                fax=None,
+                email=email,
+                phone=capitol_phone)
+            
+            legislator.add_office(**office)
 
         district_office_info = self._clean_office_info(col2)
-
         # This probably isn't a valid district office at less than two lines.
         if len(district_office_info) < 2:
             return
