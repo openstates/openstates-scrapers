@@ -1,92 +1,69 @@
 import re
-import datetime
-import urlparse
-
-from billy.scrape.events import EventScraper, Event
-
 import pytz
+import urllib
+import datetime
+
 import lxml.html
+from pupa.scrape import Scraper, Event
+
+from . import utils
 
 
-class PAEventScraper(EventScraper):
-    jurisdiction = 'pa'
-
+class PAEventScraper(Scraper):
     _tz = pytz.timezone('US/Eastern')
 
-    def scrape(self, chamber, session):
-        if chamber == 'upper':
-            url = "http://www.legis.state.pa.us/WU01/LI/CO/SM/COSM.HTM"
-        elif chamber == 'lower':
-            url = "http://www.legis.state.pa.us/WU01/LI/CO/HM/COHM.HTM"
-        else:
-            return
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
 
+    def scrape_chamber(self, chamber):
+        url = utils.urls['events'][chamber]
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for date_td in page.xpath("//td[@valign='middle']"):
-            date = date_td.text_content().strip()
-
-            datetime.datetime.strptime(
-                date, "%A, %B %d, %Y").date()
-
-            next_tr = date_td.getparent().getnext()
-            while next_tr is not None:
-                if next_tr.xpath("td[@valign='middle']"):
-                    break
-
-                time = next_tr.xpath("string(td[1])").strip()
-                dt = "%s %s" % (date, time)
+        for table in page.xpath('//table[@class="CMS-MeetingDetail-CurrMeeting"]'):
+            date_string = table.xpath('ancestor::div[@class="CMS-MeetingDetail"]/div/a/@name')[0]
+            for row in table.xpath('tr'):
+                time_string = row.xpath('td[@class="CMS-MeetingDetail-Time"]/text()')[0].strip()
+                description = row.xpath(
+                    'td[@class="CMS-MeetingDetail-Agenda"]/div/div'
+                )[-1].text_content().strip()
+                location = row.xpath(
+                    'td[@class="CMS-MeetingDetail-Location"]'
+                )[0].text_content().strip()
+                committees = row.xpath('.//div[@class="CMS-MeetingDetail-Agenda-CommitteeName"]/a')
+                bills = row.xpath('.//a[contains(@href, "billinfo")]')
 
                 try:
-                    dt = datetime.datetime.strptime(
-                        dt, "%A, %B %d, %Y %I:%M %p")
-                    dt = self._tz.localize(dt)
+                    start_time = datetime.datetime.strptime(
+                        '{} {}'.format(date_string, time_string),
+                        '%m/%d/%Y %I:%M %p',
+                    )
                 except ValueError:
                     break
 
-                desc = next_tr.xpath("string(td[2])").strip()
-                desc_el = next_tr.xpath("td[2]")[0]
-                desc = re.sub(r'\s+', ' ', desc)
-
-                ctty = None
-                cttyraw = desc.split("COMMITTEE", 1)
-                if len(cttyraw) > 1:
-                    ctty = cttyraw[0]
-
-                related_bills = desc_el.xpath(
-                    ".//a[contains(@href, 'billinfo')]")
-                bills = []
-                urls = [x.attrib['href'] for x in related_bills]
-
-                for u in urls:
-                    o = urlparse.urlparse(u)
-                    qs = urlparse.parse_qs(o.query)
-                    bills.append({
-                        "bill_id": "%sB %s" % ( qs['body'][0], qs['bn'][0] ),
-                        "bill_num": qs['bn'][0],
-                        "bill_chamber": qs['body'][0],
-                        "session": qs['syear'][0],
-                        "descr": desc
-                    })
-
-                location = next_tr.xpath("string(td[3])").strip()
-                location = re.sub(r'\s+', ' ', location)
-
-                event = Event(session, dt, 'committee:meeting',
-                              desc, location)
+                event = Event(
+                    name=description,
+                    start_time=self._tz.localize(start_time),
+                    location_name=location,
+                    timezone=self._tz.zone,
+                )
                 event.add_source(url)
 
-                if not ctty is None:
-                    event.add_participant('host', ctty, 'committee',
-                                          chamber=chamber)
+                if bills or committees:
+                    item = event.add_agenda_item(description)
+                    for bill in bills:
+                        parsed = urllib.parse.urlparse(bill.get('href'))
+                        qs = urllib.parse.parse_qs(parsed.query)
+                        item.add_bill('{}{} {}'.format(qs['body'], qs['type'], qs['bn']))
+                    for committee in committees:
+                        parsed = urllib.parse.urlparse(committee.get('href'))
+                        qs = urllib.parse.parse_qs(parsed.query)
+                        item.add_committee(
+                            re.sub(r' \([S|H]\)$', '', committee.text),
+                            id=qs.get('Code'),
+                        )
 
-                for bill in bills:
-                    event.add_related_bill(
-                        bill['bill_id'],
-                        description=bill['descr'],
-                        type='consideration'
-                    )
-                self.save_event(event)
-                next_tr = next_tr.getnext()
+                yield event
