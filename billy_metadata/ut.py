@@ -1,11 +1,14 @@
 import datetime
 import re
+'''
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from billy.scrape.utils import url_xpath
 from .bills import UTBillScraper
 from .legislators import UTLegislatorScraper
 from .committees import UTCommitteeScraper
 from .events import UTEventScraper
+'''
+
 
 metadata = {
     'name': 'Utah',
@@ -194,7 +197,8 @@ def session_list():
             )
     return [ re.sub(r'\s+', ' ', session.strip()) for session in sessions ]
 
-
+'''
 def extract_text(doc, data):
     if doc['mimetype'] == 'application/pdf':
         return text_after_line_numbers(pdfdata_to_text(data))
+'''
