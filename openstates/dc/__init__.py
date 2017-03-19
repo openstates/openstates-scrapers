@@ -1,6 +1,7 @@
 import datetime
 from pupa.scrape import Jurisdiction, Organization
 from .people import DCPersonScraper
+from .committees import DCCommitteeScraper
 
 
 class DistrictofColumbia(Jurisdiction):
@@ -10,6 +11,7 @@ class DistrictofColumbia(Jurisdiction):
     url = "TODO"
     scrapers = {
     	'people': DCPersonScraper,
+        'committees': DCCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
