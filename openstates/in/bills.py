@@ -64,7 +64,7 @@ class INBillScraper(Scraper):
             chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
-            vote_date = self._tz.localize(datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p"))
+            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p").date()
 
             passed = None
 
@@ -162,7 +162,7 @@ class INBillScraper(Scraper):
             file_date = version["filed"]
             for d in [update_date,create_date,intro_date,file_date]:
                 try:
-                    update_date = self._tz.localize(datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S"))
+                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S").date()
                 except TypeError:
                     continue
                 else:
@@ -290,19 +290,19 @@ class INBillScraper(Scraper):
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
             for s in bill_json["authors"]:
-                bill.add_sponsorship(classification="author",
+                bill.add_sponsorship(classification="primary",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=True)
 
             for s in bill_json["coauthors"]:
-                bill.add_sponsorship(classification="coauthor",
+                bill.add_sponsorship(classification="cosponsor",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=False)
 
             for s in bill_json["sponsors"]:
-                bill.add_sponsorship(classification="sponsor",
+                bill.add_sponsorship(classification="primary",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=True)
@@ -334,8 +334,7 @@ class INBillScraper(Scraper):
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
-
-                date = self._tz.localize(datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S"))
+                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S").date()
 
                 action_type = []
                 d = action_desc.lower()
