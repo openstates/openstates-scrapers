@@ -1,4 +1,5 @@
 import lxml.html
+from functools import reduce
 from collections import defaultdict
 
 from pupa.scrape import Person, Scraper
@@ -21,7 +22,7 @@ class KYPersonScraper(Scraper):
         page = lxml.html.fromstring(page)
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
-            yield from self.scrape_member(chamber, year, link.get('href'))
+            yield from self.scrape_member(chamber, link.get('href'))
 
     def scrape_office_info(self, url):
         ret = {}
@@ -84,7 +85,7 @@ class KYPersonScraper(Scraper):
 
         return ret
 
-    def scrape_member(self, chamber, year, member_url):
+    def scrape_member(self, chamber, member_url):
         member_page = self.get(member_url).text
         doc = lxml.html.fromstring(member_page)
 
@@ -129,6 +130,9 @@ class KYPersonScraper(Scraper):
 
         if phone:
             person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+
+        if fax:
+            person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
 
         if email:
             person.add_contact_detail(type='email', value=email, note='Capitol Office')
