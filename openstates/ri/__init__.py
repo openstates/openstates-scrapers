@@ -75,7 +75,7 @@ class RhodeIsland(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Rhode Island General Assembly"
-        lower_chamber_name = "House"
+        lower_chamber_name = "House of Representatives"
         lower_seats = 75
         lower_title = "Representative"
         upper_chamber_name = "Senate"
