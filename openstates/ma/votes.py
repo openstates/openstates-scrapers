@@ -2,6 +2,7 @@
 import re
 import datetime
 import lxml.html
+from math import ceil
 
 from billy.scrape.utils import convert_pdf
 from billy.scrape.votes import VoteScraper, Vote as BillyVote
@@ -30,29 +31,27 @@ class MAVoteScraper(VoteScraper):
               '{1}&Refinements%5Blawsfilingtype%5D=42696c6c' \
               .format(session4url[session], branch)
 
-        self.scrape_bill(url, chamber, session)
-
         page = lxml.html.fromstring(self.get(url).text)
-        total_pages = page.xpath("//ul[@class='pagination pagination-sm']/" +
-                                 "li[@class='']/a/@onclick")
-
-        try:
-            # findng maximum number of pages in search results
-            max_page = int(re.search(r'\d+', total_pages[1]).group())
-        except:
-            max_page = 1
-
+        self.scrape_bill(url, chamber, session, page)
+        max_page = self.get_max_page(page)
+        i = 2
         # scraping other pages
-
-        for i in range(2, max_page+1):
+        while(i <= max_page):
             url = 'https://malegislature.gov/Bills/Search?Page={}&Refinements%' \
                   '5Blawsgeneralcourt%5D={}&Refinements%5Blawsbranchname%5D=' \
                   '{}&Refinements%5Blawsfilingtype%5D=42696c6c' \
                   .format(i, session4url[session], branch)
-            self.scrape_bill(url, chamber, session)
+            page = lxml.html.fromstring(self.get(url).text)
+            self.scrape_bill(url, chamber, session, page)
+            # updating max_page count
+            if i == max_page:
+                new_max_page = self.get_max_page(page)
+                i += 1
+                max_page = new_max_page
+            else:
+                i += 1
 
-    def scrape_bill(self, url, chamber, session):
-        page = lxml.html.fromstring(self.get(url).text)
+    def scrape_bill(self, url, chamber, session, page):
         bill_urls = list(set(page.xpath("//tbody[@class='customFade in']/tr/td/a/@href")))
         for bill_no in bill_urls:
             # url for a bill page
@@ -134,3 +133,11 @@ class MAVoteScraper(VoteScraper):
         yes = [x.strip(' ') for x in yes]
         no = [x.strip(' ') for x in no]
         return yes, no
+
+    def get_max_page(self, page):
+        per_page = 25.0
+        total_results = page.xpath("//div[@id='searchResults']/div/div/div/div" +
+                                   "[@class='searchResultSummary']/em/text()")
+        total_results = float(re.findall(r'\d+', total_results[0])[0])
+        max_page = int(ceil(total_results/per_page))
+        return max_page
