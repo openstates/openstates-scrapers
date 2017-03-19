@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from .people import ALPersonScraper
+
 
 class Alabama(Jurisdiction):
     division_id = "ocd-division/country:us/state:al"
@@ -7,6 +9,7 @@ class Alabama(Jurisdiction):
     name = "Alabama"
     url = "http://www.legislature.state.al.us/"
     scrapers = {
+        'people': ALPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
