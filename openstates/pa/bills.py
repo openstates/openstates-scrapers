@@ -72,7 +72,7 @@ class PABillScraper(Scraper):
 
         # only fetch votes if votes were seen in history
         # if vote_count:
-        self.parse_votes(
+        yield from self.parse_votes(
             bill,
             utils.vote_url(chamber, session, special, type_abbr, bill_num),
         )
@@ -303,11 +303,12 @@ class PABillScraper(Scraper):
                 motion_text=motion,
                 classification='other',
                 result='pass' if rollcall['passed'] else 'fail',
+                bill=bill,
             )
 
             for voteval in ('yes', 'no', 'other'):
                 for name in rollcall.get(voteval + '_votes', []):
-                    vote.add_vote(voteval, name)
+                    vote.vote(voteval, name)
 
             vote.add_source(url)
             vote.add_source(vote_url)
