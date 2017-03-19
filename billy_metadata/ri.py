@@ -1,11 +1,4 @@
 import datetime
-from billy.scrape.utils import url_xpath
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import RIBillScraper
-from .legislators import RILegislatorScraper
-from .committees import RICommitteeScraper
-from .events import RIEventScraper
-from .votes import RIVoteScraper
 
 metadata = {
     'name': 'Rhode Island',
@@ -111,13 +104,3 @@ metadata = {
     ],
     '_partial_vote_bill_id': True,
 }
-
-
-def session_list():
-    return url_xpath(
-        'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
-        '//select[@name="ctl00$rilinContent$cbYear"]/option/text()')
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))
