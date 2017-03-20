@@ -1,6 +1,6 @@
 import re
 import csv
-from io import StringIO, BytesIO
+from io import StringIO
 import datetime
 import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -9,7 +9,8 @@ import lxml.html
 
 import scrapelib
 
-TIMEZONE = pytz.timezone('US/Eastern')
+TIMEZONE = pytz.timezone('US/Central')
+
 
 def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
     # csv.py doesn't do Unicode; encode temporarily as UTF-8:
@@ -34,13 +35,13 @@ class ARBillScraper(Scraper):
         chambers = [chamber] if chamber else ['upper', 'lower']
         self.bills = {}
 
-        self.slug = session+'R'#self.metadata['session_details'][session]['slug']
-        
+        self.slug = session+'R'
+
         for Chamber in chambers:
             self.scrape_bill(Chamber, session)
         self.scrape_actions()
-        for bill_id,bill in self.bills.items():
-            yield bill #self.save_bill(bill)
+        for bill_id, bill in self.bills.items():
+            yield bill
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
@@ -66,14 +67,17 @@ class ARBillScraper(Scraper):
             if row[-1] != self.slug:
                 continue
 
-            bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=row[3], classification=bill_type) #Bill(session, chamber, bill_id, row[3], type=bill_type)
+            bill = Bill(bill_id, legislative_session=session,
+                        chamber=chamber, title=row[3], classification=bill_type)
             bill.add_source(url)
-            
+
             primary = row[11]
             if not primary:
                 primary = row[12]
-            bill.add_sponsorship(primary, classification='primary', entity_type='person', primary=True)
 
+            if primary:
+                bill.add_sponsorship(primary, classification='primary',
+                                     entity_type='person', primary=True)
             # ftp://www.arkleg.state.ar.us/Bills/
             # TODO: Keep on eye on this post 2017 to see if they apply R going forward.
             session_code = '2017R' if session == '2017' else session
@@ -108,7 +112,9 @@ class ARBillScraper(Scraper):
             actor = {'HU': 'lower', 'SU': 'upper'}[row[-5].upper()]
             # manual fix for crazy time value
             row[6] = row[6].replace('.520000000', '')
+
             date = TIMEZONE.localize(datetime.datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S"))
+            date = "{:%Y-%m-%d}".format(date)
             action = ','.join(row[7:-5])
 
             action_type = []
@@ -141,11 +147,10 @@ class ARBillScraper(Scraper):
             if re.match(r'Amendment No\. \d+ read and adopted', action):
                 action_type.append('amendment-introduction')
                 action_type.append('amendment-passage')
-            print(action_type)
+
             if not action:
                 action = '[No text provided]'
-            self.bills[bill_id].add_action(action, date, chamber=actor, classification=action_type)# or ['other']) 
-                                           
+            self.bills[bill_id].add_action(action, date, chamber=actor, classification=action_type)
 
     def scrape_bill_page(self, bill):
         # We need to scrape each bill page in order to grab associated votes.
@@ -153,7 +158,7 @@ class ARBillScraper(Scraper):
         # interested in from the CSVs, though, because their site splits
         # other info (e.g. actions) across many pages
         term_year = '2017'
-        measureno = bill.identifier 
+        measureno = bill.identifier
         url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
                "Pages/BillInformation.aspx?measureno=%s" % (
                    term_year, self.slug, measureno))
@@ -165,7 +170,7 @@ class ARBillScraper(Scraper):
         for link in page.xpath("//a[contains(@href, 'Amendments')]"):
             num = link.xpath("string(../../td[2])")
             name = "Amendment %s" % num
-            bill.add_document(name, link.attrib['href'])
+            bill.add_document_link(name, link.attrib['href'])
 
         try:
             cosponsor_link = page.xpath(
@@ -188,13 +193,13 @@ class ARBillScraper(Scraper):
 
             motion = link.xpath("string(../../td[3])")
 
-            self.scrape_vote(bill, date, motion, link.attrib['href'])
+            yield from self.scrape_vote(bill, date, motion, link.attrib['href'])
 
     def scrape_vote(self, bill, date, motion, url):
         try:
             page = self.get(url).text
         except scrapelib.HTTPError:
-            #sometiems the link is there but is dead
+            # sometiems the link is there but is dead
             return
 
         if 'not yet official' in page:
@@ -216,7 +221,9 @@ class ARBillScraper(Scraper):
         other_count += int(page.xpath(count_path % "Present").split()[-1])
         print(other_count)
         passed = yes_count > no_count + other_count
-        vote = VoteEvent(start_date='2017-03-04', motion_text=motion, result='pass' if passed else 'fail', classification='passage')
+        vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
+                         result='pass' if passed else 'fail',
+                         classification='passage', chamber=actor)
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.add_source(url)
@@ -232,7 +239,8 @@ class ARBillScraper(Scraper):
                 if not name:
                     continue
                 getattr(vote, voteval)(name)
-        bill.add_vote_event(vote)
+        
+        yield vote
 
     def scrape_cosponsors(self, bill, url):
         page = self.get(url).text
