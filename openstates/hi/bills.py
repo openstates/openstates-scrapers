@@ -8,7 +8,7 @@ HI_URL_BASE = "http://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
 
-def create_bill_report_url( chamber, year, bill_type ):
+def create_bill_report_url(chamber, year, bill_type):
     cname = {"upper": "s", "lower": "h"}[chamber]
     bill_slug = {
         "bill": "intro%sb" % (cname),
@@ -19,13 +19,13 @@ def create_bill_report_url( chamber, year, bill_type ):
     return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
         "&year=" + year
 
+
 def categorize_action(action):
     classifiers = (
         ('Pass(ed)? First Reading', 'reading-1'),
         ('Introduced and Pass(ed)? First Reading',
          ['introduction', 'reading-1']),
         ('Introduced', 'introduction'),
-        #('The committee\(s\) recommends that the measure be deferred', ?
         ('Re(-re)?ferred to ', 'referral-committee'),
         ('Passed Second Reading .* referred to the committee',
          ['reading-2', 'referral-committee']),
@@ -48,12 +48,12 @@ def categorize_action(action):
     ctty = None
     for pattern, types in classifiers:
         if re.match(pattern, action):
-            print(types, pattern, "see this")
             if "referral-committee" in types:
                 ctty = re.findall(r'\w+', re.sub(pattern, "", action))
             return (types, ctty)
     # return other by default
     return (None, ctty)
+
 
 def split_specific_votes(voters):
     if voters is None or voters.startswith('none'):
@@ -64,6 +64,7 @@ def split_specific_votes(voters):
         voters = voters.replace('Representative(s)', '')
     # Remove trailing spaces and semicolons
     return (v.rstrip(' ;') for v in voters.split(', '))
+
 
 class HIBillScraper(Scraper):
 
@@ -87,7 +88,7 @@ class HIBillScraper(Scraper):
             ret[key] = value
         return ret
 
-    def parse_bill_actions_table(self, bill, action_table, bill_id, session, url):
+    def parse_bill_actions_table(self, bill, action_table, bill_id, session, url, bill_chamber):
         for action in action_table.xpath('*')[1:]:
             date = action[0].text_content()
             date = dt.datetime.strptime(date, "%m/%d/%Y").strftime('%Y-%m-%d')
@@ -113,7 +114,6 @@ class HIBillScraper(Scraper):
                         real_committees.append(committee)
                     except KeyError:
                         pass
-            print(real_committees, "need to look at")
             bill.add_action(string, date, chamber=actor,
                             classification=act_type)
 
@@ -127,6 +127,7 @@ class HIBillScraper(Scraper):
                 vote = VoteEvent(start_date=date,
                                  chamber=actor,
                                  bill=bill_id,
+                                 bill_chamber=bill_chamber,
                                  legislative_session=session,
                                  motion_text=motion,
                                  result='pass' if 'passed' in string.lower() else 'fail',
@@ -138,19 +139,15 @@ class HIBillScraper(Scraper):
                 for voter in split_specific_votes(v['yes']):
                     # getattr(vote, attrib)(voter)
                     vote.yes(voter)
-                    print(int(v['n_yes'] or 0), voter, "yes")
                 for voter in split_specific_votes(v['yes_resv']):
                     # getattr(vote, attrib)(voter)
                     vote.yes(voter)
-                    print(int(v['n_yes'] or 0), voter, "yes_res")
                 for voter in split_specific_votes(v['no']):
                     # getattr(vote, attrib)(voter)
                     vote.no(voter)
-                    print(int(v['n_no'] or 0), voter, "no")
                 for voter in split_specific_votes(v['excused']):
                     # getattr(vote, attrib)(voter)
                     vote.vote('not voting', voter)
-                    print(int(v['n_excused'] or 0), voter, "not voting")
 
                 yield vote
 
@@ -201,7 +198,6 @@ class HIBillScraper(Scraper):
         #          referral=meta['Current Referral'],
         #          subjects=subs,
         #          type=bill_type)
-        print(meta, bill_type, chamber)
         b = Bill(bill_id, session, meta['Measure Title'],
                  chamber=chamber,
                  classification=bill_type)
@@ -209,29 +205,30 @@ class HIBillScraper(Scraper):
             b.add_subject(subject)
         if url:
             b.add_source(url)
-        print("left", meta['Companion'].strip())
-        # companion = meta['Companion'].strip()
-        # if companion:
-        #     b['companion'] = companion
 
+        prior_session = '{} Regular Session'.format(str(int(session[:4]) - 1))
+        companion = meta['Companion'].strip()
+        if companion:
+            b.add_related_bill(identifier=companion,
+                               legislative_session=prior_session,
+                               relation_type="companion")
         prior = bill_page.xpath(
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
         if 'carried over' in prior.lower():
-            prior_session = '{} Regular Session'.format(str(int(session[:4]) - 1))
             b.add_related_bill(identifier=bill_id,
                                legislative_session=prior_session,
                                relation_type="companion")
         for sponsor in meta['Introducer(s)']:
             b.add_sponsorship(sponsor, 'primary', 'person', True)
         versions = self.parse_bill_versions_table(b, versions)
-        yield from self.parse_bill_actions_table(b, action_table, bill_id, session, url)
+        yield from self.parse_bill_actions_table(b, action_table, bill_id, session, url, chamber)
         yield b
 
     def parse_vote(self, action):
         vote_re = (r'''
                 (?P<n_yes>\d+)\sAye\(?s\)?  # Yes vote count
                 (:\s+(?P<yes>.*?))?;\s+  # Yes members
-                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);? # Yes with reservations members
+                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?
                 (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
                 (\s+and\s+)?
                 (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
@@ -245,7 +242,6 @@ class HIBillScraper(Scraper):
 
     def scrape_type(self, chamber, session, billtype):
         for i in self.jurisdiction.legislative_sessions:
-            print(session, i)
             if i['identifier'] == session:
                 session_urlslug = i['_scraped_name']
         report_page_url = create_bill_report_url(chamber, session_urlslug,
