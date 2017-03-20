@@ -85,4 +85,6 @@ class PupaLegislatorScraper(LegislatorScraper):
         for source in person['sources']:
             leg.add_source(source['url'])
 
+        leg.update(**person['extras'])
+
         self.save_legislator(leg)
