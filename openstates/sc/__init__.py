@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from .people import SCPersonScraper
 
 
 class SouthCarolina(Jurisdiction):
@@ -7,6 +8,7 @@ class SouthCarolina(Jurisdiction):
     name = "South Carolina"
     url = "http://www.scstatehouse.gov/"
     scrapers = {
+        'people': SCPersonScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -80,11 +82,11 @@ class SouthCarolina(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
