@@ -3,6 +3,11 @@ from .people import SCPersonScraper
 
 
 class SouthCarolina(Jurisdiction):
+    """
+     Metadata containing information about state and sessions.
+     To be used by scrapers
+    """
+
     division_id = "ocd-division/country:us/state:sc"
     classification = "government"
     name = "South Carolina"
@@ -67,6 +72,7 @@ class SouthCarolina(Jurisdiction):
     ]
 
     def get_organizations(self):
+        """ generator to obtain organization data. """
         legislature_name = "South Carolina Legislature"
         lower_chamber_name = "House"
         lower_seats = 124
