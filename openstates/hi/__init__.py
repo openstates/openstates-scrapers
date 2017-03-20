@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import HILegislatorScraper
 from .events import HIEventScraper
+from .bills import HIBillScraper
 
 class Hawaii(Jurisdiction):
     division_id = "ocd-division/country:us/state:hi"
@@ -9,6 +10,7 @@ class Hawaii(Jurisdiction):
     url = "TODO"
     scrapers = {
         'people': HILegislatorScraper,
+        'bills': HIBillScraper,
         'events': HIEventScraper
     }
     parties = [
