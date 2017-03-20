@@ -1,14 +1,17 @@
 import lxml.html
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 
-class SCLegislatorScraper(LegislatorScraper):
+class SCPersonScraper(Scraper):
     jurisdiction = 'sc'
 
-    def scrape(self, chamber, term):
-        # CSS isn't there without this, it serves up a mobile version
+    def __init__(self):
         self.user_agent = 'Mozilla/5.0'
+
+    def scrape(self, chamber=None):
+
+        # CSS isn't there without this, it serves up a mobile version
 
         if chamber == 'lower':
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
@@ -42,19 +45,29 @@ class SCLegislatorScraper(LegislatorScraper):
 
             photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
 
+            person = Person(name=full_name, district=district,
+                            party=party, primary_org=chamber,
+                            image=photo_url)
 
-            legislator = Legislator(term, chamber, district, full_name,
-                                    party=party, photo_url=photo_url,
-                                    url=leg_url)
+            person.extras = {}
+
             # office address / phone
             try:
-                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
-                addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+                addr_div = \
+                    leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
+                capitol_address = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[
+                    0].text_content()
 
                 phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
-                phone = phone.strip()
-                legislator.add_office('capitol', 'Columbia Address',
-                                      address=addr, phone=phone)
+                capitol_phone = phone.strip()
+
+                if capitol_address:
+                    person.add_contact_detail(type='address', value=capitol_address,
+                                              note='Capitol Office')
+
+                if capitol_phone:
+                    person.add_contact_detail(type='voice', value=capitol_phone,
+                                              note='Capitol Office')
             except IndexError:
                 self.warning('no capitol address for {0}'.format(full_name))
 
@@ -65,18 +78,24 @@ class SCLegislatorScraper(LegislatorScraper):
 
                 phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
                 phone = phone.strip()
-                legislator.add_office('district', 'Home Address',
-                                      address=addr, phone=phone)
+                if addr:
+                    person.add_contact_detail(type='address', value=addr,
+                                              note='District Office')
+
+                if phone:
+                    person.add_contact_detail(type='voice', value=phone,
+                                              note='District Office')
             except IndexError:
                 self.warning('no district address for {0}'.format(full_name))
 
-            legislator.add_source(leg_url)
-            legislator.add_source(url)
+            person.add_link(leg_url)
+            person.add_source(url)
 
             # committees (skip first link)
             for com in leg_doc.xpath('//a[contains(@href, "committee.php")]')[1:]:
                 if com.text.endswith(', '):
-                    committee, role = com.text_content().rsplit(', ',1)
+                    committee, role = com.text_content().rsplit(', ', 1)
+
                     # known roles
                     role = {'Treas.': 'treasurer',
                             'Secy.': 'secretary',
@@ -88,11 +107,12 @@ class SCLegislatorScraper(LegislatorScraper):
                             '3rd V.C.': 'third vice-chair',
                             'Ex.Officio Member': 'ex-officio member',
                             'Chairman': 'chairman'}[role]
-                else:
-                    committee = com.text
-                    role = 'member'
-                legislator.add_role('committee member', term=term,
-                                    chamber=chamber, committee=committee,
-                                    position=role)
 
-            self.save_legislator(legislator)
+                    person.extras['committee'] = committee
+                    person.extras['committee_role'] = role
+                else:
+
+                    person.extras['committee_role'] = 'member'
+                    person.extras['committee'] = com.text
+
+            yield person
