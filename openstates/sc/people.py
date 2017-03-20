@@ -4,14 +4,18 @@ from pupa.scrape import Person, Scraper
 
 
 class SCPersonScraper(Scraper):
+    """
+     South Carolina Scrapper using Person Scraper - https://opencivicdata.readthedocs.io/en/latest/scrape/people.html
+    """
     jurisdiction = 'sc'
 
     def __init__(self):
+        """  CSS isn't there without this, it serves up a mobile version. """
         self.user_agent = 'Mozilla/5.0'
 
     def scrape(self, chamber=None):
+        """ Generator Function to pull in (scrape) data about person from state website."""
 
-        # CSS isn't there without this, it serves up a mobile version
 
         if chamber == 'lower':
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
