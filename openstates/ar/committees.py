@@ -130,7 +130,7 @@ class ARCommitteeScraper(Scraper):
             return
         self._seen.add((chamber, name, subcommittee))
 
-        comm = Organization(chamber=chamber, name=name, classification='committee') #Committee(chamber, name, subcommittee=subcommittee)
+        comm = Organization(chamber=chamber, name=name, classification='committee')
         comm.add_source(url)
 
         member_nodes = page.xpath('//table[@class="dxgvTable"]/tr')
@@ -152,11 +152,11 @@ class ARCommitteeScraper(Scraper):
             comm.add_member(member, role=mtype)
 
         for a in page.xpath('//table[@id="ctl00_m_g_a194465c_f092_46df_b753_'
-            '354150ac7dbd_ctl00_tblContainer"]//ul/li/a'):
+                            '354150ac7dbd_ctl00_tblContainer"]//ul/li/a'):
             sub_name = a.text.strip()
             sub_url = a.get('href').replace('../', '/')
             self.scrape_committee(chamber, name, sub_url,
-                subcommittee=sub_name)
+                                  subcommittee=sub_name)
 
         if not comm._related:
             if subcommittee:

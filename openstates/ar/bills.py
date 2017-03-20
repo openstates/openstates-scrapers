@@ -239,7 +239,7 @@ class ARBillScraper(Scraper):
                 if not name:
                     continue
                 getattr(vote, voteval)(name)
-        
+
         yield vote
 
     def scrape_cosponsors(self, bill, url):

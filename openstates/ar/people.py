@@ -9,7 +9,7 @@ class ARLegislatorScraper(Scraper):
     jurisdiction = 'ar'
     latest_only = True
 
-    def scrape(self, chamber = None):
+    def scrape(self, chamber=None):
 
         url = 'http://www.arkleg.state.ar.us/assembly/2017/2017R/Pages/LegislatorSearchResults.aspx?member=&committee=All&chamber='
         page = self.get(url).text
@@ -19,7 +19,7 @@ class ARLegislatorScraper(Scraper):
                             '/tr[contains(@class, "dxgvDataRow")]'
                             '/td[1]/a'):
             member_url = a.get('href').replace('../', '/')
-            
+
             yield from self.scrape_member(chamber, member_url)
 
     def scrape_member(self, chamber, member_url):
@@ -71,8 +71,9 @@ class ARLegislatorScraper(Scraper):
             self.warning('Member has no district listed; skipping them')
             return
 
-        person = Person(name=full_name, district=district, party=party, primary_org=chamber, image = photo_url)
-        
+        person = Person(name=full_name, district=district,
+                        party=party, primary_org=chamber, image=photo_url)
+
         person.add_link(member_url)
         person.add_source(member_url)
 
@@ -85,11 +86,11 @@ class ARLegislatorScraper(Scraper):
         except AttributeError:
             email = None
         address = root.xpath('//nobr/text()')[0].replace(u'\xa0', ' ')
-        
+
         person.add_contact_detail(type='address', value=address, note='District Office')
         person.add_contact_detail(type='voice', value=phone, note='District Office')
         person.add_contact_detail(type='email', value=email, note='District Office')
-        
+
         try:
             person.extras['occupation'] = re.search(
                 r'Occupation(.+)\r', info_box).group(1)
