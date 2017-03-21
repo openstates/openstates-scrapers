@@ -1,56 +1,43 @@
 import datetime
 import re
+from pytz import timezone as tmz
 
 from lxml import html
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Event, Scraper
 
 
-class AZEventScraper(EventScraper):
+class AZEventScraper(Scraper):
     """
     Arizona Event Scraper, gets interim committee, agendas, floor calendars
     and floor activity events
     """
     jurisdiction = 'az'
 
+    _tz = tmz('US/Arizona')
+
     _chamber_short = {'upper': 'S', 'lower': 'H'}
     _chamber_long = {'upper': 'Senate', 'lower': 'House'}
 
-    def get_session_id(self, session):
-        """
-        returns the session id for a given session
-        """
-        return self.metadata['session_details'][session]['session_id']
+    def scrape(self, chamber=None):
+        if chamber:
+            if chamber == "other":
+                return
+            else:
+                yield from self.scrape_chamber(chamber)
+        else:
+            chambers = ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber)
 
-    def scrape(self, chamber, session):
-        if chamber == "other":
-            return
-        """
-        given a chamber and session returns the events
-        """
-        try:
-            session_id = self.get_session_id(session)
-        except KeyError:
-            raise NoDataForPeriod(session)
-
-        # this will only work on the latest regular or special session
-        # 103 is fortyninth - ninth special session 102 is session_ID for
-        # fiftieth
-        # we can get old events with some hassle but we cant change what has
-        # already happened so why bother?
-        if session_id == 103 or session_id < 102:
-            raise NoDataForPeriod(session)
-
-        # http://www.azleg.gov/CommitteeAgendas.asp?Body=H
-        self.scrape_committee_agendas(chamber, session)
-        # http://www.azleg.gov/InterimCommittees.asp
-        # self.scrape_interim_events(chamber, session)
-
-    def scrape_committee_agendas(self, chamber, session):
+    def scrape_chamber(self, chamber):
         """
         Scrape upper or lower committee agendas
         """
+        session = self.latest_session()
+        # since we are scraping only latest_session
+        session_id = '117'
+
         # could use &ShowAll=ON doesn't seem to work though
         url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % \
                                           self._chamber_short[chamber]
@@ -93,19 +80,26 @@ class AZEventScraper(EventScraper):
             description = agenda_info['description']
             member_list = agenda_info['member_list']
             related_bills = agenda_info['related_bills']
-
+            print(related_bills)
+            """
             event = Event(session, when, 'committee:meeting', title,
                           location=room, link=link, details=description,
                           related_bills=related_bills)
-            event.add_participant('host', committee, 'committee',
-                                  chamber=chamber)
+            """
+            event = Event(timezone=self._tz.zone,
+                          location_name=room,
+                          start_time=self._tz.localize(when),
+                          name=title,
+                          description=description,
+                          )
+            event.add_participant(committee, type='committee', note='host')
 
-            event['participants'].extend(member_list)
+            event.participants.extend(member_list)
             event.add_source(url)
             event.add_source(link)
             # print event['when'].timetuple()
             # import ipdb;ipdb.set_trace()
-            self.save_event(event)
+            yield event
 
     def parse_agenda(self, chamber, url):
         """
