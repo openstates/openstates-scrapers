@@ -21,9 +21,7 @@ services:
     depends_on:
     - database
   scrape:
-    build:
-      context: .
-      dockerfile: Dockerfile-pupa
+    image: openstates/openstates-pupa
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
