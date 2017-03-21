@@ -226,10 +226,8 @@ class MNBillScraper(Scraper, LXMLMixin):
         # Add source
         bill.add_source(bill_detail_url)
 
-        # Add subjects.  Currently we are not mapping to Open States
-        # standardized subjects, so use 'scraped_subjects'
-        # TODO: migrate to Pupa
-        # bill['scraped_subjects'] = self._subject_mapping[bill_id]
+        for subject in self._subject_mapping[bill_id]:
+            bill.add_subject(subject)
 
         # Get companion bill.
         companion = doc.xpath('//table[@class="status_info"]//tr[1]/td[2]'
@@ -274,11 +272,14 @@ class MNBillScraper(Scraper, LXMLMixin):
             # Subjects look like "Name of Subject (##)" -- split off the #
             subject = option.text.rsplit(' (')[0]
             value = option.get('value')
-            opt_url = '%sstatus_result.php?body=%s&search=topic&session=%s&topic[]=%s' % (
-                BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
+            opt_url = (
+                '%sstatus_result.php?body=%s&search=topic&session=%s'
+                '&topic[]=%s&submit_topic=GO' %
+                (BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
+            )
             opt_html = self.get(opt_url).text
             opt_doc = lxml.html.fromstring(opt_html)
-            for bill in opt_doc.xpath('//table/tr/td[2]/a/text()'):
+            for bill in opt_doc.xpath('//table/tbody/tr/td[2]/a/text()'):
                 bill = self.make_bill_id(bill)
                 self._subject_mapping[bill].append(subject)
 
