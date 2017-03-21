@@ -444,7 +444,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             # Considering Name is brackets as short name
             regex = re.compile(".*?\((.*?)\)")
             short_name = re.findall(regex, name)
-            if len(short_name)>0:
+            if len(short_name) > 0:
                 note = 'Short Name: ' + short_name[0]
             else:
                 note = ''
