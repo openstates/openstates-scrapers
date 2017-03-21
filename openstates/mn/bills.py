@@ -47,8 +47,6 @@ SITE_IDS = {
 
 
 class MNBillScraper(Scraper, LXMLMixin):
-    jurisdiction = 'mn'
-
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
