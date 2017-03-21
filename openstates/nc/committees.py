@@ -51,7 +51,7 @@ class NCCommitteeScraper(Scraper):
             for ctype in chamber_slugs[chamber]:
                 data = self.get(base_url + ctype).text
                 doc = lxml.html.fromstring(data)
-                doc.make_links_absolute(base_url + ctype)
+                doc.make_links_absolute(base_url+ctype)
                 for comm in doc.xpath('//ul/li/a'):
                     name = comm.text
                     # skip committee of whole Senate

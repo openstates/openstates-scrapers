@@ -11,27 +11,17 @@ class PupaLegislatorScraper(LegislatorScraper):
         super(PupaLegislatorScraper, self).__init__(*args, **kwargs)
 
     def scrape(self, **kwargs):
-        self._load_orgs()
         self._load_memberships()
         for person in get_json(self.jurisdiction, 'person'):
             self.process_person(person)
-
-    def _load_orgs(self):
-        # org_id -> org
-        self.organizations = defaultdict(list)
-        for org in get_json(self.jurisdiction, 'organization'):
-            self.organizations[org['_id']] = org
 
     def _load_memberships(self):
         # person_id -> {org: org, post: post}
         self.memberships = defaultdict(list)
 
         for membership in get_json(self.jurisdiction, 'membership'):
-            org = self.organizations.get(membership['organization_id'])
-            if not org:
-                org = parse_psuedo_id(membership['organization_id'])
+            org = parse_psuedo_id(membership['organization_id'])
             post = parse_psuedo_id(membership['post_id'])
-
             self.memberships[membership['person_id']].append({
                 'org': org,
                 'post': post,
@@ -49,8 +39,6 @@ class PupaLegislatorScraper(LegislatorScraper):
         for membership in self.memberships[person['_id']]:
             org = membership['org']
             post = membership['post']
-            if not org:
-                print(membership)
             if org['classification'] in ('upper', 'lower'):
                 chamber = org['classification']
                 district = post['label']

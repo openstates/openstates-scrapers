@@ -33,16 +33,18 @@ class MELegislatorScraper(LegislatorScraper):
         # These do not include the non-voting tribal representatives
         # They do not have numbered districts, and lack a good deal of
         # the standard profile information about representatives
-        for district in page.xpath('//a[contains(@href, "dist_twn")]/..'):
+        districts = [x for x in page.xpath('/html/body/p') if
+                len(x.xpath('a')) == 3]
+        for district in districts:
             if "- Vacant" in district.text_content():
                 self.warning("District is vacant: '{}'".
                              format(district.text_content()))
                 continue
 
-            _, district_number = district.xpath('a[1]/@href')[0].split('#')
+            district_number = district.xpath('a[1]/@name')[0]
 
-            leg_url = district.xpath('a[2]/@href')[0]
-            leg_info = district.xpath('a[2]/text()')[0]
+            leg_url = district.xpath('a[3]/@href')[0]
+            leg_info = district.xpath('a[3]/text()')[0]
 
             INFO_RE = r'''
                     Representative\s
@@ -74,7 +76,7 @@ class MELegislatorScraper(LegislatorScraper):
 
             # Add contact information from personal page
             office_address = re.search(
-                    r'<B>Address:  </B>(.+?)\n?</?P>', html, re.IGNORECASE).group(1)
+                    r'<B>Address:  </B>(.+?)\n?<P>', html, re.IGNORECASE).group(1)
 
             office_email = doc.xpath(
                     '//a[starts-with(@href, "mailto:")]/text()')
@@ -84,11 +86,11 @@ class MELegislatorScraper(LegislatorScraper):
                 office_email = None
 
             business_phone = re.search(
-                    r'<B>Business Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                    r'<B>Business Telephone:  </B>(.+?)<P>', html, re.IGNORECASE)
             home_phone = re.search(
-                    r'<B>Home Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                    r'<B>Home Telephone:  </B>(.+?)<P>', html, re.IGNORECASE)
             cell_phone = re.search(
-                    r'<B>Cell Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                    r'<B>Cell Telephone:  </B>(.+?)<P>', html, re.IGNORECASE)
 
             if business_phone:
                 office_phone = business_phone.group(1)
@@ -100,12 +102,12 @@ class MELegislatorScraper(LegislatorScraper):
                 office_phone = None
 
             district_office = {
-                'name': "District Office",
-                'type': "district",
-                'address': office_address,
-                'fax': None,
-                'email': office_email,
-                'phone': office_phone,
+                    'name': "District Office",
+                    'type': "district",
+                    'address': office_address,
+                    'fax': None,
+                    'email': office_email,
+                    'phone': office_phone
             }
             leg.add_office(**district_office)
 

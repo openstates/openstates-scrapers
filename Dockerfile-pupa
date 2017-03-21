@@ -40,7 +40,6 @@ ENV PUPA_ENV /opt/openstates/venv-pupa/
 ADD . /opt/openstates/openstates
 RUN find /opt/openstates/openstates -name '*.pyc' -delete
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements-new.txt
-RUN /opt/openstates/venv-pupa/bin/pip install ipdb
 
 WORKDIR /opt/openstates/openstates/
 ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]

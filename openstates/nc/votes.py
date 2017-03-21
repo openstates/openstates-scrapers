@@ -87,7 +87,7 @@ class NCVoteScraper(Scraper):
                                motion_text=data[13],
                                result='pass' if 'PASS' in data[20] else 'fail',
                                bill_chamber=bill_chambers[data[3][0]],
-                               bill=data[3] + data[4],
+                               bill=data[3]+data[4],
                                legislative_session=session,
                                classification='passage',
                                )

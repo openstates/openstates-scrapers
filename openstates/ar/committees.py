@@ -1,7 +1,6 @@
 import re
 
-from billy.utils import urlescape
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 import lxml.html
 
@@ -11,26 +10,18 @@ COMM_TYPES = {'joint': 'Joint',
               'lower': 'House'}
 
 
-class ARCommitteeScraper(CommitteeScraper):
+class ARCommitteeScraper(Scraper):
     jurisdiction = 'ar'
     latest_only = True
 
     _seen = set()
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
 
-        # Get start year of term.
-        for termdict in self.metadata['terms']:
-            if termdict['name'] == term:
-                break
-        start_year = termdict['start_year']
+        base_url = 'http://www.arkleg.state.ar.us/assembly/2017/2017R/Pages/Committees.aspx?committeetype='
 
-        base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%sR/"
-                    "Pages/Committees.aspx?committeetype=")
-        base_url = base_url % (start_year, start_year)
-
-        for chamber, url_ext in COMM_TYPES.iteritems():
-            chamber_url = urlescape(base_url + url_ext)
+        for chamber, url_ext in COMM_TYPES.items():
+            chamber_url = base_url + url_ext
             page = self.get(chamber_url).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(chamber_url)
@@ -45,11 +36,11 @@ class ARCommitteeScraper(CommitteeScraper):
 
                 name = re.sub(r'\s*-\s*(SENATE|HOUSE)$', '', a.text).strip()
 
-                comm_url = urlescape(a.attrib['href'])
+                comm_url = a.get('href').replace('../', '/')
                 if chamber == 'task_force':
                     chamber = 'joint'
 
-                self.scrape_committee(chamber, name, comm_url)
+                yield from self.scrape_committee(chamber, name, comm_url)
 
     def _fix_committee_case(self, subcommittee):
         '''Properly capitalize the committee name.
@@ -139,7 +130,7 @@ class ARCommitteeScraper(CommitteeScraper):
             return
         self._seen.add((chamber, name, subcommittee))
 
-        comm = Committee(chamber, name, subcommittee=subcommittee)
+        comm = Organization(chamber=chamber, name=name, classification='committee')
         comm.add_source(url)
 
         member_nodes = page.xpath('//table[@class="dxgvTable"]/tr')
@@ -156,31 +147,22 @@ class ARCommitteeScraper(CommitteeScraper):
 
             member = member_node.xpath('string(td[3])').split()
 
-            title = member[0]
             member = ' '.join(member[1:])
 
-            if title == 'Senator':
-                mchamber = 'upper'
-            elif title == 'Representative':
-                mchamber = 'lower'
-            else:
-                # skip non-legislative members
-                continue
-
-            comm.add_member(member, mtype, chamber=mchamber)
+            comm.add_member(member, role=mtype)
 
         for a in page.xpath('//table[@id="ctl00_m_g_a194465c_f092_46df_b753_'
-            '354150ac7dbd_ctl00_tblContainer"]//ul/li/a'):
+                            '354150ac7dbd_ctl00_tblContainer"]//ul/li/a'):
             sub_name = a.text.strip()
-            sub_url = urlescape(a.attrib['href'])
+            sub_url = a.get('href').replace('../', '/')
             self.scrape_committee(chamber, name, sub_url,
-                subcommittee=sub_name)
+                                  subcommittee=sub_name)
 
-        if not comm['members']:
+        if not comm._related:
             if subcommittee:
                 self.warning('Not saving empty subcommittee {}.'.format(
                     subcommittee))
             else:
                 self.warning('Not saving empty committee {}.'.format(name))
         else:
-            self.save_committee(comm)
+            yield comm

@@ -218,7 +218,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
             action_name = row['ActionDescription']
             action_date = datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y')
 
-            if row.get('ChamberName') != None:
+            if row['ChamberName'] != None:
                 action_chamber = self.chamber_map[row['ChamberName']]
             elif 'Senate' in row['ActionDescription']:
                 action_chamber = 'upper'
