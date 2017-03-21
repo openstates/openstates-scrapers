@@ -231,7 +231,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                              classification=sponsor_type,
                              entity_type='person',
                              chamber=chamber,
-                             primary=True,
+                             primary=True if sponsor_type == 'primary' else False,
                              )
 
     def scrape_actions(self, bill, legislation_id):
