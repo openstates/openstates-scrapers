@@ -1,4 +1,3 @@
-# encoding=utf-8
 from pupa.scrape import Jurisdiction, Organization
 from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
