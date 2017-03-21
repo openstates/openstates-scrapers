@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     freetds-dev \
     curl \
     wget \
-    unzip
+    unzip \
+    mdbtools
 
 
 RUN mkdir -p /opt/openstates/
