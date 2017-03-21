@@ -359,8 +359,11 @@ class ILBillScraper(BillScraper, LXMLMixin):
             elif name == 'Mr. President':
                 name = self.metadata['session_details'][session]['president']
             if vcode == 'Y':
+                # Converts "Davis,William" to "Davis, William".
+                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 yes_votes.append(name)
             elif vcode == 'N':
+                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 no_votes.append(name)
             else:
                 other_vote_detail[vcode].append(name)

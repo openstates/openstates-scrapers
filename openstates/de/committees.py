@@ -1,111 +1,86 @@
 import re
 import lxml.html
-
 from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
-class DECommitteeScraper(CommitteeScraper,LXMLMixin):
+
+class DECommitteeScraper(CommitteeScraper, LXMLMixin):
     jurisdiction = "de"
 
     def scrape(self, chamber, term):
-
         urls = {
-            'upper': 'http://legis.delaware.gov/LIS/LIS%s.nsf/SCommittees',
-            'lower': 'http://legis.delaware.gov/LIS/LIS%s.nsf/HCommittees'
+            'upper': 'http://legis.delaware.gov/json/Committees/' +
+                     'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=1',
+            'lower': 'http://legis.delaware.gov/json/Committees/' +
+                     'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=2',
         }
 
         # Mapping of term names to session numbers (see metatdata).
         term2session = {"2017-2018": "149", "2015-2016": "148",
-                        "2013-2014": "147", "2011-2012": "146"}
+                        "2013-2014": "147", "2011-2012": "146",
+                        "2009-2010": "145", "2007-2008": "144",
+                        "2005-2006": "143", "2003-2004": "142",
+                        "2001-2002": "141", "1999-2000": "140"}
 
         session = term2session[term]
 
-        if chamber == "lower":
-            #only scrape joint comms once
-            self.scrape_joint_committees(term,session)
+        if chamber == 'lower':
+            # only scrape joint comms once
+            self.scrape_joint_committees(session)
 
+        # scrap upper and lower committees
         url = urls[chamber] % (session,)
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
+        self.scrape_comm(url, chamber)
 
-        for row in page.xpath('//tr'):
-            if len(row.xpath('./td')) > 0:
-                #if statement removes header tr
-                comm = row.xpath('.//a')[1]
-                comm_name = comm.text_content().strip()
+    def scrape_comm(self, url, chamber):
+        data = self.post(url).json()['Data']
 
-                comm_url = comm.attrib["href"]
+        for item in data:
+            comm_name = item['CommitteeName']
+            committee = Committee(chamber, comm_name)
+            chair_man = str(item['ChairName'])
+            vice_chair = str(item['ViceChairName'])
+            comm_id = item['CommitteeId']
+            comm_url = self.get_comm_url(chamber, comm_id, comm_name)
+            members = self.scrape_member_info(comm_url)
+            if vice_chair != 'None':
+                committee.add_member(vice_chair, 'Vice-Chair')
+            if chair_man  != 'None':
+                committee.add_member(chair_man, 'Chairman')
 
-                comm_page = lxml.html.fromstring(self.get(comm_url).text)
-                comm_page.make_links_absolute(comm_url)
-                committee = Committee(chamber, comm_name)
-                committee.add_source(comm_url)
-                committee.add_source(url)
 
-                chair = comm_page.xpath(".//div[@class='sub_title']")
-                chair = chair[0].text.replace("Chairman:","").strip()
-                committee.add_member(chair,"Chairman")
+            for member in members:
+                # vice_chair and chair_man already added.
+                if chair_man not in member and vice_chair not in member:
+                    member = " ".join(member.split())
+                    if member:
+                        committee.add_member(member)
 
-                for table in comm_page.xpath(".//table"):
-                    header,content = table.xpath(".//td")
-                    header = header.text_content().strip()
-                    content = content.text_content().strip()
-                    if "Vice" in header:
-                        if content:
-                            committee.add_member(content,"Vice-Chairman")
-                    elif header == "Members:":
-                        for m in content.split("\n"):
-                            committee.add_member(m.strip())
-
-                self.save_committee(committee)
-
-    def scrape_joint_committees(self,term,session):
-        url = "http://legis.delaware.gov/legislature.nsf/testside.html?OpenPage&BaseTarget=right"
-        page = self.lxmlize(url)
-        joint_comms = page.xpath("//a[text()='Joint Committees']")
-        comm_list = joint_comms[0].getnext()
-        for li in comm_list.xpath("./li/a"):
-            comm_name = li.text
-            comm_link = li.attrib["href"]
-
-            if comm_name.strip() == "Sunset": #I don't even want to go into it.
-                new_link = "http://legis.delaware.gov/Sunset/"\
-                    "Sunset.nsf/general+Info/JSC+Members?opendocument"
-                assert new_link != comm_link, "Remove Sunset Committee special casing"
-                comm_link = new_link
-
-            committee = Committee("joint", comm_name)
-            committee.add_source(comm_link)
-            comm_page = self.lxmlize(comm_link)
-            people = comm_page.xpath("//a/b")
-            things_to_replace = ["Senator",
-                                "Representative",
-                                "(D)","(R)",
-                                "House Minority Whip",
-                                "House Majority Whip",
-                                "Senate Minority Whip",
-                                "Senate Majority Whip",
-                                "House Minority Leader",
-                                "House Majority Leader",
-                                "Senate Minority Leader",
-                                "Senate Majority Leader",
-                                "President Pro Tempore",
-                                "Speaker of the House"]
-            for person in people:
-                person_name = person.text_content()
-                for thing in things_to_replace:
-                    person_name = person_name.replace(thing,"")
-                person_name = person_name.strip().strip(",")
-                role = "Member"
-                if person_name.strip()[-1] == ")":
-                    person_name,role = person_name.rsplit("(",1)
-                    role = role.replace(")","").strip()
-                elif ", Vice-Chair" in person_name:
-                    role = "Vice-Chair"
-                    person_name = person_name.replace(", Vice-Chair","")
-                elif ", Chair" in person_name:
-                    role = "Chair"
-                    person_name = person_name.replace(", Chair","")
-                person_name = person_name.strip().strip(",").strip()
-                committee.add_member(person_name,role)
+            committee.add_source(comm_url)
+            committee.add_source(url)
             self.save_committee(committee)
+
+    def scrape_joint_committees(self, session):
+        chamber = 'joint'
+        url = 'http://legis.delaware.gov/json/Committees/' + \
+              'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=3' % (session, )
+        self.scrape_comm(url, chamber)
+
+    def scrape_member_info(self, comm_url):
+        comm_page = lxml.html.fromstring(self.get(comm_url).text)
+        # all members including chair_man and vice_chair
+        members = comm_page.xpath("//section[@class='section-short']/div[@class='info" +
+                                  "-horizontal']/div[@class='info-group']/div[@class=" +
+                                  "'info-value']//a/text()")
+        return members
+
+    def get_comm_url(self, chamber, comm_id, comm_name):
+        if chamber == 'joint':
+            # only Sunset url is not following pattern.
+            if comm_name == 'Joint Legislative Oversight and Sunset Committee':
+                comm_url = 'http://legis.delaware.gov/Sunset'
+            else:
+                comm_url = 'http://legis.delaware.gov/' + "".join(comm_name.split())
+        else:
+            comm_url = 'http://legis.delaware.gov/CommitteeDetail?committeeId=' + str(comm_id)
+        return comm_url

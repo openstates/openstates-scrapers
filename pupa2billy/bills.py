@@ -54,6 +54,8 @@ class PupaBillScraper(BillScraper):
         bill = Bill(data['legislative_session'], chamber, data['identifier'],
                     data['title'], subjects=data['subject'],
                     type=data['classification'])
+        if data['abstracts']:
+            bill['summary'] = data['abstracts'][0]['abstract']
         bill.update(**data['extras'])
 
         for action in data['actions']:
