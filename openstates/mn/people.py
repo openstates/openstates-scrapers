@@ -107,7 +107,7 @@ class RepList(Page):
 
         name_match = re.match(r'^(.+)\(([0-9]{2}[AB]), ([A-Z]+)\)$', name_text)
         name = name_match.group(1).strip()
-        district = name_match.group(2).lstrip('0').lower()
+        district = name_match.group(2).lstrip('0').upper()
         party_text = name_match.group(3)
         party = PARTIES[party_text]
 
