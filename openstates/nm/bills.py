@@ -10,9 +10,8 @@ import lxml.html
 import lxml.etree
 import scrapelib
 
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
+from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.utils.generic import convert_pdf
 
 from .actions import Categorizer
 
@@ -57,8 +56,7 @@ def matchHeader(rowCols, cellX):
         return before
 
 
-class NMBillScraper(BillScraper):
-    jurisdiction = 'nm'
+class NMBillScraper(Scraper):
     categorizer = Categorizer()
 
     def _init_mdb(self, session):
@@ -73,8 +71,8 @@ class NMBillScraper(BillScraper):
         matches = sorted([
             (datetime.strptime(date, '%m-%d-%y  %H:%M%p'), filename)
             for date, filename in matches])
-        if matches == []:
-            raise ValueError("%s contains no matching files." % (ftp_base))
+        if not matches:
+            raise ValueError('{} contains no matching files.'.format(ftp_base))
 
         remote_file = ftp_base + matches[-1][1]
 
@@ -93,15 +91,28 @@ class NMBillScraper(BillScraper):
         """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
         try:
-            pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
+            pipe = subprocess.Popen(commands,
+                                    stdout=subprocess.PIPE,
                                     close_fds=True).stdout
-            csvfile = csv.DictReader(pipe)
+            csvfile = csv.DictReader([line.decode('utf8') for line
+                                      in pipe.readlines()])
             return csvfile
         except OSError:
-            self.warning("Failed to read mdb file. Have you installed 'mdbtools' ?")
+            self.warning("Failed to read mdb file. Have you installed "
+                         "'mdbtools' ?")
             raise
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using latest session %s', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
+
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         chamber_letter = 'S' if chamber == 'upper' else 'H'
         bill_type_map = {'B': 'bill',
                          'CR': 'concurrent resolution',
@@ -126,60 +137,66 @@ class NMBillScraper(BillScraper):
             subject_map[subject['SubjectCode']] = subject['Subject']
 
         # get all bills into this dict, fill in action/docs before saving
-        self.bills = {}
-        for data in self.access_to_csv('Legislation'):
+        bills = {}
+        for data in filter(lambda row:
+                           row['BillID'].startswith(chamber_letter),
+                           self.access_to_csv('Legislation')):
             # use their BillID for the key but build our own for storage
             bill_key = data['BillID'].replace(' ', '')
 
-            # if this is from the wrong chamber, skip it
-            if not bill_key.startswith(chamber_letter):
-                continue
-
-            bill_id = '%s%s%s' % (data['Chamber'], data['LegType'],
-                                  data['LegNo'])
+            # remove spaces for consistency
+            bill_id = '{}{}{}'.format(data['Chamber'], data['LegType'],
+                                      data['LegNo']).replace(' ', '')
             bill_type = bill_type_map[data['LegType']]
-            bill_id = bill_id.replace(' ', '')  # remove spaces for consistency
-            self.bills[bill_key] = bill = Bill(session, chamber, bill_id,
-                                               data['Title'], type=bill_type)
+            bills[bill_key] = bill = Bill(bill_id,
+                                          legislative_session=session,
+                                          chamber=chamber,
+                                          title=data['Title'],
+                                          classification=bill_type)
 
             # fake a source
             data['SessionYear'] = session_year
-            data.update({x: data[x].strip() for x in ["Chamber", "LegType",
-                                                      "LegNo", "SessionYear"]})
+            data.update({x: data[x].strip() for x in ['Chamber', 'LegType',
+                                                      'LegNo', 'SessionYear']})
 
             bill.add_source(
                 'http://www.nmlegis.gov/Legislation/Legislation?chamber='
-                "{Chamber}&legType={LegType}&legNo={LegNo}"
-                "&year={SessionYear}".format(**data))
+                '{Chamber}&legType={LegType}&legNo={LegNo}'
+                '&year={SessionYear}'.format(**data))
 
-            bill.add_sponsor('primary', sponsor_map[data['SponsorCode']])
-            if data['SponsorCode2'] not in ('NONE', 'X', ''):
-                bill.add_sponsor('primary', sponsor_map[data['SponsorCode2']])
+            bill.add_sponsorship(sponsor_map[data['SponsorCode']],
+                                 classification='primary',
+                                 entity_type='person',
+                                 primary=True)
+            for sponsor_code in ['SponsorCode2', 'SponsorCode3',
+                                 'SponsorCode4', 'SponsorCode5']:
+                if data[sponsor_code] and data[sponsor_code] not in ('NONE',
+                                                                     'X',
+                                                                     ''):
+                    bill.add_sponsorship(sponsor_map[data[sponsor_code]],
+                                         classification='primary',
+                                         entity_type='person',
+                                         primary=False)
 
             # maybe use data['emergency'] data['passed'] data['signed'] as well
-
-            bill['subjects'] = []
-            if data['SubjectCode1']:
-                bill['subjects'].append(subject_map[data['SubjectCode1']])
-            if data['SubjectCode2']:
-                bill['subjects'].append(subject_map[data['SubjectCode2']])
-            if data['SubjectCode3']:
-                bill['subjects'].append(subject_map[data['SubjectCode3']])
+            for subject_code in ['SubjectCode1', 'SubjectCode2',
+                                 'SubjectCode3']:
+                if data[subject_code]:
+                    bill.add_subject(subject_map[data[subject_code]])
 
         # bills and actions come from other tables
-        self.scrape_actions(chamber_letter)
-        self.scrape_documents(session, 'bills', chamber)
-        self.scrape_documents(session, 'resolutions', chamber)
-        self.scrape_documents(session, 'memorials', chamber)
-        self.scrape_documents(session, 'votes', chamber, chamber_name='')
-        self.check_other_documents(session, chamber)
-        self.dedupe_docs()
+        self.scrape_actions(chamber_letter, bills)
+        self.scrape_documents(session, 'bills', chamber, bills)
+        self.scrape_documents(session, 'resolutions', chamber, bills)
+        self.scrape_documents(session, 'memorials', chamber, bills)
+        self.scrape_documents(session, 'votes', chamber, bills,
+                              chamber_name='')
+        self.check_other_documents(session, chamber, bills)
+        self.dedupe_docs(bills)
 
-        # ..and save it all
-        for bill in self.bills.itervalues():
-            self.save_bill(bill)
+        yield from bills.values()
 
-    def check_other_documents(self, session, chamber):
+    def check_other_documents(self, session, chamber, bills):
         """ check for documents that reside in their own directory """
 
         s_slug = self.metadata['session_details'][session]['slug']
@@ -198,26 +215,31 @@ class NMBillScraper(BillScraper):
                 match = re.match('([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
-                    mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
+                    mimetype = 'application/pdf' if fname.lower()\
+                        .endswith('pdf') else 'text/html'
 
-                    if (chamber == "upper" and bill_type[0] == "S") or (chamber == "lower" and bill_type[0] == "H"):
+                    if (chamber == 'upper' and bill_type[0] == 'S') or \
+                            (chamber == 'lower' and bill_type[0] == 'H'):
                         bill_id = bill_type.replace('B', '') + bill_num
                         try:
-                            bill = self.bills[bill_id]
+                            bill = bills[bill_id]
                         except KeyError:
-                            self.warning('document for unknown bill %s' % fname)
+                            self.warning(
+                                'document for unknown bill {}'.format(fname))
                         else:
                             if doc_type == 'Final Version':
                                 bill.add_version(
-                                    'Final Version', url + fname, mimetype=mimetype)
+                                    'Final Version', url + fname,
+                                    mimetype=mimetype)
                             else:
-                                bill.add_document(doc_type, url + fname, mimetype=mimetype)
+                                bill.add_document(doc_type, url + fname,
+                                                  mimetype=mimetype)
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
         check_docs(final_url, 'Final Version')
 
-    def scrape_actions(self, chamber_letter):
+    def scrape_actions(self, chamber_letter, bills):
         """ append actions to bills """
 
         # we could use the TblLocation to get the real location, but we can
@@ -313,14 +335,13 @@ class NMBillScraper(BillScraper):
         # these actions need a committee name spliced in
         actions_with_committee = ('SENT', '7650', '7654')
 
-        for action in self.access_to_csv('Actions'):
+        for action in filter(lambda row:
+                             row['BillID'].startswith(chamber_letter),
+                             self.access_to_csv('Actions')):
             bill_key = action['BillID'].replace(' ', '')
 
-            # if this is from the wrong chamber or an unknown bill skip it
-            if not bill_key.startswith(chamber_letter):
-                continue
-            if bill_key not in self.bills:
-                self.warning('action for unknown bill %s' % bill_key)
+            if bill_key not in bills:
+                self.warning('action for unknown bill {}'.format(bill_key))
                 continue
 
             # ok the whole Day situation is madness, N:M mapping to real days
@@ -330,7 +351,7 @@ class NMBillScraper(BillScraper):
             # instead lets just use EntryDate and take radical the position
             # something hasn't happened until it is observed
             action_date = datetime.strptime(action['EntryDate'].split()[0],
-                                            "%m/%d/%y")
+                                            '%m/%d/%y')
             if action['LocationCode']:
                 actor = location_map.get(action['LocationCode'][0], 'other')
             else:
@@ -351,7 +372,7 @@ class NMBillScraper(BillScraper):
                 locs = [com_location_map[l]
                         for l in action['Referral'].split('/') if l
                         and l in com_location_map]
-                action_name = action_name % (' & '.join(locs))
+                action_name %= ' & '.join(locs)
 
             # Fix known quirks related to actor
             if action_name == 'passed Senate':
@@ -362,13 +383,14 @@ class NMBillScraper(BillScraper):
             attrs = dict(actor=actor, action=action_name, date=action_date)
             attrs.update(self.categorizer.categorize(action_name))
             if action_type not in attrs['type']:
-                if isinstance(action_type, basestring):
+                if isinstance(action_type, lxml.basestring):
                     attrs['type'].append(action_type)
                 else:
                     attrs['type'].extend(action_type)
-            self.bills[bill_key].add_action(**attrs)
+            bills[bill_key].add_action(**attrs)
 
-    def scrape_documents(self, session, doctype, chamber, chamber_name=None):
+    def scrape_documents(self, session, doctype, chamber, bills,
+                         chamber_name=None):
         """ most document types (+ Votes)are in this common directory go
         through it and attach them to their related bills """
 
@@ -378,7 +400,7 @@ class NMBillScraper(BillScraper):
             chamber_name = 'house' if chamber == 'lower' else 'senate'
 
         doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
-        doc_path = doc_path % (session_path, doctype, chamber_name)
+        doc_path %= session_path, doctype, chamber_name
 
         html = self.get(doc_path).text
 
@@ -391,7 +413,7 @@ class NMBillScraper(BillScraper):
                 continue
 
             # Delete any errant words found following the file name
-            fname = fname.split(" ")[0]
+            fname = fname.split(' ')[0]
 
             # skip PDFs for now -- everything but votes have HTML versions
             if fname.endswith('pdf') and 'VOTE' not in fname:
@@ -399,15 +421,15 @@ class NMBillScraper(BillScraper):
 
             match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
             if match is None:
-                self.warning("No match, skipping")
+                self.warning('No match, skipping')
                 continue
 
             bill_type, bill_num, suffix = match.groups()
 
             # adapt to bill_id format
             bill_id = bill_type.replace('B', '') + bill_num
-            if bill_id in self.bills.keys():
-                bill = self.bills[bill_id]
+            if bill_id in bills.keys():
+                bill = bills[bill_id]
             elif (doctype == 'votes' and (
                     (bill_id.startswith('H') and chamber == 'upper') or
                     (bill_id.startswith('S') and chamber == 'lower'))):
@@ -419,12 +441,13 @@ class NMBillScraper(BillScraper):
                 self.warning('document for unknown bill %s' % fname)
                 continue
 
-            mimetype = "application/pdf" if fname.lower().endswith("pdf") else "text/html"
+            media_type = 'application/pdf' if fname.lower().endswith('pdf') \
+                else 'text/html'
 
             # no suffix = just the bill
             if suffix == '':
-                bill.add_version('introduced version', doc_path + fname,
-                                 mimetype=mimetype)
+                bill.add_version_link('introduced version', doc_path + fname,
+                                      media_type=media_type)
 
             # floor amendments
             elif re.match('F(S|H)\d', suffix):
@@ -436,8 +459,8 @@ class NMBillScraper(BillScraper):
             # committee substitutes
             elif suffix.endswith('S'):
                 committee_name = suffix[:-1]
-                bill.add_version('%s substitute' % committee_name,
-                                 doc_path + fname, mimetype=mimetype)
+                bill.add_version_link('%s substitute' % committee_name,
+                                      doc_path + fname, media_type=media_type)
             # votes
             elif 'SVOTE' in suffix:
                 sv_text = self.scrape_vote(doc_path + fname)
@@ -446,9 +469,9 @@ class NMBillScraper(BillScraper):
 
                 vote = self.parse_senate_vote(sv_text, doc_path + fname)
                 if vote:
-                    bill.add_vote(vote)
+                    bill.add_vote_event(vote)
                 else:
-                    self.warning("Bad parse on the vote")
+                    self.warning('Bad parse on the vote')
 
             elif 'HVOTE' in suffix:
                 hv_text = self.scrape_vote(doc_path + fname)
@@ -456,15 +479,15 @@ class NMBillScraper(BillScraper):
                     continue
                 vote = self.parse_house_vote(hv_text, doc_path + fname)
                 if vote:
-                    bill.add_vote(vote)
+                    bill.add_vote_event(vote)
                 else:
-                    self.warning("Bad parse on the vote")
+                    self.warning('Bad parse on the vote')
 
             # committee reports
             elif re.match(r'\w{2,4}\d', suffix):
                 committee_name = re.match(r'[A-Z]+', suffix).group()
                 bill.add_document('%s committee report' % committee_name,
-                                  doc_path + fname, mimetype=mimetype)
+                                  doc_path + fname, mimetype=media_type)
 
             # ignore list, mostly typos reuploaded w/ proper name
             elif suffix in ('HEC', 'HOVTE', 'GUI'):
@@ -472,23 +495,27 @@ class NMBillScraper(BillScraper):
             else:
                 # warn about unknown suffix
                 # we're getting some "E" suffixes, but I think those are duplicates
-                self.warning('unknown document suffix %s (%s)' % (suffix, fname))
+                self.warning('unknown document suffix {} ({})'.format(suffix,
+                                                                      fname))
 
-    def scrape_vote(self, url, local=False):
+    def scrape_vote(self, filelocation, local=False):
         """Retrieves or uses local copy of vote pdf and converts into XML."""
         if not local:
             try:
-                url, resp = self.urlretrieve(url)
+                filename, response = self.urlretrieve(url=filelocation)
+                vote_text = convert_pdf(filename, type='xml')
+                os.remove(filename)
             except scrapelib.HTTPError:
-                self.warning("Request failed: {}".format(url))
+                self.warning('Request failed: {}'.format(filelocation))
                 return
-        v_text = convert_pdf(url, 'xml')
-        os.remove(url)
-        return v_text
+        else:
+            vote_text = convert_pdf(filelocation, type='xml')
+            os.remove(filelocation)
+        return vote_text
 
     def parse_house_vote(self, sv_text, url):
         """Sets any overrides and creates the vote instance"""
-        overrides = {"ONEILL": "O'NEILL"}
+        overrides = {'ONEILL': "O'NEILL"}
         # Add new columns as they appear to be safe
         vote = Vote('lower', '?', 'senate passage', False, 0, 0, 0)
         vote.add_source(url)
@@ -513,18 +540,23 @@ class NMBillScraper(BillScraper):
         # Make sure the parsed vote totals match up with counts in the total field
         if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
            sane['other'] != vote['other_count']:
-                raise ValueError("Votes were not parsed correctly")
+                raise ValueError('Votes were not parsed correctly')
         # Make sure the date is a date
         if not isinstance(vote['date'], datetime):
-                raise ValueError("Date was not parsed correctly")
+                raise ValueError('Date was not parsed correctly')
         # End Sanity Check
         return vote
 
     def parse_senate_vote(self, sv_text, url):
         """Sets any overrides and creates the vote instance"""
-        overrides = {"ONEILL": "O'NEILL"}
+        overrides = {'ONEILL': "O'NEILL"}
         # Add new columns as they appear to be safe
-        vote = Vote('upper', '?', 'senate passage', False, 0, 0, 0)
+        vote = VoteEvent(chamber='upper',
+                         start_date='?',
+                         motion_text='senate passage')
+        vote.set_count('yes', 0)
+        vote.set_count('no', 0)
+        vote.set_count('other', 0)
         vote.add_source(url)
         vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, sVoteHeader, rDate, 'TOTAL', 'TOTAL')
 
@@ -548,10 +580,10 @@ class NMBillScraper(BillScraper):
         # Make sure the parsed vote totals match up with counts in the total field
         if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
            sane['other'] != vote['other_count']:
-                raise ValueError("Votes were not parsed correctly")
+                raise ValueError('Votes were not parsed correctly')
         # Make sure the date is a date
         if not isinstance(vote['date'], datetime):
-                raise ValueError("Date was not parsed correctly")
+                raise ValueError('Date was not parsed correctly')
         # End Sanity Check
         return vote
 
@@ -637,8 +669,8 @@ class NMBillScraper(BillScraper):
 
         return vote, rowHeads, rows[saneRow]
 
-    def dedupe_docs(self):
-        for bill_id, bill in self.bills.items():
+    def dedupe_docs(self, bills):
+        for bill_id, bill in bills.items():
             documents = bill['documents']
             if 1 < len(documents):
                 resp_set = set()
