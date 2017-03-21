@@ -1,14 +1,11 @@
 import re
 from pupa.scrape import Scraper, Organization
 from .client import AZClient
+from . import session_metadata
 
 
 class AZCommitteeScraper(Scraper):
     jurisdiction = 'az'
-
-    session_id_meta_data = {
-        "53rd-1st-regular": 117
-    }
 
     def scrape(self, chamber=None):
         if chamber:
@@ -21,7 +18,7 @@ class AZCommitteeScraper(Scraper):
     def scrape_chamber(self, chamber):
         session = self.latest_session()
         # since we are scraping only latest_session
-        session_id = self.session_id_meta_data[session]
+        session_id = self.session_metadata.session_id_meta_data[session]
 
         client = AZClient()
         committees = client.list_committees(

@@ -39,16 +39,15 @@ class AZEventScraper(Scraper):
         session_id = '117'
 
         # could use &ShowAll=ON doesn't seem to work though
-        url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % \
-                                          self._chamber_short[chamber]
+        url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % self._chamber_short[chamber]
         html_ = self.get(url).text
         doc = html.fromstring(html_)
         if chamber == 'upper':
-            event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-                                     '/td/table/tr/td/table')[0]
+            event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/'
+                                    'tr/td/table/tr/td/table')[0]
         else:
             event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-                                     '/td/table/tr/td/table/tr/td/table')[0]
+                                    '/td/table/tr/td/table/tr/td/table')[0]
         for row in event_table.xpath('tr')[2:]:
             # Agenda Date, Committee, Revised, Addendum, Cancelled, Time, Room,
             # HTML Document, PDF Document for house
@@ -174,14 +173,14 @@ class AZEventScraper(Scraper):
             members = members.getnext()
         description = ""
         agenda_items = div.xpath('//p[contains(a/@name, "AgendaItems")]'
-                                '/following-sibling::table[1]')
+                                 '/following-sibling::table[1]')
         if agenda_items:
             agenda_items = [tr.text_content().strip().replace("\r\n", "")
                             for tr in agenda_items[0].getchildren()
                             if tr.text_content().strip()]
             description = ",\n".join(agenda_items)
         bill_list = div.xpath('//p[contains(a/@name, "Agenda_Bills")]'
-                                '/following-sibling::table[1]')
+                              '/following-sibling::table[1]')
         if bill_list:
             try:
                 bill_list = [tr[1].text_content().strip() + " " +

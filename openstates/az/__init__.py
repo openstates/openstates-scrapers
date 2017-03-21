@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import AZPersonScraper
 from .committees import AZCommitteeScraper
 from .events import AZEventScraper
+from .bills import AZBillScraper
 
 class Arizona(Jurisdiction):
     division_id = "ocd-division/country:us/state:az"
@@ -12,6 +13,7 @@ class Arizona(Jurisdiction):
         'people': AZPersonScraper,
         'committees': AZCommitteeScraper,
         'events': AZEventScraper,
+        'bills': AZBillScraper,
     }
     parties = [
         {'name': 'Republican'},
