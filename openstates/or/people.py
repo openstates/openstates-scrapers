@@ -3,17 +3,10 @@ from .apiclient import OregonLegislatorODataClient
 
 
 class ORPersonScraper(Scraper):
-    jurisdiction = 'or'
-
-    URLs = {
-        "lower": "http://www.oregonlegislature.gov/house/Pages/RepresentativesAll.aspx",
-        "upper": "http://www.oregonlegislature.gov/senate/Pages/SenatorsAll.aspx",
-    }
-
-    def scrape(self, chamber=None):
-
+    def scrape(self, chamber=None, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        self._get_latest_session()
+        if not session:
+            self.latest_session()
 
         yield from self.scrape_chamber()
 
@@ -44,5 +37,5 @@ class ORPersonScraper(Scraper):
 
             yield person
 
-    def _get_latest_session(self):
+    def latest_session(self):
         self.session = self.api_client.get('sessions')[-1]['SessionKey']

@@ -1,10 +1,26 @@
 from pupa.scrape import Scraper, Organization
+from .apiclient import OregonLegislatorODataClient
 import scrapelib
 from openstates.utils import LXMLMixin
 
 
 class ORCommitteeScraper(Scraper, LXMLMixin):
-    def scrape(self, chamber=None):
+    def latest_session(self):
+        self.session = self.api_client.get('sessions')[-1]['SessionKey']
+
+    def scrape(self, chamber=None, session=None):
+        self.api_client = OregonLegislatorODataClient(self)
+        if not session:
+            self.latest_session()
+
+        yield from self.scrape_committee()
+
+    def scrape_committee(self):
+        committees_response = self.api_client.get('committees', session=self.session)
+
+        #TODO: continue to create committees
+
+    def old_committee_scraper(self):
         chambers = {
             "upper": "SenateCommittees_search",
             "lower": "HouseCommittees_search",

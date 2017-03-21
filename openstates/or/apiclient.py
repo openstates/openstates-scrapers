@@ -13,6 +13,7 @@ class OregonLegislatorODataClient(object):
     resources = dict(
         sessions='LegislativeSessions',
         legislators='LegislativeSessions(\'{session}\')/Legislators',
+        committees='LegislativeSessions(\'{session}\')/Committees'
     )
 
     def _build_url(self, resource_name, **endpoint_format_args):
