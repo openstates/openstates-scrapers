@@ -18,13 +18,15 @@ RUN apt-get update && apt-get install -y \
     freetds-dev \
     curl \
     wget \
-    unzip
+    unzip \
+    mdbtools
 
 
 RUN mkdir -p /opt/openstates/
 
 RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
 RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
+RUN /opt/openstates/venv-billy/bin/pip install python-dateutil
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata
