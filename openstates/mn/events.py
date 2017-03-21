@@ -20,7 +20,7 @@ class MNEventScraper(Scraper, LXMLMixin):
     def scrape(self):
         page = self.lxmlize(url)
 
-        commission_meetings = page.xpath("//div[@class='cal_item Comm_item']")
+        commission_meetings = page.xpath("//div[@class='cal_item comm_item']")
         yield from self.scrape_meetings(commission_meetings, 'commission')
 
         house_meetings = page.xpath("//div[@class='cal_item house_item']")
