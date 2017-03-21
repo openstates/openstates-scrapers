@@ -26,3 +26,4 @@ openstates.sqlite3
 dump/
 venv
 tmp.*
+.idea
