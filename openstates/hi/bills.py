@@ -114,16 +114,14 @@ class HIBillScraper(Scraper):
                         real_committees.append(committee)
                     except KeyError:
                         pass
-            bill.add_action(string, date, chamber=actor,
-                            classification=act_type)
-
+            act = bill.add_action(string, date, chamber=actor,
+                                  classification=act_type)
+            for committee in real_committees:
+                print(committee, bill_id)
+                act.add_related_entity(name=committee, entity_type="organization")
             vote = self.parse_vote(string)
             if vote:
                 v, motion = vote
-                # vote = Vote(actor, date, motion, 'passed' in string.lower(),
-                #             int(v['n_yes'] or 0),
-                #             int(v['n_no'] or 0),
-                #             int(v['n_excused'] or 0))
                 vote = VoteEvent(start_date=date,
                                  chamber=actor,
                                  bill=bill_id,
