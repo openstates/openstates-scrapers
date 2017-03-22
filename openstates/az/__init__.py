@@ -1,4 +1,6 @@
 import lxml.html
+import re
+import requests
 
 from pupa.scrape import Jurisdiction, Organization
 
@@ -311,8 +313,6 @@ class Arizona(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        import re
-        import requests
         session = requests.Session()
 
         data = session.get('http://www.azleg.gov/')

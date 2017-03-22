@@ -2,7 +2,7 @@ import re
 import json
 import datetime
 
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.scrape import Scraper, Bill
 from . import utils
 from . import action_utils
 from . import session_metadata
@@ -41,13 +41,13 @@ class AZBillScraper(Scraper):
             legislative_session=session,
             chamber=chamber,
             title=bill_title,
-            classification=bill_type if bill_type else None,
+            classification=bill_type,
         )
 
-        self.scrape_actions(bill, page, chamber)
-        self.scrape_versions(bill, internal_id)
-        self.scrape_sponsors(bill, internal_id)
-        self.scrape_subjects(bill, internal_id)
+        bill = self.scrape_actions(bill, page, chamber)
+        bill = self.scrape_versions(bill, internal_id)
+        bill = self.scrape_sponsors(bill, internal_id)
+        bill = self.scrape_subjects(bill, internal_id)
 
         bill_url = 'https://apps.azleg.gov/BillStatus/BillOverview/{}?SessionId={}'.format(
                     internal_id, session_id)
@@ -69,6 +69,7 @@ class AZBillScraper(Scraper):
                     url=doc['HtmlPath'],
                     media_type='text/html'
                 )
+        return bill
 
     def scrape_sponsors(self, bill, internal_id):
         # Careful, this sends XML to a browser but JSON to machines
@@ -95,6 +96,7 @@ class AZBillScraper(Scraper):
             entity_type='person',
             primary=True if sponsor_type == 'primary' else False
         )
+        return bill
 
     def scrape_subjects(self, bill, internal_id):
         # https://apps.azleg.gov/api/Keyword/?billStatusId=68149
@@ -103,6 +105,7 @@ class AZBillScraper(Scraper):
         subjects = []
         for subject in page:
             bill.add_subject(subject['Name'])
+        return bill
 
     def scrape_actions(self, bill, page, self_chamber):
         """
@@ -125,6 +128,7 @@ class AZBillScraper(Scraper):
                     )
                 except ValueError:
                     self.info("Invalid Action Time {} for {}".format(page[action], action))
+        return bill
 
     def actor_from_action(self, bill, action, self_chamber):
         """
@@ -227,5 +231,4 @@ class AZBillScraper(Scraper):
         for key in utils.bill_types:
             if key in bill_id.lower():
                 return utils.bill_types[key]
-
-        return False
+        return None
