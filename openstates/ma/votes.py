@@ -30,7 +30,6 @@ class MAVoteScraper(VoteScraper):
               '5Blawsgeneralcourt%5D={0}&Refinements%5Blawsbranchname%5D=' \
               '{1}&Refinements%5Blawsfilingtype%5D=42696c6c' \
               .format(session4url[session], branch)
-
         page = lxml.html.fromstring(self.get(url).text)
         self.scrape_bill(url, chamber, session, page)
         max_page = self.get_max_page(page)
@@ -96,12 +95,10 @@ class MAVoteScraper(VoteScraper):
                     url4pdf = pdf_urls[i]
                     # downloading pdf
                     vote_file, resp = self.urlretrieve(url4pdf)
-                    text = convert_pdf(vote_file, type='text')
-                    text = text.decode('utf8')
+                    text = convert_pdf(vote_file, type='text').decode('utf8')
                     wordList = filter(None, text.split(' '*5))
                     # calculating names of legislators voted for yes and no respectively.
                     yes_members, no_members = self.members(wordList)
-
                     for i in range(0, len(yes_members)):
                         vote.yes(yes_members[i])
                     for i in range(0, len(no_members)):
@@ -122,16 +119,17 @@ class MAVoteScraper(VoteScraper):
                 final.append(j)
         c = 0
         for i in final:
-            if c == 1 and i != '  NAYS.' and i != '':
-                yes.append(i)
+            tmp = "".join(i.split()).encode('utf-8')
+            tmp = re.sub(r'[^\x00-\x7f]', r'', tmp)
+            tmp = re.sub(r'\d+\.', r'', tmp)
+            if c == 1 and tmp != 'NAYS.' and i != '':
+                yes.append(tmp)
             if c == 2 and i != final[-1] and i != '':
-                no.append(i)
-            if i == '  YEAS.':
+                no.append(tmp)
+            if tmp == 'YEAS.':
                 c = 1
-            if i == '  NAYS.':
+            if tmp == 'NAYS.':
                 c = 2
-        yes = [x.strip(' ') for x in yes]
-        no = [x.strip(' ') for x in no]
         return yes, no
 
     def get_max_page(self, page):
