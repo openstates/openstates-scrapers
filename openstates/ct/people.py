@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from pupa.scrape import Person, Scraper
 from .utils import open_csv
 
@@ -39,7 +40,7 @@ HEADERS = [
 ]
 
 
-class CTLegislatorScraper(LegislatorScraper):
+class CTPersomScraper(Scraper):
     jurisdiction = 'ct'
     latest_only = True
 
