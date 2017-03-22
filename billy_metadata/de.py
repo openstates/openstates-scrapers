@@ -1,4 +1,3 @@
-import lxml.html
 
 metadata = {
     'name': 'Delaware',
@@ -119,10 +118,3 @@ metadata = {
 
     ],
 }
-
-
-def session_list():
-    url = 'https://legis.delaware.gov/'
-    sessions = url_xpath(url, '//select[@id="billSearchGARefiner"]/option/text()')
-    sessions = [session.strip() for session in sessions if session.strip()]
-    return sessions

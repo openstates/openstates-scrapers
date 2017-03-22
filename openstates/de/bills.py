@@ -4,7 +4,7 @@ import pytz
 # import actions
 import json
 import math
-import requests
+
 
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
@@ -134,7 +134,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
 
         # response = self.post(url=search_form_url, data=form, allow_redirects=True)
-        page = requests.post(url=search_form_url, data=form, allow_redirects=True).json()
+        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
         if int(page['Total']) > 0:
             for row in page['Data']:
                 self.legislators[str(row['PersonId'])] = row
@@ -164,7 +164,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         response = self.post(url=votes_url, data=form, allow_redirects=True)
         if response.content:
             # page = json.loads(response.content)
-            page = requests.post(url=votes_url, data=form, allow_redirects=True).json()
+            page = self.post(url=votes_url, data=form, allow_redirects=True).json()
             if page['Total'] > 0:
                 for row in page['Data']:
                     yield from self.scrape_vote(bill, row['RollCallId'], session)
@@ -178,7 +178,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             'filter': '',
         }
 
-        page = requests.post(url=vote_url, data=form, allow_redirects=True).json()
+        page = self.post(url=vote_url, data=form, allow_redirects=True).json()
         if page:
             roll = page['Model']
             vote_chamber = self.chamber_map[roll['ChamberName']]
@@ -231,7 +231,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                              classification=sponsor_type,
                              entity_type='person',
                              chamber=chamber,
-                             primary=True if sponsor_type == 'primary' else False,
+                             primary=sponsor_type == 'primary',
                              )
 
     def scrape_actions(self, bill, legislation_id):
@@ -242,7 +242,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             'group': '',
             'filter': '',
         }
-        page = requests.post(url=actions_url, data=form, allow_redirects=True).json()
+        page = self.post(url=actions_url, data=form, allow_redirects=True).json()
         for row in page['Data']:
             action_name = row['ActionDescription']
             action_date = dt.datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y').strftime('%Y-%m-%d')
@@ -300,7 +300,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             'fromIntroDate': '',
             'toIntroDate': '',
         }
-        page = requests.post(url=search_form_url, data=form, allow_redirects=True).json()
+        page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
         return page
 
     def mime_from_link(self, link):

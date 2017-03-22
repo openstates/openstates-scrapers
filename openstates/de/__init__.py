@@ -3,6 +3,8 @@ from .bills import DEBillScraper
 from .events import DEEventScraper
 from .committees import DECommitteeScraper
 
+from openstates.utils import url_xpath
+
 from pupa.scrape import Jurisdiction, Organization
 
 
@@ -103,3 +105,9 @@ class Delaware(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        url = 'https://legis.delaware.gov/'
+        sessions = url_xpath(url, '//select[@id="billSearchGARefiner"]/option/text()')
+        sessions = [session.strip() for session in sessions if session.strip()]
+        return sessions
