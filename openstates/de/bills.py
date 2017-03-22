@@ -118,7 +118,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.scrape_fiscal_note(bill, fiscal)
 
         self.scrape_actions(bill, row['LegislationId'])
-        self.scrape_votes(bill, row['LegislationId'], session)
+        yield from self.scrape_votes(bill, row['LegislationId'], session)
 
         return bill
 
@@ -163,8 +163,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         }
         response = self.post(url=votes_url, data=form, allow_redirects=True)
         if response.content:
-            # page = json.loads(response.content)
-            page = self.post(url=votes_url, data=form, allow_redirects=True).json()
+            page = json.loads(response.content.decode('utf-8'))
+            # page = self.post(url=votes_url, data=form, allow_redirects=True).json()
             if page['Total'] > 0:
                 for row in page['Data']:
                     yield from self.scrape_vote(bill, row['RollCallId'], session)
@@ -183,12 +183,12 @@ class DEBillScraper(Scraper, LXMLMixin):
             roll = page['Model']
             vote_chamber = self.chamber_map[roll['ChamberName']]
             # "7/1/16 01:00 AM"
-            vote_date = datetime.strptime(roll['TakenAtDateTime'], '%m/%d/%y %I:%M %p')
+            vote_date = dt.datetime.strptime(roll['TakenAtDateTime'], '%m/%d/%y %I:%M %p').strftime('%Y-%m-%d')
 
             # TODO: What does this code mean?
             vote_motion = roll['RollCallVoteType']
 
-            vote_passed = True if roll['RollCallStatus'] == 'Passed' else False
+            vote_passed = 'pass' if roll['RollCallStatus'] == 'Passed' else 'fail'
             other_count = int(roll['NotVotingCount']) + int(roll['VacantVoteCount'])
             + int(roll['AbsentVoteCount']) + int(roll['ConflictVoteCount'])
             vote = Vote(chamber=vote_chamber,
@@ -199,6 +199,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                         bill=bill.identifier,
                         legislative_session=session
                         )
+            vote.add_source(vote_url)
             vote.set_count('yes', roll['YesVoteCount'])
             vote.set_count('no', roll['NoVoteCount'])
             vote.set_count('other', other_count)
@@ -253,6 +254,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             elif 'House' in row['ActionDescription']:
                 action_chamber = 'lower'
             elif 'Governor' in row['ActionDescription']:
+                # TODO: <obj>.bill_chamber' is not in the enumeration: [u'upper', u'lower']
                 action_chamber = 'executive'
             else:
                 # Actions like 'Stricken' and 'Defeated Amendemnt'
@@ -261,7 +263,6 @@ class DEBillScraper(Scraper, LXMLMixin):
                     action_chamber = 'lower'
                 else:
                     action_chamber = 'upper'
-
             # attrs = self.categorizer.categorize(action_name)
             bill.add_action(description=action_name,
                             date=action_date,
