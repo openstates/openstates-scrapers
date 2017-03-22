@@ -1,7 +1,7 @@
 import lxml.html
 
 from pupa.scrape import Jurisdiction, Organization
-
+from .people import CTPersomScraper
 settings = {
     'SCRAPELIB_RPM': 20
 }
@@ -13,6 +13,7 @@ class Connecticut(Jurisdiction):
     name = "Connecticut"
     url = "http://www.cga.ct.gov/"
     scrapers = {
+        'people': CTPersomScraper,
     }
     parties = [
         {'name': 'Republican'},
