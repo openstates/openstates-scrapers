@@ -1,4 +1,7 @@
+import lxml.html
+
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import AZPersonScraper
 from .committees import AZCommitteeScraper
 from .events import AZEventScraper
@@ -306,3 +309,17 @@ class Arizona(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        import re
+        import requests
+        session = requests.Session()
+
+        data = session.get('http://www.azleg.gov/')
+
+        # TODO: JSON at https://apps.azleg.gov/api/Session/
+
+        doc = lxml.html.fromstring(data.text)
+        sessions = doc.xpath('//select/option/text()')
+        sessions = [re.sub(r'\(.+$', '', x).strip() for x in sessions]
+        return sessions

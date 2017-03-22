@@ -1,5 +1,4 @@
 import datetime
-import lxml.html
 
 
 metadata = dict(
@@ -310,18 +309,3 @@ metadata = dict(
             ],
         feature_flags=[ 'events', 'influenceexplorer' ],
     )
-
-
-def session_list():
-    import re
-    import requests
-    session = requests.Session()
-
-    data = session.get('http://www.azleg.gov/')
-
-    #TODO: JSON at https://apps.azleg.gov/api/Session/
-
-    doc = lxml.html.fromstring(data.text)
-    sessions = doc.xpath('//select/option/text()')
-    sessions = [re.sub(r'\(.+$', '', x).strip() for x in sessions]
-    return sessions
