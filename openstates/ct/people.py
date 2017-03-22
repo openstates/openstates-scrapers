@@ -1,4 +1,4 @@
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from .utils import open_csv
 
 
@@ -43,7 +43,14 @@ class CTLegislatorScraper(LegislatorScraper):
     jurisdiction = 'ct'
     latest_only = True
 
-    def scrape(self, term, chambers):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         page = self.get(leg_url)
 
@@ -72,28 +79,30 @@ class CTLegislatorScraper(LegislatorScraper):
             if party == 'Democrat':
                 party = 'Democratic'
 
-            leg = Legislator(term, chamber, district, name,
-                             party=party,
-                             url=row['URL'])
+            leg = Person(primary_org=chamber,
+                         name=name,
+                         district=district,
+                         party=party
+                         )
+            leg.add_link(row['URL'])
+            leg.add_party(party=party)
 
             office_address = "%s\nRoom %s\nHartford, CT 06106" % (
                 row['capitol street address'], row['room number'])
-            extra_office_fields = dict()
+            # extra_office_fields = dict()
             email = row['email'].strip()
             if "@" not in email:
                 if not email:
                     email = None
                 elif email.startswith('http://') or email.startswith('https://'):
-                    extra_office_fields['contact_form'] = email
+                    # extra_office_fields['contact_form'] = email
                     email = None
                 else:
                     raise ValueError("Problematic email found: {}".format(email))
-            leg.add_office('capitol', 'Capitol Office',
-                           address=office_address,
-                           phone=row['capitol phone'],
-                           fax=(row['fax'].strip() or None),
-                           email=email,
-                           **extra_office_fields)
+            leg.add_contact_detail(type='address', value=office_address, note='Capitol Office')
+            leg.add_contact_detail(type='voice', value=row['capitol phone'], note='Capitol Office')
+            if email:
+                leg.add_contact_detail(type='eamil', value=email)
 
             home_address = "{}\n{}, {} {}".format(
                 row['home street address'],
@@ -102,10 +111,10 @@ class CTLegislatorScraper(LegislatorScraper):
                 row['home zip code'],
             )
             if "Legislative Office Building" not in home_address:
-                leg.add_office('district', 'District Office',
-                               address=home_address,
-                               phone=row['home phone'] if row['home phone'].strip() else None)
-
+                leg.add_contact_detail(type='address', value=home_address, note='District Office')
+                leg.add_contact_detail(type='voice',
+                                       value=row['home phone'] if row['home phone'].strip() else None,
+                                       note='District Office')
             leg.add_source(leg_url)
 
             for comm in row['committee member1'].split(';'):
@@ -117,12 +126,9 @@ class CTLegislatorScraper(LegislatorScraper):
                         role = 'member'
                     comm = comm.strip()
                     if comm:
-                        leg.add_role(
-                            'committee member',
-                            term=term,
-                            chamber='joint',
-                            committee=comm,
-                            position=role
+                        leg.add_membership(
+                            name_or_org=comm,
+                            role=role
                         )
 
-            self.save_legislator(leg)
+            yield leg
