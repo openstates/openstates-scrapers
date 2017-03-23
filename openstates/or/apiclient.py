@@ -13,7 +13,10 @@ class OregonLegislatorODataClient(object):
     resources = dict(
         sessions='LegislativeSessions',
         legislators='LegislativeSessions(\'{session}\')/Legislators',
-        committees='LegislativeSessions(\'{session}\')/Committees'
+        legislator='Legislators(LegislatorCode=\'{legislator_code}\',SessionKey=\'{session}\')',
+        committees='LegislativeSessions(\'{session}\')/Committees',
+        committee_members='Committees(CommitteeCode=\'{committee}\','
+                          'SessionKey=\'{session}\')/CommitteeMembers'
     )
 
     def _build_url(self, resource_name, **endpoint_format_args):
@@ -56,4 +59,4 @@ class OregonLegislatorODataClient(object):
                     print(err, string)
                     raise RuntimeError('Received too many bad packets from API.')
 
-        return response.json()['value']
+        return response.json()

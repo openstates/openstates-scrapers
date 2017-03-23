@@ -11,8 +11,8 @@ class Oregon(Jurisdiction):
     url = "https://olis.leg.state.or.us"
     scrapers = {
         # Commented out for testing
-        'people': ORPersonScraper,
-        # 'committees': ORCommitteeScraper,
+        # 'people': ORPersonScraper,
+        'committees': ORCommitteeScraper,
         # 'bills': ORBillScraper,
     }
     parties = [

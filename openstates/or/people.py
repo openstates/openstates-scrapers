@@ -5,7 +5,8 @@ from .apiclient import OregonLegislatorODataClient
 class ORPersonScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        if not session:
+        self.session = session
+        if not self.session:
             self.latest_session()
 
         yield from self.scrape_chamber()
@@ -13,7 +14,7 @@ class ORPersonScraper(Scraper):
     def scrape_chamber(self):
         legislators_reponse = self.api_client.get('legislators', session=self.session)
 
-        for legislator in legislators_reponse:
+        for legislator in legislators_reponse['value']:
             url_name = legislator['WebSiteUrl'].split('/')[-1]
             img = 'https://www.oregonlegislature.gov/house/MemberPhotos/{}.jpg'.format(url_name)
             person = Person(name='{} {}'.format(legislator['FirstName'], legislator['LastName']),
@@ -22,7 +23,7 @@ class ORPersonScraper(Scraper):
                             district=legislator['DistrictNumber'],
                             image=img)
             person.add_link(legislator['WebSiteUrl'])
-            person.add_source(legislator['WebSiteUrl'])
+            person.add_source(legislators_reponse['odata.metadata'])
 
             if legislator['CapitolAddress']:
                 person.add_contact_detail(type='address', value=legislator['CapitolAddress'],
@@ -38,4 +39,4 @@ class ORPersonScraper(Scraper):
             yield person
 
     def latest_session(self):
-        self.session = self.api_client.get('sessions')[-1]['SessionKey']
+        self.session = self.api_client.get('sessions')['value'][-1]['SessionKey']
