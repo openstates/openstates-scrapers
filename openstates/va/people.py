@@ -2,11 +2,12 @@ import re
 import pytz
 import datetime
 
+import lxml.html
 from pupa.scrape import Person
 from pupa.scrape import Scraper
 from pupa.scrape import Organization
-
 from spatula import Page, Spatula
+
 from .common import SESSION_SITE_IDS
 
 
@@ -31,6 +32,10 @@ class MemberDetail(Page):
         self.obj.add_term(self.role, self.chamber, district=district)
         self.obj.add_party(PARTY_MAP[party])
 
+        photo_url = self.get_photo_url()
+        if photo_url is not None:
+            self.obj.image = photo_url
+
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             org = Organization(
                 name=com,
@@ -46,15 +51,34 @@ class MemberDetail(Page):
                 end_date=maybe_date(self.kwargs['session'].get('end_date')),
             )
 
+    def get_photo_url(self):
+        pass
+
 
 class SenateDetail(MemberDetail):
     role = 'Senator'
     chamber = 'upper'
 
+    def get_photo_url(self):
+        lis_id = get_lis_id(self.chamber, self.url)
+        profile_url = 'http://apps.senate.virginia.gov/Senator/memberpage.php?id={}'.format(lis_id)
+        page = lxml.html.fromstring(self.scraper.get(profile_url).text)
+        src = page.xpath('.//img[@class="profile_pic"]/@src')
+        return src[0] if src else None
+
 
 class DelegateDetail(MemberDetail):
     role = 'Delegate'
     chamber = 'lower'
+
+    def get_photo_url(self):
+        lis_id = get_lis_id(self.chamber, self.url)
+        if lis_id:
+            lis_id = '{}{:04d}'.format(lis_id[0], int(lis_id[1:]))
+            return (
+                'http://memdata.virginiageneralassembly.gov'
+                '/images/display_image/{}'
+            ).format(lis_id)
 
 
 class MemberList(Page):
