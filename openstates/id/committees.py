@@ -8,8 +8,6 @@ _JOINT_URL = 'https://legislature.idaho.gov/sessioninfo/2017/joint/'
 
 _CHAMBERS = {'upper': 'senate', 'lower': 'house'}
 _REV_CHAMBERS = {'senate': 'upper', 'house': 'lower'}
-# _TD_ONE = ('name', 'description', 'office_hours', 'secretary', 'email', 'phone')
-# _TD_TWO = ('name', 'office_hours', 'secretary', 'email', 'phone')
 
 
 def clean_name(name):
@@ -17,7 +15,6 @@ def clean_name(name):
 
 
 class IDCommitteeScraper(Scraper):
-    jurisdiction = 'id'
 
     def get_joint_committees_data(self, name, url):
         page = self.get(url).text
