@@ -13,7 +13,7 @@ class Idaho(Jurisdiction):
     division_id = "ocd-division/country:us/state:id"
     classification = "government"
     name = "Idaho"
-    url = "TODO"
+    url = "http://www.legislature.idaho.gov"
     scrapers = {
         'people': IDPersonScraper,
         'committees': IDCommitteeScraper,

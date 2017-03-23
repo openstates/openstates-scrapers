@@ -230,11 +230,7 @@ metadata = {
 }
 
 
-def session_list():
+def get_session_list():
     sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
         '//select[@id="ddlsessions"]/option/text()')
     return sessions
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))

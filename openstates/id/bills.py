@@ -39,13 +39,13 @@ _COMMITTEES = {'lower': {'Loc Gov': 'Local Government',
 # background on bill to law can be found at:
 # http://legislature.idaho.gov/about/jointrules.htm
 _ACTIONS = (
-    # bill:reading:1
+    # reading-1
     (r'(\w+) intro - (\d)\w+ rdg - to (\w+/?\s?\w+\s?\w+)',
-     lambda mch, ch: ["bill:introduced", "bill:reading:1", "committee:referred"] \
-     if mch.groups()[2] in _COMMITTEES[ch] else ["bill:introduced", "bill:reading:1"]),
+     lambda mch, ch: ["introduction", "reading-1", "referral-committee"] \
+     if mch.groups()[2] in _COMMITTEES[ch] else ["introduction", "reading-1"]),
     # committee actions
     (r'rpt prt - to\s(\w+/?\s?\w+)',
-     lambda mch, ch: ["committee:referred"] if mch.groups()[0] in _COMMITTEES[ch] \
+     lambda mch, ch: ["referral-committee"] if mch.groups()[0] in _COMMITTEES[ch] \
      else "other"),
     # it is difficult to figure out which committee passed/reported out a bill
     # but i guess we at least know that only committees report out
@@ -63,7 +63,7 @@ _ACTIONS = (
     (r'2nd rdg - to 3rd rdg', "reading-3"),
     (r'^3rd rdg$', "reading-3"),
     (r'.*Third Time.*PASSED.*', ["reading-3", "passage"]),
-    # bill:reading:3, bill:passed
+    # reading-3, passage
     (r'^3rd rdg as amen - (ADOPTED|PASSED)', ["reading-3", "passage"]),
     (r'^3rd rdg - (ADOPTED|PASSED)', ["reading-3", "passage"]),
     (r'^Read Third Time in Full .* (ADOPTED|PASSED).*', [
@@ -72,7 +72,7 @@ _ACTIONS = (
         "reading-3", "passage"]),
     (r'^.*Read in full .* (ADOPTED|PASSED).*', [
         "reading-3", "passage"]),
-    # bill:reading:3, bill:failed
+    # reading-3, failure
     (r'^3rd rdg as amen - (FAILED)', ["reading-3", "failure"]),
     (r'^3rd rdg - (FAILED)', ["reading-3", "failure"]),
     # rules suspended
@@ -118,7 +118,6 @@ class IDBillScraper(Scraper):
     last_date = None
 
     def scrape_subjects(self, session):
-        """to scrape subjects """
         self._subjects = defaultdict(list)
 
         url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
