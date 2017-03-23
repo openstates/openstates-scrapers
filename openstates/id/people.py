@@ -16,6 +16,11 @@ phone_patterns = {
     'home': re.compile(r'Home'),
 }
 
+parse_phone_pattern = re.compile(r'tel:(?:\+1)?(\d{10}$)')
+fax_pattern = re.compile(r'fax\s+\((\d{3})\)\s+(\d{3})-(\d{4})', re.IGNORECASE)
+address_pattern = re.compile(r', \d{5}')
+address_replace_pattern = re.compile(r'(\d{5})')
+
 
 def get_phones(el):
     phones = {}
@@ -26,24 +31,17 @@ def get_phones(el):
                 phones[label] = parse_phone(link.get('href'))
     return phones
 
-parse_phone_pattern = re.compile(r'tel:(?:\+1)?(\d{10}$)')
-
 
 def parse_phone(phone):
     res = parse_phone_pattern.search(phone)
     if res is not None:
         return res.groups()[0]
 
-fax_pattern = re.compile(r'fax\s+\((\d{3})\)\s+(\d{3})-(\d{4})', re.IGNORECASE)
-
 
 def get_fax(el):
     res = fax_pattern.search(el.text_content())
     if res is not None:
         return ''.join(res.groups())
-
-address_pattern = re.compile(r', \d{5}')
-address_replace_pattern = re.compile(r'(\d{5})')
 
 
 def get_address(el):
@@ -108,6 +106,9 @@ class IDPersonScraper(Scraper):
                                           note='District Office')
             if fax:
                 person.add_contact_detail(type='fax', value=fax,
+                                          note='District Office')
+            if email:
+                person.add_contact_detail(type='email', value=email,
                                           note='District Office')
             if office_phone:
                 person.add_contact_detail(type='voice', value=office_phone,

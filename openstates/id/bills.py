@@ -76,10 +76,10 @@ _ACTIONS = (
     (r'^3rd rdg as amen - (FAILED)', ["reading-3", "failure"]),
     (r'^3rd rdg - (FAILED)', ["reading-3", "failure"]),
     # rules suspended
-    (r'^Rls susp - (ADOPTED|PASSED|FAILED)', lambda mch, ch: {'ADOPTED': "passage",
-                                                              'PASSED': "passage",
-                                                              'FAILED': "failure"
-                                                             }[mch.groups()[0]]),
+    (r'^Rls susp - (ADOPTED|PASSED|FAILED)',
+        lambda mch, ch: {'ADOPTED': "passage",
+                         'PASSED': "passage",
+                         'FAILED': "failure"}[mch.groups()[0]]),
     (r'^to governor', "executive-receipt"),
     (r'^Governor signed', "executive-signature"),
 )
@@ -156,8 +156,8 @@ class IDBillScraper(Scraper):
         # I check for rows with an id that contains 'bill' and startswith
         # 'H' or 'S' to make sure I dont get any links from the menus
         # might not be necessary
-        bill_rows = html.xpath('//tr[contains(@id, "bill") and '\
-                               'starts-with(descendant::td/a/text(), "%s")]'\
+        bill_rows = html.xpath('//tr[contains(@id, "bill") and '
+                               'starts-with(descendant::td/a/text(), "%s")]'
                                % _CHAMBERS[chamber][0])
         for row in bill_rows:
             matches = re.match(r'([A-Z]*)([0-9]+)',
@@ -257,7 +257,8 @@ class IDBillScraper(Scraper):
         if name_text:
             name_text = name_text.replace(u'\xa0--\xa0', '')
             name_text = name_text.replace(u'\u00a0', ' ')
-            name_list = [name.replace(u'\u2013', '').strip() for name in name_text.split(",") if name]
+            name_list = [name.replace(u'\u2013', '').strip()
+                         for name in name_text.split(",") if name]
             name_list = [name.split('(')[0] for name in name_list]
             return name_list
         return []
