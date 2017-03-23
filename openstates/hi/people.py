@@ -1,8 +1,6 @@
 
 from pupa.scrape import Person, Scraper
 import lxml.html
-import re
-import contextlib
 
 
 HI_BASE_URL = "http://capitol.hawaii.gov"
@@ -51,7 +49,7 @@ class HILegislatorScraper(Scraper):
 
     def scrape_leg_page(self, url):
         page = self.get_page(url)
-        people = page.xpath( \
+        people = page.xpath(
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
         people = people.xpath('./tr')[1:]
         display_order = {
@@ -177,7 +175,6 @@ class HILegislatorScraper(Scraper):
             ret[entry] = callback(els[index])
         return ret
 
-
     def scrape_chamber(self, chamber):
         metainf = self.scrape_leg_page(get_legislator_listing_url(chamber))
         for leg in metainf:
@@ -236,9 +233,7 @@ class HILegislatorScraper(Scraper):
 
             yield person
 
-
     def scrape(self, chamber=None):
-
         if chamber:
             yield from self.scrape_chamber(chamber)
         else:

@@ -3,8 +3,6 @@ import datetime as dt
 from pupa.scrape import Scraper, Event
 from .utils import get_short_codes
 from requests import HTTPError
-
-import lxml.html
 import pytz
 
 
@@ -48,7 +46,6 @@ class HIEventScraper(Scraper, LXMLMixin):
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
             committee = tds[0].text_content().strip()
-            bills = [x.text_content() for x in tds[1].xpath(".//a")]
             descr = [x.text_content() for x in tds[1].xpath(".//span")]
             if len(descr) != 1:
                 raise Exception

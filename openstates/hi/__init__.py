@@ -3,11 +3,12 @@ from .people import HILegislatorScraper
 from .events import HIEventScraper
 from .bills import HIBillScraper
 
+
 class Hawaii(Jurisdiction):
     division_id = "ocd-division/country:us/state:hi"
     classification = "government"
     name = "Hawaii"
-    url = "TODO"
+    url = "http://capitol.hawaii.gov"
     scrapers = {
         'people': HILegislatorScraper,
         'bills': HIBillScraper,

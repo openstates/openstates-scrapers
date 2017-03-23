@@ -180,8 +180,6 @@ class HIBillScraper(Scraper):
             "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
         bill_id = scraped_bill_id.split(' ')[0]
         versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
-
-        tables = bill_page.xpath("//table")
         metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
         action_table = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
