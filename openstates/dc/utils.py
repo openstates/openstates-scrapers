@@ -10,7 +10,7 @@ def decode_json(stringy_json):
         for i in range(len(stringy_json)):
             stringy_json[i] = decode_json(stringy_json[i])
 
-    elif type(stringy_json) in (str,unicode):
+    elif isinstance(stringy_json, str):
         if len(stringy_json) > 0 and stringy_json[0] in ["[","{",u"[",u"{"]:
             return decode_json(json.loads(stringy_json))
     return stringy_json

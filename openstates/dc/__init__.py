@@ -2,7 +2,7 @@ import datetime
 from pupa.scrape import Jurisdiction, Organization
 from .people import DCPersonScraper
 from .committees import DCCommitteeScraper
-
+from .bills import DCBillScraper
 
 class DistrictofColumbia(Jurisdiction):
     division_id = "ocd-division/country:us/state:dc"
@@ -12,6 +12,7 @@ class DistrictofColumbia(Jurisdiction):
     scrapers = {
     	'people': DCPersonScraper,
         'committees': DCCommitteeScraper,
+        'bills': DCBillScraper,
     }
     parties = [
         {'name': 'Republican'},

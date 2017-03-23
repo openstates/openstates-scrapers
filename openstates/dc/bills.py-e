@@ -6,6 +6,7 @@ import json
 import scrapelib
 
 from pupa.scrape import Scraper, Bill
+from billy.scrape.votes import Vote
 
 from .utils import decode_json
 
@@ -13,23 +14,14 @@ from .utils import decode_json
 class DCBillScraper(Scraper):
     jurisdiction = 'dc'
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, chambers=None):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
-
-            # chambers = [chamber] if chamber else ['upper','lower']
-            # chambers = [chamber]
-            # if chamber else ['upper','lower']
-
-
-            #for chamber in chambers:
-            #    chambers = [chamber]
-                
-
-
-            # yield from self.scrape_chamber(session)
+            chambers = [chamber] if chamber else ['upper']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber, session)
 
         #get member id matching for vote parsing
         member_ids = self.get_member_ids()[session]
@@ -113,8 +105,7 @@ class DCBillScraper(Scraper):
 
                 #dc has no chambers. calling it all upper
                 # bill = Bill(session,"upper", bill_id, title, type=bill_type)
-                # bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=title, classification=bill_type)
-                bill = Bill(bill_id, legislative_session=session, title=title, classification=bill_type)
+                bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=title, classification=bill_type)
 
                 #sponsors and cosponsors
                 if "Introducer" in legislation_info:
@@ -138,18 +129,18 @@ class DCBillScraper(Scraper):
                     cosponsors = []
 
                 for i in introducers:
-                    name = i["Name"]
+                    sponsor_name = i["Name"]
                     #they messed up Phil Mendelson's name
-                    if name == "Phil Pmendelson":
-                        name = "Phil Mendelson"
+                    if sponsor_name == "Phil Pmendelson":
+                        sponsor_name = "Phil Mendelson"
                     # bill.add_sponsor(name=sponsor_name,type="primary")
-                    bill.add_sponsorship(name, classification=cosponsors, entity_type='person', primary=True)
+                    bill.add_sponsorship(name, classification=spon_type, entity_type='person', primary=is_primary)
 
                 for s in cosponsors:
-                    name = s["Name"]
-                    if name == "Phil Pmendelson":
-                        name = "Phil Mendelson"
-                    bill.add_sponsor(name=name,type="cosponsor")
+                    sponsor_name = s["Name"]
+                    if sponsor_name == "Phil Pmendelson":
+                        sponsor_name = "Phil Mendelson"
+                    bill.add_sponsor(name=sponsor_name,type="cosponsor")
 
 
                 #if it's become law, add the law number as an alternate title
@@ -384,11 +375,11 @@ class DCBillScraper(Scraper):
         elif "2nd reading" in motion.lower():
             t = "reading-2"
         elif "third reading" in motion.lower():
-            t = "reading-3"
+            t = "bill:reading:3"
         elif "3rd reading" in motion.lower():
-            t = "reading-3"
+            t = "bill:reading:3"
         elif "final reading" in motion.lower():
-            t = "reading-3"
+            t = "bill:reading:3"
         else:
             t = "other"
 
