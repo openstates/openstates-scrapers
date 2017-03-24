@@ -1,9 +1,10 @@
-from pupa.scrape import Scraper, Bill, VoteEvent
-
-from openstates.utils import LXMLMixin
-
 import datetime as dt
 import re
+
+from openstates.utils import LXMLMixin
+from pupa.scrape import Scraper, Bill, VoteEvent
+from .apiclient import OregonLegislatorODataClient
+from .utils import index_legislators
 
 
 class ORBillScraper(Scraper, LXMLMixin):
@@ -46,16 +47,40 @@ class ORBillScraper(Scraper, LXMLMixin):
             url=url
         ).format(bill=bill_id)
 
+    def latest_session(self):
+        self.session = self.api_client.get('sessions')['value'][-1]['SessionKey']
+
     def scrape(self, session=None, chamber=None):
-        if not session:
-            session = self.latest_session()
-            self.info('no session specified, using %s', session)
+        self.api_client = OregonLegislatorODataClient(self)
+        self.session = session
+        if not self.session:
+            self.latest_session()
 
-        chambers = [chamber] if chamber else ['upper', 'lower']
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+        yield from self.scrape_bills(chamber)
 
-    def scrape_chamber(self, chamber, session):
+    def scrape_bills(self, chamber):
+        measures_response = self.api_client.get('measures', session=self.session)
+
+        legislators = index_legislators(self)
+
+        for measure in measures_response['value']:
+            bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
+            chamber = {'S': 'upper', 'H': 'lower'}[bid[0]]
+            bill = Bill(bid, legislative_session=self.session, chamber=chamber,
+                        title=measure['RelatingTo'], classification=measure['PrefixMeaning'])
+            for sponsor in measure['MeasureSponsors']:
+                if sponsor['LegislatorCode']:
+                    bill.add_sponsorship(
+                        name=legislators[sponsor['LegislatorCode']],
+                        classification={'Chief': 'primary', 'Regular': 'cosponsor'}[
+                            sponsor['SponsorLevel']],
+                        entity_type='person',
+                        primary=True if sponsor['SponsorLevel'] == 'Chief' else False
+                    )
+
+            yield bill
+
+    def scrape_chamber_old(self, chamber, session):
         self.all_bills = {}
         self.slug = session
 

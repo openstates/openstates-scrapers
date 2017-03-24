@@ -16,7 +16,8 @@ class OregonLegislatorODataClient(object):
         legislator='Legislators(LegislatorCode=\'{legislator_code}\',SessionKey=\'{session}\')',
         committees='LegislativeSessions(\'{session}\')/Committees',
         committee_members='Committees(CommitteeCode=\'{committee}\','
-                          'SessionKey=\'{session}\')/CommitteeMembers'
+                          'SessionKey=\'{session}\')/CommitteeMembers',
+        measures='LegislativeSessions(\'{session}\')/Measures?$expand=MeasureSponsors'
     )
 
     def _build_url(self, resource_name, **endpoint_format_args):

@@ -1,10 +1,8 @@
 from pupa.scrape import Scraper, Organization
 from .apiclient import OregonLegislatorODataClient
-import scrapelib
-from openstates.utils import LXMLMixin
 
 
-class ORCommitteeScraper(Scraper, LXMLMixin):
+class ORCommitteeScraper(Scraper):
     def latest_session(self):
         self.session = self.api_client.get('sessions')['value'][-1]['SessionKey']
 
@@ -42,7 +40,6 @@ class ORCommitteeScraper(Scraper, LXMLMixin):
         """
         Get the full name of legislators. The membership API only returns a "LegislatorCode".
         This will cross-reference the name.
-        :return:
         """
         legislators_response = self.api_client.get('legislators', session=self.session)
 
