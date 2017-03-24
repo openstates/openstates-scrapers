@@ -4,8 +4,7 @@ import os
 import re
 from collections import defaultdict
 
-from billy.scrape import ScrapeError
-from billy.scrape.bills import BillScraper, Bill
+from pupa.scrape import Scraper, Bill, VoteEvent
 from billy.scrape.votes import Vote
 from billy.scrape.utils import convert_pdf
 
@@ -50,24 +49,23 @@ def action_type(action):
                    ('Veto overridden', 'bill:veto_override:passed'),
                    ('Veto sustained', 'bill:veto_override:failed'),
                    ('Vetoed by Governor', 'governor:vetoed'),
-                  )
+                   )
     for prefix, atype in classifiers:
         if action.lower().startswith(prefix.lower()):
             return atype
     # otherwise
-    return 'other'
+    return None
 
 
-class SCBillScraper(BillScraper):
-    jurisdiction = 'sc'
+class SCBillScraper(Scraper):
     urls = {
-        'lower' : {
-          'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
-          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
+        'lower': {
+            'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
+            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         },
-        'upper' : {
-          'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
-          'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
+        'upper': {
+            'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
+            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
         }
     }
 
@@ -81,9 +79,9 @@ class SCBillScraper(BillScraper):
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.post(subject_search_url,
-                            data=dict((('GETINDEX','Y'), ('SESSION', session_code),
-                                  ('INDEXCODE','0'), ('INDEXTEXT', ''),
-                                  ('AORB', 'B'), ('PAGETYPE', '0')))).text
+                         data=dict((('GETINDEX', 'Y'), ('SESSION', session_code),
+                                    ('INDEXCODE', '0'), ('INDEXTEXT', ''),
+                                    ('AORB', 'B'), ('PAGETYPE', '0')))).text
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
@@ -102,7 +100,6 @@ class SCBillScraper(BillScraper):
                     bill_id = re.sub(' 0*', ' ', bill_id)
                     self._subjects[bill_id].add(subject)
 
-
     def scrape_vote_history(self, bill, vurl):
         html = self.get(vurl).text
         doc = lxml.html.fromstring(html)
@@ -119,6 +116,7 @@ class SCBillScraper(BillScraper):
             timestamp = timestamp.text.replace(u'\xa0', ' ')
             timestamp = datetime.datetime.strptime(timestamp,
                                                    '%m/%d/%Y %H:%M %p')
+
             yeas = int(yeas.text)
             nays = int(nays.text)
             others = int(nv.text) + int(exc.text) + int(abst.text) + int(pres.text)
@@ -132,15 +130,32 @@ class SCBillScraper(BillScraper):
             else:
                 chamber = 'upper'
 
-            vote = Vote(chamber, timestamp, motion.text, passed, yeas, nays,
-                        others)
+            # vote = Vote(chamber, timestamp, motion.text, passed, yeas, nays,
+            #             others)
+
+            vote = VoteEvent(
+                chamber=chamber,  # 'upper' or 'lower'
+                start_date=timestamp.strftime('%Y-%m-%d'),  # 'YYYY-MM-DD' format
+                motion_text=motion.text,
+                result=passed,  # Boolean value
+                classification='passage',  # Can also be 'other'
+
+                # Provide a Bill instance to link with the VoteEvent...
+                bill=bill,
+
+            )
+
+            vote.set_count('yes', yeas)
+            vote.set_count('no', nays)
+            vote.set_count('other', others)
+
             vote.add_source(vurl)
 
             rollcall_pdf = vote_link.get('href')
             self.scrape_rollcall(vote, rollcall_pdf)
             vote.add_source(rollcall_pdf)
 
-            bill.add_vote(vote)
+            yield vote
 
     def scrape_rollcall(self, vote, vurl):
         (path, resp) = self.urlretrieve(vurl)
@@ -158,8 +173,8 @@ class SCBillScraper(BillScraper):
             elif line.startswith('NAYS'):
                 current_vfunc = vote.no
             elif (line.startswith('EXCUSED') or
-                  line.startswith('NOT VOTING') or
-                  line.startswith('ABSTAIN')):
+                      line.startswith('NOT VOTING') or
+                      line.startswith('ABSTAIN')):
                 current_vfunc = vote.other
             # skip these
             elif not line or line.startswith('Page '):
@@ -172,7 +187,6 @@ class SCBillScraper(BillScraper):
                 for name in names:
                     if name:
                         current_vfunc(name.strip())
-
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id):
         page = self.get(bill_detail_url).text
@@ -203,15 +217,30 @@ class SCBillScraper(BillScraper):
         b = bill_div.xpath('./b[text()="Summary:"]')[0]
         bill_summary = b.getnext().tail.strip()
 
-        bill = Bill(session, chamber, bill_id, bill_summary, type=bill_type)
+        bill = Bill(
+            bill_id,
+            legislative_session=session,  # A session name from the metadata's `legislative_sessions`
+            chamber=chamber,  # 'upper' or 'lower'
+            title=bill_summary,
+            classification=bill_type
+        )
+
         bill['subjects'] = list(self._subjects[bill_id])
 
         # sponsors
         for sponsor in doc.xpath('//a[contains(@href, "member.php")]/text()'):
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsorship(
+                name=sponsor,
+                classification='primary',
+                primary=True
+            )
         for sponsor in doc.xpath('//a[contains(@href, "committee.php")]/text()'):
             sponsor = sponsor.replace(u'\xa0', ' ').strip()
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsorship(
+                name=sponsor,
+                classification='primary',
+                primary=True
+            )
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]
@@ -224,13 +253,20 @@ class SCBillScraper(BillScraper):
                              on_duplicate='use_old',
                              mimetype='text/html')
 
+            bill.add_version_link(
+                note=version.text,  # Description of the version from the state; eg, 'As introduced', 'Amended', etc.
+                url=version.get('href'),
+                on_duplicate='ignore',
+                media_type='text/html'  # Still a MIME type
+            )
+
         # actions
         for row in bill_div.xpath('table/tr'):
             date_td, chamber_td, action_td = row.xpath('td')
 
             date = datetime.datetime.strptime(date_td.text, "%m/%d/%y")
-            action_chamber = {'Senate':'upper',
-                              'House':'lower',
+            action_chamber = {'Senate': 'upper',
+                              'House': 'lower',
                               None: 'other'}[chamber_td.text]
 
             action = action_td.text_content()
@@ -238,20 +274,24 @@ class SCBillScraper(BillScraper):
             action = action.split('(Senate Journal')[0].strip()
 
             atype = action_type(action)
-            bill.add_action(action_chamber, action, date, atype)
 
+            bill.add_action(
+                description=action,  # Action description, from the state
+                date=date.strftime('%Y-%m-%d'),  # `YYYY-MM-DD` format
+                chamber=action_chamber,  # 'upper' or 'lower'
+                classification=atype  # Options explained in the next section
+            )
 
         # votes
         vurl = doc.xpath('//a[text()="View Vote History"]/@href')
         if vurl:
             vurl = vurl[0]
-            self.scrape_vote_history(bill, vurl)
+            yield from self.scrape_vote_history(bill, vurl)
 
         bill.add_source(bill_detail_url)
-        self.save_bill(bill)
+        yield bill
 
-
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
         # start with subjects
         session_code = self.metadata['session_details'][session]['_code']
         self.scrape_subjects(session_code)
@@ -278,8 +318,8 @@ class SCBillScraper(BillScraper):
             for bill_a in doc.xpath('//p/a[1]'):
                 bill_id = bill_a.text.replace('.', '')
                 if bill_id.startswith(chamber_letter):
-                    self.scrape_details(bill_a.get('href'), session, chamber,
-                                        bill_id)
+                    yield from self.scrape_details(bill_a.get('href'), session, chamber,
+                                                   bill_id)
 
         prefile_url = self.urls[chamber]['prefile-index'].format(last_two_digits_of_session_year=session[2:4])
         page = self.get(prefile_url).text
@@ -292,7 +332,7 @@ class SCBillScraper(BillScraper):
             days = doc.xpath('//dd[contains(text(),"House")]/a/@href')
         else:
             days = doc.xpath('//dd[contains(text(),"Senate")]/a/@href')
-            
+
         for day_url in days:
             try:
                 data = self.get(day_url).text
@@ -305,5 +345,5 @@ class SCBillScraper(BillScraper):
             for bill_a in doc.xpath('//p/a[1]'):
                 bill_id = bill_a.text.replace('.', '')
                 if bill_id.startswith(chamber_letter):
-                    self.scrape_details(bill_a.get('href'), session, chamber,
-                                        bill_id)
+                    yield from self.scrape_details(bill_a.get('href'), session, chamber,
+                                                   bill_id)
