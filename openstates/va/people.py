@@ -32,10 +32,36 @@ class MemberDetail(Page):
         self.obj.add_term(self.role, self.chamber, district=district)
         self.obj.add_party(PARTY_MAP[party])
 
+        self.get_offices(item)
+        yield from self.get_committees(item)
+
         photo_url = self.get_photo_url()
         if photo_url is not None:
             self.obj.image = photo_url
 
+    def get_offices(self, item):
+        for ul in item.xpath('//ul[@class="linkNon" and normalize-space()]'):
+            address = []
+            phone = None
+            email = None
+            for li in ul.getchildren():
+                text = li.text_content()
+                if re.match('\(\d{3}\)', text):
+                    phone = text.strip()
+                elif text.startswith('email:'):
+                    email = text.strip('email: ').strip()
+                else:
+                    address.append(text.strip())
+                office_type = ('Capitol Office' if 'Capitol Square' in address
+                               else 'District Office')
+
+            self.obj.add_contact_detail(type='address', value='\n'.join(address), note=office_type)
+            if phone:
+                self.obj.add_contact_detail(type='voice', value=phone, note=office_type)
+            if email:
+                self.obj.add_contact_detail(type='email', value=phone, note=office_type)
+
+    def get_committees(self, item):
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             org = Organization(
                 name=com,
