@@ -68,7 +68,10 @@ class MNEventScraper(Scraper, LXMLMixin):
         if len(date_raw) < 1:
             return
 
-        date_string = date_raw[0].text_content().split('**')[0].strip()
+        raw_text = date_raw[0].text_content()
+        if "canceled" in raw_text.lower():
+            return
+        date_string = raw_text.split('**')[0].strip()
 
         for date_format in self.date_formats:
             try:
@@ -118,7 +121,12 @@ class MNEventScraper(Scraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        return self.get_tail_of(meeting, '^Room:')
+        result = self.get_tail_of(meeting, '^Room:')
+        if result is not None:
+            return result
+        fallback_texts = meeting.xpath(".//text()[starts-with(., 'Room')]")
+        if len(fallback_texts) >= 1:
+            return fallback_texts[0][4:].strip()
 
     def get_agenda(self, meeting):
         """
