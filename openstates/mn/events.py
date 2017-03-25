@@ -96,7 +96,8 @@ class MNEventScraper(Scraper, LXMLMixin):
         i -- The index of `a`/`span` tags to look for.
 
         """
-        description_raw = meeting.xpath(".//a")
+        description_raw = meeting.xpath(".//a[not(starts-with(@href,"
+                                        "'https://events.qwikcast.tv/'))]")
         if (len(description_raw) < 1 or
                 description_raw[0].text_content() == ''):
             description_raw = meeting.xpath(".//span")
