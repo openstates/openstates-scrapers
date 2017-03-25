@@ -1,7 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+
 from .people import WIPersonScraper
+from .committees import WICommitteeScraper
 
 
 class Wisconsin(Jurisdiction):
@@ -11,6 +13,7 @@ class Wisconsin(Jurisdiction):
     url = "http://legis.wisconsin.gov/"
     scrapers = {
         'people': WIPersonScraper,
+        'committees': WICommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -48,14 +51,6 @@ class Wisconsin(Jurisdiction):
             "identifier": "2015 Regular Session",
             "name": "2015 Regular Session",
             "start_date": "2015-01-05"
-        },
-        {
-            "_scraped_name": "2017 Regular Session",
-            "classification": "primary",
-            "end_date": "2018-05-23",
-            "identifier": "2017 Regular Session",
-            "name": "2017 Regular Session",
-            "start_date": "2017-01-03"
         },
         {
             "_scraped_name": "December 2009 Special Session",
@@ -98,7 +93,15 @@ class Wisconsin(Jurisdiction):
             "classification": "special",
             "identifier": "September 2011 Special Session",
             "name": "Sep 2011 Special Session"
-        }
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "end_date": "2018-05-23",
+            "identifier": "2017 Regular Session",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-03"
+        },
     ]
     ignored_scraped_sessions = [
         "January 2017 Special Session",
