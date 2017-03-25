@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+from .people import WIPersonScraper
 
 
 class Wisconsin(Jurisdiction):
@@ -9,6 +10,7 @@ class Wisconsin(Jurisdiction):
     name = "Wisconsin"
     url = "http://legis.wisconsin.gov/"
     scrapers = {
+        'people': WIPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
