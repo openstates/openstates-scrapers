@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
+from .bills import WIBillScraper
 from .people import WIPersonScraper
 from .committees import WICommitteeScraper
 
@@ -12,6 +13,7 @@ class Wisconsin(Jurisdiction):
     name = "Wisconsin"
     url = "http://legis.wisconsin.gov/"
     scrapers = {
+        'bills': WIBillScraper,
         'people': WIPersonScraper,
         'committees': WICommitteeScraper,
     }

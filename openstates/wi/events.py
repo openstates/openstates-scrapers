@@ -8,9 +8,10 @@ import pytz
 
 calurl = "http://committeeschedule.legis.wisconsin.gov/?filter=Upcoming&committeeID=-1"
 
+
 class WIEventScraper(EventScraper, LXMLMixin):
     jurisdiction = 'wi'
-    _tz = pytz.timezone('US/Eastern')
+    _tz = pytz.timezone('US/Central')
 
     def scrape_participants(self, session, href):
         try:
