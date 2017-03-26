@@ -98,12 +98,11 @@ class AZPersonScraper(Scraper):
 
             if email:
                 leg.add_contact_detail(type='email', value=email)
-            # what is the equivalent method of add_role in pupa?
-            """
             if position:
-                leg.add_role(position, term, chamber=chamber,
-                             district=district, party=party)
-            """
+                leg.add_membership(name_or_org=party, role=position)
+                # leg.add_role(position, term, chamber=chamber,
+                #             district=district, party=party)
+
             leg.add_source(url)
 
             # Probably just get this from the committee scraper

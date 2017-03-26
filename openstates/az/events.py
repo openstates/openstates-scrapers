@@ -5,7 +5,7 @@ from pytz import timezone as tmz
 from lxml import html
 
 from pupa.scrape import Event, Scraper
-from . import session_metadata
+# from . import session_metadata
 
 
 class AZEventScraper(Scraper):
@@ -35,7 +35,7 @@ class AZEventScraper(Scraper):
         """
         session = self.latest_session()
         # since we are scraping only latest_session
-        session_id = self.session_metadata.session_id_meta_data[session]
+        # session_id = self.session_metadata.session_id_meta_data[session]
 
         # could use &ShowAll=ON doesn't seem to work though
         url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % self._chamber_short[chamber]
@@ -203,10 +203,9 @@ class AZEventScraper(Scraper):
             "other": other
         }
 
+    """
     def scrape_interim_events(self, chamber, session):
-        """
-        Scrapes the events for interim committees
-        """
+        # Scrapes the events for interim committees
         session_id = self.get_session_id(session)
         url = 'http://www.azleg.gov/InterimCommittees.asp?Session_ID=%s' % session_id
         # common xpaths
@@ -220,3 +219,4 @@ class AZEventScraper(Scraper):
             rows = table[0].xpath('tr')
             for row in rows[2:]:
                 pass
+    """

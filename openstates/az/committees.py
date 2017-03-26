@@ -1,4 +1,3 @@
-import re
 from pupa.scrape import Scraper, Organization
 from .client import AZClient
 from . import session_metadata

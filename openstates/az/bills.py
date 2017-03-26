@@ -1,4 +1,3 @@
-import re
 import json
 import datetime
 
@@ -8,7 +7,7 @@ from . import action_utils
 from . import session_metadata
 
 from lxml import html
-from lxml import etree
+
 
 BASE_URL = 'http://www.azleg.gov/'
 
@@ -102,7 +101,6 @@ class AZBillScraper(Scraper):
         # https://apps.azleg.gov/api/Keyword/?billStatusId=68149
         subjects_url = 'https://apps.azleg.gov/api/Keyword/?billStatusId={}'.format(internal_id)
         page = json.loads(self.get(subjects_url).content.decode('utf-8'))
-        subjects = []
         for subject in page:
             bill.add_subject(subject['Name'])
         return bill

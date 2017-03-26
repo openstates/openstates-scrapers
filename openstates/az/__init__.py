@@ -9,6 +9,7 @@ from .committees import AZCommitteeScraper
 from .events import AZEventScraper
 from .bills import AZBillScraper
 
+
 class Arizona(Jurisdiction):
     division_id = "ocd-division/country:us/state:az"
     classification = "government"
