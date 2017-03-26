@@ -6,6 +6,7 @@ import subprocess
 import operator
 from datetime import datetime
 from bisect import bisect_left
+
 import lxml.html
 import lxml.etree
 import scrapelib
@@ -13,15 +14,13 @@ import scrapelib
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 
-from .actions import Categorizer
-
 # Senate vote header
-sVoteHeader = re.compile(r'(YES)|(NO)|(ABS)|(EXC)|(REC)')
+s_vote_header = re.compile(r'(YES)|(NO)|(ABS)|(EXC)|(REC)')
 # House vote header
-hVoteHeader = re.compile(r'(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))')
+h_vote_header = re.compile(r'(YEA(?!S))|(NAY(?!S))|(EXCUSED(?!:))|(ABSENT(?!:))')
 
 # Date regex for senate and house parser
-rDate = re.compile(r'([0-1][0-9]\/[0-3][0-9]\/\d+)')
+date_regex = re.compile(r'([0-1][0-9]\/[0-3][0-9]\/\d+)')
 
 
 def convert_sv_char(c):
@@ -37,27 +36,42 @@ def convert_sv_char(c):
             return c
 
 
-def matchHeader(rowCols, cellX):
+def match_header(row_cols, cell_x):
     """ Map the data column to the header column, has to be done once for each column.
         The columns of the headers(yes/no/etc) do not mach up *perfect* with
         data in the grid due to random preceding whitespace and mixed fonts"""
-    rowCols.sort()
-    c = bisect_left(rowCols, cellX)
+    row_cols.sort()
+    c = bisect_left(row_cols, cell_x)
     if c == 0:
-        return rowCols[0]
-    elif c == len(rowCols):
-        return rowCols[-1]
+        return row_cols[0]
+    elif c == len(row_cols):
+        return row_cols[-1]
 
-    before = rowCols[c - 1]
-    after = rowCols[c]
-    if after-cellX < cellX-before:
+    before = row_cols[c - 1]
+    after = row_cols[c]
+    if after-cell_x < cell_x-before:
         return after
     else:
         return before
 
 
+def session_slug(session):
+    session_type = 'Special' if session.endswith('S') else 'Regular'
+    return '{}%20{}'.format(session[2:4], session_type)
+
+
+# Fix names that don't get read correctly from the vote PDFs
+corrected_names = {'Larraqaga': 'Larrañaga',
+                   'Salazar, Tomas': 'Salazar, Tomás',
+                   'Sariqana': 'Sariñana',
+                   'MUQOZ': 'MUÑOZ'}
+
+
+def correct_name(name):
+    return corrected_names[name] if name in corrected_names else name
+
+
 class NMBillScraper(Scraper):
-    categorizer = Categorizer()
 
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
@@ -176,7 +190,7 @@ class NMBillScraper(Scraper):
                     bill.add_sponsorship(sponsor_map[data[sponsor_code]],
                                          classification='primary',
                                          entity_type='person',
-                                         primary=False)
+                                         primary=True)
 
             # maybe use data['emergency'] data['passed'] data['signed'] as well
             for subject_code in ['SubjectCode1', 'SubjectCode2',
@@ -192,14 +206,14 @@ class NMBillScraper(Scraper):
         self.scrape_documents(session, 'votes', chamber, bills,
                               chamber_name='')
         self.check_other_documents(session, chamber, bills)
-        self.dedupe_docs(bills)
+        # self.dedupe_docs(bills)
 
         yield from bills.values()
 
     def check_other_documents(self, session, chamber, bills):
         """ check for documents that reside in their own directory """
 
-        s_slug = self.metadata['session_details'][session]['slug']
+        s_slug = session_slug(session)
         firs_url = 'http://www.nmlegis.gov/Sessions/%s/firs/' % s_slug
         lesc_url = 'http://www.nmlegis.gov/Sessions/%s/LESCAnalysis/' % s_slug
         final_url = 'http://www.nmlegis.gov/Sessions/%s/final/' % s_slug
@@ -232,8 +246,8 @@ class NMBillScraper(Scraper):
                                     'Final Version', url + fname,
                                     mimetype=mimetype)
                             else:
-                                bill.add_document(doc_type, url + fname,
-                                                  mimetype=mimetype)
+                                bill.add_document_link(doc_type, url + fname,
+                                                       mimetype=mimetype)
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
@@ -255,81 +269,81 @@ class NMBillScraper(Scraper):
         # table will break when new actions are encountered
         action_map = {
             # committee results
-            '7601': ('DO PASS committee report adopted', 'committee:passed:favorable'),
-            '7602': ('DO PASS, as amended, committee report adopted', 'committee:passed:favorable'),
-            '7603': ('WITHOUT RECOMMENDATION committee report adopted', 'committee:passed'),
-            '7604': ('WITHOUT RECOMMENDATION, as amended, committee report adopted', 'committee:passed'),
+            '7601': ('DO PASS committee report adopted', 'committee-passage-favorable'),
+            '7602': ('DO PASS, as amended, committee report adopted', 'committee-passage-favorable'),
+            '7603': ('WITHOUT RECOMMENDATION committee report adopted', 'committee-passage'),
+            '7604': ('WITHOUT RECOMMENDATION, as amended, committee report adopted', 'committee-passage'),
             # 7605 - 7609 are Committee Substitutes in various amend states
-            '7605': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
-            '7606': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
-            '7608': ('DO NOT PASS, replaced with committee substitute', 'committee:passed'),
+            '7605': ('DO NOT PASS, replaced with committee substitute', 'committee-passage'),
+            '7606': ('DO NOT PASS, replaced with committee substitute', 'committee-passage'),
+            '7608': ('DO NOT PASS, replaced with committee substitute', 'committee-passage'),
             # withdrawals
-            '7611': ('withdrawn from committee', 'bill:withdrawn'),
-            '7612': ('withdrawn from all committees', 'bill:withdrawn'),
-            '7613': ('withdrawn and tabled', 'bill:withdrawn'),
-            '7614': ('withdrawn printed germane prefile', 'bill:withdrawn'),
-            '7615': ('germane', 'other'),
-            '7616': ('germane & printed', 'other'),
+            '7611': ('withdrawn from committee', 'withdrawal'),
+            '7612': ('withdrawn from all committees', 'withdrawal'),
+            '7613': ('withdrawn and tabled', 'withdrawal'),
+            '7614': ('withdrawn printed germane prefile', 'withdrawal'),
+            '7615': ('germane', None),
+            '7616': ('germane & printed', None),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
-            '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
-            '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee:passed:favorable'),
-            '7623': ("WITHOUT RECOMMENDATION committee report adopted, placed on Speaker's table", 'committee:passed'),
-            '7624': ("WITHOUT RECOMMENDATION, as amended, committee report adopted, placed on Speaker's table", 'committee:passed'),
-            '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
-            '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee:passed'),
+            '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee-passage-favorable'),
+            '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee-passage-favorable'),
+            '7623': ("WITHOUT RECOMMENDATION committee report adopted, placed on Speaker's table", 'committee-passage'),
+            '7624': ("WITHOUT RECOMMENDATION, as amended, committee report adopted, placed on Speaker's table", 'committee-passage'),
+            '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee-passage'),
+            '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee-passage'),
             # floor actions
-            '7631': ('Withdrawn on the Speakers table by rule from the daily calendar', 'other'),
-            '7638': ('Germane as amended', 'other'),
-            '7639': ('tabled in House', 'other'),
-            '7640': ('tabled in Senate', 'other'),
-            '7641': ('floor substitute adopted', 'other'),
-            '7642': ('floor substitute adopted (1 amendment)', 'other'),
-            '7643': ('floor substitute adopted (2 amendment)', 'other'),
-            '7644': ('floor substitute adopted (3 amendment)', 'other'),
+            '7631': ('Withdrawn on the Speakers table by rule from the daily calendar', None),
+            '7638': ('Germane as amended', None),
+            '7639': ('tabled in House', None),
+            '7640': ('tabled in Senate', None),
+            '7641': ('floor substitute adopted', None),
+            '7642': ('floor substitute adopted (1 amendment)', None),
+            '7643': ('floor substitute adopted (2 amendment)', None),
+            '7644': ('floor substitute adopted (3 amendment)', None),
             '7655': ('Referred to the House Appropriations & Finance',
-                     'committee:referred'),
-            '7645': ('motion to reconsider adopted', 'other'),
-            '7649': ('printed', 'other'),
-            '7650': ('not printed %s', 'other'),
-            '7652': ('not printed, not referred to committee, tabled', 'other'),
-            '7654': ('referred to %s', 'committee:referred'),
-            '7656': ('referred to Finance committee', 'committee:referred'),
-            '7660': ('passed House', 'bill:passed'),
-            '7661': ('passed Senate', 'bill:passed'),
-            '7663': ('House report adopted', 'other'),
-            '7664': ('Senate report adopted', 'other'),
-            '7665': ('House concurred in Senate amendments', 'other'),
-            '7666': ('Senate concurred in House amendments', 'other'),
-            '7667': ('House failed to concur in Senate amendments', 'other'),
-            '7668': ('Senate failed to concur in House amendments', 'other'),
-            '7669': ('this procedure could follow if the Senate refuses to recede from its amendments', 'other'),
-            '7670': ('this procedure could follow if the House refuses to recede from its amendments', 'other'),
-            '7671': ('this procedure could follow if the House refuses to recede from its amendments', 'other'),
-            '7675': ('bill recalled from the House for further consideration by the Senate.', 'other'),
-            '7678': ('tabled in Senate', 'other'),
-            '7681': ('failed passage in House', 'bill:failed'),
-            '7682': ('failed passage in Senate', 'bill:failed'),
-            '7685': ('Signed', 'other'),
-            '7699': ('special', 'other'),
-            '7701': ('failed passage in House', 'bill:failed'),
-            '7702': ('failed passage in Senate', 'bill:failed'),
-            '7704': ('tabled indefinitely', 'other'),
-            '7708': ('action postponed indefinitely', 'other'),
-            '7709': ('bill not germane', 'other'),
-            '7711': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
-            '7712': ('DO NOT PASS committee report adopted', 'committee:passed:unfavorable'),
-            '7798': ('Succeeding entries', 'other'),
-            '7804': ('Signed', 'governor:signed'),
-            '7805': ('Signed', 'governor:signed'),
-            '7806': ('Vetoed', 'governor:vetoed'),
-            '7807': ('Pocket Veto', 'governor:vetoed'),
-            '7808': ('Law Without Signature', 'governor:signed'),
-            '7811': ('Veto Override Passed House', 'bill:veto_override:passed'),
-            '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
-            '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
-            '7814': ('Veto Override Failed Senate', 'bill:veto_override:failed'),
-            '7799': ('Dead', 'other'),
-            'SENT': ('Sent to %s', ['bill:introduced', 'committee:referred']),
+                     'referral-committee'),
+            '7645': ('motion to reconsider adopted', None),
+            '7649': ('printed', None),
+            '7650': ('not printed %s', None),
+            '7652': ('not printed, not referred to committee, tabled', None),
+            '7654': ('referred to %s', 'referral-committee'),
+            '7656': ('referred to Finance committee', 'referral-committee'),
+            '7660': ('passed House', 'passage'),
+            '7661': ('passed Senate', 'passage'),
+            '7663': ('House report adopted', None),
+            '7664': ('Senate report adopted', None),
+            '7665': ('House concurred in Senate amendments', None),
+            '7666': ('Senate concurred in House amendments', None),
+            '7667': ('House failed to concur in Senate amendments', None),
+            '7668': ('Senate failed to concur in House amendments', None),
+            '7669': ('this procedure could follow if the Senate refuses to recede from its amendments', None),
+            '7670': ('this procedure could follow if the House refuses to recede from its amendments', None),
+            '7671': ('this procedure could follow if the House refuses to recede from its amendments', None),
+            '7675': ('bill recalled from the House for further consideration by the Senate.', None),
+            '7678': ('tabled in Senate', None),
+            '7681': ('failed passage in House', 'failure'),
+            '7682': ('failed passage in Senate', 'failure'),
+            '7685': ('Signed', None),
+            '7699': ('special', None),
+            '7701': ('failed passage in House', 'failure'),
+            '7702': ('failed passage in Senate', 'failure'),
+            '7704': ('tabled indefinitely', None),
+            '7708': ('action postponed indefinitely', None),
+            '7709': ('bill not germane', None),
+            '7711': ('DO NOT PASS committee report adopted', 'committee-passage-unfavorable'),
+            '7712': ('DO NOT PASS committee report adopted', 'committee-passage-unfavorable'),
+            '7798': ('Succeeding entries', None),
+            '7804': ('Signed', 'executive-signature'),
+            '7805': ('Signed', 'executive-signature'),
+            '7806': ('Vetoed', 'executive-veto'),
+            '7807': ('Pocket Veto', 'executive-veto'),
+            '7808': ('Law Without Signature', 'executive-signature'),
+            '7811': ('Veto Override Passed House', 'veto-override-passage'),
+            '7812': ('Veto Override Passed Senate', 'veto-override-passage'),
+            '7813': ('Veto Override Failed House', 'veto-override-failure'),
+            '7814': ('Veto Override Failed Senate', 'veto-override-failure'),
+            '7799': ('Dead', None),
+            'SENT': ('Sent to %s', ['introduction', 'referral-committee']),
         }
 
         # these actions need a committee name spliced in
@@ -351,7 +365,7 @@ class NMBillScraper(Scraper):
             # instead lets just use EntryDate and take radical the position
             # something hasn't happened until it is observed
             action_date = datetime.strptime(action['EntryDate'].split()[0],
-                                            '%m/%d/%y')
+                                            '%m/%d/%y').strftime('%Y-%m-%d')
             if action['LocationCode']:
                 actor = location_map.get(action['LocationCode'][0], 'other')
             else:
@@ -379,28 +393,28 @@ class NMBillScraper(Scraper):
                 actor = 'upper'
             if action_name == 'passed House':
                 actor = 'lower'
+            bills[bill_key].add_action(action_name,
+                                       action_date,
+                                       chamber=actor,
+                                       classification=action_type)
 
-            attrs = dict(actor=actor, action=action_name, date=action_date)
-            attrs.update(self.categorizer.categorize(action_name))
-            if action_type not in attrs['type']:
-                if isinstance(action_type, lxml.basestring):
-                    attrs['type'].append(action_type)
-                else:
-                    attrs['type'].extend(action_type)
-            bills[bill_key].add_action(**attrs)
-
-    def scrape_documents(self, session, doctype, chamber, bills,
+    def scrape_documents(self, session, doc_type, chamber, bills,
                          chamber_name=None):
-        """ most document types (+ Votes)are in this common directory go
+        """ most document types (+ Votes) are in this common directory go
         through it and attach them to their related bills """
-
-        session_path = self.metadata['session_details'][session]['slug']
+        session_path = session_slug(session)
 
         if chamber_name is None:
             chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        doc_path = 'http://www.nmlegis.gov/Sessions/%s/%s/%s/'
-        doc_path %= session_path, doctype, chamber_name
+        if doc_type is 'votes':
+            doc_path = 'http://www.nmlegis.gov/Sessions/{}/{}/'.format(
+                session_path, doc_type)
+        else:
+            doc_path = 'http://www.nmlegis.gov/Sessions/{}/{}/{}/'.format(
+                session_path, doc_type, chamber_name)
+
+        self.info('Getting doc at {}'.format(doc_path))
 
         html = self.get(doc_path).text
 
@@ -430,12 +444,14 @@ class NMBillScraper(Scraper):
             bill_id = bill_type.replace('B', '') + bill_num
             if bill_id in bills.keys():
                 bill = bills[bill_id]
-            elif (doctype == 'votes' and (
+            elif (doc_type == 'votes' and (
                     (bill_id.startswith('H') and chamber == 'upper') or
                     (bill_id.startswith('S') and chamber == 'lower'))):
                 # There is only one vote list URL, shared between chambers
-                # So, avoid throwing warnings upon seeing the other chamber's legislation
-                self.info('Ignoring votes on bill {} while processing the other chamber'.format(fname))
+                # So, avoid throwing warnings upon seeing the other chamber's
+                # legislation
+                self.info('Ignoring votes on bill {} while processing the '
+                          'other chamber'.format(fname))
                 continue
             else:
                 self.warning('document for unknown bill %s' % fname)
@@ -453,9 +469,9 @@ class NMBillScraper(Scraper):
             elif re.match('F(S|H)\d', suffix):
                 a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
                 a_chamber = 'House' if a_chamber == 'H' else 'Senate'
-                bill.add_document('%s Floor Amendment %s' %
-                                  (a_chamber, num),
-                                  doc_path + fname)
+                bill.add_document_link('%s Floor Amendment %s' %
+                                       (a_chamber, num),
+                                       doc_path + fname)
             # committee substitutes
             elif suffix.endswith('S'):
                 committee_name = suffix[:-1]
@@ -467,34 +483,33 @@ class NMBillScraper(Scraper):
                 if not sv_text:
                     continue
 
-                vote = self.parse_senate_vote(sv_text, doc_path + fname)
-                if vote:
-                    bill.add_vote_event(vote)
-                else:
-                    self.warning('Bad parse on the vote')
+                vote = self.parse_senate_vote(sv_text, doc_path + fname, bill)
+                if not vote:
+                    self.warning(
+                        'Bad parse on the senate vote for {}'.format(bill_id))
 
             elif 'HVOTE' in suffix:
                 hv_text = self.scrape_vote(doc_path + fname)
                 if not hv_text:
                     continue
-                vote = self.parse_house_vote(hv_text, doc_path + fname)
-                if vote:
-                    bill.add_vote_event(vote)
-                else:
-                    self.warning('Bad parse on the vote')
+                vote = self.parse_house_vote(hv_text, doc_path + fname, bill)
+                if not vote:
+                    self.warning(
+                        'Bad parse on the house vote for {}'.format(bill_id))
 
             # committee reports
             elif re.match(r'\w{2,4}\d', suffix):
                 committee_name = re.match(r'[A-Z]+', suffix).group()
-                bill.add_document('%s committee report' % committee_name,
-                                  doc_path + fname, mimetype=media_type)
+                bill.add_document_link('%s committee report' % committee_name,
+                                       doc_path + fname, mimetype=media_type)
 
             # ignore list, mostly typos reuploaded w/ proper name
             elif suffix in ('HEC', 'HOVTE', 'GUI'):
                 pass
             else:
                 # warn about unknown suffix
-                # we're getting some "E" suffixes, but I think those are duplicates
+                # we're getting some "E" suffixes, but I think those are
+                # duplicates
                 self.warning('unknown document suffix {} ({})'.format(suffix,
                                                                       fname))
 
@@ -513,174 +528,255 @@ class NMBillScraper(Scraper):
             os.remove(filelocation)
         return vote_text
 
-    def parse_house_vote(self, sv_text, url):
+    def parse_house_vote(self, hv_text, url, bill):
         """Sets any overrides and creates the vote instance"""
         overrides = {'ONEILL': "O'NEILL"}
         # Add new columns as they appear to be safe
-        vote = Vote('lower', '?', 'senate passage', False, 0, 0, 0)
-        vote.add_source(url)
-        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, hVoteHeader, rDate, 'CERTIFIED CORRECT', 'YEAS')
+        vote_record, row_headers, sane_row = self.parse_visual_grid(
+            hv_text,
+            overrides,
+            h_vote_header,
+            'CERTIFIED CORRECT',
+            'YEAS')
+        vote = self.build_vote(bill, url, vote_record, 'lower',
+                               'house passage')
 
-        # Sanity checks on vote data, checks that the calculated total and listed totals match
-        sane = {'yes':0, 'no':0, 'other':0}
-        # Make sure the header row and sanity row are in orde
-        sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
-        startCount=-1
-        for cell in saneRow:
-            cellValue=cell[0].split()[-1].strip()
-            if 'YEAS' in cell[0] or startCount>=0:
-                startCount+=1
-                saneVote=sorted_rh[startCount][1]
-                if 'Y' == saneVote[0]:
-                    sane['yes']=int(cellValue)
-                elif 'N' == saneVote[0]:
-                    sane['no']=int(cellValue)
-                else:
-                    sane['other']+=int(cellValue)
-        # Make sure the parsed vote totals match up with counts in the total field
-        if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
-           sane['other'] != vote['other_count']:
-                raise ValueError('Votes were not parsed correctly')
-        # Make sure the date is a date
-        if not isinstance(vote['date'], datetime):
-                raise ValueError('Date was not parsed correctly')
-        # End Sanity Check
+        self.validate_house_vote(row_headers, sane_row, vote_record)
         return vote
 
-    def parse_senate_vote(self, sv_text, url):
+    def parse_senate_vote(self, sv_text, url, bill):
         """Sets any overrides and creates the vote instance"""
         overrides = {'ONEILL': "O'NEILL"}
         # Add new columns as they appear to be safe
-        vote = VoteEvent(chamber='upper',
-                         start_date='?',
-                         motion_text='senate passage')
-        vote.set_count('yes', 0)
-        vote.set_count('no', 0)
-        vote.set_count('other', 0)
-        vote.add_source(url)
-        vote, rowHeads, saneRow = self.parse_visual_grid(vote, sv_text, overrides, sVoteHeader, rDate, 'TOTAL', 'TOTAL')
+        vote_record, row_headers, sane_row = self.parse_visual_grid(
+            sv_text,
+            overrides,
+            s_vote_header,
+            'TOTAL',
+            'TOTAL')
+        vote = self.build_vote(bill, url, vote_record, 'upper',
+                               'senate passage')
 
-        # Sanity checks on vote data, checks that the calculated total and listed totals match
-        sane={'yes': 0, 'no': 0, 'other':0}
-        # Make sure the header row and sanity row are in orde
-        sorted_rh = sorted(rowHeads.items(), key=operator.itemgetter(0))
-        startCount=-1
-        for cell in saneRow:
-            if startCount >= 0:
-                saneVote = sorted_rh[startCount][1]
-                if 'Y' == saneVote[0]:
-                    sane['yes'] = int(cell[0])
-                elif 'N' == saneVote[0]:
-                    sane['no'] = int(cell[0])
-                else:
-                    sane['other'] += int(cell[0])
-                startCount += 1
-            elif 'TOTAL' in cell[0]:
-                startCount = 0
-        # Make sure the parsed vote totals match up with counts in the total field
-        if sane['yes'] != vote['yes_count'] or sane['no'] != vote['no_count'] or\
-           sane['other'] != vote['other_count']:
-                raise ValueError('Votes were not parsed correctly')
-        # Make sure the date is a date
-        if not isinstance(vote['date'], datetime):
-                raise ValueError('Date was not parsed correctly')
-        # End Sanity Check
+        self.validate_senate_vote(row_headers, sane_row, vote_record)
         return vote
 
-    def parse_visual_grid(self, vote, v_text, overrides, voteHeader, rDate, tableStop, saneIden):
-        """Takes a (badly)formatted pdf and converts the vote grid into an X,Y grid to match votes"""
-        rowHeads = {}
-        columnMap = {}
+    @staticmethod
+    def build_vote(bill, url, vote_record, chamber, motion_text):
+        passed = len(vote_record['yes']) > len(vote_record['no'])
+        vote = VoteEvent(result=passed,
+                         chamber=chamber,
+                         start_date=vote_record['date'],
+                         motion_text=motion_text,
+                         classification='passage',
+                         legislative_session=bill.legislative_session,
+                         bill=bill)
+        vote.set_count('yes', len(vote_record['yes']))
+        vote.set_count('no', len(vote_record['no']))
+        vote.set_count('excused', len(vote_record['excused']))
+        vote.set_count('absent', len(vote_record['absent']))
+        vote.set_count('other', len(vote_record['other']))
+        for vote_type in ['yes', 'no', 'excused', 'absent', 'other']:
+            for voter in vote_record[vote_type]:
+                vote.vote(vote_type, voter)
+
+        vote.add_source(url)
+        return vote
+
+    @staticmethod
+    def validate_house_vote(row_headers, sane_row, vote_record):
+        # Sanity checks on vote data, checks that the calculated total and
+        # listed totals match
+        sane = {'yea': 0, 'nay': 0, 'excused': 0, 'absent': 0, 'other': 0}
+        # Make sure the header row and sanity row are in order
+        sorted_row_header = sorted(row_headers.items(),
+                                   key=operator.itemgetter(0))
+        start_count = -1
+        for cell in sane_row:
+            cell_value = cell[0].split()[-1].strip()
+            if 'YEAS' in cell[0] or start_count >= 0:
+                start_count += 1
+                sane_vote = sorted_row_header[start_count][1]
+                if 'Y' == sane_vote[0]:
+                    sane['yea'] = int(cell_value)
+                elif 'N' == sane_vote[0]:
+                    sane['nay'] = int(cell_value)
+                elif 'E' == sane_vote[0]:
+                    sane['excused'] = int(cell_value)
+                elif 'A' == sane_vote[0]:
+                    sane['absent'] = int(cell_value)
+                else:
+                    sane['other'] += int(cell_value)
+        # Make sure the parsed vote totals match up with counts in the total
+        # field
+        if sane['yea'] != len(vote_record['yes']) or \
+            sane['nay'] != len(vote_record['no']) or \
+            sane['excused'] != len(vote_record['excused']) or \
+            sane['absent'] != len(vote_record['absent']) or \
+                sane['other'] != len(vote_record['other']):
+            raise ValueError('Votes were not parsed correctly')
+        # Make sure the date is a date
+        if not isinstance(vote_record['date'], datetime):
+            raise ValueError('Date was not parsed correctly')
+        # End Sanity Check
+
+    @staticmethod
+    def validate_senate_vote(row_headers, sane_row, vote_record):
+        # Sanity checks on vote data, checks that the calculated total and
+        # listed totals match
+        sane = {'yea': 0, 'nay': 0, 'excused': 0, 'absent': 0, 'other': 0}
+        # Make sure the header row and sanity row are in order
+        sorted_row_header = sorted(row_headers.items(),
+                                   key=operator.itemgetter(0))
+        start_count = -1
+        for cell in sane_row:
+            cell_value = cell[0]
+            if start_count >= 0:
+                sane_vote = sorted_row_header[start_count][1]
+                if 'Y' == sane_vote[0]:
+                    sane['yea'] = int(cell_value)
+                elif 'N' == sane_vote[0]:
+                    sane['nay'] = int(cell_value)
+                elif 'E' == sane_vote[0]:
+                    sane['excused'] = int(cell_value)
+                elif 'A' == sane_vote[0]:
+                    sane['absent'] = int(cell_value)
+                else:
+                    sane['other'] += int(cell_value)
+                start_count += 1
+            elif 'TOTAL' in cell_value:
+                start_count = 0
+        # Make sure the parsed vote totals match up with counts in the
+        # total field
+        if sane['yea'] != len(vote_record['yes']) or \
+            sane['nay'] != len(vote_record['no']) or \
+            sane['excused'] != len(vote_record['excused']) or \
+            sane['absent'] != len(vote_record['absent']) or \
+                sane['other'] != len(vote_record['other']):
+            raise ValueError('Votes were not parsed correctly')
+        # Make sure the date is a date
+        if not isinstance(vote_record['date'], datetime):
+            raise ValueError('Date was not parsed correctly')
+
+    def parse_visual_grid(self, v_text, overrides, vote_header,
+                          table_stop, sane_iden):
+        """
+        Takes a (badly)formatted pdf and converts the vote grid into an X,Y
+        grid to match votes
+        """
+        vote_record = {
+            'date': None,
+            'yes': [],
+            'no': [],
+            'excused': [],
+            'absent': [],
+            'other': []
+        }
+        row_heads = {}
+        column_map = {}
         rows = {}
-        cells = []
-        tBegin = 0
-        tStop = 0
-        saneRow = 0
-        # Take the mixed up text tag cells and separate header/special and non-header cells.
-        # Metadata hints that this doc is done by hand, tags appear in chrono order not visual
-        for tag in lxml.etree.XML(v_text).xpath('//text/b')+lxml.etree.XML(v_text).xpath('//text'):
+        t_begin = 0
+        t_stop = 0
+        sane_row = 0
+        # Take the mixed up text tag cells and separate header/special and
+        # non-header cells.
+        # Metadata hints that this doc is done by hand, tags appear in
+        # chrono order not visual
+        for tag in lxml.etree.XML(v_text).xpath('//text/b') + lxml.etree.XML(
+                v_text).xpath('//text'):
             if tag.text is None:
                 continue
-            rowValue = tag.text.strip()
+            row_value = tag.text.strip()
             if 'top' not in tag.keys():
                 tag = tag.getparent()
             top = int(tag.attrib['top'])
             # name overrides
-            if rowValue in overrides:
-                rowValue = overrides[rowValue]
-            elif 'LT. GOV' in rowValue:
-                # Special case for the senate, inconsistencies make overrides not an option
-                rowValue = 'LT. GOVERNOR'
-            elif tableStop in rowValue:
+            if row_value in overrides:
+                row_value = overrides[row_value]
+            elif 'LT. GOV' in row_value:
+                # Special case for the senate, inconsistencies make overrides
+                #  not an option
+                row_value = 'LT. GOVERNOR'
+            elif table_stop in row_value:
                 # Set the data table end point
-                tStop = top
+                t_stop = top
 
-            if saneIden in rowValue:
+            if sane_iden in row_value:
                 # Vote sanity row can be the same as the tableStop
-                saneRow = top
-            if rDate.search(rowValue):
+                sane_row = top
+            if date_regex.search(row_value):
                 # Date formats change depending on what document is being used
-                if len(rowValue) == 8:
-                    vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%y')
+                if len(row_value) == 8:
+                    vote_record['date'] = datetime.strptime(
+                        date_regex.search(row_value).group(), '%m/%d/%y')
                 else:
-                    vote['date'] = datetime.strptime(rDate.search(rowValue).group(), '%m/%d/%Y')
-            elif voteHeader.match(rowValue):
-                rowHeads[int(tag.attrib['left'])+int(tag.attrib['width'])]=rowValue
+                    vote_record['date'] = datetime.strptime(
+                        date_regex.search(row_value).group(), '%m/%d/%Y')
+            elif vote_header.match(row_value):
+                row_heads[int(tag.attrib['left']) + int(
+                    tag.attrib['width'])] = row_value
                 # Set the header begin sanity value
-                if tBegin == 0:
-                    tBegin = top
+                if t_begin == 0:
+                    t_begin = top
             else:
-                # Create dictionary of row params and x,y location- y:{value, x, x(offset)}
+                # Create dictionary of row params and x,y
+                # location- y:{value, x, x(offset)}
                 if top in rows:
-                    rows[top].append((rowValue, int(tag.attrib['left']), int(tag.attrib['width'])))
+                    rows[top].append((row_value, int(tag.attrib['left']),
+                                      int(tag.attrib['width'])))
                 else:
-                    rows[top] = [(rowValue, int(tag.attrib['left']), int(tag.attrib['width']))]
+                    rows[top] = [(row_value, int(tag.attrib['left']),
+                                  int(tag.attrib['width']))]
 
         # Mark the votes in the datagrid
-        for rowX, cells in rows.iteritems():
-            if rowX > tBegin and rowX <= tStop:
-                # Resort the row cells to go left to right, due to possile table pane switching
+        for row_x, cells in rows.items():
+            if t_begin < row_x <= t_stop:
+                # Resort the row cells to go left to right, due to possile
+                # table pane switching
                 cells.sort(key=operator.itemgetter(1))
-                # Each vote grid is made up of split tables with two active columns
+                # Each vote grid is made up of split tables with two active
+                # columns
                 for x in range(0, len(cells), 2):
-                    if tableStop in cells[x][0]:
+                    if table_stop in cells[x][0]:
                         break
                     if x + 1 >= len(cells):
                         self.warning('No vote found for {}'.format(cells[x]))
                         continue
-                    if cells[x+1][1] not in columnMap:
+                    if cells[x+1][1] not in column_map:
                         # Called one time for each column heading
                         # Map the data grid column to the header columns
-                        columnMap[cells[x+1][1]] = matchHeader(rowHeads.keys(), cells[x+1][1]+cells[x+1][2])
-                    voteCasted = rowHeads[columnMap[cells[x+1][1]]]
+                        column_map[cells[x+1][1]] = \
+                            match_header(list(row_heads.keys()),
+                                         cells[x + 1][1] + cells[x + 1][2])
+                    vote_cast = row_heads[column_map[cells[x+1][1]]]
 
                     # Fix some odd encoding issues
-                    name = ''.join(convert_sv_char(c) for c in cells[x][0])
-                    if 'Y' == voteCasted[0]:
-                        vote.yes(name)
-                    elif 'N' == voteCasted[0]:
-                        vote.no(name)
+                    name = correct_name(''.join(convert_sv_char(c) for c in
+                                                cells[x][0]))
+                    if 'Y' == vote_cast[0]:
+                        vote_record['yes'].append(name)
+                    elif 'N' == vote_cast[0]:
+                        vote_record['no'].append(name)
+                    elif 'E' == vote_cast[0]:
+                        vote_record['excused'].append(name)
+                    elif 'A' == vote_cast[0]:
+                        vote_record['absent'].append(name)
                     else:
-                        vote.other(name)
-        vote['yes_count'] = len(vote['yes_votes'])
-        vote['no_count'] = len(vote['no_votes'])
-        vote['other_count'] = len(vote['other_votes'])
-        vote['passed'] = vote['yes_count'] > vote['no_count']
+                        vote_record['other'].append(name)
 
-        return vote, rowHeads, rows[saneRow]
+        return vote_record, row_heads, rows[sane_row]
 
-    def dedupe_docs(self, bills):
-        for bill_id, bill in bills.items():
-            documents = bill['documents']
-            if 1 < len(documents):
-                resp_set = set()
-                for doc in documents:
-                    try:
-                        resp = self.head(doc['url'])
-                    except scrapelib.HTTPError:
-                        documents.remove(doc)
-                        continue
-                    if resp in resp_set:
-                        documents.remove(doc)
-                    else:
-                        resp_set.add(resp)
+    # def dedupe_docs(self, bills):
+    #     for bill_id, bill in bills.items():
+    #         documents = bill['documents']
+    #         if 1 < len(documents):
+    #             resp_set = set()
+    #             for doc in documents:
+    #                 try:
+    #                     resp = self.head(doc['url'])
+    #                 except scrapelib.HTTPError:
+    #                     documents.remove(doc)
+    #                     continue
+    #                 if resp in resp_set:
+    #                     documents.remove(doc)
+    #                 else:
+    #                     resp_set.add(resp)
