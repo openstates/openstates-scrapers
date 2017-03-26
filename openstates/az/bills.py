@@ -94,7 +94,7 @@ class AZBillScraper(Scraper):
             classification=str(sponsor_type),
             name=sponsor_name,
             entity_type='person',
-            primary=True if sponsor_type == 'primary' else False
+            primary=sponsor_type == 'primary'
         )
         return bill
 
@@ -147,9 +147,8 @@ class AZBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-            session_id = session_metadata.session_id_meta_data[session]
-        else:
-            session_id = session_metadata.session_id_meta_data[session]
+        session_id = session_metadata.session_id_meta_data[session]
+
         # Get the bills page to start the session
         req = self.get('http://www.azleg.gov/bills/')
 
@@ -170,17 +169,13 @@ class AZBillScraper(Scraper):
         bill_rows = []
         chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
-            if(chamber == 'lower'):
+            if chamber == 'lower':
                 bill_rows = page.xpath('//div[@name="HBTable"]//tbody//tr')
-                for row in bill_rows:
-                    bill_id = row.xpath('td/a/text()')[0]
-                    yield from self.scrape_bill(chamber, session, bill_id, session_id)
-
-            elif (chamber == 'upper'):
+            else:
                 bill_rows = page.xpath('//div[@name="SBTable"]//tbody//tr')
-                for row in bill_rows:
-                    bill_id = row.xpath('td/a/text()')[0]
-                    yield from self.scrape_bill(chamber, session, bill_id, session_id)
+            for row in bill_rows:
+                bill_id = row.xpath('td/a/text()')[0]
+                yield from self.scrape_bill(chamber, session, bill_id, session_id)
 
         # TODO: MBTable - Non-bill Misc Motions?
 

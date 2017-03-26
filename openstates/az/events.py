@@ -7,13 +7,12 @@ from lxml import html
 from pupa.scrape import Event, Scraper
 from . import session_metadata
 
+
 class AZEventScraper(Scraper):
     """
     Arizona Event Scraper, gets interim committee, agendas, floor calendars
     and floor activity events
     """
-    jurisdiction = 'az'
-
     _tz = tmz('US/Arizona')
 
     _chamber_short = {'upper': 'S', 'lower': 'H'}
@@ -184,13 +183,13 @@ class AZEventScraper(Scraper):
         if bill_list:
             try:
                 bill_list = [tr[1].text_content().strip() + " " +
-                         tr[3].text_content().strip().replace("\r\n", "")
-                         for tr in bill_list[0].xpath('tr')
-                         if tr.text_content().strip()]
+                             tr[3].text_content().strip().replace("\r\n", "")
+                             for tr in bill_list[0].xpath('tr')
+                             if tr.text_content().strip()]
             except IndexError:
                 bill_list = [tr.text_content().strip().replace("\r\n", "")
-                            for tr in bill_list[0].getchildren()
-                            if tr.text_content().strip()]
+                             for tr in bill_list[0].getchildren()
+                             if tr.text_content().strip()]
 
             bill_list = ",\n".join(bill_list)
             description = description + bill_list
