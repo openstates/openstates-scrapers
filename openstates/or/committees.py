@@ -4,7 +4,7 @@ from .apiclient import OregonLegislatorODataClient
 
 class ORCommitteeScraper(Scraper):
     def latest_session(self):
-        self.session = self.api_client.get('sessions')['value'][-1]['SessionKey']
+        self.session = self.api_client.get('sessions')[-1]['SessionKey']
 
     def scrape(self, chamber=None, session=None):
         self.api_client = OregonLegislatorODataClient(self)
@@ -19,16 +19,16 @@ class ORCommitteeScraper(Scraper):
 
         legislators = self._index_legislators()
 
-        for committee in committees_response['value']:
+        for committee in committees_response:
             org = Organization(
                 chamber={'S': 'upper', 'H': 'lower', 'J': 'joint'}[committee['HouseOfAction']],
                 name=committee['CommitteeName'],
                 classification='committee')
-            org.add_source(committees_response['odata.metadata'])
+            org.add_source(None) # TODO: This doesn't work
             members_response = self.api_client.get('committee_members',
                                                    session=self.session,
                                                    committee=committee['CommitteeCode'])
-            for member in members_response['value']:
+            for member in members_response:
                 try:
                     org.add_member(legislators[member['LegislatorCode']],
                                    role=member['Title'] if member['Title'] else '')
@@ -44,7 +44,7 @@ class ORCommitteeScraper(Scraper):
         legislators_response = self.api_client.get('legislators', session=self.session)
 
         legislators = {}
-        for leg in legislators_response['value']:
+        for leg in legislators_response:
             legislators[leg['LegislatorCode']] = '{} {}'.format(leg['FirstName'], leg['LastName'])
 
         return legislators

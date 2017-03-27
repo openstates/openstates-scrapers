@@ -21,7 +21,7 @@ def index_legislators(scraper):
     legislators_response = scraper.api_client.get('legislators', session=scraper.session)
 
     legislators = {}
-    for leg in legislators_response['value']:
+    for leg in legislators_response:
         legislators[leg['LegislatorCode']] = '{} {}'.format(leg['FirstName'], leg['LastName'])
 
     return legislators

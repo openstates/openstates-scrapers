@@ -12,8 +12,8 @@ class Oregon(Jurisdiction):
     scrapers = {
         # Commented out for testing
         # 'people': ORPersonScraper,
-        'committees': ORCommitteeScraper,
-        # 'bills': ORBillScraper,
+        # 'committees': ORCommitteeScraper,
+        'bills': ORBillScraper,
     }
     parties = [
         {'name': 'Republican'},

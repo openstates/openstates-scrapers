@@ -17,7 +17,8 @@ class OregonLegislatorODataClient(object):
         committees='LegislativeSessions(\'{session}\')/Committees',
         committee_members='Committees(CommitteeCode=\'{committee}\','
                           'SessionKey=\'{session}\')/CommitteeMembers',
-        measures='LegislativeSessions(\'{session}\')/Measures?$expand=MeasureSponsors'
+        measures='LegislativeSessions(\'{session}\')/Measures'
+                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions'
     )
 
     def _build_url(self, resource_name, **endpoint_format_args):
@@ -32,10 +33,13 @@ class OregonLegislatorODataClient(object):
         self.username = os.environ['OLODATA_USERNAME']
         self.password = os.environ['OLODATA_PASSWORD']
 
-    def get(self, resource_name, requests_args=None,
+    def get(self, resource_name, page=None, skip=0, requests_args=None,
             requests_kwargs=None, **url_format_args):
         num_bad_packets_allowed = 10
         url = self._build_url(resource_name, **url_format_args)
+
+        if page:
+            url = '{url}&$top={page}&$skip={skip}'.format(url=url, page=page, skip=skip)
 
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
@@ -60,4 +64,9 @@ class OregonLegislatorODataClient(object):
                     print(err, string)
                     raise RuntimeError('Received too many bad packets from API.')
 
-        return response.json()
+        response = response.json()['value']
+        if page and len(response) > 0:
+            skip += page
+            response.extend(self.get(resource_name, page, skip, requests_args,
+                                              requests_kwargs, **url_format_args))
+        return response
