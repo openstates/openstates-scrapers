@@ -17,7 +17,7 @@ class AZCommitteeScraper(Scraper):
     def scrape_chamber(self, chamber):
         session = self.latest_session()
         # since we are scraping only latest_session
-        session_id = self.session_metadata.session_id_meta_data[session]
+        session_id = session_metadata.session_id_meta_data[session]
 
         client = AZClient()
         committees = client.list_committees(

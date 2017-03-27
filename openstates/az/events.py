@@ -33,7 +33,7 @@ class AZEventScraper(Scraper):
         """
         Scrape upper or lower committee agendas
         """
-        session = self.latest_session()
+        # session = self.latest_session()
         # since we are scraping only latest_session
         # session_id = self.session_metadata.session_id_meta_data[session]
 
