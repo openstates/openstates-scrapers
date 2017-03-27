@@ -5,20 +5,23 @@ from pupa.scrape import Scraper, Organization
 import lxml.html
 
 COMM_TYPES = {'joint': 'Joint',
-              # 'task_force': 'Task Force',
+              'task_force': 'Task Force',
               'upper': 'Senate',
               'lower': 'House'}
 
 
 class ARCommitteeScraper(Scraper):
-    jurisdiction = 'ar'
     latest_only = True
 
     _seen = set()
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
 
-        base_url = 'http://www.arkleg.state.ar.us/assembly/2017/2017R/Pages/Committees.aspx?committeetype='
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%sR/"
+                    "Pages/Committees.aspx?committeetype=") % (session, session)
 
         for chamber, url_ext in COMM_TYPES.items():
             chamber_url = base_url + url_ext

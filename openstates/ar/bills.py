@@ -38,7 +38,7 @@ class ARBillScraper(Scraper):
         self.slug = session+'R'
 
         for Chamber in chambers:
-            self.scrape_bill(Chamber, session)
+            yield from self.scrape_bill(Chamber, session)
         self.scrape_actions()
         for bill_id, bill in self.bills.items():
             yield bill
@@ -87,7 +87,7 @@ class ARBillScraper(Scraper):
                                session_code, bill_id.replace(' ', '')))
             bill.add_version_link(bill_id, version_url, media_type='application/pdf')
 
-            self.scrape_bill_page(bill)
+            yield from self.scrape_bill_page(bill)
 
             self.bills[bill_id] = bill
 
@@ -180,13 +180,6 @@ class ARBillScraper(Scraper):
             # No cosponsor link is OK
             pass
 
-    #     hist_link = page.xpath("//a[contains(@href, 'BillStatusHistory')]")[0]
-    #     self.scrape_votes(bill, hist_link.attrib['href'])
-
-    # def scrape_votes(self, bill, url):
-    #     page = lxml.html.fromstring(self.get(url).text)
-    #     page.make_links_absolute(url)
-
         for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
             date = link.xpath("string(../../td[2])")
             date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"))
@@ -216,16 +209,17 @@ class ARBillScraper(Scraper):
         count_path = "string(//td[@align = 'center' and contains(., '%s: ')])"
         yes_count = int(page.xpath(count_path % "Yeas").split()[-1])
         no_count = int(page.xpath(count_path % "Nays").split()[-1])
-        other_count = int(page.xpath(count_path % "Non Voting").split()[-1])
-        print(other_count)
-        other_count += int(page.xpath(count_path % "Present").split()[-1])
-        print(other_count)
+        non_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
+        absent_count = int(page.xpath(count_path % "Present").split()[-1])
+
         passed = yes_count > no_count + other_count
         vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
                          result='pass' if passed else 'fail',
                          classification='passage', chamber=actor)
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
+        vote.set_count('non voting', non_voting_count)
+        vote.set_count('absent', absent_count)
         vote.add_source(url)
 
         xpath = (

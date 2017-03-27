@@ -6,12 +6,15 @@ import lxml.html
 
 class ARLegislatorScraper(Scraper):
     _remove_special_case = True
-    jurisdiction = 'ar'
     latest_only = True
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
 
-        url = 'http://www.arkleg.state.ar.us/assembly/2017/2017R/Pages/LegislatorSearchResults.aspx?member=&committee=All&chamber='
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        url = ('http://www.arkleg.state.ar.us/assembly/%s/%sR/Pages/'
+               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (session, session)
         page = self.get(url).text
         root = lxml.html.fromstring(page)
 

@@ -37,7 +37,6 @@ TIMECODES = {
 
 
 class AREventScraper(Scraper):
-    jurisdiction = 'ar'
     _tz = pytz.timezone('America/Chicago')
 
     def scrape(self, session=None, chamber=None):
@@ -54,8 +53,6 @@ class AREventScraper(Scraper):
             LINE_LENGTH = 11
             while len(row) < LINE_LENGTH:
                 row += next(page)
-                # assert (len(row) <= LINE_LENGTH,
-                #         "Line is too long: {}".format(row))
 
             desc = row[7].strip()
 

@@ -1,6 +1,5 @@
 import datetime
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from billy.scrape.utils import url_xpath
+
 
 metadata = {
     'name': 'Arkansas',
@@ -29,14 +28,14 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['2015','2015S1', '2016S2', '2016F', '2016S3'],
+            'sessions': ['2015', '2015S1', '2016S2', '2016F', '2016S3'],
         },
         {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
             'sessions': ['2017'],
-        },        
+        },
     ],
     'session_details': {
         '2011': {
@@ -179,15 +178,3 @@ metadata = {
         'Fourth Extraordinary Session, 1987',
     ],
 }
-
-
-def session_list():
-    links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-        '/Previous%20Legislatures.aspx', '//a')
-    sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
-        'title', '')]
-    return sessions
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))
