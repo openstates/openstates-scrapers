@@ -1,4 +1,5 @@
 from .lxmlize import LXMLMixin
+from .lxmlize import url_xpath
 import re
 
 

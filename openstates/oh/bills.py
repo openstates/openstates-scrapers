@@ -11,7 +11,6 @@ import pytz
 
 
 class OHBillScraper(Scraper):
-    jurisdiction = 'oh'
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, session=None, chambers=None):
@@ -31,7 +30,9 @@ class OHBillScraper(Scraper):
             yield from self.old_scrape(session)
 
         else:
-            chamber_dict = {"Senate": "upper", "House": "lower", "House of Representatives": "lower", "house": "lower", "senate": "upper"}
+            chamber_dict = {"Senate": "upper", "House": "lower",
+                            "House of Representatives": "lower",
+                            "house": "lower", "senate": "upper"}
 
             # so presumanbly not everything passes, but we haven't
             # seen anything not pass yet, so we'll need to wait
@@ -78,7 +79,8 @@ class OHBillScraper(Scraper):
                            }
 
             base_url = "http://search-prod.lis.state.oh.us"
-            first_page = base_url + "/solarapi/v1/general_assembly_{session}/".format(session=session)
+            first_page = base_url
+            first_page += "/solarapi/v1/general_assembly_{session}/".format(session=session)
             legislators = self.get_legislator_ids(first_page)
             all_amendments = self.get_other_data_source(first_page, base_url, "amendments")
             all_fiscals = self.get_other_data_source(first_page, base_url, "fiscals")
@@ -105,7 +107,9 @@ class OHBillScraper(Scraper):
                         version_id = v["versionid"]
                         if bill_id in bill_versions:
                             if version_id in bill_versions[bill_id]:
-                                self.logger.warning("There are two versions of {bill_id} called the same thing. Bad news bears!".format(bill_id=bill_id))
+                                self.logger.warning("There are two versions of {bill_id}"
+                                                    " called the same thing."
+                                                    " Bad news bears!".format(bill_id=bill_id))
                             else:
                                 bill_versions[bill_id][version_id] = v
                         else:
@@ -186,7 +190,8 @@ class OHBillScraper(Scraper):
                                     )
 
                             # actions
-                            blacklist = ["/solarapi/v1/general_assembly_131/resolutions/lr_131_0035-1/actions"]
+                            blacklist = ["/solarapi/v1/general_assembly_131/resolutions"
+                                         "/lr_131_0035-1/actions"]
                             # the page in the blacklist just plain old failed to load
                             # and everything got stuck
                             try:
@@ -202,16 +207,23 @@ class OHBillScraper(Scraper):
                                     try:
                                         action_type = action_dict[action["actioncode"]]
                                     except KeyError:
-                                        self.warning("Unknown action {desc} with code {code}. Add it to the action_dict.".format(desc=action_desc, code=action["actioncode"]))
+                                        self.warning("Unknown action {desc} with code {code}."
+                                                     " Add it to the action_dict"
+                                                     ".".format(desc=action_desc,
+                                                                code=action["actioncode"]))
                                         action_type = None
 
-                                    date = self._tz.localize(datetime.datetime.strptime(action["datetime"], "%Y-%m-%dT%H:%M:%S"))
+                                    date = self._tz.localize(datetime.datetime.strptime(
+                                                             action["datetime"],
+                                                             "%Y-%m-%dT%H:%M:%S"))
                                     date = "{:%Y-%m-%d}".format(date)
                                     committees = None
                                     if "committee" in action:
                                         committees = action["committee"]
 
-                                    bill.add_action(action_desc, date, chamber=actor, classification=action_type)
+                                    bill.add_action(action_desc,
+                                                    date, chamber=actor,
+                                                    classification=action_type)
                             self.add_document(all_amendments, bill_id, "amendment", bill, base_url)
                             self.add_document(all_fiscals, bill_id, "fiscal", bill, base_url)
                             self.add_document(all_synopsis, bill_id, "synopsis", bill, base_url)
@@ -220,16 +232,22 @@ class OHBillScraper(Scraper):
                             vote_url = base_url+bill_version["votes"][0]["link"]
                             vote_doc = self.get(vote_url)
                             votes = vote_doc.json()
-                            yield from self.process_vote(votes, vote_url, base_url, bill, legislators, chamber_dict, vote_results)
+                            yield from self.process_vote(votes, vote_url,
+                                                         base_url, bill, legislators,
+                                                         chamber_dict, vote_results)
 
-                            vote_url = base_url+bill_version["cmtevotes"][0]["link"]
+                            vote_url = base_url
+                            vote_url += bill_version["cmtevotes"][0]["link"]
                             try:
                                 vote_doc = self.get(vote_url)
                             except scrapelib.HTTPError:
-                                self.warning("Vote page not loading; skipping: {}".format(vote_url))
+                                self.warning("Vote page not "
+                                             "loading; skipping: {}".format(vote_url))
                                 continue
                             votes = vote_doc.json()
-                            yield from self.process_vote(votes, vote_url, base_url, bill, legislators, chamber_dict, vote_results)
+                            yield from self.process_vote(votes, vote_url,
+                                                         base_url, bill, legislators,
+                                                         chamber_dict, vote_results)
 
                             # we have never seen a veto or a disapprove, but they seem important.
                             # so we'll check and throw an error if we find one
@@ -238,13 +256,19 @@ class OHBillScraper(Scraper):
                                 veto_url = base_url+bill_version["veto"][0]["link"]
                                 veto_json = self.get(veto_url).json()
                                 if len(veto_json["items"]) > 0:
-                                    raise AssertionError("Whoa, a veto! We've never gotten one before. Go write some code to deal with it: {}".format(veto_url))
+                                    raise AssertionError("Whoa, a veto! We've never"
+                                                         " gotten one before."
+                                                         " Go write some code to deal"
+                                                         " with it: {}".format(veto_url))
 
                             if "disapprove" in bill_version:
                                 disapprove_url = base_url+bill_version["disapprove"][0]["link"]
                                 disapprove_json = self.get(disapprove_url).json()
                                 if len(disapprove_json["items"]) > 0:
-                                    raise AssertionError("Whoa, a disapprove! We've never gotten one before. Go write some code to deal with it: {}".format(disapprove_url))
+                                    raise AssertionError("Whoa, a disapprove! We've never"
+                                                         " gotten one before."
+                                                         " Go write some code to deal "
+                                                         "with it: {}".format(disapprove_url))
 
                         # this stuff is version-specific
                         version_name = bill_version["version"]
@@ -253,7 +277,6 @@ class OHBillScraper(Scraper):
                         # bill.add_version(version_name,version_link,mimetype=mimetype)
                         bill.add_version_link(version_name, version_link, media_type=mimetype)
                     # Need to sort bill actions, since they may be jumbled
-                    # bill['actions'] = sorted(bill['actions'], key=itemgetter('date'))
 
                     yield bill
 
@@ -315,7 +338,8 @@ class OHBillScraper(Scraper):
             try:
                 self.head(link)
             except scrapelib.HTTPError:
-                self.logger.warning("The link to doc {name} does not exist, skipping".format(name=name))
+                self.logger.warning("The link to doc {name}"
+                                    " does not exist, skipping".format(name=name))
                 continue
             if "legacyver" in item:
                 try:
@@ -436,7 +460,8 @@ class OHBillScraper(Scraper):
             for key, val in v.items():
                 if type(val) == list and len(val) > 0 and key not in ["yeas", "nays", "absent", "excused"]:
                     if val[0] in legislators:
-                        self.logger.warning("{k} looks like a vote type that's not being counted. Double check it?".format(k=key))
+                        self.logger.warning("{k} looks like a vote type that's not being counted."
+                                            " Double check it?".format(k=key))
             vote.add_source(url)
 
             yield vote
@@ -453,7 +478,8 @@ class OHBillScraper(Scraper):
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
 
-        status_table = doc.xpath("//div[contains(text(),'{}')]/following-sibling::table".format(session))[0]
+        status_table = doc.xpath("//div[contains(text(),'{}')]/following-"
+                                 "sibling::table".format(session))[0]
         status_links = status_table.xpath(".//a[contains(text(),'Excel')]/@href")
 
         for url in status_links:

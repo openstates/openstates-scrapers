@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
-from .people import OHLegislatorScraper
+from openstates.utils import url_xpath
 
+from .people import OHLegislatorScraper
 from .events import OHEventScraper
 from .bills import OHBillScraper
 
@@ -84,3 +85,12 @@ class Ohio(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+
+def get_session_list():
+    sessions = url_xpath('http://archives.legislature.state.oh.us',
+                         '//form[@action="bill_search.cfm"]//input[@type="radio"'
+                         ' and @name="SESSION"]/@value')
+    # Archive does not include current session
+    sessions.append('131')
+    return sessions

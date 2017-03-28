@@ -40,7 +40,6 @@ committee_cache = {}
 
 
 class OHLegislatorScraper(Scraper):
-    jurisdiction = 'oh'
     latest_only = True
 
     def scrape(self, chamber=None):
@@ -128,11 +127,6 @@ class OHLegislatorScraper(Scraper):
             )
             leg.add_membership(org)
             yield org
-            # leg.add_role('committee member',
-            #              position=position,
-            #              chamber=chmbr,
-            #              committee=entry,
-            #              **kwargs)
 
     def scrape_page(self, chamber, url):
         page = self.get(url).text
@@ -185,7 +179,7 @@ class OHLegislatorScraper(Scraper):
             leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
             leg.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-            self.scrape_homepage(leg, chamber, homepage)
+            yield from self.scrape_homepage(leg, chamber, homepage)
 
             leg.add_source(url)
             leg.add_link(url)

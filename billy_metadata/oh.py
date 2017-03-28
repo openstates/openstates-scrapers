@@ -1,6 +1,5 @@
 import datetime
-import lxml.html
-from billy.utils.fulltext import text_after_line_numbers
+
 
 metadata = dict(
     name='Ohio',
@@ -46,17 +45,3 @@ metadata = dict(
     _ignored_scraped_sessions=['127', '126', '125', '124', '123', '122']
 
 )
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    sessions = url_xpath('http://archives.legislature.state.oh.us',
-                     '//form[@action="bill_search.cfm"]//input[@type="radio" and @name="SESSION"]/@value')
-    # Archive does not include current session
-    sessions.append('131')
-    return sessions
-
-
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = ' '.join(x.text_content() for x in doc.xpath('//td[@align="LEFT"]'))
-    return text
