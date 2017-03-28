@@ -1,61 +1,51 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 import lxml.html
 
 nelis_root = 'https://www.leg.state.nv.us/App/NELIS/REL'
 
 
-class NVCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'nv'
+class NVCommitteeScraper(Scraper):
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            chambers = [chamber]
+        else:
+            chambers = ['upper', 'lower']
+        for chamber in chambers:
+            insert = self.latest_session()
 
-        for t in self.metadata['terms']:
-            if t['name'] == term:
-                session = t['sessions'][-1]
+            chamber_names = {'lower': 'Assembly', 'upper': 'Senate'}
+            list_url = '%s/%s/HomeCommittee/LoadCommitteeListTab' % (nelis_root, insert)
+            html = self.get(list_url).text
+            doc = lxml.html.fromstring(html)
 
-        sessionsuffix = 'th'
-        if str(session)[-1] == '1':
-            sessionsuffix = 'st'
-        elif str(session)[-1] == '2':
-            sessionsuffix = 'nd'
-        elif str(session)[-1] == '3':
-            sessionsuffix = 'rd'
-        insert = str(session) + sessionsuffix + str(term[0:4])
+            sel = 'panel%sCommittees' % chamber_names[chamber]
 
-        chamber_names = {'lower': 'Assembly', 'upper': 'Senate'}
+            ul = doc.xpath('//ul[@id="%s"]' % sel)[0]
+            coms = ul.xpath('li/div/div/div[@class="col-md-4"]/a')
 
-        insert = self.metadata['session_details'][session].get(
-            '_committee_session', insert
-        )
-
-        list_url = '%s/%s/HomeCommittee/LoadCommitteeListTab' % (nelis_root, insert)
-        html = self.get(list_url).text
-        doc = lxml.html.fromstring(html)
-
-        sel = 'panel%sCommittees' % chamber_names[chamber]
-
-        ul = doc.xpath('//ul[@id="%s"]' % sel)[0]
-        coms = ul.xpath('li/div/div/div[@class="col-md-4"]/a')
-
-        for com in coms:
-            name = com.text.strip()
-            com_id = re.match(r'.*/Committee/(?P<id>[0-9]+)/Overview', com.attrib['href']).group('id')
-            com_url = '%s/%s/Committee/FillSelectedCommitteeTab?committeeOrSubCommitteeKey=%s&selectedTab=Overview' % (nelis_root, insert, com_id)
-            com = Committee(chamber, name)
-            com.add_source(com_url)
-            self.scrape_comm_members(chamber, com, com_url)
-            self.save_committee(com)
+            for com in coms:
+                name = com.text.strip()
+                com_id = (re.match(r'.*/Committee/(?P<id>[0-9]+)/Overview', com.attrib['href'])
+                          .group('id'))
+                com_url = '%s/%s/Committee/FillSelectedCommitteeTab?committeeOrSubCommitteeKey=%s'\
+                          '&selectedTab=Overview' % (nelis_root, insert, com_id)
+                org = Organization(name=name, chamber=chamber, classification="committee")
+                org.add_source(com_url)
+                self.scrape_comm_members(chamber, org, com_url)
+                yield org
 
     def scrape_comm_members(self, chamber, committee, url):
+
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
-        links = doc.xpath('//div[@class="col-md-11"]/a[@class="bio"]')
+        links = doc.xpath('//a[@class="bio"]')
         for link in links:
             name = link.text.strip()
             role = link.tail.strip().replace("- ", "")
             if role == '':
                 role = 'member'
-            committee.add_member(name, role)
+            committee.add_member(name, role=role)

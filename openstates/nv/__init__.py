@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import NVPeopleScraper
+from .committees import NVCommitteeScraper
+
 
 class Nevada(Jurisdiction):
     division_id = "ocd-division/country:us/state:nv"
@@ -7,7 +9,8 @@ class Nevada(Jurisdiction):
     name = "Nevada"
     url = "http://www.leg.state.nv.us/"
     scrapers = {
-        'people': NVPeopleScraper
+        'people': NVPeopleScraper,
+        'committees': NVCommitteeScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -17,26 +20,26 @@ class Nevada(Jurisdiction):
         {
             "_scraped_name": "26th (2010) Special Session",
             "classification": "special",
-            "identifier": "2010Special26n",
+            "identifier": "26th2010Special",
             "name": "26th Special Session (2010)"
         },
         {
             "_scraped_name": "27th (2013) Special Session",
             "classification": "special",
-            "identifier": "2013Special27",
+            "identifier": "27th2013Special",
             "name": "27th Special Session (2013)"
         },
         {
             "_scraped_name": "28th (2014) Special Session",
             "classification": "special",
-            "identifier": "2014Special28",
+            "identifier": "28th2014Special",
             "name": "28th Special Session (2014)"
         },
         {
             "_scraped_name": "29th (2015) Special Session",
             "classification": "special",
             "end_date": "2015-12-19",
-            "identifier": "2015Special29",
+            "identifier": "29th2015Special",
             "name": "29th Special Session (2015)",
             "start_date": "2015-12-16"
         },
@@ -44,7 +47,7 @@ class Nevada(Jurisdiction):
             "_scraped_name": "30th (2016) Special Session",
             "classification": "special",
             "end_date": "2016-10-14",
-            "identifier": "2016Special30",
+            "identifier": "30th2016Special",
             "name": "30th Special Session (2016)",
             "start_date": "2016-10-10"
         },
