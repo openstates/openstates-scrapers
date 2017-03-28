@@ -1,17 +1,15 @@
 import datetime as dt
 import re
 
-import pytz
-
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Bill, VoteEvent
 from .apiclient import OregonLegislatorODataClient
-from .utils import index_legislators
+from .utils import index_legislators, get_timezone
 
 
 class ORBillScraper(Scraper, LXMLMixin):
     jurisdiction = 'or'
-    _tz = pytz.timezone("US/Pacific")
+    tz = get_timezone()
 
     bill_directory_url = "https://olis.leg.state.or.us/liz/{0}/Measures/list/"
     base_url = "https://olis.leg.state.or.us"
@@ -55,21 +53,20 @@ class ORBillScraper(Scraper, LXMLMixin):
     def latest_session(self):
         self.session = self.api_client.get('sessions')[-1]['SessionKey']
 
-    def scrape(self, session=None, chamber=None):
+    def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
         self.session = session
         if not self.session:
             self.latest_session()
 
-        yield from self.scrape_bills(chamber)
+        yield from self.scrape_bills()
 
-    def scrape_bills(self, chamber):
-        measures_response = self.api_client.get('measures', page=100, skip=2700, session=self.session)
+    def scrape_bills(self):
+        measures_response = self.api_client.get('measures', page=100, session=self.session)
 
         legislators = index_legislators(self)
 
         for measure in measures_response:
-            print(measure)
             bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
 
             chamber = self.chamber_code[bid[0]]
@@ -81,9 +78,10 @@ class ORBillScraper(Scraper, LXMLMixin):
                 classification=self.bill_types[measure['MeasurePrefix'][1:]]
             )
             for sponsor in measure['MeasureSponsors']:
-                if sponsor['LegislatoreCode']:
+                legislator_code = sponsor['LegislatoreCode']  # typo in API
+                if legislator_code:
                     bill.add_sponsorship(
-                        name=legislators[sponsor['LegislatoreCode']],
+                        name=legislators[legislator_code],
                         classification={'Chief': 'primary', 'Regular': 'cosponsor'}[
                             sponsor['SponsorLevel']],
                         entity_type='person',
@@ -99,7 +97,7 @@ class ORBillScraper(Scraper, LXMLMixin):
             for action in measure['MeasureHistoryActions']:
                 classifiers = self.determine_action_classifiers(action['ActionText'])
                 when = dt.datetime.strptime(action['ActionDate'], '%Y-%m-%dT%H:%M:%S')
-                when = self._tz.localize(when)
+                when = self.tz.localize(when)
                 bill.add_action(action['ActionText'], when,
                                 chamber=self.chamber_code[action['Chamber']],
                                 classification=classifiers)
@@ -134,7 +132,6 @@ class ORBillScraper(Scraper, LXMLMixin):
             return ws.sub(' ', txt).strip()
 
         for a in bill_anchors:
-            print(a)
             bid = ws.sub('', a.text_content())
             # bill title is added below
             bill = Bill(bid, legislative_session=session, chamber=chamber,

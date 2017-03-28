@@ -24,7 +24,10 @@ class ORCommitteeScraper(Scraper):
                 chamber={'S': 'upper', 'H': 'lower', 'J': 'joint'}[committee['HouseOfAction']],
                 name=committee['CommitteeName'],
                 classification='committee')
-            org.add_source(None) # TODO: This doesn't work
+            org.add_source(
+                'https://olis.leg.state.or.us/liz/{session}'
+                '/Committees/{committee}/Overview'.format(session=self.session,
+                                                          committee=committee['CommitteeName']))
             members_response = self.api_client.get('committee_members',
                                                    session=self.session,
                                                    committee=committee['CommitteeCode'])

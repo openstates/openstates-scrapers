@@ -18,7 +18,8 @@ class OregonLegislatorODataClient(object):
         committee_members='Committees(CommitteeCode=\'{committee}\','
                           'SessionKey=\'{session}\')/CommitteeMembers',
         measures='LegislativeSessions(\'{session}\')/Measures'
-                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions'
+                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions',
+        votes='LegislativeSessions(\'{session}\')/Measures?$expand=MeasureVote'
     )
 
     def _build_url(self, resource_name, **endpoint_format_args):
@@ -32,6 +33,9 @@ class OregonLegislatorODataClient(object):
         self.scraper = scraper
         self.username = os.environ['OLODATA_USERNAME']
         self.password = os.environ['OLODATA_PASSWORD']
+
+    def latest_session(self):
+        return self.get('sessions')[-1]['SessionKey']
 
     def get(self, resource_name, page=None, skip=0, requests_args=None,
             requests_kwargs=None, **url_format_args):

@@ -23,7 +23,7 @@ class ORPersonScraper(Scraper):
                             district=legislator['DistrictNumber'],
                             image=img)
             person.add_link(legislator['WebSiteUrl'])
-            person.add_source(legislators_reponse['odata.metadata'])
+            person.add_source(legislator['WebSiteUrl'])
 
             if legislator['CapitolAddress']:
                 person.add_contact_detail(type='address', value=legislator['CapitolAddress'],

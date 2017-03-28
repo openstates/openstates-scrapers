@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import ORPersonScraper
 from .committees import ORCommitteeScraper
 from .bills import ORBillScraper
+from .votes import ORVoteScraper
 
 
 class Oregon(Jurisdiction):
@@ -13,7 +14,8 @@ class Oregon(Jurisdiction):
         # Commented out for testing
         # 'people': ORPersonScraper,
         # 'committees': ORCommitteeScraper,
-        'bills': ORBillScraper,
+        # 'bills': ORBillScraper,
+        'votes': ORVoteScraper
     }
     parties = [
         {'name': 'Republican'},

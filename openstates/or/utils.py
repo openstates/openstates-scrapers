@@ -1,3 +1,6 @@
+import pytz
+
+
 def clean_space(str):
     new_str = ' '.join(str.split())
     return new_str
@@ -25,3 +28,8 @@ def index_legislators(scraper):
         legislators[leg['LegislatorCode']] = '{} {}'.format(leg['FirstName'], leg['LastName'])
 
     return legislators
+
+
+def get_timezone():
+    return pytz.timezone("US/Pacific")
+
