@@ -3,15 +3,12 @@ import datetime
 import collections
 import chardet
 import unicodecsv
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+from io import BytesIO
 
 
 def open_csv(data):
     char_encoding = chardet.detect(data.content)['encoding']
-    return unicodecsv.DictReader(StringIO.StringIO(data.content),
+    return unicodecsv.DictReader(BytesIO(data.content),
                                  encoding=char_encoding)
 
 

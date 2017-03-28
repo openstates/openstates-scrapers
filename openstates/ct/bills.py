@@ -4,7 +4,6 @@ import requests
 from operator import itemgetter
 from collections import defaultdict
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
 from .utils import parse_directory_listing, open_csv
@@ -49,7 +48,7 @@ class CTBillScraper(BillScraper):
             bill_id = row['bill_num']
             chamber = chamber_map[bill_id[0]]
 
-            if not chamber in chambers:
+            if chamber not in chambers:
                 continue
 
             # assert that the bill data is from this session, CT is tricky
@@ -105,7 +104,6 @@ class CTBillScraper(BillScraper):
                     bill.add_sponsor(spon_type, sponsor,
                                      official_type='introducer')
                     spon_type = 'cosponsor'
-
 
         for link in page.xpath("//a[contains(@href, '/FN/')]"):
             bill.add_document(link.text.strip(), link.attrib['href'])
@@ -189,7 +187,6 @@ class CTBillScraper(BillScraper):
 
         bill.add_vote(vote)
 
-
     def scrape_bill_history(self):
         history_url = "ftp://ftp.cga.ct.gov/pub/data/bill_history.csv"
         page = self.get(history_url)
@@ -240,7 +237,7 @@ class CTBillScraper(BillScraper):
                                   match.group(1)))
 
                 if (re.match(r'^ADOPTED, (HOUSE|SENATE)', action) or
-                    re.match(r'^(HOUSE|SENATE) PASSED', action)):
+                        re.match(r'^(HOUSE|SENATE) PASSED', action)):
                     act_type.append('bill:passed')
 
                 match = re.match(r'^Joint ((Un)?[Ff]avorable)', action)
@@ -258,7 +255,7 @@ class CTBillScraper(BillScraper):
                     act_chamber = 'lower'
 
                 if ('TRANSMITTED TO SENATE' in action or
-                    action == 'HOUSE PASSED'):
+                        action == 'HOUSE PASSED'):
                     act_chamber = 'upper'
 
     def scrape_versions(self, chamber, session):
