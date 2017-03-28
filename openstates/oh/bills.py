@@ -1,6 +1,5 @@
 import os
 import datetime
-from operator import itemgetter
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
@@ -190,8 +189,8 @@ class OHBillScraper(Scraper):
                                     )
 
                             # actions
-                            blacklist = ["/solarapi/v1/general_assembly_131/resolutions"
-                                         "/lr_131_0035-1/actions"]
+                            # blacklist = ["/solarapi/v1/general_assembly_131/resolutions"
+                            #             "/lr_131_0035-1/actions"]
                             # the page in the blacklist just plain old failed to load
                             # and everything got stuck
                             try:
@@ -217,9 +216,6 @@ class OHBillScraper(Scraper):
                                                              action["datetime"],
                                                              "%Y-%m-%dT%H:%M:%S"))
                                     date = "{:%Y-%m-%d}".format(date)
-                                    committees = None
-                                    if "committee" in action:
-                                        committees = action["committee"]
 
                                     bill.add_action(action_desc,
                                                     date, chamber=actor,
@@ -273,8 +269,10 @@ class OHBillScraper(Scraper):
                         # this stuff is version-specific
                         version_name = bill_version["version"]
                         version_link = base_url+bill_version["pdfDownloadLink"]
-                        mimetype = "application/pdf" if version_link.endswith("pdf") else "application/octet-stream"
-                        # bill.add_version(version_name,version_link,mimetype=mimetype)
+                        if version_link.endswith("pdf"):
+                            mimetype = "application/pdf"
+                        else:
+                            mimetype = "application/octet-stream"
                         bill.add_version_link(version_name, version_link, media_type=mimetype)
                     # Need to sort bill actions, since they may be jumbled
 
@@ -357,7 +355,8 @@ class OHBillScraper(Scraper):
     def get_legislator_ids(self, base_url):
         legislators = {}
         for chamber in ["House", "Senate"]:
-            doc = self.get(base_url+"chamber/{chamber}/legislators?per_page=100".format(chamber=chamber))
+            url = base_url+"chamber/{chamber}/legislators?per_page=100"
+            doc = self.get(url.format(chamber=chamber))
             leg_json = doc.json()
             for leg in leg_json["items"]:
                 legislators[leg["med_id"]] = leg["displayname"]
@@ -400,8 +399,10 @@ class OHBillScraper(Scraper):
                 motion = v["motiontype"]
 
             # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
-            if not motion and isinstance(v['yeas'], basestring) and isinstance(v['nays'], basestring):
-                self.warning('Malformed JSON found for vote ("revno" of {}); skipping'.format(v['revno']))
+            if (not motion and isinstance(v['yeas'], basestring)
+               and isinstance(v['nays'], basestring)):
+                waringText = 'Malformed JSON found for vote ("revno" of {}); skipping'
+                self.warning(waringText.format(v['revno']))
                 continue
 
             result = v.get("results") or v.get("passed")
@@ -458,7 +459,8 @@ class OHBillScraper(Scraper):
             # check to see if there are any other things that look
             # like vote categories, throw a warning if so
             for key, val in v.items():
-                if type(val) == list and len(val) > 0 and key not in ["yeas", "nays", "absent", "excused"]:
+                if (type(val) == list and len(val) > 0 and
+                   key not in ["yeas", "nays", "absent", "excused"]):
                     if val[0] in legislators:
                         self.logger.warning("{k} looks like a vote type that's not being counted."
                                             " Double check it?".format(k=key))
@@ -477,9 +479,8 @@ class OHBillScraper(Scraper):
         doc = self.get(status_report_url, verify=False).text
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
-
-        status_table = doc.xpath("//div[contains(text(),'{}')]/following-"
-                                 "sibling::table".format(session))[0]
+        xpath = "//div[contains(text(),'{}')]/following-sibling::table"
+        status_table = doc.xpath(xpath.format(session))[0]
         status_links = status_table.xpath(".//a[contains(text(),'Excel')]/@href")
 
         for url in status_links:
