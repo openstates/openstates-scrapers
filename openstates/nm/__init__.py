@@ -2,17 +2,19 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import NMPersonScraper
 from .committees import NMCommitteeScraper
 from .bills import NMBillScraper
+from .votes import NMVoteScraper
 
 
 class NewMexico(Jurisdiction):
     division_id = "ocd-division/country:us/state:nm"
     classification = "government"
     name = "New Mexico"
-    url = "TODO"
+    url = "https://www.nmlegis.gov"
     scrapers = {
         'people': NMPersonScraper,
         'committees': NMCommitteeScraper,
-        'bills': NMBillScraper
+        'bills': NMBillScraper,
+        'votes': NMVoteScraper
     }
     parties = [
         {'name': 'Republican'},
