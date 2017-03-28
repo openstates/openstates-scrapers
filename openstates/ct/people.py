@@ -103,7 +103,7 @@ class CTPersomScraper(Scraper):
             leg.add_contact_detail(type='address', value=office_address, note='Capitol Office')
             leg.add_contact_detail(type='voice', value=row['capitol phone'], note='Capitol Office')
             if email:
-                leg.add_contact_detail(type='eamil', value=email)
+                leg.add_contact_detail(type='email', value=email)
 
             home_address = "{}\n{}, {} {}".format(
                 row['home street address'],
@@ -113,9 +113,10 @@ class CTPersomScraper(Scraper):
             )
             if "Legislative Office Building" not in home_address:
                 leg.add_contact_detail(type='address', value=home_address, note='District Office')
-                leg.add_contact_detail(type='voice',
-                                       value=row['home phone'] if row['home phone'].strip() else None,
-                                       note='District Office')
+                if row['home phone'].strip():
+                    leg.add_contact_detail(type='voice',
+                                           value=row['home phone'],
+                                           note='District Office')
             leg.add_source(leg_url)
 
             for comm in row['committee member1'].split(';'):

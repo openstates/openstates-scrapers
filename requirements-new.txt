@@ -6,9 +6,14 @@ feedparser>=4.1
 spatula
 
 
+
 # dev
 ipdb
 
 # California
 SQLAlchemy
 mysqlclient
+
+#CT
+chardet
+unicodecsv

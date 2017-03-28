@@ -96,17 +96,16 @@ class Connecticut(Jurisdiction):
         yield upper
         yield lower
 
-    def get_session_list():
+    def get_session_list(self):
         import scrapelib
         text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
         sessions = [line.split()[-1] for line in text.splitlines()]
 
-        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL',"apaac", 'FOI_1'):
+        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', "apaac", 'FOI_1'):
             sessions.remove(not_session_name)
         return sessions
 
-
-    def get_extract_text(doc, data):
+    def get_extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)
         text = ' '.join(p.text_content() for p in doc.xpath('//body/p'))
         return text

@@ -4,7 +4,6 @@ import json
 from billy.scrape.events import EventScraper, Event
 
 import pytz
-import lxml.html
 
 from .utils import open_csv
 
