@@ -2,6 +2,7 @@ import os
 import datetime
 
 from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.scrape.base import ScrapeError
 
 import xlrd
 import scrapelib
@@ -399,8 +400,8 @@ class OHBillScraper(Scraper):
                 motion = v["motiontype"]
 
             # Sometimes Ohio's SOLAR will only return part of the JSON, so in that case skip
-            if (not motion and isinstance(v['yeas'], basestring)
-               and isinstance(v['nays'], basestring)):
+            if (not motion and isinstance(v['yeas'], str)
+               and isinstance(v['nays'], str)):
                 waringText = 'Malformed JSON found for vote ("revno" of {}); skipping'
                 self.warning(waringText.format(v['revno']))
                 continue
@@ -413,7 +414,6 @@ class OHBillScraper(Scraper):
                     result = "failed"
 
             passed = vote_results[result.lower()]
-            committee = None
             if "committee" in v:
                 vote = VoteEvent(chamber=chamber,
                                  start_date=date,
@@ -487,7 +487,7 @@ class OHBillScraper(Scraper):
 
             try:
                 fname, resp = self.urlretrieve(url)
-            except scrapelib.HTTPError:
+            except scrapelib.HTTPError as report:
                 self.logger.warning("Missing report {}".format(report))
                 continue
 
