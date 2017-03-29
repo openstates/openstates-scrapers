@@ -350,11 +350,7 @@ class NMBillScraper(Scraper):
         if chamber_name is None:
             chamber_name = 'house' if chamber == 'lower' else 'senate'
 
-        if doc_type is 'votes':
-            doc_path = 'http://www.nmlegis.gov/Sessions/{}/{}/'.format(
-                session_path, doc_type)
-        else:
-            doc_path = 'http://www.nmlegis.gov/Sessions/{}/{}/{}/'.format(
+        doc_path = 'http://www.nmlegis.gov/Sessions/{}/{}/{}/'.format(
                 session_path, doc_type, chamber_name)
 
         self.info('Getting doc at {}'.format(doc_path))
@@ -387,15 +383,6 @@ class NMBillScraper(Scraper):
             bill_id = bill_type.replace('B', '') + bill_num
             if bill_id in bills.keys():
                 bill = bills[bill_id]
-            elif (doc_type == 'votes' and (
-                    (bill_id.startswith('H') and chamber == 'upper') or
-                    (bill_id.startswith('S') and chamber == 'lower'))):
-                # There is only one vote list URL, shared between chambers
-                # So, avoid throwing warnings upon seeing the other chamber's
-                # legislation
-                self.info('Ignoring votes on bill {} while processing the '
-                          'other chamber'.format(fname))
-                continue
             else:
                 self.warning('document for unknown bill %s' % fname)
                 continue
