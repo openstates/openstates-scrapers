@@ -70,6 +70,106 @@ def correct_name(name):
     return corrected_names[name] if name in corrected_names else name
 
 
+def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
+    passed = len(vote_record['yes']) > len(vote_record['no'])
+    vote_event = VoteEvent(
+        result='pass' if passed else 'fail',
+        chamber=chamber,
+        start_date=vote_record['date'].strftime('%Y-%m-%d'),
+        motion_text=motion_text,
+        classification='passage',
+        legislative_session=session,
+        bill=bill_id,
+        bill_chamber='upper' if bill_id[0] is 'S' else 'lower'
+    )
+    vote_event.set_count('yes', len(vote_record['yes']))
+    vote_event.set_count('no', len(vote_record['no']))
+    vote_event.set_count('excused', len(vote_record['excused']))
+    vote_event.set_count('absent', len(vote_record['absent']))
+    vote_event.set_count('other', len(vote_record['other']))
+    for vote_type in ['yes', 'no', 'excused', 'absent', 'other']:
+        for voter in vote_record[vote_type]:
+            vote_event.vote(vote_type, voter)
+
+    vote_event.add_source(url)
+    return vote_event
+
+
+def validate_house_vote(row_headers, sane_row, vote_record):
+    # Sanity checks on vote data, checks that the calculated total and
+    # listed totals match
+    sane = {'yes': 0, 'no': 0, 'excused': 0, 'absent': 0, 'other': 0}
+    # Make sure the header row and sanity row are in order
+    sorted_row_header = sorted(row_headers.items(),
+                               key=operator.itemgetter(0))
+    start_count = -1
+    for cell in sane_row:
+        cell_value = cell[0].split()[-1].strip()
+        if 'YEAS' in cell[0] or start_count >= 0:
+            start_count += 1
+            sane_vote = sorted_row_header[start_count][1]
+            if 'Y' == sane_vote[0]:
+                sane['yes'] = int(cell_value)
+            elif 'N' == sane_vote[0]:
+                sane['no'] = int(cell_value)
+            elif 'E' == sane_vote[0]:
+                sane['excused'] = int(cell_value)
+            elif 'A' == sane_vote[0]:
+                sane['absent'] = int(cell_value)
+            else:
+                sane['other'] += int(cell_value)
+    # Make sure the parsed vote totals match up with counts in the total
+    # field
+    if not sane_matches_captured(sane, vote_record):
+        raise ValueError('Votes were not parsed correctly')
+    # Make sure the date is a date
+    if not isinstance(vote_record['date'], datetime):
+        raise ValueError('Date was not parsed correctly')
+    # End Sanity Check
+
+
+def validate_senate_vote(row_headers, sane_row, vote_record):
+    # Sanity checks on vote data, checks that the calculated total and
+    # listed totals match
+    sane = {'yes': 0, 'no': 0, 'excused': 0, 'absent': 0, 'other': 0}
+    # Make sure the header row and sanity row are in order
+    sorted_row_header = sorted(row_headers.items(),
+                               key=operator.itemgetter(0))
+    start_count = -1
+    for cell in sane_row:
+        cell_value = cell[0]
+        if start_count >= 0:
+            sane_vote = sorted_row_header[start_count][1]
+            if 'Y' == sane_vote[0]:
+                sane['yes'] = int(cell_value)
+            elif 'N' == sane_vote[0]:
+                sane['no'] = int(cell_value)
+            elif 'E' == sane_vote[0]:
+                sane['excused'] = int(cell_value)
+            elif 'A' == sane_vote[0]:
+                sane['absent'] = int(cell_value)
+            else:
+                sane['other'] += int(cell_value)
+            start_count += 1
+        elif 'TOTAL' in cell_value:
+            start_count = 0
+    # Make sure the parsed vote totals match up with counts in the
+    # total field
+    if not sane_matches_captured(sane, vote_record):
+        raise ValueError('Votes were not parsed correctly')
+    # Make sure the date is a date
+    if not isinstance(vote_record['date'], datetime):
+        raise ValueError('Date was not parsed correctly')
+
+
+def sane_matches_captured(sane, vote_record):
+    return sane['yes'] == len(vote_record['yes']) and \
+           sane['no'] == len(vote_record['no']) and \
+           sane['excused'] == len(vote_record['excused']) and \
+           sane['absent'] == len(vote_record['absent']) and \
+           sane['other'] == len(vote_record['other'])
+
+
 class NMVoteScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
@@ -166,10 +266,10 @@ class NMVoteScraper(Scraper):
             h_vote_header,
             'CERTIFIED CORRECT',
             'YEAS')
-        vote = self.build_vote(session, bill_id, url, vote_record, 'lower',
-                               'house passage')
+        vote = build_vote(session, bill_id, url, vote_record, 'lower',
+                          'house passage')
 
-        self.validate_house_vote(row_headers, sane_row, vote_record)
+        validate_house_vote(row_headers, sane_row, vote_record)
         return vote
 
     def parse_senate_vote(self, sv_text, url, session, bill_id):
@@ -182,111 +282,11 @@ class NMVoteScraper(Scraper):
             s_vote_header,
             'TOTAL',
             'TOTAL')
-        vote = self.build_vote(session, bill_id, url, vote_record, 'upper',
+        vote = build_vote(session, bill_id, url, vote_record, 'upper',
                                'senate passage')
 
-        self.validate_senate_vote(row_headers, sane_row, vote_record)
+        validate_senate_vote(row_headers, sane_row, vote_record)
         return vote
-
-    @staticmethod
-    def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
-        passed = len(vote_record['yes']) > len(vote_record['no'])
-        vote = VoteEvent(
-            result='pass' if passed else 'fail',
-            chamber=chamber,
-            start_date=vote_record['date'].strftime('%Y-%m-%d'),
-            motion_text=motion_text,
-            classification='passage',
-            legislative_session=session,
-            bill=bill_id,
-            bill_chamber='upper' if bill_id[0] is 'S' else 'lower'
-        )
-        vote.set_count('yes', len(vote_record['yes']))
-        vote.set_count('no', len(vote_record['no']))
-        vote.set_count('excused', len(vote_record['excused']))
-        vote.set_count('absent', len(vote_record['absent']))
-        vote.set_count('other', len(vote_record['other']))
-        for vote_type in ['yes', 'no', 'excused', 'absent', 'other']:
-            for voter in vote_record[vote_type]:
-                vote.vote(vote_type, voter)
-
-        vote.add_source(url)
-        return vote
-
-    @staticmethod
-    def validate_house_vote(row_headers, sane_row, vote_record):
-        # Sanity checks on vote data, checks that the calculated total and
-        # listed totals match
-        sane = {'yea': 0, 'nay': 0, 'excused': 0, 'absent': 0, 'other': 0}
-        # Make sure the header row and sanity row are in order
-        sorted_row_header = sorted(row_headers.items(),
-                                   key=operator.itemgetter(0))
-        start_count = -1
-        for cell in sane_row:
-            cell_value = cell[0].split()[-1].strip()
-            if 'YEAS' in cell[0] or start_count >= 0:
-                start_count += 1
-                sane_vote = sorted_row_header[start_count][1]
-                if 'Y' == sane_vote[0]:
-                    sane['yea'] = int(cell_value)
-                elif 'N' == sane_vote[0]:
-                    sane['nay'] = int(cell_value)
-                elif 'E' == sane_vote[0]:
-                    sane['excused'] = int(cell_value)
-                elif 'A' == sane_vote[0]:
-                    sane['absent'] = int(cell_value)
-                else:
-                    sane['other'] += int(cell_value)
-        # Make sure the parsed vote totals match up with counts in the total
-        # field
-        if sane['yea'] != len(vote_record['yes']) or \
-            sane['nay'] != len(vote_record['no']) or \
-            sane['excused'] != len(vote_record['excused']) or \
-            sane['absent'] != len(vote_record['absent']) or \
-                sane['other'] != len(vote_record['other']):
-            raise ValueError('Votes were not parsed correctly')
-        # Make sure the date is a date
-        if not isinstance(vote_record['date'], datetime):
-            raise ValueError('Date was not parsed correctly')
-        # End Sanity Check
-
-    @staticmethod
-    def validate_senate_vote(row_headers, sane_row, vote_record):
-        # Sanity checks on vote data, checks that the calculated total and
-        # listed totals match
-        sane = {'yea': 0, 'nay': 0, 'excused': 0, 'absent': 0, 'other': 0}
-        # Make sure the header row and sanity row are in order
-        sorted_row_header = sorted(row_headers.items(),
-                                   key=operator.itemgetter(0))
-        start_count = -1
-        for cell in sane_row:
-            cell_value = cell[0]
-            if start_count >= 0:
-                sane_vote = sorted_row_header[start_count][1]
-                if 'Y' == sane_vote[0]:
-                    sane['yea'] = int(cell_value)
-                elif 'N' == sane_vote[0]:
-                    sane['nay'] = int(cell_value)
-                elif 'E' == sane_vote[0]:
-                    sane['excused'] = int(cell_value)
-                elif 'A' == sane_vote[0]:
-                    sane['absent'] = int(cell_value)
-                else:
-                    sane['other'] += int(cell_value)
-                start_count += 1
-            elif 'TOTAL' in cell_value:
-                start_count = 0
-        # Make sure the parsed vote totals match up with counts in the
-        # total field
-        if sane['yea'] != len(vote_record['yes']) or \
-            sane['nay'] != len(vote_record['no']) or \
-            sane['excused'] != len(vote_record['excused']) or \
-            sane['absent'] != len(vote_record['absent']) or \
-                sane['other'] != len(vote_record['other']):
-            raise ValueError('Votes were not parsed correctly')
-        # Make sure the date is a date
-        if not isinstance(vote_record['date'], datetime):
-            raise ValueError('Date was not parsed correctly')
 
     def parse_visual_grid(self, v_text, overrides, vote_header,
                           table_stop, sane_iden):

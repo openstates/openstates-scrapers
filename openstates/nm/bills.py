@@ -4,61 +4,16 @@ import csv
 import zipfile
 import subprocess
 from datetime import datetime
-from bisect import bisect_left
 
 import lxml.html
 import lxml.etree
-import scrapelib
 
 from pupa.scrape import Scraper, Bill
-
-
-def convert_sv_char(c):
-    """ logic for shifting senate vote characters to real ASCII """
-    # capital letters shift 64
-    if 65 <= ord(c) - 64 <= 90:
-        return chr(ord(c) - 64)
-    # punctuation shift 128
-    else:
-        try:
-            return chr(ord(c) - 128)
-        except ValueError:
-            return c
-
-
-def match_header(row_cols, cell_x):
-    """ Map the data column to the header column, has to be done once for each column.
-        The columns of the headers(yes/no/etc) do not mach up *perfect* with
-        data in the grid due to random preceding whitespace and mixed fonts"""
-    row_cols.sort()
-    c = bisect_left(row_cols, cell_x)
-    if c == 0:
-        return row_cols[0]
-    elif c == len(row_cols):
-        return row_cols[-1]
-
-    before = row_cols[c - 1]
-    after = row_cols[c]
-    if after-cell_x < cell_x-before:
-        return after
-    else:
-        return before
 
 
 def session_slug(session):
     session_type = 'Special' if session.endswith('S') else 'Regular'
     return '{}%20{}'.format(session[2:4], session_type)
-
-
-# Fix names that don't get read correctly from the vote PDFs
-corrected_names = {'Larraqaga': 'Larrañaga',
-                   'Salazar, Tomas': 'Salazar, Tomás',
-                   'Sariqana': 'Sariñana',
-                   'MUQOZ': 'MUÑOZ'}
-
-
-def correct_name(name):
-    return corrected_names[name] if name in corrected_names else name
 
 
 class NMBillScraper(Scraper):
@@ -235,7 +190,8 @@ class NMBillScraper(Scraper):
                                     media_type=mimetype)
                             else:
                                 bill.add_document_link(doc_type, url + fname,
-                                                       media_type=mimetype)
+                                                       media_type=mimetype,
+                                                       on_duplicate='ignore')
 
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
@@ -481,19 +437,3 @@ class NMBillScraper(Scraper):
                 # duplicates
                 self.warning('unknown document suffix {} ({})'.format(suffix,
                                                                       fname))
-
-    # def dedupe_docs(self, bills):
-    #     for bill_id, bill in bills.items():
-    #         documents = bill['documents']
-    #         if 1 < len(documents):
-    #             resp_set = set()
-    #             for doc in documents:
-    #                 try:
-    #                     resp = self.head(doc['url'])
-    #                 except scrapelib.HTTPError:
-    #                     documents.remove(doc)
-    #                     continue
-    #                 if resp in resp_set:
-    #                     documents.remove(doc)
-    #                 else:
-    #                     resp_set.add(resp)
