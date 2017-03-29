@@ -1,5 +1,9 @@
+import logging
+
 from pupa.scrape import Scraper, Organization
 from .apiclient import OregonLegislatorODataClient
+
+logger = logging.getLogger('openstates')
 
 
 class ORCommitteeScraper(Scraper):
@@ -33,10 +37,13 @@ class ORCommitteeScraper(Scraper):
                                                    committee=committee['CommitteeCode'])
             for member in members_response:
                 try:
-                    org.add_member(legislators[member['LegislatorCode']],
-                                   role=member['Title'] if member['Title'] else '')
+                    member_name = legislators[member['LegislatorCode']]
                 except KeyError:
-                    pass
+                    logger.warn('Legislator {} not found in session {}'.format(
+                        member['LegislatorCode'], self.session))
+                    member_name = member['LegislatorCode']
+                org.add_member(member_name, role=member['Title'] if member['Title'] else '')
+
             yield org
 
     def _index_legislators(self):

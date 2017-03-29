@@ -1,10 +1,13 @@
 import re
 import datetime
+import logging
 from collections import Counter
 
 from pupa.scrape import VoteEvent, Scraper
 from .apiclient import OregonLegislatorODataClient
 from .utils import index_legislators, get_timezone
+
+logger = logging.getLogger('openstates')
 
 
 class ORVoteScraper(Scraper):
@@ -36,13 +39,12 @@ class ORVoteScraper(Scraper):
         self.session = session
         if not self.session:
             self.session = self.api_client.latest_session()
+        self.legislators = index_legislators(self)
 
         yield from self.scrape_votes()
 
     def scrape_votes(self):
         measures_response = self.api_client.get('votes', page=500, session=self.session)
-
-        legislators = index_legislators(self)
 
         for measure in measures_response:
             bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
@@ -50,7 +52,6 @@ class ORVoteScraper(Scraper):
             measure_history = measure['MeasureHistoryActions']
             for event in measure_history:
                 if event['MeasureVotes']:
-
                     tally = self.tally_votes(event, 'measure')
                     passed = self.passed_vote(tally)
 
@@ -73,22 +74,14 @@ class ORVoteScraper(Scraper):
                     vote.set_count('no', tally['yes'])
                     vote.set_count('absent', tally['absent'])
 
-                    for voter in event['MeasureVotes']:
-                        try:
-                            if voter['Vote'] == 'Aye':
-                                vote.yes(legislators[voter['VoteName']])
-                            elif voter['Vote'] == 'Nay':
-                                vote.no(legislators[voter['VoteName']])
-                            else:
-                                vote.vote('absent', legislators[voter['VoteName']])
-                        except KeyError:
-                            pass
+                    vote_call = event['MeasureVotes']
+                    self.add_individual_votes(vote, vote_call, 'measure')
 
                     vote.add_source(
                         'https://olis.leg.state.or.us/liz/{session}'
                         '/Measures/Overview/{bid}'.format(
                             session=self.session,
-                            bid=bid
+                            bid=bid.replace(' ', '')
                         ))
 
                     yield vote
@@ -96,7 +89,6 @@ class ORVoteScraper(Scraper):
             committee_history = measure['CommitteeAgendaItems']
             for event in committee_history:
                 if event['CommitteeVotes']:
-
                     tally = self.tally_votes(event, 'committee')
                     passed = self.passed_vote(tally)
 
@@ -119,13 +111,8 @@ class ORVoteScraper(Scraper):
                     vote.set_count('no', tally['yes'])
                     vote.set_count('absent', tally['absent'])
 
-                    for voter in event['CommitteeVotes']:
-                        if voter['Meaning'] == 'Aye':
-                            vote.yes(legislators[voter['VoteName']])
-                        elif voter['Meaning'] == 'Nay':
-                            vote.no(legislators[voter['VoteName']])
-                        else:
-                            vote.vote('absent', legislators[voter['VoteName']])
+                    vote_call = event['CommitteeVotes']
+                    self.add_individual_votes(vote, vote_call, 'committee')
 
                     meeting_date = when.strftime('%Y-%m-%d-%H-%M')
                     vote.add_source(
@@ -134,10 +121,30 @@ class ORVoteScraper(Scraper):
                             session=self.session,
                             committee=event['CommitteCode'],
                             meeting_date=meeting_date,
-                            bid=bid
+                            bid=bid.replace(' ', '')
                         ))
 
                     yield vote
+
+    def add_individual_votes(self, vote, vote_call, vote_type):
+        if vote_type == 'measure':
+            vote_meaning = 'Vote'
+        elif vote_type == 'committee':
+            vote_meaning = 'Meaning'
+
+        for voter in vote_call:
+            try:
+                voter_name = self.legislators[voter['VoteName']]
+            except KeyError:
+                logger.warn('Legislator {} not found in session {}'.format(
+                    voter['VoteName'], self.session))
+                voter_name = voter['VoteName']
+            if voter[vote_meaning] == 'Aye':
+                vote.yes(voter_name)
+            elif voter[vote_meaning] == 'Nay':
+                vote.no(voter_name)
+            else:
+                vote.vote('absent', voter_name)
 
     @staticmethod
     def passed_vote(tally):

@@ -1,9 +1,12 @@
 import datetime
 import re
+import logging
 
 from pupa.scrape import Scraper, Bill
 from .apiclient import OregonLegislatorODataClient
 from .utils import index_legislators, get_timezone
+
+logger = logging.getLogger('openstates')
 
 
 class ORBillScraper(Scraper):
@@ -68,8 +71,14 @@ class ORBillScraper(Scraper):
             for sponsor in measure['MeasureSponsors']:
                 legislator_code = sponsor['LegislatoreCode']  # typo in API
                 if legislator_code:
+                    try:
+                        legislator = legislators[legislator_code]
+                    except KeyError:
+                        logger.warn('Legislator {} not found in session {}'.format(
+                            legislator_code, self.session))
+                        legislator = legislator_code
                     bill.add_sponsorship(
-                        name=legislators[legislator_code],
+                        name=legislator,
                         classification={'Chief': 'primary', 'Regular': 'cosponsor'}[
                             sponsor['SponsorLevel']],
                         entity_type='person',
@@ -78,10 +87,14 @@ class ORBillScraper(Scraper):
 
             bill.add_source(
                 "https://olis.leg.state.or.us/liz/{session}/Measures/Overview/{bid}".format(
-                    session=self.session, bid=bid)
+                    session=self.session, bid=bid.replace(' ', ''))
             )
             for document in measure['MeasureDocuments']:
-                bill.add_version_link(document['VersionDescription'], document['DocumentUrl'])
+                try:
+                    bill.add_version_link(document['VersionDescription'], document['DocumentUrl'],
+                                          media_type='application/pdf')
+                except ValueError:
+                    logger.warn('Duplicate link found for {}'.format(document['DocumentUrl']))
             for action in measure['MeasureHistoryActions']:
                 classifiers = self.determine_action_classifiers(action['ActionText'])
                 when = datetime.datetime.strptime(action['ActionDate'], '%Y-%m-%dT%H:%M:%S')
