@@ -149,7 +149,6 @@ class NMBillScraper(Scraper):
         self.scrape_documents(session, 'resolutions', chamber, bills)
         self.scrape_documents(session, 'memorials', chamber, bills)
         self.check_other_documents(session, chamber, bills)
-        # self.dedupe_docs(bills)
 
         yield from bills.values()
 
