@@ -117,7 +117,6 @@ class HIBillScraper(Scraper):
             act = bill.add_action(string, date, chamber=actor,
                                   classification=act_type)
             for committee in real_committees:
-                print(committee, bill_id)
                 act.add_related_entity(name=committee, entity_type="organization")
             vote = self.parse_vote(string)
             if vote:
@@ -135,16 +134,12 @@ class HIBillScraper(Scraper):
                 vote.set_count('no', int(v['n_no'] or 0))
                 vote.set_count('not voting', int(v['n_excused'] or 0))
                 for voter in split_specific_votes(v['yes']):
-                    # getattr(vote, attrib)(voter)
                     vote.yes(voter)
                 for voter in split_specific_votes(v['yes_resv']):
-                    # getattr(vote, attrib)(voter)
                     vote.yes(voter)
                 for voter in split_specific_votes(v['no']):
-                    # getattr(vote, attrib)(voter)
                     vote.no(voter)
                 for voter in split_specific_votes(v['excused']):
-                    # getattr(vote, attrib)(voter)
                     vote.vote('not voting', voter)
 
                 yield vote
@@ -164,7 +159,6 @@ class HIBillScraper(Scraper):
 
             http_href = tds[0].xpath("./a")
             name = http_href[0].text_content().strip()
-            # category  = tds[1].text_content().strip()
             pdf_href = tds[1].xpath("./a")
 
             http_link = http_href[0].attrib['href']
@@ -188,12 +182,6 @@ class HIBillScraper(Scraper):
         subs = [s.strip() for s in meta['Report Title'].split(";")]
         if "" in subs:
             subs.remove("")
-
-        # b = Bill(session, , bill_id, title=meta['Measure Title'],
-        #          summary=meta['Description'],
-        #          referral=meta['Current Referral'],
-        #          subjects=subs,
-        #          type=bill_type)
         b = Bill(bill_id, session, meta['Measure Title'],
                  chamber=chamber,
                  classification=bill_type)

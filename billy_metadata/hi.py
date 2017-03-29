@@ -1,7 +1,3 @@
-# from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-# from .bills import HIBillScraper
-# from .legislators import HILegislatorScraper
-# from .events import HIEventScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -105,7 +101,7 @@ metadata = dict(
     ]
 )
 
-def session_list():
+def get_session_list():
     # doesn't include current session, we need to change it
     from billy.scrape.utils import url_xpath
     sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
@@ -113,7 +109,3 @@ def session_list():
         )
     sessions.remove("Archives Main")
     return sessions
-
-def extract_text(doc, data):
-    if doc['mimetype'] == 'application/pdf':
-        return text_after_line_numbers(pdfdata_to_text(data))

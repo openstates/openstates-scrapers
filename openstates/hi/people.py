@@ -111,6 +111,38 @@ class HILegislatorScraper(Scraper):
     def scrape_district_info(self, district):
         return district[2].text_content()
 
+    def _scrape_title(self, els):
+            return els[0].text_content()
+
+    def _scrape_name(self, els):
+        lName = els[0].text_content()
+        fName = els[2].text_content()
+        return "%s %s" % (fName, lName)
+
+    def _scrape_party(self, els):
+        party = {
+            "(D)": "Democratic",
+            "(R)": "Republican"
+        }
+        return party.get(els[4].text_content(), 'Other')
+
+    def _scrape_addr(self, els):
+        room_number = els[1].text_content()
+        slug = els[0].text_content()
+        return "%s %s" % (slug, room_number)
+
+    def _scrape_room(self, els):
+        return els[1].text_content()
+
+    def _scrape_phone(self, els):
+        return els[1].text_content()
+
+    def _scrape_fax(self, els):
+        return els[1].text_content()
+
+    def _scrape_email(self, els):
+        return els[1].text_content()
+
     def scrape_contact_info(self, contact):
         homepage = "%s/%s" % (
             HI_BASE_URL,
@@ -119,51 +151,15 @@ class HILegislatorScraper(Scraper):
 
         els = self.br_split(contact)
 
-        def _scrape_title(els):
-            return els[0].text_content()
-
-        def _scrape_name(els):
-            lName = els[0].text_content()
-            fName = els[2].text_content()
-            return "%s %s" % (fName, lName)
-
-        def _scrape_party(els):
-            party = {
-                "(D)": "Democratic",
-                "(R)": "Republican"
-            }
-
-            try:
-                return party[els[4].text_content()]
-            except KeyError:
-                return "Other"
-
-        def _scrape_addr(els):
-            room_number = els[1].text_content()
-            slug = els[0].text_content()
-            return "%s %s" % (slug, room_number)
-
-        def _scrape_room(els):
-            return els[1].text_content()
-
-        def _scrape_phone(els):
-            return els[1].text_content()
-
-        def _scrape_fax(els):
-            return els[1].text_content()
-
-        def _scrape_email(els):
-            return els[1].text_content()
-
         contact_entries = {
-            "title": (0, _scrape_title),
-            "name": (1, _scrape_name),
-            "party": (1, _scrape_party),
-            "addr": (2, _scrape_addr),
-            "room": (2, _scrape_room),
-            "phone": (3, _scrape_phone),
-            "fax": (4, _scrape_fax),
-            "email": (5, _scrape_email)
+            "title": (0, self._scrape_title),
+            "name": (1, self._scrape_name),
+            "party": (1, self._scrape_party),
+            "addr": (2, self._scrape_addr),
+            "room": (2, self._scrape_room),
+            "phone": (3, self._scrape_phone),
+            "fax": (4, self._scrape_fax),
+            "email": (5, self._scrape_email)
         }
 
         ret = {
@@ -214,22 +210,12 @@ class HILegislatorScraper(Scraper):
             for source in leg['source']:
                 person.add_source(source)
 
-            # try:
-            #     for ctty in leg['ctty']:
-            #         flag='Joint Legislative'
-            #         if ctty['name'][:len(flag)] == flag:
-            #             ctty_chamber = "joint"
-            #         else:
-            #             ctty_chamber = chamber
-
-            #         p.add_role( 'committee member',
-            #             term=session,
-            #             chamber=ctty_chamber,
-            #             committee=ctty['name'],
-            #             position="member")
-            # except KeyError:
-            #     self.log( "XXX: Warning, %s has no scraped Commities" %
-            #         leg['name'] )
+            try:
+                for ctty in leg['ctty']:
+                    person.add_term('member', 'committee', org_name=ctty['name'])
+            except KeyError:
+                self.log("XXX: Warning, %s has no scraped Commities" %
+                         leg['name'])
 
             yield person
 

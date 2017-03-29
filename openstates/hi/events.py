@@ -13,7 +13,6 @@ class HIEventScraper(Scraper, LXMLMixin):
 
     def get_related_bills(self, href):
         ret = []
-        print(href)
         try:
             page = self.lxmlize(href)
         except HTTPError:
@@ -35,10 +34,9 @@ class HIEventScraper(Scraper, LXMLMixin):
 
         return ret
 
-    def scrape_events(self):
+    def scrape(self):
         tz = pytz.timezone("US/Eastern")
         get_short_codes(self)
-        print("url", URL)
         page = self.lxmlize(URL)
         table = page.xpath(
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
@@ -81,15 +79,10 @@ class HIEventScraper(Scraper, LXMLMixin):
             event.add_document(notice_name,
                                notice_href,
                                media_type='text/html')
-            print(notice_name, notice_href)
             for bill in self.get_related_bills(notice_href):
                 a = event.add_agenda_item(description=bill['descr'])
                 a.add_bill(
                     bill['bill_id'],
                     note=bill['type']
                 )
-
             yield event
-
-    def scrape(self):
-        yield from self.scrape_events()
