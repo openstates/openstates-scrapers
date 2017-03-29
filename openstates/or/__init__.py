@@ -128,3 +128,7 @@ class Oregon(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        from .apiclient import OregonLegislatorODataClient
+        return OregonLegislatorODataClient(self).all_sessions()

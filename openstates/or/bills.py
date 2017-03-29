@@ -41,14 +41,11 @@ class ORBillScraper(Scraper):
         ('.*Read\. .* Adopted.*', ['passage']),
     )
 
-    def latest_session(self):
-        self.session = self.api_client.get('sessions')[-1]['SessionKey']
-
     def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
         self.session = session
         if not self.session:
-            self.latest_session()
+            self.api_client.latest_session()
 
         yield from self.scrape_bills()
 

@@ -35,6 +35,9 @@ class OregonLegislatorODataClient(object):
         self.username = os.environ['OLODATA_USERNAME']
         self.password = os.environ['OLODATA_PASSWORD']
 
+    def all_sessions(self):
+        return self.get('sessions')
+
     def latest_session(self):
         return self.get('sessions')[-1]['SessionKey']
 

@@ -1,10 +1,6 @@
 import pytz
 
 
-def year_from_session(session):
-    return int(session.split()[0])
-
-
 def index_legislators(scraper):
     """
     Get the full name of legislators. The membership API only returns a "LegislatorCode".

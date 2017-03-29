@@ -118,16 +118,3 @@ metadata = dict(
                                '2009 - 2010 Interim',
                                '2007 - 2008 Interim']
 )
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return [x.strip() for x in
-            url_xpath('https://olis.leg.state.or.us/liz/sessions/',
-                      '//a[contains(@href, "/liz/")]/text()')]
-
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    lines = doc.xpath('//pre/text()')[0].splitlines()
-    text = ' '.join(line for line in lines
-                    if not re.findall('Page \d+$', line))
-    return text
