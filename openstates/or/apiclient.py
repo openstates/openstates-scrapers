@@ -73,5 +73,5 @@ class OregonLegislatorODataClient(object):
         if page and len(response) > 0:
             skip += page
             response.extend(self.get(resource_name, page, skip, requests_args,
-                                              requests_kwargs, **url_format_args))
+                                     requests_kwargs, **url_format_args))
         return response

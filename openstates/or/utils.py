@@ -21,4 +21,3 @@ def index_legislators(scraper):
 
 def get_timezone():
     return pytz.timezone("US/Pacific")
-
