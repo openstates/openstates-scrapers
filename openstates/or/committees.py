@@ -6,7 +6,7 @@ class ORCommitteeScraper(Scraper):
     def latest_session(self):
         self.session = self.api_client.get('sessions')[-1]['SessionKey']
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
         self.session = session
         if not self.session:

@@ -3,7 +3,7 @@ from .apiclient import OregonLegislatorODataClient
 
 
 class ORPersonScraper(Scraper):
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
         self.session = session
         if not self.session:
