@@ -43,7 +43,8 @@ class WYPersonScraper(Scraper):
                 "//img[contains(@src, 'LegislatorSummary/photos')]")[0]
             photo_url = img.attrib['src']
 
-            office_tds = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]/tr/td/text()')
+            table = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]')[0]
+            office_tds = table.xpath('./tr/td/text()')
             address = []
             phone = None
             fax = None
@@ -62,6 +63,9 @@ class WYPersonScraper(Scraper):
                 elif ' - ' not in td:
                     address.append(td)
 
+            emails = table.xpath('.//a[contains(@href, "mailto:")]/@href')
+            email = emails[0].replace('mailto:', '') if emails else None
+
             person = Person(
                 name=name,
                 district=district,
@@ -77,6 +81,8 @@ class WYPersonScraper(Scraper):
                 person.add_contact_detail(type='voice', value=phone, note='District Office')
             if fax:
                 person.add_contact_detail(type='fax', value=fax, note='District Office')
+            if email:
+                person.add_contact_detail(type='email', value=email, note='District Office')
 
             person.add_source(url)
             person.add_source(leg_url)
