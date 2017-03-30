@@ -1,14 +1,16 @@
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
 import lxml.html
+from pupa.scrape import Scraper, Person
 
 
-class WYLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'wy'
+class WYPersonScraper(Scraper):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
 
-    def scrape(self, chamber, term):
+    def scrape_chamber(self, chamber):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
         url = ("http://legisweb.state.wy.us/LegislatorSummary/LegislatorList"
@@ -60,17 +62,24 @@ class WYLegislatorScraper(LegislatorScraper):
                 elif ' - ' not in td:
                     address.append(td)
 
-            leg = Legislator(term, chamber, district, name, party=party,
-                             photo_url=photo_url,
-                             url=leg_url)
+            person = Person(
+                name=name,
+                district=district,
+                party=party,
+                primary_org=chamber,
+                image=photo_url,
+            )
 
             adr = " ".join([part.strip() for part in address]) or None
 
-            leg.add_office('district', 'Contact Information',
-                           address=adr, phone=phone, fax=fax,
-                           email=email_address)
+            person.add_contact_detail(type='address', value=adr, note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone, note='District Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax, note='District Office')
 
-            leg.add_source(url)
-            leg.add_source(leg_url)
+            person.add_source(url)
+            person.add_source(leg_url)
+            person.add_link(leg_url)
 
-            self.save_legislator(leg)
+            yield person
