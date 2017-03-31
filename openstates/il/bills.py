@@ -46,30 +46,33 @@ DOC_TYPES = {
 }
 
 _action_classifiers = ( # see http://openstates.org/categorization/
-    (re.compile(r'Amendment No. \d+ Filed'), 'amendment-introduction'),
-    (re.compile(r'Amendment No. \d+ Tabled'), 'amendment-failure'),
-    (re.compile(r'Amendment No. \d+ Adopted'), 'amendment-passage'),
-    (re.compile(r'(Pref|F)iled with'), 'filing'),
-    (re.compile(r'Arrived? in'), 'introduction'),
-    (re.compile(r'First Reading'), 'reading-1'),
-    (re.compile(r'(Recalled to )?Second Reading'), 'reading-2'),
-    (re.compile(r'(Re-r|R)eferred to'), 'committee-referral'),
-    (re.compile(r'(Re-a|A)ssigned to'), 'committee-referral'),
-    (re.compile(r'Sent to the Governor'), 'executive-received'),
-    (re.compile(r'Governor Approved'), 'executive-signature'),
-    (re.compile(r'Governor Vetoed'), 'executive-veto'),
-    (re.compile(r'Governor Item'), 'executive-veto-line-item'),
-    (re.compile(r'Governor Amendatory Veto'), 'executive-veto'),
-    (re.compile(r'Do Pass'), 'committee-passage'),
-    (re.compile(r'Recommends Be Adopted'), 'committee-passage-favorable'),
-    (re.compile(r'Be Adopted'), 'committee-passage-favorable'),
+    (re.compile(r'Amendment No. \d+ Filed'), ['amendment-introduction']),
+    (re.compile(r'Amendment No. \d+ Tabled'), ['amendment-failure']),
+    (re.compile(r'Amendment No. \d+ Adopted'), ['amendment-passage']),
+    (re.compile(r'(Pref|F)iled with'), ['filing']),
+    (re.compile(r'Arrived? in'), ['introduction']),
+    (re.compile(r'First Reading'), ['reading-1']),
+    (re.compile(r'(Recalled to )?Second Reading'), ['reading-2']),
+    (re.compile(r'(Re-r|R)eferred to'), ['referral-committee']),
+    (re.compile(r'(Re-a|A)ssigned to'), ['referral-committee']),
+    (re.compile(r'Sent to the Governor'), ['executive-received']),
+    (re.compile(r'Governor Approved'), ['executive-signature']),
+    (re.compile(r'Governor Vetoed'), ['executive-veto']),
+    (re.compile(r'Governor Item'), ['executive-veto-line-item']),
+    (re.compile(r'Governor Amendatory Veto'), ['executive-veto']),
+    (re.compile(r'^(?:Recommends )?Do Pass(?: as Amended)?(?: / Short Debate)?(?: / Standard Debate)?'), ['committee-passage']),
+    (re.compile(r'Motion Do Pass(?: as Amended)?(?: - Lost)?'), ['committee-failure']),
+    (re.compile(r'Motion Do Pass(?: as Amended)?'), ['committee-passage']),
+    (re.compile(r'.*Recommends Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
+    (re.compile(r'Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
     (re.compile(r'Third Reading .+? Passed'), ['reading-3', 'passage']),
     (re.compile(r'Third Reading .+? Lost'), ['reading-3', 'failure']),
-    (re.compile(r'Third Reading'), 'reading-3'),
-    (re.compile(r'Resolution Adopted'), 'passage'),
-    (re.compile(r'Resolution Lost'), 'failure'),
-    (re.compile(r'Session Sine Die',), 'failure'),
-    (re.compile(r'Tabled'), 'withdrawal'),
+    (re.compile(r'Third Reading'), ['reading-3']),
+    (re.compile(r'Resolution Adopted'), ['passage']),
+    (re.compile(r'Resolution Lost'), ['failure']),
+    (re.compile(r'Session Sine Die',), ['failure']),
+    (re.compile(r'Tabled'), ['withdrawal']),
+    (re.compile(r'Motion To Adopt'), ['passage']),
 )
 
 OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
@@ -115,14 +118,40 @@ OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
 VOTE_VALUES = ['NV', 'Y', 'N', 'E', 'A', 'P', '-']
 
 
+
+
+COMMITTEE_CORRECTIONS = {
+    'Elementary & Secondary Education: School Curriculum & Policies': 'Elem Sec Ed: School Curric Policies',
+    'Elementary & Secondary Education: Licensing, Administration & Oversight': 'Elem Sec Ed: Licensing, Admin.',
+    'Elementary & Secondary Education:  Charter School Policy': 'Elem Sec Ed:  Charter School Policy',
+    'Transportation: Regulation, Roads & Bridges': 'Transportation: Regulation, Roads',
+    'Business Incentives for Local Communities': 'Business Incentives for Local Comm.',
+    'Museums, Arts, & Cultural Enhancement': 'Museums, Arts, & Cultural Enhanceme',
+    'Health Care Availability & Accessibility': 'Health Care Availability & Access',
+    'Construction Industry & Code Enforcement': 'Construction Industry & Code Enforc',
+    'Appropriations-Elementary & Secondary Education': 'Approp-Elementary & Secondary Educ',
+    'Tourism, Hospitality & Craft Industries': 'Tourism, Hospitality & Craft Ind.',
+    'Government Consolidation &  Modernization': 'Government Consolidation &  Modern',
+    'Community College Access & Affordability': 'Community College Access & Afford.',}
+
+DUPE_VOTES = {'http://ilga.gov/legislation/votehistory/100/house/committeevotes/10000HB2457_16401.pdf'}
+
+
 def _categorize_action(action):
     related_orgs = []
 
     for pattern, atype in _action_classifiers:
+        
         if pattern.findall(action):
-            if "committee:referred" in atype:
+            if "referral-committee" in atype:
                 related_orgs = [pattern.sub("", action).strip()]
-
+            for each in atype:
+                if each.startswith("committee"):
+                    org = pattern.sub("", action).split(';')[0].strip()
+                    org = re.sub(' *Committee *$', '', org)
+                    if org in COMMITTEE_CORRECTIONS:
+                        org = COMMITTEE_CORRECTIONS[org]
+                    related_orgs = [org]
             return atype, related_orgs 
 
     return None, related_orgs
@@ -139,10 +168,8 @@ class IlBillScraper(Scraper):
     LEGISLATION_URL = 'http://ilga.gov/legislation/grplist.asp'
     localize = pytz.timezone('America/Chicago').localize
 
-    jurisdiction = 'il'
-
     def get_bill_urls(self, chamber, session, doc_type):
-        params = SESSION.get(session, {})
+        params = self.jurisdiction.session_details[session]['params']
         params['num1'] = '1'
         params['num2'] = '10000'
         params['DocTypeID'] = doc_type
@@ -155,29 +182,17 @@ class IlBillScraper(Scraper):
             yield bill_url
 
     def scrape(self):
-
-        chamber = 'upper'
-        session = '100th'
-
-
-        for doc_type in DOC_TYPES:
-            doc_type = chamber_slug(chamber)+doc_type
-            for bill_url in self.get_bill_urls(chamber, session, doc_type):
-                bill, votes = self.scrape_bill(chamber, session, doc_type, bill_url)
-                yield bill
-                yield from votes
-
-        # if chamber == 'upper':
-        #     # add appointments and JSRs as upper chamber, not perfectly
-        #     # accurate but it'll do
-        #     for bill_url in self.get_bill_urls(chamber, session, 'AM'):
-        #         self.scrape_bill(chamber, session, 'AM', bill_url,
-        #                          'appointment')
-        #     for bill_url in self.get_bill_urls(chamber, session, 'JSR'):
-        #         self.scrape_bill(chamber, session, 'JSR', bill_url,
-        #                          'joint session resolution')
-        #     # TODO: also add EO's - they aren't voted upon anyway & we don't
-        #     # handle governor so they are omitted for now
+        for session in self.jurisdiction.legislative_sessions:
+            session_id = session['identifier']
+            for chamber in ('lower', 'upper'):
+                doc_types = (list(DOC_TYPES) +
+                             (['AM', 'JSR'] if chamber == 'upper' else []))
+                for doc_type in doc_types:
+                    doc_type = chamber_slug(chamber)+doc_type
+                    for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                        bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
+                        yield bill
+                        yield from votes
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
@@ -215,17 +230,23 @@ class IlBillScraper(Scraper):
         for date, actor, action in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(),
                                               "%m/%d/%Y")
-            date = self.localize(date)
+            date = self.localize(date).date()
             actor = actor.text_content()
             if actor == 'House':
-                actor = 'lower'
+                actor = 'Illinois House of Representatives'
             elif actor == 'Senate':
-                actor = 'upper'
+                actor = 'Illinois Senate'
 
             action = action.text_content()
             classification, related_orgs = _categorize_action(action)
+            # Subcommittee are very difficult, we'll need to keep
+            # track of actions to resolve these
+            if 'Subcommittee/' not in action and classification:
+                for each in classification:
+                    if each.startswith('committee'):
+                        actor = related_orgs[0]
             bill.add_action(action, date,
-                            organization=actor,
+                            organization={'name': actor},
                             classification=classification,
                             related_entities=related_orgs)
 
@@ -281,24 +302,49 @@ class IlBillScraper(Scraper):
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
 
+            if link.get('href') in DUPE_VOTES:
+                continue
+
             pieces = link.text.split(' - ')
             date = pieces[-1]
-            if len(pieces) == 3:
-                motion = pieces[1]
-            else:
-                motion = 'Third Reading'
 
-            chamber = link.xpath('../following-sibling::td/text()')[0]
-            if chamber == 'HOUSE':
-                chamber = 'lower'
-            elif chamber == 'SENATE':
-                chamber = 'upper'
+            vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
+            if vote_type == 'Committee Hearing Votes':
+                
+                actor = re.sub(' *Committee *$', '', pieces[1])
+                # depends on bill type
+                motion = 'Do Pass'
+                if pieces[0].startswith(('SCA', 'HCA')):
+                    amendment_num = int(re.split(r'SCA|HCA', pieces[0])[-1])
+                    amendment = ', Amendment %s' % amendment_num
+                    motion += amendment
+                
+
             else:
-                self.warning('unknown chamber %s' % chamber)
+                if len(pieces) == 3:
+                    motion = pieces[1].strip()
+                else:
+                    motion = 'Third Reading'
+
+                if pieces[0].startswith(('SFA', 'HFA')):
+                    amendment_num = int(re.split(r'SFA|HFA', pieces[0])[-1])
+                    amendment = ', Amendment %s' % amendment_num
+                    motion += amendment
+                    
+
+                actor = link.xpath('../following-sibling::td/text()')[0]
+                if actor == 'HOUSE':
+                    actor = 'Illinois House of Representatives'
+                elif actor == 'SENATE':
+                    actor = 'Illinois Senate'
+                else:
+                    self.warning('unknown actor %s' % actor)
+                    
+            classification, _ = _categorize_action(motion)
 
             for date_format in ["%b %d, %Y", "%A, %B %d, %Y"]:
                 try:
-                    date = self.localize(datetime.datetime.strptime(date, date_format))
+                    date = self.localize(datetime.datetime.strptime(date, date_format)).date()
                     break
                 except ValueError:
                     continue
@@ -307,7 +353,7 @@ class IlBillScraper(Scraper):
                         "Date '{}' does not follow a format".format(date))
 
             #manual fix for bad bill. TODO: better error catching here
-            vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
+            vote = self.scrape_pdf_for_votes(session, actor, date, motion.strip(), link.get('href'))
             if vote:
                 vote.set_bill(bill)
                 yield vote
@@ -325,7 +371,7 @@ class IlBillScraper(Scraper):
             return False
 
 
-    def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
+    def scrape_pdf_for_votes(self, session, actor, date, motion, href):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
         VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
@@ -374,10 +420,10 @@ class IlBillScraper(Scraper):
 
         votes = find_columns_and_parse(vote_lines)
         for name, vcode in votes.items():
-            # if name == 'Mr. Speaker':
-            #     name = self.metadata['session_details'][session]['speaker']
-            # elif name == 'Mr. President':
-            #     name = self.metadata['session_details'][session]['president']
+            if name == 'Mr. Speaker':
+                name = self.jurisdiction.session_details[session]['speaker']
+            elif name == 'Mr. President':
+                name = self.jurisdiction.session_details[session]['president']
             if vcode == 'Y':
                 yes_votes.append(name)
             elif vcode == 'N':
@@ -400,7 +446,7 @@ class IlBillScraper(Scraper):
                 warned = True
 
         if passed is None:
-            if chamber == 'lower':  # senate doesn't have these lines
+            if actor == 'Illinois House':  # senate doesn't have these lines
                 self.warning("No pass/fail word found; fall back to comparing yes and no vote.")
                 warned = True
             passed = 'pass' if yes_count > no_count else 'fail'
@@ -409,6 +455,7 @@ class IlBillScraper(Scraper):
         vote_event = VoteEvent(legislative_session=session,
                                motion_text=motion,
                                classification=classification,
+                               organization={'name': actor},
                                start_date=date,
                                result=passed)
         for name in yes_votes:
@@ -513,9 +560,6 @@ def build_sponsor_list(sponsor_atags):
         sponsors.append((spontype, sponsor, chamber, official_spontype))
     return sponsors
 
-SESSION = {'100th' : { 'GA': '100', 'SessionId': '91' }}
-
-
 def convert_pdf(filename, type='xml'):
     commands = {'text': ['pdftotext', '-layout', filename, '-'],
                 'text-nolayout': ['pdftotext', filename, '-'],
@@ -530,3 +574,4 @@ def convert_pdf(filename, type='xml'):
     data = pipe.read()
     pipe.close()
     return data
+

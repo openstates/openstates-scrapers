@@ -28,4 +28,5 @@ pymssql
 
 #pupa
 git+https://github.com/opencivicdata/pupa.git#egg=pupa
-https://github.com/datamade/python-opencivicdata-django/zipball/master
+https://github.com/opencivicdata/python-opencivicdata-django/zipball/master
+

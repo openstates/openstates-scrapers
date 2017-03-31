@@ -21,6 +21,8 @@ class IlCommitteeScraper(Scraper):
 
     def scrape(self):
         chambers = (('upper', 'senate'), ('lower', 'house'))
+        seen_committees = set()
+
         for chamber, chamber_name in chambers:
 
             url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
@@ -33,6 +35,9 @@ class IlCommitteeScraper(Scraper):
             for a in doc.xpath('//a[contains(@href, "members.asp")]'):
                 name = a.text.strip()
                 code = a.getparent().getnext()
+                if name in seen_committees:
+                    continue
+                seen_committees.add(name)
                 if code is None:
                     #committee doesn't have a code, maybe it's a taskforce?
                     o = Organization(name,

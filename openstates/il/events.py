@@ -68,20 +68,22 @@ class IlEventScraper(Scraper):
         return event
 
     def scrape(self):
-        session = '100th'
-        chamber = 'upper'
-        try:
-            url = urls[chamber]
-        except KeyError:
-            return  # Not for us.
-        html = self.get(url).text
-        doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(url)
+        for session in self.jurisdiction.legislative_sessions:
+            session_id = session['identifier']
+            for chamber in ('upper', 'lower'):
 
-        tables = doc.xpath("//table[@width='550']")
-        for table in tables:
-            meetings = table.xpath(".//a")
-            for meeting in meetings:
-                event = self.scrape_page(meeting.attrib['href'],
-                                         session, chamber)
-                yield event
+                try:
+                    url = urls[chamber]
+                except KeyError:
+                    return  # Not for us.
+                html = self.get(url).text
+                doc = lxml.html.fromstring(html)
+                doc.make_links_absolute(url)
+
+                tables = doc.xpath("//table[@width='550']")
+                for table in tables:
+                    meetings = table.xpath(".//a")
+                    for meeting in meetings:
+                        event = self.scrape_page(meeting.attrib['href'],
+                                                 session_id, chamber)
+                        yield event
