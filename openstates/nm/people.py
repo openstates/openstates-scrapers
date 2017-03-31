@@ -90,7 +90,7 @@ class NMPersonScraper(Scraper, LXMLMixin):
 
         if name_node is not None:
             if name_node.text.strip().endswith(' Vacant'):
-                self.warning("Found vacant seat for {} district {}; skipping"
+                self.warning('Found vacant seat for {} district {}; skipping'
                              .format(chamber, district))
                 return
 
@@ -148,7 +148,7 @@ class NMPersonScraper(Scraper, LXMLMixin):
             info_node,
             './/span[@id="MainContent_formViewLegislator_lblAddress"]')
         if district_address_node is not None:
-            district_address = '\n'.join(district_address_node.xpath("text()"))
+            district_address = '\n'.join(district_address_node.xpath('text()'))
 
         office_phone_node = self.get_node(
             info_node,

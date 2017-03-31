@@ -36,7 +36,7 @@ class NMBillScraper(Scraper):
         remote_file = ftp_base + matches[-1][1]
 
         # all of the data is in this Access DB, download & retrieve it
-        mdbfile = '%s.accdb' % fname
+        mdbfile = '{}.accdb'.format(fname)
 
         # if a new mdbfile or it has changed
         if getattr(self, 'mdbfile', None) != mdbfile:
@@ -64,7 +64,9 @@ class NMBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         if not session:
             session = self.latest_session()
-            self.info('no session specified, using latest session %s', session)
+            self.info(
+                'no session specified, using latest session {}'.format(
+                    session))
 
         chambers = [chamber] if chamber else ['upper', 'lower']
 
@@ -97,9 +99,8 @@ class NMBillScraper(Scraper):
 
         # get all bills into this dict, fill in action/docs before saving
         bills = {}
-        for data in filter(lambda row:
-                           row['BillID'].startswith(chamber_letter),
-                           self.access_to_csv('Legislation')):
+        for data in [row for row in self.access_to_csv('Legislation') if
+                     row['BillID'].startswith(chamber_letter)]:
             # use their BillID for the key but build our own for storage
             bill_key = data['BillID'].replace(' ', '')
 
@@ -156,9 +157,10 @@ class NMBillScraper(Scraper):
         """ check for documents that reside in their own directory """
 
         s_slug = session_slug(session)
-        firs_url = 'http://www.nmlegis.gov/Sessions/%s/firs/' % s_slug
-        lesc_url = 'http://www.nmlegis.gov/Sessions/%s/LESCAnalysis/' % s_slug
-        final_url = 'http://www.nmlegis.gov/Sessions/%s/final/' % s_slug
+        firs_url = 'http://www.nmlegis.gov/Sessions/{}/firs/'.format(s_slug)
+        lesc_url = 'http://www.nmlegis.gov/Sessions/{}/LESCAnalysis/'.format(
+            s_slug)
+        final_url = 'http://www.nmlegis.gov/Sessions/{}/final/'.format(s_slug)
 
         # go through all of the links on these pages and add them to the
         # appropriate bills
@@ -292,9 +294,8 @@ class NMBillScraper(Scraper):
         # these actions need a committee name spliced in
         actions_with_committee = ('SENT', '7650', '7654')
 
-        for action in filter(lambda row:
-                             row['BillID'].startswith(chamber_letter),
-                             self.access_to_csv('Actions')):
+        for action in [row for row in self.access_to_csv('Actions') if
+                       row['BillID'].startswith(chamber_letter)]:
             bill_key = action['BillID'].replace(' ', '')
 
             if bill_key not in bills:
@@ -318,8 +319,8 @@ class NMBillScraper(Scraper):
             try:
                 action_name, action_type = action_map[action_code]
             except KeyError:
-                self.warning('unknown action code %s on %s' % (action_code,
-                                                               bill_key))
+                self.warning('unknown action code {} on {}'.format(action_code,
+                                                                   bill_key))
                 raise
 
             # if there's room in this action for a location name, map locations
@@ -384,7 +385,7 @@ class NMBillScraper(Scraper):
             if bill_id in bills.keys():
                 bill = bills[bill_id]
             else:
-                self.warning('document for unknown bill %s' % fname)
+                self.warning('document for unknown bill {}'.format(fname))
                 continue
 
             media_type = 'application/pdf' if fname.lower().endswith('pdf') \
@@ -399,20 +400,21 @@ class NMBillScraper(Scraper):
             elif re.match('F(S|H)\d', suffix):
                 a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
                 a_chamber = 'House' if a_chamber == 'H' else 'Senate'
-                bill.add_document_link('%s Floor Amendment %s' %
-                                       (a_chamber, num),
-                                       doc_path + fname)
+                bill.add_document_link(
+                    '{} Floor Amendment {}'.format(a_chamber, num),
+                    doc_path + fname)
             # committee substitutes
             elif suffix.endswith('S'):
                 committee_name = suffix[:-1]
-                bill.add_version_link('%s substitute' % committee_name,
+                bill.add_version_link('{} substitute'.format(committee_name),
                                       doc_path + fname, media_type=media_type)
 
             # committee reports
             elif re.match(r'\w{2,4}\d', suffix):
                 committee_name = re.match(r'[A-Z]+', suffix).group()
-                bill.add_document_link('%s committee report' % committee_name,
-                                       doc_path + fname, media_type=media_type)
+                bill.add_document_link(
+                    '{} committee report'.format(committee_name),
+                    doc_path + fname, media_type=media_type)
 
             # ignore list, mostly typos reuploaded w/ proper name
             elif suffix in ('HEC', 'HOVTE', 'GUI'):
