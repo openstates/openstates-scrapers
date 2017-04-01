@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .people import WYPersonScraper
+from .committees import WYCommitteeScraper
 
 
 class Wyoming(Jurisdiction):
@@ -12,6 +13,7 @@ class Wyoming(Jurisdiction):
     url = "http://legisweb.state.wy.us/"
     scrapers = {
         'people': WYPersonScraper,
+        'committees': WYCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
