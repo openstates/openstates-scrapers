@@ -12,7 +12,7 @@ class WYCommitteeScraper(Scraper):
     }
 
     def scrape(self, session=None):
-        if not session:
+        if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 

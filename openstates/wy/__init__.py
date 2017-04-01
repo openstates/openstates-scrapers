@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
+from .bills import WYBillScraper
 from .people import WYPersonScraper
 from .committees import WYCommitteeScraper
 
@@ -12,6 +13,7 @@ class Wyoming(Jurisdiction):
     name = "Wyoming"
     url = "http://legisweb.state.wy.us/"
     scrapers = {
+        'bills': WYBillScraper,
         'people': WYPersonScraper,
         'committees': WYCommitteeScraper,
     }
