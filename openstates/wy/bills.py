@@ -132,8 +132,8 @@ class WYBillScraper(Scraper, LXMLMixin):
             ext_title = ''
         bill_desc = ext_title.replace('\n', ' ')
         bill_desc = re.sub("  *", " ", bill_desc)
-        # TODO(jmcarp) restore bill description
-        # bill.description = bill_desc
+        if bill_desc:
+            bill.add_abstract(abstract=bill_desc, note='description')
 
         sponsor_span = re.search(SPONSOR_RE, all_text).group(1)
         sponsors = ''
