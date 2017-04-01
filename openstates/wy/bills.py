@@ -26,7 +26,8 @@ def split_names(voters):
 
 
 def clean_line(line):
-    return line.replace('\n', ' ').strip()
+    line = line.replace('\n', ' ').strip()
+    return re.sub(r'^\d+\s+', '', line)  # Handle line numbers
 
 
 def categorize_action(action):
@@ -158,8 +159,13 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         # initial actor is bill chamber
         actor = chamber
-        action_lines = re.search(action_re, all_text).group(1).split('\n')
-        action_lines = iter(action_lines)
+
+        lines = all_text.splitlines()
+        for idx, line in enumerate(lines):
+            if action_re.search(line):
+                break
+        action_lines = lines[idx:]
+
         for line in action_lines:
             line = clean_line(line)
 
@@ -178,7 +184,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                     actor = 'upper'
 
                 date = datetime.datetime.strptime(date, '%m/%d/%Y')
-                bill.add_action(action.strip(), date, chamber=actor,
+                bill.add_action(action.strip(), TIMEZONE.localize(date), chamber=actor,
                                 classification=categorize_action(action))
             elif line == 'ROLL CALL':
                 voters = defaultdict(str)
@@ -228,6 +234,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                             start_date=TIMEZONE.localize(date),
                             motion_text=action,
                             result='pass' if passed else 'fail',
+                            classification='passage',
                             bill=bill,
                         )
                         vote.set_count('yes', int(ayes))
@@ -235,7 +242,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                         vote.set_count('other', int(exc) + int(abs) + int(con))
                         vote.add_source(digest_url)
 
-                        for vtype, voters in voters.iteritems():
+                        for vtype, voters in voters.items():
                             for voter in split_names(voters):
                                 if voter:
                                     if vtype == 'Ayes':
