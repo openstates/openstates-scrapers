@@ -10,6 +10,12 @@ import lxml.html
 
 
 def action_type(action):
+    """
+    Used to standardise the bill actions to the terms specified
+    @ https://opencivicdata.readthedocs.io/en/latest/scrape/bills.html
+    :param scraped action:
+    :return opencivicdata action:
+    """
     # http://www.scstatehouse.gov/actionsearch.php is very useful for this
     classifiers = (('Adopted', 'passage'),
                    ('Amended and adopted',
@@ -56,6 +62,11 @@ def action_type(action):
 
 
 class SCBillScraper(Scraper):
+    """
+     Bill scraper that pulls down all legislatition on from sc website.
+     Used to pull in information regarding Legislation, and basic associated metadata,
+     using x-path to find and obtain the information
+    """
     urls = {
         'lower': {
             'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
@@ -70,6 +81,12 @@ class SCBillScraper(Scraper):
     _subjects = defaultdict(set)
 
     def scrape_subjects(self, session_code):
+        """
+        Obtain bill subjects, which will be saved onto _subjects global,
+        to be added on to bill later on in process.
+        :param session_code:
+
+        """
 
         # only need to do it once
         if self._subjects:
@@ -99,6 +116,12 @@ class SCBillScraper(Scraper):
                     self._subjects[bill_id].add(subject)
 
     def scrape_vote_history(self, bill, vurl):
+        """
+         Obtain the information on a vote and link it to the related Bill
+        :param bill: related bill
+        :param vurl: source for the voteEvent information.
+        :return: voteEvent object
+        """
         html = self.get(vurl).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(vurl)
@@ -149,6 +172,7 @@ class SCBillScraper(Scraper):
 
             vote.add_source(vurl)
 
+            # obtain vote rollcall from pdf and add it to the VoteEvent object
             rollcall_pdf = vote_link.get('href')
             self.scrape_rollcall(vote, rollcall_pdf)
             vote.add_source(rollcall_pdf)
@@ -156,6 +180,12 @@ class SCBillScraper(Scraper):
             yield vote
 
     def scrape_rollcall(self, vote, vurl):
+        """
+         Get text information from the pdf, containing the vote roll call
+         and add the information obtained to the related voteEvent object
+        :param vote:  related voteEvent object
+        :param vurl:  pdf source url
+        """
         (path, resp) = self.urlretrieve(vurl)
         pdflines = convert_pdf(path, 'text')
         os.remove(path)
@@ -202,6 +232,15 @@ class SCBillScraper(Scraper):
                                           voter=name.strip())
 
     def scrape_details(self, bill_detail_url, session, chamber, bill_id):
+        """
+        Create the Bill and add the information obtained from the provided bill_detail_url.
+        and then yield the bill object.
+        :param bill_detail_url:
+        :param session:
+        :param chamber:
+        :param bill_id:
+        :return:
+        """
         page = self.get(bill_detail_url).text
 
         if 'INVALID BILL NUMBER' in page:
@@ -307,6 +346,14 @@ class SCBillScraper(Scraper):
         yield bill
 
     def scrape(self, chamber=None, session=None):
+
+        """
+         Obtain the bill urls containing the bill information which will be used
+         by the scrape_details function to yield the desired Bill objects
+        :param chamber:
+        :param session:
+        :return:
+        """
         # start with subjects
 
         if session is None:
@@ -350,7 +397,6 @@ class SCBillScraper(Scraper):
             doc.make_links_absolute(prefile_url)
 
             # visit each day and extract bill ids
-            days = ''
             if chamber == 'lower':
                 days = doc.xpath('//dd[contains(text(),"House")]/a/@href')
             else:
