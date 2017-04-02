@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import UTPersonScraper
+from .committees import UTCommitteeScraper
 
 
 class Utah(Jurisdiction):
@@ -9,6 +10,7 @@ class Utah(Jurisdiction):
     url = "http://le.utah.gov/"
     scrapers = {
         'people': UTPersonScraper,
+        'committees': UTCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},

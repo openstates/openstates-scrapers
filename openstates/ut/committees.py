@@ -1,35 +1,41 @@
 import re
 
-#from billy.scrape import NoDataForPeriod
 from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 import lxml.html
 
 
-class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'ut'
+class UTCommitteeScraper(Scraper):
 
-    def scrape(self, term, chambers):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
 
         url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
-        page = self.lxmlize(url)
+        html = self.get(url)
+        page = lxml.html.fromstring(html)
 
         for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
             comm_name = comm_link.text.strip()
 
-            if "House" in comm_name:
-                chamber = "lower"
-            elif "Senate" in comm_name:
-                chamber = "upper"
+            chamber_type = ""
+            if chamber:
+                if "House" in comm_name:
+                    chamber_type = "lower"
+                elif "Senate" in comm_name:
+                    chamber_type = "upper"
+                else:
+                    chamber_type = "joint"
             else:
-                chamber = "joint"
-
+                chamber_type = "joint" #chamber defaults to joint
+            chamber = chamber_type
 
             # Drop leading "House" or "Senate" from name
             comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
-            comm = Committee(chamber, comm_name)
+            committee = Organization(
+                name,
+                chamber=chamber,  # 'upper' or 'lower' (or joint)
+                classification='committee'
+            )
 
             committee_page = self.lxmlize(comm_link.attrib['href'])
 
@@ -51,4 +57,4 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
             comm.add_source(url)
             comm.add_source(comm_link.get('href'))
 
-            self.save_committee(comm)
+            yield comm
