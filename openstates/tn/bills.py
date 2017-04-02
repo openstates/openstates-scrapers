@@ -212,9 +212,11 @@ class TNBillScraper(Scraper):
         session_details = self.jurisdiction.sessions_by_id[session]
 
         # The index page gives us links to the paginated bill pages
-        if self.metadata['session_details'][term]['type'] == 'special':
+        if session_details['classification'] == 'special':
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/SPSession1.aspx'
-            xpath = '//h4[text()="%s"]/following-sibling::table[1]/tbody/tr/td/a' % session_details['_scraped_name']
+            xpath = '//h4[text()="{}"]/following-sibling::table[1]/tbody/tr/td/a'.format(
+                session_details['_scraped_name']
+            )
         else:
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
             xpath = '//td[contains(@class,"webindex")]/a'
@@ -236,7 +238,7 @@ class TNBillScraper(Scraper):
             for bill_link in bill_list_page.xpath(
                 '//h1[text()="Legislation"]/following-sibling::div/'
                 'div/div/div/label//a/@href'
-                ):
+            ):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
                     yield bill
@@ -329,7 +331,11 @@ class TNBillScraper(Scraper):
         # amendment notes in image with alt text describing doc inside <a>
         amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
         for afn in amend_fns:
-            bill.add_document_link(afn.get('alt'), afn.getparent().get('href'), on_duplicate='ignore')
+            bill.add_document_link(
+                afn.get('alt'),
+                afn.getparent().get('href'),
+                on_duplicate='ignore'
+            )
 
         # actions
         atable = page.xpath("//table[@id='gvBillActionHistory']")[0]
@@ -338,7 +344,8 @@ class TNBillScraper(Scraper):
         # if there is a matching bill
         if secondary_bill_id:
             # secondary sponsor
-            secondary_sponsor = page.xpath("//span[@id='lblCompPrimeSponsor']")[0].text_content().split("by")[-1]
+            secondary_sponsor = page.xpath(
+                "//span[@id='lblCompPrimeSponsor']")[0].text_content().split("by")[-1]
             secondary_sponsor = secondary_sponsor.replace('*', '').replace(')', '').strip()
             # Skip black-name sponsors.
             if secondary_sponsor:
@@ -380,11 +387,12 @@ class TNBillScraper(Scraper):
             if vote_date:
                 vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
-            passed = ('Passed' in motion or
-                      'Recommended for passage' in motion or
-                      'Rec. for pass' in motion or
-                      'Adopted' in raw_vote[1]
-                      )
+            passed = (
+                'Passed' in motion or
+                'Recommended for passage' in motion or
+                'Rec. for pass' in motion or
+                'Adopted' in raw_vote[1]
+            )
             vote_regex = re.compile('\d+$')
             aye_regex = re.compile('^.+voting aye were: (.+) -')
             no_regex = re.compile('^.+voting no were: (.+) -')

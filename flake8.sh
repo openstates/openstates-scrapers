@@ -24,6 +24,7 @@ python3 -m flake8 \
     openstates/or \
     openstates/pa \
     openstates/sc \
+    openstates/tn \
     openstates/va \
     openstates/sd \
     openstates/wi \

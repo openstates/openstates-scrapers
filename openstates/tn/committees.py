@@ -90,7 +90,8 @@ class TNCommitteeScraper(Scraper):
 
         is_subcommittee = bool(page.xpath('//li/a[text()="Committee"]'))
         if is_subcommittee:
-            # All TN subcommittees are just the name of the parent committee with " Subcommittee" at the end
+            # All TN subcommittees are just the name of the parent committee with " Subcommittee"
+            # at the end
             parent_committee_name = re.sub(r'\s*Subcommittee\s*', '', committee_name)
             com = Organization(
                     committee_name,
@@ -105,13 +106,9 @@ class TNCommitteeScraper(Scraper):
             )
 
         OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
-                     'following-sibling::div/ul/li/a'
+                         'following-sibling::div/ul/li/a'
         MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
-                     'following-sibling::div/ul/li/a'
-        HOUSE_SEARCH = '//h2[contains(text(), "House Members")]/' \
-                     'following-sibling::div/ul/li/a'
-        SENATE_SEARCH = '//h2[contains(text(), "House Members")]/' \
-                     'following-sibling::div/ul/li/a'
+                        'following-sibling::div/ul/li/a'
         for a in (page.xpath(OFFICER_SEARCH) + page.xpath(MEMBER_SEARCH)):
 
             member_name = ' '.join([
@@ -131,7 +128,7 @@ class TNCommitteeScraper(Scraper):
         com.add_source(link)
         return com
 
-    #Scrapes joint committees
+    # Scrapes joint committees
     def scrape_joint_committees(self):
         main_url = 'http://www.capitol.tn.gov/joint/'
 
@@ -146,7 +143,7 @@ class TNCommitteeScraper(Scraper):
             if com:
                 yield com
 
-    #Scrapes the individual joint committee - most of it is special case
+    # Scrapes the individual joint committee - most of it is special case
     def scrape_joint_committee(self, committee_name, url):
         if 'state.tn.us' in url:
             com = Organization(
@@ -162,7 +159,9 @@ class TNCommitteeScraper(Scraper):
 
             page = lxml.html.fromstring(page)
 
-            for el in page.xpath("//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"):
+            for el in page.xpath(
+                "//div[@class='Blurb']/table//tr[2 <= position() and  position() < 10]/td[1]"
+            ):
                 if el.xpath('text()') == ['Vacant']:
                     continue
 
@@ -197,9 +196,9 @@ class TNCommitteeScraper(Scraper):
                 chamber_page = lxml.html.fromstring(chamber_page)
 
                 OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
-                             'following-sibling::div/ul/li/a'
+                                 'following-sibling::div/ul/li/a'
                 MEMBER_SEARCH = '//h2[contains(text(), "Committee Members")]/' \
-                             'following-sibling::div/ul/li/a'
+                                'following-sibling::div/ul/li/a'
                 for a in (
                         chamber_page.xpath(OFFICER_SEARCH) +
                         chamber_page.xpath(MEMBER_SEARCH)

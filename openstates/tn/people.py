@@ -22,7 +22,7 @@ class TNPersonScraper(Scraper):
                    'CCR': 'Carter County Republican',
                    'I': 'Independent'}
 
-        #testing for chamber
+        # testing for chamber
         if chamber == 'upper':
             url_chamber_name = 'senate'
             abbr = 's'
@@ -50,9 +50,9 @@ class TNPersonScraper(Scraper):
             address = row.xpath('td[6]')[0].text_content()
             # 301 6th Avenue North Suite
             address = address.replace('LP',
-                              'Legislative Plaza\nNashville, TN 37243')
+                                      'Legislative Plaza\nNashville, TN 37243')
             address = address.replace('WMB',
-                              'War Memorial Building\nNashville, TN 37243')
+                                      'War Memorial Building\nNashville, TN 37243')
             address = '301 6th Avenue North\nSuite ' + address
             phone = [
                     x.strip() for x in
@@ -61,11 +61,11 @@ class TNPersonScraper(Scraper):
                     ][0]
 
             email = html.parser.HTMLParser().unescape(
-                    row.xpath('td[1]/a/@href')[0][len("mailto:"): ])
+                    row.xpath('td[1]/a/@href')[0][len("mailto:"):])
             member_url = (root_url + url_chamber_name + '/members/' + abbr +
-                district + '.html')
+                          district + '.html')
             member_photo_url = (root_url + url_chamber_name +
-                '/members/images/' + abbr + district + '.jpg')
+                                '/members/images/' + abbr + district + '.jpg')
 
             try:
                 member_page = self.get(member_url, allow_redirects=False).text

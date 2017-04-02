@@ -10,10 +10,11 @@ import pytz
 
 cal_weekly_events = "http://wapp.capitol.tn.gov/apps/schedule/WeeklyView.aspx"
 cal_chamber_text = {
-    "upper" : "Senate",
-    "lower" : "House",
-    "other" : "Joint"
+    "upper": "Senate",
+    "lower": "House",
+    "other": "Joint"
 }
+
 
 class TNEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Central')
@@ -92,7 +93,7 @@ class TNEventScraper(Scraper, LXMLMixin):
 
                 time = metainf['time'].text_content()
                 datetime_string = "%s %s" % \
-                        (date.strip(' \r\n'), time.strip(' \r\n'))
+                                  (date.strip(' \r\n'), time.strip(' \r\n'))
                 location = metainf['location'].text_content()
                 description = metainf['type'].text_content()
                 dtfmt = "%A, %B %d, %Y %I:%M %p"
