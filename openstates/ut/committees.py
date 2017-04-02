@@ -12,16 +12,16 @@ class UTCommitteeScraper(Scraper):
 
         url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
         html = self.get(url)
-        page = lxml.html.fromstring(html)
+        page = lxml.html.fromstring(html.text)
 
         for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
-            comm_name = comm_link.text.strip()
+            name = comm_link.text.strip()
 
             chamber_type = ""
             if chamber:
-                if "House" in comm_name:
+                if "House" in name:
                     chamber_type = "lower"
-                elif "Senate" in comm_name:
+                elif "Senate" in name:
                     chamber_type = "upper"
                 else:
                     chamber_type = "joint"
@@ -30,31 +30,32 @@ class UTCommitteeScraper(Scraper):
             chamber = chamber_type
 
             # Drop leading "House" or "Senate" from name
-            comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
+            name = re.sub(r"^(House|Senate) ", "", name)
+
             committee = Organization(
                 name,
                 chamber=chamber,  # 'upper' or 'lower' (or joint)
                 classification='committee'
             )
 
-            committee_page = self.lxmlize(comm_link.attrib['href'])
+            committee_page = lxml.html.fromstring(comm_link.attrib['href'])
 
             for mbr_link in committee_page.xpath(
                     "//table[@class='memberstable']//a"):
 
-                name = mbr_link.text.strip()
-                name = re.sub(r' \([A-Z]\)$', "", name)
-                name = re.sub(r'^Sen. ', "", name)
-                name = re.sub(r'^Rep. ', "", name)
+                m_name = mbr_link.text.strip()
+                m_name = re.sub(r' \([A-Z]\)$', "", m_name)
+                m_name = re.sub(r'^Sen. ', "", m_name)
+                m_name = re.sub(r'^Rep. ', "", m_name)
 
                 role = mbr_link.tail.strip().strip(",").strip()
                 type = "member"
                 if role:
                     type = role
 
-                comm.add_member(name, type)
+                committee.add_member(m_name, type)
 
-            comm.add_source(url)
-            comm.add_source(comm_link.get('href'))
+            committee.add_source(url)
+            committee.add_source(comm_link.get('href'))
 
-            yield comm
+            yield committee
