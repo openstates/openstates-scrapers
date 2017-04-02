@@ -1,7 +1,7 @@
 import re
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
+#from billy.scrape import NoDataForPeriod
+from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 import lxml.html
