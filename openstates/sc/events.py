@@ -6,48 +6,64 @@ import lxml.html
 from pupa.scrape import Scraper, Event
 
 
+def normalize_time(time_string):
+    """
+    Clean up and normalize the time_string obtained from the scraped page.
+    :param time_string:
+    :return:
+    """
+    time_string = time_string.lower().strip()
+    if re.search(r'adjourn', time_string):
+        time_string = '12:00 am'
+    if re.search(r' noon', time_string):
+        time_string = time_string.replace(' noon', ' pm')
+    # remove extra spaces
+    if re.search('[^ ]+ ?- ?[0-9]', time_string):
+        start, end = re.search(r'([^ ]+) ?- ?([0-9])',
+                               time_string).groups()
+        time_string = re.sub(start + ' ?- ?' + end,
+                             start + '-' + end, time_string)
+    # if it's a block of time, use the start time
+    block_reg = re.compile(
+        r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
+
+    if re.search(block_reg, time_string):
+        start_time, start_meridiem, end_meridiem = re.search(
+            block_reg, time_string).groups()
+
+        start_hour = int(start_time.split(':')[0])
+        if start_meridiem:
+            time_string = re.search(
+                '^([0-9]{1,2}:[0-9]{2} [ap]m)', time_string).group(1)
+        else:
+            if end_meridiem == 'pm' and start_hour < 12:
+                time_string = start_time + ' am'
+            else:
+                time_string = start_time + ' ' + end_meridiem
+    return time_string
+
+
 class SCEventScraper(Scraper):
+    """
+    Event scraper to pull down information regarding upcoming (or past) Events
+    and associated metadata and any supporting material.
+    """
     jurisdiction = 'sc'
     _tz = pytz.timezone('US/Eastern')
 
     def get_page_from_url(self, url):
+        """
+        Get page from the provided url and change to string
+        :param url:
+        :return:
+        """
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
         return page
 
-    def normalize_time(self, time_string):
-        time_string = time_string.lower().strip()
-        if re.search(r'adjourn', time_string):
-            time_string = '12:00 am'
-        if re.search(r' noon', time_string):
-            time_string = time_string.replace(' noon', ' pm')
-        # remove extra spaces
-        if re.search('[^ ]+ ?- ?[0-9]', time_string):
-            start, end = re.search(r'([^ ]+) ?- ?([0-9])',
-                                   time_string).groups()
-            time_string = re.sub(start + ' ?- ?' + end,
-                                 start + '-' + end, time_string)
-        # if it's a block of time, use the start time
-        block_reg = re.compile(
-            r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
-
-        if re.search(block_reg, time_string):
-            start_time, start_meridiem, end_meridiem = re.search(
-                block_reg, time_string).groups()
-
-            start_hour = int(start_time.split(':')[0])
-            if start_meridiem:
-                time_string = re.search(
-                    '^([0-9]{1,2}:[0-9]{2} [ap]m)', time_string).group(1)
-            else:
-                if end_meridiem == 'pm' and start_hour < 12:
-                    time_string = start_time + ' am'
-                else:
-                    time_string = start_time + ' ' + end_meridiem
-        return time_string
-
     def get_bill_description(self, url):
+        """ Find and obtain bill description from bill page using xpath"""
         bill_page = self.get_page_from_url(url)
         bill_text = bill_page.xpath(
             './/div[@id="resultsbox"]/div[2]')[0]
@@ -59,6 +75,13 @@ class SCEventScraper(Scraper):
         return bill_description
 
     def scrape(self, chamber, session):
+        """
+        Scrape the events data from all dates from the sc meetings page,
+        then create and yield the events objects from the data.
+        :param chamber:
+        :param session:
+        :return: yielded Event objects
+        """
         if chamber == 'other':
             return
 
@@ -102,7 +125,7 @@ class SCEventScraper(Scraper):
                             './/span[contains(text(), "CANCELED")]')) > 0:
                     continue
 
-                time_string = self.normalize_time(time_string)
+                time_string = normalize_time(time_string)
                 date_time = datetime.datetime.strptime(
                     event_year + ' ' + date_string
                     + ' ' + time_string, "%Y %A, %B %d %I:%M %p")
