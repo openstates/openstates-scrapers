@@ -3,13 +3,14 @@ import pytz
 import datetime
 import lxml.html
 
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 
-class SCEventScraper(EventScraper):
+
+class SCEventScraper(Scraper):
     jurisdiction = 'sc'
     _tz = pytz.timezone('US/Eastern')
 
-    def get_page_from_url(self,url):
+    def get_page_from_url(self, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -17,7 +18,7 @@ class SCEventScraper(EventScraper):
 
     def normalize_time(self, time_string):
         time_string = time_string.lower().strip()
-        if re.search(r'adjourn',time_string):
+        if re.search(r'adjourn', time_string):
             time_string = '12:00 am'
         if re.search(r' noon', time_string):
             time_string = time_string.replace(' noon', ' pm')
@@ -31,9 +32,9 @@ class SCEventScraper(EventScraper):
         block_reg = re.compile(
             r'^([0-9]{1,2}:[0-9]{2}( [ap]m)?)-[0-9]{1,2}:[0-9]{2} ([ap]m)')
 
-        if re.search(block_reg,time_string):
+        if re.search(block_reg, time_string):
             start_time, start_meridiem, end_meridiem = re.search(
-                block_reg,time_string).groups()
+                block_reg, time_string).groups()
 
             start_hour = int(start_time.split(':')[0])
             if start_meridiem:
@@ -90,8 +91,8 @@ class SCEventScraper(EventScraper):
             elif date_string.count(",") == 1:
                 event_year = meeting_year
             else:
-                raise AssertionError("This is not a valid date: '{}'").\
-                        format(date_string)
+                raise AssertionError("This is not a valid date: '{}'"). \
+                    format(date_string)
 
             for meeting in date.xpath('li'):
                 time_string = meeting.xpath('span')[0].text_content()
@@ -117,13 +118,11 @@ class SCEventScraper(EventScraper):
                 else:
                     meeting_type = 'other:meeting'
 
-                event = Event(
-                    session,
-                    date_time,
-                    meeting_type,
-                    description,
-                    location
-                )
+                event = Event(name=description,  # Event Name
+                              start_time=date_time,  # When the event will take place
+                              timezone=pytz.timezone('US/Eastern').zone,  # the local timezone for the event
+                              location_name=location)  # Where the event will be
+
                 event.add_source(events_url)
 
                 agenda_url = meeting.xpath(".//a[contains(@href,'agendas')]")
@@ -131,18 +130,19 @@ class SCEventScraper(EventScraper):
                 if agenda_url:
                     agenda_url = agenda_url[0].attrib['href']
                     event.add_source(agenda_url)
+                    event.add_document(note="Agenda",
+                                       url=agenda_url,
+                                       media_type="application/pdf")
+
                     agenda_page = self.get_page_from_url(agenda_url)
 
                     for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"):
                         bill_url = bill.attrib['href']
                         bill_id = bill.text_content().replace(
-                            '.','').replace(' ','')
+                            '.', '').replace(' ', '')
                         bill_description = self.get_bill_description(bill_url)
 
-                        event.add_related_bill(
-                            bill_id=bill_id,
-                            type='consideration',
-                            description=bill_description
-                        )
-                self.save_event(event)
+                        event.add_bill(bill_id)
+
+                yield event
