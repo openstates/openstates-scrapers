@@ -112,11 +112,8 @@ class SCPersonScraper(Scraper):
                             'Ex.Officio Member': 'ex-officio member',
                             'Chairman': 'chairman'}[role]
 
-                    person.extras['committee'] = committee
-                    person.extras['committee_role'] = role
+                    person.add_membership(committee,role=role)
                 else:
-
-                    person.extras['committee_role'] = 'member'
-                    person.extras['committee'] = com.text
+                    person.add_membership(committee)
 
             yield person
