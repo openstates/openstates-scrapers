@@ -70,11 +70,13 @@ class SCBillScraper(Scraper):
     urls = {
         'lower': {
             'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
-            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
+            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil"
+                             "{last_two_digits_of_session_year}.php",
         },
         'upper': {
             'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
-            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil{last_two_digits_of_session_year}.php",
+            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil"
+                             "{last_two_digits_of_session_year}.php",
         }
     }
 
@@ -271,7 +273,7 @@ class SCBillScraper(Scraper):
 
         bill = Bill(
             bill_id,
-            legislative_session=session,  # A session name from the metadata's `legislative_sessions`
+            legislative_session=session,  # session name metadata's `legislative_sessions`
             chamber=chamber,  # 'upper' or 'lower'
             title=bill_summary,
             classification=bill_type
@@ -308,7 +310,8 @@ class SCBillScraper(Scraper):
             # duplicate versions with same date, use first appearance
 
             bill.add_version_link(
-                note=version.text,  # Description of the version from the state; eg, 'As introduced', 'Amended', etc.
+                note=version.text,  # Description of the version from the state;
+                                    #  eg, 'As introduced', 'Amended', etc.
                 url=version.get('href'),
                 on_duplicate='ignore',
                 media_type='text/html'  # Still a MIME type
@@ -352,7 +355,6 @@ class SCBillScraper(Scraper):
          by the scrape_details function to yield the desired Bill objects
         :param chamber:
         :param session:
-        :return:
         """
         # start with subjects
 
@@ -391,7 +393,8 @@ class SCBillScraper(Scraper):
                         yield from self.scrape_details(bill_a.get('href'), session, chamber,
                                                        bill_id)
 
-            prefile_url = self.urls[chamber]['prefile-index'].format(last_two_digits_of_session_year=session[2:4])
+            prefile_url = self.urls[chamber]['prefile-index']\
+                              .format(last_two_digits_of_session_year=session[2:4])
             page = self.get(prefile_url).text
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(prefile_url)

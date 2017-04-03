@@ -146,14 +146,14 @@ class SCEventScraper(Scraper):
                 location, description = re.search(
                     r'-- (.*?) -- (.*)', meeting_info).groups()
 
-                if re.search(r'committee', description, re.I):
-                    meeting_type = 'committee:meeting'
-                else:
-                    meeting_type = 'other:meeting'
+                # if re.search(r'committee', description, re.I):
+                #     meeting_type = 'committee:meeting'
+                # else:
+                #     meeting_type = 'other:meeting'
 
                 event = Event(name=description,  # Event Name
                               start_time=date_time,  # When the event will take place
-                              timezone=pytz.timezone('US/Eastern').zone,  # the local timezone for the event
+                              timezone=self._tz.zone,  # the local timezone for the event
                               location_name=location)  # Where the event will be
 
                 event.add_source(events_url)
@@ -171,10 +171,10 @@ class SCEventScraper(Scraper):
 
                     for bill in agenda_page.xpath(
                             ".//a[contains(@href,'billsearch.php')]"):
-                        bill_url = bill.attrib['href']
+                        # bill_url = bill.attrib['href']
                         bill_id = bill.text_content().replace(
                             '.', '').replace(' ', '')
-                        bill_description = self.get_bill_description(bill_url)
+                        # bill_description = self.get_bill_description(bill_url)
 
                         event.add_bill(bill_id)
 
