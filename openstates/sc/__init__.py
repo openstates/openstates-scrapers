@@ -109,9 +109,9 @@ class SouthCarolina(Jurisdiction):
         yield lower
 
     def get_session_list(self):
+        """ Get session list from billsearch page using xpath"""
         url = 'http://www.scstatehouse.gov/billsearch.php'
         path = "//select[@id='session']/option/text()"
 
         doc = lxml.html.fromstring(requests.get(url).text)
         return doc.xpath(path)
-

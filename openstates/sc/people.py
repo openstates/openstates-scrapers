@@ -5,7 +5,8 @@ from pupa.scrape import Person, Scraper
 
 class SCPersonScraper(Scraper):
     """
-     South Carolina Scrapper using Person Scraper - https://opencivicdata.readthedocs.io/en/latest/scrape/people.html
+     South Carolina Scrapper using Person Scraper
+    - https://opencivicdata.readthedocs.io/en/latest/scrape/people.html
     """
     jurisdiction = 'sc'
 
@@ -15,7 +16,6 @@ class SCPersonScraper(Scraper):
 
     def scrape(self, chamber=None):
         """ Generator Function to pull in (scrape) data about person from state website."""
-
 
         if chamber == 'lower':
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
@@ -38,7 +38,8 @@ class SCPersonScraper(Scraper):
                 self.info('Resigned')
                 continue
 
-            party, district, _ = leg_doc.xpath('//p[@style="font-size: 17px; margin: 0 0 0 0; padding: 0;"]/text()')
+            party, district, _ = leg_doc.xpath('//p[@style="font-size: 17px;'
+                                               ' margin: 0 0 0 0; padding: 0;"]/text()')
             if 'Republican' in party:
                 party = 'Republican'
             elif 'Democrat' in party:
@@ -58,11 +59,14 @@ class SCPersonScraper(Scraper):
             # office address / phone
             try:
                 addr_div = \
-                    leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 5px 0 20px; padding: 0;"]')[0]
-                capitol_address = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[
-                    0].text_content()
+                    leg_doc.xpath('//div[@style="float: left; width: 225px;'
+                                  ' margin: 10px 5px 0 20px; padding: 0;"]')[0]
+                capitol_address = addr_div.xpath('p[@style="font-size: 13px;'
+                                                 ' margin: 0 0 10px 0; padding: 0;"]')[0]\
+                                          .text_content()
 
-                phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+                phone = addr_div.xpath('p[@style="font-size: 13px;'
+                                       ' margin: 0 0 0 0; padding: 0;"]/text()')[0]
                 capitol_phone = phone.strip()
 
                 if capitol_address:
@@ -77,10 +81,13 @@ class SCPersonScraper(Scraper):
 
             # home address / phone
             try:
-                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px; margin: 10px 0 0 20px;"]')[0]
-                addr = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
+                addr_div = leg_doc.xpath('//div[@style="float: left;'
+                                         ' width: 225px; margin: 10px 0 0 20px;"]')[0]
+                addr = addr_div.xpath('p[@style="font-size: 13px;'
+                                      ' margin: 0 0 10px 0; padding: 0;"]')[0].text_content()
 
-                phone = addr_div.xpath('p[@style="font-size: 13px; margin: 0 0 0 0; padding: 0;"]/text()')[0]
+                phone = addr_div.xpath('p[@style="font-size: 13px;'
+                                       ' margin: 0 0 0 0; padding: 0;"]/text()')[0]
                 phone = phone.strip()
                 if addr:
                     person.add_contact_detail(type='address', value=addr,
@@ -112,7 +119,7 @@ class SCPersonScraper(Scraper):
                             'Ex.Officio Member': 'ex-officio member',
                             'Chairman': 'chairman'}[role]
 
-                    person.add_membership(committee,role=role)
+                    person.add_membership(committee, role=role)
                 else:
                     person.add_membership(committee)
 
