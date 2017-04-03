@@ -82,12 +82,22 @@ class SCEventScraper(Scraper):
         :param session:
         :return: yielded Event objects
         """
+
+        chambers = {
+            'upper': {'name': 'Senate', 'title': 'Senator'},
+            'lower': {'name': 'House', 'title': 'Representative'},
+        }
         if chamber == 'other':
             return
 
-        events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=%s' % (
-            self.metadata['chambers'][chamber]['name'].upper()[0]
-        )
+        if chamber is None:
+            self.info('no chamber specified, using Joint Committee Meeting Schedule')
+            events_url = 'http://www.scstatehouse.gov/meetings.php'
+        else:
+            events_url = 'http://www.scstatehouse.gov/meetings.php?chamber=%s' % (
+                chambers[chamber]['name'].upper()[0]
+            )
+
         page = self.get_page_from_url(events_url)
 
         meeting_year = page.xpath(
