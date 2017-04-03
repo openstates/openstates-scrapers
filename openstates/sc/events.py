@@ -74,7 +74,7 @@ class SCEventScraper(Scraper):
             r'Summary: (.*)', bill_description).group(1).strip()
         return bill_description
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
         """
         Scrape the events data from all dates from the sc meetings page,
         then create and yield the events objects from the data.
