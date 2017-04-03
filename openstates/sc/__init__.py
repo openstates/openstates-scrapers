@@ -3,6 +3,9 @@ from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
 
+import requests
+import lxml.html
+
 
 class SouthCarolina(Jurisdiction):
     """
@@ -104,3 +107,11 @@ class SouthCarolina(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        url = 'http://www.scstatehouse.gov/billsearch.php'
+        path = "//select[@id='session']/option/text()"
+
+        doc = lxml.html.fromstring(requests.get(url).text)
+        return doc.xpath(path)
+
