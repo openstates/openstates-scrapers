@@ -6,6 +6,7 @@ import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
+from openstates.utils import url_xpath
 
 import scrapelib
 
@@ -157,84 +158,95 @@ class ARBillScraper(Scraper):
         # It's still more efficient to get the rest of the data we're
         # interested in from the CSVs, though, because their site splits
         # other info (e.g. actions) across many pages
-        term_year = '2017'
-        measureno = bill.identifier
-        url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
-               "Pages/BillInformation.aspx?measureno=%s" % (
-                   term_year, self.slug, measureno))
-        bill.add_source(url)
-
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
-
-        for link in page.xpath("//a[contains(@href, 'Amendments')]"):
-            num = link.xpath("string(../../td[2])")
-            name = "Amendment %s" % num
-            bill.add_document_link(name, link.attrib['href'])
-
         try:
-            cosponsor_link = page.xpath(
-                "//a[contains(@href, 'CoSponsors')]")[0]
-            self.scrape_cosponsors(bill, cosponsor_link.attrib['href'])
-        except IndexError:
-            # No cosponsor link is OK
+
+            term_year = '2017'
+            measureno = bill.identifier.replace(" ", "")
+            url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
+                   "Pages/BillInformation.aspx?measureno=%s" % (
+                       term_year, self.slug, measureno))
+            page = self.get(url).text
+            bill.add_source(url)
+            page = lxml.html.fromstring(page)
+            for link in page.xpath("//a[contains(@href, 'Amendments')]"):
+                num = link.xpath("string(../../td[2])")
+                name = "Amendment %s" % num
+                bill.add_document_link(name, link.attrib['href'])
+
+            try:
+                cosponsor_link = page.xpath(
+                    "//a[contains(@href, 'CoSponsors')]")[0]
+                self.scrape_cosponsors(bill, cosponsor_link.attrib['href'])
+            except IndexError:
+                # No cosponsor link is OK
+                pass
+
+            for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
+                date = link.xpath("string(../../td[2])")
+                date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"))
+
+                motion = link.xpath("string(../../td[3])")
+                print("base1")
+                yield from self.scrape_vote(bill, date, motion, link.attrib['href'])
+        except:
             pass
 
-        for link in page.xpath("//a[contains(@href, 'votes.aspx')]"):
-            date = link.xpath("string(../../td[2])")
-            date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"))
-
-            motion = link.xpath("string(../../td[3])")
-
-            yield from self.scrape_vote(bill, date, motion, link.attrib['href'])
-
     def scrape_vote(self, bill, date, motion, url):
+        print("called")
         try:
             page = self.get(url).text
-        except scrapelib.HTTPError:
+            if 'not yet official' in page:
+                # Sometimes they link to vote pages before they go live
+                pass
+
+            else:
+                page = lxml.html.fromstring(page)
+
+                if url.endswith('Senate'):
+                    actor = 'upper'
+                else:
+                    actor = 'lower'
+
+                votevals = ['yes', 'no', 'not voting',  'other']
+                count_path = "string(//td[@align = 'center' and contains(., '%s: ')])"
+                yes_count = int(page.xpath(count_path % "Yeas").split()[-1])
+                no_count = int(page.xpath(count_path % "Nays").split()[-1])
+                not_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
+                other_count = int(page.xpath(count_path % "Present").split()[-1])
+                try:
+                    excused_count = int(page.xpath(count_path % "Excused").split()[-1])
+                    vote.set_count('excused', excused_count)
+                    votevals.append('excused')
+                except:
+                    pass
+                passed = yes_count > no_count + not_voting_count + other_count
+                vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
+                                 result='pass' if passed else 'fail',
+                                 classification='passage',
+                                 chamber=actor,
+                                 bill=bill)
+                vote.set_count('yes', yes_count)
+                vote.set_count('no', no_count)
+                vote.set_count('not voting', not_voting_count)
+                vote.set_count('other', other_count)
+                vote.add_source(url)
+
+                xpath = (
+                    '//*[contains(@class, "ms-standardheader")]/'
+                    'following-sibling::table')
+                divs = page.xpath(xpath)
+
+                for (voteval, div) in zip(votevals, divs):
+                    for a in div.xpath('.//a'):
+                        name = a.text_content().strip()
+                        if not name:
+                            continue
+                        else:
+                            vote.vote(voteval, name)
+                yield vote
+        except:
             # sometiems the link is there but is dead
-            return
-
-        if 'not yet official' in page:
-            # Sometimes they link to vote pages before they go live
-            return
-
-        page = lxml.html.fromstring(page)
-
-        if url.endswith('Senate'):
-            actor = 'upper'
-        else:
-            actor = 'lower'
-
-        count_path = "string(//td[@align = 'center' and contains(., '%s: ')])"
-        yes_count = int(page.xpath(count_path % "Yeas").split()[-1])
-        no_count = int(page.xpath(count_path % "Nays").split()[-1])
-        non_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
-        absent_count = int(page.xpath(count_path % "Present").split()[-1])
-
-        passed = yes_count > no_count + other_count
-        vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
-                         result='pass' if passed else 'fail',
-                         classification='passage', chamber=actor)
-        vote.set_count('yes', yes_count)
-        vote.set_count('no', no_count)
-        vote.set_count('non voting', non_voting_count)
-        vote.set_count('absent', absent_count)
-        vote.add_source(url)
-
-        xpath = (
-            '//*[contains(@class, "ms-standardheader")]/'
-            'following-sibling::table')
-        divs = page.xpath(xpath)
-        votevals = 'yes no other other'.split()
-        for (voteval, div) in zip(votevals, divs):
-            for a in div.xpath('.//a'):
-                name = a.text_content().strip()
-                if not name:
-                    continue
-                getattr(vote, voteval)(name)
-
-        yield vote
+            pass
 
     def scrape_cosponsors(self, bill, url):
         page = self.get(url).text

@@ -52,7 +52,8 @@ class ARCommitteeScraper(Scraper):
             r'^(HOUSE|SENATE|JOINT)\s+', '', subcommittee.strip().title())
 
         # Fix roman numeral capping.
-        replacer = lambda m: m.group().upper()
+        # replacer = lambda m: m.group().upper()
+        def replacer(m): return m.group().upper()
         subcommittee = re.sub(
             r'\b(VII|VII|III|IIV|IV|II|VI|IX|V|X)\b', replacer, subcommittee,
             flags=re.I)
