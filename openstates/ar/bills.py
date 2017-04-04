@@ -6,9 +6,6 @@ import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
-from openstates.utils import url_xpath
-
-import scrapelib
 
 TIMEZONE = pytz.timezone('US/Central')
 
@@ -213,18 +210,18 @@ class ARBillScraper(Scraper):
                 no_count = int(page.xpath(count_path % "Nays").split()[-1])
                 not_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
                 other_count = int(page.xpath(count_path % "Present").split()[-1])
-                try:
-                    excused_count = int(page.xpath(count_path % "Excused").split()[-1])
-                    vote.set_count('excused', excused_count)
-                    votevals.append('excused')
-                except:
-                    pass
                 passed = yes_count > no_count + not_voting_count + other_count
                 vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
                                  result='pass' if passed else 'fail',
                                  classification='passage',
                                  chamber=actor,
                                  bill=bill)
+                try:
+                    excused_count = int(page.xpath(count_path % "Excused").split()[-1])
+                    vote.set_count('excused', excused_count)
+                    votevals.append('excused')
+                except:
+                    pass
                 vote.set_count('yes', yes_count)
                 vote.set_count('no', no_count)
                 vote.set_count('not voting', not_voting_count)
