@@ -31,7 +31,7 @@ class CTBillScraper(Scraper):
         self.scrape_subjects()
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
-        self.scrape_bill_info(session, chambers)
+        yield from self.scrape_bill_info(session, chambers)
         for chamber in chambers:
             self.scrape_versions(chamber, session)
         self.scrape_bill_history()
@@ -77,22 +77,22 @@ class CTBillScraper(Scraper):
                                      entity_type='person')
 
             try:
-                self.scrape_bill_page(bill)
-
                 for subject in self._subjects[bill_id]:
                     bill.subject.append(subject)
 
                 self.bills[bill_id] = [bill, chamber]
+
+                yield from self.scrape_bill_page(bill)
             except SkipBill:
                 self.warning('no such bill: ' + bill_id)
                 pass
 
     def scrape_bill_page(self, bill):
         # Removes leading zeroes in the bill number.
-        bill_number = ''.join(re.split('0+', bill['bill_id'], 1))
+        bill_number = ''.join(re.split('0+', bill.identifier, 1))
 
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
-               "&bill_num=%s&which_year=%s" % (bill_number, bill['session']))
+               "&bill_num=%s&which_year=%s" % (bill_number, bill.legislative_session))
 
         # Connecticut's SSL is causing problems with Scrapelib, so use Requests
         page = requests.get(url, verify=False).text
@@ -104,7 +104,7 @@ class CTBillScraper(Scraper):
         bill.add_source(url)
 
         spon_type = 'primary'
-        if not bill['sponsors']:
+        if not bill.sponsorships:
             for sponsor in page.xpath('//h5[text()="Introduced by: "]/../text()'):
                 sponsor = sponsor.strip()
                 if sponsor:
@@ -169,7 +169,7 @@ class CTBillScraper(Scraper):
         date = page.xpath("string(//span[contains(., 'Taken on')])")
         date = re.match(r'.*Taken\s+on\s+(\d+/\s?\d+)', date).group(1)
         date = date.replace(' ', '')
-        date = datetime.datetime.strptime(date + " " + bill['session'],
+        date = datetime.datetime.strptime(date + " " + bill.legislative_session,
                                           "%m/%d %Y").date()
 
         vote = Vote(chamber=vote_chamber,
@@ -291,8 +291,9 @@ class CTBillScraper(Scraper):
             bill_id = match.group(1).replace('-', '')
 
             try:
+                print(self.bills[bill_id])
                 bill = self.bills[bill_id][0]
-            except KeyError:
+            except IndexError:
                 continue
 
             url = versions_url + f.filename
