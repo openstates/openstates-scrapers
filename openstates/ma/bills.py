@@ -3,12 +3,15 @@ import re
 import time
 import itertools
 import requests
+import os
+
 from datetime import datetime
 
 import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 from .actions import Categorizer
 
@@ -46,7 +49,9 @@ class MABillScraper(BillScraper):
     def scrape(self, chamber, session):
         # for the chamber of the action
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
-        #self.scrape_bill(session,'S11',chamber)
+
+        # simngle bill test code
+        #self.scrape_bill(session,'H58',chamber)
 
         # Pull the search page to get the filters
         search_url = 'https://malegislature.gov/Bills/Search'
@@ -55,19 +60,16 @@ class MABillScraper(BillScraper):
         self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
         self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
-# remove nick lines before final
+
+        # comment in before running for all bills
         lastPage = self.get_max_pages(session, chamber)
-        lastPage = 1 # nick
         for pageNumber in range(1, lastPage + 1):
             bills = self.list_bills(session, chamber, pageNumber)
-            bill_count = 0 # nick
             for bill in bills:
-                # if bill > 4: didn't work
                 bill = self.format_bill_number(bill).replace(' ','')
                 if bill != 'H58':
                     continue
                 self.scrape_bill(session, bill, chamber )
-                break # remove after testing
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -201,6 +203,7 @@ class MABillScraper(BillScraper):
 
             action_name = row.xpath('string(td[3])')
             attrs = self.categorizer.categorize(action_name)
+
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
@@ -210,6 +213,10 @@ class MABillScraper(BillScraper):
                 o = 0 # placeholder
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
+
+                #TODO: enable for multiple years
+                housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
+                self.scrape_house(cached_vote, housevote_pdf)
 
             # Senate votes
             if "Roll Call" in action_name:
@@ -222,20 +229,97 @@ class MABillScraper(BillScraper):
                 o = 0 # placeholder
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
-                bill.add_document(row.xpath('string(td[3]/a/text())'),
-                    'malegislature.gov' + row.xpath('string(td[3]/a/@href)'),
-                    mimetype='application/pdf')
 
+                # ID path of pdf
+                rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
 
-# rewrite to add source
+                self.scrape_rollcall(cached_vote, rollcall_pdf)
+
+                # removed functionality for source and document adding, probably not working
+                #vote.add_source(rollcall_pdf)
+                #convert_pdf(vote_path, 'text')
+                #bill.add_document(row.xpath('string(td[3]/a/text())'),
+                #    vote_path,
+                #    mimetype='application/pdf')
                 #cached_vote.add_source('malegislature.gov/' + row)
-# Not parsing 'paired' for now, include other votes (not yes no)
-                #create vote object from pdf
 
+                #TODO:linclude other votes (not yes no)
 
             #TODO: categorize action
             bill.add_action(action_actor, action_name, action_date, **attrs)
         return page
+
+    def scrape_house(self, vote, vurl):
+        #Point to PDF and read to memory
+        (path, resp) = self.urlretrieve(vurl)
+        pdflines = convert_pdf(path, 'text')
+        os.remove(path)
+
+        # Recognize page in pdflines
+        # read in votes in a column - Y or N
+        # read in legislator names
+        # clean legislator names
+        # handle 'Mr. Speaker Items'
+        # match vote to legislator name
+        # run vote.yes and vote.no for individual legislators
+
+    def scrape_rollcall(self, vote, vurl):
+        # download file to server
+        (path, resp) = self.urlretrieve(vurl)
+        pdflines = convert_pdf(path, 'text')
+        os.remove(path)
+
+        # create mode with y, n, a, null
+        mode = None
+        yes_votes = []
+        no_votes = []
+        other_votes = []
+
+        # Create list broken at \n
+        lines = pdflines.splitlines()
+
+        # handle individual lines in pdf to id legislator votes
+        for line in lines:
+            line = line.strip()
+            line = line.decode('utf-8').replace(u'\u2212', '-')
+            if line == '':
+                continue
+            # change mode accordingly
+            elif line.startswith('YEAS'):
+                mode = 'y'
+            elif line.startswith('NAYS'):
+                mode = 'n'
+            # else parse line with names
+            else:
+                #split on '   '
+                nameline = line.split('   ')
+
+                for raw_name in nameline:
+                    raw_name = raw_name.strip()
+                    if raw_name == '':
+                        continue
+
+                    # If there is a '-' near end of string remove everything after it inclusive
+                    # split on '-'
+                    cut_name = raw_name.split('-')
+
+                    # examine last list item, strip of . and whitespace, test whether numeric
+                    clean_name = ''
+                    if cut_name[len(cut_name) - 1].strip(' .').isdigit():
+                        del cut_name[-1]
+                        clean_name = ''.join(cut_name)
+                    else:
+                        clean_name = raw_name.strip()
+
+                    # update vote object with names
+                    if mode == 'y':
+                        yes_votes.append(clean_name)
+                        vote.yes(clean_name)
+                    elif mode == 'n':
+                        no_votes.append(clean_name)
+                        vote.no(clean_name)
+                    else:
+                        continue
 
     def get_as_ajax(self, url):
         #set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
