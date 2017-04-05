@@ -218,6 +218,7 @@ class MDBillScraper(BillScraper):
             elif td.startswith('Excused'):
                 func = vote.other
             elif func:
+                td = td.rstrip('*')
                 func(td)
 
         return vote
@@ -302,7 +303,7 @@ class MDBillScraper(BillScraper):
             else:
                 passed = None
         elif 'overridden' in motion:
-            passed = True 
+            passed = True
             motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
@@ -332,11 +333,13 @@ class MDBillScraper(BillScraper):
                 vfunc = vote.other
             elif vfunc:
                 if ' and ' in text:
-                    a, b = text.split(' and ')
-                    vfunc(a)
-                    vfunc(b)
+                    legs = text.split(' and ')
                 else:
-                    vfunc(text)
+                    legs = [text]
+                for leg in legs:
+                    # Strip the occasional asterisk - see #1512
+                    leg = leg.rstrip('*')
+                    vfunc(leg)
 
         vote.validate()
         vote.add_source(url)

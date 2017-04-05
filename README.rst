@@ -13,8 +13,6 @@ Getting Started
 We use `Docker <https://www.docker.com/products/docker>`_ to provide a reproducible development environment. Make sure
 you have Docker installed.  Inside of the directory you cloned this project into::
 
-  docker-compose build  # Flaky. Try running the command again if it fails.
-  docker-compose up database  # Starts the database
   docker-compose run openstates <abbreviated state code>  # Scrapes the state indicated by the code e.g. "ny"
 
 This project runs on top of `billy <https://github.com/openstates/billy>`_, a scraping framework for government data.

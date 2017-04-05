@@ -316,21 +316,27 @@ class TNBillScraper(BillScraper):
             actions_from_table(bill, cotable)
 
         # votes
-        votes_link = page.xpath("//span[@id='lblBillVotes']/a/@href")
-        if len(votes_link) > 0:
-            bill = self.scrape_votes(bill, votes_link[0])
-        votes_link = page.xpath("//span[@id='lblCompVotes']/a/@href")
-        if len(votes_link) > 0:
-            bill = self.scrape_votes(bill, votes_link[0])
+        bill = self.scrape_votes(bill, page, bill_url)
 
         bill['actions'].sort(key=lambda a: a['date'])
         self.save_bill(bill)
 
-    def scrape_votes(self, bill, link):
-        page = self.get(link).text
-        page = lxml.html.fromstring(page)
-        raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-        raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]
+    def scrape_votes(self, bill, page, link):
+        chamber_labels = (
+            ('lower', 'lblHouseVoteData'),
+            ('upper', 'lblSenateVoteData')
+        )
+        for chamber, element_id in chamber_labels:
+            raw_vote_data = page.xpath("//*[@id='{}']".format(element_id))[0].text_content()
+            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+            for vote in votes:
+                bill.add_vote(vote)
+
+        return bill
+
+    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
+        votes = []
+        raw_vote_data = re.split('\w+? by [\w ]+?\s+-', vote_data.strip())[1:]
         for raw_vote in raw_vote_data:
             raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
             motion = raw_vote[0]
@@ -341,6 +347,7 @@ class TNBillScraper(BillScraper):
 
             passed = ('Passed' in motion or
                       'Recommended for passage' in motion or
+                      'Rec. for pass' in motion or
                       'Adopted' in raw_vote[1]
                      )
             vote_regex = re.compile('\d+$')
@@ -369,11 +376,6 @@ class TNBillScraper(BillScraper):
                 elif other_regex.search(v):
                     others += other_regex.search(v).groups()[0].split(', ')
 
-            if 'ChamberVoting=H' in link:
-                chamber = 'lower'
-            else:
-                chamber = 'upper'
-
             vote = Vote(chamber, vote_date, motion, passed, yes_count,
                         no_count, other_count)
             vote.add_source(link)
@@ -395,7 +397,6 @@ class TNBillScraper(BillScraper):
                 vote.other(o)
                 seen.add(o)
 
-            # vote.validate()
-            bill.add_vote(vote)
+            votes.append(vote)
 
-        return bill
+        return votes

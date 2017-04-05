@@ -44,8 +44,7 @@ def convert(state):
 
     lower_max, upper_max = get_districts(state)
 
-    tmpl = """import datetime
-from pupa.scrape import Jurisdiction, Organization
+    tmpl = """from pupa.scrape import Jurisdiction, Organization
 
 
 class {classname}(Jurisdiction):
@@ -60,9 +59,7 @@ class {classname}(Jurisdiction):
         {{'name': 'Democratic'}}
     ]
     legislative_sessions = {sessions}
-    ignored_scraped_sessions = [
-{ignored}
-    ]
+    ignored_scraped_sessions = {ignored}
 
     def get_organizations(self):
         legislature_name = "{legislature_name}"
@@ -80,12 +77,12 @@ class {classname}(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
-            lower.add_post(
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{{}}/sldu:{{}}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            upper.add_post(
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{{}}/sldl:{{}}'.format(self.division_id, n))
 
@@ -112,13 +109,8 @@ class {classname}(Jurisdiction):
             s['end_date'] = v.get('end_date')
         sessions.append(s)
 
-    sessions = json.dumps(sessions, sort_keys=True, indent=4,
-                          cls=DatetimeEncoder, separators=(',', ': '))
-    sessions = sessions.replace('null', 'None')
-
-    ignored = '        ' + '\n        '.join(
-        repr(x) + ',' for x in metadata['_ignored_scraped_sessions']
-    )
+    sessions = indent_tail(format_json(sessions), 4)
+    ignored = indent_tail(format_json(metadata['_ignored_scraped_sessions']), 4)
 
     data = {
         'abbr': metadata['abbreviation'],
@@ -137,5 +129,22 @@ class {classname}(Jurisdiction):
     print(tmpl.format(**data))
 
 
+def format_json(data):
+    return json.dumps(
+        data,
+        indent=4,
+        sort_keys=True,
+        cls=DatetimeEncoder,
+        separators=(',', ': '),
+    ).replace('null', 'None')
+
+
+def indent_tail(text, n):
+    padding = ' ' * n
+    lines = text.split('\n')
+    return '\n'.join([lines[0]] + [padding + line for line in lines[1:]])
+
+
 if __name__ == '__main__':
+    sys.path.append('.')
     convert(sys.argv[1])

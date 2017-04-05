@@ -135,7 +135,10 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         #skip the header row
         for version in versions:
-            version_date = version.xpath('td[1]/text()')[0].strip()
+            if version.xpath('td[1]/text()'):
+                version_date = version.xpath('td[1]/text()')[0].strip()
+            else:
+                version_date = 'None'
             #version_date = dt.datetime.strptime(version_date, '%m/%d/%Y')
             version_type = version.xpath('td[2]/text()')[0]
             version_url = version.xpath('td[3]/span/a/@href')[0]
@@ -166,8 +169,13 @@ class COBillScraper(BillScraper, LXMLMixin):
             action_date = action.xpath('td[1]/text()')[0]
             action_date = dt.datetime.strptime(action_date, '%m/%d/%Y')
 
-            action_chamber = action.xpath('td[2]/text()')[0]
-            action_actor = chamber_map[action_chamber]
+            # If an action has no chamber, it's joint
+            # e.g. http://leg.colorado.gov/bills/sb17-100 
+            if action.xpath('td[2]/text()'):
+                action_chamber = action.xpath('td[2]/text()')[0]
+                action_actor = chamber_map[action_chamber]
+            else:
+                action_actor = 'joint'
 
             action_name = action.xpath('td[3]/text()')[0]
 

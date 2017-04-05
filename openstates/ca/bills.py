@@ -536,6 +536,9 @@ class CABillScraper(BillScraper):
                 else:
                     result = False
 
+                if not vote.location:
+                    continue
+                    
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
