@@ -401,9 +401,19 @@ class MDBillScraper(BillScraper):
 
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
+            description = td.xpath('text()')[0]
+            description = self.remove_leading_dash(description)
+            whole = ''.join(td.itertext())
+
             if a.text == 'Text':
                 bill.add_version('Bill Text', a.get('href'),
                                  mimetype='application/pdf')
+            elif a.text == 'Reprint':
+                bill.add_version(description, a.get('href'),
+                                 mimetype='application/pdf')
+            elif a.text == 'Report':
+                bill.add_document(description, a.get('href'),
+                                  mimetype='application/pdf')
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
@@ -415,7 +425,7 @@ class MDBillScraper(BillScraper):
                                   mimetype='application/pdf')
             elif a.text in ('Amendments', 'Conference Committee Amendment',
                             'Conference Committee Report'):
-                bill.add_document(a.text + ' - ' + a.tail.strip(),
+                bill.add_document(whole,
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate - Committee':
                 bill.add_document('Senate %s Committee Vote' %
@@ -460,6 +470,10 @@ class MDBillScraper(BillScraper):
                 kwargs['committees'] = committee
 
             bill.add_action(chamber, action, action_date, **kwargs)
+
+    def remove_leading_dash(self, string):
+        string = string[3:] if string.startswith(' - ') else string
+        return string.strip()
 
 
     def scrape(self, chamber, session):
