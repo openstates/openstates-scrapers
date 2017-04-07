@@ -50,7 +50,7 @@ class MABillScraper(BillScraper):
         # for the chamber of the action
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
 
-        # simngle bill test code
+        # single bill test code
         #self.scrape_bill(session,'H58',chamber)
 
         # Pull the search page to get the filters
