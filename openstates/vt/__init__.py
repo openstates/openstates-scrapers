@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import VTPersonScraper
 from .committees import VTCommitteeScraper
 from .bills import VTBillScraper
+from .events import VTEventScraper
 
 
 class Vermont(Jurisdiction):
@@ -13,7 +14,8 @@ class Vermont(Jurisdiction):
     scrapers = {
         'people': VTPersonScraper,
         'committees': VTCommitteeScraper,
-        'bills': VTBillScraper
+        'bills': VTBillScraper,
+        'events': VTEventScraper
     }
     parties = [
         {'name': 'Republican'},

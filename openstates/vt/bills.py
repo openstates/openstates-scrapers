@@ -246,7 +246,10 @@ class VTBillScraper(Scraper, LXMLMixin):
                     ),
                     motion_text=re.sub(HTML_TAGS_RE, "", vote['FullStatus']).strip(),
                     result='pass' if did_pass else 'fail',
-                    classification='passage'
+                    classification='passage',
+                    legislative_session=session,
+                    bill=info['BillNumber'],
+                    bill_chamber=bill_chamber
                 )
                 vote_to_add.add_source(roll_call_url)
 
@@ -261,7 +264,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                 for member in roll_call_not_voting:
                     vote_to_add.vote('not voting', member)
 
-                bill.add_vote_event(vote_to_add)
+                yield vote_to_add
 
             # Capture extra information
             # This was not in the billy spec, but is available
