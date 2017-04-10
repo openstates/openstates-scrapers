@@ -2,11 +2,12 @@ import re
 import pytz
 import datetime
 
+import lxml.html
 from pupa.scrape import Person
 from pupa.scrape import Scraper
 from pupa.scrape import Organization
-
 from spatula import Page, Spatula
+
 from .common import SESSION_SITE_IDS
 
 
@@ -31,6 +32,36 @@ class MemberDetail(Page):
         self.obj.add_term(self.role, self.chamber, district=district)
         self.obj.add_party(PARTY_MAP[party])
 
+        self.get_offices(item)
+        yield from self.get_committees(item)
+
+        photo_url = self.get_photo_url()
+        if photo_url is not None:
+            self.obj.image = photo_url
+
+    def get_offices(self, item):
+        for ul in item.xpath('//ul[@class="linkNon" and normalize-space()]'):
+            address = []
+            phone = None
+            email = None
+            for li in ul.getchildren():
+                text = li.text_content()
+                if re.match('\(\d{3}\)', text):
+                    phone = text.strip()
+                elif text.startswith('email:'):
+                    email = text.strip('email: ').strip()
+                else:
+                    address.append(text.strip())
+                office_type = ('Capitol Office' if 'Capitol Square' in address
+                               else 'District Office')
+
+            self.obj.add_contact_detail(type='address', value='\n'.join(address), note=office_type)
+            if phone:
+                self.obj.add_contact_detail(type='voice', value=phone, note=office_type)
+            if email:
+                self.obj.add_contact_detail(type='email', value=phone, note=office_type)
+
+    def get_committees(self, item):
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
             org = Organization(
                 name=com,
@@ -46,15 +77,34 @@ class MemberDetail(Page):
                 end_date=maybe_date(self.kwargs['session'].get('end_date')),
             )
 
+    def get_photo_url(self):
+        pass
+
 
 class SenateDetail(MemberDetail):
     role = 'Senator'
     chamber = 'upper'
 
+    def get_photo_url(self):
+        lis_id = get_lis_id(self.chamber, self.url)
+        profile_url = 'http://apps.senate.virginia.gov/Senator/memberpage.php?id={}'.format(lis_id)
+        page = lxml.html.fromstring(self.scraper.get(profile_url).text)
+        src = page.xpath('.//img[@class="profile_pic"]/@src')
+        return src[0] if src else None
+
 
 class DelegateDetail(MemberDetail):
     role = 'Delegate'
     chamber = 'lower'
+
+    def get_photo_url(self):
+        lis_id = get_lis_id(self.chamber, self.url)
+        if lis_id:
+            lis_id = '{}{:04d}'.format(lis_id[0], int(lis_id[1:]))
+            return (
+                'http://memdata.virginiageneralassembly.gov'
+                '/images/display_image/{}'
+            ).format(lis_id)
 
 
 class MemberList(Page):

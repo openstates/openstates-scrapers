@@ -87,7 +87,7 @@ class PupaBillScraper(BillScraper):
                                   date=parse_date(doc['date']))
 
         for title in data['other_titles']:
-            bill.add_title(title)
+            bill.add_title(title['title'])
 
         # TODO: related bills
         # for related in data['related_bills']:

@@ -28,6 +28,10 @@ def fix_whitespace(s):
     return re.sub(r'\s+', ' ', s)
 
 
+# All links in a section with a given title
+COMMITTEE_LINKS_TEMPLATE = '//h2[text()="{header}"]/parent::*//a'
+
+
 class TNCommitteeScraper(CommitteeScraper):
     jurisdiction = 'tn'
     base_href = 'http://www.capitol.tn.gov'
@@ -51,8 +55,9 @@ class TNCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        find_expr = 'body/div/div/h1[text()="Senate Committees"]/' \
-                'following-sibling::div/div/div/div//a'
+        standing = COMMITTEE_LINKS_TEMPLATE.format(header="Standing Committees")
+        select = COMMITTEE_LINKS_TEMPLATE.format(header="Select Committees")
+        find_expr = '{}|{}'.format(standing, select)
         links = [(a.text_content(), a.attrib['href']) for a in
                  page.xpath(find_expr)]
 
@@ -64,10 +69,9 @@ class TNCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        links = doc.xpath(
-                'body/div/div/h1[text()="House Committees"]/'
-                'following-sibling::div/div/div/div//a'
-                )
+        standing = COMMITTEE_LINKS_TEMPLATE.format(header="Committees & Subcommittees")
+        select = COMMITTEE_LINKS_TEMPLATE.format(header="Select Committees")
+        links = doc.xpath('{}|{}'.format(standing, select))
 
         for a in links:
             self._scrape_committee(a.text.strip(), a.get('href'), 'lower')
@@ -123,10 +127,7 @@ class TNCommitteeScraper(CommitteeScraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
 
-        for el in page.xpath(
-                '//div/h2[text()="Committees"]/'
-                'following-sibling::div/div//a'
-                ):
+        for el in page.xpath(COMMITTEE_LINKS_TEMPLATE.format(header="Committees")):
             com_name = el.text
             com_link = el.attrib["href"]
             self.scrape_joint_committee(com_name, com_link)

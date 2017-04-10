@@ -301,6 +301,7 @@ class NMBillScraper(BillScraper):
             '7805': ('Signed', 'governor:signed'),
             '7806': ('Vetoed', 'governor:vetoed'),
             '7807': ('Pocket Veto', 'governor:vetoed'),
+            '7808': ('Law Without Signature', 'governor:signed'),
             '7811': ('Veto Override Passed House', 'bill:veto_override:passed'),
             '7812': ('Veto Override Passed Senate', 'bill:veto_override:passed'),
             '7813': ('Veto Override Failed House', 'bill:veto_override:failed'),
