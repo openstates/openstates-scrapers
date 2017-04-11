@@ -7,6 +7,7 @@ from billy.scrape.legislators import LegislatorScraper, Legislator
 from .utils import clean_committee_name, MDBMixin
 
 import scrapelib
+import unicodedata
 
 class NJLegislatorScraper(LegislatorScraper, MDBMixin):
     jurisdiction = 'nj'
@@ -56,6 +57,14 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             email = None
             if rec["Email"]:
                 email = rec["Email"]
+
+            # Email has been removed from the Access DB, but it's
+            # still AsmLAST@njleg.org and SenLAST@njleg.org - many
+            # reps have these emails on their personal pages even if
+            # they're gone from the DB file
+            if not email:
+                email = self._construct_email(chamber, last_name)
+
             try:
                 photo_url = photos[rec['Roster Key']]
             except KeyError:
@@ -78,3 +87,16 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             leg.add_source(url)
             leg.add_source('http://www.njleg.state.nj.us/downloads.asp')
             self.save_legislator(leg)
+
+    def _construct_email(self, chamber, last_name):
+        # translate accents to non-accented versions for use in an
+        # email and drop apostrophes and hyphens
+        last_name = ''.join(c for c in
+                            unicodedata.normalize('NFD', unicode(last_name))
+                            if unicodedata.category(c) != 'Mn')
+        last_name = last_name.replace("'", "").replace("-", "")        
+
+        if chamber == 'lower':
+            return 'Asm' + last_name  + '@njleg.org'
+        else:
+            return 'Sen' + last_name  + '@njleg.org'
