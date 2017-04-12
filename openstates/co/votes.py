@@ -1,6 +1,6 @@
 from openstates.utils import LXMLMixin
-from billy.scrape.votes import VoteScraper, Vote
-from billy.scrape.utils import convert_pdf
+from pupa.scrape import Scraper, VoteEvent
+from pupa.utils.generic import convert_pdf
 import datetime
 import subprocess
 import lxml
@@ -21,8 +21,7 @@ vote_re = re.compile((r"\s*"
            "ABSENT\s*(?P<abs_count>\d+).*"))
 votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
-class COVoteScraper(VoteScraper, LXMLMixin):
-    jurisdiction = 'co'
+class COVoteScraper(Scraper, LXMLMixin):
 
     def scrape_house(self, session):
         url = journals % (session, 'House')
@@ -31,7 +30,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
 
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            data = convert_pdf(path, type='text')
+            data = convert_pdf(path, type='text-nolayout').decode()
 
             in_vote = False
             cur_vote = {}
@@ -77,8 +76,12 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                     cur_bill_id, chamber, typ = found
 
                 try:
+                    print(non_std)
                     if not non_std:
+
+                        print(line)
                         _, line = line.strip().split(" ", 1)
+                        print(line+"**********************************************")
                     line = line.strip()
                 except ValueError:
                     in_vote = False
@@ -96,8 +99,9 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                     cur_question = line.strip()
                     in_question = True
 
-
+                print("Base-2")
                 if in_vote:
+                    print("base-1")
                     if line == "":
                         likely_garbage = True
 
@@ -118,8 +122,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                     last_line = False
                     for who, _, vote in votes:
                         if who.lower() == "speaker":
-                            last_line = True
-
+                            last_line = True     
                     if votes == [] or last_line:
                         in_vote = False
                         # save vote
@@ -132,16 +135,14 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                             "S": "upper",
                             "J": "joint"
                         }[cur_bill_id[0].upper()]
-
-                        vote = Vote('lower',
-                                    known_date,
-                                    cur_question,
-                                    (yes > no),
-                                    yes,
-                                    no,
-                                    other,
-                                    session=session,
-                                    bill_id=cur_bill_id,
+                        print("base0")
+                        vote = Vote(chamber='lower',
+                                    start_date=known_date,
+                                    motion_text=cur_question,
+                                    result = 'pass' if (yes > no) else 'fail',
+                                    classification='passage',
+                                    legislative_session=session,
+                                    bill=cur_bill_id,
                                     bill_chamber=bc)
 
                         vote.add_source(href.attrib['href'])
@@ -150,7 +151,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                         for person in cur_vote:
                             if person is None:
                                 continue
-
+                            print("base1")
                             vot = cur_vote[person]
 
                             if person.endswith("Y"):
@@ -167,10 +168,12 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                                 vote.yes(person)
                             elif vot == 'N':
                                 vote.no(person)
-                            elif vot == 'E' or vot == '-':
-                                vote.other(person)
+                            elif vot == 'E':
+                                vote.vote('excused', person)
+                            elif vot == '-':
+                                vote.vote('absent', person)
 
-                        self.save_vote(vote)
+                    
 
                         cur_vote = {}
                         in_question = False
@@ -186,20 +189,23 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                 yes, no, exc, ab = summ
                 yes, no, exc, ab = \
                         int(yes), int(no), int(exc), int(ab)
+                vote.set_count('yes', yes)
+                vote.set_count('no', no)
+                vote.set_count('excused', exc)
+                vote.set_count('absent', ab)
                 other = exc + ab
-                cur_vote_count = (yes, no, other)
                 in_vote = True
-                continue
+                print("base2")
+                yield vote
             os.unlink(path)
 
     def scrape_senate(self, session):
         url = journals % (session, 'Senate')
         page = self.lxmlize(url)
         hrefs = page.xpath("//font//a")
-
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
-            data = convert_pdf(path, type='text')
+            data = convert_pdf(path, type='text-nolayout').decode()
 
             cur_bill_id = None
             cur_vote_count = None
@@ -208,7 +214,6 @@ class COVoteScraper(VoteScraper, LXMLMixin):
             in_question = False
             known_date = None
             cur_vote = {}
-
             for line in data.split("\n"):
                 if not known_date:
                     dt = date_re.findall(line)
@@ -277,19 +282,18 @@ class COVoteScraper(VoteScraper, LXMLMixin):
 
                         yes, no, exc, ab = cur_vote_count
                         other = int(exc) + int(ab)
+                        exc = int(exc)
+                        ab = int(ab)
                         yes, no, other = int(yes), int(no), int(other)
 
                         bc = {'H': 'lower', 'S': 'upper'}[cur_bill_id[0]]
-
-                        vote = Vote('upper',
-                                    known_date,
-                                    cur_question,
-                                    (yes > no),
-                                    yes,
-                                    no,
-                                    other,
-                                    session=session,
-                                    bill_id=cur_bill_id,
+                        vote = Vote(chamber='upper',
+                                    start_date=known_date,
+                                    motion_text=cur_question,
+                                    result = 'pass' if (yes > no) else 'fail',
+                                    classification='passage',
+                                    legislative_session=session,
+                                    bill=cur_bill_id,
                                     bill_chamber=bc)
                         for person in cur_vote:
                             if person is None:
@@ -315,10 +319,11 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                             else:
                                 vote.other(person)
                         vote.add_source(href.attrib['href'])
-                        self.save_vote(vote)
+                        
 
                         cur_vote, cur_question, cur_vote_count = (
                             None, None, None)
+                        yield vote
                         continue
 
                     votes = re.findall(votes_re, line)
@@ -329,8 +334,14 @@ class COVoteScraper(VoteScraper, LXMLMixin):
 
             os.unlink(path)
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
         if chamber == 'upper':
-            self.scrape_senate(session)
-        if chamber == 'lower':
-            self.scrape_house(session)
+            yield from self.scrape_senate(session)
+        elif chamber == 'lower':
+            yield from self.scrape_house(session)
+        else:
+            yield from self.scrape_house(session)
+            #yield from self.scrape_senate(session)

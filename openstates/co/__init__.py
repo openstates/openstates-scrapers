@@ -2,7 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from .people import COLegislatorScraper
 from .committees import COCommitteeScraper
-
+from .bills import COBillScraper
 class Colorado(Jurisdiction):
     division_id = "ocd-division/country:us/state:co"
     classification = "government"
@@ -11,6 +11,7 @@ class Colorado(Jurisdiction):
     scrapers = {
         'people':COLegislatorScraper,
         'committee':COCommitteeScraper,
+        'bills':COBillScraper,
     }
     parties = [
         {'name': 'Republican'},

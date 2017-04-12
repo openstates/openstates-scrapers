@@ -4,47 +4,51 @@ import lxml.html
 import scrapelib
 import json
 import math
-from urlparse import urlparse
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+#from urlparse import urlparse
+from urllib import parse as urlparse
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 
-from .actions import Categorizer
-from .pre2016bills import COPre2016BillScraper
+#from .actions import Categorizer
+#from .pre2016bills import COPre2016BillScraper
 
 CO_URL_BASE = "http://leg.colorado.gov"
 
-class COBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'co'
-    categorizer = Categorizer()
+class COBillScraper(Scraper, LXMLMixin):
+    #categorizer = Categorizer()
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
         """
         Entry point when invoking this from billy (or really whatever else)
         """
         #chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-        if int(session[0:4]) < 2016:
-            legacy = COPre2016BillScraper(self.metadata, self.output_dir, self.strict_validation)
-            legacy.scrape(chamber, session)
-            # This throws an error because object_count isn't being properly incremented,
-            # even though it saves fine. So fake the output_names
-            self.output_names = ['1']
-            return
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        
+        for chamber in chambers:
+            if int(session[0:4]) < 2016:
+                legacy = COPre2016BillScraper(self.metadata, self.output_dir, self.strict_validation)
+                legacy.scrape(chamber, session)
+                # This throws an error because object_count isn't being properly incremented,
+                # even though it saves fine. So fake the output_names
+                self.output_names = ['1']
+                return
 
-        page = self.scrape_bill_list(session, chamber, 0)
+            page = self.scrape_bill_list(session, chamber, 0)
 
-        pagination_str = page.xpath('//div[contains(@class, "view-header")]/text()')[0]
-        max_results = re.search(r'of (\d+) results', pagination_str)
-        max_results = int(max_results.group(1))
-        max_page = int(math.ceil(max_results / 25.0))
+            pagination_str = page.xpath('//div[contains(@class, "view-header")]/text()')[0]
+            max_results = re.search(r'of (\d+) results', pagination_str)
+            max_results = int(max_results.group(1))
+            max_page = int(math.ceil(max_results / 25.0))
 
-        # We already have the first page load, so just grab later pages
-        if max_page > 1:
-            for i in range(1, max_page):
-                self.scrape_bill_list(session, chamber, i)
+            # We already have the first page load, so just grab later pages
+            if max_page > 1:
+                for i in range(1, max_page):
+                    yield from self.scrape_bill_list(session, chamber, i)
 
     def scrape_bill_list(self, session, chamber, pageNumber):
         chamber_code_map = {'lower': 1, 'upper': 2}
@@ -76,7 +80,7 @@ class COBillScraper(BillScraper, LXMLMixin):
                                '/h4[contains(@class,"node-title")]/a/@href')
 
         for bill_url in bill_list:
-            self.scrape_bill(session, chamber, bill_url)
+            yield from self.scrape_bill(session, chamber, bill_url)
 
         # We Need to return the page
         # so we can pull the max page # from it on page 1
@@ -100,13 +104,19 @@ class COBillScraper(BillScraper, LXMLMixin):
 
         bill_summary = page.xpath('string(//div[contains(@class,"field-name-field-bill-summary")])')
         bill_summary = bill_summary.strip()
-
-        bill = Bill(session, chamber, bill_number, bill_title, summary=bill_summary)
-
+        print(bill_summary)
+        #bill = Bill(session, chamber, bill_number, bill_title, summary=bill_summary)
+        bill = Bill(
+                    bill_number,
+                    legislative_session=session,
+                    chamber=chamber,
+                    title=bill_title,
+            )
+        
         bill.add_source('{}{}'.format(CO_URL_BASE, bill_url))
 
         self.scrape_sponsors(bill, page)
-        self.scrape_actions(bill, page)
+        #self.scrape_actions(bill, page)
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
         self.scrape_fiscal_notes(bill, page)
@@ -114,7 +124,7 @@ class COBillScraper(BillScraper, LXMLMixin):
         self.scrape_votes(bill, page)
         self.scrape_amendments(bill, page)
 
-        self.save_bill(bill)
+        yield bill
 
 
     def scrape_sponsors(self, bill, page):
@@ -126,7 +136,13 @@ class COBillScraper(BillScraper, LXMLMixin):
             sponsor_chamber = sponsor.xpath('.//span[contains(@class, "member-title")]/text()')[0]
             sponsor_chamber = chamber_map[sponsor_chamber]
 
-            bill.add_sponsor('primary', sponsor_name, chamber=sponsor_chamber)
+            bill.add_sponsorship(
+                                sponsor_name,
+                                classification='primary',
+                                entity_type='person',
+                                primary=True
+                )
+            #bill.add_sponsor('primary', sponsor_name, chamber=sponsor_chamber)
 
     def scrape_versions(self, bill, page):
         versions = page.xpath('//div[@id="bill-documents-tabs1"]//table//tbody//tr')
@@ -152,11 +168,11 @@ class COBillScraper(BillScraper, LXMLMixin):
                 version_name = '{} ({})'.format(version_type, version_date)
 
             if version_url not in seen_versions:
-                bill.add_version(
+                bill.add_version_link(
                     version_name,
                     version_url,
-                    'application/pdf'
-                )
+                    media_type='application/pdf'
+                    )
                 seen_versions.append(version_url)
 
     def scrape_actions(self, bill, page):
@@ -198,19 +214,19 @@ class COBillScraper(BillScraper, LXMLMixin):
             else:
                 version_name = 'Fiscal Note {} ({})'.format(version_type, version_date)
 
-            bill.add_document(version_name, version_url, 'application/pdf')
+            bill.add_document_link(version_name, version_url, media_type='application/pdf')
 
     def scrape_research_notes(self, bill, page):
         note = page.xpath('//div[contains(@class,"research-note")]/@href')
         if note:
             note_url = note[0]
-            bill.add_document("Research Note", note_url, 'application/pdf')
+            bill.add_document_link("Research Note", note_url, media_type='application/pdf')
 
     def scrape_committee_report(self, bill, page):
         note = page.xpath('//a[text()="Committee Report"]/@href')
         if note:
             note_url = note[0]
-            bill.add_version("Committee Amendment", note_url, 'application/pdf')
+            bill.add_version_link("Committee Amendment", note_url, media_type='application/pdf')
 
     def scrape_amendments(self, bill, page):
         # CO Amendments are Buried in their hearing summary pages as attachments
@@ -252,9 +268,9 @@ class COBillScraper(BillScraper, LXMLMixin):
                     # Return the first URL with amendment_filename in it, and don't error on missing
                     amendment_url = next((url for url in pdf_links if amendment_filename in url),None)
                     if amendment_url:
-                        bill.add_version(amendment_name,
+                        bill.add_version_link(amendment_name,
                                          amendment_url,
-                                         'application/pdf',
+                                         media_type='application/pdf',
                                          on_duplicate='use_new')
                     else:
                         self.warning("Didn't find attachment for %s %s",
