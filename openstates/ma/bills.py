@@ -51,7 +51,7 @@ class MABillScraper(BillScraper):
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
 
         # single bill test code
-        #self.scrape_bill(session,'H58',chamber)
+        self.scrape_bill(session,'H58',chamber)
 
         # Pull the search page to get the filters
         search_url = 'https://malegislature.gov/Bills/Search'
@@ -62,14 +62,14 @@ class MABillScraper(BillScraper):
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
         # comment in before running for all bills
-        lastPage = self.get_max_pages(session, chamber)
-        for pageNumber in range(1, lastPage + 1):
-            bills = self.list_bills(session, chamber, pageNumber)
-            for bill in bills:
-                bill = self.format_bill_number(bill).replace(' ','')
-                if bill != 'H58':
-                    continue
-                self.scrape_bill(session, bill, chamber )
+        #lastPage = self.get_max_pages(session, chamber)
+        #for pageNumber in range(1, lastPage + 1):
+        #    bills = self.list_bills(session, chamber, pageNumber)
+        #    for bill in bills:
+        #        bill = self.format_bill_number(bill).replace(' ','')
+        #        if bill != 'H58':
+        #            continue
+        #        self.scrape_bill(session, bill, chamber )
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -211,12 +211,16 @@ class MABillScraper(BillScraper):
                 y = int(action_name.strip().split('-')[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
                 o = 0 # placeholder
+
+                # get supplement number
+                n_supplement = int(action_name.strip().split('No. ')[1].split(r')')[0])
+
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
 
                 #TODO: enable for multiple years
                 housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
-                self.scrape_house(cached_vote, housevote_pdf)
+                self.scrape_house(cached_vote, housevote_pdf, n_supplement)
 
             # Senate votes
             if "Roll Call" in action_name:
@@ -249,11 +253,54 @@ class MABillScraper(BillScraper):
             bill.add_action(action_actor, action_name, action_date, **attrs)
         return page
 
-    def scrape_house(self, vote, vurl):
+    def scrape_house(self, vote, vurl, supplement):
         #Point to PDF and read to memory
         (path, resp) = self.urlretrieve(vurl)
         pdflines = convert_pdf(path, 'text')
         os.remove(path)
+        pdflines = pdflines.decode('utf-8')
+
+        # get pdf data from supplement number
+        vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
+
+        # create list of independant items in vote_text
+        rows = vote_text.splitlines()
+        lines = []
+        for row in rows:
+            lines.extend(row.split('   '))
+
+        # retrieving votes in columns
+
+        vote_tally = []
+        voters = []
+        for line in lines:
+            line = line.strip()
+
+            if 'NAYS' in line or 'YEAS' in line or '=' in line or '/' in line:
+                continue
+            elif line == '':
+                continue
+            elif line == 'N':
+                vote_tally.append('n')
+            elif line == 'Y':
+                vote_tally.append('y')
+            # Not Voting
+            elif line == 'X':
+                vote_tally.append('x')
+            #Present
+            elif line == 'P':
+                vote_tally.append('p')
+            else:
+                voters.append(line)
+        house_votes = list(zip(voters, vote_tally))
+
+        # Need a way to iterate list and add individual names to vote.yes, vote.no
+
+
+
+
+
+
 
         # Recognize page in pdflines
         # read in votes in a column - Y or N

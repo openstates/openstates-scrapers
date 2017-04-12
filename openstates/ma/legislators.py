@@ -71,8 +71,12 @@ class MALegislatorScraper(LegislatorScraper):
         photo_url = root.xpath('//div[@class="thumbPhoto"]/img/@src')[0]
         full_name = root.xpath('//h1/span')[0].tail.strip()
 
-        email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
-        email = email.replace('mailto:', '')
+        try:
+            email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
+            email = email.replace('mailto:', '')
+        except:
+            email = ''
+            print("seat may be vacant")
 
         party, district = root.xpath('//h1/span')[1].text.split('-')
         party = party.strip()
