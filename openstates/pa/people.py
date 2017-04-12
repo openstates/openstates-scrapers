@@ -64,9 +64,6 @@ class PALegislatorScraper(Scraper):
             raise AssertionError("Legislator photo parsing needs to be rewritten")
 
     def scrape_email_address(self, page, leg_id):
-        if leg_id == "1011":
-            import pdb; pdb.set_trace()
-
         # find the right block on the contact page
         leg_block = page.xpath('//a[@href[contains(., "id=%s")]]' % (leg_id,))[0]
 
