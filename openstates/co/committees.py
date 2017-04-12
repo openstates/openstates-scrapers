@@ -11,7 +11,8 @@ class COCommitteeScraper(Scraper, LXMLMixin):
         comName = link.text
         roles = {
             "Chair": "chair",
-            "Vice Chair": "vice-chair"
+            "Vice Chair": "vice-chair",
+            "Vice-Chair": "vice-chair",
         }
         committee = Organization(comName, 
                                  chamber=chamber,
