@@ -37,7 +37,7 @@ class PALegislatorScraper(Scraper):
 
             url = link.get('href')
             leg_id = url.split('?id=')[1]
-            
+
             person = Person(name=full_name, district=district, party=party,
                             primary_org=chamber)
             person.add_link(leg_list_url)
@@ -68,13 +68,12 @@ class PALegislatorScraper(Scraper):
         leg_block = page.xpath('//a[@href[contains(., "id=%s")]]' % (leg_id,))[0]
 
         # navigate to the block of JS with the email details in it
-        email_block = leg_block.getparent().getparent()\
-                      .getnext().text_content()
+        email_block = leg_block.getparent().getparent().getnext().text_content()
         if re.search(r'var \S+\s+= "(\S+)";', email_block):
             vals = re.findall(r'var \S+\s+= "(\S+)";', email_block)
             email = '%s@%s%s' % tuple(vals)
-            return '%s@%s%s' % tuple(vals)
-        
+            return email
+
     def scrape_offices(self, url, doc, person, email):
         offices = False
 
