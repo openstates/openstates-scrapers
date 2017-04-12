@@ -18,6 +18,12 @@ class PALegislatorScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(leg_list_url)
 
+        # email addresses are hidden away on a separate page now, at
+        # least for Senators
+        contact_url = utils.urls['contacts'][chamber]
+        contact_page = self.get(contact_url).text
+        contact_page = lxml.html.fromstring(contact_page)
+
         for link in page.xpath("//a[contains(@href, '_bio.cfm')]"):
             full_name = link.text
             district = link.getparent().getnext().tail.strip()
@@ -30,7 +36,8 @@ class PALegislatorScraper(Scraper):
                 party = 'Democratic'
 
             url = link.get('href')
-
+            leg_id = url.split('?id=')[1]
+            
             person = Person(name=full_name, district=district, party=party,
                             primary_org=chamber)
             person.add_link(leg_list_url)
@@ -41,7 +48,7 @@ class PALegislatorScraper(Scraper):
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(url)
 
-            email = self.scrape_email_address(url, page)
+            email = self.scrape_email_address(contact_page, leg_id)
             self.scrape_offices(url, doc, person, email)
             self.scrape_photo_url(url, doc, person)
 
@@ -56,11 +63,21 @@ class PALegislatorScraper(Scraper):
         else:
             raise AssertionError("Legislator photo parsing needs to be rewritten")
 
-    def scrape_email_address(self, url, page):
-        if re.search(r'var \S+\s+= "(\S+)";', page):
-            vals = re.findall(r'var \S+\s+= "(\S+)";', page)
-            return '%s@%s%s' % tuple(vals)
+    def scrape_email_address(self, page, leg_id):
+        if leg_id == "1011":
+            import pdb; pdb.set_trace()
 
+        # find the right block on the contact page
+        leg_block = page.xpath('//a[@href[contains(., "id=%s")]]' % (leg_id,))[0]
+
+        # navigate to the block of JS with the email details in it
+        email_block = leg_block.getparent().getparent()\
+                      .getnext().text_content()
+        if re.search(r'var \S+\s+= "(\S+)";', email_block):
+            vals = re.findall(r'var \S+\s+= "(\S+)";', email_block)
+            email = '%s@%s%s' % tuple(vals)
+            return '%s@%s%s' % tuple(vals)
+        
     def scrape_offices(self, url, doc, person, email):
         offices = False
 
@@ -107,6 +124,8 @@ class PALegislatorScraper(Scraper):
                     person.add_contact_detail(type='voice', value=phone, note=note)
                 if fax is not None:
                     person.add_contact_detail(type='fax', value=fax, note=note)
+                if email is not None:
+                    person.add_contact_detail(type='email', value=email, note=note)
                 offices = True
 
         if not offices and email:
