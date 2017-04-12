@@ -38,6 +38,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
             cur_vote = None
             in_vote = False
             cur_motion = ""
+            bills = []
 
             # Determine which URLs the information was pulled from
             pdf_url = pdf.attrib['href']
@@ -106,6 +107,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                         cur_vote = None
                         results = {}
                         cur_motion = ""
+                        bills = []
 
                     # If votes are being processed, record the voting members
                     elif ":" in line:
@@ -115,6 +117,14 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
 
                         name_may_be_continued = False if line.endswith(";") \
                                 else True
+
+                    # Extracts bill numbers in the closing text
+                    # used for when the closing text is multiple lines.
+                    elif cur_vote is not None and\
+                            re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line) and \
+                            not any(x in line.lower() for x in
+                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
+                        bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
                     
                     elif cur_vote is not None and \
                             not any(x in line.lower() for x in
@@ -139,7 +149,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
 
                         # Identify what is being voted on
                         # Throw a warning if impropper informaiton found
-                        bills = re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line)
+                        bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
 
                         if bills == [] or cur_motion.strip() == "":
                             results = {}
@@ -150,8 +160,6 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                     "decision text: " + line.strip()
                                     )
                             continue
-
-                        cur_bill_id = "%s%s%s %s" % (bills[-1])
 
                         # If votes are found in the motion name, throw an error
                         if "YEAS:" in cur_motion or "NAYS:" in cur_motion:
@@ -184,61 +192,69 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                             "J": "joint"
                         }
 
-                        # Identify the source chamber for the bill
-                        try:
-                            bc = chambers[cur_bill_id[0]]
-                        except KeyError:
-                            bc = 'other'
+                        # Almost all of the time, a vote only applies to one bill and this loop will only be run once.
+                        # Some exceptions exist.
 
-                        # Determine whether or not the vote passed
-                        if "over the governor's veto" in cur_motion.lower():
-                            VETO_SUPERMAJORITY = 2 / 3
-                            passed = (yes / (yes + no) > VETO_SUPERMAJORITY)
-                        else:
-                            passed = (yes > no)
+                        for bill in bills:
 
-                        # Create a Vote object based on the scraped information
-                        vote = Vote(chamber,
-                                    cur_date,
-                                    cur_motion,
-                                    passed,
-                                    yes,
-                                    no,
-                                    other,
-                                    session=session,
-                                    bill_id=cur_bill_id,
-                                    bill_chamber=bc)
+                            cur_bill_id = "%s%s%s %s" % bill
 
-                        vote.add_source(pdf_url)
-                        vote.add_source(url)
+                            # Identify the source chamber for the bill
+                            try:
+                                bc = chambers[cur_bill_id[0]]
+                            except KeyError:
+                                bc = 'other'
 
-                        # For each category of voting members,
-                        # add the individuals to the Vote object
-                        for key in res:
-                            obj = getattr(vote, key)
-                            for person in res[key]:
-                                obj(person)
+                            # Determine whether or not the vote passed
+                            if "over the governor's veto" in cur_motion.lower():
+                                VETO_SUPERMAJORITY = 2 / 3
+                                passed = (yes / (yes + no) > VETO_SUPERMAJORITY)
+                            else:
+                                passed = (yes > no)
 
-                        # Check the vote counts in the motion text against
-                        # the parsed results
-                        for category_name in keys.keys():
-                            # Need to search for the singular, not plural, in the text
-                            # so it can find, for example,  " 1 NAY "
-                            vote_re = r"(\d+)\s{}".format(category_name[:-1])
-                            motion_count = int(re.findall(vote_re, cur_motion)[0])
-                            vote_count = vote[keys[category_name] + "_count"]
+                            # Create a Vote object based on the scraped information
+                            vote = Vote(chamber,
+                                        cur_date,
+                                        cur_motion,
+                                        passed,
+                                        yes,
+                                        no,
+                                        other,
+                                        session=session,
+                                        bill_id=cur_bill_id,
+                                        bill_chamber=bc)
 
-                            if motion_count != vote_count:
-                                self.warning(
-                                        "Motion text vote counts ({}) ".format(motion_count) +
-                                        "differed from roll call counts ({}) ".format(vote_count) +
-                                        "for {0} on {1}".format(category_name, cur_bill_id)
-                                        )
-                                vote[keys[category_name] + "_count"] = motion_count
+                            vote.add_source(pdf_url)
+                            vote.add_source(url)
 
-                        self.save_vote(vote)
+                            # For each category of voting members,
+                            # add the individuals to the Vote object
+                            for key in res:
+                                obj = getattr(vote, key)
+                                for person in res[key]:
+                                    obj(person)
+
+                            # Check the vote counts in the motion text against
+                            # the parsed results
+                            for category_name in keys.keys():
+                                # Need to search for the singular, not plural, in the text
+                                # so it can find, for example,  " 1 NAY "
+                                vote_re = r"(\d+)\s{}".format(category_name[:-1])
+                                motion_count = int(re.findall(vote_re, cur_motion)[0])
+                                vote_count = vote[keys[category_name] + "_count"]
+
+                                if motion_count != vote_count:
+                                    self.warning(
+                                            "Motion text vote counts ({}) ".format(motion_count) +
+                                            "differed from roll call counts ({}) ".format(vote_count) +
+                                            "for {0} on {1}".format(category_name, cur_bill_id)
+                                            )
+                                    vote[keys[category_name] + "_count"] = motion_count
+
+                            self.save_vote(vote)
 
                         # With the vote successfully processed,
                         # wipe its data and continue to the next one
                         results = {}
                         cur_motion = ""
+                        bills = []
