@@ -326,6 +326,8 @@ class UTBillScraper(BillScraper, LXMLMixin):
             passed = False
         elif "UTAH STATE LEGISLATURE" in descr:
             return
+        elif descr.strip() == '-':
+            return
         else:
             self.warning(descr)
             raise NotImplementedError("Can't see if we passed or failed")

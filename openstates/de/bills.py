@@ -229,10 +229,7 @@ class DEBillScraper(BillScraper, LXMLMixin):
             else:
                 # Actions like 'Stricken' and 'Defeated Amendemnt'
                 # don't have a chamber in the data, so assume the bill's home chamber
-                if 'House' in bill['type'][0]:
-                    action_chamber = 'lower'
-                elif 'Senate' in bill['type'][0]:
-                    action_chamber = 'upper'
+                action_chamber = bill['chamber']
 
             attrs = self.categorizer.categorize(action_name)
 

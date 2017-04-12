@@ -4,8 +4,7 @@ from .bills import FlBillScraper
 from .people import FlPersonScraper
 from .committees import FlCommitteeScraper
 from .events import FlEventScraper
-# TODO: this should probably be moved somewhere common
-from .common import url_xpath
+from openstates.utils import url_xpath
 
 
 class Florida(Jurisdiction):
