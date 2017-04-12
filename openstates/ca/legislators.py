@@ -1,5 +1,6 @@
 import re
 import collections
+import unicodedata
 from operator import methodcaller
 
 import lxml.html
@@ -83,11 +84,15 @@ class CALegislatorScraper(LegislatorScraper):
         leg = Legislator(term, chamber, full_name=name, party=party, district=district,
                          photo_url=photo_url, url=url)
 
+        # CA senators have working emails, but they're not putting them on
+        # their public pages anymore
+        email = self._construct_email(chamber, name)
+
         for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-capitol-office")]//p'):
             addr, phone = addr.text_content().split('; ')
             leg.add_office(
                 'capitol', 'Senate Office',
-                address=addr.strip(), phone=phone.strip())
+                address=addr.strip(), phone=phone.strip(), email=email)
 
         for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-district-office")]//p'):
             for addr in addr.text_content().strip().splitlines():
@@ -144,6 +149,14 @@ class CALegislatorScraper(LegislatorScraper):
         except IndexError:
             pass
 
+        # Remove junk from assembly member names.
+        junk = 'Contact Assembly Member '
+
+        try:
+            res['full_name'] = res['full_name'].pop().replace(junk, '')
+        except IndexError:
+            return
+
         # Addresses.
         addresses = res['address']
         try:
@@ -169,6 +182,11 @@ class CALegislatorScraper(LegislatorScraper):
             addresses[0].update(type='capitol', name='Capitol Office')
             offices.append(addresses[0])
 
+            # CA reps have working emails, but they're not putting them on
+            # their public pages anymore
+            offices[0]['email'] = \
+                  self._construct_email(chamber, res['full_name'])
+
             for office in addresses[1:]:
                 office.update(type='district', name='District Office')
                 offices.append(office)
@@ -179,20 +197,13 @@ class CALegislatorScraper(LegislatorScraper):
                 street = '%s\n%s, %s' % (street, office['city'], state_zip)
                 office['address'] = street
                 office['fax'] = None
-                office['email'] = None
+                if 'email' not in office:
+                    office['email'] = None
 
                 del office['street'], office['city'], office['state_zip']
 
         res['offices'] = offices
         del res['address']
-
-        # Remove junk from assembly member names.
-        junk = 'Contact Assembly Member '
-
-        try:
-            res['full_name'] = res['full_name'].pop().replace(junk, '')
-        except IndexError:
-            return
 
         # Normalize party.
         for party in res['party'][:]:
@@ -219,3 +230,19 @@ class CALegislatorScraper(LegislatorScraper):
         leg.update(**res)
 
         return leg
+
+    def _construct_email(self, chamber, full_name):
+        last_name = re.split(r'\s+', full_name)[-1].lower()
+
+        # translate accents to non-accented versions for use in an
+        # email and drop apostrophes
+        last_name = ''.join(c for c in
+                            unicodedata.normalize('NFD', unicode(last_name))
+                            if unicodedata.category(c) != 'Mn')
+        last_name = last_name.replace("'", "")
+
+        if chamber == 'lower':
+            return 'assemblymember.' +  last_name + '@assembly.ca.gov'
+        else:
+            return 'senator.' +  last_name + '@sen.ca.gov'
+        

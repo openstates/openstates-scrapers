@@ -169,8 +169,13 @@ class COBillScraper(BillScraper, LXMLMixin):
             action_date = action.xpath('td[1]/text()')[0]
             action_date = dt.datetime.strptime(action_date, '%m/%d/%Y')
 
-            action_chamber = action.xpath('td[2]/text()')[0]
-            action_actor = chamber_map[action_chamber]
+            # If an action has no chamber, it's joint
+            # e.g. http://leg.colorado.gov/bills/sb17-100 
+            if action.xpath('td[2]/text()'):
+                action_chamber = action.xpath('td[2]/text()')[0]
+                action_actor = chamber_map[action_chamber]
+            else:
+                action_actor = 'joint'
 
             action_name = action.xpath('td[3]/text()')[0]
 
@@ -260,35 +265,36 @@ class COBillScraper(BillScraper, LXMLMixin):
         votes = page.xpath('//div[@id="bill-documents-tabs3"]//table//tbody//tr')
 
         for vote in votes:
-            vote_url = vote.xpath('td[3]/a/@href')[0]
+            if vote.xpath('td[3]/a/@href'):
+                vote_url = vote.xpath('td[3]/a/@href')[0]
 
-            parent_committee_row = vote.xpath('ancestor::ul[@class="accordion"]/li/'
-                                              'a[@class="accordion-title"]/h5/text()')[0]
-            parent_committee_row = parent_committee_row.strip()
+                parent_committee_row = vote.xpath('ancestor::ul[@class="accordion"]/li/'
+                                                'a[@class="accordion-title"]/h5/text()')[0]
+                parent_committee_row = parent_committee_row.strip()
 
-            # The vote day and chamber aren't on the roll call page,
-            # But they're in a header row above this one...
+                # The vote day and chamber aren't on the roll call page,
+                # But they're in a header row above this one...
 
-            # e.g. 05/05/2016                  | Senate State, Veterans, & Military Affairs
-            header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
-                               parent_committee_row)
+                # e.g. 05/05/2016                  | Senate State, Veterans, & Military Affairs
+                header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
+                                parent_committee_row)
 
-            # Some vote headers have missing information, so we cannot save the vote information
-            if not header:
-                self.warning("No date and committee information available in the vote header.")
-                return
+                # Some vote headers have missing information, so we cannot save the vote information
+                if not header:
+                    self.warning("No date and committee information available in the vote header.")
+                    return
 
-            if 'Senate' in header.group('committee'):
-                chamber = 'upper'
-            elif 'House' in header.group('committee'):
-                chamber = 'lower'
-            else:
-                self.warning("No chamber for %s" % header.group('committee'))
-                chamber = bill['chamber']
+                if 'Senate' in header.group('committee'):
+                    chamber = 'upper'
+                elif 'House' in header.group('committee'):
+                    chamber = 'lower'
+                else:
+                    self.warning("No chamber for %s" % header.group('committee'))
+                    chamber = bill['chamber']
 
-            date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
+                date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
 
-            self.scrape_vote(bill, vote_url, chamber, date)
+                self.scrape_vote(bill, vote_url, chamber, date)
 
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
