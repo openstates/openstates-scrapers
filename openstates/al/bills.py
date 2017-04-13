@@ -206,6 +206,8 @@ class ALBillScraper(Scraper):
                                     'MainDefaultContent$gvStatus$ctl02$ctl00'
         }
 
+        self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=True)
+
         yield from self.scrape_bill_list(RESOLUTION_LIST_URL)
 
     def scrape_bill_list(self, url):
