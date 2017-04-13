@@ -73,7 +73,7 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
             self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
-        url = 'http://www.senate.michigan.gov/senatorinfo.html'
+        url = 'http://www.senate.michigan.gov/senatorinfo_list.html'
         doc = self.lxmlize(url)
         for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
             if len(row) != 7:
