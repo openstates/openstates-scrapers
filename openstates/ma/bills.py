@@ -239,14 +239,6 @@ class MABillScraper(BillScraper):
 
                 self.scrape_rollcall(cached_vote, rollcall_pdf)
 
-                # removed functionality for source and document adding, probably not working
-                #vote.add_source(rollcall_pdf)
-                #convert_pdf(vote_path, 'text')
-                #bill.add_document(row.xpath('string(td[3]/a/text())'),
-                #    vote_path,
-                #    mimetype='application/pdf')
-                #cached_vote.add_source('malegislature.gov/' + row)
-
                 #TODO:linclude other votes (not yes no)
 
             #TODO: categorize action
@@ -258,7 +250,7 @@ class MABillScraper(BillScraper):
         (path, resp) = self.urlretrieve(vurl)
         pdflines = convert_pdf(path, 'text')
         os.remove(path)
-        pdflines = pdflines.decode('utf-8')
+        pdflines = pdflines.decode('utf-8').replace(u'\u2019', "'")
 
         # get pdf data from supplement number
         vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
@@ -270,11 +262,11 @@ class MABillScraper(BillScraper):
             lines.extend(row.split('   '))
 
         # retrieving votes in columns
-
         vote_tally = []
         voters = []
         for line in lines:
-            line = line.strip()
+            # removes whitespace and after-vote '*' tag
+            line = line.strip().strip('*').strip()
 
             if 'NAYS' in line or 'YEAS' in line or '=' in line or '/' in line:
                 continue
@@ -290,25 +282,28 @@ class MABillScraper(BillScraper):
             #Present
             elif line == 'P':
                 vote_tally.append('p')
+
+            #True for all records 2009 - 2017 - brittle code, this will change in the future
+            elif line == 'Mr. Speaker':
+                voters.append('DeLeo')
+            # Handle legislators with same last name
+            elif line == 'Moran F.':
+                voters.append('Moran, Frank A.')
+            elif line == 'Moran M.':
+                voters.append('Moran, Michael J.')
             else:
                 voters.append(line)
         house_votes = list(zip(voters, vote_tally))
+        print voters
+        # iterate list and add individual names to vote.yes, vote.no
+        for tup1 in house_votes:
+            if tup1[1] == 'y':
+                vote.yes(tup1[0])
+            elif tup1[1] == 'n':
+                vote.no(tup1[0])
+            else:
+                vote.other(tup1[0])
 
-        # Need a way to iterate list and add individual names to vote.yes, vote.no
-
-
-
-
-
-
-
-        # Recognize page in pdflines
-        # read in votes in a column - Y or N
-        # read in legislator names
-        # clean legislator names
-        # handle 'Mr. Speaker Items'
-        # match vote to legislator name
-        # run vote.yes and vote.no for individual legislators
 
     def scrape_rollcall(self, vote, vurl):
         # download file to server
