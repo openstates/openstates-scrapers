@@ -51,7 +51,7 @@ class MABillScraper(BillScraper):
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
 
         # single bill test code
-        self.scrape_bill(session,'H58',chamber)
+        # self.scrape_bill(session,'H58',chamber)
 
         # Pull the search page to get the filters
         search_url = 'https://malegislature.gov/Bills/Search'
@@ -62,14 +62,12 @@ class MABillScraper(BillScraper):
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
         # comment in before running for all bills
-        #lastPage = self.get_max_pages(session, chamber)
-        #for pageNumber in range(1, lastPage + 1):
-        #    bills = self.list_bills(session, chamber, pageNumber)
-        #    for bill in bills:
-        #        bill = self.format_bill_number(bill).replace(' ','')
-        #        if bill != 'H58':
-        #            continue
-        #        self.scrape_bill(session, bill, chamber )
+        lastPage = self.get_max_pages(session, chamber)
+        for pageNumber in range(1, lastPage + 1):
+            bills = self.list_bills(session, chamber, pageNumber)
+            for bill in bills:
+                bill = self.format_bill_number(bill).replace(' ','')
+                self.scrape_bill(session, bill, chamber )
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -294,7 +292,6 @@ class MABillScraper(BillScraper):
             else:
                 voters.append(line)
         house_votes = list(zip(voters, vote_tally))
-        print voters
         # iterate list and add individual names to vote.yes, vote.no
         for tup1 in house_votes:
             if tup1[1] == 'y':
@@ -303,7 +300,6 @@ class MABillScraper(BillScraper):
                 vote.no(tup1[0])
             else:
                 vote.other(tup1[0])
-
 
     def scrape_rollcall(self, vote, vurl):
         # download file to server
@@ -340,11 +336,9 @@ class MABillScraper(BillScraper):
                     raw_name = raw_name.strip()
                     if raw_name == '':
                         continue
-
                     # If there is a '-' near end of string remove everything after it inclusive
                     # split on '-'
                     cut_name = raw_name.split('-')
-
                     # examine last list item, strip of . and whitespace, test whether numeric
                     clean_name = ''
                     if cut_name[len(cut_name) - 1].strip(' .').isdigit():
@@ -352,7 +346,18 @@ class MABillScraper(BillScraper):
                         clean_name = ''.join(cut_name)
                     else:
                         clean_name = raw_name.strip()
+                    # handle name exceptions - probably somewhere better to put these
+                    if clean_name == "Chandler, Harriett L.":
+                        clean_name = "Harriette L. Chandler"
+                    elif clean_name == "Creem, Cynthia Stone":
+                        clean_name = "Creem, Cynthia S."
+                    #TODO: this should be handled elsewhere as the legislator name is incorrect
+                    elif clean_name == "O'Connor Ives, Kathleen":
+                        clean_name = "Ives, Kathleen O'Connor"
+                    elif clean_name == "Humason, Donald F., Jr.":
+                        clean_name = "Donald F. Humason, Jr."
 
+                    #if clean_name = ''
                     # update vote object with names
                     if mode == 'y':
                         yes_votes.append(clean_name)
@@ -360,6 +365,7 @@ class MABillScraper(BillScraper):
                     elif mode == 'n':
                         no_votes.append(clean_name)
                         vote.no(clean_name)
+                    #TODO: Other votes
                     else:
                         continue
 
