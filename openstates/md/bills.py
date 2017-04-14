@@ -401,8 +401,9 @@ class MDBillScraper(BillScraper):
 
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
-            description = td.xpath('text()')[0]
-            description = self.remove_leading_dash(description)
+            description = td.xpath('text()')
+            if description:
+                description = self.remove_leading_dash(description[0])
             whole = ''.join(td.itertext())
 
             if a.text == 'Text':
