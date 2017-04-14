@@ -1,35 +1,33 @@
-from datetime import datetime as datetime
+from datetime import datetime
 import re
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import Event, EventScraper
-from openstates.utils import LXMLMixin
-
-import lxml.html
 import pytz
+from pupa.scrape import Scraper
+from pupa.scrape import Event
+
+from openstates.utils import LXMLMixin
 
 url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
-class MNEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'mn'
+
+class MNEventScraper(Scraper, LXMLMixin):
+    tz = pytz.timezone("US/Central")
     date_formats = (
         '%A, %B %d, %Y %I:%M %p',
         '%A, %B %d'
     )
 
-    def scrape(self, chamber, session):
-        self.session = session
-
+    def scrape(self):
         page = self.lxmlize(url)
 
-        commission_meetings = page.xpath("//div[@class='Comm_item']")
-        self.scrape_meetings(commission_meetings, 'commission')
+        commission_meetings = page.xpath("//div[@class='cal_item comm_item']")
+        yield from self.scrape_meetings(commission_meetings, 'commission')
 
-        house_meetings = page.xpath("//div[@class='house_item']")
-        self.scrape_meetings(house_meetings, 'house')
+        house_meetings = page.xpath("//div[@class='cal_item house_item']")
+        yield from self.scrape_meetings(house_meetings, 'house')
 
-        senate_meetings = page.xpath("//div[@class='senate_item']")
-        self.scrape_meetings(senate_meetings, 'senate')
+        senate_meetings = page.xpath("//div[@class='cal_item senate_item']")
+        yield from self.scrape_meetings(senate_meetings, 'senate')
 
     def scrape_meetings(self, meetings, group):
         """
@@ -49,21 +47,14 @@ class MNEventScraper(EventScraper, LXMLMixin):
             location = self.get_location(meeting)
 
             if when and description and location:
-                kwargs = {}
-                if group in self.metadata['chambers'].keys():
-                    kwargs['chamber'] = group
+                event = Event(name=description, start_time=when.replace(tzinfo=self.tz),
+                              timezone=self.tz.zone, description=description,
+                              location_name=location)
                 agenda = self.get_agenda(meeting)
                 if agenda:
-                    kwargs['agenda'] = agenda
-
-                # Event prototype is as follows:
-                # class Event(SourcedObject):
-                #    def __init__(self, session, when, type,
-                #                 description, location, end=None, **kwargs)
-                event = Event(self.session, when, 'committee:meeting',
-                        description, location, **kwargs)
+                    event.add_agenda_item(agenda)
                 event.add_source(url)
-                self.save_event(event)
+                yield event
 
     def get_date(self, meeting):
         """
@@ -73,11 +64,14 @@ class MNEventScraper(EventScraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        date_raw = meeting.xpath(".//b")
+        date_raw = meeting.xpath(".//*[@class='calendar_p_top']")
         if len(date_raw) < 1:
             return
 
-        date_string = date_raw[0].text_content().strip()
+        raw_text = date_raw[0].text_content()
+        if "canceled" in raw_text.lower():
+            return
+        date_string = raw_text.split('**')[0].strip()
 
         for date_format in self.date_formats:
             try:
@@ -102,7 +96,8 @@ class MNEventScraper(EventScraper, LXMLMixin):
         i -- The index of `a`/`span` tags to look for.
 
         """
-        description_raw = meeting.xpath(".//a")
+        description_raw = meeting.xpath(".//a[not(starts-with(@href,"
+                                        "'https://events.qwikcast.tv/'))]")
         if (len(description_raw) < 1 or
                 description_raw[0].text_content() == ''):
             description_raw = meeting.xpath(".//span")
@@ -127,7 +122,12 @@ class MNEventScraper(EventScraper, LXMLMixin):
         meeting -- A lxml element containing event information
 
         """
-        return self.get_tail_of(meeting, '^Room:')
+        result = self.get_tail_of(meeting, '^Room:')
+        if result is not None:
+            return result
+        fallback_texts = meeting.xpath(".//text()[starts-with(., 'Room')]")
+        if len(fallback_texts) >= 1:
+            return fallback_texts[0][4:].strip()
 
     def get_agenda(self, meeting):
         """
@@ -157,7 +157,7 @@ class MNEventScraper(EventScraper, LXMLMixin):
         """
         pattern = re.compile(pattern_string)
 
-        p_tags = meeting.xpath(".//p")
+        p_tags = meeting.xpath(".//*[@class='calendar_p_indent']")
         if len(p_tags) < 1:
             return
 
@@ -173,4 +173,3 @@ class MNEventScraper(EventScraper, LXMLMixin):
                         return tail
                     break
         return
-
