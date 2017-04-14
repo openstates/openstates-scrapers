@@ -67,7 +67,7 @@ class MABillScraper(BillScraper):
             bills = self.list_bills(session, chamber, pageNumber)
             for bill in bills:
                 bill = self.format_bill_number(bill).replace(' ','')
-                self.scrape_bill(session, bill, chamber )
+                self.scrape_bill(session, bill, chamber)
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -186,7 +186,6 @@ class MABillScraper(BillScraper):
                 page = self.scrape_action_page(bill, bill_url, counter)
                 #https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
-
     def scrape_action_page(self, bill, bill_url, page_number):
         actions_url = "{}/BillHistory?pageNumber={}".format(bill_url, page_number)
         page = lxml.html.fromstring(self.get_as_ajax(actions_url).text)
@@ -232,12 +231,8 @@ class MABillScraper(BillScraper):
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
 
-                # ID path of pdf
                 rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
-
-                self.scrape_rollcall(cached_vote, rollcall_pdf)
-
-                #TODO:linclude other votes (not yes no)
+                self.scrape_senate(cached_vote, rollcall_pdf)
 
             #TODO: categorize action
             bill.add_action(action_actor, action_name, action_date, **attrs)
@@ -291,6 +286,7 @@ class MABillScraper(BillScraper):
                 voters.append('Moran, Michael J.')
             else:
                 voters.append(line)
+
         house_votes = list(zip(voters, vote_tally))
         # iterate list and add individual names to vote.yes, vote.no
         for tup1 in house_votes:
@@ -301,19 +297,15 @@ class MABillScraper(BillScraper):
             else:
                 vote.other(tup1[0])
 
-    def scrape_rollcall(self, vote, vurl):
+    def scrape_senate(self, vote, vurl):
         # download file to server
         (path, resp) = self.urlretrieve(vurl)
         pdflines = convert_pdf(path, 'text')
         os.remove(path)
 
-        # create mode with y, n, a, null
+        # for y, n
         mode = None
-        yes_votes = []
-        no_votes = []
-        other_votes = []
 
-        # Create list broken at \n
         lines = pdflines.splitlines()
 
         # handle individual lines in pdf to id legislator votes
@@ -329,45 +321,39 @@ class MABillScraper(BillScraper):
                 mode = 'n'
             # else parse line with names
             else:
-                #split on '   '
                 nameline = line.split('   ')
 
                 for raw_name in nameline:
                     raw_name = raw_name.strip()
                     if raw_name == '':
                         continue
-                    # If there is a '-' near end of string remove everything after it inclusive
-                    # split on '-'
+
+                    # handles vote count lines
                     cut_name = raw_name.split('-')
-                    # examine last list item, strip of . and whitespace, test whether numeric
                     clean_name = ''
                     if cut_name[len(cut_name) - 1].strip(' .').isdigit():
                         del cut_name[-1]
                         clean_name = ''.join(cut_name)
                     else:
                         clean_name = raw_name.strip()
+
                     # handle name exceptions - probably somewhere better to put these
                     if clean_name == "Chandler, Harriett L.":
                         clean_name = "Harriette L. Chandler"
                     elif clean_name == "Creem, Cynthia Stone":
                         clean_name = "Creem, Cynthia S."
-                    #TODO: this should be handled elsewhere as the legislator name is incorrect
+                    #TODO: this should be handled elsewhere as Ives name is incorrect
                     elif clean_name == "O'Connor Ives, Kathleen":
                         clean_name = "Ives, Kathleen O'Connor"
                     elif clean_name == "Humason, Donald F., Jr.":
                         clean_name = "Donald F. Humason, Jr."
 
-                    #if clean_name = ''
                     # update vote object with names
                     if mode == 'y':
-                        yes_votes.append(clean_name)
                         vote.yes(clean_name)
                     elif mode == 'n':
-                        no_votes.append(clean_name)
                         vote.no(clean_name)
                     #TODO: Other votes
-                    else:
-                        continue
 
     def get_as_ajax(self, url):
         #set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
