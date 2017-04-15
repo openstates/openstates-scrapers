@@ -9,4 +9,5 @@ python3 -m flake8 \
     openstates/nm \
     openstates/pa \
     openstates/va \
+    openstates/id \
     pupa2billy
