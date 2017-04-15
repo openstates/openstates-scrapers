@@ -33,7 +33,7 @@ _categorizers = {
     'read a third time': 'reading-3',
     'introduced by': 'introduction',
     'passed': 'passage',
-    'referred to committee': 'committee-passage',
+    'referred to committee': 'referral-committee',
     'reported': 'committee-passage',
     'received': 'introduction',
     'presented to governor': 'executive-receipt',
@@ -65,7 +65,7 @@ class MIBillScraper(Scraper):
                             % (session[-4:], bill_id.replace(' ', '-'))).text
             if ('Page Not Found' in html or
                     'The bill you are looking for is not available yet' in html):
-                return None
+                return
 
         doc = lxml.html.fromstring(html)
 
@@ -79,13 +79,17 @@ class MIBillScraper(Scraper):
         bill.add_source(url)
 
         # sponsors
-        for sponsor in doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a'):
+        sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
+        for sponsor in sponsors:
             name = sponsor.text.replace(u'\xa0', ' ')
-            classification = (
-                'primary'
-                if sponsor.tail and 'primary' in sponsor.tail
-                else 'cosponsor'
-            )
+            if len(sponsors) > 1:
+                classification = (
+                    'primary'
+                    if sponsor.tail and 'primary' in sponsor.tail
+                    else 'cosponsor'
+                )
+            else:
+                classification = 'primary'
             bill.add_sponsorship(
                 name=name,
                 chamber=chamber,
@@ -122,11 +126,11 @@ class MIBillScraper(Scraper):
                     results = self.parse_roll_call(vote_url, rc_num)
                     vote = VoteEvent(
                         start_date=date,
-                        chamber=chamber,
+                        chamber=actor,
                         bill=bill,
                         motion_text=action,
                         result='pass' if len(results['yes']) > len(results['no']) else 'fail',
-                        classification='committee',
+                        classification='passage',
                     )
 
                     # check the expected counts vs actual
@@ -149,6 +153,8 @@ class MIBillScraper(Scraper):
                         vote.yes(name)
                     for name in results['no']:
                         vote.no(name)
+                    for name in results['other']:
+                        vote.vote('other', name)
 
                     vote.add_source(vote_url)
                     yield vote
