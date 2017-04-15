@@ -183,9 +183,8 @@ class IDBillScraper(Scraper):
         for subject in self._subjects[bill_id.replace(' ', '')]:
             bill.add_subject(subject)
 
-        # if short_title and title.lower() != short_title.lower():
-        #     print(short_title)
-        #     bill.add_title(short_title)
+        if short_title and title.lower() != short_title.lower():
+            bill.add_title(short_title, 'short title')
 
         # documents
         doc_links = html.xpath('//div[contains(@class,"pf-content")]//a')

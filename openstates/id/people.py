@@ -114,6 +114,5 @@ class IDPersonScraper(Scraper):
                 person.add_contact_detail(type='voice', value=office_phone,
                                           note='Capitol Office')
             person.add_source(url)
-            person.add_link(url)
-            person.extras['url'] = person_url
+            person.add_link(person_url)
             yield person
