@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import re
 import sys
 import json
 import glob
@@ -78,6 +79,10 @@ class Comparator:
 
         self.summary()
 
+def fix_bill_id(bill_id):
+    bill_id = bill_id.replace('.', '')
+    _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+    return _bill_id_re.sub(r'\1 \2', bill_id, 1).strip()
 
 class VoteComparator(Comparator):
     def load_json(self, dirname):
@@ -91,7 +96,7 @@ class VoteComparator(Comparator):
             blobs = []
             for bill in bills:
                 for v in bill.get('votes'):
-                    v['bill_id'] = bill['bill_id']
+                    v['bill_id'] = fix_bill_id(bill['bill_id'])
                     blobs.append(v)
         all_json = defaultdict(list)
         for d in blobs:
