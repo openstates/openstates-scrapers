@@ -1,9 +1,10 @@
 python3 -m flake8 \
+    openstates/de \
     openstates/fl \
-    openstates/mn \
     openstates/mi \
-    openstates/nc \
+    openstates/mn \
     openstates/mt \
+    openstates/nc \
     openstates/nj \
     openstates/pa \
     openstates/va \
