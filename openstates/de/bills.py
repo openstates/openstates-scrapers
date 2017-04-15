@@ -5,11 +5,12 @@ import math
 
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
+from .actions import Categorizer
 
 
 class DEBillScraper(Scraper, LXMLMixin):
     jurisdiction = 'de'
-    # categorizer = actions.Categorizer()
+    categorizer = Categorizer()
     chamber_codes = {'upper': 1, 'lower': 2}
     chamber_codes_rev = {1: 'upper', 2: 'lower'}
     chamber_map = {'House': 'lower', 'Senate': 'upper'}
@@ -255,11 +256,19 @@ class DEBillScraper(Scraper, LXMLMixin):
                     action_chamber = 'lower'
                 else:
                     action_chamber = 'upper'
-            # attrs = self.categorizer.categorize(action_name)
-            bill.add_action(description=action_name,
-                            date=action_date,
-                            chamber=action_chamber
-                            )
+
+            categorization = self.categorizer.categorize(action_name)
+
+            action = bill.add_action(description=action_name,
+                                     date=action_date,
+                                     chamber=action_chamber,
+                                     classification=categorization['classification'],
+                                     )
+
+            for l in categorization['legislators']:
+                action.add_related_entity(l, 'person')
+            for c in categorization['committees']:
+                action.add_related_entity(c, 'organization')
 
     def classify_bill(self, bill_id):
         legislation_types = (
