@@ -302,7 +302,7 @@ class MDBillScraper(BillScraper):
                 passed = yes_count > no_count
             else:
                 passed = None
-        elif 'overridden' in motion:
+        elif 'overridden' in motion.lower():
             passed = True
             motion = 'Veto Override'
         elif 'Sustained' in motion:
@@ -424,6 +424,8 @@ class MDBillScraper(BillScraper):
             elif a.text in ('Bond Bill Fact Sheet',
                             "Attorney General's Review Letter",
                             "Governor's Veto Letter",
+                            "Joint Chairmen's Report",
+                            "Conference Committee Summary Report",
                            ):
                 bill.add_document(a.text, a.get('href'),
                                   mimetype='application/pdf')
