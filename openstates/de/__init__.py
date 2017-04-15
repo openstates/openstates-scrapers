@@ -1,143 +1,113 @@
-import lxml.html
-from billy.scrape.utils import url_xpath
+from .people import DEPersonScraper
 from .bills import DEBillScraper
-from .legislators import DELegislatorScraper
-from .committees import DECommitteeScraper
 from .events import DEEventScraper
-import logging
-logging.basicConfig(level=logging.DEBUG)
+from .committees import DECommitteeScraper
 
-metadata = {
-    'name': 'Delaware',
-    'abbreviation': 'de',
-    'legislature_name': 'Delaware General Assembly',
-    'legislature_url': 'http://legis.delaware.gov/',
-    'capitol_timezone': 'America/New_York',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    'terms': [
-         {
-            'name': '1999-2000',
-            'start_year': 1999,
-            'end_year': 2000,
-            'sessions': ['140'],
-        },
-         {
-            'name': '2001-2002',
-            'start_year': 2001,
-            'end_year': 2002,
-            'sessions': ['141'],
-        },
-        {
-            'name': '2003-2004',
-            'start_year': 2003,
-            'end_year': 2004,
-            'sessions': ['142'],
-        },
-        {
-            'name': '2005-2006',
-            'start_year': 2005,
-            'end_year': 2006,
-            'sessions': ['143'],
-        },
-        {
-            'name': '2007-2008',
-            'start_year': 2007,
-            'end_year': 2008,
-            'sessions': ['144'],
-        },
-        {
-            'name': '2009-2010',
-            'start_year': 2009,
-            'end_year': 2010,
-            'sessions': ['145'],
-        },
-        {
-            'name': '2011-2012',
-            'start_year': 2011,
-            'end_year': 2012,
-            'sessions': ['146'],
-        },
-        {
-            'name': '2013-2014',
-            'start_year': 2013,
-            'end_year': 2014,
-            'sessions': ['147'],
-        },
-        {
-            'name': '2015-2016',
-            'start_year': 2015,
-            'end_year': 2016,
-            'sessions': ['148'],
-            },
-        {
-            'name': '2017-2018',
-            'start_year': 2017,
-            'end_year': 2018,
-            'sessions': ['149'],
-            },
-    ],
-    'session_details': {
-         '140': {
-            'display_name': '140th General Assembly (1999-2000)',
-            '_scraped_name': '1998 - 2000 (GA 140)',
-        },
-         '141': {
-            'display_name': '141st General Assembly (2001-2002)',
-            '_scraped_name': '2000 - 2002 (GA 141)',
-        },
-         '142': {
-            'display_name': '142nd General Assembly (2003-2004)',
-            '_scraped_name': '2002 - 2004 (GA 142)',
-        },
-         '143': {
-            'display_name': '143rd General Assembly (2005-2006)',
-            '_scraped_name': '2004 - 2006 (GA 143)',
-        },
-        '144': {
-            'display_name': '144th General Assembly (2007-2008)',
-            '_scraped_name': '2006 - 2008 (GA 144)',
-        },
-        '145': {
-            'display_name': '145th General Assembly (2009-2010)',
-            '_scraped_name': '2008 - 2010 (GA 145)',
-        },
-        '146': {
-            'display_name': '146th General Assembly (2011-2012)',
-            '_scraped_name': '2010 - 2012 (GA 146)',
-        },
-        '147': {
-            'display_name': '147th General Assembly (2013-2014)',
-            '_scraped_name': '2012 - 2014 (GA 147)',
-        },
-        '148': {
-            'display_name': '148th General Assembly (2015-2016)',
-            '_scraped_name': '2014 - 2016 (GA 148)',
-        },
-        '149': {
-            'display_name': '149th General Assembly (2017-2018)',
-            '_scraped_name': '2016 - 2018 (GA 149)',
-        },
-    },
-    'feature_flags': ['events', 'influenceexplorer'],
-    '_ignored_scraped_sessions': [
+from openstates.utils import url_xpath
 
-    ],
-}
+from pupa.scrape import Jurisdiction, Organization
 
 
-def session_list():
-    url = 'https://legis.delaware.gov/'
-    sessions = url_xpath(url,
-        '//select[@id="billSearchGARefiner"]/option/text()')
-    sessions = [session.strip() for session in sessions if session.strip()]
-    return sessions
+class Delaware(Jurisdiction):
+    division_id = "ocd-division/country:us/state:de"
+    classification = "government"
+    name = "Delaware"
+    url = "http://legis.delaware.gov/"
+    scrapers = {
+        'people': DEPersonScraper,
+        'bills': DEBillScraper,
+        'events': DEEventScraper,
+        'committees': DECommitteeScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "1998 - 2000 (GA 140)",
+            "identifier": "140",
+            "name": "140th General Assembly (1999-2000)"
+        },
+        {
+            "_scraped_name": "2000 - 2002 (GA 141)",
+            "identifier": "141",
+            "name": "141st General Assembly (2001-2002)"
+        },
+        {
+            "_scraped_name": "2002 - 2004 (GA 142)",
+            "identifier": "142",
+            "name": "142nd General Assembly (2003-2004)"
+        },
+        {
+            "_scraped_name": "2004 - 2006 (GA 143)",
+            "identifier": "143",
+            "name": "143rd General Assembly (2005-2006)"
+        },
+        {
+            "_scraped_name": "2006 - 2008 (GA 144)",
+            "identifier": "144",
+            "name": "144th General Assembly (2007-2008)"
+        },
+        {
+            "_scraped_name": "2008 - 2010 (GA 145)",
+            "identifier": "145",
+            "name": "145th General Assembly (2009-2010)"
+        },
+        {
+            "_scraped_name": "2010 - 2012 (GA 146)",
+            "identifier": "146",
+            "name": "146th General Assembly (2011-2012)"
+        },
+        {
+            "_scraped_name": "2012 - 2014 (GA 147)",
+            "identifier": "147",
+            "name": "147th General Assembly (2013-2014)"
+        },
+        {
+            "_scraped_name": "2014 - 2016 (GA 148)",
+            "identifier": "148",
+            "name": "148th General Assembly (2015-2016)"
+        },
+        {
+            "_scraped_name": "2016 - 2018 (GA 149)",
+            "identifier": "149",
+            "name": "149th General Assembly (2017-2018)"
+        }
+    ]
+    ignored_scraped_sessions = []
 
+    def get_organizations(self):
+        legislature_name = "Delaware General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 41
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 21
+        upper_title = "Senator"
 
-def extract_text(doc, data):
-    if doc['mimetype'] == 'text/html':
-        doc = lxml.html.fromstring(data)
-        return ' '.join(x.text_content()
-            for x in doc.xpath('//p[@class: "MsoNormal"]'))
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        url = 'https://legis.delaware.gov/'
+        sessions = url_xpath(url, '//select[@id="billSearchGARefiner"]/option/text()')
+        sessions = [session.strip() for session in sessions if session.strip()]
+        return sessions
