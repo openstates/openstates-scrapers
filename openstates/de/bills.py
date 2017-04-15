@@ -40,10 +40,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         page = self.post_search(session, chamber, 1, per_page)
 
         for row in page['Data']:
-            bill = self.scrape_bill(row, chamber, session)
-            # 'SA' in bill_id then bill will be none
-            if bill is not None:
-                yield bill
+            yield from self.scrape_bill(row, chamber, session)
 
         max_results = int(page["Total"])
         if max_results > per_page:
@@ -52,23 +49,10 @@ class DEBillScraper(Scraper, LXMLMixin):
             for i in range(2, max_page):
                 page = self.post_search(session, chamber, i, per_page)
                 for row in page['Data']:
-                    bill = self.scrape_bill(row, chamber, session)
-                    # 'SA' in bill_id then bill will be none
-                    if bill is not None:
-                        yield bill
+                    yield from self.scrape_bill(row, chamber, session)
 
     def scrape_bill(self, row, chamber, session):
-
         bill_id = row['LegislationNumber']
-
-        if row['Synopsis']:
-            bill_summary = row['Synopsis']
-        else:
-            bill_summary = ''
-
-        bill_title = row['LongTitle']
-        if row['ShortTitle']:
-            alternate_title = row['ShortTitle']
 
         # TODO: re-evaluate if these should be separate bills
         if 'SA' in bill_id or 'HA' in bill_id:
@@ -79,8 +63,12 @@ class DEBillScraper(Scraper, LXMLMixin):
         bill = Bill(identifier=bill_id,
                     legislative_session=session,
                     chamber=chamber,
-                    title=bill_title,
+                    title=row['LongTitle'],
                     classification=bill_type)
+        if row['Synopsis']:
+            bill.add_abstract(row['Synopsis'], 'synopsis')
+        if row['ShortTitle']:
+            bill.add_title(row['ShortTitle'], 'short title')
         if row['SponsorPersonId']:
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
 
@@ -120,7 +108,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         self.scrape_actions(bill, row['LegislationId'])
         yield from self.scrape_votes(bill, row['LegislationId'], session)
 
-        return bill
+        yield bill
 
     def scrape_legislators(self, session):
         search_form_url = 'https://legis.delaware.gov/json/Search/GetFullLegislatorList'
@@ -189,8 +177,11 @@ class DEBillScraper(Scraper, LXMLMixin):
             vote_motion = roll['RollCallVoteType']
 
             vote_passed = 'pass' if roll['RollCallStatus'] == 'Passed' else 'fail'
-            other_count = int(roll['NotVotingCount']) + int(roll['VacantVoteCount'])
-            + int(roll['AbsentVoteCount']) + int(roll['ConflictVoteCount'])
+            other_count = (int(roll['NotVotingCount']) +
+                           int(roll['VacantVoteCount']) +
+                           int(roll['AbsentVoteCount']) +
+                           int(roll['ConflictVoteCount'])
+                           )
             vote = Vote(chamber=vote_chamber,
                         start_date=vote_date,
                         motion_text=vote_motion,
@@ -270,17 +261,17 @@ class DEBillScraper(Scraper, LXMLMixin):
                             )
 
     def classify_bill(self, bill_id):
-        legislation_types = {
-            'bill': 'HB',
-            'concurrent resolution': 'HCR',
-            'joint resolution': 'HJR',
-            'resolution': 'HR',
-            'bill': 'SB',
-            'concurrent resolution': 'SCR',
-            'joint resolution': 'SJR',
-            'resolution': 'SR',
-        }
-        for name, abbr in legislation_types.items():
+        legislation_types = (
+            ('bill', 'HB'),
+            ('concurrent resolution', 'HCR'),
+            ('joint resolution', 'HJR'),
+            ('resolution', 'HR'),
+            ('bill', 'SB'),
+            ('concurrent resolution', 'SCR'),
+            ('joint resolution', 'SJR'),
+            ('resolution', 'SR'),
+        )
+        for name, abbr in legislation_types:
             if abbr in bill_id:
                 return name
 
