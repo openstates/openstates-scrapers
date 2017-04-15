@@ -1,4 +1,3 @@
-import re
 import lxml.html
 from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
@@ -47,9 +46,8 @@ class DECommitteeScraper(Scraper, LXMLMixin):
             members = self.scrape_member_info(comm_url)
             if vice_chair != 'None':
                 committee.add_member(vice_chair, role='Vice-Chair')
-            if chair_man  != 'None':
+            if chair_man != 'None':
                 committee.add_member(chair_man, role='Chairman')
-
 
             for member in members:
                 # vice_chair and chair_man already added.

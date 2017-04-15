@@ -1,7 +1,4 @@
 import datetime as dt
-import pytz
-
-# import actions
 import json
 import math
 
@@ -73,7 +70,9 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
 
         # TODO: Is there a way get additional sponsors and cosponsors, and versions/fns via API?
-        html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(row['LegislationId'])
+        html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(
+            row['LegislationId']
+        )
         bill.add_source(html_url, note='text/html')
 
         html = self.lxmlize(html_url)
@@ -171,7 +170,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             roll = page['Model']
             vote_chamber = self.chamber_map[roll['ChamberName']]
             # "7/1/16 01:00 AM"
-            vote_date = dt.datetime.strptime(roll['TakenAtDateTime'], '%m/%d/%y %I:%M %p').strftime('%Y-%m-%d')
+            vote_date = dt.datetime.strptime(roll['TakenAtDateTime'],
+                                             '%m/%d/%y %I:%M %p').strftime('%Y-%m-%d')
 
             # TODO: What does this code mean?
             vote_motion = roll['RollCallVoteType']
@@ -237,7 +237,8 @@ class DEBillScraper(Scraper, LXMLMixin):
         page = self.post(url=actions_url, data=form, allow_redirects=True).json()
         for row in page['Data']:
             action_name = row['ActionDescription']
-            action_date = dt.datetime.strptime(row['OccuredAtDateTime'], '%m/%d/%y').strftime('%Y-%m-%d')
+            action_date = dt.datetime.strptime(row['OccuredAtDateTime'],
+                                               '%m/%d/%y').strftime('%Y-%m-%d')
             if row.get('ChamberName') is not None:
                 action_chamber = self.chamber_map[row['ChamberName']]
             elif 'Senate' in row['ActionDescription']:

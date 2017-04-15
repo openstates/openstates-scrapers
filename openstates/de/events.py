@@ -4,7 +4,6 @@ from openstates.utils import LXMLMixin
 from pupa.scrape import Event, Scraper
 
 import pytz
-import lxml.html
 import json
 
 chamber_urls = {
@@ -47,8 +46,10 @@ class DEEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
         event.add_committee(name=str(item['CommitteeName']), id=item['CommitteeId'])
 
-        page_url = "http://legis.delaware.gov/json/MeetingNotice/" + \
-                   "GetCommitteeMeetingItems?committeeMeetingId={}".format(item['CommitteeMeetingId'])
+        page_url = ("http://legis.delaware.gov/json/MeetingNotice/"
+                    "GetCommitteeMeetingItems?committeeMeetingId={}".format(
+                        item['CommitteeMeetingId'])
+                    )
 
         event.add_source(page_url)
         page_data = self.post(page_url).json()['Data']
