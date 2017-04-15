@@ -396,14 +396,21 @@ class NJBillScraper(Scraper, MDBMixin):
                     vote_id = '_'.join((bill_id, chamber, action))
                     vote_id = vote_id.replace(" ", "_")
 
+                    if bill_id[0] == 'A':
+                        b_chamber = "lower"
+                    else:
+                        b_chamber = "upper"
+
                     if vote_id not in votes:
                         votes[vote_id] = VoteEvent(
                             start_date=TIMEZONE.localize(date),
                             chamber=chamber,
-                            bill=bill,
                             motion_text=action,
                             classification='passage',
                             result=None,
+                            bill=bill_id,
+                            bill_chamber=b_chamber,
+                            legislative_session=session,
                         )
                     if leg_vote == "Y":
                         votes[vote_id].vote('yes', leg)
@@ -433,9 +440,12 @@ class NJBillScraper(Scraper, MDBMixin):
                         vote.result = 'pass' if counts['yes'] >= 54 else 'fail'
                     elif vote['chamber'] == 'upper':
                         vote.result = 'pass' if counts['yes'] >= 27 else 'fail'
+                else:
+                    # Regular vote.
+                    vote.result = 'pass' if counts['yes'] > counts['no'] else 'fail'
 
-                # Regular vote.
-                vote.result = 'pass' if counts['yes'] > counts['no'] else 'fail'
+                vote.add_source('http://www.njleg.state.nj.us/downloads.asp')
+                yield vote
 
         # Actions
         bill_action_csv = self.access_to_csv('BillHist')
