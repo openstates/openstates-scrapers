@@ -1,3 +1,6 @@
+from collections import defaultdict
+import re
+
 # hb1 is relatively normal
 hb1 = """
                        NEW MEXICO HOUSE OF REPRESENTATIVES
@@ -93,9 +96,8 @@ RCS# 2811                    Fiftieth Legislature                       2/24/11
                             ___________________________________ (Chief Clerk)"""
 
 
-from collections import defaultdict
-import re
 HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
+
 
 def check_regex_against_vote(vote, y, n, a, e):
     counts = defaultdict(int)
@@ -105,13 +107,14 @@ def check_regex_against_vote(vote, y, n, a, e):
             continue
         counts[v[0]] += 1
     if counts['Y'] != y or counts['N'] != n or counts[' '] != a or counts['E'] != e:
-        print counts
+        print(counts)
         for x in HOUSE_VOTE_RE.findall(vote):
-            print ' ',x
+            print(' ', x)
     else:
-        print '  good'
+        print('  good')
 
-print 'HB1'
+
+print('HB1')
 check_regex_against_vote(hb1, 66, 0, 4, 0)
-print 'HB131'
+print('HB131')
 check_regex_against_vote(hb131, 34, 34, 0, 2)

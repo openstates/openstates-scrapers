@@ -57,8 +57,8 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
 
                 if c_name:
                     members_xpath = ('//table[@id="MainContent_formView'
-                                    'CommitteeInformation_grid'
-                                    'ViewCommitteeMembers"]/tbody/tr')
+                                     'CommitteeInformation_grid'
+                                     'ViewCommitteeMembers"]/tbody/tr')
                     member_nodes = self.get_nodes(committee_page, members_xpath)
 
                     tds = {
@@ -97,9 +97,7 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                             m_role = None
 
                         if m_role:
-                            members.append(Member(name=m_name,
-                                                role=m_role,
-                                                chamber=m_chamber))
+                            members.append(Member(name=m_name, role=m_role, chamber=m_chamber))
 
                     # Interim committees are collected during the scraping
                     # for joint committees, and most interim committees
@@ -114,8 +112,8 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                         if len(m_chambers) == 1:
                             chamber = m_chambers.pop()
                     committee = Organization(name=clean_committee_name(c_name),
-                                            chamber=chamber,
-                                            classification='committee')
+                                             chamber=chamber,
+                                             classification='committee')
                     for member in members:
                         committee.add_member(member.name, member.role)
                     committee.add_source(committee_url)
@@ -128,4 +126,4 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
 
                 else:
                     self.warning('No legislative committee found at '
-                                '{}'.format(committee_url))
+                                 '{}'.format(committee_url))

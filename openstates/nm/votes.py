@@ -35,9 +35,9 @@ def convert_sv_char(c):
 
 
 def match_header(row_cols, cell_x):
-    """ Map the data column to the header column, has to be done once for each 
-        column. The columns of the headers(yes/no/etc) do not mach up *perfect* 
-        with data in the grid due to random preceding whitespace and mixed 
+    """ Map the data column to the header column, has to be done once for each
+        column. The columns of the headers(yes/no/etc) do not mach up *perfect*
+        with data in the grid due to random preceding whitespace and mixed
         fonts"""
     row_cols.sort()
     c = bisect_left(row_cols, cell_x)
@@ -284,8 +284,7 @@ class NMVoteScraper(Scraper):
             s_vote_header,
             'TOTAL',
             'TOTAL')
-        vote = build_vote(session, bill_id, url, vote_record, 'upper',
-                               'senate passage')
+        vote = build_vote(session, bill_id, url, vote_record, 'upper', 'senate passage')
 
         validate_senate_vote(row_headers, sane_row, vote_record)
         return vote

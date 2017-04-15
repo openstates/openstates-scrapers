@@ -215,9 +215,11 @@ class NMBillScraper(Scraper):
         action_map = {
             # committee results
             '7601': ('DO PASS committee report adopted', 'committee-passage-favorable'),
-            '7602': ('DO PASS, as amended, committee report adopted', 'committee-passage-favorable'),
+            '7602': ('DO PASS, as amended, committee report adopted',
+                     'committee-passage-favorable'),
             '7603': ('WITHOUT RECOMMENDATION committee report adopted', 'committee-passage'),
-            '7604': ('WITHOUT RECOMMENDATION, as amended, committee report adopted', 'committee-passage'),
+            '7604': ('WITHOUT RECOMMENDATION, as amended, committee report adopted',
+                     'committee-passage'),
             # 7605 - 7609 are Committee Substitutes in various amend states
             '7605': ('DO NOT PASS, replaced with committee substitute', 'committee-passage'),
             '7606': ('DO NOT PASS, replaced with committee substitute', 'committee-passage'),
@@ -230,12 +232,19 @@ class NMBillScraper(Scraper):
             '7615': ('germane', None),
             '7616': ('germane & printed', None),
             # 7621-7629 are same as 760*s but add the speakers table (-T)
-            '7621': ("DO PASS committee report adopted, placed on Speaker's table", 'committee-passage-favorable'),
-            '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table", 'committee-passage-favorable'),
-            '7623': ("WITHOUT RECOMMENDATION committee report adopted, placed on Speaker's table", 'committee-passage'),
-            '7624': ("WITHOUT RECOMMENDATION, as amended, committee report adopted, placed on Speaker's table", 'committee-passage'),
-            '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee-passage'),
-            '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table", 'committee-passage'),
+            '7621': ("DO PASS committee report adopted, placed on Speaker's table",
+                     'committee-passage-favorable'),
+            '7622': ("DO PASS, as amended, committee report adopted, placed on Speaker's table",
+                     'committee-passage-favorable'),
+            '7623': ("WITHOUT RECOMMENDATION committee report adopted, placed on Speaker's table",
+                     'committee-passage'),
+            '7624': ("WITHOUT RECOMMENDATION, as amended, committee report adopted, placed "
+                     "on Speaker's table",
+                     'committee-passage'),
+            '7625': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table",
+                     'committee-passage'),
+            '7628': ("DO NOT PASS, replaced with committee substitute, placed on Speaker's table",
+                     'committee-passage'),
             # floor actions
             '7631': ('Withdrawn on the Speakers table by rule from the daily calendar', None),
             '7638': ('Germane as amended', None),
@@ -261,10 +270,14 @@ class NMBillScraper(Scraper):
             '7666': ('Senate concurred in House amendments', None),
             '7667': ('House failed to concur in Senate amendments', None),
             '7668': ('Senate failed to concur in House amendments', None),
-            '7669': ('this procedure could follow if the Senate refuses to recede from its amendments', None),
-            '7670': ('this procedure could follow if the House refuses to recede from its amendments', None),
-            '7671': ('this procedure could follow if the House refuses to recede from its amendments', None),
-            '7675': ('bill recalled from the House for further consideration by the Senate.', None),
+            '7669': ('this procedure could follow if the Senate refuses to recede '
+                     'from its amendments', None),
+            '7670': ('this procedure could follow if the House refuses to recede '
+                     'from its amendments', None),
+            '7671': ('this procedure could follow if the House refuses to recede '
+                     'from its amendments', None),
+            '7675': ('bill recalled from the House for further consideration by the Senate.',
+                     None),
             '7678': ('tabled in Senate', None),
             '7681': ('failed passage in House', 'failure'),
             '7682': ('failed passage in Senate', 'failure'),

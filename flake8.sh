@@ -6,6 +6,7 @@ python3 -m flake8 \
     openstates/mt \
     openstates/nc \
     openstates/nj \
+    openstates/nm \
     openstates/pa \
     openstates/va \
     pupa2billy

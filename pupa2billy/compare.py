@@ -79,10 +79,12 @@ class Comparator:
 
         self.summary()
 
+
 def fix_bill_id(bill_id):
     bill_id = bill_id.replace('.', '')
     _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
     return _bill_id_re.sub(r'\1 \2', bill_id, 1).strip()
+
 
 class VoteComparator(Comparator):
     def load_json(self, dirname):
