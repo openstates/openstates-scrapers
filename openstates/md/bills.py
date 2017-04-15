@@ -305,6 +305,9 @@ class MDBillScraper(BillScraper):
         elif 'overridden' in motion:
             passed = True
             motion = 'Veto Override'
+        elif 'Sustained' in motion:
+            passed = False
+            motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
         vote = Vote(chamber=chamber, date=None, motion=motion,
