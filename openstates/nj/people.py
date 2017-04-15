@@ -29,7 +29,7 @@ class NJPersonScraper(Scraper, MDBMixin):
             full_name = full_name.replace('  ', ' ')
             full_name = full_name[0: len(full_name) - 1]
 
-            district = int(rec["District"])
+            district = str(int(rec["District"]))
             party = rec["Party"]
             if party == 'R':
                 party = "Republican"
