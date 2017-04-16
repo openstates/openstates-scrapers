@@ -95,7 +95,7 @@ class VoteComparator(Comparator):
                     blobs.append(v)
         all_json = defaultdict(list)
         for d in blobs:
-            key = (d['bill_id'], d['motion'])
+            key = (fix_bill_id(d['bill_id']), d['motion'])
             all_json[key].append(d)
         return all_json
 

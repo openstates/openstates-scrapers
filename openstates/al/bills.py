@@ -370,19 +370,20 @@ class ALBillScraper(Scraper):
                 except AttributeError:
                     action_committee = ''
 
-                action = bill.add_action(
+                act = bill.add_action(
                     action_text,
                     TIMEZONE.localize(action_date),
                     chamber=actor,
                     classification=action_type,
                 )
                 if action_committee:
-                    action.add_related_entity(action_committee, entity_type='organization')
+                    act.add_related_entity(action_committee, entity_type='organization')
 
                 try:
                     vote_button = action.xpath('td[9]//text()')[0].strip()
-                except:
+                except IndexError:
                     vote_button = ''
+
                 if vote_button.startswith("Roll "):
                     vote_id = vote_button.split(" ")[-1]
 
@@ -447,7 +448,7 @@ class ALBillScraper(Scraper):
 
         vote = VoteEvent(
             chamber=self.CHAMBERS[vote_chamber[0]],
-            start_date=TIMEZONE.localize(vote_date),
+            start_date=vote_date,
             motion_text=action_text,
             result='pass' if total_yea > total_nay else 'fail',
             classification='passage',
