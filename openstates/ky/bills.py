@@ -106,7 +106,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 page,
                 '//div[@class="StandardText leftDivMargin"]/text()')
             title_texts = list(filter(None, [text.strip() for text in title_texts]))
-            title_texts = [s for s in title_texts if s != ',']
+            title_texts = [s for s in title_texts if s != ',' and not s.startswith('(BR ')]
             title = ' '.join(title_texts)
 
             actions = self.get_nodes(
@@ -177,7 +177,8 @@ class KYBillScraper(Scraper, LXMLMixin):
             bill.add_document_link("Fiscal Note", source_url, media_type=mimetype)
 
         for link in page.xpath("//a[contains(@href, 'legislator/')]"):
-            bill.add_sponsorship(link.text.strip(), classification='Primary', entity_type='person', primary=True)
+            bill.add_sponsorship(link.text.strip(), classification='primary',
+                                 entity_type='person', primary=True)
 
         for line in actions:
             line_actions = line.strip().split(';')
@@ -238,7 +239,8 @@ class KYBillScraper(Scraper, LXMLMixin):
 
                     if veto_document_link is not None:
                         bill.add_document_link("Veto Message",
-                            veto_document_link.attrib['href'])
+                                               veto_document_link.attrib['href'],
+                                               on_duplicate='ignore')
                 elif re.match(r'^to [A-Z]', action):
                     atype.append('referral-committee')
                 elif action == 'adopted by voice vote':
