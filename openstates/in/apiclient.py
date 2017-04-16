@@ -1,6 +1,5 @@
 import os
 import time
-import requests
 from urllib.parse import urljoin
 import functools
 
@@ -13,6 +12,8 @@ If you're trying to hit api links through your browser you
 need to install a header-modifying extension to do this, on firefox:
 https://addons.mozilla.org/en-US/firefox/addon/modify-headers/
 """
+
+
 class BadApiResponse(Exception):
     '''Raised if the service returns a service code higher than 400,
     other than 429. Makes the response object avaible as exc.resp
@@ -53,14 +54,15 @@ class ApiClient(object):
         bills='/{session}/bills',
         bill='/{session}/bills/{bill_id}',
         chamber_bills='/{session}/chambers/{chamber}/bills',
-        rollcalls='/{session}/rollcalls/{rollcall_id}', #note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
+        # note that rollcall_id has to be pulled off the URL, it's NOT the rollcall_number
+        rollcalls='/{session}/rollcalls/{rollcall_id}',
         bill_actions='/{session}/bills/{bill_id}/actions',
         committees='/{session}/committees',
         committee='/{committee_link}',
         legislators='/{session}/legislators',
         legislator='/{session}/legislators/{legislator_id}',
         chamber_legislators='/{session}/chambers/{chamber}/legislators',
-        bill_version = '/{session}/bills/{bill_id}/versions/{version_id}'
+        bill_version='/{session}/bills/{bill_id}/versions/{version_id}'
         )
 
     def __init__(self, scraper):
@@ -112,7 +114,7 @@ class ApiClient(object):
         self.scraper.info('Api GET: %r, %r, %r' % args)
         resp = None
         tries = 0
-        while resp is None and tries <  num_bad_packets_allowed:
+        while resp is None and tries < num_bad_packets_allowed:
             resp = self.scraper.get(url, *requests_args, **requests_kwargs)
         return resp
 

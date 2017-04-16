@@ -4,12 +4,10 @@ import os
 from collections import OrderedDict
 
 import scrapelib
+import pytz
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
-
-import pytz
-import lxml.html
 
 from .apiclient import ApiClient
 
@@ -65,12 +63,12 @@ class INBillScraper(Scraper):
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
 
-            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
+            vote_date = datetime.datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
             vote_date = vote_date.strftime("%Y-%m-%d %H:%M:%S")
 
             passed = None
 
-            for res,val in result_types.items():
+            for res, val in result_types.items():
                 # We check multiple lines now because the result of the
                 # roll call vote as parsed can potentially be split.
                 # PDF documents suck.
@@ -123,9 +121,9 @@ class INBillScraper(Scraper):
                     currently_counting = "not voting"
                 elif currently_counting == "":
                     pass
-                elif re.search(r'v\. \d\.\d',l):
-                    #this gets rid of the version number
-                    #which is often found at the bottom of the doc
+                elif re.search(r'v\. \d\.\d', l):
+                    # this gets rid of the version number
+                    # which is often found at the bottom of the doc
                     pass
                 else:
                     voters = l.split("  ")
@@ -135,9 +133,8 @@ class INBillScraper(Scraper):
 
             yield vote
 
-
-    def deal_with_version(self,version,bill,bill_id,chamber,session,proxy):
-        #documents
+    def deal_with_version(self, version, bill, bill_id, chamber, session, proxy):
+        # documents
         docs = OrderedDict()
         docs["Committee Amendment"] = version["cmte_amendments"]
         docs["Floor Amendment"] = version["floor_amendments"]
@@ -145,21 +142,21 @@ class INBillScraper(Scraper):
         docs["Fiscal Note"] = version["fiscal-notes"]
         docs["Committee Report"] = version["committee-reports"]
 
-        #sometimes amendments appear in multiple places
-        #cmte_amendment vs amendment
-        #so we're only adding once but using the more
-        #specific if it's available
+        # sometimes amendments appear in multiple places
+        # cmte_amendment vs amendment
+        # so we're only adding once but using the more
+        # specific if it's available
         urls_seen = []
         for doc_type in docs:
             doc_list = docs[doc_type]
             for doc in doc_list:
-                title = "{doc_type}: {name}".format(doc_type=doc_type,name=doc["name"])
+                title = "{doc_type}: {name}".format(doc_type=doc_type, name=doc["name"])
                 link = proxy["url"] + doc["link"]
                 if link not in urls_seen:
                     urls_seen.append(link)
-                    bill.add_document_link(note=title,url=link,media_type="application/pdf")
+                    bill.add_document_link(note=title, url=link, media_type="application/pdf")
 
-        #version
+        # version
         link = proxy["url"] + version["link"]
         name = version["stageVerbose"]
         if link not in urls_seen:
@@ -168,13 +165,13 @@ class INBillScraper(Scraper):
             create_date = version["created"]
             intro_date = version["introduced"]
             file_date = version["filed"]
-            for d in [update_date,create_date,intro_date,file_date]:
+            for d in [update_date, create_date, intro_date, file_date]:
                 try:
-                    #pupa choked when I passed datetimes, so passing dates only.
-                    #If we figure out how to make pupa not choke, here's the line you want:
-                    ####
-                    #self._tz.localize(datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S"))
-                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S").date()
+                    # pupa choked when I passed datetimes, so passing dates only.
+                    # If we figure out how to make pupa not choke, here's the line you want:
+                    # ## #
+                    # self._tz.localize(datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S"))
+                    update_date = datetime.datetime.strptime(d, "%Y-%m-%dT%H:%M:%S").date()
                 except TypeError:
                     continue
                 else:
@@ -185,7 +182,7 @@ class INBillScraper(Scraper):
 
         # votes
         votes = version["rollcalls"]
-        yield from self._process_votes(votes,bill_id,chamber,session,proxy)
+        yield from self._process_votes(votes, bill_id, chamber, session, proxy)
 
     def scrape(self):
         session_name = self.latest_session()
@@ -242,22 +239,22 @@ class INBillScraper(Scraper):
         }
 
         api_base_url = "https://api.iga.in.gov"
-        proxy = {"url":"http://in-proxy.openstates.org"}
+        proxy = {"url": "http://in-proxy.openstates.org"}
 
-        #ah, indiana. it's really, really hard to find
-        #pdfs in their web interface. Super easy with
-        #the api, but a key needs to be passed
-        #in the headers. To make these documents
-        #viewable to the public and our scrapers,
-        #sunlight's put up a proxy service at this link
-        #using our api key for pdf document access.
+        # ah, indiana. it's really, really hard to find
+        # pdfs in their web interface. Super easy with
+        # the api, but a key needs to be passed
+        # in the headers. To make these documents
+        # viewable to the public and our scrapers,
+        # sunlight's put up a proxy service at this link
+        # using our api key for pdf document access.
 
         client = ApiClient(self)
-        r = client.get("bills",session=session)
+        r = client.get("bills", session=session)
         all_pages = client.unpaginate(r)
         for b in all_pages:
             bill_id = b["billName"]
-            for idx,char in enumerate(bill_id):
+            for idx, char in enumerate(bill_id):
                 try:
                     int(char)
                 except ValueError:
@@ -268,7 +265,7 @@ class INBillScraper(Scraper):
             bill_link = b["link"]
             api_source = api_base_url + bill_link
             try:
-                bill_json = client.get("bill",session=session,bill_id=bill_id.lower())
+                bill_json = client.get("bill", session=session, bill_id=bill_id.lower())
             except scrapelib.HTTPError:
                 self.logger.warning('Bill could not be accessed. Skipping.')
                 continue
@@ -276,55 +273,54 @@ class INBillScraper(Scraper):
             title = bill_json["title"]
             if title == "NoneNone":
                 title = None
-            #sometimes title is blank
-            #if that's the case, we can check to see if
-            #the latest version has a short description
+            # sometimes title is blank
+            # if that's the case, we can check to see if
+            # the latest version has a short description
             if not title:
                 title = bill_json["latestVersion"]["shortDescription"]
 
-            #and if that doesn't work, use the bill_id but throw a warning
+            # and if that doesn't work, use the bill_id but throw a warning
             if not title:
                 title = bill_id
                 self.logger.warning("Bill is missing a title, using bill id instead.")
 
             bill_prefix = self._get_bill_id_components(bill_id)[0]
 
-            original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
+            original_chamber = ("lower" if bill_json["originChamber"].lower() == "house"
+                                else "upper")
             bill_type = self._bill_prefix_map[bill_prefix]['type']
             bill = Bill(disp_bill_id,
-                legislative_session=session,
-                chamber=original_chamber,
-                title=title,
-                classification=bill_type)
+                        legislative_session=session,
+                        chamber=original_chamber,
+                        title=title,
+                        classification=bill_type)
 
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
 
             # sponsors
-            positions = {"Representative": "lower", "Senator": "upper"}
             for s in bill_json["authors"]:
                 bill.add_sponsorship(classification="author",
-                    name=self._get_name(s),
-                    entity_type='person',
-                    primary=True)
+                                     name=self._get_name(s),
+                                     entity_type='person',
+                                     primary=True)
 
             for s in bill_json["coauthors"]:
                 bill.add_sponsorship(classification="coauthor",
-                    name=self._get_name(s),
-                    entity_type='person',
-                    primary=False)
+                                     name=self._get_name(s),
+                                     entity_type='person',
+                                     primary=False)
 
             for s in bill_json["sponsors"]:
                 bill.add_sponsorship(classification="sponsor",
-                    name=self._get_name(s),
-                    entity_type='person',
-                    primary=True)
+                                     name=self._get_name(s),
+                                     entity_type='person', primary=True)
 
             for s in bill_json["cosponsors"]:
                 bill.add_sponsorship(classification="cosponsor",
-                    name=self._get_name(s),
-                    entity_type='person',
-                    primary=False)
+                                     name=self._get_name(s),
+                                     entity_type='person',
+                                     primary=False)
 
             # actions
             action_link = bill_json["actions"]["link"]

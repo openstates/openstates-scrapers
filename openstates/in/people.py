@@ -1,4 +1,3 @@
-
 import lxml.html
 
 from pupa.scrape import Person, Scraper
@@ -24,7 +23,7 @@ class INPersonScraper(Scraper):
         base_url = "http://iga.in.gov/legislative"
         api_base_url = "https://api.iga.in.gov"
         chamber_name = "Senate" if chamber == "upper" else "House"
-        r = client.get("chamber_legislators",session=session,chamber=chamber_name)
+        r = client.get("chamber_legislators", session=session, chamber=chamber_name)
         all_pages = client.unpaginate(r)
         for leg in all_pages:
             firstname = leg["firstName"]
@@ -32,9 +31,10 @@ class INPersonScraper(Scraper):
             party = leg["party"]
             link = leg["link"]
             api_link = api_base_url+link
-            html_link = base_url+link.replace("legislators/","legislators/legislator_")
+            html_link = base_url+link.replace("legislators/", "legislators/legislator_")
             try:
-                html = get_with_increasing_timeout(self,html_link,fail=True,kwargs={"verify":False})
+                html = get_with_increasing_timeout(self, html_link, fail=True,
+                                                   kwargs={"verify": False})
             except scrapelib.HTTPError:
                 self.logger.warning("Legislator's page is not available.")
                 continue
@@ -44,18 +44,18 @@ class INPersonScraper(Scraper):
             address = address.text_content().strip()
             address = "\n".join([l.strip() for l in address.split("\n")])
             phone = phone.text_content().strip()
-            district = doc.xpath("//span[@class='district-heading']")[0].text.lower().replace("district","").strip()
-            image_link = base_url+link.replace("legislators/","portraits/legislator_")
+            district = doc.xpath("//span[@class='district-heading']"
+                                 )[0].text.lower().replace("district", "").strip()
+            image_link = base_url+link.replace("legislators/", "portraits/legislator_")
             legislator = Person(primary_org=chamber,
-                                    district=district,
-                                    name=" ".join([firstname,lastname]),
-                                    party=party,
-                                    image=image_link)
-            legislator.add_contact_detail(type="address",note="Capitol Office", value=address)
-            legislator.add_contact_detail(type="voice",note="Capitol Office", value=phone)
+                                district=district,
+                                name=" ".join([firstname, lastname]),
+                                party=party,
+                                image=image_link)
+            legislator.add_contact_detail(type="address", note="Capitol Office", value=address)
+            legislator.add_contact_detail(type="voice", note="Capitol Office", value=phone)
             legislator.add_link(html_link)
             legislator.add_source(html_link)
             legislator.add_source(api_link)
+
             yield legislator
-
-
