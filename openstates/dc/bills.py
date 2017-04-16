@@ -104,8 +104,7 @@ class DCBillScraper(Scraper):
                     # sometimes there are introducers, sometimes not.
                     # Set Introducers to empty array to avoid downstream breakage,
                     # but log bills without introducers
-                    self.logger.warning("No Introducer: {0} {1}: {2}".format(
-                        bill['chamber'], bill['session'], bill['bill_id']))
+                    self.logger.warning("No Introducer: {0}".format(bill.identifier))
                     introducers = []
 
                 try:
@@ -162,13 +161,11 @@ class DCBillScraper(Scraper):
                     elif "committee" in withdrawn_by.lower():
                         a = bill.add_action("withdrawn", withdrawn_date,
                                             classification="withdrawal")
-                        a.add_related_entity(withdrawn_by, entity_type='organization',
-                                             note='withdrawn by')
+                        a.add_related_entity(withdrawn_by, entity_type='organization')
                     else:
                         a = bill.add_action("withdrawn", withdrawn_date,
                                             classification="withdrawal")
-                        a.add_related_entity(withdrawn_by, entity_type='person',
-                                             note='withdrawn by')
+                        a.add_related_entity(withdrawn_by, entity_type='person')
 
                 # deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
@@ -488,7 +485,7 @@ class DCBillScraper(Scraper):
                 doc_type = "Amendment"
 
             if is_version:
-                bill.add_version_link(doc_type, doc_url, media_type='text/html',
+                bill.add_version_link(doc_type, doc_url, media_type=mimetype,
                                       on_duplicate='ignore')
                 continue
 
