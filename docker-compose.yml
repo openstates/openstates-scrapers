@@ -44,3 +44,12 @@ services:
     environment:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+  ca-download:
+    image: openstates/openstates-pupa
+    entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
+    environment:
+    - MYSQL_HOST=mysql
+    volumes:
+    - .:/opt/openstates/openstates/
+    depends_on:
+    - mysql

@@ -5,5 +5,10 @@ pytz>=2010l
 feedparser>=4.1
 spatula
 
+
 # dev
 ipdb
+
+# California
+SQLAlchemy
+mysqlclient
