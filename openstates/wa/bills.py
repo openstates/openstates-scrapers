@@ -276,8 +276,7 @@ class WABillScraper(Scraper, LXMLMixin):
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
         yield from self.scrape_votes(bill)
-        for sub in list(set(self._subjects[bill_id])):
-            bill.subject.append(sub)
+        bill.subject = list(set(self._subjects[bill_id]))
         yield bill
 
     def scrape_sponsors(self, bill):
