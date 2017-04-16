@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import WAPersonScraper
 from .events import WAEventScraper
 from .committees import WACommitteeScraper
+from .bills import WABillScraper
 
 
 class Washington(Jurisdiction):
@@ -13,6 +14,7 @@ class Washington(Jurisdiction):
         'person': WAPersonScraper,
         'events': WAEventScraper,
         'committees': WACommitteeScraper,
+        'bills': WABillScraper,
     }
     parties = [
         {'name': 'Republican'},
