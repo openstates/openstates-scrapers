@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import WAPersonScraper
 from .events import WAEventScraper
+from .committees import WACommitteeScraper
 
 
 class Washington(Jurisdiction):
@@ -11,6 +12,7 @@ class Washington(Jurisdiction):
     scrapers = {
         'person': WAPersonScraper,
         'events': WAEventScraper,
+        'Committees': WACommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},

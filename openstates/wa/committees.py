@@ -8,7 +8,12 @@ class WACommitteeScraper(Scraper):
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
+
+    def scrape_chamber(self, chamber):
         biennium = "%s-%s" % (term[0:4], term[7:9])
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
