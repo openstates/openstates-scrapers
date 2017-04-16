@@ -17,7 +17,8 @@ class KYPersonScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        url = 'http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper' else 'http://www.lrc.ky.gov/house/hsemembers.htm'
+        url = ('http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper'
+               else 'http://www.lrc.ky.gov/house/hsemembers.htm')
         page = self.get(url).text
         page = lxml.html.fromstring(page)
 
@@ -103,11 +104,13 @@ class KYPersonScraper(Scraper):
 
         district = doc.xpath('//span[@id="districtHeader"]/text()')[0].split()[-1]
 
-        person = Person(name=full_name, district=district, party=party, primary_org=chamber, image=photo_url)
+        person = Person(name=full_name, district=district, party=party,
+                        primary_org=chamber, image=photo_url)
         person.add_source(member_url)
         person.add_link(member_url)
 
-        address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
+        address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//'
+                                      'span[@class="bioText"]/text()'))
 
         phone = None
         fax = None

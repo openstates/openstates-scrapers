@@ -47,18 +47,20 @@ class KYCommitteeScraper(Scraper):
             for link in links:
                 yield from self.scrape_committee(chamber, link)
 
-
     def scrape_committee(self, chamber, link, parent_comm=None):
         home_link = link.attrib["href"]
         name = re.sub(r'\s+\((H|S)\)$', '', link.text).strip().title()
         name = name.replace(".", "").strip()
         if "Subcommittee " in name and parent_comm:
             name = name.split("Subcommittee")[1]
-            name = name.replace(" on ","").replace(" On ", "")
+            name = name.replace(" on ", "").replace(" On ", "")
             name = name.strip()
-            comm = Organization(name, parent_id={'name': parent_comm, 'classification': chamber}, classification='committee')
+            comm = Organization(name,
+                                parent_id={'name': parent_comm,
+                                           'classification': chamber},
+                                classification='committee')
         else:
-            for c in ["Committee", "Comm", "Sub","Subcommittee"]:
+            for c in ["Committee", "Comm", "Sub", "Subcommittee"]:
                 if name.endswith(c):
                     name = name[:-1*len(c)].strip()
             comm = Organization(name, chamber=chamber, classification='committee')
@@ -72,10 +74,10 @@ class KYCommitteeScraper(Scraper):
         else:
             self.logger.warning("Empty committee, skipping.")
 
-        #deal with subcommittees
+        # deal with subcommittees
         if parent_comm is None:
-            #checking parent_comm so we don't look for subcommittees
-            #in subcommittees leaving us exposed to infinity
+            # checking parent_comm so we don't look for subcommittees
+            # in subcommittees leaving us exposed to infinity
             page = self.get(home_link).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(home_link)
@@ -103,7 +105,9 @@ class KYCommitteeScraper(Scraper):
                 role = 'vice chair'
             elif link.tail.strip() == '[Co-Chair Designate]':
                 role = 'co-chair designate'
-            elif link.tail.strip() in ['[ex officio]', '[non voting ex officio]', '[Liaison Member]']:
+            elif link.tail.strip() in ['[ex officio]',
+                                       '[non voting ex officio]',
+                                       '[Liaison Member]']:
                 role = 'member'
             else:
                 raise Exception("unexpected position: %s" % link.tail)

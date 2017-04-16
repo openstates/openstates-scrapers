@@ -77,8 +77,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 else:
                     bill_id = bill_abbr + bill_id
 
-                yield from self.parse_bill(chamber, session, bill_id,
-                    link.attrib['href'])
+                yield from self.parse_bill(chamber, session, bill_id, link.attrib['href'])
 
     def parse_bill(self, chamber, session, bill_id, url):
         page = self.lxmlize(url)
@@ -142,13 +141,12 @@ class KYBillScraper(Scraper, LXMLMixin):
         else:
             bill_type = 'bill'
 
-        bill = Bill(bill_id, legislative_session=session, chamber=chamber, title=title, classification=bill_type)
+        bill = Bill(bill_id, legislative_session=session, chamber=chamber,
+                    title=title, classification=bill_type)
         bill.subject = self._subjects[bill_id]
         bill.add_source(url)
 
-        bill.add_version_link("Most Recent Version",
-                         source_url,
-                         media_type=mimetype)
+        bill.add_version_link("Most Recent Version", source_url, media_type=mimetype)
 
         other_versions = page.xpath('//a[contains(@href, "/recorddocuments/bill/") and'
                                     ' not(contains(@href, "/bill.pdf")) and'
@@ -192,8 +190,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 if self._is_post_2016:
                     action_date_string = action_date_text.replace(',', '')
                 else:
-                    action_date_string = '{} {}'.format(action_date_text,
-                        session[0:4])
+                    action_date_string = '{} {}'.format(action_date_text, session[0:4])
 
                 # This patch is super hacky, but allows us to better
                 # capture actions that screw up the formatting such as
@@ -232,8 +229,8 @@ class KYBillScraper(Scraper, LXMLMixin):
 
                     # Get the accompanying veto message document. There
                     # should only be one.
-                    veto_document_link = self.get_node(page,
-                        '//div[@class="StandardText leftDivMargin"]/'
+                    veto_document_link = self.get_node(
+                        page, '//div[@class="StandardText leftDivMargin"]/'
                         'div[@class="StandardText"][last()]/a[contains(@href,'
                         '"veto.pdf")]')
 
@@ -280,8 +277,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         try:
             votes_link = page.xpath(
                 "//a[contains(@href, 'vote_history.pdf')]")[0]
-            bill.add_document_link("Vote History",
-                votes_link.attrib['href'])
+            bill.add_document_link("Vote History", votes_link.attrib['href'])
         except IndexError:
             # No votes
             self.logger.warning(u'No votes found for {}'.format(title))
