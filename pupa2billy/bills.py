@@ -87,9 +87,11 @@ class PupaBillScraper(BillScraper):
                                   date=parse_date(doc['date']))
 
         for title in data['other_titles']:
-            bill.add_title(title)
+            bill.add_title(title['title'])
 
-        # TODO: related bills
-        # for related in data['related_bills']:
-
+        for related in data['related_bills']:
+            bill.add_companion(related['identifier'],
+                               related['legislative_session'],
+                               chamber
+                               )
         self.save_bill(bill)

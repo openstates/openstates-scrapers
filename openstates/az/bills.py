@@ -19,6 +19,9 @@ class AZBillScraper(Scraper):
     """
     jurisdiction = 'az'
     chamber_map = {'lower': 'H', 'upper': 'S'}
+    chamber_map_rev = {'H': 'upper', 'S': 'lower', 'G': 'executive', 'SS': 'executive'}
+    chamber_map_rev_eng = {'H': 'House', 'S': 'Senate', 'G': 'Governor',
+                           'SS': 'Secretary of State'}
 
     def scrape_bill(self, chamber, session, bill_id, session_id):
         """
@@ -63,11 +66,20 @@ class AZBillScraper(Scraper):
         page = json.loads(self.get(versions_url).content.decode('utf-8'))
         if page and 'Documents' in page[0]:
             for doc in page[0]['Documents']:
-                bill.add_version_link(
-                    note=doc['DocumentName'],
-                    url=doc['HtmlPath'],
-                    media_type='text/html'
-                )
+                if doc['HtmlPath']:
+                    bill.add_version_link(
+                        note=doc['DocumentName'],
+                        url=doc['HtmlPath'],
+                        media_type='text/html'
+                    )
+                elif doc['PdfPath']:
+                    bill.add_version_link(
+                        note=doc['DocumentName'],
+                        url=doc['PdfPath'],
+                        media_type='application/pdf'
+                    )
+                else:
+                    self.warning("No PDF or HTML version found for %s" % doc['DocumentName'])
         return bill
 
     def scrape_sponsors(self, bill, internal_id):
@@ -126,6 +138,51 @@ class AZBillScraper(Scraper):
                     )
                 except ValueError:
                     self.info("Invalid Action Time {} for {}".format(page[action], action))
+
+        # Governor Signs and Vetos get different treatment
+        if page['GovernorAction'] == 'Signed':
+            action_date = datetime.datetime.strptime(page['GovernorActionDate'],
+                                                     '%Y-%m-%dT%H:%M:%S')
+            bill.add_action(
+                actor='executive',
+                action='Signed by Governor',
+                date=action_date,
+                type='governor:signed'
+            )
+
+        if page['GovernorAction'] == 'Vetoed':
+            action_date = datetime.datetime.strptime(page['GovernorActionDate'],
+                                                     '%Y-%m-%dT%H:%M:%S')
+            bill.add_action(
+                actor='executive',
+                action='Vetoed by Governor',
+                date=action_date,
+                type='governor:vetoed'
+            )
+
+        # Transmit to (X) has its own data structure as well
+        for transmit in page['BodyTransmittedTo']:
+            action_date = datetime.datetime.strptime(transmit['TransmitDate'],
+                                                     '%Y-%m-%dT%H:%M:%S')
+            # upper, lower, executive
+            action_actor = self.chamber_map_rev[transmit['LegislativeBody']]
+            # house, senate, governor
+            body_text = self.chamber_map_rev_eng[transmit['LegislativeBody']]
+
+            action_text = 'Transmit to {}'.format(body_text)
+
+            if action_actor == 'executive':
+                action_type = 'governor:received'
+            else:
+                action_type = 'other'
+
+            bill.add_action(
+                actor=action_actor,
+                action=action_text,
+                date=action_date,
+                type=action_type
+            )
+
         return bill
 
     def actor_from_action(self, bill, action, self_chamber):

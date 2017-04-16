@@ -84,7 +84,7 @@ class CTBillScraper(BillScraper):
     def scrape_bill_page(self, bill):
         # Removes leading zeroes in the bill number.
         bill_number = ''.join(re.split('0+', bill['bill_id'], 1))
-        
+
         url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill_number, bill['session']))
 
@@ -272,6 +272,9 @@ class CTBillScraper(BillScraper):
         for f in files:
             match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
                              f.filename)
+            if not match:
+                self.warning('bad version filename', f.filename)
+                continue
             bill_id = match.group(1).replace('-', '')
 
             try:

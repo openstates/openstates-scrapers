@@ -1,22 +1,22 @@
-import datetime as dt
-import pytz
 import re
+import pytz
+import datetime as dt
+
+from pupa.scrape import Scraper, Event
+
 from .utils import MDBMixin
 
-from billy.scrape.events import EventScraper, Event
 
-
-class NJEventScraper(EventScraper, MDBMixin):
-    jurisdiction = 'nj'
+class NJEventScraper(Scraper, MDBMixin):
     _tz = pytz.timezone('US/Eastern')
 
     def initialize_committees(self, year_abr):
-        chamber = {'A':'Assembly', 'S': 'Senate', '':''}
+        chamber = {'A': 'Assembly', 'S': 'Senate', '': ''}
 
         com_csv = self.access_to_csv('Committee')
 
         self._committees = {}
-        
+
         # There are some IDs that are missing. I'm going to add them
         # before we load the DBF, in case they include them, we'll just
         # override with their data.
@@ -51,7 +51,11 @@ class NJEventScraper(EventScraper, MDBMixin):
                                                       com['Description'],
                                                       'Committee'))
 
-    def scrape(self, chamber, session):
+    def scrape(self, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
@@ -64,7 +68,7 @@ class NJEventScraper(EventScraper, MDBMixin):
 
             for bill in re.findall("(A|S)(-)?(\d{4})", description):
                 related_bills.append({
-                    "bill_id" : "%s %s" % ( bill[0], bill[2] ),
+                    "bill_id": "%s %s" % (bill[0], bill[2]),
                     "descr": description
                 })
 
@@ -72,30 +76,24 @@ class NJEventScraper(EventScraper, MDBMixin):
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
             hr_name = self._committees[record['CommHouse']]
 
-            event = Event(
-                session,
-                date_time,
-                'committee:meeting',
-                "Meeting of the %s" % ( hr_name ),
-                location=record['Location'] or "Statehouse",
-            )
-            for bill in related_bills:
-                event.add_related_bill(bill['bill_id'],
-                                      description=bill['descr'],
-                                      type='consideration')
-            try:
-                chamber = {
-                    "a" : "lower",
-                    "s" : "upper",
-                    "j" : "joint"
-                }[record['CommHouse'][0].lower()]
-            except KeyError:
-                chamber = "joint"
+            description = 'Meeting of the {}'.format(hr_name)
 
-            event.add_participant("host",
-                                  hr_name,
-                                  'committee',
-                                  committee_code=record['CommHouse'],
-                                  chamber=chamber)
+            event = Event(
+                name=description,
+                start_time=self._tz.localize(date_time),
+                location_name=record['Location'] or 'Statehouse',
+                timezone=self._tz.zone,
+            )
+            item = None
+            for bill in related_bills:
+                item = item or event.add_agenda_item(description)
+                item.add_bill(bill['bill_id'])
+
+            event.add_committee(
+                hr_name,
+                id=record['CommHouse'],
+                note='host',
+            )
             event.add_source('http://www.njleg.state.nj.us/downloads.asp')
-            self.save_event(event)
+
+            yield event
