@@ -5,21 +5,18 @@ from collections import OrderedDict
 
 import scrapelib
 
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
+from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.utils.generic import convert_pdf
 
 import pytz
 import lxml.html
 
-from .actions import Categorizer
-from apiclient import ApiClient
+from .apiclient import ApiClient
 
 
-class INBillScraper(BillScraper):
+class INBillScraper(Scraper):
     jurisdiction = 'in'
 
-    categorizer = Categorizer()
     _tz = pytz.timezone('US/Eastern')
 
     def _get_bill_id_components(self, bill_id):
@@ -45,7 +42,7 @@ class INBillScraper(BillScraper):
 
         return url_template.format(session, url_segment, bill_number)
 
-    def _process_votes(self,rollcalls,bill,proxy):
+    def _process_votes(self,rollcalls,bill_id,original_chamber,session,proxy):
         result_types = {
             'FAILED': False,
             'DEFEATED': False,
@@ -60,14 +57,18 @@ class INBillScraper(BillScraper):
         for r in rollcalls:
             proxy_link = proxy["url"] + r["link"]
             (path, resp) = self.urlretrieve(proxy_link)
-            text = convert_pdf(path, 'text')
+            text = convert_pdf(path, 'text').decode("utf-8") 
             lines = text.split("\n")
             os.remove(path)
 
             chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
-            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
+            #pupa choked when I passed datetimes, so passing dates only.
+            #If we figure out how to make pupa not choke, here's the line you want:
+            ####
+            #self._tz.localize(datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p"))
+            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p").date()
 
             passed = None
 
@@ -92,9 +93,15 @@ class INBillScraper(BillScraper):
             except ValueError:
                 self.logger.warning("Vote format is weird, skipping")
                 continue
-            other_count = excused + not_voting
 
-            vote = Vote(chamber,vote_date,motion,passed,yeas,nays,other_count,yes_votes=[],no_votes=[],other_votes=[])
+            vote = VoteEvent(bill_chamber=chamber,legislative_session=session,bill=bill_id,
+                            start_date=vote_date,motion_text=motion,
+                            result="pass" if passed else "fail", classification="passage")
+
+            vote.set_count('yes',yeas)
+            vote.set_count('no',nays)
+            vote.set_count('excused',excused)
+            vote.set_count('not voting',not_voting)
 
             vote.add_source(proxy_link)
 
@@ -105,13 +112,13 @@ class INBillScraper(BillScraper):
                 l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
                 l = l.replace("\xc2\xa0"," -")
                 if "yea-" in l.lower().replace(" ",""):
-                    currently_counting = "yes_votes"
+                    currently_counting = "yes"
                 elif "nay-" in l.lower().replace(" ",""):
-                    currently_counting = "no_votes"
+                    currently_counting = "no"
                 elif "excused-" in l.lower().replace(" ",""):
-                    currently_counting = "other_votes"
+                    currently_counting = "excused"
                 elif "notvoting-" in l.lower().replace(" ",""):
-                    currently_counting = "other_votes"
+                    currently_counting = "not voting"
                 elif currently_counting == "":
                     pass
                 elif re.search(r'v\. \d\.\d',l):
@@ -122,36 +129,10 @@ class INBillScraper(BillScraper):
                     voters = l.split("  ")
                     for v in voters:
                         if v.strip():
-                            vote[currently_counting].append(v.strip())
+                            vote.vote(currently_counting,v.strip())
 
-            if len(vote["yes_votes"]) == vote["yes_count"]:
-                self.logger.warning("Yes vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["yes_count"],actual=len(vote["yes_votes"]), url=proxy_link))
-            if len(vote["no_votes"]) == vote["no_count"]:
-                self.logger.warning("No vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["no_count"],actual=len(vote["no_votes"]), url=proxy_link))
-            if len(vote["other_votes"]) == vote["other_count"]:
-                self.logger.warning("Other vote counts ({count}) don't match count of actual votes ({actual}): {url}".format(count=vote["other_count"],actual=len(vote["other_votes"]),url=proxy_link))
 
-            #indiana only has simple majorities even for veto overrides
-            #if passage status isn't the same as yes>no, then we should look!
-            bill_type = bill['type'][0]
-
-            vote_invalid = False
-            # It seems resolutions may be passed without a recorded vote.
-            # Don't understand why there's a roll call then, but hey.
-            if 'resolution' in bill_type:
-                if vote['passed'] != (vote['yes_count'] >= vote['no_count']):
-                    vote_invalid = True
-            else:
-                if vote['passed'] != (vote['yes_count'] > vote['no_count']):
-                    vote_invalid = True
-
-            if vote_invalid:
-                raise AssertionError('Vote count doesn\'t agree with vote '
-                    'passage status.')
-
-            bill.add_vote(vote)
-
-    def deal_with_version(self,version,bill,proxy):
+    def deal_with_version(self,version,bill,bill_id,chamber,session,proxy):
         #documents
         docs = OrderedDict()
         docs["Committee Amendment"] = version["cmte_amendments"]
@@ -172,7 +153,7 @@ class INBillScraper(BillScraper):
                 link = proxy["url"] + doc["link"]
                 if link not in urls_seen:
                     urls_seen.append(link)
-                    bill.add_document(title,link,mimetype="application/pdf")
+                    bill.add_document_link(note=title,url=link,media_type="application/pdf")
 
         #version
         link = proxy["url"] + version["link"]
@@ -185,19 +166,25 @@ class INBillScraper(BillScraper):
             file_date = version["filed"]
             for d in [update_date,create_date,intro_date,file_date]:
                 try:
-                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S")
+                    #pupa choked when I passed datetimes, so passing dates only.
+                    #If we figure out how to make pupa not choke, here's the line you want:
+                    ####
+                    #self._tz.localize(datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S"))
+                    update_date = datetime.datetime.strptime(d,"%Y-%m-%dT%H:%M:%S").date()
                 except TypeError:
                     continue
                 else:
                     break
 
-            bill.add_version(name,link,mimetype="application/pdf",date=update_date)
+            bill.add_version_link(note=name,url=link,media_type="application/pdf",date=update_date)
 
         #votes
         votes = version["rollcalls"]
-        self._process_votes(votes,bill,proxy)
+        self._process_votes(votes,bill_id,chamber,session,proxy)
 
-    def scrape(self, session, chambers):
+    def scrape(self):
+        session_name = self.latest_session()
+        session = session_name[0:5]
         self._bill_prefix_map = {
             'HB':  {
                 'type': 'bill',
@@ -299,12 +286,11 @@ class INBillScraper(BillScraper):
 
             original_chamber = "lower" if bill_json["originChamber"].lower() == "house" else "upper"
             bill_type = self._bill_prefix_map[bill_prefix]['type']
-            bill = Bill(
-                session,
-                original_chamber,
-                disp_bill_id,
-                title,
-                type=bill_type)
+            bill = Bill(disp_bill_id,
+                legislative_session=session,
+                chamber=original_chamber,
+                title=title,
+                classification=bill_type)
 
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
@@ -312,28 +298,28 @@ class INBillScraper(BillScraper):
             #sponsors
             positions = {"Representative":"lower","Senator":"upper"}
             for s in bill_json["authors"]:
-                bill.add_sponsor("primary",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="author")
+                bill.add_sponsorship(classification="primary",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=True)
 
             for s in bill_json["coauthors"]:
-                bill.add_sponsor("cosponsor",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="coauthor")
+                bill.add_sponsorship(classification="cosponsor",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=False)
 
             for s in bill_json["sponsors"]:
-                bill.add_sponsor("primary",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="sponsor")
+                bill.add_sponsorship(classification="primary",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=True)
 
             for s in bill_json["cosponsors"]:
-                bill.add_sponsor("cosponsor",
-                    self._get_name(s),
-                    chamber=positions[s["position_title"]],
-                    official_type="cosponsor")
+                bill.add_sponsorship(classification="cosponsor",
+                    name=self._get_name(s),
+                    entity_type='person',
+                    primary=False)
 
             #actions
             action_link = bill_json["actions"]["link"]
@@ -356,8 +342,11 @@ class INBillScraper(BillScraper):
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
-
-                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
+                #pupa choked when I passed datetimes, so passing dates only.
+                #If we figure out how to make pupa not choke, here's the line you want:
+                ####
+                #self._tz.localize(datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S"))
+                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S").date()
 
                 action_type = []
                 d = action_desc.lower()
@@ -365,80 +354,61 @@ class INBillScraper(BillScraper):
 
                 reading = False
                 if "first reading" in d:
-                    action_type.append("bill:reading:1")
+                    action_type.append("reading-1")
                     reading = True
 
                 if ("second reading" in d
                     or "reread second time" in d):
-                    action_type.append("bill:reading:2")
+                    action_type.append("reading-2")
                     reading = True
 
                 if ("third reading" in d
                     or "reread third time" in d):
-                    action_type.append("bill:reading:3")
+                    action_type.append("reading-3")
                     if "passed" in d:
-                        action_type.append("bill:passed")
+                        action_type.append("passage")
                     if "failed" in d:
-                        action_type.append("bill:failed")
+                        action_type.append("failure")
                     reading = True
 
                 if "adopted" in d and reading:
-                    action_type.append("bill:passed")
+                    action_type.append("passage")
 
                 if ("referred" in d and "committee on" in d
                     or "reassigned" in d and "committee on" in d):
                     committee = d.split("committee on")[-1].strip()
-                    action_type.append("committee:referred")
+                    action_type.append("referral-committee")
 
                 if "committee report" in d:
                     if "pass" in d:
-                        action_type.append("committee:passed")
+                        action_type.append("committee-passage")
                     if "fail" in d:
-                        action_type.append("committee:failed")
+                        action_type.append("committee-failure")
 
                 if "amendment" in d and "without amendment" not in d:
                     if "pass" in d or "prevail" in d or "adopted" in d:
-                        action_type.append("amendment:passed")
+                        action_type.append("amendment-passage")
                     if "fail" or "out of order" in d:
-                        action_type.append("amendment:failed")
+                        action_type.append("amendment-failure")
                     if "withdraw" in d:
-                        action_type.append("amendment:withdrawn")
+                        action_type.append("amendment-withdrawal")
 
                 if "signed by the governor" in d:
-                    action_type.append("governor:signed")
+                    action_type.append("executive-signature")
 
-                if ("not substituted for majority report" in d
-                    or "returned to the house" in d
-                    or "referred to the senate" in d
-                    or "referred to the house" in d
-                    or "technical corrections" in d
-                    or "signed by the president" in d
-                    or "signed by the speaker"
-                    or "authored" in d
-                    or "sponsor" in d
-                    or "coauthor" in d
-                    or ("rule" in d and "suspended" in d)
-                    or "removed as author" in d
-                    or ("added as" in d and "author" in d)
-                    or "public law" in d):
-
-                        if len(action_type) == 0:
-                            action_type.append("other")
 
                 if len(action_type) == 0:
                     #calling it other and moving on with a warning
                     self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
-                    action_type = ["other"]
-
-                elif committee:
-                    bill.add_action(action_chamber,action_desc,date,type=action_type,committees=committee)
+                    
 
                 else:
-                    bill.add_action(action_chamber,action_desc,date,type=action_type)
+                    bill.add_action(chamber=action_chamber,description=action_desc,date=date,classification=action_type)
 
             #subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
-            bill["subjects"] = subjects
+            for subject in subjects:
+                bill.add_subject(subject)
 
             #versions and votes
             for version in bill_json["versions"][::-1]:
@@ -452,6 +422,6 @@ class INBillScraper(BillScraper):
                     self.logger.warning("Bill version does not seem to exist.")
                     continue
 
-                self.deal_with_version(version_json,bill,proxy)
+                self.deal_with_version(version_json,bill,bill_id,original_chamber,session,proxy)
 
-            self.save_bill(bill)
+            yield bill

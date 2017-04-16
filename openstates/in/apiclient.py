@@ -1,9 +1,8 @@
 import os
 import time
 import requests
-import urlparse
+from urllib.parse import urljoin
 import functools
-from OpenSSL.SSL import SysCallError
 
 """
 API key must be passed as a header. You need the following headers to get JSON:
@@ -81,7 +80,7 @@ class ApiClient(object):
         headers = {}
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
-        url = urlparse.urljoin(self.root, url)
+        url = urljoin(self.root, url)
         self.scraper.info('Api GET: %r, %r' % (url, headers))
         return self.scraper.get(url, headers=headers, verify=False)
 
@@ -89,7 +88,7 @@ class ApiClient(object):
         # Build up the url.
         url = self.resources[resource_name]
         url = url.format(**url_format_args)
-        url = urlparse.urljoin(self.root, url)
+        url = urljoin(self.root, url)
         return url
 
     @check_response
@@ -114,16 +113,7 @@ class ApiClient(object):
         resp = None
         tries = 0
         while resp is None and tries <  num_bad_packets_allowed:
-            try:
-                resp = self.scraper.get(url, *requests_args, **requests_kwargs)
-            except SysCallError as e:
-                err, string = e.args
-                if err != 104:
-                    raise
-                tries += 1
-                if tries >= num_bad_packets_allowed:
-                    print err, string
-                    raise RuntimeError("Got bad packet from API too many times, I give up")
+            resp = self.scraper.get(url, *requests_args, **requests_kwargs)
         return resp
 
     def unpaginate(self, result):
