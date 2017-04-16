@@ -90,7 +90,7 @@ class OHLegislatorScraper(Scraper):
             fax_number = re.search(
                 r'(\(\d{3}\)\s\d{3}\-\d{4})', fax_line[0]
             ).group(1)
-            leg.add_contact_detail(type='fax', value=fax_number, note='Office')
+            leg.add_contact_detail(type='fax', value=fax_number, note='Capitol Office')
 
         ctties = page.xpath("//div[@class='committeeList']//a")
         for a in ctties:
@@ -178,5 +178,5 @@ class OHLegislatorScraper(Scraper):
             yield from self.scrape_homepage(leg, chamber, homepage)
 
             leg.add_source(url)
-            leg.add_link(url)
+            leg.add_link(homepage)
             yield leg

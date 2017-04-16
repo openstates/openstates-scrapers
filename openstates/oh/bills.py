@@ -154,8 +154,8 @@ class OHBillScraper(Scraper):
 
                                 display_id = bill_id[:idx]+" "+bill_id[idx:]
                                 break
-                            classification = 'bill' if doc_type == 'bill' else 'resolution'
-                            assert doc_type.endswith('s'), "Only bills and resolutions accepted"
+                            classification = {'bills': 'bill',
+                                              'resolutions': 'resolution'}[doc_type]
                             bill = Bill(display_id.upper(),
                                         legislative_session=session,
                                         chamber=chamber,
@@ -188,12 +188,6 @@ class OHBillScraper(Scraper):
                                                      entity_type='person',
                                                      primary=False,
                                     )
-
-                            # actions
-                            # blacklist = ["/solarapi/v1/general_assembly_131/resolutions"
-                            #             "/lr_131_0035-1/actions"]
-                            # the page in the blacklist just plain old failed to load
-                            # and everything got stuck
                             try:
                                 action_doc = self.get(base_url+bill_version["action"][0]["link"])
                             except scrapelib.HTTPError:
@@ -201,7 +195,7 @@ class OHBillScraper(Scraper):
                             else:
 
                                 actions = action_doc.json()
-                                for action in actions["items"]:
+                                for action in reversed(actions["items"]):
                                     actor = chamber_dict[action["chamber"]]
                                     action_desc = action["description"]
                                     try:
