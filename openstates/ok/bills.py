@@ -134,6 +134,17 @@ class OKBillScraper(BillScraper):
                 bill.add_document(name, version_url, mimetype='application/pdf')
                 continue
 
+            # 2015-2016 HB1002 has duplicate version urls
+            if bill_id == 'HB1002' and session == '2015-2016':
+                if (name == 'House Conference Committee Substitute' and 
+                        version_url == ("http://webserver1.lsb.state.ok.us/"
+                            "cf_pdf/2015-16 COMMITTEE SUBS/HCCS/HB1002 CCS.PDF")):
+                    try:
+                        bill.add_version(name, version_url, mimetype='application/pdf')
+                    except:
+                        self.warning('Exception for duplicate version url.')                        
+                    continue 
+
             bill.add_version(name, version_url, mimetype='application/pdf')
 
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
