@@ -23,10 +23,16 @@ def split_names(voters):
     return voters
 
 def clean_line(line):
-    return line.\
-            replace('\n', ' ').\
-            decode('utf-8').\
-            strip()
+    try:
+        return line.\
+                replace('\n', ' ').\
+                decode('utf-8').\
+                strip()
+    except:
+        return  unicode(line.\
+                replace('\n', ' ').\
+                strip()\
+                , 'ISO-8859-1')
 
 def categorize_action(action):
     categorizers = (
