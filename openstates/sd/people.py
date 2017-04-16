@@ -57,8 +57,6 @@ class SDLegislatorScraper(Scraper):
 
         email_link = page.xpath('//a[@id="lnkMail"]')
 
-        if email_link:
-            email = email_link[0].attrib['href'].split(":")[1]
         legislator = Person(primary_org=chamber,
                             image=photo_url,
                             name=name,
@@ -66,9 +64,11 @@ class SDLegislatorScraper(Scraper):
                             district=district
                             )
         legislator.extras['occupation'] = occupation
-        kwargs = {}
         if office_phone.strip() != "":
             legislator.add_contact_detail(type='voice', value=office_phone, note='Capitol Office')
+        if email_link:
+            email = email_link[0].attrib['href'].split(":")[1]
+            legislator.add_contact_detail(type='email', value=email, note='Capitol Office')
 
         # SD is hiding their email addresses entirely in JS now, so
         # search through <script> blocks looking for them
