@@ -4,6 +4,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from .people import CAPersonScraper
+from .committees import CACommitteeScraper
 
 
 settings = dict(SCRAPELIB_RPM=30)
@@ -16,6 +17,7 @@ class California(Jurisdiction):
     url = "http://www.legislature.ca.gov/"
     scrapers = {
         'people': CAPersonScraper,
+        'committees': CACommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -163,7 +165,8 @@ class California(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        sessions = url_xpath('http://www.leginfo.ca.gov/bilinfo.html',
+        sessions = url_xpath(
+            'http://www.leginfo.ca.gov/bilinfo.html',
             "//select[@name='sess']/option/text()")
         return [
             re.findall('\(.*\)', session)[0][1:-1]
