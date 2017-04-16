@@ -25,7 +25,7 @@ class PupaCommitteeScraper(CommitteeScraper):
         parent = parse_psuedo_id(data['parent_id'])
         chamber = parent['classification']
         if chamber == 'legislature':
-            chamber = 'joint'
+            chamber = 'upper'
         if 'name' in parent:
             com = Committee(chamber, parent['name'], subcommittee=data['name'])
         else:
