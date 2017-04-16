@@ -270,7 +270,7 @@ class CTBillScraper(BillScraper):
         files = parse_directory_listing(page)
 
         for f in files:
-            match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
+            match = re.match(r'^\d{4,5}([A-Z]+-\d{5,5})-(R\d\d)',
                              f.filename)
             if not match:
                 self.warning('bad version filename', f.filename)
