@@ -57,7 +57,7 @@ class INBillScraper(Scraper):
         for r in rollcalls:
             proxy_link = proxy["url"] + r["link"]
             (path, resp) = self.urlretrieve(proxy_link)
-            text = convert_pdf(path, 'text').decode("utf-8") 
+            text = convert_pdf(path, 'text').decode("utf-8")
             lines = text.split("\n")
             os.remove(path)
 
@@ -131,6 +131,8 @@ class INBillScraper(Scraper):
                         if v.strip():
                             vote.vote(currently_counting,v.strip())
 
+            yield vote
+
 
     def deal_with_version(self,version,bill,bill_id,chamber,session,proxy):
         #documents
@@ -176,11 +178,12 @@ class INBillScraper(Scraper):
                 else:
                     break
 
-            bill.add_version_link(note=name,url=link,media_type="application/pdf",date=update_date)
+            bill.add_version_link(note=name, url=link,
+                                  media_type="application/pdf", date=update_date)
 
-        #votes
+        # votes
         votes = version["rollcalls"]
-        self._process_votes(votes,bill_id,chamber,session,proxy)
+        yield from self._process_votes(votes,bill_id,chamber,session,proxy)
 
     def scrape(self):
         session_name = self.latest_session()
@@ -295,22 +298,22 @@ class INBillScraper(Scraper):
             bill.add_source(self._get_bill_url(session, bill_id))
             bill.add_source(api_source)
 
-            #sponsors
-            positions = {"Representative":"lower","Senator":"upper"}
+            # sponsors
+            positions = {"Representative": "lower", "Senator": "upper"}
             for s in bill_json["authors"]:
-                bill.add_sponsorship(classification="primary",
+                bill.add_sponsorship(classification="author",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=True)
 
             for s in bill_json["coauthors"]:
-                bill.add_sponsorship(classification="cosponsor",
+                bill.add_sponsorship(classification="coauthor",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=False)
 
             for s in bill_json["sponsors"]:
-                bill.add_sponsorship(classification="primary",
+                bill.add_sponsorship(classification="sponsor",
                     name=self._get_name(s),
                     entity_type='person',
                     primary=True)
@@ -321,14 +324,16 @@ class INBillScraper(Scraper):
                     entity_type='person',
                     primary=False)
 
-            #actions
+            # actions
             action_link = bill_json["actions"]["link"]
             api_source = api_base_url + action_link
+
             try:
-                actions = client.get("bill_actions",session=session,bill_id=bill_id.lower())
+                actions = client.get("bill_actions", session=session, bill_id=bill_id.lower())
             except scrapelib.HTTPError:
                 self.logger.warning("Could not find bill actions page")
-                actions = {"items":[]}
+                actions = {"items": []}
+
             for a in actions["items"]:
                 action_desc = a["description"]
                 if "governor" in action_desc.lower():
@@ -357,13 +362,11 @@ class INBillScraper(Scraper):
                     action_type.append("reading-1")
                     reading = True
 
-                if ("second reading" in d
-                    or "reread second time" in d):
+                if ("second reading" in d or "reread second time" in d):
                     action_type.append("reading-2")
                     reading = True
 
-                if ("third reading" in d
-                    or "reread third time" in d):
+                if ("third reading" in d or "reread third time" in d):
                     action_type.append("reading-3")
                     if "passed" in d:
                         action_type.append("passage")
@@ -396,32 +399,33 @@ class INBillScraper(Scraper):
                 if "signed by the governor" in d:
                     action_type.append("executive-signature")
 
-
                 if len(action_type) == 0:
-                    #calling it other and moving on with a warning
-                    self.logger.warning("Could not recognize an action in '{}'".format(action_desc))
-                    
-
+                    # calling it other and moving on with a warning
+                    self.logger.warning("Could not recognize an action in '{}'".format(
+                        action_desc))
                 else:
-                    bill.add_action(chamber=action_chamber,description=action_desc,date=date,classification=action_type)
+                    bill.add_action(chamber=action_chamber,
+                                    description=action_desc,
+                                    date=date,
+                                    classification=action_type)
 
-            #subjects
+            # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
             for subject in subjects:
                 bill.add_subject(subject)
 
-            #versions and votes
+            # versions and votes
             for version in bill_json["versions"][::-1]:
                 try:
                     version_json = client.get("bill_version",
-                                        session=session,
-                                        bill_id=version["billName"],
-                                        version_id=version["printVersionName"])
-
+                                              session=session,
+                                              bill_id=version["billName"],
+                                              version_id=version["printVersionName"])
                 except scrapelib.HTTPError:
                     self.logger.warning("Bill version does not seem to exist.")
                     continue
 
-                self.deal_with_version(version_json,bill,bill_id,original_chamber,session,proxy)
+                yield from self.deal_with_version(version_json, bill, bill_id,
+                                                  original_chamber, session, proxy)
 
             yield bill
