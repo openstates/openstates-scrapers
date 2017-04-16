@@ -25,8 +25,8 @@ class INBillScraper(Scraper):
 
         return (bill_prefix, bill_number)
 
-    def _get_name(self,random_json):
-        #got sick of doing this everywhere
+    def _get_name(self, random_json):
+        # got sick of doing this everywhere
         return ' '.join([random_json["firstName"], random_json["lastName"]])
 
     def _get_bill_url(self, session, bill_id):
@@ -37,12 +37,12 @@ class INBillScraper(Scraper):
         try:
             url_segment = self._bill_prefix_map[bill_prefix]['url_segment']
         except KeyError:
-            raise AssertionError('Unknown bill type {}, don\'t know how to '
-                'make url.'.format(bill_id))
+            raise AssertionError("Unknown bill type {}, don't know how to "
+                                 "make url.".format(bill_id))
 
         return url_template.format(session, url_segment, bill_number)
 
-    def _process_votes(self,rollcalls,bill_id,original_chamber,session,proxy):
+    def _process_votes(self, rollcalls, bill_id, original_chamber, session, proxy):
         result_types = {
             'FAILED': False,
             'DEFEATED': False,
@@ -64,11 +64,9 @@ class INBillScraper(Scraper):
             chamber = "lower" if "house of representatives" in lines[0].lower() else "upper"
             date_parts = lines[1].strip().split()[-3:]
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
-            #pupa choked when I passed datetimes, so passing dates only.
-            #If we figure out how to make pupa not choke, here's the line you want:
-            ####
-            #self._tz.localize(datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p"))
-            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p").date()
+
+            vote_date = datetime.datetime.strptime(date_str,"%b %d, %Y %I:%M:%S %p")
+            vote_date = vote_date.strftime("%Y-%m-%d %H:%M:%S")
 
             passed = None
 
@@ -94,30 +92,34 @@ class INBillScraper(Scraper):
                 self.logger.warning("Vote format is weird, skipping")
                 continue
 
-            vote = VoteEvent(bill_chamber=chamber,legislative_session=session,bill=bill_id,
-                            start_date=vote_date,motion_text=motion,
-                            result="pass" if passed else "fail", classification="passage")
+            vote = VoteEvent(chamber=chamber,
+                             legislative_session=session,
+                             bill=bill_id,
+                             bill_chamber=original_chamber,
+                             start_date=vote_date,
+                             motion_text=motion,
+                             result="pass" if passed else "fail",
+                             classification="passage")
 
-            vote.set_count('yes',yeas)
-            vote.set_count('no',nays)
-            vote.set_count('excused',excused)
-            vote.set_count('not voting',not_voting)
-
+            vote.set_count('yes', yeas)
+            vote.set_count('no', nays)
+            vote.set_count('excused', excused)
+            vote.set_count('not voting', not_voting)
             vote.add_source(proxy_link)
 
             currently_counting = ""
 
             possible_vote_lines = lines[8:]
             for l in possible_vote_lines:
-                l = l.replace("NOT\xc2\xa0VOTING","NOT VOTING")
-                l = l.replace("\xc2\xa0"," -")
-                if "yea-" in l.lower().replace(" ",""):
+                l = l.replace("NOT\xc2\xa0VOTING", "NOT VOTING")
+                l = l.replace("\xc2\xa0", " -")
+                if "yea-" in l.lower().replace(" ", ""):
                     currently_counting = "yes"
-                elif "nay-" in l.lower().replace(" ",""):
+                elif "nay-" in l.lower().replace(" ", ""):
                     currently_counting = "no"
-                elif "excused-" in l.lower().replace(" ",""):
+                elif "excused-" in l.lower().replace(" ", ""):
                     currently_counting = "excused"
-                elif "notvoting-" in l.lower().replace(" ",""):
+                elif "notvoting-" in l.lower().replace(" ", ""):
                     currently_counting = "not voting"
                 elif currently_counting == "":
                     pass
@@ -129,7 +131,7 @@ class INBillScraper(Scraper):
                     voters = l.split("  ")
                     for v in voters:
                         if v.strip():
-                            vote.vote(currently_counting,v.strip())
+                            vote.vote(currently_counting, v.strip())
 
             yield vote
 
@@ -347,11 +349,9 @@ class INBillScraper(Scraper):
                 if not date:
                     self.logger.warning("Action has no date, skipping")
                     continue
-                #pupa choked when I passed datetimes, so passing dates only.
-                #If we figure out how to make pupa not choke, here's the line you want:
-                ####
-                #self._tz.localize(datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S"))
-                date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S").date()
+
+                # convert time to pupa fuzzy time
+                date = date.replace('T', ' ')
 
                 action_type = []
                 d = action_desc.lower()
@@ -378,7 +378,7 @@ class INBillScraper(Scraper):
                     action_type.append("passage")
 
                 if ("referred" in d and "committee on" in d
-                    or "reassigned" in d and "committee on" in d):
+                        or "reassigned" in d and "committee on" in d):
                     committee = d.split("committee on")[-1].strip()
                     action_type.append("referral-committee")
 
@@ -403,11 +403,14 @@ class INBillScraper(Scraper):
                     # calling it other and moving on with a warning
                     self.logger.warning("Could not recognize an action in '{}'".format(
                         action_desc))
-                else:
-                    bill.add_action(chamber=action_chamber,
+                    action_type = None
+
+                a = bill.add_action(chamber=action_chamber,
                                     description=action_desc,
                                     date=date,
                                     classification=action_type)
+                if committee:
+                    a.add_related_entity(committee, entity_type='organization')
 
             # subjects
             subjects = [s["entry"] for s in bill_json["latestVersion"]["subjects"]]
