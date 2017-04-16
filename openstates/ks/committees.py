@@ -1,12 +1,9 @@
-import re
-import os
-import datetime
-import json
 import scrapelib
-
 from billy.scrape.committees import Committee, CommitteeScraper
 
 import ksapi
+from throttle import ThrottleWrapper
+
 
 class KSCommitteeScraper(CommitteeScraper):
     jurisdiction = 'ks'
@@ -16,16 +13,19 @@ class KSCommitteeScraper(CommitteeScraper):
         # some committees, 500, let them go
         self.retry_attempts = 0
 
+        self.throttle = ThrottleWrapper(self)
+
         self.scrape_current(chamber, term)
 
     def scrape_current(self, chamber, term):
+        attempts = 1
+        max_attempts = 5
         if chamber == 'upper':
             chambers = ['special_committees', 'senate_committees']
         else:
             chambers = ['house_committees']
 
-        committee_request = self.get(ksapi.url + 'ctte/').text
-        committee_json = json.loads(committee_request)
+        committee_json = self.throttle.get(ksapi.url + 'ctte/', attempts=attempts, max_attempts=max_attempts)
 
         for com_type in chambers:
             committees = committee_json['content'][com_type]
@@ -39,12 +39,14 @@ class KSCommitteeScraper(CommitteeScraper):
                 committee = Committee(com_chamber, committee_data['TITLE'])
 
                 com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
+
                 try:
-                    detail_json = self.get(com_url).text
+                    detail_json = self.throttle.get(com_url, attempts=attempts, max_attempts=max_attempts)
                 except scrapelib.HTTPError:
                     self.warning("error fetching committee %s" % com_url)
                     continue
-                details = json.loads(detail_json)['content']
+                    
+                details = detail_json['content']
                 for chair in details['CHAIR']:
                     if chair.get('FULLNAME', None):
                         chair_name = chair['FULLNAME']
