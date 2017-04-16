@@ -273,7 +273,7 @@ class CTBillScraper(BillScraper):
             match = re.match(r'^\d{4,4}([A-Z]+-\d{5,5})-(R\d\d)',
                              f.filename)
             if not match:
-                self.warning('bad version filename', f.filename)
+                self.warning('bad version filename %s', f.filename)
                 continue
             bill_id = match.group(1).replace('-', '')
 
