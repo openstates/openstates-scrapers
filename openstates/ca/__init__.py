@@ -3,6 +3,7 @@ import re
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+from .people import CAPersonScraper
 
 
 settings = dict(SCRAPELIB_RPM=30)
@@ -14,6 +15,7 @@ class California(Jurisdiction):
     name = "California"
     url = "http://www.legislature.ca.gov/"
     scrapers = {
+        'people': CAPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
