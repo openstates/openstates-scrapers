@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 import scrapelib
 import lxml.html
+from .people import SDLegislatorScraper
 
 class SouthDakota(Jurisdiction):
     division_id = "ocd-division/country:us/state:sd"
@@ -8,6 +9,7 @@ class SouthDakota(Jurisdiction):
     name = "South Dakota"
     url = "http://www.sdlegislature.gov/"
     scrapers = {
+        'people':SDLegislatorScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -73,7 +75,7 @@ class SouthDakota(Jurisdiction):
     def get_organizations(self):
         legislature_name = "South Dakota State Legislature"
         lower_chamber_name = "House"
-        lower_seats = None
+        lower_seats = 0
         lower_title = "Representative"
         upper_chamber_name = "Senate"
         upper_seats = 0
@@ -98,10 +100,11 @@ class SouthDakota(Jurisdiction):
         yield legislature
         yield upper
         yield lower
-        def get_session_list():
-            html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
-                                           'Legislative_Session/Menu.aspx').text
-            doc = lxml.html.fromstring(html)
-            sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
-                '/a/div/text()')
-            return sessions
+    
+    def get_session_list(self):
+        html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
+                                       'Legislative_Session/Menu.aspx').text
+        doc = lxml.html.fromstring(html)
+        sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
+            '/a/div/text()')
+        return sessions
