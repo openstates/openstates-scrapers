@@ -1,22 +1,25 @@
-import datetime
 from pupa.scrape import Jurisdiction, Organization
 from .people import DCPersonScraper
 from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
+#from .events import DCEventScraper
 
-class DistrictofColumbia(Jurisdiction):
-    division_id = "ocd-division/country:us/state:dc"
+
+class DistrictOfColumbia(Jurisdiction):
+    division_id = "ocd-division/country:us/district:dc"
     classification = "government"
     name = "District of Columbia"
-    url = "TODO"
+    url = "https://dc.gov"
     scrapers = {
-    	'people': DCPersonScraper,
+        'people': DCPersonScraper,
         'committees': DCCommitteeScraper,
-        'bills': DCBillScraper,
+        #'events': DCEventScraper,
+        #'bills': DCBillScraper,
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Independent'},
+        {'name': 'Democratic'},
     ]
     legislative_sessions = [
         {
@@ -56,26 +59,12 @@ class DistrictofColumbia(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Council of the District of Columbia"
-        upper_chamber_name = "Council"
-        upper_seats = 8
-        upper_title = "Councilmember"
+        council = Organization(name=legislature_name, classification="legislature")
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        #lower = Organization(lower_chamber_name, classification='lower',
-        #                     parent_id=legislature._id)
+        council.add_post('Chairman', role="Chairman", division_id=self.division_id)
+        council.add_post('At-Large', role="Councilmember", division_id=self.division_id)
 
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        #for n in range(1, lower_seats+1):
-        #    lower.add_post(
-        #        label=str(n), role=lower_title,
-        #        division_id='{}/sldl:{}'.format(self.division_id, n))
-
-        yield legislature
-        yield upper
-        # yield lower
+        for n in range(1, 8+1):
+            council.add_post('Ward {}'.format(n), role="member",
+                             division_id='{}/ward:{}'.format(self.division_id, n))
+        yield council
