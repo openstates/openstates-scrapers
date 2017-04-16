@@ -1,11 +1,10 @@
 from .utils import xpath
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 import lxml.etree
 
 
-class WACommitteeScraper(CommitteeScraper):
-    jurisdiction = 'wa'
+class WACommitteeScraper(Scraper):
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 

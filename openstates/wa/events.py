@@ -6,7 +6,7 @@ import datetime as dt
 import pytz
 import re
 
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 
 event_page = "http://app.leg.wa.gov/mobile/MeetingSchedules/Committees?AgencyId=%s&" + \
              "StartDate=%s&EndDate=%s&ScheduleType=2"
@@ -15,9 +15,7 @@ event_page = "http://app.leg.wa.gov/mobile/MeetingSchedules/Committees?AgencyId=
 # arg3: end date
 
 
-class WAEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'wa'
-
+class WAEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Pacific')
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
@@ -44,7 +42,15 @@ class WAEventScraper(EventScraper, LXMLMixin):
                     })
         return ret
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         cha = {"upper": "7", "lower": "3", "other": "4"}[chamber]
 
         print_format = "%m/%d/%Y"
@@ -69,19 +75,13 @@ class WAEventScraper(EventScraper, LXMLMixin):
 
                 when = dt.datetime.strptime(when.strip(), "%m/%d/%Y %I:%M:%S %p")
 
-                kwargs = {
-                    "location": (where or '').strip() or "unknown"
-                }
+                location = (where or '').strip() or "unknown"
 
-                event = Event(session, when, 'committee:meeting',
-                              meeting_title, **kwargs)
+                event = Event(name=meeting_title, start_time=self._tz.localize(when),
+                              timezone=self._tz.zone, location_name=location,
+                              description=meeting_title)
 
-                event.add_participant(
-                        "host",
-                        who.strip(),
-                        'committee',
-                        chamber=chamber
-                    )
+                event.add_participant(who.strip(), type='committee', note='host')
                 event.add_source(url)
 
                 # only scraping public hearing bills for now.
@@ -89,10 +89,7 @@ class WAEventScraper(EventScraper, LXMLMixin):
                                       "[contains(@class, 'visible-lg')]")
                 for bill in bills:
                     bill_id, descr = bill.xpath("./a/text()")[0].split(" - ")
-                    event.add_related_bill(
-                        bill_id.strip(),
-                        description=descr.strip(),
-                        type="consideration"
-                    )
+                    item = event.add_agenda_item(descr.strip())
+                    item.add_bill(bill_id.strip())
 
-                self.save_event(event)
+                yield event
