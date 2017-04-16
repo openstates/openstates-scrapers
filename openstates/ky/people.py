@@ -1,26 +1,28 @@
+import lxml.html
+from functools import reduce
 from collections import defaultdict
 
-from billy.scrape.legislators import Legislator, LegislatorScraper
-
-import lxml.html
+from pupa.scrape import Person, Scraper
 
 
-class KYLegislatorScraper(LegislatorScraper):
+class KYPersonScraper(Scraper):
     jurisdiction = 'ky'
     latest_only = True
 
-    def scrape(self, chamber, year):
-
-        if chamber == 'upper':
-            leg_list_url = 'http://www.lrc.ky.gov/senate/senmembers.htm'
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
         else:
-            leg_list_url = 'http://www.lrc.ky.gov/house/hsemembers.htm'
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
 
-        page = self.get(leg_list_url).text
+    def scrape_chamber(self, chamber):
+        url = 'http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper' else 'http://www.lrc.ky.gov/house/hsemembers.htm'
+        page = self.get(url).text
         page = lxml.html.fromstring(page)
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
-            self.scrape_member(chamber, year, link.get('href'))
+            yield from self.scrape_member(chamber, link.get('href'))
 
     def scrape_office_info(self, url):
         ret = {}
@@ -83,7 +85,7 @@ class KYLegislatorScraper(LegislatorScraper):
 
         return ret
 
-    def scrape_member(self, chamber, year, member_url):
+    def scrape_member(self, chamber, member_url):
         member_page = self.get(member_url).text
         doc = lxml.html.fromstring(member_page)
 
@@ -101,14 +103,14 @@ class KYLegislatorScraper(LegislatorScraper):
 
         district = doc.xpath('//span[@id="districtHeader"]/text()')[0].split()[-1]
 
-        leg = Legislator(year, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url)
-        leg.add_source(member_url)
+        person = Person(name=full_name, district=district, party=party, primary_org=chamber, image=photo_url)
+        person.add_source(member_url)
+        person.add_link(member_url)
 
         address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//span[@class="bioText"]/text()'))
 
         phone = None
-        fax   = None
+        fax = None
         phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
         for num in phone_numbers:
             if num.startswith('Annex: '):
@@ -118,7 +120,6 @@ class KYLegislatorScraper(LegislatorScraper):
                 else:
                     phone = num
 
-
         emails = doc.xpath(
             '//div[@id="EmailAddresses"]//span[@class="bioText"]//a/text()'
         )
@@ -127,15 +128,18 @@ class KYLegislatorScraper(LegislatorScraper):
             [None] + emails
         )
 
+        if phone:
+            person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+
+        if fax:
+            person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
+
+        if email:
+            person.add_contact_detail(type='email', value=email, note='Capitol Office')
+
         if address.strip() == "":
             self.warning("Missing Capitol Office!!")
         else:
-            leg.add_office(
-                'capitol', 'Capitol Office',
-                address=address,
-                phone=phone,
-                fax=fax,
-                email=email
-            )
+            person.add_contact_detail(type='address', value=address, note='Capitol Office')
 
-        self.save_legislator(leg)
+        yield person
