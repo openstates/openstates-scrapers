@@ -5,8 +5,7 @@ from collections import defaultdict
 
 # from .actions import Categorizer, committees_abbrs
 from .utils import xpath
-from pupa.scrape import Scraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
 
 import lxml.etree
@@ -231,8 +230,8 @@ class WABillScraper(Scraper, LXMLMixin):
         # de-dup bill_id
         for bill_id in list(set(bill_id_list)):
             bill = self.scrape_bill(chamber, session, bill_id)
-            bill['subjects'] = list(set(self._subjects[bill_id]))
-            self.save_bill(bill)
+            bill.subject = list(set(self._subjects[bill_id]))
+            yield bill
 
     def scrape_bill(self, chamber, session, bill_id):
         bill_num = bill_id.split()[1]
@@ -275,7 +274,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
         self.scrape_sponsors(bill, session)
         self.scrape_actions(bill, bill_num)
-        yield from self.scrape_votes(bill)
+        yield from self.scrape_votes(bill, session)
 
         return bill
 
@@ -345,8 +344,8 @@ class WABillScraper(Scraper, LXMLMixin):
             bill.add_action(description=action_name, date=action_date, chamber=actor,
                             classification=self.categorizer.categorize(action_name))
 
-    def scrape_votes(self, bill):
-        bill_num = bill['bill_id'].split()[1]
+    def scrape_votes(self, bill, session):
+        bill_num = bill.identifier.split()[1]
 
         url = ("http://wslwebservices.leg.wa.gov/legislationservice.asmx/"
                "GetRollCalls?billNumber=%s&biennium=%s" % (
@@ -372,9 +371,13 @@ class WABillScraper(Scraper, LXMLMixin):
             agency = xpath(rc, "string(wa:Agency)")
             chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
 
-            vote = Vote(chamber, date, motion,
-                        yes_count > (no_count + other_count),
-                        yes_count, no_count, other_count)
+            vote = Vote(chamber=chamber, start_date=date,
+                        motion_text=motion,
+                        result='pass' if yes_count > (no_count + other_count) else 'fail',
+                        classification='other', bill=bill)
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
 
             for sv in xpath(rc, "wa:Votes/wa:Vote"):
                 name = xpath(sv, "string(wa:Name)")
@@ -385,6 +388,6 @@ class WABillScraper(Scraper, LXMLMixin):
                 elif vtype == 'Nay':
                     vote.no(name)
                 else:
-                    vote.other(name)
+                    vote.vote('other', name)
 
-            bill.add_vote(vote)
+            yield vote
