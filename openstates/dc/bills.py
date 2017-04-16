@@ -234,13 +234,12 @@ class DCBillScraper(Scraper):
                             committees.append(committee["Name"])
                     if committees != []:
                         a = bill.add_action("referred to committee", date,
-                                        classification="referral-committee")
+                                            classification="referral-committee")
                         for com in committees:
                             a.add_related_entity(com, entity_type='organization')
 
                 if "CommitteeReferralComments" in legislation_info:
-                    a = bill.add_action("comments from committee", date,
-                                    )
+                    a = bill.add_action("comments from committee", date)
                     for committee in legislation_info["CommitteeReferralComments"]:
                         a.add_related_entity(committee["Name"], entity_type='organization')
 
