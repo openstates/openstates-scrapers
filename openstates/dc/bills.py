@@ -1,69 +1,68 @@
-import re
 import datetime
-import lxml.html
 import json
 
-import scrapelib
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 from .utils import decode_json
 
 
-class DCBillScraper(BillScraper):
-    jurisdiction = 'dc'
+class DCBillScraper(Scraper):
 
-    def scrape(self, session, chambers):
-        #get member id matching for vote parsing
+    def scrape(self, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        # get member id matching for vote parsing
         member_ids = self.get_member_ids()[session]
-        per_page = 10 #seems like it gives me 10 no matter what.
+        per_page = 10       # seems like it gives 10 no matter what.
         start_record = 0
 
-        headers = {"Content-Type":"application/json"}
-        url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicAdvancedSearch"
+        headers = {"Content-Type": "application/json"}
+        url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
+               "GetPublicAdvancedSearch")
         bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
         params = {
             "request": {
-                "sEcho":2,
-                "iColumns":4,
-                "sColumns":"",
-                "iDisplayStart":0,
-                "iDisplayLength":per_page,
-                "mDataProp_0":"ShortTitle",
-                "mDataProp_1":"Title",
-                "mDataProp_2":"LegislationCategories",
-                "mDataProp_3":"Modified",
-                "iSortCol_0":0,
-                "sSortDir_0":"asc",
-                "iSortingCols":0,
-                "bSortable_0":"true",
-                "bSortable_1":"true",
-                "bSortable_2":"true",
-                "bSortable_3":"true"
+                "sEcho": 2,
+                "iColumns": 4,
+                "sColumns": "",
+                "iDisplayStart": 0,
+                "iDisplayLength": per_page,
+                "mDataProp_0": "ShortTitle",
+                "mDataProp_1": "Title",
+                "mDataProp_2": "LegislationCategories",
+                "mDataProp_3": "Modified",
+                "iSortCol_0": 0,
+                "sSortDir_0": "asc",
+                "iSortingCols": 0,
+                "bSortable_0": "true",
+                "bSortable_1": "true",
+                "bSortable_2": "true",
+                "bSortable_3": "true"
             },
-            "criteria":{
-                "Keyword":"",
-                "Category":"",
-                "SubCategoryId":"",
-                "RequestOf":"",
-                "CouncilPeriod":str(session),
-                "Introducer":"",
-                "CoSponsor":"",
-                "CommitteeReferral":"",
-                "CommitteeReferralComments":"",
-                "StartDate":"",
-                "EndDate":"",
-                "QueryLimit":100,
-                "FilterType":"",
-                "Phases":"",
-                "LegislationStatus":"0",
-                "IncludeDocumentSearch":"false"
+            "criteria": {
+                "Keyword": "",
+                "Category": "",
+                "SubCategoryId": "",
+                "RequestOf": "",
+                "CouncilPeriod": str(session),
+                "Introducer": "",
+                "CoSponsor": "",
+                "CommitteeReferral": "",
+                "CommitteeReferralComments": "",
+                "StartDate": "",
+                "EndDate": "",
+                "QueryLimit": 100,
+                "FilterType": "",
+                "Phases": "",
+                "LegislationStatus": "0",
+                "IncludeDocumentSearch": "false"
             }
         }
         param_json = json.dumps(params)
-        response = self.post(url,headers=headers,data=param_json)
-        #the response is a terrible string-of-nested-json-strings. Yuck.
+        response = self.post(url, headers=headers, data=param_json)
+        # the response is a terrible string-of-nested-json-strings. Yuck.
         response = decode_json(response.json()["d"])
         data = response["aaData"]
 
@@ -72,152 +71,139 @@ class DCBillScraper(BillScraper):
         while len(data) > 0:
 
             for bill in data:
-
-                bill_versions = [] #sometimes they're in there more than once, so we'll keep track
+                # sometimes they're in there more than once, so we'll keep track
+                bill_versions = []
 
                 bill_id = bill["Title"]
                 if bill_id.startswith("AG"):
-                    #actually an agenda, skip
+                    # actually an agenda, skip
                     continue
-                bill_params = {"legislationId":bill_id}
-                bill_info = self.post(bill_url,headers=headers,data=json.dumps(bill_params))
+                bill_params = {"legislationId": bill_id}
+                bill_info = self.post(bill_url, headers=headers,
+                                      data=json.dumps(bill_params))
                 bill_info = decode_json(bill_info.json()["d"])["data"]
                 bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
 
-
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
-
-
 
                 if bill_id.startswith("R") or bill_id.startswith("CER"):
                     bill_type = "resolution"
                 else:
                     bill_type = "bill"
 
-                #dc has no chambers. calling it all upper
-                bill = Bill(session,"upper", bill_id, title, type=bill_type)
+                bill = Bill(bill_id, legislative_session=session,
+                            title=title, classification=bill_type)
 
-                #sponsors and cosponsors
+                # sponsors and cosponsors
                 if "Introducer" in legislation_info:
                     introducers = legislation_info["Introducer"]
                     intro_date = self.date_format(legislation_info["IntroductionDate"])
-                    bill.add_action("upper",
-                                    "Introduced",
-                                    intro_date,
-                                    type="bill:introduced")
+                    bill.add_action("Introduced", intro_date, classification="introduction")
                 else:
-                    #sometimes there are introducers, sometimes not.
-                    # Set Introducers to empty array to avoid downstream breakage, but log bills without introducers
-                    self.logger.warning("No Introducer: {0} {1}: {2}".format(bill['chamber'], bill['session'], bill['bill_id']))
+                    # sometimes there are introducers, sometimes not.
+                    # Set Introducers to empty array to avoid downstream breakage,
+                    # but log bills without introducers
+                    self.logger.warning("No Introducer: {0}".format(bill.identifier))
                     introducers = []
 
                 try:
-                    #sometimes there are cosponsors, sometimes not.
+                    # sometimes there are cosponsors, sometimes not.
                     cosponsors = legislation_info["CoSponsor"]
                 except KeyError:
                     cosponsors = []
 
                 for i in introducers:
-                    sponsor_name = i["Name"]
-                    #they messed up Phil Mendelson's name
-                    if sponsor_name == "Phil Pmendelson":
-                        sponsor_name = "Phil Mendelson"
-                    bill.add_sponsor(name=sponsor_name,type="primary")
+                    name = i["Name"]
+                    # they messed up Phil Mendelson's name
+                    if name == "Phil Pmendelson":
+                        name = "Phil Mendelson"
+                    bill.add_sponsorship(name, classification='primary',
+                                         entity_type='person', primary=True)
+
                 for s in cosponsors:
-                    sponsor_name = s["Name"]
-                    if sponsor_name == "Phil Pmendelson":
-                        sponsor_name = "Phil Mendelson"
-                    bill.add_sponsor(name=sponsor_name,type="cosponsor")
+                    name = s["Name"]
+                    if name == "Phil Pmendelson":
+                        name = "Phil Mendelson"
+                    bill.add_sponsorship(name=name, classification="cosponsor",
+                                         entity_type='person', primary=False)
 
-
-                #if it's become law, add the law number as an alternate title
+                # if it's become law, add the law number as an alternate title
                 if "LawNumber" in legislation_info:
                     law_num = legislation_info["LawNumber"]
                     if law_num:
                         bill.add_title(law_num)
 
-                #also sometimes it's got an act number
+                # also sometimes it's got an act number
                 if "ActNumber" in legislation_info:
                     act_num = legislation_info["ActNumber"]
                     if act_num:
                         bill.add_title(act_num)
 
-                #sometimes AdditionalInformation has a previous bill name
+                # sometimes AdditionalInformation has a previous bill name
                 if "AdditionalInformation" in legislation_info:
                     add_info = legislation_info["AdditionalInformation"]
                     if "previously" in add_info.lower():
-                        prev_title = add_info.lower().replace("previously","").strip().replace(" ","")
+                        prev_title = add_info.lower().replace("previously", ""
+                                                              ).strip().replace(" ", "")
                         bill.add_title(prev_title.upper())
                     elif add_info:
-                        bill["additional_information"] = add_info
+                        bill.extras["additional_information"] = add_info
 
                 if "WithDrawnDate" in legislation_info:
                     withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
                     withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
                     if withdrawn_by == "the Mayor":
 
-                        bill.add_action("executive",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn")
+                        bill.add_action("withdrawn", withdrawn_date,
+                                        chamber="executive", classification="withdrawal")
 
                     elif "committee" in withdrawn_by.lower():
-                        bill.add_action("upper",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn",
-                                    committees=withdrawn_by)
+                        a = bill.add_action("withdrawn", withdrawn_date,
+                                            classification="withdrawal")
+                        a.add_related_entity(withdrawn_by, entity_type='organization')
                     else:
-                        bill.add_action("upper",
-                                    "withdrawn",
-                                    withdrawn_date,
-                                    "bill:withdrawn",
-                                    legislators=withdrawn_by)
+                        a = bill.add_action("withdrawn", withdrawn_date,
+                                            classification="withdrawal")
+                        a.add_related_entity(withdrawn_by, entity_type='person')
 
-
-                #deal with actions involving the mayor
+                # deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
                 if mayor != []:
                     mayor = mayor[0]
 
-                    #in dc, mayor == governor because openstates schema
                     if "TransmittedDate" in mayor:
                         transmitted_date = self.date_format(mayor["TransmittedDate"])
 
-                        bill.add_action("executive",
-                                    "transmitted to mayor",
-                                    transmitted_date,
-                                    type = "governor:received")
+                        bill.add_action("transmitted to mayor", transmitted_date,
+                                        chamber="executive",
+                                        classification="executive-receipt")
 
                     if 'SignedDate' in mayor:
                         signed_date = self.date_format(mayor["SignedDate"])
 
-                        bill.add_action("executive",
-                                        "signed",
-                                        signed_date,
-                                        type="governor:signed")
+                        bill.add_action("signed", signed_date,
+                                        chamber="executive",
+                                        classification="executive-signature")
 
-
-                    elif 'ReturnedDate' in mayor: #if returned but not signed, it was vetoed
+                    # if returned but not signed, it was vetoed
+                    elif 'ReturnedDate' in mayor:
                         veto_date = self.date_format(mayor["ReturnedDate"])
 
-                        bill.add_action("executive",
-                                        "vetoed",
-                                        veto_date,
-                                        type="governor:vetoed")
+                        bill.add_action("vetoed", veto_date,
+                                        chamber="executive",
+                                        classification="executive-veto")
 
-                        if 'EnactedDate' in mayor: #if it was returned and enacted but not signed, there was a veto override
+                        # if it was returned and enacted but not signed, there was a veto override
+                        if 'EnactedDate' in mayor:
                             override_date = self.date_format(mayor["EnactedDate"])
 
-                            bill.add_action("upper",
-                                        "veto override",
-                                        override_date,
-                                        type="bill:veto_override:passed")
+                            bill.add_action("veto override", override_date,
+                                            classification="veto-override-passage")
 
                     if 'AttachmentPath' in mayor:
-                        #documents relating to the mayor's review
-                        self.add_documents(mayor["AttachmentPath"],bill)
+                        # documents relating to the mayor's review
+                        self.add_documents(mayor["AttachmentPath"], bill)
 
                 congress = bill_info["CongressReview"]
                 if len(congress) > 0:
@@ -225,20 +211,17 @@ class DCBillScraper(BillScraper):
                     if "TransmittedDate" in congress:
                         transmitted_date = self.date_format(congress["TransmittedDate"])
 
-                        bill.add_action("other",
-                                    "Transmitted to Congress for review",
-                                    transmitted_date)
+                        bill.add_action("Transmitted to Congress for review",
+                                        transmitted_date)
 
-
-
-
-                #deal with committee actions
+                # deal with committee actions
                 if "DateRead" in legislation_info:
                     date = legislation_info["DateRead"]
                 elif "IntroductionDate" in legislation_info:
                     date = legislation_info["IntroductionDate"]
                 else:
-                    self.logger.warning("Crap, we can't find anything that looks like an action date. Skipping")
+                    self.logger.warning("we can't find anything that looks like an "
+                                        "action date. Skipping")
                     continue
                 date = self.date_format(date)
                 if "CommitteeReferral" in legislation_info:
@@ -250,77 +233,77 @@ class DCBillScraper(BillScraper):
                         else:
                             committees.append(committee["Name"])
                     if committees != []:
-                        bill.add_action("upper",
-                                    "referred to committee",
-                                    date,
-                                    committees=committees,
-                                    type="committee:referred")
+                        a = bill.add_action("referred to committee", date,
+                                        classification="referral-committee")
+                        for com in committees:
+                            a.add_related_entity(com, entity_type='organization')
 
                 if "CommitteeReferralComments" in legislation_info:
-                    committees = []
+                    a = bill.add_action("comments from committee", date,
+                                    )
                     for committee in legislation_info["CommitteeReferralComments"]:
-                        committees.append(committee["Name"])
-                    bill.add_action("upper",
-                                    "comments from committee",
-                                    date,
-                                    committees=committees,
-                                    type="other")
+                        a.add_related_entity(committee["Name"], entity_type='organization')
 
-                #deal with random docs floating around
+                # deal with random docs floating around
                 docs = bill_info["OtherDocuments"]
                 for d in docs:
                     if "AttachmentPath" in d:
-                        self.add_documents(d["AttachmentPath"],bill)
+                        self.add_documents(d["AttachmentPath"], bill)
                     else:
                         self.logger.warning("Document path missing from 'Other Documents'")
 
                 if "MemoLink" in legislation_info:
-                    self.add_documents(legislation_info["MemoLink"],bill)
+                    self.add_documents(legislation_info["MemoLink"], bill)
 
                 if "AttachmentPath" in legislation_info:
-                    self.add_documents(legislation_info["AttachmentPath"],bill)
+                    self.add_documents(legislation_info["AttachmentPath"], bill)
 
-
-                #full council votes
+                # full council votes
                 votes = bill_info["VotingSummary"]
                 for vote in votes:
-                    self.process_vote(vote, bill, member_ids)
+                    v = self.process_vote(vote, bill, member_ids)
+                    if v:
+                        v.add_source(bill_source_url)
+                        yield v
 
-
-                #deal with committee votes
+                # deal with committee votes
                 if "CommitteeMarkup" in bill_info:
                     committee_info = bill_info["CommitteeMarkup"]
                     if len(committee_info) > 0:
                         for committee_action in committee_info:
-                            self.process_committee_vote(committee_action,bill)
+                            v = self.process_committee_vote(committee_action, bill)
+                            if v:
+                                v.add_source(bill_source_url)
+                                yield v
                         if "AttachmentPath" in committee_info:
-                            self.add_documents(vote["AttachmentPath"],bill,is_version)
+                            self.add_documents(vote["AttachmentPath"], bill)
 
                 bill.add_source(bill_source_url)
-                self.save_bill(bill)
+                yield bill
 
-            #get next page
+            # get next page
             start_record += per_page
             params["request"]["iDisplayStart"] = start_record
             param_json = json.dumps(params)
-            response = self.post(url,headers=headers,data=param_json)
+            response = self.post(url, headers=headers, data=param_json)
             response = decode_json(response.json()["d"])
             data = response["aaData"]
 
     def get_member_ids(self):
-        member_dict = {} #three levels: from session to member_id to name
-        search_data_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicSearchData"
-        response = self.post(search_data_url,headers={"Content-Type":"application/json"})
+        # three levels: from session to member_id to name
+        member_dict = {}
+        search_data_url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
+                           "GetPublicSearchData")
+        response = self.post(search_data_url, headers={"Content-Type": "application/json"})
         member_data = decode_json(response.json()['d'])["Members"]
         for session_id, members in member_data.items():
             member_dict[session_id] = {}
             for member in members:
-                member_id = int(member["ID"]) #should be ints already, but once one wasn't
+                member_id = int(member["ID"])
                 member_name = member["MemberName"]
                 member_dict[session_id][member_id] = member_name
 
         return member_dict
-
 
     def process_vote(self, vote, bill, member_ids):
         try:
@@ -329,10 +312,10 @@ class DCBillScraper(BillScraper):
             self.logger.warning("Can't even figure out what we're voting on. Skipping.")
             return
 
-        if not "VoteResult" in vote:
+        if "VoteResult" not in vote:
             if "postponed" in motion.lower():
                 result = "Postponed"
-                status = True #because we're talking abtout the motion, not the amendment
+                status = True   # because we're talking abtout the motion, not the amendment
             elif "tabled" in motion.lower():
                 result = "Tabled"
                 status = True
@@ -341,98 +324,102 @@ class DCBillScraper(BillScraper):
                 return
         else:
 
-            result = vote["VoteResult"]
-
-            statuses = {"approved":True,
-                    "disapproved":False,
-                    "failed":False,
-                    "declined":False,
-                    "passed":True}
+            result = vote["VoteResult"].strip().lower()
+            statuses = {"approved": 'pass',
+                        "disapproved": 'fail',
+                        "failed": 'fail',
+                        "declined": 'fail',
+                        "passed": 'pass'}
 
             try:
-                status = statuses[result.strip().lower()]
+                status = statuses[result]
             except KeyError:
-                self.logger.warning("Unexpected vote result '{result},' skipping vote.".format(result=result))
+                self.logger.warning("Unexpected vote result '{result},' skipping vote.".format(
+                    result=result)
+                )
                 return
 
         date = self.date_format(vote["DateOfVote"])
 
         leg_votes = vote["MemberVotes"]
-        v = Vote('upper',date,motion,status,0,0,0,
-                yes_votes=[],no_votes=[],other_votes=[])
+        v = VoteEvent(chamber='legislature',
+                      start_date=date,
+                      motion_text=motion,
+                      result=status,
+                      classification='passage',
+                      bill=bill
+                      )
+        yes_count = no_count = other_count = 0
         for leg_vote in leg_votes:
             mem_name = member_ids[int(leg_vote["MemberId"])]
             if leg_vote["Vote"] == "1":
-                v['yes_count'] += 1
-                v['yes_votes'].append(mem_name)
+                yes_count += 1
+                v.yes(mem_name)
             elif leg_vote["Vote"] == "2":
-                v['no_count'] += 1
-                v['no_votes'].append(mem_name)
+                no_count += 1
+                v.no(mem_name)
             else:
-                v['other_count'] += 1
-                v['other_votes'].append(mem_name)
+                other_count += 1
+                v.vote('other', mem_name)
 
+        v.set_count('yes', yes_count)
+        v.set_count('no', no_count)
+        v.set_count('other', other_count)
 
-
-        #the documents for the readings are inside the vote
-        #level in the json, so we'll deal with them here
-        #and also add relevant actions
+        # the documents for the readings are inside the vote
+        # level in the json, so we'll deal with them here
+        # and also add relevant actions
 
         if "amendment" in motion.lower():
             if status:
-                t = "amendment:passed"
-            elif result in ["Tabled","Postponed"]:
-                t = "amendment:tabled"
+                t = "amendment-passage"
+            elif result in ["Tabled", "Postponed"]:
+                t = "amendment-deferral"
             else:
-                t = "amendment:failed"
-        elif result in ["Tabled","Postponed"]:
-                t = "other" #we don't really have a thing for postponed bills
+                t = "amendment-failure"
         elif "first reading" in motion.lower():
-            t = "bill:reading:1"
+            t = "reading-1"
         elif "1st reading" in motion.lower():
-            t = "bill:reading:1"
+            t = "reading-1"
         elif "second reading" in motion.lower():
-            t = "bill:reading:2"
+            t = "reading-2"
         elif "2nd reading" in motion.lower():
-            t = "bill:reading:2"
+            t = "reading-2"
         elif "third reading" in motion.lower():
-            t = "bill:reading:3"
+            t = "reading-3"
         elif "3rd reading" in motion.lower():
-            t = "bill:reading:3"
+            t = "reading-3"
         elif "final reading" in motion.lower():
-            t = "bill:reading:3"
+            t = "reading-3"
+        elif result in ["Tabled", "Postponed"]:
+            t = None
         else:
-            t = "other"
+            t = None
 
-        bill.add_action("upper",
-                        motion,
-                        date,
-                        type=t)
+        bill.add_action(motion, date, classification=t)
 
         if "amendment" in t:
             vote["type"] = "amendment"
         elif "reading" in t:
-            vote["type"] = t.replace("bill:","")
+            vote["type"] = t.replace("bill:", "")
 
-        #some documents/versions are hiding in votes.
+        # some documents/versions are hiding in votes.
         if "AttachmentPath" in vote:
             is_version = False
             try:
-                if vote["DocumentType"] in ["enrollment","engrossment","introduction"]:
+                if vote["DocumentType"] in ["enrollment", "engrossment", "introduction"]:
                     is_version = True
             except KeyError:
                 pass
 
-            if motion in ["enrollment","engrossment","introduction"]:
+            if motion in ["enrollment", "engrossment", "introduction"]:
                 is_version = True
 
-            self.add_documents(vote["AttachmentPath"],bill,is_version)
+            self.add_documents(vote["AttachmentPath"], bill, is_version)
 
-        bill.add_vote(v)
+        return v
 
-
-
-    def process_committee_vote(self,committee_action,bill):
+    def process_committee_vote(self, committee_action, bill):
         try:
             date = committee_action["ActionDate"]
             vote_info = committee_action["Vote"]
@@ -453,17 +440,28 @@ class DCBillScraper(BillScraper):
             else:
                 other_count += vote_count
 
-        passed = False
+        result = 'fail'
         if yes_count > no_count:
-            passed = True
+            result = 'pass'
 
-        vote = Vote("upper",date,"Committee Vote",passed,yes_count,no_count,other_count)
-        bill.add_vote(vote)
+        v = VoteEvent(chamber='legislature',
+                      start_date=date,
+                      motion_text='Committee Vote',
+                      result=result,
+                      classification='committee',
+                      bill=bill
+                      )
+        v.set_count('yes', yes_count)
+        v.set_count('no', no_count)
+        v.set_count('other', other_count)
 
+        return v
 
-    def add_documents(self,attachment_path,bill,is_version=False):
+    def add_documents(self, attachment_path, bill, is_version=False):
         global bill_versions
-        base_url = "http://lims.dccouncil.us/Download/" #nothing is actual links. we'll have to concatenate to get doc paths (documents are hiding in thrice-stringified json. eek.)
+        # nothing is actual links. we'll have to concatenate to get doc paths
+        # (documents are hiding in thrice-stringified json. eek.)
+        base_url = "http://lims.dccouncil.us/Download/"
         for a in attachment_path:
             doc_type = a["Type"]
             doc_name = a["Name"]
@@ -476,8 +474,8 @@ class DCBillScraper(BillScraper):
 
             mimetype = "application/pdf" if doc_name.endswith("pdf") else None
 
-            #figure out if it's a version from type/name
-            possible_version_types = ["SignedAct","Introduction","Enrollment","Engrossment"]
+            # figure out if it's a version from type/name
+            possible_version_types = ["SignedAct", "Introduction", "Enrollment", "Engrossment"]
             for vt in possible_version_types:
                 if vt.lower() in doc_name.lower():
                     is_version = True
@@ -487,16 +485,12 @@ class DCBillScraper(BillScraper):
                 doc_type = "Amendment"
 
             if is_version:
-                if doc_url in bill_versions:
-                    self.logger.warning("Version {} has been seen multiple times. Keeping first version seen".format(doc_url))
-                else:
-                    bill.add_version(doc_type,doc_url,mimetype=mimetype)
-                    bill_versions.append(doc_url)
+                bill.add_version_link(doc_type, doc_url, media_type=mimetype,
+                                      on_duplicate='ignore')
                 continue
 
+            bill.add_document_link(doc_type, doc_url, media_type=mimetype)
 
-            bill.add_document(doc_type,doc_url,mimetype=mimetype)
-
-    def date_format(self,d):
-        #the time seems to be 00:00:00 all the time, so ditching it with split
-        return datetime.datetime.strptime(d.split()[0],"%Y/%m/%d")
+    def date_format(self, d):
+        # the time seems to be 00:00:00 all the time, so ditching it with split
+        return datetime.datetime.strptime(d.split()[0], "%Y/%m/%d").strftime('%Y-%m-%d')

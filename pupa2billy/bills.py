@@ -51,6 +51,8 @@ class PupaBillScraper(BillScraper):
 
     def process_bill(self, data):
         chamber = parse_psuedo_id(data['from_organization'])['classification']
+        if chamber == 'legislature':
+            chamber = 'upper'
         bill = Bill(data['legislative_session'], chamber, data['identifier'],
                     data['title'], subjects=data['subject'],
                     type=data['classification'])
