@@ -8,15 +8,18 @@ class WACommitteeScraper(Scraper):
 
     _base_url = 'http://wslwebservices.leg.wa.gov/CommitteeService.asmx'
 
-    def scrape(self, chamber=None):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
         chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
-        biennium = "%s-%s" % (term[0:4], term[7:9])
+    def scrape_chamber(self, chamber, session):
+        # biennium = "%s-%s" % (term[0:4], term[7:9])
 
-        url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, biennium)
+        url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, session)
         page = self.get(url)
         page = lxml.etree.fromstring(page.content)
 
@@ -29,14 +32,15 @@ class WACommitteeScraper(Scraper):
             name = xpath(comm, "string(wa:Name)")
             comm_id = xpath(comm, "string(wa:Id)")
             # acronym = xpath(comm, "string(wa:Acronym)")
-            phone = xpath(comm, "string(wa:Phone)")
+            # phone = xpath(comm, "string(wa:Phone)")
 
-            comm = Committee(chamber, name, _code=comm_id,
-                             office_phone=phone)
+            comm = Organization(name, chamber=chamber, classification='committee')
             self.scrape_members(comm, agency)
             comm.add_source(url)
-            if comm['members']:
-                self.save_committee(comm)
+            if not comm._related:
+                self.warning('empty committee: %s', name)
+            else:
+                yield comm
 
     def scrape_members(self, comm, agency):
         # Can't get them to accept special characters (e.g. &) in URLs,
@@ -55,12 +59,12 @@ class WACommitteeScraper(Scraper):
         </soap12:Envelope>
         """.strip()
 
-        body = template % (agency, comm['committee'].replace('&', '&amp;'))
+        body = template % (agency, comm.name.replace('&', '&amp;'))
         headers = {'Content-Type': 'application/soap+xml; charset=utf-8'}
         resp = self.post(self._base_url, data=body, headers=headers)
         doc = lxml.etree.fromstring(resp.content)
 
-        if 'subcommittee' in comm['committee'].lower():
+        if 'subcommittee' in comm.name.lower():
             roles = ['chair', 'ranking minority member']
         else:
             roles = ['chair', 'vice chair', 'ranking minority member',

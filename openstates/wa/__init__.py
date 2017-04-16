@@ -8,11 +8,11 @@ class Washington(Jurisdiction):
     division_id = "ocd-division/country:us/state:wa"
     classification = "government"
     name = "Washington"
-    url = "TODO"
+    url = "http://www.leg.wa.gov"
     scrapers = {
         'person': WAPersonScraper,
         'events': WAEventScraper,
-        'Committees': WACommitteeScraper,
+        'committees': WACommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
