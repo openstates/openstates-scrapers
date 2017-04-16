@@ -94,10 +94,11 @@ class {classname}(Jurisdiction):
     for k, v in sorted(metadata['session_details'].items(), reverse=False):
         s = {'identifier': k,
              'name': v['display_name'],
-             '_scraped_name': v['_scraped_name'],
              }
         if v.get('type'):
             s['classification'] = v['type']
+        if v.get('_scraped_name'):
+            s['_scraped_name'] = v['_scraped_name']
         else:
             print(
                 'Warning: Missing classification on session {}'.format(k),
