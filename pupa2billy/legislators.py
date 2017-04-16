@@ -51,10 +51,11 @@ class PupaLegislatorScraper(LegislatorScraper):
             post = membership['post']
             if not org:
                 print(membership)
-            if org['classification'] in ('upper', 'lower'):
-                chamber = org['classification']
+            classification = org.get('classification') or org.get('organization__classification')
+            if classification in ('upper', 'lower'):
+                chamber = classification
                 district = post['label']
-            elif org['classification'] == 'party':
+            elif classification == 'party':
                 party = org['name']
 
         district_office = {}
