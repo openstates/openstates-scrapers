@@ -1,5 +1,5 @@
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
+from utils.actions import Rule, BaseCategorizer
 
 
 # http://www.leg.wa.gov/legislature/pages/committeelisting.aspx#
@@ -56,38 +56,38 @@ _categorizer_rules = (
     Rule(r'Passed to (?P<committees>.+?) for \S+ reading'),
     Rule(r'by (?P<committees>.+?) Committee'),
 
-    Rule(r'^Adopted', 'bill:passed'),
-    Rule(r'^Introduced', 'bill:introduced'),
-    Rule(r'^Introduced', 'bill:introduced'),
-    Rule(r'Third reading, adopted', ['bill:reading:3', 'bill:passed']),
-    Rule(r'Prefiled for introduction', 'bill:filed'),
-    Rule(r'amendment adopted', 'amendment:passed'),
-    Rule(r'amendment not adopted', 'amendment:failed'),
-    Rule(r"(?i)third reading, (?P<pass_fail>(passed|failed))", 'bill:reading:3'),
-    Rule(r'Read first time', 'bill:reading:1'),
-    Rule(r"(?i)first reading, referred to (?P<committees>.*)\.", 'bill:reading:1'),
-    Rule(r"(?i)And refer to (?P<committees>.*)", 'committee:referred'),
-    Rule(r"(?i).* substitute bill substituted.*", 'bill:substituted'),
-    Rule(r"(?i)chapter (((\d+),?)+) \d+ laws.( .+)?", "other"),  # XXX: Thom: Code stuff?
-    Rule(r"(?i)effective date \d{1,2}/\d{1,2}/\d{4}.*", "other"),
+    Rule(r'^Adopted', 'passage'),
+    Rule(r'^Introduced', 'introduction'),
+    Rule(r'^Introduced', 'introduction'),
+    Rule(r'Third reading, adopted', ['reading-3', 'passage']),
+    Rule(r'Prefiled for introduction', 'filing'),
+    Rule(r'amendment adopted', 'amendment-passage'),
+    Rule(r'amendment not adopted', 'amendment-failure'),
+    Rule(r"(?i)third reading, (?P<pass_fail>(passed|failed))", 'reading-3'),
+    Rule(r'Read first time', 'reading-1'),
+    Rule(r"(?i)first reading, referred to (?P<committees>.*)\.", 'reading-1'),
+    Rule(r"(?i)And refer to (?P<committees>.*)", 'referral-committee'),
+    Rule(r"(?i).* substitute bill substituted.*", 'substitution'),
+    Rule(r"(?i)chapter (((\d+),?)+) \d+ laws.( .+)?", ""),  # XXX: Thom: Code stuff?
+    Rule(r"(?i)effective date \d{1,2}/\d{1,2}/\d{4}.*", ""),
     Rule(r"(?i)(?P<committees>\w+) - majority; do pass with amendment\(s\) \
-         (but without amendments\(s\))?.*\.", "committee:passed:favorable", "committee:passed"),
+         (but without amendments\(s\))?.*\.", "committee-passage-favorable", "committee-passage"),
     Rule(r"(?i)Executive action taken in the (House|Senate) committee on (?P<committees>.*) \
-         (at)? .*\.", "other"),
-    Rule(r"(?i)(?P<committees>\w+) \- Majority; do pass .* \(Majority Report\)", 'bill:passed'),
-    Rule(r"(?i)Conference committee appointed.", "other"),
-    Rule(r"(?i)Conference committee report;", 'other'),
-    Rule(r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass", 'bill:passed'),
+         (at)? .*\.", ""),
+    Rule(r"(?i)(?P<committees>\w+) \- Majority; do pass .* \(Majority Report\)", 'passage'),
+    Rule(r"(?i)Conference committee appointed.", ""),
+    Rule(r"(?i)Conference committee report;", ''),
+    Rule(r"(?i).+ - Majority; \d+.+ substitute bill be substituted, do pass", 'passage'),
     Rule(r"(?i)Signed by (?P<signed_chamber>(Representatives|Senators)) (?P<legislators>.*)", \
-         "bill:passed"),
+         "passage"),
     Rule(r"(?i)Referred to (?P<committees>.*)(\.)?"),
     Rule(r"(?i)(?P<from_committee>.*) relieved of further consideration. On motion, referred to \
-         (?P<committees>.*)", 'committee:referred'),
-    Rule(r"(?i)Governor partially vetoed", 'governor:vetoed:line-item'),
-    Rule(r"(?i)Governor vetoed", 'governor:vetoed'),
-    Rule(r"(?i)Governor signed", 'governor:signed'),
-    Rule(r"(?i)Passed final passage;", 'bill:passed'),
-    Rule(r"(?i)Failed final passage;", 'bill:failed'),
+         (?P<committees>.*)", 'referral-committee'),
+    Rule(r"(?i)Governor partially vetoed", 'executive-veto-line-item'),
+    Rule(r"(?i)Governor vetoed", 'executive-veto'),
+    Rule(r"(?i)Governor signed", 'executive-signature'),
+    Rule(r"(?i)Passed final passage;", 'passage'),
+    Rule(r"(?i)Failed final passage;", 'failure'),
     # Rule(r"(?i)"),
     # Rule(r"(?i)"),
     )

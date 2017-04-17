@@ -92,9 +92,9 @@ class WABillScraper(Scraper, LXMLMixin):
                 if not self.versions.get(bill_id):
                     self.versions[bill_id] = []
                 self.versions[bill_id].append({
-                    'name': name,
+                    'note': name,
                     'url': link,
-                    'mimetype': 'text/html'
+                    'media_type': 'text/html'
                 })
 
     def _load_documents(self, chamber):
@@ -152,9 +152,9 @@ class WABillScraper(Scraper, LXMLMixin):
                 if not self.documents.get(bill_number):
                     self.documents[bill_number] = []
                 self.documents[bill_number].append({
-                    'name': name,
+                    'note': name,
                     'url': link,
-                    'mimetype': 'text/html'
+                    'media_type': 'text/html'
                 })
 
     def get_prefiles(self, chamber, session, year):
@@ -231,8 +231,6 @@ class WABillScraper(Scraper, LXMLMixin):
         # de-dup bill_id
         for bill_id in list(set(bill_id_list)):
             yield from self.scrape_bill(chamber, session, bill_id)
-            # bill.subject = list(set(self._subjects[bill_id]))
-            # yield bill
 
     def scrape_bill(self, chamber, session, bill_id):
         bill_num = bill_id.split()[1]
@@ -263,13 +261,18 @@ class WABillScraper(Scraper, LXMLMixin):
         bill.add_source(fake_source)
 
         try:
-            bill.versions = self.versions[bill_id]
+            for version in self.versions[bill_id]:
+                bill.add_version_link(note=version['note'],
+                                      url=version['url'],
+                                      media_type=version['media_type'])
         except KeyError:
-            bill.versions = []
             self.warning("No versions were found for {}".format(bill_id))
 
         try:
-            bill.documents = self.documents[bill_num]
+            for document in self.documents[bill_num]:
+                bill.add_document_link(note=document['note'],
+                                       url=document['url'],
+                                       media_type=document['media_type'])
         except KeyError:
             pass
 
@@ -326,7 +329,8 @@ class WABillScraper(Scraper, LXMLMixin):
             action_name = xpath(action, 'string(wa:HistoryLine)')
 
             action_date = xpath(action, 'string(wa:ActionDate)')
-            action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S")
+            action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S").strftime(
+                '%Y-%m-%d')
 
             bill_id = xpath(action, 'string(wa:BillId)')
 
@@ -338,12 +342,9 @@ class WABillScraper(Scraper, LXMLMixin):
             elif 'H' in bill_id:
                 actor = 'lower'
 
-            attrs = dict(actor=actor, date=action_date, action=action_name)
-            print(attrs)
-            attrs.update(self.categorizer.categorize(action_name))
-            print(attrs)
             bill.add_action(description=action_name, date=action_date, chamber=actor,
-                            classification=self.categorizer.categorize(action_name))
+                            classification=self.categorizer.categorize(action_name)
+                            ['classification'])
 
     def scrape_votes(self, bill):
         bill_num = bill.identifier.split()[1]
@@ -379,7 +380,7 @@ class WABillScraper(Scraper, LXMLMixin):
             vote.set_count('yes', yes_count)
             vote.set_count('no', no_count)
             vote.set_count('other', other_count)
-
+            vote.add_source(url)
             for sv in xpath(rc, "wa:Votes/wa:Vote"):
                 name = xpath(sv, "string(wa:Name)")
                 vtype = xpath(sv, "string(wa:VOte)")

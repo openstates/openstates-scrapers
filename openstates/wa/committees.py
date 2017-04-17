@@ -17,7 +17,6 @@ class WACommitteeScraper(Scraper):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        # biennium = "%s-%s" % (term[0:4], term[7:9])
 
         url = "%s/GetActiveCommittees?biennium=%s" % (self._base_url, session)
         page = self.get(url)

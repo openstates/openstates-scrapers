@@ -4,7 +4,6 @@ from openstates.utils import LXMLMixin
 
 
 class WAPersonScraper(Scraper, LXMLMixin):
-    jurisdiction = 'wa'
 
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber else ['upper', 'lower']

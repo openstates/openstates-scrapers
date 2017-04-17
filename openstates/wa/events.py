@@ -2,7 +2,6 @@ from openstates.utils import LXMLMixin
 from datetime import timedelta
 import datetime as dt
 
-# import lxml.etree
 import pytz
 import re
 
