@@ -348,6 +348,8 @@ class INBillScraper(Scraper):
 
                 # convert time to pupa fuzzy time
                 date = date.replace('T', ' ')
+                # TODO: if we update pupa to accept datetimes we can drop this line
+                date = date.split()[0]
 
                 action_type = []
                 d = action_desc.lower()
