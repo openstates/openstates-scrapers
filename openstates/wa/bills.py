@@ -3,7 +3,7 @@ import datetime
 import scrapelib
 from collections import defaultdict
 
-# from .actions import Categorizer, committees_abbrs
+from .actions import Categorizer
 from .utils import xpath
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
@@ -17,7 +17,7 @@ class WABillScraper(Scraper, LXMLMixin):
     # API Docs: http://wslwebservices.leg.wa.gov/legislationservice.asmx
 
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
-    # categorizer = Categorizer()
+    categorizer = Categorizer()
     _subjects = defaultdict(list)
 
     ORDINALS = {

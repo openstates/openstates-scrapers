@@ -30,7 +30,7 @@ class WACommitteeScraper(Scraper):
                 continue
 
             name = xpath(comm, "string(wa:Name)")
-            comm_id = xpath(comm, "string(wa:Id)")
+            # comm_id = xpath(comm, "string(wa:Id)")
             # acronym = xpath(comm, "string(wa:Acronym)")
             # phone = xpath(comm, "string(wa:Phone)")
 
