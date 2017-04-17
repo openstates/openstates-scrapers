@@ -106,13 +106,13 @@ class CTBillScraper(Scraper):
         spon_type = 'primary'
         if not bill.sponsorships:
             for sponsor in page.xpath('//h5[text()="Introduced by: "]/../text()'):
-                sponsor = sponsor.strip()
+                sponsor = str(sponsor.strip())
                 if sponsor:
-                    bill.add_sponsorship(name=sponsor.decode('utf-8'),
+                    bill.add_sponsorship(name=sponsor,
                                          classification=spon_type,
                                          entity_type='person',
                                          primary=spon_type == 'primary')
-                    spon_type = 'cosponsor'
+                    # spon_type = 'cosponsor'
 
         for link in page.xpath("//a[contains(@href, '/FN/')]"):
             bill.add_document_link(link.text.strip(), link.attrib['href'])
@@ -172,10 +172,12 @@ class CTBillScraper(Scraper):
         date = datetime.datetime.strptime(date + " " + bill.legislative_session,
                                           "%m/%d %Y").date()
 
+        # not sure about classification.
         vote = Vote(chamber=vote_chamber,
                     start_date=date,
                     motion_text=name,
                     result='pass' if yes_count > need_count else 'fail',
+                    classification='passage'
                     )
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
@@ -263,16 +265,16 @@ class CTBillScraper(Scraper):
                 if not act_type:
                     act_type = None
 
+                if 'TRANS.TO HOUSE' in action or action == 'SENATE PASSED':
+                    act_chamber = 'lower'
+
+                if ('TRANSMITTED TO SENATE' in action or action == 'HOUSE PASSED'):
+                    act_chamber = 'upper'
+
                 bill.add_action(description=action,
                                 date=date,
                                 chamber=act_chamber,
                                 classification=act_type)
-                if 'TRANS.TO HOUSE' in action or action == 'SENATE PASSED':
-                    act_chamber = 'lower'
-
-                if ('TRANSMITTED TO SENATE' in action or
-                        action == 'HOUSE PASSED'):
-                    act_chamber = 'upper'
 
     def scrape_versions(self, chamber, session):
         chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
