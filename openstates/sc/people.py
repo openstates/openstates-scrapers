@@ -10,8 +10,9 @@ class SCPersonScraper(Scraper):
     """
     jurisdiction = 'sc'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """  CSS isn't there without this, it serves up a mobile version. """
+        super().__init__(*args, **kwargs)
         self.user_agent = 'Mozilla/5.0'
 
     def scrape(self, chamber=None):
