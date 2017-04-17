@@ -3,6 +3,7 @@ import re
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+from .bills import CABillScraper
 from .people import CAPersonScraper
 from .committees import CACommitteeScraper
 
@@ -16,6 +17,7 @@ class California(Jurisdiction):
     name = "California"
     url = "http://www.legislature.ca.gov/"
     scrapers = {
+        'bills': CABillScraper,
         'people': CAPersonScraper,
         'committees': CACommitteeScraper,
     }
