@@ -122,6 +122,7 @@ class SCPersonScraper(Scraper):
 
                     person.add_membership(committee, role=role)
                 else:
+                    committee = com.text
                     person.add_membership(committee)
 
             yield person

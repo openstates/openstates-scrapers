@@ -82,17 +82,22 @@ class SCBillScraper(Scraper):
 
     _subjects = defaultdict(set)
 
-    def scrape_subjects(self, session_code):
+    def scrape_subjects(self, session):
         """
         Obtain bill subjects, which will be saved onto _subjects global,
         to be added on to bill later on in process.
         :param session_code:
 
         """
-
         # only need to do it once
         if self._subjects:
             return
+
+        session_code = {
+            '2013-2014': '120',
+            '2015-2016': '121',
+            '2017-2018': '122',
+        }[session]
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.post(subject_search_url,
@@ -196,37 +201,36 @@ class SCBillScraper(Scraper):
         option = None
 
         for line in pdflines.split(b'\n'):
-            line = line.strip()
+            line = line.strip().decode()
 
             # change what is being recorded
-            if line.startswith(b'YEAS') or line.startswith(b'AYES'):
+            if line.startswith('YEAS') or line.startswith('AYES'):
                 current_vfunc = vote.yes
-            elif line.startswith(b'NAYS'):
+            elif line.startswith('NAYS'):
                 current_vfunc = vote.no
-            elif line.startswith(b'EXCUSED'):
+            elif line.startswith('EXCUSED'):
                 current_vfunc = vote.vote
                 option = 'excused'
-            elif line.startswith(b'NOT VOTING'):
+            elif line.startswith('NOT VOTING'):
                 current_vfunc = vote.vote
                 option = 'excused'
-            elif line.startswith(b'ABSTAIN'):
+            elif line.startswith('ABSTAIN'):
                 current_vfunc = vote.vote
                 option = 'excused'
-            elif line.startswith(b'PAIRED'):
+            elif line.startswith('PAIRED'):
                 current_vfunc = vote.vote
                 option = 'paired'
 
             # skip these
-            elif not line or line.startswith(b'Page '):
+            elif not line or line.startswith('Page '):
                 continue
 
             # if a vfunc is active
             elif current_vfunc:
                 # split names apart by 3 or more spaces
-                names = re.split(b'\s{3,}', line)
+                names = re.split('\s{3,}', line)
                 for name in names:
                     if name:
-                        name = str(name)
                         if not option:
                             current_vfunc(name.strip())
                         else:
@@ -349,23 +353,20 @@ class SCBillScraper(Scraper):
         yield bill
 
     def scrape(self, chamber=None, session=None):
-
         """
          Obtain the bill urls containing the bill information which will be used
          by the scrape_details function to yield the desired Bill objects
         :param chamber:
         :param session:
         """
-        # start with subjects
-
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
+        # start with subjects
         self.scrape_subjects(session)
 
         # get bill index
-
         chambers = [chamber] if chamber else ['upper', 'lower']
 
         for chamber in chambers:
