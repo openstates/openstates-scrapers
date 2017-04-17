@@ -41,16 +41,13 @@ HEADERS = [
 
 
 class CTPersomScraper(Scraper):
-    jurisdiction = 'ct'
     latest_only = True
 
     def scrape(self, chamber=None):
-        if chamber:
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
             yield from self.scrape_chamber(chamber)
-        else:
-            yield from self.scrape_chamber('upper')
-            yield from self.scrape_chamber('lower')
-
+    
     def scrape_chamber(self, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         page = self.get(leg_url)
