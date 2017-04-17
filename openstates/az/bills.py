@@ -141,29 +141,26 @@ class AZBillScraper(Scraper):
 
         # Governor Signs and Vetos get different treatment
         if page['GovernorAction'] == 'Signed':
-            action_date = datetime.datetime.strptime(page['GovernorActionDate'],
-                                                     '%Y-%m-%dT%H:%M:%S')
+            action_date = page['GovernorActionDate'].split('T')[0]
             bill.add_action(
-                actor='executive',
-                action='Signed by Governor',
+                chamber='executive',
+                description='Signed by Governor',
                 date=action_date,
-                type='governor:signed'
+                classification='executive-signature',
             )
 
         if page['GovernorAction'] == 'Vetoed':
-            action_date = datetime.datetime.strptime(page['GovernorActionDate'],
-                                                     '%Y-%m-%dT%H:%M:%S')
+            action_date = page['GovernorActionDate'].split('T')[0]
             bill.add_action(
-                actor='executive',
-                action='Vetoed by Governor',
+                chamber='executive',
+                description='Vetoed by Governor',
                 date=action_date,
-                type='governor:vetoed'
+                classification='executive-veto',
             )
 
         # Transmit to (X) has its own data structure as well
         for transmit in page['BodyTransmittedTo']:
-            action_date = datetime.datetime.strptime(transmit['TransmitDate'],
-                                                     '%Y-%m-%dT%H:%M:%S')
+            action_date = transmit['TransmitDate'].split('T')[0]
             # upper, lower, executive
             action_actor = self.chamber_map_rev[transmit['LegislativeBody']]
             # house, senate, governor
@@ -172,15 +169,15 @@ class AZBillScraper(Scraper):
             action_text = 'Transmit to {}'.format(body_text)
 
             if action_actor == 'executive':
-                action_type = 'governor:received'
+                action_type = 'executive-receipt'
             else:
-                action_type = 'other'
+                action_type = None
 
             bill.add_action(
-                actor=action_actor,
-                action=action_text,
+                chamber=action_actor,
+                description=action_text,
                 date=action_date,
-                type=action_type
+                classification=action_type
             )
 
         return bill
