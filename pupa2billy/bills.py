@@ -51,6 +51,8 @@ class PupaBillScraper(BillScraper):
 
     def process_bill(self, data):
         chamber = parse_psuedo_id(data['from_organization'])['classification']
+        if chamber == 'legislature':
+            chamber = 'upper'
         bill = Bill(data['legislative_session'], chamber, data['identifier'],
                     data['title'], subjects=data['subject'],
                     type=data['classification'])
@@ -60,11 +62,20 @@ class PupaBillScraper(BillScraper):
 
         for action in data['actions']:
             actor = parse_psuedo_id(action['organization_id'])['classification']
+            legislators = []
+            committees = []
+            for rel in action['related_entities']:
+                if rel['entity_type'] == 'organization':
+                    committees.append(rel['name'])
+                elif rel['entity_type'] == 'person':
+                    legislators.append(rel['name'])
             bill.add_action(actor,
                             action['description'],
                             parse_date(action['date']),
-                            type=_action_categories(action['classification']))
-            # TODO: related entities
+                            type=_action_categories(action['classification']),
+                            committees=committees,
+                            legislators=legislators,
+                            )
 
         for source in data['sources']:
             bill.add_source(source['url'])
