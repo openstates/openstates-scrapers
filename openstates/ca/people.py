@@ -133,7 +133,7 @@ class CAPersonScraper(Scraper):
             'party': [('party', '/text()')],
             'name': [('office-information', '/a[not(contains(text(), "edit"))]/text()')],
             'address': [('office-information', '/h3/following-sibling::text()'),
-                          ('office-information', '/p/text()')],
+                        ('office-information', '/p/text()')],
         }
 
         titles = {'upper': 'senator', 'lower': 'member'}
