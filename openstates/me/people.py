@@ -1,5 +1,5 @@
 import re
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 import lxml.html
 import xlrd
@@ -13,18 +13,19 @@ _party_map = {
     'C': 'Independent'
 }
 
-class MELegislatorScraper(LegislatorScraper):
+class MEPersonScraper(Scraper):
     jurisdiction = 'me'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
 
-        if chamber == 'upper':
-            self.scrape_senators(chamber, term)
-        elif chamber == 'lower':
-            self.scrape_reps(chamber, term)
+        if chamber == None:
+            chamber = ['upper', 'lower']
+        if 'upper' in chamber:
+            yield from self.scrape_senators(chamber)
+        if 'lower' in chamber:
+            yield from self.scrape_reps(chamber)
 
-    def scrape_reps(self, chamber, term_name):
+    def scrape_reps(self, chamber):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
         page = self.get(url).text
         page = lxml.html.fromstring(page)
@@ -59,18 +60,11 @@ class MELegislatorScraper(LegislatorScraper):
             party = _party_map[info_search.group('party')]
             district_name = info_search.group('district_name')
 
-            leg = Legislator(term_name, chamber, str(district_number),
-                             member_name, party=party, url=leg_url,
-                             district_name=district_name)
-            leg.add_source(url)
-            leg.add_source(leg_url)
-
             # Get the photo url.
             html = self.get(leg_url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(leg_url)
-            (photo_url, ) = doc.xpath('//img[contains(@src, ".jpg")]/@src')
-            leg['photo_url'] = photo_url
+            (photo_url,) = doc.xpath('//img[contains(@src, ".jpg")]/@src')
 
             # Add contact information from personal page
             office_address = re.search(
@@ -78,11 +72,6 @@ class MELegislatorScraper(LegislatorScraper):
 
             office_email = doc.xpath(
                     '//a[starts-with(@href, "mailto:")]/text()')
-            if office_email:
-                office_email = office_email[0]
-            else:
-                office_email = None
-
             business_phone = re.search(
                     r'<B>Business Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
             home_phone = re.search(
@@ -90,55 +79,39 @@ class MELegislatorScraper(LegislatorScraper):
             cell_phone = re.search(
                     r'<B>Cell Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
 
-            if business_phone:
-                office_phone = business_phone.group(1)
-            elif home_phone:
-                office_phone = home_phone.group(1)
-            elif cell_phone:
-                office_phone = cell_phone.group(1)
+            person = Person(name=member_name, district=district_name, party=party, image=photo_url)
+
+            person.add_link(leg_url)
+            person.add_source(leg_url)
+
+            if office_address:
+                leg_address = office_address
+                person.add_contact_detail(type='address', value=leg_address, note='District Office')
             else:
-                office_phone = None
+                # If no address for legislator
+                if party == 'Democratic':
+                    leg_address = 'House Democratic Office, Room 333 State House, 2 State House Station, Augusta, Main 04333-0002'
 
-            district_office = {
-                'name': "District Office",
-                'type': "district",
-                'address': office_address,
-                'fax': None,
-                'email': office_email,
-                'phone': office_phone,
-            }
-            leg.add_office(**district_office)
+                    person.add_contact_detail(type='address', value=leg_address, note='Party Office')
 
-            # Add state party office to member's addresses
-            if party == "Democratic":
-                DEM_PARTY_OFFICE = dict(
-                        name='House Democratic Office',
-                        type='capitol',
-                        address='\n'.join(
-                                ['Room 333, State House',
-                                '2 State House Station',
-                                'Augusta, Maine 04333-0002']),
-                        fax=None,
-                        email=None,
-                        phone='(207) 287-1430')
-                leg.add_office(**DEM_PARTY_OFFICE)
-            elif party == "Republican":
-                REP_PARTY_OFFICE = dict(
-                        name='House GOP Office',
-                        type='capitol',
-                        address='\n'.join(
-                                ['Room 332, State House',
-                                '2 State House Station',
-                                'Augusta, Maine 04333-0002']),
-                        fax=None,
-                        email=None,
-                        phone='(207) 287-1440')
-                leg.add_office(**REP_PARTY_OFFICE)
+                elif party == 'Republican':
+                    leg_address = 'House GOP Office, Room 332 State House, 2 State House Station, Augusta, Main 04333-0002'
 
-            # Save legislator
-            self.save_legislator(leg)
+                    person.add_contact_detail(type='address', value=leg_address, note='Party Office')
 
-    def scrape_senators(self, chamber, term):
+            if office_email:
+                office_email = office_email[0]
+                person.add_contact_detail(type='email', value=office_email, note='District Office')
+            if business_phone:
+                person.add_contact_detail(type='voice', value=business_phone.group(1), note='Business Phone')
+            if home_phone:
+                person.add_contact_detail(type='voice', value=home_phone.group(1), note='Home Phone')
+            if cell_phone:
+                person.add_contact_detail(type='voice', value=cell_phone.group(1), note='Cell Phone')
+
+            yield person
+
+    def scrape_senators(self, chamber):
         mapping = {
                 'district': 0,
                 'first_name': 2,
@@ -166,18 +139,21 @@ class MELegislatorScraper(LegislatorScraper):
         roster_doc = lxml.html.fromstring(self.get(LEGISLATOR_ROSTER_URL).text)
         roster_doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
 
-        for rownum in xrange(1, sh.nrows):
+        for rownum in range(1, sh.nrows):
             # get fields out of mapping
             d = {}
-            for field, col_num in mapping.iteritems():
+            for field, col_num in mapping.items():
                 try:
                     d[field] = str(sh.cell(rownum, col_num).value).strip()
                 except IndexError:
                     # This col_num doesn't exist in the sheet.
                     pass
+            first_name = d['first_name']
+            middle_name = d['middle_name']
+            last_name = d['last_name']
 
-            full_name = " ".join((d['first_name'], d['middle_name'],
-                                  d['last_name']))
+            full_name = " ".join((first_name, middle_name,
+                                  last_name))
             full_name = re.sub(r'\s+', ' ', full_name).strip()
 
             address = "{street_addr}\n{city}, ME {zip_code}".format(**d)
@@ -192,9 +168,9 @@ class MELegislatorScraper(LegislatorScraper):
                 phone = None
 
             district = d['district'].split('.')[0]
+            party = d['party'].split('.')[0]
 
             # Determine legislator's URL to get their photo
-
             URL_XPATH = '//li/a[contains(text(), "District {:02d}")]/@href'.format(int(district))
 
             try:
@@ -203,17 +179,6 @@ class MELegislatorScraper(LegislatorScraper):
                 self.warning('vacant seat %s', district)
                 continue # Seat is vacant
 
-            leg = Legislator(term, chamber, district, full_name,
-                             first_name=d['first_name'],
-                             middle_name=d['middle_name'],
-                             last_name=d['last_name'],
-                             party=d['party'],
-                             suffixes=d['suffixes'],
-                             district_name=district_name,
-                             url=leg_url)
-            leg.add_source(url)
-            leg.add_source(leg_url)
-
             html = self.get(leg_url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute(leg_url)
@@ -221,18 +186,19 @@ class MELegislatorScraper(LegislatorScraper):
             photo_url = doc.xpath(xpath)
             if photo_url:
                 photo_url = photo_url.pop()
-                leg['photo_url'] = photo_url
             else:
                 photo_url = None
 
-            office = dict(
-                name='District Office',
-                type='district',
-                phone=phone,
-                fax=None,
-                email=d['email'],
-                address=address
-                )
+            person = Person(name=full_name, district=district,  image=photo_url, primary_org=chamber, party=party)
 
-            leg.add_office(**office)
-            self.save_legislator(leg)
+            person.add_link(leg_url)
+            person.add_source(leg_url)
+            person.extras['first_name'] = first_name
+            person.extras['middle_name'] = middle_name
+            person.extras['last_name'] = last_name
+
+            person.add_contact_detail(type='address', value=address, note='District Office')
+            person.add_contact_detail(type='voice', value=phone, note='District Phone')
+            person.add_contact_detail(type='email', value=d['email'], note='District Email')
+
+            yield person
