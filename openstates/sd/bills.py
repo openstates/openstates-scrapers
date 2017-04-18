@@ -40,9 +40,6 @@ class SDBillScraper(Scraper, LXMLMixin):
                                             link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
-        # page = self.get(url).text
-        # page = lxml.html.fromstring(page)
-        # page.make_links_absolute(url)
         page = self.lxmlize(url)
 
         if re.match(r'^(S|H)B ', bill_id):
