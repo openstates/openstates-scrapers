@@ -1,6 +1,6 @@
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper, Organization
 
 import lxml.html
 
@@ -31,19 +31,23 @@ SUBCOMMITTEES = {
     "Finance Subcommittee on State Government and Agency Review": "Finance"
 }
 
+CHAMBER_URLS = {
+    'upper': "http://www.ohiosenate.gov/members/senate-directory",
+    'lower':  "http://www.ohiohouse.gov/members/member-directory"
+}
+
 committee_cache = {}
 
 
-class OHLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'oh'
+class OHLegislatorScraper(Scraper):
     latest_only = True
 
-    def scrape(self, chamber, term):
-        url = (
-            "http://www.ohiosenate.gov/members/senate-directory"
-            if chamber == "upper" else
-            "http://www.ohiohouse.gov/members/member-directory")
-        self.scrape_page(chamber, term, url)
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_page(chamber, CHAMBER_URLS[chamber])
+        else:
+            yield from self.scrape_page('upper', CHAMBER_URLS['upper'])
+            yield from self.scrape_page('lower', CHAMBER_URLS['lower'])
 
     def fetch_committee_positions(self, a):
         page = self.get(a.attrib['href']).text
@@ -65,7 +69,7 @@ class OHLegislatorScraper(LegislatorScraper):
 
         return ret
 
-    def scrape_homepage(self, leg, chamber, homepage, term):
+    def scrape_homepage(self, leg, chamber, homepage):
         page = self.get(homepage).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(homepage)
@@ -73,7 +77,7 @@ class OHLegislatorScraper(LegislatorScraper):
             "//div[@class='biography']//div[@class='right']//p/text()")
         if bio != []:
             bio = bio[0]
-            leg['biography'] = bio
+            leg.extras['biography'] = bio
 
         fax_line = [
             x.strip() for x in
@@ -86,7 +90,7 @@ class OHLegislatorScraper(LegislatorScraper):
             fax_number = re.search(
                 r'(\(\d{3}\)\s\d{3}\-\d{4})', fax_line[0]
             ).group(1)
-            leg['offices'][0]['fax'] = fax_number
+            leg.add_contact_detail(type='fax', value=fax_number, note='Capitol Office')
 
         ctties = page.xpath("//div[@class='committeeList']//a")
         for a in ctties:
@@ -97,11 +101,6 @@ class OHLegislatorScraper(LegislatorScraper):
             else:
                 committee_positions = self.fetch_committee_positions(a)
                 committee_cache[entry] = committee_positions
-
-            position = "member"
-            name = leg['full_name']
-            if name in committee_positions:
-                position = committee_positions[name]
 
             chmbr = "joint" if "joint" in entry.lower() else chamber
             if entry in JOINT_COMMITTEE_OVERRIDE:
@@ -116,15 +115,16 @@ class OHLegislatorScraper(LegislatorScraper):
                 else:
                     self.warning("No subcommittee known: '%s'" % (entry))
                     raise Exception
+            org = Organization(
+                name=entry,
+                chamber=chmbr,
+                classification='committee',
+            )
+            org.add_source(homepage)
+            leg.add_membership(org)
+            yield org
 
-            leg.add_role('committee member',
-                         position=position,
-                         term=term,
-                         chamber=chmbr,
-                         committee=entry,
-                         **kwargs)
-
-    def scrape_page(self, chamber, term, url):
+    def scrape_page(self, chamber, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -167,15 +167,16 @@ class OHLegislatorScraper(LegislatorScraper):
                 'sd{0:0{width}}@ohiosenate.gov'
             ).format(int(district), width=2)
 
-            leg = Legislator(term, chamber, district, full_name,
-                             party=party, url=homepage, photo_url=img)
+            leg = Person(name=full_name, district=district,
+                         party=party, primary_org=chamber,
+                         image=img)
 
-            leg.add_office('capitol', 'Capitol Office',
-                           address=office,
-                           phone=phone,
-                           email=email)
+            leg.add_contact_detail(type='address', value=office, note='Capitol Office')
+            leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+            leg.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-            self.scrape_homepage(leg, chamber, homepage, term)
+            yield from self.scrape_homepage(leg, chamber, homepage)
 
             leg.add_source(url)
-            self.save_legislator(leg)
+            leg.add_link(homepage)
+            yield leg

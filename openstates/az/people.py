@@ -1,9 +1,9 @@
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from lxml import html
 import re
 
 
-class AZLegislatorScraper(LegislatorScraper):
+class AZPersonScraper(Scraper):
     jurisdiction = 'az'
     parties = {
         'R': 'Republican',
@@ -16,10 +16,17 @@ class AZLegislatorScraper(LegislatorScraper):
     def get_party(self, abbr):
         return self.parties[abbr]
 
-    def scrape(self, chamber, term):
-        # TODO: old AZ scraper allowed old sessions, they seem to be gone?
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
 
+        # TODO: old AZ scraper allowed old sessions, they seem to be gone?
+        # self.validate_term(term, latest_only=True)
+
+    def scrape_chamber(self, chamber):
         body = {'lower': 'H', 'upper': 'S'}[chamber]
         url = 'http://www.azleg.gov/MemberRoster/?body=' + body
         page = self.get(url).text
@@ -82,23 +89,26 @@ class AZLegislatorScraper(LegislatorScraper):
             if '602' not in re.findall(r'(\d+)', phone):
                 phone = "602-" + phone
 
-            leg = Legislator(term, chamber, district, full_name=name,
-                             party=party, url=link,
-                             photo_url=photo_url)
+            leg = Person(primary_org=chamber, image=photo_url, name=name, district=district,
+                         party=party)
+            leg.add_contact_detail(type='address', value=address, note='Capitol Office')
+            leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+            leg.add_party(party=party)
+            leg.add_link(link)
 
-            leg.add_office('capitol', 'Capitol Office', address=address,
-                           phone=phone, email=email)
-
+            if email:
+                leg.add_contact_detail(type='email', value=email)
             if position:
-                leg.add_role(position, term, chamber=chamber,
-                             district=district, party=party)
+                leg.add_membership(name_or_org=party, role=position)
+                # leg.add_role(position, term, chamber=chamber,
+                #             district=district, party=party)
 
             leg.add_source(url)
 
             # Probably just get this from the committee scraper
             # self.scrape_member_page(link, session, chamber, leg)
-            self.save_legislator(leg)
-
+            yield leg
+    """
     def scrape_member_page(self, url, session, chamber, leg):
         html = self.get(url).text
         root = html.fromstring(html)
@@ -107,6 +117,7 @@ class AZLegislatorScraper(LegislatorScraper):
         for row in c.xpath('ancestor::table[1]')[1:]:
             name = row[0].text_content().strip()
             role = row[1].text_content().strip()
-            leg.add_role(role, session, chamber=chamber, committee=name)
+            leg.add_membership(role=role, name_or_org=name)
 
         leg.add_source(url)
+    """
