@@ -6,7 +6,6 @@ import lxml.html
 
 
 class SDLegislatorScraper(Scraper):
-    latest_only = True
 
     def scrape(self, chambers=None):
         url = 'http://www.sdlegislature.gov/Legislators/default.aspx' \

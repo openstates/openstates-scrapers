@@ -1,13 +1,16 @@
 import re
 import datetime
 import lxml.html
+
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.scrape.base import ScrapeError
 
+from openstates.utils import LXMLMixin
 
-class SDBillScraper(Scraper):
 
-    def scrape(self, chamber=None, session=None):
+class SDBillScraper(Scraper, LXMLMixin):
+
+    def scrape(self, chambers=None, session=None):
         url = 'http://www.sdlegislature.gov/Legislative_Session' \
               '/Bills/default.aspx?Session={}'.format(session)
 
@@ -15,7 +18,7 @@ class SDBillScraper(Scraper):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
-        chambers = [chamber] if chamber else ['upper', 'lower']
+        chambers = [chambers] if chambers else ['upper', 'lower']
 
         for chamber in chambers:
             if chamber == 'upper':
@@ -37,9 +40,10 @@ class SDBillScraper(Scraper):
                                             link.attrib['href'])
 
     def scrape_bill(self, chamber, session, bill_id, title, url):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        # page = self.get(url).text
+        # page = lxml.html.fromstring(page)
+        # page.make_links_absolute(url)
+        page = self.lxmlize(url)
 
         if re.match(r'^(S|H)B ', bill_id):
             btype = ['bill']
