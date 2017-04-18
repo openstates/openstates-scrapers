@@ -26,7 +26,6 @@ class CTBillScraper(Scraper):
         self._committee_names = {}
         self._introducers = defaultdict(set)
         self._subjects = defaultdict(list)
-
         self.scrape_committee_names()
         self.scrape_subjects()
         self.scrape_introducers('upper')
@@ -71,7 +70,7 @@ class CTBillScraper(Scraper):
             bill.add_source(info_url)
 
             for introducer in self._introducers[bill_id]:
-                bill.add_sponsorship(name=introducer.decode('utf-8'),
+                bill.add_sponsorship(name=str(introducer),
                                      classification='primary',
                                      primary=True,
                                      entity_type='person')
@@ -177,7 +176,8 @@ class CTBillScraper(Scraper):
                     start_date=date,
                     motion_text=name,
                     result='pass' if yes_count > need_count else 'fail',
-                    classification='passage'
+                    classification='passage',
+                    bill=bill
                     )
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
