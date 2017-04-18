@@ -18,5 +18,4 @@ python3 -m flake8 \
     openstates/va \
     openstates/wa \
     openstates/utils \
-
-    
+    pupa2billy

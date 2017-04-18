@@ -4,6 +4,8 @@ from .events import WAEventScraper
 from .committees import WACommitteeScraper
 from .bills import WABillScraper
 
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 
 class Washington(Jurisdiction):
     division_id = "ocd-division/country:us/state:wa"
@@ -90,3 +92,9 @@ class Washington(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list():
+        from utils.lxmlize import url_xpath
+        return url_xpath('http://apps.leg.wa.gov/billinfo/',
+                         '//select[starts-with(@id, "ctl00_ContentPlaceHolder'
+                         '1_biennia")]/option/@value')

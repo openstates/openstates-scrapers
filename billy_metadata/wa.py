@@ -1,6 +1,4 @@
 
-settings = dict(SCRAPELIB_TIMEOUT=300)
-
 metadata = dict(
     name='Washington',
     abbreviation='wa',

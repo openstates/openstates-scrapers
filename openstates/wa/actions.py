@@ -58,7 +58,6 @@ _categorizer_rules = (
 
     Rule(r'^Adopted', 'passage'),
     Rule(r'^Introduced', 'introduction'),
-    Rule(r'^Introduced', 'introduction'),
     Rule(r'Third reading, adopted', ['reading-3', 'passage']),
     Rule(r'Prefiled for introduction', 'filing'),
     Rule(r'amendment adopted', 'amendment-passage'),
@@ -88,8 +87,6 @@ _categorizer_rules = (
     Rule(r"(?i)Governor signed", 'executive-signature'),
     Rule(r"(?i)Passed final passage;", 'passage'),
     Rule(r"(?i)Failed final passage;", 'failure'),
-    # Rule(r"(?i)"),
-    # Rule(r"(?i)"),
     )
 
 
