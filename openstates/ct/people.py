@@ -47,7 +47,7 @@ class CTPersomScraper(Scraper):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
-    
+
     def scrape_chamber(self, chambers):
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         page = self.get(leg_url)
