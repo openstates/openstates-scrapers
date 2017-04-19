@@ -61,6 +61,8 @@ class MALegislatorScraper(LegislatorScraper):
         doc.make_links_absolute("https://malegislature.gov")
 
         for member_url in doc.xpath('//td[@class="pictureCol"]/a/@href'):
+            if 'VAC_' in member_url:
+                continue
             self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):

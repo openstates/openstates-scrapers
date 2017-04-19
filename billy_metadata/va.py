@@ -117,7 +117,7 @@ metadata = {
             'site_id': '171',
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017 Session',
-        },        
+        },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [

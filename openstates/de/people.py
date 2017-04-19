@@ -1,16 +1,23 @@
 import re
 from openstates.utils import LXMLMixin
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 PARTY = {'R': 'Republican',
          'D': 'Democratic'}
 
 
-class DELegislatorScraper(LegislatorScraper, LXMLMixin):
+class DEPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'de'
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         url = {
             'upper': 'https://legis.delaware.gov/json/Senate/GetSenators',
             'lower': 'https://legis.delaware.gov/json/House/' +
@@ -35,22 +42,22 @@ class DELegislatorScraper(LegislatorScraper, LXMLMixin):
 
             leg_url = 'https://legis.delaware.gov/' +\
                       'LegislatorDetail?personId={}'.format(item['PersonId'])
-            leg = Legislator(term, chamber,
-                             district=str(item['DistrictNumber']),
-                             full_name=item['PersonFullName'],
-                             party=PARTY[item['PartyCode']],
-                             url=leg_url,
-                             )
-            self.scrape_contact_info(leg, leg_url)
 
-            leg.add_source(leg_url, page="legislator detail page")
-            leg.add_source(source_url, page="legislator list page")
-            self.save_legislator(leg)
+            doc = self.lxmlize(leg_url)
+            image_url = doc.xpath('//img/@src')[0]
 
-    def scrape_contact_info(self, leg, leg_url):
-        doc = self.lxmlize(leg_url)
-        leg['photo_url'] = doc.xpath('//img/@src')[0]
+            leg = Person(name=item['PersonFullName'],
+                         district=str(item['DistrictNumber']),
+                         party=PARTY[item['PartyCode']],
+                         primary_org=chamber,
+                         image=image_url
+                         )
+            self.scrape_contact_info(leg, doc)
+            leg.add_link(leg_url, note="legislator page")
+            leg.add_source(source_url, note="legislator list page")
+            yield leg
 
+    def scrape_contact_info(self, leg, doc):
         address = phone = email = None
 
         for label in doc.xpath('//label'):
@@ -63,6 +70,9 @@ class DELegislatorScraper(LegislatorScraper, LXMLMixin):
             elif label.text == 'Legislative Phone:':
                 phone = value
 
-        leg.add_office('capitol', 'Capitol Office',
-                       address=address, phone=phone, email=email)
-        leg['email'] = email or ''
+        if address:
+            leg.add_contact_detail(type='address', value=address, note='Capitol Office')
+        if phone:
+            leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+        if email:
+            leg.add_contact_detail(type='email', value=email)

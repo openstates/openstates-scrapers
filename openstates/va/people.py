@@ -59,7 +59,7 @@ class MemberDetail(Page):
             if phone:
                 self.obj.add_contact_detail(type='voice', value=phone, note=office_type)
             if email:
-                self.obj.add_contact_detail(type='email', value=phone, note=office_type)
+                self.obj.add_contact_detail(type='email', value=email, note=office_type)
 
     def get_committees(self, item):
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):

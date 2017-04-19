@@ -1,10 +1,10 @@
-import lxml.html
-import gc
+from pupa.scrape import Jurisdiction, Organization
 from .bills import MNBillScraper
-from .legislators import MNLegislatorScraper
 from .committees import MNCommitteeScraper
+from .people import MNPersonScraper
+from .vote_events import MNVoteScraper
 from .events import MNEventScraper
-from .votes import MNVoteScraper
+from .common import url_xpath
 
 """
 Minnesota legislative data can be found at the Office of the Revisor
@@ -17,132 +17,91 @@ Bill pages have vote counts and links to House details, so it makes more
 sense to get vote data from the bill pages.
 """
 
-metadata = {
-    'name': 'Minnesota',
-    'abbreviation': 'mn',
-    'legislature_name': 'Minnesota State Legislature',
-    'legislature_url': 'http://www.leg.state.mn.us/',
-    'capitol_timezone': 'America/Chicago',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    'terms': [
+
+class Minnesota(Jurisdiction):
+    division_id = "ocd-division/country:us/state:mn"
+    classification = "government"
+    name = "Minnesota"
+    url = "http://state.mn.us/"
+    check_sessions = True
+    scrapers = {
+        "bills": MNBillScraper,
+        "committees": MNCommitteeScraper,
+        "people": MNPersonScraper,
+        "vote_events": MNVoteScraper,
+        "events": MNEventScraper,
+    }
+    parties = [{'name': 'Republican'},
+               {'name': 'Democratic-Farmer-Labor'}]
+    legislative_sessions = [
         {
-            'name': '2009-2010',
-            'sessions': ['2009-2010', '2010 1st Special Session', '2010 2nd Special Session'],
-            'start_year': 2009,
-            'end_year': 2010,
-            'biennium': '86',
-        },
-        {
-            'name': '2011-2012',
-            'sessions': ['2011-2012', '2011s1', '2012s1'],
-            'start_year': 2011,
-            'end_year': 2012,
-            'biennium': '87',
-        },
-        {
-            'name': '2013-2014',
-            'sessions': ['2013-2014', '2013s1'],
-            'start_year': 2013,
-            'end_year': 2014,
-            'biennium': 88
-        },
-        {
-            'name': '2015-2016',
-            'sessions': ['2015s1', '2015-2016'],
-            'start_year': 2015,
-            'end_year': 2016,
-            'biennium': 89,
-        },
-        {
-            'name': '2017-2018',
-            'sessions': ['2017-2018'],
-            'start_year': 2017,
-            'end_year': 2018,
-            'biennium': 90,
-        },
-    ],
-    'session_details': {
-        '2009-2010': {
-            'type':'primary',
-            'display_name': '2009-2010 Regular Session',
             '_scraped_name': '86th Legislature, 2009-2010',
-            'site_id': '0862009',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls86.asp',
+            'classification': 'primary',
+            'identifier': '2009-2010',
+            'name': '2009-2010 Regular Session'
         },
-        '2010 1st Special Session': {
-            'type': 'special',
-            'display_name': '2010, 1st Special Session',
+        {
             '_scraped_name': '86th Legislature, 2010 1st Special Session',
-            'site_id': '1862010',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8620101.asp',
+            'classification': 'special',
+            'identifier': '2010 1st Special Session',
+            'name': '2010, 1st Special Session'
         },
-        '2010 2nd Special Session': {
-            'type':'special',
-            'display_name': '2010, 2nd Special Session',
+        {
             '_scraped_name': '86th Legislature, 2010 2nd Special Session',
-            'site_id': '2862010', 
+            'classification': 'special',
+            'identifier': '2010 2nd Special Session',
+            'name': '2010, 2nd Special Session'
         },
-        '2011-2012': {
-            'type':'primary',
-            'display_name': '2011-2012 Regular Session',
+        {
             '_scraped_name': '87th Legislature, 2011-2012',
-            'site_id': '0872011',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls87.asp',
+            'classification': 'primary',
+            'identifier': '2011-2012',
+            'name': '2011-2012 Regular Session'
         },
-        '2011s1': {
-            'type': 'special',
-            'display_name': '2011, 1st Special Session',
+        {
             '_scraped_name': '87th Legislature, 2011 1st Special Session',
-            'site_id': '1872011',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8720111.asp',
+            'classification': 'special',
+            'identifier': '2011s1',
+            'name': '2011, 1st Special Session'
         },
-        '2012s1': {
-            'type': 'special',
-            'display_name': '2012, 1st Special Session',
+        {
             '_scraped_name': '87th Legislature, 2012 1st Special Session',
-            'site_id': '1872012', 'type': 'special',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8720121.asp',
+            'classification': 'special',
+            'identifier': '2012s1',
+            'name': '2012, 1st Special Session'
         },
-        '2013-2014': {
-            'type': 'primary',
-            'display_name': '2013-2014 Regular Session',
+        {
             '_scraped_name': '88th Legislature, 2013-2014',
-            'site_id': '0882013',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls88.asp',
+            'classification': 'primary',
+            'identifier': '2013-2014',
+            'name': '2013-2014 Regular Session'
         },
-        '2013s1': {
-            'type': 'special',
-            'display_name': '2013, 1st Special Session',
+        {
             '_scraped_name': '88th Legislature, 2013 1st Special Session',
-            'site_id': '1882013',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8820131.asp',
+            'classification': 'special',
+            'identifier': '2013s1',
+            'name': '2013, 1st Special Session'
         },
-        '2015-2016': {
-            'type': 'primary',
-            'display_name': '2015-2016 Regular Session',
+        {
             '_scraped_name': '89th Legislature, 2015-2016',
-            'site_id': '0892015',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls89.asp',
+            'classification': 'primary',
+            'identifier': '2015-2016',
+            'name': '2015-2016 Regular Session'
         },
-        '2015s1': {
-            'type': 'special',
-            'display_name': '2015, 1st Special Session',
+        {
             '_scraped_name': '89th Legislature, 2015 1st Special Session',
-            'site_id': '1892015',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
+            'classification': 'special',
+            'identifier': '2015s1',
+            'name': '2015, 1st Special Session'
         },
-        '2017-2018': {
-            'type': 'primary',
-            'display_name': '2017-2018 Regular Session',
+        {
             '_scraped_name': '90th Legislature, 2017-2018',
-            'site_id': '0902017',
-            'votes_url': 'http://www.house.leg.state.mn.us/votes/getVotesls90.asp',
+            'classification': 'primary',
+            'identifier': '2017-2018',
+            'name': '2017-2018 Regular Session'
         },
-    },
-    '_ignored_scraped_sessions': [
+    ]
+    ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',
         '85th Legislature, 2007 1st Special Session',
         '84th Legislature, 2005-2006',
@@ -161,23 +120,29 @@ metadata = {
         '79th Legislature, 1995-1996',
         '79th Legislature, 1995 1st Special Session',
         '89th Legislature, 2015-2016',
-    ],
-    'feature_flags': ['subjects', 'events', 'influenceexplorer'],
-}
+    ]
 
+    def get_organizations(self):
+        legis = Organization('Minnesota Legislature', classification='legislature')
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('https://www.revisor.mn.gov/revisor/pages/search_status/'
-                     'status_search.php?body=House',
-                     '//select[@name="session"]/option/text()')
+        upper = Organization('Minnesota Senate', classification='upper',
+                             parent_id=legis._id)
+        lower = Organization('Minnesota House of Representatives',
+                             classification='lower', parent_id=legis._id)
 
+        for n in range(1, 68):
+            upper.add_post(label=str(n), role='Senator',
+                           division_id='ocd-division/country:us/state:mn/sldu:{}'.format(n))
+            lower.add_post(label=str(n) + 'A', role='Representative',
+                           division_id='ocd-division/country:us/state:mn/sldl:{}a'.format(n))
+            lower.add_post(label=str(n) + 'B', role='Representative',
+                           division_id='ocd-division/country:us/state:mn/sldl:{}b'.format(n))
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    xtend = doc.xpath('//div[@class="xtend"]')[0].text_content()
-    for v in doc.xpath('.//var/text()'):
-        xtend = xtend.replace(v, '')
-    doc = None
-    gc.collect()
-    return xtend
+        yield legis
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        return url_xpath('https://www.revisor.mn.gov/revisor/pages/'
+                         'search_status/status_search.php?body=House',
+                         '//select[@name="session"]/option/text()')

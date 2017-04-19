@@ -114,19 +114,18 @@ class KSBillScraper(BillScraper):
                 if sn_url:
                     bill.add_document(title + ' - Fiscal Note', sn_url)
 
+        all_links = doc.xpath("//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href")
+        vote_members_urls = []
+        for i in all_links:
+            if "vote_view" in i:
+                vote_members_urls.append(str(i))
+        if len(vote_members_urls) > 0:
+            for link in vote_members_urls:
+                self.parse_vote(bill, link)
 
         history_rows = doc.xpath('//tbody[starts-with(@id, "history-tab")]/tr')
         for row in history_rows:
             row_text = row.xpath('.//td[3]')[0].text_content()
-
-            # votes
-            vote_url = row.xpath('.//a[contains(text(), "Yea:")]/@href')
-            if vote_url:
-                vote_date = row.xpath('.//td[1]')[0].text_content()
-                vote_chamber = row.xpath('.//td[2]')[0].text_content()
-                self.parse_vote(bill, vote_date, vote_chamber, row_text,
-                                vote_url[0])
-
             # amendments & reports
             amendment = get_doc_link(row.xpath('.//td[4]')[0])
             if amendment:
@@ -139,78 +138,45 @@ class KSBillScraper(BillScraper):
                     amendment_name = row_text.strip()
                 bill.add_document(amendment_name, amendment)
 
+    def parse_vote(self, bill, link):
+        member_doc = lxml.html.fromstring(self.get(link).text)
+        motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
+        opinions = member_doc.xpath("//div[@id='main_content']/h3/text()")
+        if len(opinions) > 0:
+            temp = opinions[0].split()
+            vote_chamber = temp[0]
+            vote_date = datetime.datetime.strptime(temp[-1], '%m/%d/%Y')
+            vote_status = " ".join(temp[2:-2])
+            vote_status = vote_status if vote_status.strip() else motion[0]
+            vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
 
-    def parse_vote(self, bill, vote_date, vote_chamber, vote_status, vote_url):
-        vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
-        formats = ['%a %d %b %Y',
-                   '%b. %d, %Y, %H:%M %p',
-                   '%B %d, %Y, %H:%M %p',
-                   '%B %d, %Y, %H %p',
-                   '%a, %b %d, %Y'
-                  ]
-        vote_date = vote_date.replace('.m.', 'm')
-        for format in formats:
-            try:
-                vote_date = datetime.datetime.strptime(vote_date, format)
-                break
-            except ValueError:
-                pass
-        else:
-            raise ValueError("couldn't parse date: " + vote_date)
-
-        vote_doc = self.get(vote_url).text
-        vote_lines = vote_doc.splitlines()
-
-        comma_or_and = re.compile(', |\sand\s')
-        comma_or_and_jrsr = re.compile(', (?!Sr.|Jr.)|\sand\s')
-
-        vote = None
-        passed = True
-        for line in vote_lines:
-            totals = re.findall('Yeas (\d+)[;,] Nays (\d+)[;,] (?:Present but not voting|Present and Passing):? (\d+)[;,] (?:Absent or not voting|Absent or Not Voting):? (\d+)',
-                                line)
-            line = line.strip()
-            if totals:
-                totals = totals[0]
-                yeas = int(totals[0])
-                nays = int(totals[1])
-                nv = int(totals[2])
-                absent = int(totals[3])
-                # default passed to true
-                vote = Vote(vote_chamber, vote_date, vote_status.strip(),
-                            True, yeas, nays, nv+absent)
-            elif vote and line.startswith('Yeas:'):
-                line = line.split(':', 1)[1].strip()
-                for member in comma_or_and.split(line):
-                    if member != 'None.':
-                        vote.yes(member)
-            elif vote and line.startswith('Nays:'):
-                line = line.split(':', 1)[1].strip()
-                # slightly different vote format if Jr stands alone on a line
-                if ', Jr.,' in line:
-                    regex = comma_or_and_jrsr
+            for i in opinions:
+                try:
+                    count = int(i[i.find("(")+1:i.find(")")])
+                except:
+                    pass
+                if "yea" in i.lower():
+                    yes_count = count
+                elif "nay" in i.lower():
+                    no_count = count
+                elif "present" in i.lower():
+                    p_count = count
+                elif "absent" in i.lower():
+                    a_count = count
+            vote = Vote(vote_chamber, vote_date, vote_status,
+                        yes_count > no_count, yes_count, no_count, p_count+a_count)
+            vote.add_source(link)
+            a_links = member_doc.xpath("//div[@id='main_content']/a/text()")
+            for i in range(1, len(a_links)):
+                if i <= yes_count:
+                    vote.yes(re.sub(',', '', a_links[i]).split()[0])
+                elif no_count != 0 and i > yes_count and i <= yes_count+no_count:
+                    vote.no(re.sub(',', '', a_links[i]).split()[0])
                 else:
-                    regex = comma_or_and
-                for member in regex.split(line):
-                    if member != 'None.':
-                        vote.no(member)
-            elif vote and line.startswith('Present '):
-                line = line.split(':', 1)[1].strip()
-                for member in comma_or_and.split(line):
-                    if member != 'None.':
-                        vote.other(member)
-            elif vote and line.startswith('Absent or'):
-                line = line.split(':', 1)[1].strip()
-                for member in comma_or_and.split(line):
-                    if member != 'None.':
-                        vote.other(member)
-            elif 'the motion did not prevail' in line:
-                passed = False
-
-        if vote:
-            vote['passed'] = passed
-            vote.add_source(vote_url)
+                    vote.other(re.sub(',', '', a_links[i]).split()[0])
             bill.add_vote(vote)
+        else:
+            print self.warning("No Votes for: %s", link)
 
 
 def get_doc_link(elem):

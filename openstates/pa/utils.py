@@ -16,6 +16,10 @@ urls = {
         'upper': '{}/cfdocs/legis/cms/index.cfm?chamber=S'.format(base_url),
         'lower': '{}/cfdocs/legis/cms/index.cfm?chamber=H'.format(base_url),
     },
+    'contacts': {
+        'upper': '{}/contact.cfm?body=S'.format(members_url),
+        'lower': '{}/contact.cfm?body=H'.format(members_url),
+    },
 }
 
 

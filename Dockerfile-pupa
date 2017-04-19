@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     python-pip \
     python-lxml \
     libssl-dev \
+    mdbtools \
     python-dev \
     python3-dev \
     poppler-utils \
@@ -34,11 +35,11 @@ RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivi
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV BILLY_ENV /opt/openstates/venv-billy/
 ENV PUPA_ENV /opt/openstates/venv-pupa/
 
 ADD . /opt/openstates/openstates
-RUN find /opt/openstates/openstates -name '*.pyc' -delete
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements-new.txt
 RUN /opt/openstates/venv-pupa/bin/pip install ipdb
 

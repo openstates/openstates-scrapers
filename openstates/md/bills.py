@@ -302,8 +302,11 @@ class MDBillScraper(BillScraper):
                 passed = yes_count > no_count
             else:
                 passed = None
-        elif 'overridden' in motion:
+        elif 'overridden' in motion.lower():
             passed = True
+            motion = 'Veto Override'
+        elif 'Sustained' in motion:
+            passed = False
             motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
@@ -401,21 +404,34 @@ class MDBillScraper(BillScraper):
 
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
+            description = td.xpath('text()')
+            if description:
+                description = self.remove_leading_dash(description[0])
+            whole = ''.join(td.itertext())
+
             if a.text == 'Text':
                 bill.add_version('Bill Text', a.get('href'),
                                  mimetype='application/pdf')
+            elif a.text == 'Reprint':
+                bill.add_version(description, a.get('href'),
+                                 mimetype='application/pdf')
+            elif a.text == 'Report':
+                bill.add_document(description, a.get('href'),
+                                  mimetype='application/pdf')
             elif a.text == 'Analysis':
                 bill.add_document(a.tail.replace(' - ', ' ').strip(),
                                   a.get('href'), mimetype='application/pdf')
             elif a.text in ('Bond Bill Fact Sheet',
                             "Attorney General's Review Letter",
                             "Governor's Veto Letter",
+                            "Joint Chairmen's Report",
+                            "Conference Committee Summary Report",
                            ):
                 bill.add_document(a.text, a.get('href'),
                                   mimetype='application/pdf')
             elif a.text in ('Amendments', 'Conference Committee Amendment',
                             'Conference Committee Report'):
-                bill.add_document(a.text + ' - ' + a.tail.strip(),
+                bill.add_document(whole,
                                   a.get('href'), mimetype='application/pdf')
             elif a.text == 'Vote - Senate - Committee':
                 bill.add_document('Senate %s Committee Vote' %
@@ -460,6 +476,10 @@ class MDBillScraper(BillScraper):
                 kwargs['committees'] = committee
 
             bill.add_action(chamber, action, action_date, **kwargs)
+
+    def remove_leading_dash(self, string):
+        string = string[3:] if string.startswith(' - ') else string
+        return string.strip()
 
 
     def scrape(self, chamber, session):

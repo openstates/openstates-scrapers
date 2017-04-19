@@ -6,12 +6,12 @@ import lxml.html
 HI_URL_BASE = "http://capitol.hawaii.gov"
 
 
-
 def get_chamber_url(chamber):
 
-    chambers_code = {'upper': 'S', 'lower': 'H'}[chamber]
+    chamber_code = {'upper': 'S', 'lower': 'H'}[chamber]
     URL = "%s/committees/committees.aspx?chamber=%s" % (HI_URL_BASE, chamber_code)
     return URL
+
 
 class HICommitteeScraper(Scraper):
 
@@ -20,28 +20,34 @@ class HICommitteeScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
 
-    def scrape_chamber(chamber):
+    def get_committee_data(self, url, org):
+        list_html = self.get(HI_URL_BASE + url).text
+        list_page = lxml.html.fromstring(list_html)
+        chair_div = list_page.xpath("//div[@id='ctl00_ContentPlaceHolderCol1_PanelChair']/div")
+        chair = chair_div[0].xpath("//a[@id='ctl00_ContentPlaceHolderCol1_HyperLinkChair']")
+        vchair_div = list_page.xpath("//div[@id='ctl00_ContentPlaceHolderCol1_PanelViceChair']")
+        vice = vchair_div[0].xpath("//div/a[@id='ctl00_ContentPlaceHolderCol1_HyperLinkcvChair']")
+        members = list_page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_DataList1']/tr/td/a")
+        for i in chair:
+            org.add_member(i.text_content().strip(), role='chair')
+        for i in vice:
+            org.add_member(i.text_content().strip(), role='vice chair')
+        for i in members:
+            org.add_member(i.text_content().strip(), role='member')
+
+    def scrape_chamber(self, chamber):
         URL = get_chamber_url(chamber)
-        list_html = scraper.get(URL).text
+        list_html = self.get(URL).text
         list_page = lxml.html.fromstring(list_html)
         rows = list_page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
-        scraper.short_ids = {
-            "CONF": {
-                "chamber": "joint",
-                "name": "Conference Committee",
-            },
-        }
-
         for row in rows:
             tds = row.xpath("./td")
-            short = tds[0]
             clong = tds[1]
-            chamber = clong.xpath("./span")[0].text_content()
             clong = clong.xpath("./a")[0]
-            short_id = short.text_content().strip()
             ctty_name = clong.text_content().strip()
-            chamber = "joint"
-            if "house" in chamber.lower():
-                chamber = 'lower'
-            elif "senate" in chamber.lower():
-                chamber = 'upper'
+            ctty_url = clong.get('href')
+            org = Organization(chamber=chamber, classification="committee",
+                               name=ctty_name)
+            org.add_source(HI_URL_BASE + ctty_url)
+            self.get_committee_data(ctty_url, org)
+            yield org

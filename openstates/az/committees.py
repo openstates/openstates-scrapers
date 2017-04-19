@@ -1,35 +1,23 @@
-import re
-
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-
+from pupa.scrape import Scraper, Organization
 from .client import AZClient
+from . import session_metadata
 
 
-class AZCommitteeScraper(CommitteeScraper):
+class AZCommitteeScraper(Scraper):
     jurisdiction = 'az'
 
-    def get_session_for_term(self, term):
-        # ideally this should be either first or second regular session
-        # and probably first and second when applicable
-        for t in self.metadata['terms']:
-            if t['name'] == term:
-                session = t['sessions'][-1]
-                if re.search('regular', session):
-                    return session
-                else:
-                    return t['sessions'][0]
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            chambers = ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber)
 
-    def get_session_id(self, session):
-        return self.metadata['session_details'][session]['session_id']
-
-    def scrape(self, chamber, term):
-        self.validate_term(term)
-        session = self.get_session_for_term(term)
-        try:
-            session_id = self.get_session_id(session)
-        except KeyError:
-            raise NoDataForPeriod
+    def scrape_chamber(self, chamber):
+        session = self.latest_session()
+        # since we are scraping only latest_session
+        session_id = session_metadata.session_id_meta_data[session]
 
         client = AZClient()
         committees = client.list_committees(
@@ -38,13 +26,8 @@ class AZCommitteeScraper(CommitteeScraper):
             legislativeBody='S' if chamber == 'upper' else 'H',
         )
         for committee in committees.json():
-            c = Committee(
-                chamber,
-                committee['CommitteeName'],
-                session=session,
-                az_committee_id=committee['CommitteeId'],
-            )
-
+            c = Organization(name=committee['CommitteeName'],
+                             chamber=chamber, classification='committee')
             details = client.get_standing_committee(
                 sessionId=session_id,
                 legislativeBody='S' if chamber == 'upper' else 'H',
@@ -59,7 +42,7 @@ class AZCommitteeScraper(CommitteeScraper):
                 c.add_source(details.url)
 
             c.add_source(committees.url)
-            self.save_committee(c)
+            yield c
 
 
 def parse_role(member):
