@@ -1,6 +1,8 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
+
 from .people import MSLegislatorScraper
+from .committees import MSCommitteeScraper
 
 
 class Mississippi(Jurisdiction):
@@ -9,7 +11,8 @@ class Mississippi(Jurisdiction):
     name = "Mississippi"
     url = "http://www.legislature.ms.gov/"
     scrapers = {
-        "people": MSLegislatorScraper
+        "people": MSLegislatorScraper,
+        "committee": MSCommitteeScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -172,6 +175,9 @@ class Mississippi(Jurisdiction):
         upper_chamber_name = "Senate"
         upper_seats = 52
         upper_title = "Senator"
+        lower_chamber_name = "House"
+        lower_title = "Representative"
+        lower_seats = 122 
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
