@@ -1,4 +1,5 @@
 import re
+import lxml.html
 
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin
@@ -73,7 +74,7 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
             self.save_legislator(leg)
 
     def scrape_upper(self, chamber, term):
-        url = 'http://www.senate.michigan.gov/senatorinfo.html'
+        url = 'http://www.senate.michigan.gov/senatorinfo_list.html'
         doc = self.lxmlize(url)
         for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
             if len(row) != 7:
@@ -110,6 +111,29 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
                     office_loc
                     )
 
+            # email addresses aren't on the list page anymore but they
+            # are on the page linked off "Contact Me"
+
+            # data has a typo in a row
+            contact_url = [
+                a for a in row.xpath(".//a")
+                if a.text in ('Contact Me', 'Conact Me')][0].get('href')
+            contact_html = self.get(contact_url).text
+            contact_doc = lxml.html.fromstring(contact_html)
+
+            email = None
+            header_email = contact_doc.xpath("//a[@class='header_email']")
+            if header_email:
+                email = header_email[0].text
+            else:
+                # not using the most common template, but maybe they
+                # dropped their email on the page somewhere
+                links = contact_doc.xpath('//a') or []
+                text_email = [a for a in links
+                              if 'mailto:' in (a.get('href') or '')]
+                if text_email:
+                    email = text_email[0].text
+
             leg = Legislator(term=term, chamber=chamber,
                              district=district,
                              full_name=name,
@@ -119,7 +143,8 @@ class MILegislatorScraper(LegislatorScraper, LXMLMixin):
             leg.add_office('capitol', 'Capitol Office',
                            address=office_loc,
                            fax=office_fax,
-                           phone=office_phone)
+                           phone=office_phone,
+                           email=email)
 
             leg.add_source(url)
             self.save_legislator(leg)

@@ -1,6 +1,7 @@
+from pupa.scrape import Scraper, Person
 import re
 import lxml.html
-from billy.scrape.legislators import LegislatorScraper, Legislator
+
 
 def get_field(doc, key):
     # get text_content of parent of the element containing the key
@@ -11,18 +12,16 @@ def get_field(doc, key):
         return ''
 
 
-class DCLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'dc'
+class DCPersonScraper(Scraper):
 
-    def scrape(self, term, chambers):
-        # council_url = 'http://www.dccouncil.washington.dc.us/council'
+    def scrape(self):
         council_url = 'http://dccouncil.us/council'
         data = self.get(council_url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
         urls = set(doc.xpath('//a[contains(@href, "dccouncil.us/council/")]/@href'))
-        print '\n'.join(urls)
+        # print '\n'.join(urls)
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
         for url in urls:
@@ -33,7 +32,7 @@ class DCLegislatorScraper(LegislatorScraper):
             descriptor = doc.xpath('//p[@class="head-descriptor"]/text()')[0]
             title_name = doc.xpath('//h2/text()')[0]
 
-            #removes the title that is prepended to the name
+            # removes the title that is prepended to the name
             name = re.sub(r'^Councilmember ', '', title_name)
 
             if 'Chairman' in descriptor:
@@ -67,23 +66,28 @@ class DCLegislatorScraper(LegislatorScraper):
 
             email = doc.xpath('//a[starts-with(text(), "Send an email")]/@href')[0].split(':')[1]
 
-            legislator = Legislator(
-                term,
-                'upper',
-                district,
-                name,
+            person = Person(
+                name=name,
                 party=party,
-                url=url,
-                photo_url=photo_url)
+                image=photo_url,
+                primary_org='legislature',
+                district=str(district),
+            )
 
-            legislator.add_office(
-                'capitol',
-                'Council Office',
-                address=office_address or None,
-                phone=phone,
-                fax=fax,
-                email=email or None)
+            person.add_source(url)
+            person.add_link(url)
 
-            legislator.add_source(url)
+            if office_address:
+                person.add_contact_detail(type='address', value=office_address,
+                                          note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note='Capitol Office')
+            if email:
+                person.add_contact_detail(type='email', value=email,
+                                          note='Capitol Office')
 
-            self.save_legislator(legislator)
+            yield person

@@ -1,6 +1,7 @@
 import re
 import lxml.html
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Scraper, Person
+# from billy.scrape.legislators import LegislatorScraper, Legislator
 
 BASE_URL = 'https://legislature.idaho.gov/%s/membership/'
 CHAMBERS = {'upper': 'senate', 'lower': 'house'}
@@ -14,6 +15,13 @@ phone_patterns = {
     'business': re.compile(r'Bus'),
     'home': re.compile(r'Home'),
 }
+
+parse_phone_pattern = re.compile(r'tel:(?:\+1)?(\d{10}$)')
+fax_pattern = re.compile(r'fax\s+\((\d{3})\)\s+(\d{3})-(\d{4})', re.IGNORECASE)
+address_pattern = re.compile(r', \d{5}')
+address_replace_pattern = re.compile(r'(\d{5})')
+
+
 def get_phones(el):
     phones = {}
     for link in el.xpath('p/a[@class = "mob-tel"]'):
@@ -23,20 +31,19 @@ def get_phones(el):
                 phones[label] = parse_phone(link.get('href'))
     return phones
 
-parse_phone_pattern = re.compile(r'tel:(?:\+1)?(\d{10}$)')
+
 def parse_phone(phone):
     res = parse_phone_pattern.search(phone)
     if res is not None:
         return res.groups()[0]
 
-fax_pattern = re.compile(r'fax\s+\((\d{3})\)\s+(\d{3})-(\d{4})', re.IGNORECASE)
+
 def get_fax(el):
     res = fax_pattern.search(el.text_content())
     if res is not None:
         return ''.join(res.groups())
 
-address_pattern = re.compile(r', \d{5}')
-address_replace_pattern = re.compile(r'(\d{5})')
+
 def get_address(el):
     for br in el.xpath('p/br'):
         piece = (br.tail or '').strip()
@@ -44,15 +51,23 @@ def get_address(el):
         if res is not None:
             return address_replace_pattern.sub(r'ID \1', piece).strip()
 
-class IDLegislatorScraper(LegislatorScraper):
+
+class IDPersonScraper(Scraper):
     """Legislator data seems to be available for the current term only."""
     jurisdiction = 'id'
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         """
         Scrapes legislators for the current term only
         """
-        self.validate_term(term, latest_only=True)
+        # self.validate_term(term, latest_only=True)
         url = BASE_URL % CHAMBERS[chamber].lower()
         index = self.get(url).text
         html = lxml.html.fromstring(index)
@@ -70,29 +85,34 @@ class IDLegislatorScraper(LegislatorScraper):
             party = PARTY[inner.xpath('p/strong')[0].tail.strip()]
             email = inner.xpath('p/strong/a')[0].text
             district = inner.xpath('p/a')[0].text.replace('District ', '')
-            leg_url = inner.xpath('p/a/@href')[0]
-
-            leg = Legislator(term, chamber, district, name, party=party,
-                             email=email)
-
-            phones = get_phones(inner)
-            leg.add_office('district', 'District Office',
-                           address=get_address(inner), fax=get_fax(inner),
-                           phone=phones.get('home') or phones.get('business'))
-            leg.add_office('capitol', 'Capitol Office', phone=phones.get('office'))
-
-            leg.add_source(url)
-            leg['photo_url'] = img_url
-            leg['url'] = leg_url
-
+            person_url = inner.xpath('p/a/@href')[0]
             for com in inner.xpath('p/a[contains(@href, "committees")]'):
                 role = com.tail.strip()
                 if not role:
                     role = 'member'
-                leg.add_role('committee member',
-                             term=term,
-                             chamber=chamber,
-                             committee=com.text,
-                             position=role)
-
-            self.save_legislator(leg)
+            person = Person(name=name, district=district,
+                            party=party, primary_org=chamber,
+                            image=img_url, role=role)
+            phones = get_phones(inner)
+            phone = phones.get('home') or phones.get('business')
+            office_phone = phones.get('office')
+            address = get_address(inner)
+            fax = get_fax(inner)
+            if address:
+                person.add_contact_detail(type='address', value=address,
+                                          note='District Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note='District Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax,
+                                          note='District Office')
+            if email:
+                person.add_contact_detail(type='email', value=email,
+                                          note='District Office')
+            if office_phone:
+                person.add_contact_detail(type='voice', value=office_phone,
+                                          note='Capitol Office')
+            person.add_source(url)
+            person.add_link(person_url)
+            yield person
