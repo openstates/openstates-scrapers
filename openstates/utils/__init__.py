@@ -1,12 +1,7 @@
 import re
 
-<<<<<<< HEAD
-from .lxmlize import LXMLMixin
-from .lxmlize import url_xpath
-=======
 from .lxmlize import LXMLMixin  # noqa
 from .lxmlize import url_xpath  # noqa
->>>>>>> 942112548b379d4434cab5b8e12e0882ec65df8d
 
 
 def validate_phone_number(phone_number):
