@@ -1,8 +1,5 @@
-'''
-
-'''
 import re
-#from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 
 committees = [

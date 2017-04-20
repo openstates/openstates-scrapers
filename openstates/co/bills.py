@@ -4,19 +4,18 @@ import lxml.html
 import scrapelib
 import json
 import math
-#from urlparse import urlparse
 from urllib import parse as urlparse
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 
-#from .actions import Categorizer
+from .actions import Categorizer
 #from .pre2016bills import COPre2016BillScraper
 
 CO_URL_BASE = "http://leg.colorado.gov"
 
 class COBillScraper(Scraper, LXMLMixin):
-    #categorizer = Categorizer()
+    categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
         """
@@ -30,13 +29,13 @@ class COBillScraper(Scraper, LXMLMixin):
         chambers = [chamber] if chamber else ['upper', 'lower']
         
         for chamber in chambers:
-            if int(session[0:4]) < 2016:
-                legacy = COPre2016BillScraper(self.metadata, self.output_dir, self.strict_validation)
-                legacy.scrape(chamber, session)
-                # This throws an error because object_count isn't being properly incremented,
-                # even though it saves fine. So fake the output_names
-                self.output_names = ['1']
-                return
+            # if int(session[0:4]) < 2016:
+            #     legacy = COPre2016BillScraper(self.metadata, self.output_dir, self.strict_validation)
+            #     legacy.scrape(chamber, session)
+            #     # This throws an error because object_count isn't being properly incremented,
+            #     # even though it saves fine. So fake the output_names
+            #     self.output_names = ['1']
+            #     return
 
             page = self.scrape_bill_list(session, chamber, 0)
 
@@ -112,16 +111,16 @@ class COBillScraper(Scraper, LXMLMixin):
                     chamber=chamber,
                     title=bill_title,
             )
-        
+        bill.add_abstract(abstract=bill_summary, note='summary')        
         bill.add_source('{}{}'.format(CO_URL_BASE, bill_url))
 
         self.scrape_sponsors(bill, page)
-        #self.scrape_actions(bill, page)
+        self.scrape_actions(bill, page)
         self.scrape_versions(bill, page)
         self.scrape_research_notes(bill, page)
         self.scrape_fiscal_notes(bill, page)
         self.scrape_committee_report(bill, page)
-        self.scrape_votes(bill, page)
+        #self.scrape_votes(bill, page)
         self.scrape_amendments(bill, page)
 
         yield bill
@@ -196,6 +195,7 @@ class COBillScraper(Scraper, LXMLMixin):
             action_name = action.xpath('td[3]/text()')[0]
 
             attrs = dict(actor=action_actor, action=action_name, date=action_date)
+            attrs = dict(description=action_name, chamber=actor, date=action_date)
             attrs.update(self.categorizer.categorize(action_name))
             bill.add_action(**attrs)
 
