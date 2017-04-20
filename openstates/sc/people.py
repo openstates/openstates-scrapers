@@ -4,12 +4,6 @@ from pupa.scrape import Person, Scraper
 
 
 class SCPersonScraper(Scraper):
-    """
-     South Carolina Scrapper using Person Scraper
-    - https://opencivicdata.readthedocs.io/en/latest/scrape/people.html
-    """
-    jurisdiction = 'sc'
-
     def __init__(self, *args, **kwargs):
         """  CSS isn't there without this, it serves up a mobile version. """
         super().__init__(*args, **kwargs)
@@ -18,6 +12,11 @@ class SCPersonScraper(Scraper):
     def scrape(self, chamber=None):
         """ Generator Function to pull in (scrape) data about person from state website."""
 
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for c in chambers:
+            yield from self.scrape_chamber(c)
+
+    def scrape_chamber(self, chamber):
         if chamber == 'lower':
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
         else:
@@ -41,6 +40,7 @@ class SCPersonScraper(Scraper):
 
             party, district, _ = leg_doc.xpath('//p[@style="font-size: 17px;'
                                                ' margin: 0 0 0 0; padding: 0;"]/text()')
+
             if 'Republican' in party:
                 party = 'Republican'
             elif 'Democrat' in party:
@@ -55,16 +55,13 @@ class SCPersonScraper(Scraper):
                             party=party, primary_org=chamber,
                             image=photo_url)
 
-            person.extras = {}
-
             # office address / phone
             try:
-                addr_div = \
-                    leg_doc.xpath('//div[@style="float: left; width: 225px;'
-                                  ' margin: 10px 5px 0 20px; padding: 0;"]')[0]
+                addr_div = leg_doc.xpath('//div[@style="float: left; width: 225px;'
+                                         ' margin: 10px 5px 0 20px; padding: 0;"]')[0]
                 capitol_address = addr_div.xpath('p[@style="font-size: 13px;'
-                                                 ' margin: 0 0 10px 0; padding: 0;"]')[0]\
-                                          .text_content()
+                                                 ' margin: 0 0 10px 0; padding: 0;"]'
+                                                 )[0].text_content()
 
                 phone = addr_div.xpath('p[@style="font-size: 13px;'
                                        ' margin: 0 0 0 0; padding: 0;"]/text()')[0]
@@ -102,6 +99,7 @@ class SCPersonScraper(Scraper):
 
             person.add_link(leg_url)
             person.add_source(url)
+            person.add_source(leg_url)
 
             # committees (skip first link)
             for com in leg_doc.xpath('//a[contains(@href, "committee.php")]')[1:]:
