@@ -183,13 +183,11 @@ class ARBillScraper(Scraper):
                 date = TIMEZONE.localize(datetime.datetime.strptime(date, "%m/%d/%Y %I:%M:%S %p"))
 
                 motion = link.xpath("string(../../td[3])")
-                print("base1")
                 yield from self.scrape_vote(bill, date, motion, link.attrib['href'])
         except:
             pass
 
     def scrape_vote(self, bill, date, motion, url):
-        print("called")
         try:
             page = self.get(url).text
             if 'not yet official' in page:
