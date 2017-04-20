@@ -37,10 +37,10 @@ RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV PROJECT_PATH="/srv/openstates-web/"
 ADD . ${PROJECT_PATH}
-RUN find ${PROJECT_PATH} -name '*.pyc' -delete
 RUN echo "${PROJECT_PATH}/openstates/" > /usr/lib/python2.7/dist-packages/openstates.pth
 
 RUN pip install -U pip

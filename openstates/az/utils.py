@@ -1,13 +1,16 @@
-import re, datetime
+import re
+import datetime
 doc_for_bills_url = 'http://www.azleg.gov/DocumentsForBill.asp?Bill_Number=%s&Session_ID=%s'
 base_url = 'http://www.azleg.gov/'
 select_session_url = 'http://www.azleg/SelectSession.asp.html'
+
 
 def parse_link_id(link):
     """
     extracts the div[@id] from the links on the DocumentsForBill pages
     """
-    return link.get('href')[link.get('href').find("'") + 1 : link.get('href').rfind("'")]
+    return link.get('href')[link.get('href').find("'") + 1: link.get('href').rfind("'")]
+
 
 def get_bill_type(bill_id):
     """
@@ -20,6 +23,7 @@ def get_bill_type(bill_id):
     else:
         return 'bill'
 
+
 def legislature_to_number(leg):
     """
     Takes a full session and splits it down to the values for
@@ -31,6 +35,7 @@ def legislature_to_number(leg):
     l = leg.lower().split('-')
     return '%sLeg/%s%s' % (l[0][0:2], l[1][0], l[2][0])
 
+
 def get_date(elem):
     """
     Returns the date object or an empty string, silly but it will really save
@@ -41,6 +46,7 @@ def get_date(elem):
     except ValueError:
         return_date = ''
     return return_date
+
 
 def img_check(elem):
     """
@@ -57,6 +63,7 @@ def img_check(elem):
         else:
             return 'N'
 
+
 def get_rows(rows, header):
     """
     takes the rows and header and returns a dict for each row with { key : <td> }
@@ -65,10 +72,11 @@ def get_rows(rows, header):
     keyed_rows = []
     for r in rows:
         dict_row = {}
-        for k,v in zip(header, r.xpath('td')):
-            dict_row.update({k:v})
+        for k, v in zip(header, r.xpath('td')):
+            dict_row.update({k: v})
         keyed_rows.append(dict_row)
     return keyed_rows
+
 
 def get_actor(tr, chamber):
     """
@@ -80,7 +88,7 @@ def get_actor(tr, chamber):
         return {'H': 'lower', 'S': 'upper'}[actor]
     else:
         h_or_s = tr.xpath('ancestor::table[1]/preceding-sibling::' +
-                                  'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
+                          'table/tr/td/b[contains(text(), "TRANSMIT TO")]')
         if h_or_s:
             # actor is the last B element
             h_or_s = h_or_s[-1].text_content().strip()
@@ -89,11 +97,13 @@ def get_actor(tr, chamber):
             actor = chamber
         return actor
 
+
 def get_committee_name(abbrv, chamber):
     try:
         return com_names[chamber][abbrv]
     except KeyError:
         return abbrv
+
 
 com_names = {
     'lower': {'APPROP': 'Appropriations',

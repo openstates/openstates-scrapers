@@ -302,8 +302,11 @@ class MDBillScraper(BillScraper):
                 passed = yes_count > no_count
             else:
                 passed = None
-        elif 'overridden' in motion:
+        elif 'overridden' in motion.lower():
             passed = True
+            motion = 'Veto Override'
+        elif 'Sustained' in motion:
+            passed = False
             motion = 'Veto Override'
         else:
             raise Exception('unknown motion: %s' % motion)
@@ -401,8 +404,9 @@ class MDBillScraper(BillScraper):
 
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
-            description = td.xpath('text()')[0]
-            description = self.remove_leading_dash(description)
+            description = td.xpath('text()')
+            if description:
+                description = self.remove_leading_dash(description[0])
             whole = ''.join(td.itertext())
 
             if a.text == 'Text':
@@ -420,6 +424,8 @@ class MDBillScraper(BillScraper):
             elif a.text in ('Bond Bill Fact Sheet',
                             "Attorney General's Review Letter",
                             "Governor's Veto Letter",
+                            "Joint Chairmen's Report",
+                            "Conference Committee Summary Report",
                            ):
                 bill.add_document(a.text, a.get('href'),
                                   mimetype='application/pdf')
