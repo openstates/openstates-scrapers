@@ -99,6 +99,11 @@ class MELegislatorScraper(LegislatorScraper):
             else:
                 office_phone = None
 
+            # if they don't say what area code they're in, it's 207
+            if office_phone:
+                if sum(c.isdigit() for c in office_phone) == 7:
+                    office_phone = '(207) ' + office_phone
+
             district_office = {
                 'name': "District Office",
                 'type': "district",
@@ -190,6 +195,11 @@ class MELegislatorScraper(LegislatorScraper):
                 phone = d['phone2']
             if not phone:
                 phone = None
+
+            # if they don't say what area code they're in, it's 207
+            if phone:
+                if sum(c.isdigit() for c in phone) == 7:
+                    phone = '(207) ' + phone
 
             district = d['district'].split('.')[0]
 
