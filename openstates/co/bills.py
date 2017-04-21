@@ -4,17 +4,20 @@ import lxml.html
 import scrapelib
 import json
 import math
+import pytz
 from urllib import parse as urlparse
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 
 from .actions import Categorizer
-#from .pre2016bills import COPre2016BillScraper
-
 CO_URL_BASE = "http://leg.colorado.gov"
-
+SESSION_DATA_ID = {
+                    '2016A': '30',
+                    '2017A': '10171'
+                    }
 class COBillScraper(Scraper, LXMLMixin):
+    _tz = pytz.timezone('US/Mountain')
     categorizer = Categorizer()
 
     def scrape(self, chamber=None, session=None):
@@ -27,7 +30,7 @@ class COBillScraper(Scraper, LXMLMixin):
             self.info('no session specified, using %s', session)
 
         chambers = [chamber] if chamber else ['upper', 'lower']
-        
+
         for chamber in chambers:
             # if int(session[0:4]) < 2016:
             #     legacy = COPre2016BillScraper(self.metadata, self.output_dir, self.strict_validation)
@@ -38,6 +41,11 @@ class COBillScraper(Scraper, LXMLMixin):
             #     return
 
             page = self.scrape_bill_list(session, chamber, 0)
+            bill_list = page.xpath('//header[contains(@class,"search-result-single-item")]'
+                               '/h4[contains(@class,"node-title")]/a/@href')
+
+            for bill_url in bill_list:
+                yield from self.scrape_bill(session, chamber, bill_url)
 
             pagination_str = page.xpath('//div[contains(@class, "view-header")]/text()')[0]
             max_results = re.search(r'of (\d+) results', pagination_str)
@@ -47,16 +55,21 @@ class COBillScraper(Scraper, LXMLMixin):
             # We already have the first page load, so just grab later pages
             if max_page > 1:
                 for i in range(1, max_page):
-                    yield from self.scrape_bill_list(session, chamber, i)
-
+                    page = self.scrape_bill_list(session, chamber, i)
+                    bill_list = page.xpath('//header[contains(@class,"search-result-single-item")]'
+                                           '/h4[contains(@class,"node-title")]/a/@href')
+                    for bill_url in bill_list:
+                        yield from self.scrape_bill(session, chamber, bill_url)
+                    
     def scrape_bill_list(self, session, chamber, pageNumber):
         chamber_code_map = {'lower': 1, 'upper': 2}
 
         ajax_url = 'http://leg.colorado.gov/views/ajax'
+
         form = {
             'field_chamber': chamber_code_map[chamber],
             'field_bill_type': 'All',
-            'field_sessions': self.metadata['session_details'][session]['_data_id'],
+            'field_sessions': SESSION_DATA_ID[session],
             'sort_bef_combine': 'search_api_relevance DESC',
             'view_name': 'bill_search',
             'view_display_id': 'full',
@@ -68,19 +81,12 @@ class COBillScraper(Scraper, LXMLMixin):
             'page': pageNumber,
         }
         resp = self.post(url=ajax_url, data=form, allow_redirects=True)
-        resp = json.loads(resp.content)
+        resp = json.loads(resp.content.decode("utf-8"))
 
         #Yes, they return a big block of HTML inside the json response
         html = resp[3]['data']
 
         page = lxml.html.fromstring(html)
-
-        bill_list = page.xpath('//header[contains(@class,"search-result-single-item")]'
-                               '/h4[contains(@class,"node-title")]/a/@href')
-
-        for bill_url in bill_list:
-            yield from self.scrape_bill(session, chamber, bill_url)
-
         # We Need to return the page
         # so we can pull the max page # from it on page 1
         return page
@@ -103,15 +109,13 @@ class COBillScraper(Scraper, LXMLMixin):
 
         bill_summary = page.xpath('string(//div[contains(@class,"field-name-field-bill-summary")])')
         bill_summary = bill_summary.strip()
-        print(bill_summary)
-        #bill = Bill(session, chamber, bill_number, bill_title, summary=bill_summary)
         bill = Bill(
                     bill_number,
                     legislative_session=session,
                     chamber=chamber,
                     title=bill_title,
             )
-        bill.add_abstract(abstract=bill_summary, note='summary')        
+        bill.extras['bill_summary'] = bill_summary       
         bill.add_source('{}{}'.format(CO_URL_BASE, bill_url))
 
         self.scrape_sponsors(bill, page)
@@ -120,11 +124,9 @@ class COBillScraper(Scraper, LXMLMixin):
         self.scrape_research_notes(bill, page)
         self.scrape_fiscal_notes(bill, page)
         self.scrape_committee_report(bill, page)
-        #self.scrape_votes(bill, page)
         self.scrape_amendments(bill, page)
-
         yield bill
-
+        yield from self.scrape_votes(bill, page)
 
     def scrape_sponsors(self, bill, page):
         chamber_map = {'Senator':'upper', 'Representative': 'lower'}
@@ -141,7 +143,6 @@ class COBillScraper(Scraper, LXMLMixin):
                                 entity_type='person',
                                 primary=True
                 )
-            #bill.add_sponsor('primary', sponsor_name, chamber=sponsor_chamber)
 
     def scrape_versions(self, bill, page):
         versions = page.xpath('//div[@id="bill-documents-tabs1"]//table//tbody//tr')
@@ -183,7 +184,7 @@ class COBillScraper(Scraper, LXMLMixin):
         for action in actions:
             action_date = action.xpath('td[1]/text()')[0]
             action_date = dt.datetime.strptime(action_date, '%m/%d/%Y')
-
+            action_date = self._tz.localize(action_date)
             # If an action has no chamber, it's joint
             # e.g. http://leg.colorado.gov/bills/sb17-100 
             if action.xpath('td[2]/text()'):
@@ -194,9 +195,8 @@ class COBillScraper(Scraper, LXMLMixin):
 
             action_name = action.xpath('td[3]/text()')[0]
 
-            attrs = dict(actor=action_actor, action=action_name, date=action_date)
-            attrs = dict(description=action_name, chamber=actor, date=action_date)
-            attrs.update(self.categorizer.categorize(action_name))
+            attrs = dict(description=action_name, chamber=action_actor, date=action_date)
+            #attrs.update(self.categorizer.categorize(action_name))
             bill.add_action(**attrs)
 
     def scrape_fiscal_notes(self, bill, page):
@@ -233,7 +233,7 @@ class COBillScraper(Scraper, LXMLMixin):
         hearings = page.xpath('//a[text()="Hearing Summary"]/@href')
         for hearing_url in hearings:
             # Save the full page text for later, we'll need it for amendments
-            page_text = self.get(hearing_url).content
+            page_text = self.get(hearing_url).content.decode()
             page = lxml.html.fromstring(page_text)
 
             pdf_links = page.xpath("//main//a[contains(@href,'.pdf')]/@href")
@@ -243,8 +243,7 @@ class COBillScraper(Scraper, LXMLMixin):
             # A hearing can discuss multiple bills,
             # so first make a list of all amendments
             # mentioned in summary tables revelant to this bill
-
-            table_xpath = '//table[.//*[contains(text(), "{}")]]'.format(bill['bill_id'])
+            table_xpath = '//table[.//*[contains(text(), "{}")]]'.format(bill.identifier)
             bill_tables = page.xpath(table_xpath)
             if bill_tables:
                 for table in bill_tables:
@@ -271,7 +270,7 @@ class COBillScraper(Scraper, LXMLMixin):
                         bill.add_version_link(amendment_name,
                                          amendment_url,
                                          media_type='application/pdf',
-                                         on_duplicate='use_new')
+                                         on_duplicate='ignore')
                     else:
                         self.warning("Didn't find attachment for %s %s",
                                      amendment_name,
@@ -306,11 +305,11 @@ class COBillScraper(Scraper, LXMLMixin):
                     chamber = 'lower'
                 else:
                     self.warning("No chamber for %s" % header.group('committee'))
-                    chamber = bill['chamber']
+                    chamber = None
 
                 date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
 
-                self.scrape_vote(bill, vote_url, chamber, date)
+                yield from self.scrape_vote(bill, vote_url, chamber, date)
 
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
@@ -346,20 +345,33 @@ class COBillScraper(Scraper, LXMLMixin):
 
             other_count = int(exc_count) + int(nv_count)
 
-            vote = Vote(chamber, date, motion, passed,
-                        int(yes_count), int(no_count), int(other_count))
-
+            vote = VoteEvent(chamber=chamber,
+                             start_date=self._tz.localize(date),
+                             motion_text=motion,
+                             result= 'pass' if passed else 'fail',
+                             bill=bill,
+                             classification='passage'
+                             )
+            vote.set_count('yes', int(yes_count))
+            vote.set_count('no', int(no_count))
+            vote.set_count('excused', int(exc_count))
+            vote.set_count('not voting', int(nv_count))
+            vote.add_source(vote_url)
+            
             for roll in rolls[:-2]:
                 voter = roll.xpath('td[2]/div/font')[0].text_content()
                 voted = roll.xpath('td[3]/div/font')[0].text_content().strip()
+                
                 if voted:
                     if 'Yes' in voted:
                         vote.yes(voter)
                     elif 'No' in voted:
                         vote.no(voter)
+                    elif 'Excused' in voted:
+                        vote.vote('excused', voter)
                     else:
-                        vote.other(voter)
+                        vote.vote("other", voter)
+
                 elif 'passed without objection' in motion.lower() and voter:
                     vote.yes(voter)
-
-            bill.add_vote(vote)
+            yield vote
