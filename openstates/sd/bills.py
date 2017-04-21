@@ -26,9 +26,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             else:
                 bill_abbr = 'H'
 
-            page = self.get(url).text
-            page = lxml.html.fromstring(page)
-            page.make_links_absolute(url)
+            page = self.lxmlize(url)
 
             for link in page.xpath("//a[contains(@href, 'Bill.aspx') and"
                                    " starts-with(., '%s')]" % bill_abbr):
