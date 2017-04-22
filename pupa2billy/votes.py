@@ -16,6 +16,8 @@ class PupaVoteScraper(VoteScraper):
                                                self.jurisdiction,
                                                'bill_' + bill_uuid + '.json')))
             chamber = parse_psuedo_id(bill['from_organization'])['classification']
+        if chamber == 'legislature':
+            chamber = 'upper'
         return chamber, bill['identifier']
 
     def __init__(self, *args, **kwargs):
@@ -29,6 +31,10 @@ class PupaVoteScraper(VoteScraper):
     def process_vote(self, data):
         chamber = parse_psuedo_id(data['organization'])['classification']
         bill_chamber, bill_id = self.get_bill_details(data['bill'])
+        if chamber == 'legislature':
+            chamber = 'upper'
+        if bill_chamber == 'legislature':
+            bill_chamber = 'upper'
 
         yes_count = None
         no_count = None
