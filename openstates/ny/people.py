@@ -421,7 +421,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             person.add_link(url)
 
-            # TODO mbacchi fixme
             self.scrape_lower_offices(person, legislator_url)
 
             yield person
