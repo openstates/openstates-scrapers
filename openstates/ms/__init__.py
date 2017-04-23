@@ -3,6 +3,7 @@ from openstates.utils import url_xpath
 
 from .people import MSLegislatorScraper
 from .committees import MSCommitteeScraper
+from .bills import MSBillScraper
 
 
 class Mississippi(Jurisdiction):
@@ -12,7 +13,8 @@ class Mississippi(Jurisdiction):
     url = "http://www.legislature.ms.gov/"
     scrapers = {
         "people": MSLegislatorScraper,
-        "committee": MSCommitteeScraper
+        "committee": MSCommitteeScraper,
+        "bills": MSBillScraper
     }
     parties = [
         {'name': 'Republican'},
