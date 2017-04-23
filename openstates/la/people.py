@@ -27,7 +27,6 @@ class LAPersonScraper(Scraper, LXMLMixin):
                 yield from self.scrape_upper("upper")
                 yield from self.scrape_lower("lower")
     
-
     def scrape_upper_leg_page(self, url, who):
         page = self.lxmlize(url)
 
@@ -98,6 +97,7 @@ class LAPersonScraper(Scraper, LXMLMixin):
                                           note = "District Office")
         
         person.add_source(url)
+        person.add_link(url)
                 
         yield person
 
@@ -137,12 +137,11 @@ class LAPersonScraper(Scraper, LXMLMixin):
         email = page.xpath(
             '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
             )[0].strip()
-        kwargs = {"url": url,
-                  "party": party,
-                  "photo_url": photo}
+ 
         district = leg_info['dist'].replace('Dist', '').strip()
 
         person = Person(name = name, 
+                        party = party,
                         district = district, 
                         primary_org = 'lower',
                         image = photo)
@@ -160,6 +159,8 @@ class LAPersonScraper(Scraper, LXMLMixin):
                                           note = "District Office")
         
         person.add_source(url)
+        
+        person.add_link(url)
         
         yield person
 
