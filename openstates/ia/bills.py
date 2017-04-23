@@ -6,6 +6,7 @@ from collections import defaultdict
 from pupa.scrape import Scraper, Bill
 from openstates.utils import LXMLMixin
 from .scraper import InvalidHTTPSScraper
+from . import session_metadata
 
 
 def get_popup_url(link):
@@ -22,10 +23,10 @@ class IABillScraper(Scraper):
         if self._subjects:
             return
 
-        session_id = self.metadata['session_details'][session]['number']
+        session_id = session_metadata.session_id_metadata[self.latest_session()]
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = self.lxmlize(url)
+        doc = lxml.html.fromstring(self.get(url).text)
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
@@ -64,6 +65,7 @@ class IABillScraper(Scraper):
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
+        session_id = session_metadata.session_id_metadata[self.latest_session()]
         url = (base_url % (session_id, bill_offset))
         page = self.lxmlize(url)
 
@@ -92,7 +94,7 @@ class IABillScraper(Scraper):
             return
 
         try:
-            page = self.lxmlize(hist_url)
+            page = lxml.html.fromstring(self.get("https://www.legis.iowa.gov" + hist_url).text)
         except:
             self.warning("URL: %s gives us a 500 error. Aborting." % url)
             return 
@@ -131,6 +133,7 @@ class IABillScraper(Scraper):
         version_pdf_url_template = 'https://www.legis.iowa.gov/docs/'\
             'publications/LG{}/{}/{}.pdf'
         
+        session_id = session_metadata.session_id_metadata[self.latest_session()]
         # get pieces of version_link
         vpieces = sidebar.xpath('//select[@id="billVersions"]/option')
         if vpieces:
@@ -287,5 +290,5 @@ class IABillScraper(Scraper):
                         chamber = actor, 
                         classification = atype)
 
-        bill['subjects'] = self._subjects[bill_id]
-        self.save_bill(bill)
+        #bill['subjects'] = self._subjects[bill_id]
+        yield bill
