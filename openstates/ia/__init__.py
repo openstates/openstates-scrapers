@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import IAPersonScraper
 from .bills import IABillScraper
+from .votes import IAVoteScraper
 
 class Iowa(Jurisdiction):
     division_id = "ocd-division/country:us/state:ia"
@@ -10,6 +11,7 @@ class Iowa(Jurisdiction):
     scrapers = {
         'people': IAPersonScraper,
         'bills': IABillScraper,
+        'votes': IAVoteScraper,
     }
     parties = [
         {'name': 'Republican'},
