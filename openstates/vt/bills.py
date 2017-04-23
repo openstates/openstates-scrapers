@@ -146,7 +146,7 @@ class VTBillScraper(Scraper, LXMLMixin):
             # If there is no internal bill ID, then it has no extra information
             try:
                 internal_bill_id = re.search(
-                    r'"LegislationId": "(\d+)"',
+                    r'"bill/loadBillDetailedStatus/.+?/(\d+)"',
                     lxml.etree.tostring(doc).decode('utf-8')
                 ).group(1)
             except AttributeError:
