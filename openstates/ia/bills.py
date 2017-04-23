@@ -234,45 +234,45 @@ class IABillScraper(Scraper):
             action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action).strip()
 
             if action.startswith('Introduced'):
-                atype = ['bill:introduced']
+                atype = ['introduction']
                 if ', referred to' in action:
-                    atype.append('committee:referred')
+                    atype.append('referral-committee')
             elif action.startswith('Read first time'):
-                atype = 'bill:reading:1'
+                atype = 'reading-1'
             elif action.startswith('Referred to'):
-                atype = 'committee:referred'
+                atype = 'referral-committee'
             elif action.startswith('Sent to Governor'):
-                atype = 'governor:received'
+                atype = 'executive-receipt'
             elif action.startswith('Reported Signed by Governor'):
-                atype = 'governor:signed'
+                atype = 'executive-signature'
             elif action.startswith('Signed by Governor'):
-                atype = 'governor:signed'
+                atype = 'executive-signature'
             elif action.startswith('Vetoed by Governor'):
-                atype = 'governor:vetoed'
+                atype = 'executive-veto'
             elif action.startswith('Item veto'):
-                atype = 'governor:vetoed:line-item'
+                atype = 'executive-veto:line-item'
             elif re.match(r'Passed (House|Senate)', action):
-                atype = 'bill:passed'
+                atype = 'passage'
             elif re.match(r'Amendment (S|H)-\d+ filed', action):
-                atype = ['amendment:introduced']
+                atype = ['amendment-introduction']
                 if ', adopted' in action:
-                    atype.append('amendment:passed')
+                    atype.append('amendment-passage')
             elif re.match(r'Amendment (S|H)-\d+( as amended,)? adopted',
                           action):
-                atype = 'amendment:passed'
+                atype = 'amendment-passage'
             elif re.match('Amendment (S|N)-\d+ lost', action):
-                atype = 'amendment:failed'
+                atype = 'amendment-failure'
             elif action.startswith('Resolution filed'):
-                atype = 'bill:introduced'
+                atype = 'introduction'
             elif action.startswith('Resolution adopted'):
-                atype = 'bill:passed'
+                atype = 'passage'
             elif (action.startswith('Committee report') and
                   action.endswith('passage.')):
-                  atype = 'committee:passed'
+                  atype = 'committee-passage'
             elif action.startswith('Withdrawn'):
-                atype = 'bill:withdrawn'
+                atype = 'withdrawal'
             else:
-                atype = 'other'
+                atype = None
 
             if action.strip() == "":
                 continue
