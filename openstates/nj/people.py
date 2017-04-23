@@ -1,18 +1,15 @@
-import re
-import urlparse
-import htmlentitydefs
+from pupa.scrape import Scraper, Person
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from .utils import clean_committee_name, MDBMixin
+from .utils import MDBMixin
 
-import scrapelib
 
-class NJLegislatorScraper(LegislatorScraper, MDBMixin):
-    jurisdiction = 'nj'
+class NJPersonScraper(Scraper, MDBMixin):
+    def scrape(self, session=None):
+        if not session:
+            session = self.jurisdiction.legislative_sessions[-1]['name']
+            self.info('no session specified, using %s', session)
 
-    def scrape(self, term, chambers):
-        year_abr = term[0:4]
+        year_abr = session[0:4]
 
         self._init_mdb(year_abr)
 
@@ -32,7 +29,7 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             full_name = full_name.replace('  ', ' ')
             full_name = full_name[0: len(full_name) - 1]
 
-            district = int(rec["District"])
+            district = str(int(rec["District"]))
             party = rec["Party"]
             if party == 'R':
                 party = "Republican"
@@ -50,8 +47,6 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
             # skip Deceased/Retired members
             if leg_status != 'Active':
                 continue
-            title = rec["Title"]
-            legal_position = rec["LegPos"]
             phone = rec["Phone"] or None
             email = None
             if rec["Email"]:
@@ -67,14 +62,23 @@ class NJLegislatorScraper(LegislatorScraper, MDBMixin):
                                                  rec['State'], rec['Zipcode'])
             gender = {'M': 'Male', 'F': 'Female'}[rec['Sex']]
 
-            leg = Legislator(term, chamber, str(district), full_name,
-                             first_name, last_name, middle_name, party,
-                             suffixes=suffix, title=title,
-                             legal_position=legal_position,
-                             url=url, photo_url=photo_url,
-                             gender=gender)
-            leg.add_office('district', 'District Office', address=address,
-                           phone=phone, email=email)
-            leg.add_source(url)
-            leg.add_source('http://www.njleg.state.nj.us/downloads.asp')
-            self.save_legislator(leg)
+            person = Person(
+                name=full_name,
+                district=district,
+                primary_org=chamber,
+                party=party,
+                image=photo_url,
+                gender=gender,
+            )
+
+            person.add_link(url)
+            person.add_source(url)
+            person.add_source('http://www.njleg.state.nj.us/downloads.asp')
+
+            person.add_contact_detail(type='address', value=address, note='District Office')
+            if phone is not None:
+                person.add_contact_detail(type='voice', value=phone, note='District Office')
+            if email is not None:
+                person.add_contact_detail(type='email', value=email, note='District Office')
+
+            yield person

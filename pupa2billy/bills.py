@@ -51,18 +51,31 @@ class PupaBillScraper(BillScraper):
 
     def process_bill(self, data):
         chamber = parse_psuedo_id(data['from_organization'])['classification']
+        if chamber == 'legislature':
+            chamber = 'upper'
         bill = Bill(data['legislative_session'], chamber, data['identifier'],
                     data['title'], subjects=data['subject'],
                     type=data['classification'])
+        if data['abstracts']:
+            bill['summary'] = data['abstracts'][0]['abstract']
         bill.update(**data['extras'])
 
         for action in data['actions']:
             actor = parse_psuedo_id(action['organization_id'])['classification']
+            legislators = []
+            committees = []
+            for rel in action['related_entities']:
+                if rel['entity_type'] == 'organization':
+                    committees.append(rel['name'])
+                elif rel['entity_type'] == 'person':
+                    legislators.append(rel['name'])
             bill.add_action(actor,
                             action['description'],
                             parse_date(action['date']),
-                            type=_action_categories(action['classification']))
-            # TODO: related entities
+                            type=_action_categories(action['classification']),
+                            committees=committees,
+                            legislators=legislators,
+                            )
 
         for source in data['sources']:
             bill.add_source(source['url'])
@@ -85,9 +98,11 @@ class PupaBillScraper(BillScraper):
                                   date=parse_date(doc['date']))
 
         for title in data['other_titles']:
-            bill.add_title(title)
+            bill.add_title(title['title'])
 
-        # TODO: related bills
-        # for related in data['related_bills']:
-
+        for related in data['related_bills']:
+            bill.add_companion(related['identifier'],
+                               related['legislative_session'],
+                               chamber
+                               )
         self.save_bill(bill)

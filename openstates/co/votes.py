@@ -148,9 +148,8 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                         vote.add_source(url)
 
                         for person in cur_vote:
-                            if person is None:
+                            if not person:
                                 continue
-
                             vot = cur_vote[person]
 
                             if person.endswith("Y"):
@@ -162,6 +161,9 @@ class COVoteScraper(VoteScraper, LXMLMixin):
                             if person.endswith("E"):
                                 vot = "E"
                                 person = person[:-1]
+
+                            if not person:
+                                continue
 
                             if vot == 'Y':
                                 vote.yes(person)

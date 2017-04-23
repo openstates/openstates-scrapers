@@ -238,7 +238,10 @@ class NHBillScraper(BillScraper):
         votes = {}
         last_line = []
 
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content:
+        lines = self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content.splitlines()
+
+        for line in lines:
+
             if len(line) < 2:
                 continue
 
@@ -253,7 +256,7 @@ class NHBillScraper(BillScraper):
                 else:
                     last_line = line
                     self.warning('bad vote line %s' % '|'.join(line))
-            session_yr = line[0]
+            session_yr = line[0].replace('\xef\xbb\xbf', '')
             body = line[1]
             vote_num = line[2]
             timestamp = line[3]
@@ -275,14 +278,14 @@ class NHBillScraper(BillScraper):
                 votes[body+vote_num] = vote
                 self.bills_by_id[bill_id].add_vote(vote)
 
-        for line in  self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt').content:
+        for line in  self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt').content.splitlines():
             if len(line) < 2:
                 continue
 
             # 2016|H|2|330795||Yea|
-            # 2012    | H   | 2    | 330795  | HB309  | Yea |1/4/2012 8:27:03 PM
-            session_yr, body, v_num, employee, bill_id, vote \
-                    = line.split('|')
+            # 2012    | H   | 2    | 330795  | 964 |  HB309  | Yea | 1/4/2012 8:27:03 PM
+            session_yr, body, v_num, _, employee, bill_id, vote, date = \
+                line.split('|')
 
             if not bill_id:
                 continue

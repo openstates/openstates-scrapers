@@ -64,7 +64,8 @@ def split_specific_votes(voters):
         voters = voters.replace('Senator(s) ', '')
     elif voters.startswith('Representative(s)'):
         voters = voters.replace('Representative(s)', '')
-    return voters.split(', ')
+    # Remove trailing spaces and semicolons
+    return (v.rstrip(' ;') for v in voters.split(', '))
 
 class HIBillScraper(BillScraper):
 
@@ -192,10 +193,16 @@ class HIBillScraper(BillScraper):
         if companion:
             b['companion'] = companion
 
+        prior = bill_page.xpath(
+            "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
+        if 'carried over' in prior.lower():
+            prior_session = '{} Regular Session'.format(str(int(session[:4])-1))
+            b.add_companion(bill_id, prior_session, chamber)
+
         for sponsor in meta['Introducer(s)']:
             b.add_sponsor(type='primary', name=sponsor)
 
-        actions  = self.parse_bill_actions_table(b, action_table)
+        actions = self.parse_bill_actions_table(b, action_table)
         versions = self.parse_bill_versions_table(b, versions)
 
         self.save_bill(b)
@@ -222,9 +229,9 @@ class HIBillScraper(BillScraper):
         report_page_url = create_bill_report_url(chamber, session_urlslug,
                                                  billtype)
         billy_billtype = {
-            "bill" : "bill",
-            "cr"   : "concurrent resolution",
-            "r"    : "resolution"
+            "bill": "bill",
+            "cr": "concurrent resolution",
+            "r": "resolution"
         }[billtype]
 
         list_html = self.get(report_page_url).text
@@ -232,7 +239,6 @@ class HIBillScraper(BillScraper):
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = HI_URL_BASE + bill_url.attrib['href']
             self.scrape_bill(session, chamber, billy_billtype, bill_url)
-
 
     def scrape(self, session, chamber):
         get_short_codes(self)

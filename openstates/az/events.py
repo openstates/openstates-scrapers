@@ -1,67 +1,52 @@
 import datetime
 import re
+from pytz import timezone as tmz
 
 from lxml import html
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Event, Scraper
+# from . import session_metadata
 
 
-class AZEventScraper(EventScraper):
+class AZEventScraper(Scraper):
     """
     Arizona Event Scraper, gets interim committee, agendas, floor calendars
     and floor activity events
     """
-    jurisdiction = 'az'
+    _tz = tmz('US/Arizona')
 
     _chamber_short = {'upper': 'S', 'lower': 'H'}
     _chamber_long = {'upper': 'Senate', 'lower': 'House'}
 
-    def get_session_id(self, session):
-        """
-        returns the session id for a given session
-        """
-        return self.metadata['session_details'][session]['session_id']
+    def scrape(self, chamber=None):
+        if chamber:
+            if chamber == "other":
+                return
+            else:
+                yield from self.scrape_chamber(chamber)
+        else:
+            chambers = ['upper', 'lower']
+            for chamber in chambers:
+                yield from self.scrape_chamber(chamber)
 
-    def scrape(self, chamber, session):
-        if chamber == "other":
-            return
-        """
-        given a chamber and session returns the events
-        """
-        try:
-            session_id = self.get_session_id(session)
-        except KeyError:
-            raise NoDataForPeriod(session)
-
-        # this will only work on the latest regular or special session
-        # 103 is fortyninth - ninth special session 102 is session_ID for
-        # fiftieth
-        # we can get old events with some hassle but we cant change what has
-        # already happened so why bother?
-        if session_id == 103 or session_id < 102:
-            raise NoDataForPeriod(session)
-
-        # http://www.azleg.gov/CommitteeAgendas.asp?Body=H
-        self.scrape_committee_agendas(chamber, session)
-        # http://www.azleg.gov/InterimCommittees.asp
-        # self.scrape_interim_events(chamber, session)
-
-    def scrape_committee_agendas(self, chamber, session):
+    def scrape_chamber(self, chamber):
         """
         Scrape upper or lower committee agendas
         """
+        # session = self.latest_session()
+        # since we are scraping only latest_session
+        # session_id = self.session_metadata.session_id_meta_data[session]
+
         # could use &ShowAll=ON doesn't seem to work though
-        url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % \
-                                          self._chamber_short[chamber]
+        url = 'http://www.azleg.gov/CommitteeAgendas.asp?Body=%s' % self._chamber_short[chamber]
         html_ = self.get(url).text
         doc = html.fromstring(html_)
         if chamber == 'upper':
-            event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-                                     '/td/table/tr/td/table')[0]
+            event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/'
+                                    'tr/td/table/tr/td/table')[0]
         else:
             event_table = doc.xpath('//table[@id="body"]/tr/td/table[2]/tr'
-                                     '/td/table/tr/td/table/tr/td/table')[0]
+                                    '/td/table/tr/td/table/tr/td/table')[0]
         for row in event_table.xpath('tr')[2:]:
             # Agenda Date, Committee, Revised, Addendum, Cancelled, Time, Room,
             # HTML Document, PDF Document for house
@@ -93,19 +78,26 @@ class AZEventScraper(EventScraper):
             description = agenda_info['description']
             member_list = agenda_info['member_list']
             related_bills = agenda_info['related_bills']
-
+            print(related_bills)
+            """
             event = Event(session, when, 'committee:meeting', title,
                           location=room, link=link, details=description,
                           related_bills=related_bills)
-            event.add_participant('host', committee, 'committee',
-                                  chamber=chamber)
+            """
+            event = Event(timezone=self._tz.zone,
+                          location_name=room,
+                          start_time=self._tz.localize(when),
+                          name=title,
+                          description=description,
+                          )
+            event.add_participant(committee, type='committee', note='host')
 
-            event['participants'].extend(member_list)
+            event.participants.extend(member_list)
             event.add_source(url)
             event.add_source(link)
             # print event['when'].timetuple()
             # import ipdb;ipdb.set_trace()
-            self.save_event(event)
+            yield event
 
     def parse_agenda(self, chamber, url):
         """
@@ -180,24 +172,24 @@ class AZEventScraper(EventScraper):
             members = members.getnext()
         description = ""
         agenda_items = div.xpath('//p[contains(a/@name, "AgendaItems")]'
-                                '/following-sibling::table[1]')
+                                 '/following-sibling::table[1]')
         if agenda_items:
             agenda_items = [tr.text_content().strip().replace("\r\n", "")
                             for tr in agenda_items[0].getchildren()
                             if tr.text_content().strip()]
             description = ",\n".join(agenda_items)
         bill_list = div.xpath('//p[contains(a/@name, "Agenda_Bills")]'
-                                '/following-sibling::table[1]')
+                              '/following-sibling::table[1]')
         if bill_list:
             try:
                 bill_list = [tr[1].text_content().strip() + " " +
-                         tr[3].text_content().strip().replace("\r\n", "")
-                         for tr in bill_list[0].xpath('tr')
-                         if tr.text_content().strip()]
+                             tr[3].text_content().strip().replace("\r\n", "")
+                             for tr in bill_list[0].xpath('tr')
+                             if tr.text_content().strip()]
             except IndexError:
                 bill_list = [tr.text_content().strip().replace("\r\n", "")
-                            for tr in bill_list[0].getchildren()
-                            if tr.text_content().strip()]
+                             for tr in bill_list[0].getchildren()
+                             if tr.text_content().strip()]
 
             bill_list = ",\n".join(bill_list)
             description = description + bill_list
@@ -211,10 +203,9 @@ class AZEventScraper(EventScraper):
             "other": other
         }
 
+    """
     def scrape_interim_events(self, chamber, session):
-        """
-        Scrapes the events for interim committees
-        """
+        # Scrapes the events for interim committees
         session_id = self.get_session_id(session)
         url = 'http://www.azleg.gov/InterimCommittees.asp?Session_ID=%s' % session_id
         # common xpaths
@@ -228,3 +219,4 @@ class AZEventScraper(EventScraper):
             rows = table[0].xpath('tr')
             for row in rows[2:]:
                 pass
+    """

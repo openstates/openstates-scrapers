@@ -1,49 +1,36 @@
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
 
-# These are regex patterns that map to action categories.
 _categorizer_rules = (
-
-    # Capture some groups.
-    Rule(r'Senators (?P<legislators>.+) a committee of conference'),
-    Rule(r"(?P<version>Printer's No. \d+)"),
-
-    Rule(r'(?i)introduced', 'bill:introduced'),
+    (r'(?i)introduced', 'introduction'),
 
     # Committee referred, reported.
-    Rule(r"Referred to (?P<committees>.+)", 'committee:referred'),
-    Rule(r"Re-(referred|committed) to (?P<committees>.+)",
-         'committee:referred'),
-    Rule(r'(?i)(re-)?reported', 'committee:passed'),
-    Rule(r'Reported with request to re-refer to (?P<committees>.+)',
-         ['committee:referred', 'committee:passed']),
+    (r"Referred to (?P<committees>.+)", 'referral-committee'),
+    (r"Re-(referred|committed) to (?P<committees>.+)", 'referral-committee'),
+    (r'(?i)(re-)?reported', 'committee-passage'),
+    (
+        r'Reported with request to re-refer to (?P<committees>.+)',
+        ['referral-committee', 'committee-passage']
+    ),
 
-    Rule([r'^Amended on', r'as amended'], 'amendment:passed'),
+    (r'^Amended on', 'amendment-passage'),
+    (r'as amended', 'amendment-passage'),
 
     # Governor.
-    Rule(r'^Approved by the Governor', 'governor:signed'),
-    Rule(r'^Presented to the Governor', 'governor:received'),
+    (r'^Approved by the Governor', 'executive-signature'),
+    (r'^Presented to the Governor', 'executive-receipt'),
 
     # Passage.
-    Rule([r'^Final passage', '^Third consideration and final passage'],
-         'bill:passed'),
-    Rule(r'(?i)adopted', 'bill:passed'),
-    Rule(r'^First consideration', 'bill:reading:1'),
-    Rule(r'Second consideration', 'bill:reading:2'),
-    Rule(r'Third consideration', 'bill:reading:3'),
-    )
+    (r'^Final passage', 'passage'),
+    (r'^Third consideration and final passage', 'passage'),
+    (r'(?i)adopted', 'passage'),
+    (r'^First consideration', 'reading-1'),
+    (r'Second consideration', 'reading-2'),
+    (r'Third consideration', 'reading-3'),
+)
 
 
-class Categorizer(BaseCategorizer):
-    rules = _categorizer_rules
-
-    def post_categorize(self, attrs):
-        res = set()
-        if 'legislators' in attrs:
-            for text in attrs['legislators']:
-                rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
-                legs = re.split(rgx, text)
-                legs = filter(lambda x: x not in [', ', ' and '], legs)
-                res |= set(legs)
-        attrs['legislators'] = list(res)
-        return attrs
+def categorize(action):
+    for pattern, labels in _categorizer_rules:
+        if re.search(pattern, action):
+            for label in (labels if isinstance(labels, list) else [labels]):
+                yield label
