@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import IAPersonScraper
-
+from .bills import IABillScraper
 
 class Iowa(Jurisdiction):
     division_id = "ocd-division/country:us/state:ia"
@@ -9,7 +9,7 @@ class Iowa(Jurisdiction):
     url = "https://www.legis.iowa.gov/"
     scrapers = {
         'people': IAPersonScraper,
-        'bills': IABillScraper
+        'bills': IABillScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -19,23 +19,27 @@ class Iowa(Jurisdiction):
         {
             "_scraped_name": "General Assembly: 84",
             "end_date": "2013-01-13",
-            "identifier": "84",
+            "identifier": "2011-2012",
+            "number": "84",
             "name": "2011-2012 Regular Session",
             "start_date": "2011-01-10",
         },
         {
             "_scraped_name": "General Assembly: 85",
-            "identifier": "85",
+            "identifier": "2013-2014",
+            "number": "85",
             "name": "2013-2014 Regular Session",
         },
         {
             "_scraped_name": "General Assembly: 86",
-            "identifier": "86",
+            "identifier": "2015-2016",
+            "number": "86",
             "name": "2015-2016 Regular Session",
         },
         {
             "_scraped_name": "General Assembly: 87",
-            "identifier": "87",
+            "identifier": "2017-2018",
+            "number": "87",
             "name": "2017-2018 Regular Session",
         }
     ]
