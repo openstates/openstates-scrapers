@@ -41,11 +41,8 @@ class NYCommitteeScraper(Scraper, LXMLMixin):
         return (name, role)
 
     def scrape(self, chamber=None):
-        if chamber:
-            yield from getattr(self, 'scrape_' + chamber + '_chamber')()
-        else:
-            yield from self.scrape_upper_chamber()
-            yield from self.scrape_lower_chamber()
+        yield from self.scrape_upper_chamber()
+        yield from self.scrape_lower_chamber()
 
     def scrape_lower_chamber(self, only_names=None):
         url = 'http://assembly.state.ny.us/comm/'
