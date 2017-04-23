@@ -1,29 +1,38 @@
 # -*- coding: utf8 -*-
-from datetime import datetime
+from datetime import datetime, time, tzinfo, timezone,timedelta
 import re
 import collections
-
 import lxml.etree
 
-from billy.scrape.utils import convert_pdf
-from billy.scrape.votes import VoteScraper, Vote
-from .scraper import InvalidHTTPSScraper
+import pdb
+from pupa.utils.generic import convert_pdf
+from pupa.scrape import Scraper, VoteEvent
 
+class IAVoteScraper(Scraper):
 
-class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
-    jurisdiction = 'ia'
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
 
-    def scrape(self, chamber, session):
+        if chamber:
+            yield from self.scrape_chamber(chamber,session)
+        else:
+            yield from self.scrape_chamber('upper',session)
+            yield from self.scrape_chamber('lower',session)
+
+    def scrape_chamber(self, chamber,session):
         # Each PDF index page contains just one year, not a whole session
         # Therefore, we need to iterate over both years in the session
         session_years = [int(year) for year in session.split("-")]
         for year in session_years:
 
             if year <= datetime.today().year:
+                url = 'https://www.legis.iowa.gov/chambers/journals/index/'
+                if chamber == "lower":
+                    url += "house"
+                else:
+                    url += "senate"
 
-                chamber_name = self.metadata["chambers"][chamber]["name"].lower()
-                url = 'https://www.legis.iowa.gov/chambers/journals/index/{}'.\
-                    format(chamber_name)
                 params = {"year": year}
                 html = self.get(url, params=params).content
 
@@ -45,9 +54,15 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                                 chamber))
 
                         date = datetime.strptime(filename, journal_format)
-                        self.scrape_journal(url, chamber, session, date)
+                        date = datetime.combine(
+                                date, 
+                                time(
+                                    tzinfo=timezone(
+                                        timedelta(hours=-5))))
+                        yield self.scrape_journal(url, chamber, session, date)
                     except ValueError:
                         journal_format = '%m-%d-%Y.pdf'
+                        #journal_format = '%Y%m%d_{}.pdf'
                         try:
                             date = datetime.strptime(filename, journal_format)
                         except:
@@ -60,12 +75,13 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
         self.logger.info('Saved journal to %r' % filename)
         all_text = convert_pdf(filename, type="text")
 
-        lines = all_text.split("\n")
+        lines = all_text.split(b'\n')
+        lines = [line.decode('utf-8') for line in lines]
         lines = [line.
                  strip().
-                 replace("–", "-").
-                 replace("―", '"').
-                 replace("‖", '"').
+                 replace('–', '-').
+                 replace('―', '"').
+                 replace('‖', '"').
                  replace('“', '"').
                  replace('”', '"')
                  for line in lines]
@@ -97,7 +113,7 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
                 end_of_motion_re = r'.*Shall.*\?"?(\s{})?\s*'.format(bill_re)
 
             while not re.match(end_of_motion_re, line, re.IGNORECASE):
-                line += " " + lines.next()
+                line += " " + next(lines)#lines.next()
 
             try:
                 bill_id = re.search(bill_re, line).group(1)
@@ -151,16 +167,34 @@ class IAVoteScraper(InvalidHTTPSScraper, VoteScraper):
             if not passed and votes['yes_count'] > votes['no_count']:
                 self.logger.warning("The bill got a majority but did not pass. Could be worth confirming.")
 
-            vote = Vote(motion=re.sub('\xad', '-', motion),
-                        passed=passed,
-                        chamber=chamber, date=date,
-                        session=session, bill_id=bill_id,
-                        bill_chamber=bill_chamber,
-                        **votes)
-            vote.update(votes)
-            vote.add_source(url)
+            result = ""
+            if passed:
+                result = "pass"
+            else:
+                result = "fail"
 
-            self.save_vote(vote)
+            vote = VoteEvent(chamber=chamber,
+                    start_date=date,
+                    motion_text=re.sub('\xad', '-', motion),
+                    result=result,
+                    classification = 'passage',
+                    legislative_session=session, 
+                    bill=bill_id,
+                    bill_chamber=bill_chamber
+                    )
+            
+            yes_count = votes['yes_count'] or 0
+            no_count = votes['no_count'] or 0
+            other_count = votes['other_count'] or 0
+            skip_count = votes['skip_count'] or 0
+            
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
+            vote.set_count('absent', skip_count)
+            
+            vote.add_source(url)
+            yield vote
 
     def parse_votes(self, lines):
 
