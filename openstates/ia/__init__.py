@@ -9,6 +9,7 @@ class Iowa(Jurisdiction):
     url = "https://www.legis.iowa.gov/"
     scrapers = {
         'people': IAPersonScraper
+        'bills': IABillScraper
     }
     parties = [
         {'name': 'Republican'},
