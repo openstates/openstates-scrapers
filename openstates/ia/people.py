@@ -2,8 +2,6 @@ from pupa.scrape import Person, Scraper
 import lxml.html
 import re
 
-from . import session_metadata
-
 class IAPersonScraper(Scraper):
     jurisdiction = 'ia'
 
@@ -37,7 +35,13 @@ class IAPersonScraper(Scraper):
         if party == 'Democrat':
             party = 'Democratic'
 
-        session_id = session_metadata.session_id_metadata[self.latest_session()]
+        #session_id = session_metadata.session_id_metadata[self.latest_session()]
+
+        session_id = [x for x in 
+                self.jurisdiction.legislative_sessions 
+                if x['identifier'] == 
+                self.latest_session()][0]['number']
+
         pid = re.search("personID=(\d+)", link.attrib['href']).group(1)
         photo_url = ("https://www.legis.iowa.gov/photo"
                      "?action=getPhoto&ga=%s&pid=%s" % (self.latest_session(), pid))
