@@ -2,10 +2,8 @@ import re
 import datetime
 import lxml.html
 from collections import defaultdict
-#from billy.scrape.bills import BillScraper, Bill
 from pupa.scrape import Scraper, Bill
-from openstates.utils import LXMLMixin
-from .scraper import InvalidHTTPSScraper
+import pdb
 
 def get_popup_url(link):
     onclick = link.attrib['onclick']
@@ -206,24 +204,25 @@ class IABillScraper(Scraper):
             action = tr.xpath("string(td[2])").strip()
             action = re.sub(r'\s+', ' ', action)
 
-#            # Capture any amendment links.
-#            version_urls = set(version['url'] for version in bill['versions'])
-#            if 'amendment' in action.lower():
-#                for anchor in tr.xpath('td[2]/a'):
-#                    if '-' in anchor.text:
-#                        # These links aren't given hrefs for some reason (needs to be fixed upstream)
-#                        try:
-#                            url = anchor.attrib['href']
-#                        except:
-#                            continue 
-#
-#                        if url not in version_urls:
-#                            bill.add_version_link(
-#                                    note = anchor.text, 
-#                                    url = url, 
-#                                    media_type = 'text/html')
-#                            version_urls.add(url)
-#
+            # Capture any amendment links.
+            links = [link for link in [version['links'] for version in bill.versions]]
+            version_urls = [link['url'] for link in [i for sub in links for i in sub]]
+            if 'amendment' in action.lower():
+                for anchor in tr.xpath('td[2]/a'):
+                    if '-' in anchor.text:
+                        # These links aren't given hrefs for some reason (needs to be fixed upstream)
+                        try:
+                            url = anchor.attrib['href']
+                        except:
+                            continue 
+
+                        if url not in version_urls:
+                            bill.add_version_link(
+                                    note = anchor.text, 
+                                    url = url, 
+                                    media_type = 'text/html')
+                            version_urls.append(url)
+
             if 'S.J.' in action or 'SCS' in action:
                 actor = 'upper'
             elif 'H.J.' in action or 'HCS' in action:
@@ -287,7 +286,9 @@ class IABillScraper(Scraper):
                         chamber = actor, 
                         classification = atype)
 
-        #bill['subjects'] = self._subjects[bill_id]
+        for subject in self._subjects[bill_id]:
+            bill.add_subject(subject['Name'])
+
         yield bill
 
 
