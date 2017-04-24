@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import LAPersonScraper
+from .committees import LACommitteeScraper
+
 
 class Louisiana(Jurisdiction):
     division_id = "ocd-division/country:us/state:la"
@@ -8,6 +10,7 @@ class Louisiana(Jurisdiction):
     url = "http://www.legis.la.gov/"
     scrapers = {
         "people": LAPersonScraper,
+        "committees": LACommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
