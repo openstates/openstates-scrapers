@@ -1,219 +1,197 @@
-import datetime
-import re
-from billy.scrape.utils import url_xpath
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import LABillScraper
-from .legislators import LALegislatorScraper
+from pupa.scrape import Jurisdiction, Organization
+from .people import LAPersonScraper
 from .committees import LACommitteeScraper
-from .events import LAEventScraper
 
-metadata = {
-    'name': 'Louisiana',
-    'abbreviation': 'la',
-    'legislature_name': 'Louisiana Legislature',
-    'legislature_url': 'http://www.legis.la.gov/',
-    'capitol_timezone': 'America/Chicago',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    # Louisiana legislators serve four-year terms.
-    'terms': [
-        {
-            'name': '2008-2011',
-            'start_year': 2008,
-            'end_year': 2011,
-            'sessions': [
-                '2009',
-                '2010',
-                '2011 1st Extraordinary Session',
-                '2011',
-            ],
-        },
-        {
-            'name': '2012-2015',
-            'start_year': 2012,
-            'end_year': 2015,
-            'sessions': [
-                '2012',
-                '2013',
-                '2014',
-                '2015',
-            ],
-        },
-        {
-            'name': '2016-2019',
-            'start_year': 2016,
-            'end_year': 2019,
-            'sessions': [
-                '2016',
-                '2016 1st Extraordinary Session',
-                '2016 2nd Extraordinary Session',
-                '2017',
-                '2017 1st Extraordinary Session',
-            ],
-        },
-    ],
-    'session_details': {
-        '2009': {
-            'type': 'primary',
-            'start_date': datetime.date(2010, 4, 27),
-            'end_date': datetime.date(2010, 6, 24),
-            'display_name': '2009 Regular Session',
-            '_id': '09RS',
-            '_scraped_name': '2009 Regular Session',
-        },
-        '2010': {
-            'type': 'primary',
-            'start_date': datetime.date(2010, 3, 29),
-            'end_date': datetime.date(2010, 6, 21),
-            'display_name': '2010 Regular Session',
-            '_id': '10RS',
-            '_scraped_name': '2010 Regular Session',
-        },
-        '2011 1st Extraordinary Session': {
-            'type': 'special',
-            'start_date': datetime.date(2011, 3, 20),
-            'end_date': datetime.date(2011, 4, 13),
-            'display_name': '2011, 1st Extraordinary Session',
-            '_id': '111ES',
-            '_scraped_name': '2011 First Extraordinary Session',
-        },
-        '2011': {
-            'type': 'primary',
-            'start_date': datetime.date(2011, 4, 25),
-            'end_date': datetime.date(2011, 6, 23),
-            'display_name': '2011 Regular Session',
-            '_id': '11RS',
-            '_scraped_name': '2011 Regular Session',
-        },
-        '2012': {
-            'type': 'primary',
-            'start_date': datetime.date(2012, 3, 12),
-            'end_date': datetime.date(2012, 6, 4),
-            'display_name': '2012 Regular Session',
-            '_id': '12RS',
-            '_scraped_name': '2012 Regular Session',
-        },
-        '2013': {
-            'type': 'primary',
-            'start_date': datetime.date(2013, 4, 8),
-            'end_date': datetime.date(2013, 6, 6),
-            'display_name': '2013 Regular Session',
-            '_id': '13RS',
-            '_scraped_name': '2013 Regular Session',
-        },
-        '2014': {
-            'type': 'primary',
-            'start_date': datetime.date(2014, 3, 10),
-            'end_date': datetime.date(2014, 6, 2),
-            'display_name': '2014 Regular Session',
-            '_id': '14RS',
-            '_scraped_name': '2014 Regular Session',
-        },
-        '2015': {
-            'type': 'primary',
-            'start_date': datetime.date(2015, 4, 13),
-            'end_date': datetime.date(2015, 6, 11),
-            'display_name': '2015 Regular Session',
-            '_id': '15RS',
-            '_scraped_name': '2015 Regular Session',
-        },
-        '2016': {
-            'type': 'primary',
-            'start_date': datetime.date(2016, 3, 14),
-            'end_date': datetime.date(2016, 6, 6),
-            'display_name': '2016 Regular Session',
-            '_id': '16RS',
-            '_scraped_name': '2016 Regular Session',
-        },
-        '2016 1st Extraordinary Session': {
-            'type': 'special',
-            'start_date': datetime.date(2016, 2, 14),
-            'end_date': datetime.date(2016, 3, 9),
-            'display_name': '2016, 1st Extraordinary Session',
-            '_id': '161ES',
-            '_scraped_name': '2016 First Extraordinary Session',
-        },
-        '2016 2nd Extraordinary Session': {
-            'type': 'special',
-            'start_date': datetime.date(2016, 6, 6),
-            'end_date': datetime.date(2016, 6, 23),
-            'display_name': '2016, 2nd Extraordinary Session',
-            '_id': '162ES',
-            '_scraped_name': '2016 Second Extraordinary Session',
-        },
-        '2017': {
-            'type': 'primary',
-            'start_date': datetime.date(2017, 4, 10),
-            'end_date': datetime.date(2017, 6, 8),
-            'display_name': '2017 Regular Session',
-            '_id': '17RS',
-            '_scraped_name': '2017 Regular Session',
-        },
-        '2017 1st Extraordinary Session': {
-            'type': 'special',
-            'start_date': datetime.date(2017, 2, 13),
-            'end_date': datetime.date(2017, 2, 22),
-            'display_name': '2017, 1st Extraordinary Session',
-            '_id': '171ES',
-            '_scraped_name': '2017 First Extraordinary Session',
-        },
-    },
-    'feature_flags': ['subjects', 'influenceexplorer', 'events'],
-    '_ignored_scraped_sessions': [
-        '2016 Organizational Session',
-        '2015 Regular Session',
-        '2014 Regular Session',
-        '2013 Regular Session',
-        '2012 Regular Session',
-        '2012 Organizational Session',
-        '2011 Regular Session',
-        '2011 First Extraordinary Session',
-        '2010 Regular Session',
-        '2009 Regular Session',
-        '2008 Regular Session',
-        '2008 Organizational Session',
-        '2008 Second Extraordinary Session',
-        '2008 First Extraordinary Session',
-        '2007 Regular Session',
-        '2006 Regular Session',
-        '2005 Regular Session',
-        '2004 Regular Session',
-        '2004 First Extraordinary Session',
-        '2004 1st Extraordinary Session',
-        '2003 Regular Session',
-        '2002 Regular Session',
-        '2001 Regular Session',
-        '2000 Regular Session',
-        '1999 Regular Session',
-        '1998 Regular Session',
-        '1997 Regular Session',
-        '2006 Second Extraordinary Session',
-        '2006 First Extraordinary Session',
-        '2005 First Extraordinary Session',
-        '2002 First Extraordinary Session',
-        '2001 Second Extraordinary Session',
-        '2001 First Extraordinary Session',
-        '2000 Second Extraordinary Session',
-        '2000 First Extraordinary Session',
-        '1998 First Extraordinary Session',
-        '2012 Organizational Session',
-        '2000 Organizational Session',
-        '2004 Organizational Session',
-        'Other Sessions',
-        'Other Sessions',
-        'Sessions',
+
+class Louisiana(Jurisdiction):
+    division_id = "ocd-division/country:us/state:la"
+    classification = "government"
+    name = "Louisiana"
+    url = "http://www.legis.la.gov/"
+    scrapers = {
+        "people": LAPersonScraper,
+        "committees": LACommitteeScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
     ]
-}
+    legislative_sessions = [
+        {
+            "_scraped_name": "2009 Regular Session",
+            "classification": "primary",
+            "end_date": "2010-06-24",
+            "identifier": "2009",
+            "name": "2009 Regular Session",
+            "start_date": "2010-04-27"
+        },
+        {
+            "_scraped_name": "2010 Regular Session",
+            "classification": "primary",
+            "end_date": "2010-06-21",
+            "identifier": "2010",
+            "name": "2010 Regular Session",
+            "start_date": "2010-03-29"
+        },
+        {
+            "_scraped_name": "2011 Regular Session",
+            "classification": "primary",
+            "end_date": "2011-06-23",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-04-25"
+        },
+        {
+            "_scraped_name": "2011 First Extraordinary Session",
+            "classification": "special",
+            "end_date": "2011-04-13",
+            "identifier": "2011 1st Extraordinary Session",
+            "name": "2011, 1st Extraordinary Session",
+            "start_date": "2011-03-20"
+        },
+        {
+            "_scraped_name": "2012 Regular Session",
+            "classification": "primary",
+            "end_date": "2012-06-04",
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-03-12"
+        },
+        {
+            "_scraped_name": "2013 Regular Session",
+            "classification": "primary",
+            "end_date": "2013-06-06",
+            "identifier": "2013",
+            "name": "2013 Regular Session",
+            "start_date": "2013-04-08"
+        },
+        {
+            "_scraped_name": "2014 Regular Session",
+            "classification": "primary",
+            "end_date": "2014-06-02",
+            "identifier": "2014",
+            "name": "2014 Regular Session",
+            "start_date": "2014-03-10"
+        },
+        {
+            "_scraped_name": "2015 Regular Session",
+            "classification": "primary",
+            "end_date": "2015-06-11",
+            "identifier": "2015",
+            "name": "2015 Regular Session",
+            "start_date": "2015-04-13"
+        },
+        {
+            "_scraped_name": "2016 Regular Session",
+            "classification": "primary",
+            "end_date": "2016-06-06",
+            "identifier": "2016",
+            "name": "2016 Regular Session",
+            "start_date": "2016-03-14"
+        },
+        {
+            "_scraped_name": "2016 First Extraordinary Session",
+            "classification": "special",
+            "end_date": "2016-03-09",
+            "identifier": "2016 1st Extraordinary Session",
+            "name": "2016, 1st Extraordinary Session",
+            "start_date": "2016-02-14"
+        },
+        {
+            "_scraped_name": "2016 Second Extraordinary Session",
+            "classification": "special",
+            "end_date": "2016-06-23",
+            "identifier": "2016 2nd Extraordinary Session",
+            "name": "2016, 2nd Extraordinary Session",
+            "start_date": "2016-06-06"
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "end_date": "2017-06-08",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+            "start_date": "2017-04-10"
+        },
+        {
+            "_scraped_name": "2017 First Extraordinary Session",
+            "classification": "special",
+            "end_date": "2017-02-22",
+            "identifier": "2017 1st Extraordinary Session",
+            "name": "2017, 1st Extraordinary Session",
+            "start_date": "2017-02-13"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2016 Organizational Session",
+        "2015 Regular Session",
+        "2014 Regular Session",
+        "2013 Regular Session",
+        "2012 Regular Session",
+        "2012 Organizational Session",
+        "2011 Regular Session",
+        "2011 First Extraordinary Session",
+        "2010 Regular Session",
+        "2009 Regular Session",
+        "2008 Regular Session",
+        "2008 Organizational Session",
+        "2008 Second Extraordinary Session",
+        "2008 First Extraordinary Session",
+        "2007 Regular Session",
+        "2006 Regular Session",
+        "2005 Regular Session",
+        "2004 Regular Session",
+        "2004 First Extraordinary Session",
+        "2004 1st Extraordinary Session",
+        "2003 Regular Session",
+        "2002 Regular Session",
+        "2001 Regular Session",
+        "2000 Regular Session",
+        "1999 Regular Session",
+        "1998 Regular Session",
+        "1997 Regular Session",
+        "2006 Second Extraordinary Session",
+        "2006 First Extraordinary Session",
+        "2005 First Extraordinary Session",
+        "2002 First Extraordinary Session",
+        "2001 Second Extraordinary Session",
+        "2001 First Extraordinary Session",
+        "2000 Second Extraordinary Session",
+        "2000 First Extraordinary Session",
+        "1998 First Extraordinary Session",
+        "2012 Organizational Session",
+        "2000 Organizational Session",
+        "2004 Organizational Session",
+        "Other Sessions",
+        "Other Sessions",
+        "Sessions"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "Louisiana Legislature"
+        lower_chamber_name = "House"
+        lower_seats = 105
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 39
+        upper_title = "Senator"
 
-def session_list():
-    return url_xpath(
-        'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
-        '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
-        '(text(), "Session")]/text()')
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))
+        yield legislature
+        yield upper
+        yield lower

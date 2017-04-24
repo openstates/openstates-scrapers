@@ -1,6 +1,6 @@
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
@@ -12,11 +12,22 @@ def xpath_one(el, expr):
     return ret[0]
 
 
-class LALegislatorScraper(LegislatorScraper, LXMLMixin):
+class LAPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'la'
     latest_only = True
-
-    def scrape_upper_leg_page(self, term, url, who):
+    
+    def scrape(self, chamber=None):
+            if chamber == "upper":
+                yield from self.scrape_upper(chamber)
+            
+            elif chamber == "lower":
+                yield from self.scrape_lower(chamber)
+                
+            else:
+                yield from self.scrape_upper("upper")
+                yield from self.scrape_lower("lower")
+    
+    def scrape_upper_leg_page(self, url, who):
         page = self.lxmlize(url)
 
         (who, ) = [x for x in
@@ -50,8 +61,7 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
 
         phone_index = info.index("District Phone") + 1
         phone = info[phone_index]
-        assert (sum(c.isdigit() for c in phone) == 9,
-                "Phone number is invalid: {}".format(phone))
+        assert sum(c.isdigit() for c in phone) == 10, "Phone number is invalid: {}".format(phone)
 
         # Address exists for all lines between party and phone
         address = "\n".join(info[party_index + 2:phone_index - 1])
@@ -62,30 +72,36 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
 
         fax_index = info.index("Fax") + 1
         fax = info[fax_index]
-        assert (sum(c.isdigit() for c in fax) == 9,
-                "Fax number is invalid: {}".format(fax))
+        assert sum(c.isdigit() for c in fax) == 10, "Fax number is invalid: {}".format(fax)
 
         email_index = info.index("E-mail Address") + 1
         email = info[email_index]
         assert "@" in email, "Email info is not valid: {}".format(email)
 
-        leg = Legislator(term,
-                         'upper',
-                         district,
-                         who,
-                         party=party)
+        person = Person(name = who, 
+                        district = district, 
+                        party = party, 
+                        primary_org = "upper")
+        
+        contacts = [
+            (address, "address"), 
+            (phone, "voice"),
+            (email, "email"),
+            (fax, "fax"),
+        ]
+        
+        for (value, key) in contacts:
+            if value:
+                person.add_contact_detail(type = key, 
+                                          value = value,
+                                          note = "District Office")
+        
+        person.add_source(url)
+        person.add_link(url)
+                
+        yield person
 
-        leg.add_office('district',
-                       'District Office',
-                       address=address,
-                       phone=phone,
-                       fax=fax,
-                       email=email)
-
-        leg.add_source(url)
-        self.save_legislator(leg)
-
-    def scrape_upper(self, chamber, term):
+    def scrape_upper(self, chamber):
         url = "http://senate.la.gov/Senators/"
         page = self.lxmlize(url)
         table = page.xpath("//table[@width='96%']")[0]
@@ -94,9 +110,9 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
             who = leg.text_content().strip()
             if who == "":
                 continue
-            self.scrape_upper_leg_page(term, leg.attrib['href'], who)
+            yield from self.scrape_upper_leg_page(leg.attrib['href'], who)
 
-    def scrape_lower_legislator(self, url, leg_info, term):
+    def scrape_lower_legislator(self, url, leg_info):
         page = self.lxmlize(url)
 
         name = page.xpath(
@@ -121,34 +137,34 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
         email = page.xpath(
             '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
             )[0].strip()
-        kwargs = {"url": url,
-                  "party": party,
-                  "photo_url": photo}
+ 
         district = leg_info['dist'].replace('Dist', '').strip()
 
-        leg = Legislator(term,
-                         'lower',
-                         district,
-                         leg_info['name'],
-                         **kwargs)
+        person = Person(name = name, 
+                        party = party,
+                        district = district, 
+                        primary_org = 'lower',
+                        image = photo)
+                       
+        contacts = [
+            (leg_info["office"], "address"), 
+            (leg_info["phone"], "voice"),
+            (email, "email"),
+        ]
+        
+        for (value, key) in contacts:
+            if value:
+                person.add_contact_detail(type = key, 
+                                          value = value,
+                                          note = "District Office")
+        
+        person.add_source(url)
+        
+        person.add_link(url)
+        
+        yield person
 
-        kwargs = {
-            "address": leg_info['office'],
-            "phone": leg_info['phone'],
-            "email": email,
-        }
-        for key in kwargs.keys():
-            if not kwargs[key].strip():
-                kwargs[key] = None
-
-        leg.add_office('district',
-                       'District Office',
-                       **kwargs)
-
-        leg.add_source(url)
-        self.save_legislator(leg)
-
-    def scrape_lower(self, chamber, term):
+    def scrape_lower(self, chamber):
         url = "http://house.louisiana.gov/H_Reps/H_Reps_FullInfo.aspx"
         page = self.lxmlize(url)
         meta = ["name", "dist", "office", "phone"]
@@ -166,10 +182,4 @@ class LALegislatorScraper(LegislatorScraper, LXMLMixin):
             hrp = tr.xpath(
                 ".//a[contains(@href, 'H_Reps')]")[0].attrib['href']
 
-            self.scrape_lower_legislator(hrp, info, term)
-
-    def scrape(self, chamber, term):
-        if chamber == "upper":
-            return self.scrape_upper(chamber, term)
-        if chamber == "lower":
-            return self.scrape_lower(chamber, term)
+            yield from self.scrape_lower_legislator(hrp, info)

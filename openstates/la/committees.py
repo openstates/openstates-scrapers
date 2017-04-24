@@ -3,12 +3,10 @@ import lxml.html
 from scrapelib import HTTPError
 import name_tools
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
+from pupa.scrape import Scraper, Organization
 
-
-class LACommitteeScraper(CommitteeScraper, LXMLMixin):
+class LACommitteeScraper(Scraper, LXMLMixin):
     jurisdiction = 'la'
 
     def _normalize_committee_name(self, name):
@@ -37,7 +35,11 @@ class LACommitteeScraper(CommitteeScraper, LXMLMixin):
         cat = "Assignments.asp"
         url3 = "".join((url2, cat))
 
-        committee = Committee('upper', name)
+        committee = Organization(
+                                 name,
+                                 chamber = "upper",
+                                 classification = "committee"
+                                 )
         committee.add_source(url2)
 
         page = self.lxmlize(url3)
@@ -57,12 +59,16 @@ class LACommitteeScraper(CommitteeScraper, LXMLMixin):
 
             committee.add_member(name, role)
 
-        self.save_committee(committee)
+        yield committee
     
     def _scrape_lower_standing_committee(self, committee_name, url):
         page = self.lxmlize(url)
 
-        committee = Committee('lower', committee_name)
+        committee = Organization(
+                                 committee_name,
+                                 chamber = "lower",
+                                 classification = "committee"
+                                 )
         committee.add_source(url)
 
         rows = page.xpath('//table[@id="body_ListView1_itemPlaceholder'
@@ -77,7 +83,7 @@ class LACommitteeScraper(CommitteeScraper, LXMLMixin):
 
             committee.add_member(member_name, member_role)
 
-        self.save_committee(committee)
+        yield committee
 
     def _scrape_lower_standing_committees(self):
         url = 'http://house.louisiana.gov/H_Reps/H_Reps_StandCmtees.aspx'
@@ -124,8 +130,8 @@ class LACommitteeScraper(CommitteeScraper, LXMLMixin):
                 member_role = self._normalize_member_role(member_role)
 
                 committee.add_member(member_name, member_role)
-
-            self.save_committee(committee)
+                
+            yield committee
 
     def _scrape_upper_chamber(self):
         committee_types = {
@@ -147,8 +153,6 @@ class LACommitteeScraper(CommitteeScraper, LXMLMixin):
         self._scrape_lower_standing_committees()
         self._scrape_lower_special_committees()
 
-    def scrape(self, chamber, term):
-        if term != self.metadata['terms'][-1]['name']:
-            raise NoDataForPeriod(term)
+    def scrape(self, chamber = None):
 
         getattr(self, '_scrape_' + chamber + '_chamber')()
