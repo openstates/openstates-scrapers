@@ -1,10 +1,11 @@
 import re
 import lxml.html
-from billy.utils.fulltext import text_after_line_numbers
+from pupa.scrape import Jurisdiction
 from .bills import NYBillScraper
 from .legislators import NYLegislatorScraper
 from .committees import NYCommitteeScraper
 from .events import NYEventScraper
+from .executive import NYGovernorPressScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
 
@@ -76,3 +77,30 @@ def extract_text(doc, data):
     # strip numbers from lines (not all lines have numbers though)
     text = re.sub('\n\s*\d+\s*', ' ', text)
     return text
+
+
+class NYGovernorScraper(Jurisdiction):
+    jurisdiction_id = 'ocd-jurisdiction/country:us/state:ny'
+    name = 'New York State Governor'
+    url = 'http://www.governor.ny.gov/'
+    terms = [{
+        'name': '2011-2014',
+        'sessions': ['2011-2014'],
+        'start_year': 2011,
+        'end_year': 2014
+    }]
+    provides = ['events']
+    parties = [
+        {'name': 'Democratic'}
+    ]
+    session_details = {
+        '2011-2014': {'_scraped_name': '2011-2014'}
+    }
+
+    def get_scraper(self, term, session, scraper_type):
+        if scraper_type == 'events':
+            return NYGovernorPressScraper
+
+    @staticmethod
+    def scrape_session_list():
+        return ['2011-2014']
