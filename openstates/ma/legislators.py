@@ -76,7 +76,7 @@ class MALegislatorScraper(LegislatorScraper):
             email = email.replace('mailto:', '')
         except:
             email = ''
-            print("seat may be vacant")
+            self.info("seat may be vacant")
 
         party, district = root.xpath('//h1/span')[1].text.split('-')
         party = party.strip()

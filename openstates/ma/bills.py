@@ -51,7 +51,7 @@ class MABillScraper(BillScraper):
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
 
         # single bill test code
-        # self.scrape_bill(session,'H58',chamber)
+        self.scrape_bill(session,'H3654',chamber)
 
         # Pull the search page to get the filters
         search_url = 'https://malegislature.gov/Bills/Search'
@@ -62,12 +62,12 @@ class MABillScraper(BillScraper):
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
         # comment in before running for all bills
-        lastPage = self.get_max_pages(session, chamber)
-        for pageNumber in range(1, lastPage + 1):
-            bills = self.list_bills(session, chamber, pageNumber)
-            for bill in bills:
-                bill = self.format_bill_number(bill).replace(' ','')
-                self.scrape_bill(session, bill, chamber)
+        #lastPage = self.get_max_pages(session, chamber)
+        #for pageNumber in range(1, lastPage + 1):
+        #    bills = self.list_bills(session, chamber, pageNumber)
+        #    for bill in bills:
+        #        bill = self.format_bill_number(bill).replace(' ','')
+        #        self.scrape_bill(session, bill, chamber)
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -152,7 +152,7 @@ class MABillScraper(BillScraper):
             bill.add_version('Bill Text', version_url,
                     mimetype='application/pdf')
 
-        self.scrape_actions(bill, bill_url)
+        self.scrape_actions(bill, bill_url, session)
 
         self.save_bill(bill)
 
@@ -174,10 +174,10 @@ class MABillScraper(BillScraper):
             if not any(sponsor['name'] == cosponsor_name for sponsor in bill['sponsors']):
                 bill.add_sponsor('cosponsor', cosponsor_name, district=cosponsor_district)
 
-    def scrape_actions(self, bill, bill_url):
+    def scrape_actions(self, bill, bill_url, session):
         # scrape_action_page adds the actions, and also returns the Page xpath object
         # so that we can check for a paginator
-        page = self.scrape_action_page(bill, bill_url, 1)
+        page = self.scrape_action_page(bill, bill_url, 1, session)
 
         max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
         if max_page:
@@ -186,7 +186,7 @@ class MABillScraper(BillScraper):
                 page = self.scrape_action_page(bill, bill_url, counter)
                 #https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
-    def scrape_action_page(self, bill, bill_url, page_number):
+    def scrape_action_page(self, bill, bill_url, page_number, session):
         actions_url = "{}/BillHistory?pageNumber={}".format(bill_url, page_number)
         page = lxml.html.fromstring(self.get_as_ajax(actions_url).text)
         action_rows = page.xpath('//tbody/tr')
@@ -207,7 +207,7 @@ class MABillScraper(BillScraper):
                 vote_action = action_name.split(' -')[0]
                 y = int(action_name.strip().split('-')[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
-                o = 0 # placeholder
+                o = 160 - (y + n) #TODO: includes uncounted seats
 
                 # get supplement number
                 n_supplement = int(action_name.strip().split('No. ')[1].split(r')')[0])
@@ -215,19 +215,33 @@ class MABillScraper(BillScraper):
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
 
-                #TODO: enable for multiple years
-                housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
-                self.scrape_house(cached_vote, housevote_pdf, n_supplement)
+                #TODO: future proof this
+                if datetime(2017, 1, 1) <= action_date <= datetime(2017, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
+                # Change repository based on td in xpath
+                elif datetime(2016, 1, 1) <= action_date <= datetime(2016, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2016RCs.pdf'
+                #TODO: 2015 and 2014 pdfs formatted differently and will break
+                elif datetime(2015, 1, 1) <= action_date <= datetime(2015, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2015RCs.pdf'
+                elif datetime(2014, 1, 1) <= action_date <= datetime(2014, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2014RCs.pdf'
+                # No data on website for years prior to 2014
+
+                # Only scrape votes from 2016 forward, TODO: enable 2015 & 14
+                if datetime(2016, 1, 1) <= action_date:
+                    self.scrape_house(cached_vote, housevote_pdf, n_supplement)
 
             # Senate votes
             if "Roll Call" in action_name:
                 actor = "upper"
                  #placeholder
                 vote_action = action_name.split(' -')[0]
-                y = int(action_name.strip().split('Yeas')[1].split('-')[0])
+                y = int(re.search(r"yeas\s*(\d*)", action_name.lower()).group(1))
+                n = int(re.search(r"nays\s*(\d*)", action_name.lower()).group(1))
 
-                n = int(action_name.strip().split('Nays')[1].split(')')[0])
-                o = 0 # placeholder
+                #n = int(action_name.strip().split('Nays')[1])
+                o = 40 - (y + n) #TODO: this includes empty seats, inacurate count
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
 
@@ -277,13 +291,8 @@ class MABillScraper(BillScraper):
                 vote_tally.append('p')
 
             #True for all records 2009 - 2017 - brittle code, this will change in the future
-            elif line == 'Mr. Speaker':
-                voters.append('DeLeo')
-            # Handle legislators with same last name
-            elif line == 'Moran F.':
-                voters.append('Moran, Frank A.')
-            elif line == 'Moran M.':
-                voters.append('Moran, Michael J.')
+            #elif line == 'Mr. Speaker':
+            #    voters.append('DeLeo')
             else:
                 voters.append(line)
 
@@ -319,6 +328,8 @@ class MABillScraper(BillScraper):
                 mode = 'y'
             elif line.startswith('NAYS'):
                 mode = 'n'
+            elif line.startswith('ABSENT OR'):
+                mode = 'o'
             # else parse line with names
             else:
                 nameline = line.split('   ')
@@ -336,24 +347,13 @@ class MABillScraper(BillScraper):
                         clean_name = ''.join(cut_name)
                     else:
                         clean_name = raw_name.strip()
-
-                    # handle name exceptions - probably somewhere better to put these
-                    if clean_name == "Chandler, Harriett L.":
-                        clean_name = "Harriette L. Chandler"
-                    elif clean_name == "Creem, Cynthia Stone":
-                        clean_name = "Creem, Cynthia S."
-                    #TODO: this should be handled elsewhere as Ives name is incorrect
-                    elif clean_name == "O'Connor Ives, Kathleen":
-                        clean_name = "Ives, Kathleen O'Connor"
-                    elif clean_name == "Humason, Donald F., Jr.":
-                        clean_name = "Donald F. Humason, Jr."
-
                     # update vote object with names
                     if mode == 'y':
                         vote.yes(clean_name)
                     elif mode == 'n':
                         vote.no(clean_name)
-                    #TODO: Other votes
+                    elif mode == 'o':
+                        vote.other(clean_name)
 
     def get_as_ajax(self, url):
         #set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
