@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+from openstates.ne.people import NEPersonScraper
 
 
 class Nebraska(Jurisdiction):
@@ -9,6 +10,7 @@ class Nebraska(Jurisdiction):
     name = "Nebraska"
     url = "http://nebraskalegislature.gov/"
     scrapers = {
+        'people': NEPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -60,30 +62,18 @@ class Nebraska(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Nebraska Legislature"
-        upper_chamber_name = "Unicameral"
-        upper_seats = 49
-        upper_title = "Senator"
+        seats = 49
+        title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
+        for n in range(1, seats + 1):
+            legislature.add_post(
+                label=str(n), role=title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
-        yield upper
-        yield lower
 
     def get_session_list(self):
         return url_xpath('http://nebraskalegislature.gov/bills/',
-                        "//select[@name='Legislature']/option/text()")[:-1]
+                         "//select[@name='Legislature']/option/text()")[:-1]

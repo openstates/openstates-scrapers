@@ -1,34 +1,34 @@
 import re
-import lxml.html
 import scrapelib
-from billy.scrape.legislators import Legislator, LegislatorScraper
+
+from pupa.scrape import Person, Scraper
+
 from openstates.utils import LXMLMixin
 
 
-class NELegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'ne'
-    latest_only = True
-
-    def scrape(self, term, chambers):
+class NEPersonScraper(Scraper, LXMLMixin):
+    def scrape(self):
         base_url = 'http://news.legislature.ne.gov/dist'
 
-        #there are 49 districts
+        # there are 49 districts
         for district in range(1, 50):
             rep_url = base_url + str(district).zfill(2)
 
             full_name = None
-            address   = None
-            phone     = None
-            email     = None
+            address = None
+            phone = None
+            email = None
             photo_url = None
 
             try:
                 page = self.lxmlize(rep_url)
 
-                info_node = self.get_node(page,
+                info_node = self.get_node(
+                    page,
                     '//div[@class="container view-front"]'
                     '//div[@class="col-sm-4 col-md-3 ltc-col-right"]'
-                    '/div[@class="block-box"]')
+                    '/div[@class="block-box"]',
+                )
 
                 full_name = self.get_node(
                     info_node,
@@ -67,22 +67,31 @@ class NELegislatorScraper(LegislatorScraper, LXMLMixin):
 
                 address = '\n'.join(address_sections)
 
-                photo_url =\
-                    'http://www.nebraskalegislature.gov/media/images/blogs'\
-                    '/dist{:2d}.jpg'.format(district)
+                photo_url = (
+                    'http://www.nebraskalegislature.gov/media/images/blogs'
+                    '/dist{:2d}.jpg'
+                ).format(district)
 
                 # Nebraska is offically nonpartisan.
                 party = 'Nonpartisan'
 
-                leg = Legislator(term, 'upper', str(district), full_name,
-                                 party=party, url=rep_url, photo_url=photo_url)
+                person = Person(
+                    name=full_name,
+                    district=district,
+                    party=party,
+                    image=photo_url,
+                )
+
+                person.add_link(rep_url)
+                person.add_source(rep_url)
+
+                note = 'Capitol Office'
+                person.add_contact_detail(type='address', value=address, note=note)
+                if phone:
+                    person.add_contact_detail(type='voice', value=phone, note=note)
                 if email:
-                    leg['email'] = email
+                    person.add_contact_detail(type='email', value=email, note=note)
 
-                leg.add_source(rep_url)
-                leg.add_office('capitol', 'Capitol Office', address=address,
-                    phone=phone, email=email)
-
-                self.save_legislator(leg)
+                yield person
             except scrapelib.HTTPError:
                 self.warning('could not retrieve %s' % rep_url)
