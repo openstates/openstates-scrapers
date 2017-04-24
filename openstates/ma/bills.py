@@ -51,23 +51,23 @@ class MABillScraper(BillScraper):
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
 
         # single bill test code
-        self.scrape_bill(session,'H3654',chamber)
+        #self.scrape_bill(session,'H3654',chamber)
 
         # Pull the search page to get the filters
-        search_url = 'https://malegislature.gov/Bills/Search'
+        search_url = 'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1'
         page = lxml.html.fromstring(self.get(search_url).text)
-
+        print self.get(search_url).text
         self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
         self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
         # comment in before running for all bills
-        #lastPage = self.get_max_pages(session, chamber)
-        #for pageNumber in range(1, lastPage + 1):
-        #    bills = self.list_bills(session, chamber, pageNumber)
-        #    for bill in bills:
-        #        bill = self.format_bill_number(bill).replace(' ','')
-        #        self.scrape_bill(session, bill, chamber)
+        lastPage = self.get_max_pages(session, chamber)
+        for pageNumber in range(1, lastPage + 1):
+            bills = self.list_bills(session, chamber, pageNumber)
+            for bill in bills:
+                bill = self.format_bill_number(bill).replace(' ','')
+                self.scrape_bill(session, bill, chamber)
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -89,7 +89,7 @@ class MABillScraper(BillScraper):
 
         search_url = u'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1&Refinements%5Blawsgeneralcourt%5D={}&&Refinements%5Blawsbranchname%5D={}'.format(
             session_filter, chamber_filter)
-
+        #print search_url
         page = lxml.html.fromstring(requests.get(search_url).text)
 
         if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
@@ -216,6 +216,9 @@ class MABillScraper(BillScraper):
                 bill.add_vote(cached_vote)
 
                 #TODO: future proof this
+                # 2018 code not tested and may break if MA website changes
+                if datetime(2018, 1, 1) <= action_date <= datetime(2018, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2018RCs.pdf'
                 if datetime(2017, 1, 1) <= action_date <= datetime(2017, 12, 31):
                     housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
                 # Change repository based on td in xpath
