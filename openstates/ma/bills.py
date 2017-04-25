@@ -209,7 +209,6 @@ class MABillScraper(BillScraper):
 
                 # get supplement number
                 n_supplement = int(action_name.strip().split('No. ')[1].split(r')')[0])
-
                 cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
                 bill.add_vote(cached_vote)
 
@@ -261,7 +260,12 @@ class MABillScraper(BillScraper):
         pdflines = pdflines.decode('utf-8').replace(u'\u2019', "'")
 
         # get pdf data from supplement number
-        vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
+        try:
+            vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
+        except IndexError:
+            self.info("No vote found in supplement for vote #%s" % supplement)
+            return
+
 
         # create list of independant items in vote_text
         rows = vote_text.splitlines()
