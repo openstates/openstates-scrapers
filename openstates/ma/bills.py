@@ -56,7 +56,6 @@ class MABillScraper(BillScraper):
         # Pull the search page to get the filters
         search_url = 'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1'
         page = lxml.html.fromstring(self.get(search_url).text)
-        print self.get(search_url).text
         self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
         self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
@@ -89,7 +88,6 @@ class MABillScraper(BillScraper):
 
         search_url = u'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1&Refinements%5Blawsgeneralcourt%5D={}&&Refinements%5Blawsbranchname%5D={}'.format(
             session_filter, chamber_filter)
-        #print search_url
         page = lxml.html.fromstring(requests.get(search_url).text)
 
         if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
