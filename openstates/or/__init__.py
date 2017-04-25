@@ -131,6 +131,6 @@ class Oregon(Jurisdiction):
 
     def get_session_list(self):
         from .apiclient import OregonLegislatorODataClient
-        sessions = OregonLegislatorODataClient(self).all_sessions()
+        sessions = OregonLegislatorODataClient(None).all_sessions()
         sessions = [s['SessionName'] for s in sessions]
         return sessions

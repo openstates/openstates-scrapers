@@ -31,6 +31,8 @@ class OregonLegislatorODataClient(object):
         return url
 
     def __init__(self, scraper):
+        if not scraper:
+            scraper = requests.Session()
         self.scraper = scraper
         self.username = os.environ['OLODATA_USERNAME']
         self.password = os.environ['OLODATA_PASSWORD']
