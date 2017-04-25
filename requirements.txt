@@ -1,4 +1,5 @@
 billy
+Django<1.10
 
 # scraping
 cffi
