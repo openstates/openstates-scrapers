@@ -13,7 +13,13 @@ logger = logging.getLogger('openstates')
 class ORVoteScraper(Scraper):
     tz = get_timezone()
     chamber_code = {'S': 'upper', 'H': 'lower', 'J': 'joint'}
-    vote_code = {'Aye': 'yes', 'Nay': 'no', 'Excused': 'absent', 'Excused for Business': 'absent'}
+    vote_code = {
+            'Aye': 'yes',
+            'Nay': 'no',
+            'Excused': 'absent',
+            'Excused for Business': 'absent',
+            'Absent': 'absent',
+            }
 
     vote_classifiers = (
         ('.*Introduction and first reading.*',
