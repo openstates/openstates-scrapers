@@ -8,7 +8,7 @@ class Montana(Jurisdiction):
     division_id = "ocd-division/country:us/state:mt"
     classification = "government"
     name = "Montana"
-    url = "TODO"
+    url = "http://leg.mt.gov/"
     scrapers = {
         'people': MTPersonScraper,
         'committees': MTCommitteeScraper,

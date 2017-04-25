@@ -9,7 +9,7 @@ class NorthCarolina(Jurisdiction):
     division_id = "ocd-division/country:us/state:nc"
     classification = "government"
     name = "North Carolina"
-    url = "TODO"
+    url = "http://www.ncleg.net/"
     scrapers = {
         'people': NCPersonScraper,
         'committees': NCCommitteeScraper,
