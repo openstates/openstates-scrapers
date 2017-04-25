@@ -45,7 +45,7 @@ class ORBillScraper(Scraper):
         self.api_client = OregonLegislatorODataClient(self)
         self.session = session
         if not self.session:
-            self.api_client.latest_session()
+            self.session = self.api_client.latest_session()
 
         yield from self.scrape_bills()
 
