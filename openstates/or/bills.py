@@ -49,8 +49,7 @@ class ORBillScraper(Scraper):
 
     def scrape_bills(self, session):
         session_key = SESSION_KEYS[session]
-        measures_response = self.api_client.get('measures', page=500,
-                session=session_key)
+        measures_response = self.api_client.get('measures', page=500, session=session_key)
 
         legislators = index_legislators(self, session_key)
 
@@ -59,12 +58,14 @@ class ORBillScraper(Scraper):
 
             chamber = self.chamber_code[bid[0]]
             bill = Bill(
-                bid,
+                bid.replace(' ', ''),
                 legislative_session=session,
                 chamber=chamber,
                 title=measure['RelatingTo'],
                 classification=self.bill_types[measure['MeasurePrefix'][1:]]
             )
+            bill.add_abstract(measure['MeasureSummary'].strip(), note='summary')
+
             for sponsor in measure['MeasureSponsors']:
                 legislator_code = sponsor['LegislatoreCode']  # typo in API
                 if legislator_code:

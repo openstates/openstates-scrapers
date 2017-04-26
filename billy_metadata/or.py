@@ -108,7 +108,6 @@ metadata = dict(
             'end_date': datetime.date(2017, 7, 10),
         },
     },
-    feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=['Today',
                                '2015-2016 Interim',
                                '2013 1st Special Session',
@@ -116,5 +115,6 @@ metadata = dict(
                                '2013 - 2014 Interim',
                                '2011 - 2012 Interim',
                                '2009 - 2010 Interim',
-                               '2007 - 2008 Interim']
+                               '2007 - 2008 Interim'],
+    feature_flags=[],
 )
