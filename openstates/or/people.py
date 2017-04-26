@@ -1,18 +1,20 @@
 from pupa.scrape import Person, Scraper
 from .apiclient import OregonLegislatorODataClient
+from .utils import SESSION_KEYS
 
 
 class ORPersonScraper(Scraper):
     def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        self.session = session
-        if not self.session:
-            self.session = self.api_client.latest_session()
+        if not session:
+            session = self.latest_session()
 
-        yield from self.scrape_chamber()
+        yield from self.scrape_chamber(session)
 
-    def scrape_chamber(self):
-        legislators_reponse = self.api_client.get('legislators', session=self.session)
+    def scrape_chamber(self, session):
+        session_key = SESSION_KEYS[session]
+        legislators_reponse = self.api_client.get('legislators', session=session_key)
+        print(legislators_reponse)
 
         for legislator in legislators_reponse:
             url_name = legislator['WebSiteUrl'].split('/')[-1]

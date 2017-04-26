@@ -4,13 +4,12 @@ import logging
 
 from pupa.scrape import Scraper, Bill
 from .apiclient import OregonLegislatorODataClient
-from .utils import index_legislators, get_timezone
+from .utils import index_legislators, get_timezone, SESSION_KEYS
 
 logger = logging.getLogger('openstates')
 
 
 class ORBillScraper(Scraper):
-    jurisdiction = 'or'
     tz = get_timezone()
 
     bill_types = {'B': 'bill',
@@ -43,16 +42,17 @@ class ORBillScraper(Scraper):
 
     def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        self.session = session
-        if not self.session:
-            self.session = self.api_client.latest_session()
+        if not session:
+            session = self.latest_session()
 
-        yield from self.scrape_bills()
+        yield from self.scrape_bills(session)
 
-    def scrape_bills(self):
-        measures_response = self.api_client.get('measures', page=500, session=self.session)
+    def scrape_bills(self, session):
+        session_key = SESSION_KEYS[session]
+        measures_response = self.api_client.get('measures', page=500,
+                session=session_key)
 
-        legislators = index_legislators(self)
+        legislators = index_legislators(self, session_key)
 
         for measure in measures_response:
             bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
@@ -60,7 +60,7 @@ class ORBillScraper(Scraper):
             chamber = self.chamber_code[bid[0]]
             bill = Bill(
                 bid,
-                legislative_session=self.session,
+                legislative_session=session,
                 chamber=chamber,
                 title=measure['RelatingTo'],
                 classification=self.bill_types[measure['MeasurePrefix'][1:]]
@@ -72,7 +72,7 @@ class ORBillScraper(Scraper):
                         legislator = legislators[legislator_code]
                     except KeyError:
                         logger.warn('Legislator {} not found in session {}'.format(
-                            legislator_code, self.session))
+                            legislator_code, session))
                         legislator = legislator_code
                     bill.add_sponsorship(
                         name=legislator,
@@ -84,7 +84,7 @@ class ORBillScraper(Scraper):
 
             bill.add_source(
                 "https://olis.leg.state.or.us/liz/{session}/Measures/Overview/{bid}".format(
-                    session=self.session, bid=bid.replace(' ', ''))
+                    session=session_key, bid=bid.replace(' ', ''))
             )
             for document in measure['MeasureDocuments']:
                 try:

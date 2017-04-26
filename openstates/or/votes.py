@@ -5,7 +5,7 @@ from collections import Counter
 
 from pupa.scrape import VoteEvent, Scraper
 from .apiclient import OregonLegislatorODataClient
-from .utils import index_legislators, get_timezone
+from .utils import index_legislators, get_timezone, SESSION_KEYS
 
 logger = logging.getLogger('openstates')
 
@@ -42,15 +42,16 @@ class ORVoteScraper(Scraper):
 
     def scrape(self, session=None):
         self.api_client = OregonLegislatorODataClient(self)
-        self.session = session
-        if not self.session:
-            self.session = self.api_client.latest_session()
-        self.legislators = index_legislators(self)
+        if not session:
+            session = self.latest_session()
 
-        yield from self.scrape_votes()
+        yield from self.scrape_votes(session)
 
-    def scrape_votes(self):
-        measures_response = self.api_client.get('votes', page=500, session=self.session)
+    def scrape_votes(self, session):
+        self.session_key = SESSION_KEYS[session]
+        self.legislators = index_legislators(self, self.session_key)
+        measures_response = self.api_client.get('votes', page=500,
+                session=self.session_key)
 
         for measure in measures_response:
             bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
@@ -71,7 +72,7 @@ class ORVoteScraper(Scraper):
                         motion_text=event['ActionText'],
                         classification=classification,
                         result='pass' if passed else 'fail',
-                        legislative_session=self.session,
+                        legislative_session=self.session_key,
                         bill=bid,
                         chamber=self.chamber_code[event['Chamber']]
                     )
@@ -86,7 +87,7 @@ class ORVoteScraper(Scraper):
                     vote.add_source(
                         'https://olis.leg.state.or.us/liz/{session}'
                         '/Measures/Overview/{bid}'.format(
-                            session=self.session,
+                            session=self.session_key,
                             bid=bid.replace(' ', '')
                         ))
 
@@ -108,7 +109,7 @@ class ORVoteScraper(Scraper):
                         motion_text=event['Action'],
                         classification=classification,
                         result='pass' if passed else 'fail',
-                        legislative_session=self.session,
+                        legislative_session=self.session_key,
                         bill=bid,
                         chamber=self.chamber_code[event['CommitteCode'][0]]
                     )
@@ -124,7 +125,7 @@ class ORVoteScraper(Scraper):
                     vote.add_source(
                         'https://olis.leg.state.or.us/liz/{session}/Committees'
                         '/{committee}/{meeting_date}/{bid}/Details'.format(
-                            session=self.session,
+                            session=self.session_key,
                             committee=event['CommitteCode'],
                             meeting_date=meeting_date,
                             bid=bid.replace(' ', '')
@@ -143,7 +144,7 @@ class ORVoteScraper(Scraper):
                 voter_name = self.legislators[voter['VoteName']]
             except KeyError:
                 logger.warn('Legislator {} not found in session {}'.format(
-                    voter['VoteName'], self.session))
+                    voter['VoteName'], self.session_key))
                 voter_name = voter['VoteName']
             if voter[vote_meaning] == 'Aye':
                 vote.yes(voter_name)

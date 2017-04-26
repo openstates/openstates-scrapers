@@ -23,68 +23,68 @@ class Oregon(Jurisdiction):
     legislative_sessions = [
         {
             "_scraped_name": "2007 Regular Session",
-            "identifier": "2007R1",
+            "identifier": "2007 Regular Session",
             "name": "2007 Regular Session"
         },
         {
             "_scraped_name": "2008 Special Session",
-            "identifier": "2008S1",
+            "identifier": "2008 Special Session",
             "name": "2008 Special Session"
         },
         {
             "_scraped_name": "2009 Regular Session",
-            "identifier": "2009R1",
+            "identifier": "2009 Regular Session",
             "name": "2009 Regular Session"
         },
         {
             "_scraped_name": "2010 Special Session",
-            "identifier": "2012S1",
+            "identifier": "2012 Special Session",
             "name": "2010 Special Session"
         },
         {
             "_scraped_name": "2011 Regular Session",
-            "identifier": "2011R1",
+            "identifier": "2011 Regular Session",
             "name": "2011 Regular Session"
         },
         {
             "_scraped_name": "2012 Regular Session",
-            "identifier": "2012R1",
+            "identifier": "2012 Regular Session",
             "name": "2012 Regular Session"
         },
         {
             "_scraped_name": "2012 Special Session",
-            "identifier": "2012S1",
+            "identifier": "2012 Special Session",
             "name": "2012 Speical Session"
         },
         {
             "_scraped_name": "2013 Regular Session",
-            "identifier": "2013R1",
+            "identifier": "2013 Regular Session",
             "name": "2013 Regular Session"
         },
         {
             "_scraped_name": "2013 Special Session",
-            "identifier": "2013S1",
+            "identifier": "2013 Special Session",
             "name": "2013 Special Session"
         },
         {
             "_scraped_name": "2014 Regular Session",
-            "identifier": "2014R1",
+            "identifier": "2014 Regular Session",
             "name": "2014 Regular Session"
         },
         {
             "_scraped_name": "2015 Regular Session",
-            "identifier": "2015R1",
+            "identifier": "2015 Regular Session",
             "name": "2015 Regular Session"
         },
         {
             "_scraped_name": "2016 Regular Session",
-            "identifier": "2016R1",
+            "identifier": "2016 Regular Session",
             "name": "2016 Regular Session"
         },
         {
             "_scraped_name": "2017 Regular Session",
             "end_date": "2017-07-10",
-            "identifier": "2017R1",
+            "identifier": "2017 Regular Session",
             "name": "2017 Regular Session",
             "start_date": "2017-02-01"
         }
