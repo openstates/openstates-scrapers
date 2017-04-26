@@ -72,7 +72,7 @@ class ORVoteScraper(Scraper):
                         motion_text=event['ActionText'],
                         classification=classification,
                         result='pass' if passed else 'fail',
-                        legislative_session=self.session_key,
+                        legislative_session=session,
                         bill=bid,
                         chamber=self.chamber_code[event['Chamber']]
                     )
@@ -109,7 +109,7 @@ class ORVoteScraper(Scraper):
                         motion_text=event['Action'],
                         classification=classification,
                         result='pass' if passed else 'fail',
-                        legislative_session=self.session_key,
+                        legislative_session=session,
                         bill=bid,
                         chamber=self.chamber_code[event['CommitteCode'][0]]
                     )
