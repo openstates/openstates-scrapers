@@ -50,8 +50,7 @@ class ORVoteScraper(Scraper):
     def scrape_votes(self, session):
         self.session_key = SESSION_KEYS[session]
         self.legislators = index_legislators(self, self.session_key)
-        measures_response = self.api_client.get('votes', page=500,
-                session=self.session_key)
+        measures_response = self.api_client.get('votes', page=500, session=self.session_key)
 
         for measure in measures_response:
             bid = '{} {}'.format(measure['MeasurePrefix'], measure['MeasureNumber'])
@@ -78,7 +77,7 @@ class ORVoteScraper(Scraper):
                     )
 
                     vote.set_count('yes', tally['yes'])
-                    vote.set_count('no', tally['yes'])
+                    vote.set_count('no', tally['no'])
                     vote.set_count('absent', tally['absent'])
 
                     vote_call = event['MeasureVotes']
@@ -115,7 +114,7 @@ class ORVoteScraper(Scraper):
                     )
 
                     vote.set_count('yes', tally['yes'])
-                    vote.set_count('no', tally['yes'])
+                    vote.set_count('no', tally['no'])
                     vote.set_count('absent', tally['absent'])
 
                     vote_call = event['CommitteeVotes']

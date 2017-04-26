@@ -88,6 +88,7 @@ class ORBillScraper(Scraper):
                     session=session_key, bid=bid.replace(' ', ''))
             )
             for document in measure['MeasureDocuments']:
+                # TODO: probably mixing documents & versions here - should revisit
                 try:
                     bill.add_version_link(document['VersionDescription'], document['DocumentUrl'],
                                           media_type='application/pdf')
