@@ -1,140 +1,168 @@
-import datetime
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import MDBillScraper
-from .legislators import MDLegislatorScraper
-from .committees import MDCommitteeScraper
-from .events import MDEventScraper
-
-metadata = dict(
-    name='Maryland',
-    abbreviation='md',
-    capitol_timezone='America/New_York',
-    legislature_name='Maryland General Assembly',
-    legislature_url='http://mgaleg.maryland.gov/',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Delegate'},
-    },
-    terms=[
-        {'name': '2007-2010', 'sessions': ['2007', '2007s1', '2008',
-                                           '2009', '2010'],
-         'start_year': 2007, 'end_year': 2010},
-        {'name': '2011-2014', 'sessions': ['2011', '2011s1', '2012',
-                                           '2012s1', '2012s2', '2013', '2014'],
-         'start_year': 2011, 'end_year': 2014},
-        {'name': '2015-2018', 'sessions': ['2015', '2016', '2017'],
-         'start_year': 2015, 'end_year': 2018},
-    ],
-    session_details={
-        '2007': {'start_date': datetime.date(2007,1,10),
-                 'end_date': datetime.date(2007,4,10),
-                 'number': 423,
-                 'display_name': '2007 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2007 Regular Session',
-                },
-        '2007s1': {'start_date': datetime.date(2007,10,29),
-                   'end_date': datetime.date(2007,11,19),
-                   'display_name': '2007, 1st Special Session',
-                   'number': 424,
-                   'type': 'special',
-                   '_scraped_name': '2007 Special Session 1',
-                  },
-        '2008': {'start_date': datetime.date(2008,1,9),
-                 'end_date': datetime.date(2008,4,7),
-                 'display_name': '2008 Regular Session',
-                 'number': 425,
-                 'type': 'primary',
-                 '_scraped_name': '2008 Regular Session',
-                },
-        '2009': {'start_date': datetime.date(2009,1,14),
-                 'end_date': datetime.date(2009,4,13),
-                 'display_name': '2009 Regular Session',
-                 'number': 426,
-                 'type': 'primary',
-                 '_scraped_name': '2009 Regular Session',
-                },
-        '2010': {'start_date': datetime.date(2010,1,13),
-                 'end_date': datetime.date(2010,4,12),
-                 'number': 427,
-                 'display_name': '2010 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2010 Regular Session',
-                },
-        '2011': {'start_date': datetime.date(2011,1,12),
-                 'end_date': datetime.date(2011,4,12),
-                 'number': 428,
-                 'display_name': '2011 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2011 Regular Session',
-                },
-        '2011s1': {'number': 429,
-                   'display_name': '2011, 1st Special Session',
-                   'type': 'special',
-                   '_scraped_name': '2011 Special Session 1',
-                  },
-        '2012': {'start_date': datetime.date(2012,1,11),
-                 'end_date': datetime.date(2012,4,9),
-                 'number': 430,
-                 'display_name': '2012 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2012 Regular Session',
-                },
-        '2012s1': {'number': 431,
-                   'display_name': '2012, 1st Special Session',
-                   'type': 'special',
-                   '_scraped_name': '2012 Special Session 1',
-                  },
-        '2012s2': {'display_name': '2012, 2nd Special Session',
-                   'type': 'special',
-                   '_scraped_name': '2012 Special Session 2',
-                  },
-        '2013': {'display_name': '2013 Regular Session',
-                   'type': 'primary',
-                   '_scraped_name': '2013 Regular Session',
-                  },
-        '2014': {'display_name': '2014 Regular Session',
-                   'type': 'primary',
-                   '_scraped_name': '2014 Regular Session',
-                },
-        '2015': {'display_name': '2015 Regular Session',
-                   'type': 'primary',
-                   '_scraped_name': '2015 Regular Session',
-                },
-        '2016': {'display_name': '2016 Regular Session',
-                   'type': 'primary',
-                   '_scraped_name': '2016 Regular Session',
-                },
-        '2017': {'display_name': '2017 Regular Session',
-                   'type': 'primary',
-                   '_scraped_name': '2017 Regular Session',
-                    'start_date': datetime.date(2017, 1, 11),
-                    'end_date': datetime.date(2017, 4, 10),
-                },                
-    },
-    feature_flags=['subjects', 'events', 'influenceexplorer'],
-    _ignored_scraped_sessions=['1996 Regular Session',
-                               '1997 Regular Session',
-                               '1998 Regular Session',
-                               '1999 Regular Session',
-                               '2000 Regular Session',
-                               '2001 Regular Session',
-                               '2002 Regular Session',
-                               '2003 Regular Session',
-                               '2004 Regular Session',
-                               '2004 Special Session 1',
-                               '2005 Regular Session',
-                               '2006 Regular Session',
-                               '2006 Special Session 1']
-)
+from .people import MDPersonScraper
+from pupa.scrape import Jurisdiction, Organization
 
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3',
-                     '//select[contains(@name, "cboSession")]/option/text()')
+class Maryland(Jurisdiction):
+    division_id = "ocd-division/country:us/state:md"
+    classification = "government"
+    name = "Maryland"
+    url = "http://mgaleg.maryland.gov/webmga/frm1st.aspx?tab=home"
+    scrapers = {
+        'people': MDPersonScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2007 Regular Session",
+            "classification": "primary",
+            "end_date": "2007-04-10",
+            "identifier": "2007",
+            "name": "2007 Regular Session",
+            "start_date": "2007-01-10"
+        },
+        {
+            "_scraped_name": "2007 Special Session 1",
+            "classification": "special",
+            "end_date": "2007-11-19",
+            "identifier": "2007s1",
+            "name": "2007, 1st Special Session",
+            "start_date": "2007-10-29"
+        },
+        {
+            "_scraped_name": "2008 Regular Session",
+            "classification": "primary",
+            "end_date": "2008-04-07",
+            "identifier": "2008",
+            "name": "2008 Regular Session",
+            "start_date": "2008-01-09"
+        },
+        {
+            "_scraped_name": "2009 Regular Session",
+            "classification": "primary",
+            "end_date": "2009-04-13",
+            "identifier": "2009",
+            "name": "2009 Regular Session",
+            "start_date": "2009-01-14"
+        },
+        {
+            "_scraped_name": "2010 Regular Session",
+            "classification": "primary",
+            "end_date": "2010-04-12",
+            "identifier": "2010",
+            "name": "2010 Regular Session",
+            "start_date": "2010-01-13"
+        },
+        {
+            "_scraped_name": "2011 Regular Session",
+            "classification": "primary",
+            "end_date": "2011-04-12",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-12"
+        },
+        {
+            "_scraped_name": "2011 Special Session 1",
+            "classification": "special",
+            "identifier": "2011s1",
+            "name": "2011, 1st Special Session"
+        },
+        {
+            "_scraped_name": "2012 Regular Session",
+            "classification": "primary",
+            "end_date": "2012-04-09",
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-01-11"
+        },
+        {
+            "_scraped_name": "2012 Special Session 1",
+            "classification": "special",
+            "identifier": "2012s1",
+            "name": "2012, 1st Special Session"
+        },
+        {
+            "_scraped_name": "2012 Special Session 2",
+            "classification": "special",
+            "identifier": "2012s2",
+            "name": "2012, 2nd Special Session"
+        },
+        {
+            "_scraped_name": "2013 Regular Session",
+            "classification": "primary",
+            "identifier": "2013",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "2014 Regular Session",
+            "classification": "primary",
+            "identifier": "2014",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015 Regular Session",
+            "classification": "primary",
+            "identifier": "2015",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "2016 Regular Session",
+            "classification": "primary",
+            "identifier": "2016",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "end_date": "2017-04-10",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-11"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "1996 Regular Session",
+        "1997 Regular Session",
+        "1998 Regular Session",
+        "1999 Regular Session",
+        "2000 Regular Session",
+        "2001 Regular Session",
+        "2002 Regular Session",
+        "2003 Regular Session",
+        "2004 Regular Session",
+        "2004 Special Session 1",
+        "2005 Regular Session",
+        "2006 Regular Session",
+        "2006 Special Session 1"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "Maryland General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 0 # was none
+        lower_title = "Delegate"
+        upper_chamber_name = "Senate"
+        upper_seats = 0
+        upper_title = "Senator"
 
-def extract_text(doc, data):
-    text = pdfdata_to_text(data)
-    return text_after_line_numbers(text)
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
