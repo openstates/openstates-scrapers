@@ -1,24 +1,22 @@
-import re
-import os
-import datetime
 import json
+
 import scrapelib
+from pupa.scrape import Scraper, Organization
 
-from billy.scrape.committees import Committee, CommitteeScraper
+from . import ksapi
 
-import ksapi
 
-class KSCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'ks'
-    latest_only = True
+class KSCommitteeScraper(Scraper):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
-    def scrape(self, chamber, term):
         # some committees, 500, let them go
         self.retry_attempts = 0
 
-        self.scrape_current(chamber, term)
+        for chamber in chambers:
+            yield from self.scrape_current(chamber)
 
-    def scrape_current(self, chamber, term):
+    def scrape_current(self, chamber):
         if chamber == 'upper':
             chambers = ['special_committees', 'senate_committees']
         else:
@@ -36,7 +34,11 @@ class KSCommitteeScraper(CommitteeScraper):
                 com_chamber = ('joint' if com_type == 'special_committees'
                                else chamber)
 
-                committee = Committee(com_chamber, committee_data['TITLE'])
+                committee = Organization(
+                    committee_data['TITLE'],
+                    chamber=com_chamber,
+                    classification='committee',
+                )
 
                 com_url = ksapi.url + 'ctte/%s/' % committee_data['KPID']
                 try:
@@ -59,12 +61,12 @@ class KSCommitteeScraper(CommitteeScraper):
                 for member in details['MEMBERS']:
                     committee.add_member(member['FULLNAME'])
 
-                if not committee['members']:
+                if not committee._related:
                     self.warning('skipping blank committee %s' %
                                  committee_data['TITLE'])
                 else:
                     committee.add_source(com_url)
-                    self.save_committee(committee)
+                    yield committee
 
     def parse_kpid(self, kpid):
         """
