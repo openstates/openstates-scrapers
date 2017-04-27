@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from openstates.ks.people import KSPersonScraper
+from openstates.ks.committees import KSCommitteeScraper
 
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
@@ -15,6 +16,7 @@ class Kansas(Jurisdiction):
     url = "http://www.kslegislature.org/"
     scrapers = {
         'people': KSPersonScraper,
+        'committees': KSCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
