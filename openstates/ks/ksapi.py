@@ -3,7 +3,7 @@ url = '%s/api/v7/rev-1/' % ksleg
 
 # in order from sec 10.1 of KLISS doc
 action_codes = {
-     # motion to acede; appointed
+    # motion to acede; appointed
     'ccac_om_370': 'other',
     'efa_fabc_343': 'bill:passed',
     'efa_fabc_342': 'bill:passed',
@@ -25,8 +25,8 @@ action_codes = {
     'mot_tab_404': 'other', 'mot_rcon_303': 'other', 'mot_rcon_302': 'other',
     'ee_enrb_149': 'governor:received',
     'cow_jcow_197': ['bill:passed', 'bill:substituted'],
-    'mot_pspn_405': 'other', # postpone - failed
-     # other COW actions
+    'mot_pspn_405': 'other',  # postpone - failed
+    # other COW actions
     'cow_jcow_211': 'other', 'cow_jcow_210': 'other', 'cow_jcow_214': 'other',
     'cow_jcow_695': 'other', 'cow_jcow_694': 'other', 'cow_jcow_693': 'other',
     'cow_jcow_692': 'other', 'cow_jcow_690': 'other', 'cow_jcow_317': 'other',
@@ -34,28 +34,28 @@ action_codes = {
     'cow_jcow_681': 'other', 'cow_jcow_682': 'other', 'cow_jcow_683': 'other',
     'cow_jcow_684': 'other', 'cow_jcow_685': 'other', 'cow_jcow_688': 'other',
     'cow_jcow_689': 'other',
-     # withdrawn from consent cal.'
+    # withdrawn from consent cal.'
     'ccal_rcc_233': 'other',
     'ccal_faccl_900': 'other',   # consent calendar passed
-    'efa_fabc_933': 'bill:passed', # these 3 are 2/3 emergency clause votes...
+    'efa_fabc_933': 'bill:passed',  # these 3 are 2/3 emergency clause votes...
     'efa_fabc_936': 'bill:failed',
     'efa_fabc_934': 'bill:passed',
-    'cref_cref_316': ['bill:withdrawn','committee:referred'],
-    'cref_cref_315':  ['bill:withdrawn','committee:referred'],
-    'cur_con_374': 'other', # non-concur, conf. com. requested
-    'cr_rsc_801': 'committee:passed:unfavorable', # these 3 are appointments..
+    'cref_cref_316': ['bill:withdrawn', 'committee:referred'],
+    'cref_cref_315': ['bill:withdrawn', 'committee:referred'],
+    'cur_con_374': 'other',  # non-concur, conf. com. requested
+    'cr_rsc_801': 'committee:passed:unfavorable',  # these 3 are appointments..
     'cr_rsc_800': 'committee:passed:favorable',
     'cr_rsc_802': 'committee:passed',
     'ccr_rel_100': 'other',  # conference committee report available
     'misc_bs_100': 'other',  # adopting conf committee report
     'gov_mg_150': 'governor:signed',
-    'gov_mg_151': 'other', # law w/o signature
+    'gov_mg_151': 'other',  # law w/o signature
     'gov_mg_154': 'governor:vetoed',
-    'cow_jcow_180': 'bill:passed', # COW
+    'cow_jcow_180': 'bill:passed',  # COW
     'ar_adj_605': 'other',  # adjourn
     'ee_enrb_888': 'other',   # enrolled and presented to Sec. of State
-    'cow_jcow_239': 'bill:passed', # adopted
-    'cur_con_875': 'other', # nonconcurrences
+    'cow_jcow_239': 'bill:passed',  # adopted
+    'cur_con_875': 'other',  # nonconcurrences
     'cur_con_876': 'other',
     'cur_con_873': 'other',
     'fa_fabc_341': 'bill:passed',
@@ -101,21 +101,21 @@ action_codes = {
     # referred to COW
     'ref_rbc_235': 'other',
     'cur_iopbc_141': 'committee:referred',
-    'mot_wd_126': 'other', #'committee:withdrawn',
-    'mot_wd_127': 'other', # withdraw from com- failed
-    'mot_wd_125': 'other', # withdraw from com- pending
+    'mot_wd_126': 'other',  # 'committee:withdrawn',
+    'mot_wd_127': 'other',  # withdraw from com- failed
+    'mot_wd_125': 'other',  # withdraw from com- pending
     # strike from calendar
     'mot_strk_505': 'other', 'mot_strk_504': 'other', 'mot_strk_501': 'other',
     # conf. com report adopted
     'ccac_om_832': 'bill:passed',
-    'ccac_ccr_862': 'other', # motion to not adopt conf.com report failed
-    'ccac_ccr_863': 'bill:failed', # failed in conf.com, report not adopted
-    'ccac_ccr_865': 'other', # motion to not adopt conf.com report failed
-    'ccac_ccr_867': 'other', # agree to disagree on conf. com report
+    'ccac_ccr_862': 'other',  # motion to not adopt conf.com report failed
+    'ccac_ccr_863': 'bill:failed',  # failed in conf.com, report not adopted
+    'ccac_ccr_865': 'other',  # motion to not adopt conf.com report failed
+    'ccac_ccr_867': 'other',  # agree to disagree on conf. com report
     # passed over
     'cow_jcow_201': 'other', 'cow_jcow_202': 'other', 'cow_jcow_203': 'other',
-    'ccac_cc_377': 'other', # conf committee changed member
-    'ee_enrb_226': 'other', # Enrolled
+    'ccac_cc_377': 'other',  # conf committee changed member
+    'ee_enrb_226': 'other',  # Enrolled
     # veto overrides
     'gov_avm_885': 'bill:veto_override:failed',
     'gov_avm_887': 'bill:veto_override:passed',
@@ -128,7 +128,7 @@ action_codes = {
     'gov_avm_129': 'bill:veto_override:failed',
     'cow_jcow_191': 'bill:passed',
     'cow_jcow_192': 'bill:passed',
-    'cow_jcow_195': 'other', # com. report adopted
+    'cow_jcow_195': 'other',  # com. report adopted
     'cow_jcow_196': ['bill:passed', 'bill:substituted'],
     'gov_avm_125': 'bill:veto_override:failed',
     'mot_ref_102': 'committee:referred',
@@ -189,9 +189,9 @@ action_codes = {
     'mot_susp_203': 'other',
     'mot_susp_202': 'other',
     'mot_susp_206': 'other',
-    'cur_con_101': 'other', # concur. failed
+    'cur_con_101': 'other',  # concur. failed
     'cur_om_141': 'committee:referred',
-    'misc_he_200': 'other', # hearing
+    'misc_he_200': 'other',  # hearing
     # Died on Calendar
     'dead_conf_101': 'other',  # died in conference
     'dead_cal_201': 'other',
@@ -200,9 +200,9 @@ action_codes = {
     'dead_com_301': 'committee:failed',
     'dead_com_302': 'committee:failed',
     'dead_com_303': 'committee:failed',
-    'dead_go_302': 'other', # died on general order
-    'dead_go_401': 'other', # died on general order
-    'dead_go_402': 'other', # died on general order
+    'dead_go_302': 'other',  # died on general order
+    'dead_go_401': 'other',  # died on general order
+    'dead_go_402': 'other',  # died on general order
     'kill_reso_100': 'bill:failed',
     'kill_reso_200': 'bill:failed',
-    }
+}
