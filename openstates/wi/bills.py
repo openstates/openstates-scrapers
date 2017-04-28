@@ -304,6 +304,8 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
+        v.set_count('yes', yes)
+        v.set_count('no', no)
 
         # fetch the vote itself
         if url:
@@ -325,6 +327,8 @@ class WIBillScraper(Scraper):
 
         doc = lxml.html.fromstring(html)
 
+        yes_count = no_count = other_count = 0
+
         # a game of div-div-table
         for ddt in doc.xpath('//div/div/table'):
             text = ddt.text_content()
@@ -334,16 +338,24 @@ class WIBillScraper(Scraper):
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and 'AYES' not in name:
                         vote.vote('yes', name.strip())
+                        yes_count += 1
             elif 'NAYS -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and 'NAYS' not in name:
                         vote.vote('no', name.strip())
+                        no_count += 1
             elif 'NOT VOTING -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and "NOT VOTING" not in name:
                         vote.vote('other', name.strip())
+                        other_count += 1
             elif text.strip():
                 raise ValueError('unexpected block in vote')
+
+        if yes_count or no_count or other_count:
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
 
     def add_house_votes(self, vote, url):
         try:

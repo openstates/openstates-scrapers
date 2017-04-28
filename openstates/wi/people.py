@@ -79,17 +79,20 @@ class WIPersonScraper(Scraper):
                 # office ####
                 address_lines = rep_doc.xpath('.//span[@class="info office"]/text()')
                 address = '\n'.join([line.strip() for line in address_lines if line.strip() != ""])
-                person.add_contact_detail(type='address', value=address, note='Madison Office')
+                person.add_contact_detail(type='address', value=address, note='Capitol Office')
 
                 phone = rep_doc.xpath('.//span[@class="info telephone"]/text()')
                 if phone:
                     phone = re.sub('\s+', ' ', phone[1]).strip()
-                    person.add_contact_detail(type='voice', value=phone, note='Madison Office')
+                    person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
 
                 fax = rep_doc.xpath('.//span[@class="info fax"]/text()')
                 if fax:
                     fax = re.sub('\s+', ' ', fax[1]).strip()
-                    person.add_contact_detail(type='fax', value=fax, note='Madison Office')
+                    person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
+
+                if email:
+                    person.add_contact_detail(type='email', value=email, note='Capitol Office')
 
                 person.add_link(rep_url)
                 person.add_source(rep_url)
