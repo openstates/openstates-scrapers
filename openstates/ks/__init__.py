@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
+from openstates.ks.bills import KSBillScraper
 from openstates.ks.people import KSPersonScraper
 from openstates.ks.committees import KSCommitteeScraper
 
@@ -15,6 +16,7 @@ class Kansas(Jurisdiction):
     name = "Kansas"
     url = "http://www.kslegislature.org/"
     scrapers = {
+        'bills': KSBillScraper,
         'people': KSPersonScraper,
         'committees': KSCommitteeScraper,
     }
