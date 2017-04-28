@@ -1,3 +1,5 @@
+#!/bin/sh
+
 python3 -m flake8 \
     openstates/al \
     openstates/az \
@@ -18,6 +20,7 @@ python3 -m flake8 \
     openstates/pa \
     openstates/sc \
     openstates/va \
+    openstates/wi \
     openstates/utils \
     pupa2billy
 

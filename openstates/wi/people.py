@@ -1,37 +1,42 @@
-import datetime
-import lxml.html
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+import lxml.html
+from pupa.scrape import Scraper, Person
 
 
 PARTY_DICT = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}
 
-class WILegislatorScraper(LegislatorScraper):
-    jurisdiction = 'wi'
-    latest_only = True
 
-    def scrape(self, chamber, term):
+class WIPersonScraper(Scraper):
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.jurisdiction.legislative_sessions[-1]
+            self.info('no session specified, using %s', session['identifier'])
 
-        if chamber == 'upper':
-            url = "http://legis.wisconsin.gov/Pages/leg-list.aspx?h=s"
-        else:
-            url = "http://legis.wisconsin.gov/Pages/leg-list.aspx?h=a"
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
+
+    def scrape_chamber(self, chamber):
+        url = 'http://legis.wisconsin.gov/Pages/leg-list.aspx?h={}'.format(
+            {'upper': 's', 'lower': 'a'}[chamber],
+        )
 
         body = self.get(url).text
         page = lxml.html.fromstring(body)
         page.make_links_absolute(url)
 
         for row in page.xpath(".//div[@class='box-content']/div[starts-with(@id,'district')]"):
-
             if row.xpath(".//a/@href") and not row.xpath(".//a[text()='Vacant']"):
                 rep_url = row.xpath(".//a[text()='Details']/@href")[0].strip("https://")
-                rep_url = "https://docs."+rep_url
+                rep_url = "https://docs." + rep_url
                 rep_doc = lxml.html.fromstring(self.get(rep_url).text)
                 rep_doc.make_links_absolute(rep_url)
 
-                full_name = rep_doc.xpath('.//div[@id="district"]/h1/text()')[0].replace("Senator ","").replace("Representative ","")
-
+                full_name = rep_doc.xpath(
+                    './/div[@id="district"]/h1/text()'
+                )[0].replace("Senator ", "").replace("Representative ", "")
 
                 party = rep_doc.xpath('.//div[@id="district"]/h3/small/text()')
                 if len(party) > 0:
@@ -51,41 +56,45 @@ class WILegislatorScraper(LegislatorScraper):
 
                 if party is None:
                     try:
-                        party = {'Dan Feyen': 'Republican',
-                                 'Patrick Testin': 'Republican',
-                                 }[full_name]
+                        party = {
+                            'Dan Feyen': 'Republican',
+                            'Patrick Testin': 'Republican',
+                        }[full_name]
                     except KeyError:
                         pass
 
                 assert party is not None, "{} is missing party".format(full_name)
 
-                leg = Legislator(term, chamber, district, full_name,
-                                 party=party, url=rep_url)
+                person = Person(
+                    name=full_name,
+                    district=district,
+                    primary_org=chamber,
+                    party=party,
+                )
 
                 img = rep_doc.xpath('.//div[@id="district"]/img/@src')
                 if img:
-                    leg['photo_url'] = img[0]
+                    person.image = img[0]
 
                 # office ####
                 address_lines = rep_doc.xpath('.//span[@class="info office"]/text()')
                 address = '\n'.join([line.strip() for line in address_lines if line.strip() != ""])
+                person.add_contact_detail(type='address', value=address, note='Capitol Office')
 
                 phone = rep_doc.xpath('.//span[@class="info telephone"]/text()')
                 if phone:
                     phone = re.sub('\s+', ' ', phone[1]).strip()
-                else:
-                    phone = None
+                    person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
 
                 fax = rep_doc.xpath('.//span[@class="info fax"]/text()')
                 if fax:
                     fax = re.sub('\s+', ' ', fax[1]).strip()
-                else:
-                    fax = None
+                    person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
 
+                if email:
+                    person.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-                leg.add_office('capitol', 'Madison Office', address=address,
-                               phone=phone, fax=fax, email=email)
+                person.add_link(rep_url)
+                person.add_source(rep_url)
 
-                # save legislator
-                leg.add_source(rep_url)
-                self.save_legislator(leg)
+                yield person
