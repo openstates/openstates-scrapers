@@ -1,4 +1,3 @@
-from .utils import chamber_name, parse_ftp_listing
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 from datetime import datetime
@@ -6,6 +5,7 @@ import lxml.etree
 import os
 import re
 import pytz
+
 
 def _combine_lines(lines):
     newlines = []
@@ -17,6 +17,7 @@ def _combine_lines(lines):
         else:
             lastline = newlines[-1] = newlines[-1] + ' ' + line
     return newlines
+
 
 class MSBillScraper(Scraper):
     _tz = pytz.timezone('CST6CDT')
@@ -62,7 +63,7 @@ class MSBillScraper(Scraper):
             else:
                 chamber = "lower"
 
-            bill_type = {'B':'bill', 'C': 'concurrent resolution',
+            bill_type = {'B': 'bill', 'C': 'concurrent resolution',
                          'R': 'resolution', 'N': 'nomination'}[bill_id[1]]
 
             # just skip past bills that are of the wrong chamber
@@ -75,7 +76,7 @@ class MSBillScraper(Scraper):
             bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
             details_page = self.get(bill_details_url)
 
-            page = details_page.content  #.replace(chr(11), "")
+            page = details_page.content
             # Some pages have the (invalid) byte 11 sitting around. Just drop
             # them out. Might as well.
 
@@ -89,34 +90,33 @@ class MSBillScraper(Scraper):
                         title=title,
                         classification=bill_type)
             bill.extras['summary'] = longtitle
-            #sponsors
+            # sponsors
             main_sponsor = details_root.xpath('string(//P_NAME)').split()
             if main_sponsor:
                 main_sponsor = main_sponsor[0]
                 main_sponsor_link = details_root.xpath('string(//P_LINK)').replace(" ", "_")
-                main_sponsor_url =  'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, main_sponsor_link)
+                main_sponsor_url = ('http://billstatus.ls.state.ms.us/%s/'
+                                    'pdf/House_authors/%s.xml') % (session, main_sponsor_link)
                 type = "primary"
-                #bill.add_sponsor(type, main_sponsor, main_sponsor_url = main_sponsor_url)
                 bill.add_sponsorship(main_sponsor,
                                      classification=type,
                                      entity_type='person',
                                      primary=True)
 
-                
             for author in details_root.xpath('//AUTHORS/ADDITIONAL'):
                 leg = author.xpath('string(CO_NAME)').replace(" ", "_")
                 if leg:
-                    leg_url = 'http://billstatus.ls.state.ms.us/%s/pdf/House_authors/%s.xml' % (session, leg)
+                    leg_url = ('http://billstatus.ls.state.ms.us/%s/'
+                               'pdf/House_authors/%s.xml') % (session, leg)
                     type = "cosponsor"
-                    #bill.add_sponsor(type, leg, leg_url=leg_url)
                     bill.add_sponsorship(leg,
                                          classification=type,
                                          entity_type='person',
                                          primary=False
                                          )
-                    #bill.add_link(leg_url)
-            #Versions 
-            curr_version = details_root.xpath('string(//CURRENT_OTHER)').replace("../../../../", "")
+            # Versions
+            curr_version = details_root.xpath('string(//CURRENT_OTHER'
+                                              ')').replace("../../../../", "")
             if curr_version != "":
                 curr_version_url = "http://billstatus.ls.state.ms.us/" \
                         + curr_version
@@ -130,35 +130,36 @@ class MSBillScraper(Scraper):
                 intro_version_url = "http://billstatus.ls.state.ms.us/"\
                         + intro_version
                 bill.add_version_link("As Introduced", intro_version_url,
-                                 on_duplicate='ignore',
-                                 media_type='text/html')
+                                      on_duplicate='ignore',
+                                      media_type='text/html')
 
-            comm_version = details_root.xpath('string(//CMTESUB_OTHER)').replace("../../../../", "")
+            comm_version = details_root.xpath('string(//CMTESUB_OTHER'
+                                              ')').replace("../../../../", "")
             if comm_version.find("documents") != -1:
                 comm_version_url = "http://billstatus.ls.state.ms.us/" + comm_version
                 bill.add_version_link("Committee Substitute", comm_version_url,
-                                 on_duplicate='ignore',
-                                 media_type='text/html')
-            passed_version = details_root.xpath('string(//PASSED_OTHER)').replace("../../../../", "")
+                                      on_duplicate='ignore',
+                                      media_type='text/html')
+            passed_version = details_root.xpath('string(//PASSED_OTHER'
+                                                ')').replace("../../../../", "")
             if passed_version.find("documents") != -1:
                 passed_version_url = "http://billstatus.ls.state.ms.us/" + passed_version
                 title = "As Passed the " + chamber
                 bill.add_version_link(title, passed_version_url,
-                                 on_duplicate='ignore',
-                                 media_type='text/html')
+                                      on_duplicate='ignore',
+                                      media_type='text/html')
 
             asg_version = details_root.xpath('string(//ASG_OTHER)').replace("../../../../", "")
             if asg_version.find("documents") != -1:
                 asg_version_url = "http://billstatus.ls.state.ms.us/" + asg_version
                 bill.add_version_link("Approved by the Governor", asg_version_url,
-                                 on_duplicate='ignore',
-                                 media_type='text/html')
-
+                                      on_duplicate='ignore',
+                                      media_type='text/html')
 
             # avoid duplicate votes
             seen_votes = set()
 
-            #Actions
+            # Actions
             for action in details_root.xpath('//HISTORY/ACTION'):
                 # action_num  = action.xpath('string(ACT_NUMBER)').strip()
                 # action_num = int(action_num)
@@ -182,7 +183,7 @@ class MSBillScraper(Scraper):
                     version_path = details_root.xpath("string(//VETO_OTHER)")
                     version_path = version_path.replace("../../../../", "")
                     version_url = "http://billstatus.ls.state.ms.us/" + version_path
-                    bill.add_document_link("Veto", version_url) 
+                    bill.add_document_link("Veto", version_url)
 
                 atype = 'other'
                 for prefix, prefix_type in self._action_types:
@@ -190,12 +191,14 @@ class MSBillScraper(Scraper):
                         atype = prefix_type
                         break
 
-                bill.add_action(action, self._tz.localize(date), chamber=actor, classification=atype if atype is not 'other' else None)
+                bill.add_action(action, self._tz.localize(date),
+                                chamber=actor,
+                                classification=atype if atype is not 'other' else None)
 
                 # use committee names as scraped subjects
                 subjects = details_root.xpath('//H_NAME/text()')
                 subjects += details_root.xpath('//S_NAME/text()')
-                
+
                 for subject in subjects:
                     bill.add_subject(subject)
 
@@ -204,7 +207,7 @@ class MSBillScraper(Scraper):
                     if vote_url not in seen_votes:
                         seen_votes.add(vote_url)
                         yield from self.scrape_votes(vote_url, action,
-                                                 date, actor, bill)
+                                                     date, actor, bill)
 
             bill.add_source(bill_details_url)
             yield bill

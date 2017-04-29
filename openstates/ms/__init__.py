@@ -179,7 +179,7 @@ class Mississippi(Jurisdiction):
         upper_title = "Senator"
         lower_chamber_name = "House"
         lower_title = "Representative"
-        lower_seats = 122 
+        lower_seats = 122
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
@@ -201,6 +201,6 @@ class Mississippi(Jurisdiction):
         yield upper
         yield lower
 
-    def session_list():
+    def get_session_list(self):
         return url_xpath('http://billstatus.ls.state.ms.us/sessions.htm',
                          '//a/text()')

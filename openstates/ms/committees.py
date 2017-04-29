@@ -1,5 +1,4 @@
 from pupa.scrape import Scraper, Organization
-from .utils import clean_committee_name
 
 import lxml.etree
 
@@ -7,7 +6,7 @@ import lxml.etree
 class MSCommitteeScraper(Scraper):
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber else ['upper','lower']
+        chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
             if chamber == 'lower':
                 chamber = 'h'
@@ -18,7 +17,7 @@ class MSCommitteeScraper(Scraper):
 
     def scrape_comm(self, chamber):
         url = 'http://billstatus.ls.state.ms.us/htms/%s_cmtememb.xml' % chamber
-        comm_page =  self.get(url)
+        comm_page = self.get(url)
         root = lxml.etree.fromstring(comm_page.content)
         if chamber == 'h':
             chamber = "lower"
