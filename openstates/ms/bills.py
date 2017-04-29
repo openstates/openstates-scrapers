@@ -90,6 +90,7 @@ class MSBillScraper(Scraper):
                         title=title,
                         classification=bill_type)
             bill.extras['summary'] = longtitle
+            bill.add_source(main_doc_url)
             # sponsors
             main_sponsor = details_root.xpath('string(//P_NAME)').split()
             if main_sponsor:
@@ -98,6 +99,7 @@ class MSBillScraper(Scraper):
                 main_sponsor_url = ('http://billstatus.ls.state.ms.us/%s/'
                                     'pdf/House_authors/%s.xml') % (session, main_sponsor_link)
                 type = "primary"
+                bill.add_source(main_sponsor_url)
                 bill.add_sponsorship(main_sponsor,
                                      classification=type,
                                      entity_type='person',
@@ -109,6 +111,7 @@ class MSBillScraper(Scraper):
                     leg_url = ('http://billstatus.ls.state.ms.us/%s/'
                                'pdf/House_authors/%s.xml') % (session, leg)
                     type = "cosponsor"
+                    bill.add_source(leg_url)
                     bill.add_sponsorship(leg,
                                          classification=type,
                                          entity_type='person',
