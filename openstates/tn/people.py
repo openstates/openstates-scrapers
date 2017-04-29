@@ -54,6 +54,8 @@ class TNPersonScraper(Scraper):
             address = address.replace('WMB',
                                       'War Memorial Building\nNashville, TN 37243')
             address = '301 6th Avenue North\nSuite ' + address
+            address = address.strip()
+
             phone = [
                     x.strip() for x in
                     row.xpath('td[7]//text()')
