@@ -1,11 +1,10 @@
-import lxml.html
 import re
-from billy.scrape.legislators import LegislatorScraper, Legislator
+
+import lxml.html
+from pupa.scrape import Person, Scraper
 
 
-class MOLegislatorScraper(LegislatorScraper):
-
-    jurisdiction = 'mo'
+class MOPersonScraper(Scraper):
     _assumed_address_fmt = ('201 West Capitol Avenue {}, '
                             'Jefferson City, MO 65101')
     # senators_url = 'http://www.senate.mo.gov/{}info/senalpha.htm'
@@ -24,8 +23,10 @@ class MOLegislatorScraper(LegislatorScraper):
         # legislators and not the seats. See: http://bit.ly/jOtrhd
         self._vacant_legislators.append(leg)
 
-    def _scrape_upper_chamber(self, chamber, term):
-        self.log('Scraping upper chamber for legislators.')
+    def _scrape_upper_chamber(self):
+        self.info('Scraping upper chamber for legislators.')
+
+        chamber = 'upper'
 
         url = self._senators_url
         source_url = url
@@ -61,10 +62,16 @@ class MOLegislatorScraper(LegislatorScraper):
             if 'currently vacant' in details_page:
                 continue
 
-            leg = Legislator(term, chamber, district, full_name,
-                             party=party, url=url)
-            leg.add_source(source_url)
-            leg.add_source(url)
+            person = Person(
+                name=full_name,
+                primary_org=chamber,
+                district=district,
+                party=party,
+            )
+
+            person.add_source(source_url)
+            person.add_source(url)
+            person.add_link(url)
 
             page = lxml.html.fromstring(details_page)
             photo_url = page.xpath('//*[@id="content-2"]//img[contains(@src, "uploads")]/@src')[0]
@@ -91,17 +98,21 @@ class MOLegislatorScraper(LegislatorScraper):
                 None
             )
 
+            person.add_contact_detail(type='address', value=address, note='Capitol Office')
+            person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
             if email:
-                leg['email'] = email
+                person.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-            leg.add_office("capitol", "Capitol Office",
-                           address=address, email=email, phone=phone, fax=fax)
+            person.image = photo_url
 
-            leg['photo_url'] = photo_url
-            self.save_legislator(leg)
+            yield person
 
-    def _scrape_lower_chamber(self, chamber, term):
-        self.log('Scraping lower chamber for legislators.')
+    def _scrape_lower_chamber(self):
+        self.info('Scraping lower chamber for legislators.')
+
+        chamber = 'lower'
 
         roster_url = (self._reps_url)
         page = self.get(roster_url).text
@@ -114,7 +125,7 @@ class MOLegislatorScraper(LegislatorScraper):
             # If a given term hasn't occurred yet, then ignore it
             # Eg, in 2017, the 2018 term page will have a blank table
             if tr.attrib.get('class') == 'dxgvEmptyDataRow':
-                self.warning('No House members found for {} term'.format(session))
+                self.warning('No House members found')
                 return
 
             tds = tr.xpath('td')
@@ -132,20 +143,26 @@ class MOLegislatorScraper(LegislatorScraper):
             phone = tds[4].text_content().strip()
             room = tds[5].text_content().strip()
             address = self._assumed_address_fmt.format(room if room else '')
-            office_kwargs = {
-                "address": address
-            }
-            if phone.strip() != "":
-                office_kwargs['phone'] = phone
 
             if last_name == 'Vacant':
-                leg = Legislator(term, chamber, district, full_name=full_name,
-                                 first_name=first_name, last_name=last_name,
-                                 party=party, url=roster_url)
+                person = Person(
+                    name=full_name,
+                    primary_org=chamber,
+                    district=district,
+                    party=party,
+                )
+                person.extras = {
+                    'first_name': first_name,
+                    'last_name': last_name,
+                }
 
-                leg.add_office('capitol', 'Capitol Office', **office_kwargs)
-                leg.add_source(roster_url)
-                self._save_vacant_legislator(leg)
+                person.add_contact_detail(type='address', value=address, note='Capitol Office')
+                if phone.strip():
+                    person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+
+                person.add_source(roster_url)
+
+                self._save_vacant_legislator(person)
             else:
                 party_override = {" Green": "Democratic",
                                   " Sisco": "Republican"}
@@ -156,28 +173,44 @@ class MOLegislatorScraper(LegislatorScraper):
                 details_url = self._rep_details_url.format(district)
                 details_page = lxml.html.fromstring(self.get(details_url).text)
 
-                leg = Legislator(term, chamber, district, full_name=full_name,
-                                 first_name=first_name, last_name=last_name,
-                                 party=party, url=details_url)
-                leg.add_source(roster_url)
-                leg.add_source(details_url)
+                person = Person(
+                    name=full_name,
+                    primary_org=chamber,
+                    district=district,
+                    party=party,
+                )
+                person.extras = {
+                    'first_name': first_name,
+                    'last_name': last_name,
+                }
+                person.add_source(roster_url)
+                person.add_source(details_url)
+                person.add_link(details_url)
 
                 email = details_page.xpath(
                     '//*[@id="ContentPlaceHolder1_lblAddresses"]'
                     '/table/tr[4]/td/a/@href'
                 )
                 if len(email) > 0 and email[0].lower() != 'mailto:':
-                    leg['email'] = email[0].split(':')[1]
-                    office_kwargs['email'] = leg['email']
+                    email = email[0].split(':')[1]
+                else:
+                    email = None
 
-                leg.add_office('capitol', 'Capitol Office', **office_kwargs)
+                person.add_contact_detail(type='address', value=address, note='Capitol Office')
+                if phone:
+                    person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+                if email:
+                    person.add_contact_detail(type='email', value=email, note='Capitol Office')
 
                 picture = details_page.xpath(
                     '//*[@id="ContentPlaceHolder1_imgPhoto"]/@src')
                 if len(picture) > 0:
-                    leg['photo_url'] = picture[0]
+                    person.image = picture[0]
 
-                self.save_legislator(leg)
+                yield person
 
-    def scrape(self, chamber, term):
-        getattr(self, '_scrape_' + chamber + '_chamber')(chamber, term)
+    def scrape(self, chamber=None):
+        if chamber in ['upper', None]:
+            yield from self._scrape_upper_chamber()
+        if chamber in ['lower', None]:
+            yield from self._scrape_lower_chamber()
