@@ -26,7 +26,7 @@ def house_get_actor_from_action(text):
     return 'lower'
 
 
-def find_nodes_with_matching_text(page,xpath,regex):
+def find_nodes_with_matching_text(page, xpath, regex):
     """
     Using an lxml node, find matching xpath results that have text content
     matching the regex that is passed in here.
@@ -34,9 +34,10 @@ def find_nodes_with_matching_text(page,xpath,regex):
     xpath_matches = page.xpath(xpath)
     results = []
     for xp in xpath_matches:
-        if re.search(regex,xp.text_content()):
+        if re.search(regex, xp.text_content()):
             results.append(xp)
     return results
+
 
 def senate_get_actor_from_action(text):
     if re.search("Prefiled", text):
