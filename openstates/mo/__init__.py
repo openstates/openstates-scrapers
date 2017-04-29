@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from openstates.mo.people import MOPersonScraper
+from openstates.mo.committees import MOCommitteeScraper
 
 
 class Missouri(Jurisdiction):
@@ -12,6 +13,7 @@ class Missouri(Jurisdiction):
     url = "http://www.moga.mo.gov/"
     scrapers = {
         'people': MOPersonScraper,
+        'committees': MOCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
