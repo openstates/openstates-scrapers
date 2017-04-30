@@ -197,6 +197,43 @@ def actions_from_table(bill, actions_table):
         )
 
 
+# Map the OpenStates chamber identifier to TN bill prefixes for that chamber
+CHAMBER_TO_PREFIXES = {
+    # Senate Bill, Senate Joint Resolution, Senate Resolution
+    'upper': ['SB', 'SJR', 'SR'],
+    'lower': ['HB', 'HJR', 'HR'],
+}
+
+# Set of all prefixes so we can make sure we're not missing any
+PREFIXES = {p for prefixes in CHAMBER_TO_PREFIXES.values() for p in prefixes}
+
+# Bill listing is something like "BillIndex.aspx?StartNum=HB0001&EndNum=HB0100"
+# This is meant to always return only one result, the prefix for this bill listing
+BILL_LISTING_PREFIX_RE = re.compile(r'StartNum=([A-Z]{2,3})')
+
+
+def listing_matches_chamber(listing, chamber):
+    """ Returns True if the listing url matches the passed chamber
+
+    This parses the URL to pull out the bill prefix (e.g. HB, SB, etc.), and uses some knowledge
+    encoded in the constants above to say if it is a valid prefix for the chamber.
+
+    This takes a conservative approach and raises an exception if
+    * The match anything other than a single prefix in the URL
+    * The matched prefix isn't in our list of known prefixes
+    In these cases either the regex is broken or our list of prefixes is incomplete. An exception
+    highlights either case for a quick fix.
+    """
+    (prefix,) = BILL_LISTING_PREFIX_RE.findall(listing)
+    if prefix not in CHAMBER_TO_PREFIXES[chamber]:
+        if prefix not in PREFIXES:
+            raise Exception("Unknown bill prefix: {}".format(prefix))
+
+        return False
+
+    return True
+
+
 class TNBillScraper(Scraper):
 
     def scrape(self, session=None, chamber=None):
@@ -229,6 +266,16 @@ class TNBillScraper(Scraper):
         for bill_listing in index_list_page.xpath(xpath):
 
             bill_listing = bill_listing.attrib['href']
+
+            if not listing_matches_chamber(bill_listing, chamber):
+                self.logger.info(
+                    "Skipping bill listing '{bill_listing}' "
+                    "Does not match chamber '{chamber}'".format(
+                        bill_listing=bill_listing,
+                        chamber=chamber,
+                    )
+                )
+                continue
 
             bill_list_page = self.get(bill_listing).text
 
