@@ -121,14 +121,14 @@ class TNEventScraper(Scraper, LXMLMixin):
                     when = self._utc.localize(when)
 
                 event = Event(
-                    description,
-                    when,
-                    when.tzname(),
-                    location,
+                    name=description,
+                    start_time=when,
+                    timezone=when.tzname(),
+                    location_name=location,
                     description=description,
                 )
                 # The description is a committee name
-                event.add_committee(description)
+                event.add_committee(name=description)
                 event.add_source(cal_weekly_events)
 
                 agenda = metainf['agenda'].xpath(".//a")
