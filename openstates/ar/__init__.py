@@ -125,7 +125,15 @@ class Arkansas(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-12"
-        }
+        },
+        {
+            "_scraped_name": "First Extraordinary Session, 2017",
+            "classification": "special",
+            "end_date": "2017-07-01",
+            "identifier": "2017S1",
+            "name": "2017 First Extraordinary Session",
+            "start_date": "2017-05-01"
+        },
     ]
     ignored_scraped_sessions = [
         "Regular Session, 2009",
