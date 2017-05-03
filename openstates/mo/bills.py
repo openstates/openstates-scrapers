@@ -4,13 +4,12 @@ import datetime as dt
 from collections import defaultdict
 
 import lxml.html
-import scrapelib
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
 
 from .utils import (clean_text, house_get_actor_from_action,
-                    senate_get_actor_from_action, find_nodes_with_matching_text)
+                    senate_get_actor_from_action)
 
 bill_types = {
     'HB ': 'bill',
@@ -81,33 +80,18 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _parse_cosponsors_from_bill(self, bill, url):
         bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
-        sponsors_text = find_nodes_with_matching_text(bill_page, '//p/span', r'\s*INTRODUCED.*')
-        if len(sponsors_text) == 0:
-            # probably its withdrawn
-            return
-        sponsors_text = sponsors_text[0].text_content()
-        sponsors = clean_text(sponsors_text).split(',')
-        if len(sponsors) > 1:  # if there are several comma separated entries, list them.
-            # the sponsor and the cosponsor were already got from the previous page,
-            # so ignore those:
-            sponsors = sponsors[2::]
-            for part in sponsors:
-                parts = re.split(r' (?i)and ', part)
-                for sponsor in parts:
-                    cosponsor_name = clean_text(sponsor)
-                    if cosponsor_name != "":
-                        cosponsor_name = cosponsor_name.replace(
-                            u'\u00a0', " ")  # epic hax
-                        for name in re.split(r'\s+AND\s+', cosponsor_name):
-                            # for name in cosponsor_name.split("AND"):
-                            name = name.strip()
-                            if name:
-                                bill.add_sponsorship(
-                                    name,
-                                    entity_type='person',
-                                    classification='cosponsor',
-                                    primary=False,
-                                )
+        table = bill_page.xpath('//table[@id="CoSponsorTable"]')
+        assert len(table) == 1
+        for row in table[0].xpath('./tr'):
+            name = row[0].text_content()
+            if re.search(r'no co-sponsors', name, re.IGNORECASE):
+                continue
+            bill.add_sponsorship(
+                row[0].text_content(),
+                entity_type='person',
+                classification='cosponsor',
+                primary=False,
+            )
 
     def _scrape_subjects(self, session):
         self._scrape_senate_subjects(session)
@@ -460,31 +444,9 @@ class MOBillScraper(Scraper, LXMLMixin):
         )
 
         # check for cosponsors
-        if cosponsorOffset == 1:
-            if len(table_rows[2][1]) == 1:  # just a name
-                cosponsor = table_rows[2][1][0]
-                bill.add_sponsorship(
-                    cosponsor.text_content(),
-                    entity_type='person',
-                    classification='cosponsor',
-                    primary=False,
-                )
-            else:  # name ... etal
-                try:
-                    cosponsor = table_rows[2][1][0]
-                    bill.add_sponsor(
-                        clean_text(cosponsor.text_content()),
-                        entity_type='person',
-                        classification='cosponsor',
-                        primary=False,
-                    )
-                    sponsors_url, = bill_page.xpath(
-                        "//a[contains(@href, 'CoSponsors.aspx')]/@href")
-                    self._parse_cosponsors_from_bill(bill, sponsors_url)
-                except scrapelib.HTTPError as e:
-                    self.warning("WARNING: " + str(e))
-                    self._bad_urls.append(url)
-                    self.warning("WARNING: no bill summary page (%s)", url)
+        sponsors_url, = bill_page.xpath(
+            "//a[contains(@href, 'CoSponsorsPrn.aspx')]/@href")
+        self._parse_cosponsors_from_bill(bill, sponsors_url)
 
         # actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
         # actions_link = '%s/%s' % (self._senate_base_url,actions_link_tag.attrib['href'])
