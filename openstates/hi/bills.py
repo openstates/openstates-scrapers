@@ -1,61 +1,59 @@
 import datetime as dt
 import lxml.html
 import re
-
 from .utils import get_short_codes
-from urlparse import urlparse
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 HI_URL_BASE = "http://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
 
-def create_bill_report_url( chamber, year, bill_type ):
-    cname = { "upper" : "s", "lower" : "h" }[chamber]
+
+def create_bill_report_url(chamber, year, bill_type):
+    cname = {"upper": "s", "lower": "h"}[chamber]
     bill_slug = {
-        "bill" : "intro%sb" % ( cname ),
-        "cr"   : "%sCR" % ( cname.upper() ),
-        "r"    : "%sR"  % ( cname.upper() )
+        "bill": "intro%sb" % (cname),
+        "cr": "%sCR" % (cname.upper()),
+        "r": "%sR" % (cname.upper())
     }
 
     return HI_URL_BASE + "/report.aspx?type=" + bill_slug[bill_type] + \
         "&year=" + year
 
+
 def categorize_action(action):
     classifiers = (
-        ('Pass(ed)? First Reading', 'bill:reading:1'),
+        ('Pass(ed)? First Reading', 'reading-1'),
         ('Introduced and Pass(ed)? First Reading',
-             ['bill:introduced', 'bill:reading:1']),
-        ('Introduced', 'bill:introduced'),
-        #('The committee\(s\) recommends that the measure be deferred', ?
-        ('Re(-re)?ferred to ', 'committee:referred'),
+         ['introduction', 'reading-1']),
+        ('Introduced', 'introduction'),
+        ('Re(-re)?ferred to ', 'referral-committee'),
         ('Passed Second Reading .* referred to the committee',
-         ['bill:reading:2', 'committee:referred']),
-        ('.* that the measure be PASSED', 'committee:passed:favorable'),
-        ('Received from (House|Senate)', 'bill:introduced'),
-        ('Floor amendment .* offered', 'amendment:introduced'),
-        ('Floor amendment adopted', 'amendment:passed'),
-        ('Floor amendment failed', 'amendment:failed'),
-        ('.*Passed Third Reading', 'bill:passed'),
-        ('Enrolled to Governor', 'governor:received'),
-        ('Act ', 'governor:signed'),
+         ['reading-2', 'referral-committee']),
+        ('.* that the measure be PASSED', 'committee-passage-favorable'),
+        ('Received from (House|Senate)', 'introduction'),
+        ('Floor amendment .* offered', 'amendment-introduction'),
+        ('Floor amendment adopted', 'amendment-passage'),
+        ('Floor amendment failed', 'amendment-failure'),
+        ('.*Passed Third Reading', 'passage'),
+        ('Enrolled to Governor', 'executive-receipt'),
+        ('Act ', 'executive-signature'),
         # Note, occasionally the gov sends intent to veto then doesn't. So use Vetoed not Veto
-        ('Vetoed .* line-item', 'governor:vetoed:line-item'),
-        ('Vetoed', 'governor:vetoed'),
-        ('Veto overridden', 'bill:veto_override:passed'),
+        ('Vetoed .* line-item', 'executive-veto-line-item'),
+        ('Vetoed', 'executive-veto'),
+        ('Veto overridden', 'veto-override-passage'),
         # these are for resolutions
-        ('Offered', 'bill:introduced'),
-        ('Adopted', 'bill:passed'),
+        ('Offered', 'introduction'),
+        ('Adopted', 'passage'),
     )
     ctty = None
     for pattern, types in classifiers:
         if re.match(pattern, action):
-            if "committee:referred" in types:
+            if "referral-committee" in types:
                 ctty = re.findall(r'\w+', re.sub(pattern, "", action))
             return (types, ctty)
     # return other by default
-    return ('other', ctty)
+    return (None, ctty)
+
 
 def split_specific_votes(voters):
     if voters is None or voters.startswith('none'):
@@ -67,22 +65,21 @@ def split_specific_votes(voters):
     # Remove trailing spaces and semicolons
     return (v.rstrip(' ;') for v in voters.split(', '))
 
-class HIBillScraper(BillScraper):
 
-    jurisdiction = 'hi'
+class HIBillScraper(Scraper):
 
-    def parse_bill_metainf_table( self, metainf_table ):
+    def parse_bill_metainf_table(self, metainf_table):
         def _sponsor_interceptor(line):
-            return [ guy.strip() for guy in line.split(",") ]
+            return [guy.strip() for guy in line.split(",")]
 
         interceptors = {
-            "Introducer(s)" : _sponsor_interceptor
+            "Introducer(s)": _sponsor_interceptor
         }
 
         ret = {}
         for tr in metainf_table:
-            row = tr.xpath( "td" )
-            key   = row[0].text_content().strip()
+            row = tr.xpath("td")
+            key = row[0].text_content().strip()
             value = row[1].text_content().strip()
             if key[-1:] == ":":
                 key = key[:-1]
@@ -91,18 +88,18 @@ class HIBillScraper(BillScraper):
             ret[key] = value
         return ret
 
-    def parse_bill_actions_table(self, bill, action_table):
+    def parse_bill_actions_table(self, bill, action_table, bill_id, session, url, bill_chamber):
         for action in action_table.xpath('*')[1:]:
-            date   = action[0].text_content()
-            date   = dt.datetime.strptime(date, "%m/%d/%Y")
-            actor  = action[1].text_content()
+            date = action[0].text_content()
+            date = dt.datetime.strptime(date, "%m/%d/%Y").strftime('%Y-%m-%d')
+            actor = action[1].text_content()
             string = action[2].text_content()
             actor = {
-                "S" : "upper",
-                "H" : "lower",
-                "D" : "Data Systems",
-                "$" : "Appropriation measure",
-                "ConAm" : "Constitutional Amendment"
+                "S": "upper",
+                "H": "lower",
+                "D": "Data Systems",
+                "$": "Appropriation measure",
+                "ConAm": "Constitutional Amendment"
             }[actor]
             act_type, committees = categorize_action(string)
             # XXX: Translate short-code to full committee name for the
@@ -117,28 +114,35 @@ class HIBillScraper(BillScraper):
                         real_committees.append(committee)
                     except KeyError:
                         pass
-
-            bill.add_action(actor, string, date,
-                            type=act_type, committees=real_committees)
-
+            act = bill.add_action(string, date, chamber=actor,
+                                  classification=act_type)
+            for committee in real_committees:
+                act.add_related_entity(name=committee, entity_type="organization")
             vote = self.parse_vote(string)
             if vote:
                 v, motion = vote
-                vote = Vote(actor, date, motion, 'passed' in string.lower(),
-                    int( v['n_yes'] or 0 ),
-                    int( v['n_no'] or 0 ),
-                    int( v['n_excused'] or 0))
+                vote = VoteEvent(start_date=date,
+                                 chamber=actor,
+                                 bill=bill_id,
+                                 bill_chamber=bill_chamber,
+                                 legislative_session=session,
+                                 motion_text=motion,
+                                 result='pass' if 'passed' in string.lower() else 'fail',
+                                 classification='passage')
+                vote.add_source(url)
+                vote.set_count('yes', int(v['n_yes'] or 0))
+                vote.set_count('no', int(v['n_no'] or 0))
+                vote.set_count('not voting', int(v['n_excused'] or 0))
+                for voter in split_specific_votes(v['yes']):
+                    vote.yes(voter)
+                for voter in split_specific_votes(v['yes_resv']):
+                    vote.yes(voter)
+                for voter in split_specific_votes(v['no']):
+                    vote.no(voter)
+                for voter in split_specific_votes(v['excused']):
+                    vote.vote('not voting', voter)
 
-                def _add_votes( attrib, v, vote ):
-                    for voter in split_specific_votes(v):
-                        getattr(vote, attrib)(voter)
-
-                _add_votes('yes',   v['yes'],      vote)
-                _add_votes('yes',   v['yes_resv'], vote)
-                _add_votes('no',    v['no'],       vote)
-                _add_votes('other', v['excused'],  vote)
-
-                bill.add_vote(vote)
+                yield vote
 
     def parse_bill_versions_table(self, bill, versions):
         versions = versions.xpath("./*")
@@ -155,14 +159,13 @@ class HIBillScraper(BillScraper):
 
             http_href = tds[0].xpath("./a")
             name = http_href[0].text_content().strip()
-            # category  = tds[1].text_content().strip()
-            pdf_href  = tds[1].xpath("./a")
+            pdf_href = tds[1].xpath("./a")
 
             http_link = http_href[0].attrib['href']
-            pdf_link  = pdf_href[0].attrib['href']
+            pdf_link = pdf_href[0].attrib['href']
 
-            bill.add_version(name, http_link, mimetype="text/html")
-            bill.add_version(name, pdf_link, mimetype="application/pdf")
+            bill.add_version_link(name, http_link, media_type="text/html")
+            bill.add_version_link(name, pdf_link, media_type="application/pdf")
 
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.get(url).text
@@ -170,48 +173,46 @@ class HIBillScraper(BillScraper):
         scraped_bill_id = bill_page.xpath(
             "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
         bill_id = scraped_bill_id.split(' ')[0]
-        versions = bill_page.xpath( "//table[contains(@id, 'GridViewVersions')]" )[0]
-
-        tables = bill_page.xpath("//table")
+        versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
         metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
-        action_table  = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
+        action_table = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
-        meta  = self.parse_bill_metainf_table(metainf_table)
+        meta = self.parse_bill_metainf_table(metainf_table)
 
-        subs = [ s.strip() for s in meta['Report Title'].split(";") ]
+        subs = [s.strip() for s in meta['Report Title'].split(";")]
         if "" in subs:
             subs.remove("")
+        b = Bill(bill_id, session, meta['Measure Title'],
+                 chamber=chamber,
+                 classification=bill_type)
+        for subject in subs:
+            b.add_subject(subject)
+        if url:
+            b.add_source(url)
 
-        b = Bill(session, chamber, bill_id, title=meta['Measure Title'],
-                 summary=meta['Description'],
-                 referral=meta['Current Referral'],
-                 subjects=subs,
-                 type=bill_type)
-        b.add_source(url)
-
+        prior_session = '{} Regular Session'.format(str(int(session[:4]) - 1))
         companion = meta['Companion'].strip()
         if companion:
-            b['companion'] = companion
-
+            b.add_related_bill(identifier=companion,
+                               legislative_session=prior_session,
+                               relation_type="companion")
         prior = bill_page.xpath(
             "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
         if 'carried over' in prior.lower():
-            prior_session = '{} Regular Session'.format(str(int(session[:4])-1))
-            b.add_companion(bill_id, prior_session, chamber)
-
+            b.add_related_bill(identifier=bill_id,
+                               legislative_session=prior_session,
+                               relation_type="companion")
         for sponsor in meta['Introducer(s)']:
-            b.add_sponsor(type='primary', name=sponsor)
-
-        actions = self.parse_bill_actions_table(b, action_table)
+            b.add_sponsorship(sponsor, 'primary', 'person', True)
         versions = self.parse_bill_versions_table(b, versions)
-
-        self.save_bill(b)
+        yield from self.parse_bill_actions_table(b, action_table, bill_id, session, url, chamber)
+        yield b
 
     def parse_vote(self, action):
         vote_re = (r'''
                 (?P<n_yes>\d+)\sAye\(?s\)?  # Yes vote count
                 (:\s+(?P<yes>.*?))?;\s+  # Yes members
-                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?  # Yes with reservations members
+                Aye\(?s\)?\swith\sreservations:\s+(?P<yes_resv>.*?);?
                 (?P<n_no>\d*)\sNo\(?es\)?:\s+(?P<no>.*?);?
                 (\s+and\s+)?
                 (?P<n_excused>\d*)\sExcused:\s(?P<excused>.*)\.?
@@ -224,8 +225,9 @@ class HIBillScraper(BillScraper):
         return result, motion
 
     def scrape_type(self, chamber, session, billtype):
-        session_urlslug = \
-            self.metadata['session_details'][session]['_scraped_name']
+        for i in self.jurisdiction.legislative_sessions:
+            if i['identifier'] == session:
+                session_urlslug = i['_scraped_name']
         report_page_url = create_bill_report_url(chamber, session_urlslug,
                                                  billtype)
         billy_billtype = {
@@ -238,10 +240,15 @@ class HIBillScraper(BillScraper):
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = HI_URL_BASE + bill_url.attrib['href']
-            self.scrape_bill(session, chamber, billy_billtype, bill_url)
+            yield from self.scrape_bill(session, chamber, billy_billtype, bill_url)
 
-    def scrape(self, session, chamber):
+    def scrape(self, chamber=None, session=None):
         get_short_codes(self)
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
         bill_types = ["bill", "cr", "r"]
-        for typ in bill_types:
-            self.scrape_type(session, chamber, typ)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            for typ in bill_types:
+                yield from self.scrape_type(chamber, session, typ)

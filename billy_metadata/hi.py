@@ -1,3 +1,5 @@
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 metadata = dict(
     name='Hawaii',
     abbreviation='hi',
@@ -97,3 +99,12 @@ metadata = dict(
         '2000', '1999'
     ]
 )
+
+def get_session_list():
+    # doesn't include current session, we need to change it
+    from billy.scrape.utils import url_xpath
+    sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
+            "//div[@class='roundedrect gradientgray shadow']/a/text()"
+        )
+    sessions.remove("Archives Main")
+    return sessions

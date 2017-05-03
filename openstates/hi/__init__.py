@@ -1,14 +1,22 @@
 from pupa.scrape import Jurisdiction, Organization
-from hi.people import HIPersonScraper
+from .people import HILegislatorScraper
+from .events import HIEventScraper
+from .bills import HIBillScraper
+from .committees import HICommitteeScraper
+settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class Hawaii(Jurisdiction):
+
     division_id = "ocd-division/country:us/state:hi"
     classification = "government"
     name = "Hawaii"
-    url = "https://portal.ehawaii.gov/"
+    url = "http://capitol.hawaii.gov"
     scrapers = {
-        'people': HIPersonScraper,
+        'people': HILegislatorScraper,
+        'bills': HIBillScraper,
+        'committees': HICommitteeScraper,
+        'events': HIEventScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -78,11 +86,11 @@ class Hawaii(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
