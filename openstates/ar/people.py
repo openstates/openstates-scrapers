@@ -1,37 +1,31 @@
 import re
 
-from billy.utils import urlescape
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
+from pupa.scrape import Person, Scraper
 import lxml.html
 
-class ARLegislatorScraper(LegislatorScraper):
+
+class ARLegislatorScraper(Scraper):
     _remove_special_case = True
-    jurisdiction = 'ar'
     latest_only = True
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None, session=None):
 
-        # Get start year of term.
-        for termdict in self.metadata['terms']:
-            if termdict['name'] == term:
-                break
-        start_year = termdict['start_year']
-
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
         url = ('http://www.arkleg.state.ar.us/assembly/%s/%sR/Pages/'
-               'LegislatorSearchResults.aspx?member=&committee=All&chamber=')
-        url = url % (start_year, start_year)
+               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (session, session)
         page = self.get(url).text
         root = lxml.html.fromstring(page)
 
         for a in root.xpath('//table[@class="dxgvTable"]'
                             '/tr[contains(@class, "dxgvDataRow")]'
                             '/td[1]/a'):
-            member_url = urlescape(a.attrib['href'])
-            self.scrape_member(chamber, term, member_url)
+            member_url = a.get('href').replace('../', '/')
 
-    def scrape_member(self, chamber, term, member_url):
+            yield from self.scrape_member(chamber, member_url)
+
+    def scrape_member(self, chamber, member_url):
         page = self.get(member_url).text
         root = lxml.html.fromstring(page)
 
@@ -80,9 +74,11 @@ class ARLegislatorScraper(LegislatorScraper):
             self.warning('Member has no district listed; skipping them')
             return
 
-        leg = Legislator(term, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url)
-        leg.add_source(member_url)
+        person = Person(name=full_name, district=district,
+                        party=party, primary_org=chamber, image=photo_url)
+
+        person.add_link(member_url)
+        person.add_source(member_url)
 
         try:
             phone = re.search(r'Phone(.+)\r', info_box).group(1)
@@ -93,13 +89,15 @@ class ARLegislatorScraper(LegislatorScraper):
         except AttributeError:
             email = None
         address = root.xpath('//nobr/text()')[0].replace(u'\xa0', ' ')
-        leg.add_office('district', 'District Office', address=address,
-                       phone=phone, email=email)
+
+        person.add_contact_detail(type='address', value=address, note='District Office')
+        person.add_contact_detail(type='voice', value=phone, note='District Office')
+        person.add_contact_detail(type='email', value=email, note='District Office')
 
         try:
-            leg['occupation'] = re.search(
+            person.extras['occupation'] = re.search(
                 r'Occupation(.+)\r', info_box).group(1)
         except AttributeError:
             pass
 
-        self.save_legislator(leg)
+        yield person
