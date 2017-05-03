@@ -139,6 +139,7 @@ metadata = {
         '2017': {
             'type': 'primary',
             'start_date': datetime.date(2017, 1, 23),
+            'end_date': datetime.date(2017, 3, 9),
             'display_name': '2017 General Session',
             '_scraped_name': '2017 General Session',
         }

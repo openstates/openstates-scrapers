@@ -1,5 +1,6 @@
 from billy.utils.fulltext import text_after_line_numbers
 import lxml.html
+import datetime
 from .bills import ILBillScraper
 from .legislators import ILLegislatorScraper
 from .committees import ILCommitteeScraper
@@ -40,6 +41,8 @@ metadata = {
                  'speaker': 'Madigan',
                  'president': 'Cullerton',
                  'params': { 'GA': '100', 'SessionId': '91' },
+                  'start_date': datetime.date(2017, 1, 11),
+                  'end_date': datetime.date(2017, 5, 31),
         },
         '99th': {'display_name': '99th Regular Session (2015-2016)',
                  '_scraped_name': '99   (2015-2016)',

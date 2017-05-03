@@ -74,6 +74,8 @@ metadata = {
         '2017': {
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017',
+            'start_date': datetime.date(2017,1,4),
+            'end_date': datetime.date(2017,6,7)
         },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],

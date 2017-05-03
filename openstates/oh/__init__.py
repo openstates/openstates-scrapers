@@ -45,7 +45,9 @@ class Ohio(Jurisdiction):
         {
             "_scraped_name": "132",
             "identifier": "132",
-            "name": "132st Legislature (2017-2018)"
+            "name": "132st Legislature (2017-2018)",
+            "start_date": "2017-01-02",
+            "end_date": "2017-12-31"
         }
     ]
     ignored_scraped_sessions = [

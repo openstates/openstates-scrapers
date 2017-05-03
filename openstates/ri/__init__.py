@@ -95,6 +95,8 @@ metadata = {
             'type': 'primary',
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017',
+            'start_date': datetime.date(2017, 1, 3),
+            'end_date': datetime.date(2017, 6, 30),
         },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],

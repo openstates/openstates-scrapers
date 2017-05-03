@@ -1,4 +1,5 @@
 import lxml.html
+import datetime
 from .bills import MEBillScraper
 from .legislators import MELegislatorScraper
 from .committees import MECommitteeScraper
@@ -46,8 +47,12 @@ metadata = dict(
                 '_scraped_name': '126th Legislature'},
         '127': {'display_name':  '127th Legislature (2015-2016)',
                 '_scraped_name': '127th Legislature'},
-        '128': {'display_name':  '128th Legislature (2017-2018)',
-                '_scraped_name': '128th Legislature'},
+        '128': {
+            'display_name':  '128th Legislature (2017-2018)',
+            '_scraped_name': '128th Legislature',
+            'start_date': datetime.date(2016, 12, 7),
+            'end_date': datetime.date(2017, 6, 14)
+        },
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[]

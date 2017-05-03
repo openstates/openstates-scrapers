@@ -74,6 +74,8 @@ metadata = dict(
             'display_name': '2017-2018 Regular Session',
             '_scraped_name': 'General Assembly: 87',
             'number': '87',
+            'start_date': datetime.date(2017, 1, 9),
+            'end_date': datetime.date(2017, 4, 22)
         },
     },
     feature_flags = ['events', 'influenceexplorer'],
