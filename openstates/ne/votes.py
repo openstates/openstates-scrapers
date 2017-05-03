@@ -90,7 +90,7 @@ class NEVoteScraper(VoteScraper):
                     for p in people:
                         if p:
                             # special cases for long name w/ 1 space
-                            if p.startswith(('Lautenbaugh ', 'Langemeier ', 'McCollister ', 'Pansing Brooks ')):
+                            if p.startswith(('Lautenbaugh ', 'Langemeier ', 'McCollister ', 'Pansing Brooks ', 'Schumacher ')):
                                 p1, p2 = p.split(' ', 1)
                                 func(p1)
                                 func(p2)
