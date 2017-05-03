@@ -181,7 +181,7 @@ class MABillScraper(BillScraper):
         if max_page:
             max_page = re.sub(r'[^\d]', '', max_page[0]).strip()
             for counter in range(2, int(max_page)+1):
-                page = self.scrape_action_page(bill, bill_url, counter)
+                page = self.scrape_action_page(bill, bill_url, counter, session)
                 #https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
     def scrape_action_page(self, bill, bill_url, page_number, session):
