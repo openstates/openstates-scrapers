@@ -1,4 +1,5 @@
 import lxml.html
+import datetime
 
 from .bills import WVBillScraper
 from .legislators import WVLegislatorScraper
@@ -30,7 +31,7 @@ metadata = {
          },
         {'name': '2017-2018',
          'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017'],
+         'sessions': ['2017','20171S'],
          },
         ],
     'session_details': {
@@ -66,6 +67,12 @@ metadata = {
         '2017': {'display_name': '2017 Regular Session',
                  'type': 'primary',
                  '_scraped_name': '2017'
+                 },
+        '20171S': {'display_name': '2017 First Special Session',
+                 'type':'special',
+                 '_scraped_name': '2017',
+                 '_special_name': '1X',
+                 'start_date': datetime.date(2017, 5, 4)
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
