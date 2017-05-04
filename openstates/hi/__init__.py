@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-from .people import HILegislatorScraper
+from .people import HIPersonScraper
 from .events import HIEventScraper
 from .bills import HIBillScraper
 from .committees import HICommitteeScraper
@@ -13,7 +13,7 @@ class Hawaii(Jurisdiction):
     name = "Hawaii"
     url = "http://capitol.hawaii.gov"
     scrapers = {
-        'people': HILegislatorScraper,
+        'people': HIPersonScraper,
         'bills': HIBillScraper,
         'committees': HICommitteeScraper,
         'events': HIEventScraper
