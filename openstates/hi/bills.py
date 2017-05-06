@@ -1,8 +1,9 @@
 import datetime as dt
 import lxml.html
 import re
-from .utils import get_short_codes
 from pupa.scrape import Scraper, Bill, VoteEvent
+from .utils import get_short_codes
+from urllib import parse as urlparse
 
 HI_URL_BASE = "http://capitol.hawaii.gov"
 SHORT_CODES = "%s/committees/committees.aspx?chamber=all" % (HI_URL_BASE)
@@ -170,10 +171,12 @@ class HIBillScraper(Scraper):
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.get(url).text
         bill_page = lxml.html.fromstring(bill_html)
-        scraped_bill_id = bill_page.xpath(
-            "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
-        bill_id = scraped_bill_id.split(' ')[0]
+
+        qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
+        bill_id = '{}{}'.format(qs['billtype'], qs['billnumber'])
         versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
+
+        tables = bill_page.xpath("//table")
         metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
         action_table = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
