@@ -3,7 +3,7 @@ import lxml.html
 import re
 
 from .utils import get_short_codes
-from urlparse import urlparse
+import urlparse
 
 from billy.scrape.bills import BillScraper, Bill
 from billy.scrape.votes import Vote
@@ -167,9 +167,8 @@ class HIBillScraper(BillScraper):
     def scrape_bill(self, session, chamber, bill_type, url):
         bill_html = self.get(url).text
         bill_page = lxml.html.fromstring(bill_html)
-        scraped_bill_id = bill_page.xpath(
-            "//a[contains(@id, 'LinkButtonMeasure')]")[0].text_content()
-        bill_id = scraped_bill_id.split(' ')[0]
+        qs = dict(urlparse.parse_qsl(urlparse.urlparse(url).query))
+        bill_id = '{}{}'.format(qs['billtype'], qs['billnumber'])
         versions = bill_page.xpath( "//table[contains(@id, 'GridViewVersions')]" )[0]
 
         tables = bill_page.xpath("//table")
