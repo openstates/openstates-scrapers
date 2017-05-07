@@ -1,21 +1,20 @@
-from openstates.utils import LXMLMixin
-import datetime as dt
 import re
-
-from billy.scrape.events import Event, EventScraper
+import pytz
+import datetime as dt
 
 import lxml.html
-import pytz
+from pupa.scrape import Scraper, Event
+
 
 mi_events = "http://legislature.mi.gov/doc.aspx?CommitteeMeetings"
 
-class MIEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'mi'
 
+class MIEventScraper(Scraper):
     _tz = pytz.timezone('US/Eastern')
 
-    def scrape_event_page(self, url, chamber, session):
-        page = self.lxmlize(url)
+    def scrape_event_page(self, url, chamber):
+        html = self.get(url).text
+        page = lxml.html.fromstring(html)
         trs = page.xpath("//table[@id='frg_committeemeeting_MeetingTable']/tr")
         metainf = {}
         for tr in trs:
@@ -35,7 +34,7 @@ class MIEventScraper(EventScraper, LXMLMixin):
         # Wednesday, 5/16/2012 3:00 pm
         datetime = "%s %s" % (
             metainf['Date']['txt'],
-            metainf['Time']['txt'].replace(".","")
+            metainf['Time']['txt'].replace(".", "")
         )
         if "Cancelled" in datetime:
             return
@@ -44,7 +43,7 @@ class MIEventScraper(EventScraper, LXMLMixin):
             "noon": " PM",
             "a.m.": " AM",
             "am": " AM",  # This is due to a nasty line they had.
-            "a.m": "AM" #another weird one
+            "a.m": "AM"  # another weird one
 
         }
 
@@ -58,12 +57,11 @@ class MIEventScraper(EventScraper, LXMLMixin):
                 "or after committees are given leave",
                 "or later immediately after committees are given leave",
                 "or later after committees are given leave by the House to meet",
-                "**Please note time**"
-                ]:
+                "**Please note time**"]:
             datetime = datetime.split(text_to_remove)[0].strip()
 
         datetime = datetime.replace('p.m.', 'pm')
-        datetime = datetime.replace('Noon',"pm")
+        datetime = datetime.replace('Noon', "pm")
         datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title
@@ -71,20 +69,22 @@ class MIEventScraper(EventScraper, LXMLMixin):
         if chamber == 'other':
             chamber = 'joint'
 
-        event = Event(session, datetime, 'committee:meeting',
-                      title, location=where)
+        event = Event(
+            name=title,
+            start_time=self._tz.localize(datetime),
+            timezone=self._tz.zone,
+            location_name=where,
+        )
         event.add_source(url)
         event.add_source(mi_events)
 
         chair_name = metainf['Chair']['txt'].strip()
         if chair_name:
-            event.add_participant('chair', chair_name, 'legislator', chamber=chamber)
+            event.add_participant(chair_name, type='legislator', note='chair')
         else:
             self.warning("No chair found for event '{}'".format(title))
 
-        event.add_participant('host', metainf['Committee']['txt'],
-                              'committee',
-                              chamber=chamber)
+        event.add_participant(metainf['Committee']['txt'], type='committee', note='host')
 
         agenda = metainf['Agenda']['obj']
         agendas = agenda.text_content().split("\r")
@@ -96,29 +96,30 @@ class MIEventScraper(EventScraper, LXMLMixin):
                 if bill.text_content() in a:
                     description = a
 
-            event.add_related_bill(
-                bill.text_content(),
-                description=description,
-                type='consideration'
-            )
+            item = event.add_agenda_item(description)
+            item.add_bill(bill.text_content())
 
-        self.save_event(event)
+        yield event
 
-    def scrape(self, chamber, session):
-        page = self.lxmlize(mi_events)
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower', 'other']
+        html = self.get(mi_events).text
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(mi_events)
         xpaths = {
             "lower": "//span[@id='frg_committeemeetings_HouseMeetingsList']",
             "upper": "//span[@id='frg_committeemeetings_SenateMeetingsList']",
             "other": "//span[@is='frg_committeemeetings_JointMeetingsList']"
         }
-        span = page.xpath(xpaths[chamber])
-        if len(span) > 0:
-            span = span[0]
-        else:
-            return
-        events = span.xpath(".//a[contains(@href, 'committeemeeting')]")
-        for event in events:
-            url = event.attrib['href']
-            if 'doPostBack' in url:
+        for chamber in chambers:
+            span = page.xpath(xpaths[chamber])
+            if len(span) > 0:
+                span = span[0]
+            else:
                 continue
-            self.scrape_event_page(url, chamber, session)
+            events = span.xpath(".//a[contains(@href, 'committeemeeting')]")
+            for event in events:
+                url = event.attrib['href']
+                if 'doPostBack' in url:
+                    continue
+                yield from self.scrape_event_page(url, chamber)

@@ -13,6 +13,14 @@ _party_map = {
     'C': 'Independent'
 }
 
+
+def clean_phone(phone):
+    if phone:
+        if sum(c.isdigit() for c in phone) == 7:
+            phone = '(207) ' + phone
+    return phone
+
+
 class MEPersonScraper(Scraper):
     jurisdiction = 'me'
 
@@ -103,11 +111,17 @@ class MEPersonScraper(Scraper):
                 office_email = office_email[0]
                 person.add_contact_detail(type='email', value=office_email, note='District Office')
             if business_phone:
-                person.add_contact_detail(type='voice', value=business_phone.group(1), note='Business Phone')
+                person.add_contact_detail(
+                    type='voice', value=clean_phone(business_phone.group(1)),
+                    note='Business Phone')
             if home_phone:
-                person.add_contact_detail(type='voice', value=home_phone.group(1), note='Home Phone')
+                person.add_contact_detail(
+                    type='voice', value=clean_phone(home_phone.group(1)),
+                    note='Home Phone')
             if cell_phone:
-                person.add_contact_detail(type='voice', value=cell_phone.group(1), note='Cell Phone')
+                person.add_contact_detail(
+                    type='voice', value=clean_phone(cell_phone.group(1)),
+                    note='Cell Phone')
 
             yield person
 
@@ -189,7 +203,13 @@ class MEPersonScraper(Scraper):
             else:
                 photo_url = None
 
-            person = Person(name=full_name, district=district,  image=photo_url, primary_org=chamber, party=party)
+            person = Person(
+                name=full_name,
+                district=district,
+                image=photo_url,
+                primary_org=chamber,
+                party=party,
+            )
 
             person.add_link(leg_url)
             person.add_source(leg_url)
@@ -198,7 +218,9 @@ class MEPersonScraper(Scraper):
             person.extras['last_name'] = last_name
 
             person.add_contact_detail(type='address', value=address, note='District Office')
-            person.add_contact_detail(type='voice', value=phone, note='District Phone')
+            if phone:
+                person.add_contact_detail(
+                    type='voice', value=clean_phone(phone), note='District Phone')
             person.add_contact_detail(type='email', value=d['email'], note='District Email')
 
             yield person

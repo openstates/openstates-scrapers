@@ -12,7 +12,7 @@ class NCCommitteeScraper(Scraper):
         for row in doc.xpath('//table/tr'):
             children = row.getchildren()
             if len(children) != 2:
-                self.log('skipping members for ' + committee.name)
+                self.info('skipping members for ' + committee.name)
                 continue
             mtype, members = row.getchildren()
             if mtype.text == 'Members':

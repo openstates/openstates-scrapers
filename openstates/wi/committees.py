@@ -1,13 +1,13 @@
-from billy.scrape.committees import CommitteeScraper, Committee
-
 import lxml.html
+from pupa.scrape import Scraper, Organization
 
-class WICommitteeScraper(CommitteeScraper):
-    jurisdiction = 'wi'
+from .common import SESSION_TERMS
 
+
+class WICommitteeScraper(Scraper):
     def scrape_committee(self, name, url, chamber):
-        com = Committee(chamber, name)
-        com.add_source(url)
+        org = Organization(name=name, chamber=chamber, classification='committee')
+        org.add_source(url)
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
 
@@ -27,13 +27,19 @@ class WICommitteeScraper(CommitteeScraper):
                     raise Exception('unknown role: %s' % role)
             else:
                 role = 'member'
-            com.add_member(leg, role)
+            org.add_member(leg, role)
 
-        self.save_committee(com)
+        return org
 
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        term = SESSION_TERMS[session]
 
-    def scrape(self, term, chambers):
-        for chamber in chambers+["joint"]:
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+
+        for chamber in chambers + ["joint"]:
             url = 'http://docs.legis.wisconsin.gov/{}/committees/'.format(term.split('-')[0])
             if chamber == 'joint':
                 url += "joint"
@@ -57,4 +63,4 @@ class WICommitteeScraper(CommitteeScraper):
                     comm_name = comm_name.replace("Committee for", "")
                     comm_name = comm_name.replace("Committee", "")
                     comm_name = comm_name.strip()
-                    self.scrape_committee(comm_name, a.get('href'), chamber)
+                    yield self.scrape_committee(comm_name, a.get('href'), chamber)
