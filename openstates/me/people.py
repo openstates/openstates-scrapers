@@ -22,18 +22,13 @@ def clean_phone(phone):
 
 
 class MEPersonScraper(Scraper):
-    jurisdiction = 'me'
-
     def scrape(self, chamber=None):
+        if chamber in ['upper', None]:
+            yield from self.scrape_senators()
+        if chamber in ['lower', None]:
+            yield from self.scrape_reps()
 
-        if chamber == None:
-            chamber = ['upper', 'lower']
-        if 'upper' in chamber:
-            yield from self.scrape_senators(chamber)
-        if 'lower' in chamber:
-            yield from self.scrape_reps(chamber)
-
-    def scrape_reps(self, chamber):
+    def scrape_reps(self):
         url = 'http://www.maine.gov/legis/house/dist_mem.htm'
         page = self.get(url).text
         page = lxml.html.fromstring(page)
@@ -76,36 +71,51 @@ class MEPersonScraper(Scraper):
 
             # Add contact information from personal page
             office_address = re.search(
-                    r'<B>Address:  </B>(.+?)\n?</?P>', html, re.IGNORECASE).group(1)
+                r'<B>Address:  </B>(.+?)\n?</?P>', html, re.IGNORECASE).group(1)
 
             office_email = doc.xpath(
-                    '//a[starts-with(@href, "mailto:")]/text()')
+                '//a[starts-with(@href, "mailto:")]/text()')
             business_phone = re.search(
-                    r'<B>Business Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                r'<B>Business Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
             home_phone = re.search(
-                    r'<B>Home Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                r'<B>Home Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
             cell_phone = re.search(
-                    r'<B>Cell Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+                r'<B>Cell Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
 
-            person = Person(name=member_name, district=district_name, party=party, image=photo_url)
+            person = Person(
+                name=member_name,
+                district=district_name,
+                primary_org='lower',
+                party=party,
+                image=photo_url,
+            )
 
             person.add_link(leg_url)
             person.add_source(leg_url)
 
             if office_address:
                 leg_address = office_address
-                person.add_contact_detail(type='address', value=leg_address, note='District Office')
+                person.add_contact_detail(
+                    type='address', value=leg_address, note='District Office')
             else:
                 # If no address for legislator
                 if party == 'Democratic':
-                    leg_address = 'House Democratic Office, Room 333 State House, 2 State House Station, Augusta, Main 04333-0002'
+                    leg_address = (
+                        'House Democratic Office, Room 333 State House, 2 State House Station, '
+                        'Augusta, Maine 04333-0002'
+                    )
 
-                    person.add_contact_detail(type='address', value=leg_address, note='Party Office')
+                    person.add_contact_detail(
+                        type='address', value=leg_address, note='Party Office')
 
                 elif party == 'Republican':
-                    leg_address = 'House GOP Office, Room 332 State House, 2 State House Station, Augusta, Main 04333-0002'
+                    leg_address = (
+                        'House GOP Office, Room 332 State House, 2 State House Station, '
+                        'Augusta, Maine 04333-0002'
+                    )
 
-                    person.add_contact_detail(type='address', value=leg_address, note='Party Office')
+                    person.add_contact_detail(
+                        type='address', value=leg_address, note='Party Office')
 
             if office_email:
                 office_email = office_email[0]
@@ -125,24 +135,27 @@ class MEPersonScraper(Scraper):
 
             yield person
 
-    def scrape_senators(self, chamber):
+    def scrape_senators(self):
         mapping = {
-                'district': 0,
-                'first_name': 2,
-                'middle_name': 3,
-                'last_name': 4,
-                'suffixes': 5,
-                'party': 1,
-                'street_addr': 6,
-                'city': 7,
-                'state': 8,
-                'zip_code': 9,
-                'phone1': 10,
-                'phone2': 11,
-                'email': 12
+            'district': 0,
+            'first_name': 2,
+            'middle_name': 3,
+            'last_name': 4,
+            'suffixes': 5,
+            'party': 1,
+            'street_addr': 6,
+            'city': 7,
+            'state': 8,
+            'zip_code': 9,
+            'phone1': 10,
+            'phone2': 11,
+            'email': 12
         }
 
-        url = 'https://mainelegislature.org/uploads/visual_edit/128th-senate-members-for-distribution-1.xlsx'
+        url = (
+            'https://mainelegislature.org/uploads/visual_edit/'
+            '128th-senate-members-for-distribution-1.xlsx'
+        )
         fn, result = self.urlretrieve(url)
 
         wb = xlrd.open_workbook(fn)
@@ -172,9 +185,6 @@ class MEPersonScraper(Scraper):
 
             address = "{street_addr}\n{city}, ME {zip_code}".format(**d)
 
-            # For matching up legs with votes
-            district_name = d['city']
-
             phone = d['phone1']
             if not phone:
                 phone = d['phone2']
@@ -191,7 +201,7 @@ class MEPersonScraper(Scraper):
                 (leg_url, ) = roster_doc.xpath(URL_XPATH)
             except ValueError:
                 self.warning('vacant seat %s', district)
-                continue # Seat is vacant
+                continue  # Seat is vacant
 
             html = self.get(leg_url).text
             doc = lxml.html.fromstring(html)
@@ -207,7 +217,7 @@ class MEPersonScraper(Scraper):
                 name=full_name,
                 district=district,
                 image=photo_url,
-                primary_org=chamber,
+                primary_org='upper',
                 party=party,
             )
 

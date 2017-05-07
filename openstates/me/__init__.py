@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import url_xpath
 from .people import MEPersonScraper
 
 
@@ -74,11 +75,11 @@ class Maine(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
@@ -86,3 +87,10 @@ class Maine(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        sessions = url_xpath('http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp',
+                             '//select[@name="LegSession"]/option/text()')
+        sessions.remove('jb-Test')
+        sessions.remove('2001-2002')
+        return sessions

@@ -1,5 +1,3 @@
-# import lxml
-
 metadata = dict(
     name='Maine',
     capitol_timezone='America/New_York',
@@ -48,13 +46,4 @@ metadata = dict(
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[]
-
 )
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    sessions =  url_xpath('http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp',
-                          '//select[@name="LegSession"]/option/text()')
-    sessions.remove('jb-Test')
-    sessions.remove('2001-2002')
-    return sessions
