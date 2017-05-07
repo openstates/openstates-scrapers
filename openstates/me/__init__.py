@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
+
+from .bills import MEBillScraper
 from .people import MEPersonScraper
 from .committees import MECommitteeScraper
 
@@ -10,6 +12,7 @@ class Maine(Jurisdiction):
     name = "Maine"
     url = "http://legislature.maine.gov"
     scrapers = {
+        'bills': MEBillScraper,
         'people': MEPersonScraper,
         'committees': MECommitteeScraper,
     }
