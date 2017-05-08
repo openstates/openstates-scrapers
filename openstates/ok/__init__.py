@@ -1,3 +1,4 @@
+import datetime
 from billy.utils.fulltext import worddata_to_text
 from .bills import OKBillScraper
 from .legislators import OKLegislatorScraper
@@ -68,6 +69,8 @@ metadata = dict(
             {'display_name': '2017-2018 Regular Session',
              'session_id': '1700',
              '_scraped_name': '2017 Regular Session',
+             'start_date': datetime.date(2017, 2, 6),
+             'end_date':   datetime.date(2017, 5, 26),
             },
         },
     feature_flags=['subjects', 'influenceexplorer'],

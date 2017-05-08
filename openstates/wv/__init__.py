@@ -66,7 +66,9 @@ metadata = {
                  },
         '2017': {'display_name': '2017 Regular Session',
                  'type': 'primary',
-                 '_scraped_name': '2017'
+                 '_scraped_name': '2017',
+                 'start_date': datetime.date(2017, 2, 8),
+                 'end_date': datetime.date(2017, 4, 9),
                  },
         '20171S': {'display_name': '2017 First Special Session',
                  'type':'special',

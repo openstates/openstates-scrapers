@@ -29,7 +29,9 @@ metadata = {
         '2017_18': {
             'display_name': '2017-2018 Regular Session',
             '_scraped_name': '2017-2018 Regular Session',
-            '_guid': 25
+            '_guid': 25,
+            'start_date': '2017-01-09',
+            'end_date': '2017-03-31'
         },
         '2015_16': {
             'display_name': '2015-2016 Regular Session',

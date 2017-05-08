@@ -1,4 +1,5 @@
 import lxml.html
+import datetime
 from billy.utils.fulltext import text_after_line_numbers
 from .bills import WABillScraper
 from .legislators import WALegislatorScraper
@@ -44,7 +45,9 @@ metadata = dict(
                      },
         '2017-2018': {'display_name': '2017-2018 Regular Session',
                       '_scraped_name': '2017-18',
-                     },                     
+                      'start_date': datetime.date(2017, 1, 9),
+                      'end_date': datetime.date(2017, 4, 23),
+                     },
     },
     feature_flags = ['events', 'subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[

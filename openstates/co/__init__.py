@@ -72,7 +72,9 @@ metadata = dict(
             'type'         : 'primary',
              'display_name': '2017 Regular Session',
             '_scraped_name': "2017 Regular Session",
-            '_data_id':'10171'
+            '_data_id':'10171',
+            'start_date'   : datetime.date(2017,1,11),
+            'end_date'     : datetime.date(2017,5,10)
          },
     },
     feature_flags=['influenceexplorer'],

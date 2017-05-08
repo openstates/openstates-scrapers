@@ -78,6 +78,8 @@ metadata = {
             'type': 'primary',
             'display_name': '190th Legislature (2017-2018)',
             '_scraped_name': '190th',
+            'start_date': datetime.date(2017,1,4),
+            'end_date': datetime.date(2017,11,15)
         },
     },
     'legislature_name': 'Massachusetts General Court',

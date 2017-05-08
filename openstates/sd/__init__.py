@@ -92,6 +92,8 @@ metadata = dict(
         '2017': {
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017 (92nd) Session',
+            'start_date': datetime.date(2017, 1, 10),
+            'end_date': datetime.date(2017, 3, 27),
         },
     },
     feature_flags = ['subjects', 'influenceexplorer'],

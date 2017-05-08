@@ -1,3 +1,4 @@
+import datetime
 from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
 from .bills import VTBillScraper
 from .legislators import VTLegislatorScraper
@@ -54,6 +55,8 @@ metadata = dict(
                      '2017-2018': {'type': 'primary',
                                    'display_name': '2017-2018 Regular Session',
                                    '_scraped_name': '2017-2018 Session',
+                                   'start_date': datetime.date(2017, 1, 4),
+                                   'end_date': datetime.date(2017, 5, 8),
                                   },
                      },
     feature_flags=[],

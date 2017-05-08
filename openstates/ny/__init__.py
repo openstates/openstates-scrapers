@@ -1,5 +1,6 @@
 import re
 import lxml.html
+import datetime
 from billy.utils.fulltext import text_after_line_numbers
 from .bills import NYBillScraper
 from .legislators import NYLegislatorScraper
@@ -53,6 +54,8 @@ metadata = dict(
         '2017-2018': {
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017',
+            'start_date': datetime.date(2017, 1, 4),
+            'end_date':   datetime.date(2017, 12, 31),
         },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],

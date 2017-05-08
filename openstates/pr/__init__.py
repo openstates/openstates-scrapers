@@ -1,3 +1,4 @@
+import datetime
 from billy.utils.fulltext import worddata_to_text
 from .bills import PRBillScraper
 from .legislators import PRLegislatorScraper
@@ -35,7 +36,9 @@ metadata = dict(
                       '_scraped_name': '2013-2016'
                      },
         '2017-2020': {'display_name': '2017-2020 Session',
-                      '_scraped_name': '2017-2020'
+                      '_scraped_name': '2017-2020',
+                      'start_date': datetime.date(2017, 1, 2),
+                      'end_date':   datetime.date(2021, 1, 1),
                      },
     },
     feature_flags=[],

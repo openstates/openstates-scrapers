@@ -84,6 +84,8 @@ class NorthCarolina(Jurisdiction):
             "classification": "primary",
             "identifier": "2017",
             "name": "2017-2018 Session",
+            "start_date": "2017-01-11",
+            "end_date": "2017-08-01"
         },
     ]
     ignored_scraped_sessions = [
