@@ -1,14 +1,10 @@
 import lxml.html
 from functools import reduce
-from collections import defaultdict
 
 from pupa.scrape import Person, Scraper
 
 
 class KYPersonScraper(Scraper):
-    jurisdiction = 'ky'
-    latest_only = True
-
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
@@ -24,67 +20,6 @@ class KYPersonScraper(Scraper):
 
         for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
             yield from self.scrape_member(chamber, link.get('href'))
-
-    def scrape_office_info(self, url):
-        ret = {}
-        legislator_page = self.get(url).text
-        legislator_page = lxml.html.fromstring(legislator_page)
-        legislator_page.make_links_absolute(url)
-        info = legislator_page.xpath("//table//span")
-        for span in info:
-            elements = span.xpath("./*")
-            if len(elements) < 1:
-                continue
-            if elements[0].tag != "b":
-                continue
-            txt = elements[0].text_content().strip()
-
-            if txt == "Bio" or \
-               "committees" in txt.lower() or \
-               "service" in txt.lower() or \
-               txt == "":
-                continue
-
-            def _handle_phone(obj):
-                ret = defaultdict(list)
-                for x in obj.xpath(".//*")[:-1]:
-                    phone = x.tail.strip()
-                    obj = phone.split(":", 1)
-                    if len(obj) != 2:
-                        continue
-                    typ, number = obj
-                    typ, number = typ.strip(), number.strip()
-                    ret[typ].append(number)
-                return ret
-
-            def _handle_address(obj):
-                addr = " ".join([x.tail or "" for x in obj.xpath(".//*")[1:]])
-                return [addr.strip()]
-
-            def _handle_emails(obj):
-                ret = []
-                emails = obj.xpath(".//a[contains(@href, 'mailto')]")
-                if len(emails) < 1:
-                    return []
-                for email in emails:
-                    _, efax = email.attrib['href'].split(":", 1)
-                    ret.append(efax)
-                return ret
-
-            handlers = {
-                "Mailing Address": _handle_address,
-                "Frankfort Address(es)": _handle_address,
-                "Phone Number(s)": _handle_phone,
-                "Email Address(es)": _handle_emails
-            }
-
-            try:
-                handler = handlers[txt]
-                ret[txt] = handler(span)
-            except KeyError:
-                pass
-
-        return ret
 
     def scrape_member(self, chamber, member_url):
         member_page = self.get(member_url).text
