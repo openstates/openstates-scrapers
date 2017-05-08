@@ -176,7 +176,6 @@ class HIBillScraper(Scraper):
         bill_id = '{}{}'.format(qs['billtype'], qs['billnumber'])
         versions = bill_page.xpath("//table[contains(@id, 'GridViewVersions')]")[0]
 
-        tables = bill_page.xpath("//table")
         metainf_table = bill_page.xpath('//div[contains(@id, "itemPlaceholder")]//table[1]')[0]
         action_table = bill_page.xpath('//div[contains(@id, "UpdatePanel1")]//table[1]')[0]
 
@@ -188,6 +187,8 @@ class HIBillScraper(Scraper):
         b = Bill(bill_id, session, meta['Measure Title'],
                  chamber=chamber,
                  classification=bill_type)
+        if meta['Description']:
+            b.add_abstract(meta['Description'], 'description')
         for subject in subs:
             b.add_subject(subject)
         if url:
