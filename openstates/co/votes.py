@@ -21,6 +21,11 @@ vote_re = re.compile((r"\s*"
            "ABSENT\s*(?P<abs_count>\d+).*"))
 votes_re = r"(?P<name>\w+(\s\w\.)?)\s+(?P<vote>Y|N|A|E|-)"
 
+
+def fix_typos(data):
+    return data.replace('Tueday', 'Tuesday')  # Spelling is hard
+
+
 class COVoteScraper(VoteScraper, LXMLMixin):
     jurisdiction = 'co'
 
@@ -32,6 +37,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
             data = convert_pdf(path, type='text')
+            data = fix_typos(data)
 
             in_vote = False
             cur_vote = {}
@@ -202,6 +208,7 @@ class COVoteScraper(VoteScraper, LXMLMixin):
         for href in hrefs:
             (path, response) = self.urlretrieve(href.attrib['href'])
             data = convert_pdf(path, type='text')
+            data = fix_typos(data)
 
             cur_bill_id = None
             cur_vote_count = None

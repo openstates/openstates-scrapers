@@ -73,28 +73,22 @@ class MICommitteeScraper(Scraper):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
-        name = doc.xpath('//div[@id="committeeleft"]//h2[1]/text()')[0]
+        headers = doc.xpath('(//div[@class="row"])[2]//h1')
+        assert len(headers) == 1
+        name = ' '.join(headers[0].xpath('./text()'))
         name = name.replace(' Committee', '')
 
         com = Organization(chamber='upper', name=name, classification='committee')
 
-        for member in doc.xpath('//div[@id="committeeright"]//a'):
-            member_name = member.text.strip()
-
-            # don't add clerks
-            if member_name == 'Committee Clerk':
-                continue
-
-            # skip phone links
-            if member.get("href").startswith("tel:"):
-                continue
-
-            if 'Committee Chair' in member.tail:
+        for member in doc.xpath('(//div[@class="row"])[3]/div[1]/ul[1]/li'):
+            text = member.text_content()
+            member_name = member.xpath('./a/text()')[0].replace('Representative ', '')
+            if 'Committee Chair' in text:
                 role = 'chair'
-            elif 'Majority Vice' in member.tail:
-                role = 'majority vice chair'
-            elif 'Minority Vice' in member.tail:
+            elif 'Minority Vice' in text:
                 role = 'minority vice chair'
+            elif 'Vice' in text:
+                role = 'majority vice chair'
             else:
                 role = 'member'
 
