@@ -93,7 +93,7 @@ class Washington(Jurisdiction):
         yield upper
         yield lower
 
-    def get_session_list():
+    def get_session_list(self):
         from utils.lxmlize import url_xpath
         return url_xpath('http://apps.leg.wa.gov/billinfo/',
                          '//select[starts-with(@id, "ctl00_ContentPlaceHolder'
