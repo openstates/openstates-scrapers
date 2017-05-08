@@ -1,16 +1,16 @@
 import json
 
-from billy.scrape.legislators import Legislator, LegislatorScraper
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'vt'
-    latest_only = True
+class VTPersonScraper(Scraper, LXMLMixin):
     CHAMBERS = {'Senator': 'upper', 'Representative': 'lower'}
 
-    def scrape(self, term, chambers):
-        year_slug = term[5:]
+    def scrape(self, session=None):
+        if session is None:
+            session = self.latest_session()
+        year_slug = session[5:]
 
         # Load all members via the private API
         legislator_dump_url = (
@@ -22,7 +22,7 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
         # Parse the information from each legislator
         for info in legislators:
             # Strip whitespace from strings
-            info = {k: v.strip() for k, v in info.iteritems()}
+            info = {k: v.strip() for k, v in info.items()}
 
             # Gather photo URL from the member's page
             member_url = ('http://legislature.vermont.gov/people/single/{}/{}'.
@@ -43,26 +43,26 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
             if district == 'Grand Isle':
                 district = 'Chittenden-Grand Isle'
 
-            leg = Legislator(
-                term=term,
-                chamber=self.CHAMBERS[info['Title']],
+            leg = Person(
+                primary_org=self.CHAMBERS[info['Title']],
                 district=district,
                 party=info['Party'].replace("Democrat", "Democratic"),
-                full_name="{0} {1}".format(info['FirstName'], info['LastName']),
-                photo_url=photo_url
+                name="{0} {1}".format(info['FirstName'], info['LastName']),
+                image=photo_url
             )
 
-            leg.add_office(
-                type='capitol',
-                name='Capitol Office',
-                address='Vermont State House\n115 State Street\nMontpelier, VT 05633',
-                email=state_email
+            leg.add_contact_detail(
+                note="Capitol Office",
+                type='address',
+                value='Vermont State House\n115 State Street\nMontpelier, VT 05633'
             )
+            if state_email:
+                leg.add_contact_detail(note="Capitol Office", type='email', value=state_email)
 
-            leg.add_office(
-                type='district',
-                name='District Office',
-                address="{0}{1}\n{2}, {3} {4}".format(
+            leg.add_contact_detail(
+                note="District Office",
+                type='address',
+                value="{0}{1}\n{2}, {3} {4}".format(
                     info['MailingAddress1'],
                     ("\n" + info['MailingAddress2']
                         if info['MailingAddress2'].strip()
@@ -70,15 +70,17 @@ class VTLegislatorScraper(LegislatorScraper, LXMLMixin):
                     info['MailingCity'],
                     info['MailingState'],
                     info['MailingZIP']
-                ),
-                phone=(info['HomePhone'].strip() or None),
-                email=(info['Email'].strip() or
-                       info['HomeEmail'].strip() or
-                       info['WorkEmail'].strip() or
-                       None)
+                )
             )
+            if info['HomePhone']:
+                leg.add_contact_detail(note="District Office", type='voice', value=info['HomePhone'])
+            district_email = info['Email'] or info['HomeEmail'] or info['WorkEmail']
+            if district_email:
+                leg.add_contact_detail(note="District Office", type='email', value=district_email)
+
+            leg.add_link(member_url)
 
             leg.add_source(legislator_dump_url)
             leg.add_source(member_url)
 
-            self.save_legislator(leg)
+            yield leg
