@@ -5,6 +5,9 @@ pytz>=2010l
 feedparser>=4.1
 spatula
 
+# dev
+ipdb
+
 #CT
 chardet
 unicodecsv
