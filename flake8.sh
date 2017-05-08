@@ -2,10 +2,12 @@
 
 python3 -m flake8 \
     openstates/al \
+    openstates/ar \
     openstates/az \
     openstates/dc \
     openstates/de \
     openstates/fl \
+    openstates/hi \
     openstates/id \
     openstates/in \
     openstates/ky \
@@ -13,6 +15,7 @@ python3 -m flake8 \
     openstates/mn \
     openstates/mt \
     openstates/nc \
+    openstates/ne \
     openstates/nj \
     openstates/nm \
     openstates/oh \
@@ -21,7 +24,9 @@ python3 -m flake8 \
     openstates/sc \
     openstates/va \
     openstates/ms \
+    openstates/sd \
     openstates/wi \
+    openstates/wy \
     openstates/utils \
     pupa2billy
 
