@@ -1,4 +1,8 @@
+import re
+
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
 
 from .people import KYPersonScraper
 from .committees import KYCommitteeScraper
@@ -14,7 +18,6 @@ class Kentucky(Jurisdiction):
         'people': KYPersonScraper,
         'committees': KYCommitteeScraper,
         'bills': KYBillScraper,
-        # 'votes': KYVoteScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -119,11 +122,11 @@ class Kentucky(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
@@ -131,3 +134,14 @@ class Kentucky(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        sessions = url_xpath(
+            'http://www.lrc.ky.gov/legislation.htm',
+            '//a[contains(@href, "record.htm")]/text()[normalize-space()]')
+
+        for index, session in enumerate(sessions):
+            # Remove escaped whitespace characters.
+            sessions[index] = re.sub(r'[\r\n\t]+', '', session)
+
+        return sessions

@@ -1,14 +1,10 @@
 import re
 
-from pupa.scrape import Scraper, Organization
-
 import lxml.html
+from pupa.scrape import Scraper, Organization
 
 
 class KYCommitteeScraper(Scraper):
-
-    latest_only = True
-
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
