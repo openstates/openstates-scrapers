@@ -37,6 +37,8 @@ class Comparator:
                 for v in itertools.chain(v1, v2):
                     v['type'] = sorted([t for t in v['type'] if t != 'other'])
                 for i, (a1, a2) in enumerate(zip(v1, v2)):
+                    a1.pop('date')
+                    a2.pop('date')
                     if a1 != a2:
                         print('action', i, 'differ', a1, '!=', a2)
 

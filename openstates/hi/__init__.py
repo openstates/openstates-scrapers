@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import HIPersonScraper
-from .events import HIEventScraper
+# from .events import HIEventScraper
 from .bills import HIBillScraper
 from .committees import HICommitteeScraper
 settings = dict(SCRAPELIB_TIMEOUT=300)
@@ -16,7 +16,7 @@ class Hawaii(Jurisdiction):
         'people': HIPersonScraper,
         'bills': HIBillScraper,
         'committees': HICommitteeScraper,
-        'events': HIEventScraper
+        # 'events': HIEventScraper
     }
     parties = [
         {'name': 'Republican'},
