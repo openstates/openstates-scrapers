@@ -9,6 +9,10 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 from . import ksapi
 
 
+def _clean_spaces(title):
+    return re.sub('\s+', ' ', title)
+
+
 class KSBillScraper(Scraper):
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -124,7 +128,7 @@ class KSBillScraper(Scraper):
         for row in version_rows:
             # version, docs, sn, fn
             tds = row.getchildren()
-            title = tds[0].text_content().strip()
+            title = _clean_spaces(tds[0].text_content().strip())
             doc_url = get_doc_link(tds[1])
             if doc_url:
                 bill.add_version_link(title, doc_url, media_type='application/pdf')
@@ -132,10 +136,14 @@ class KSBillScraper(Scraper):
                 sn_url = get_doc_link(tds[2])
                 if sn_url:
                     bill.add_document_link(
-                        title + ' - Supplementary Note', sn_url, on_duplicate='ignore')
+                        title + ' - Supplementary Note', sn_url,
+                        on_duplicate='ignore'
+                    )
             if len(tds) > 3:
                 if sn_url:
-                    bill.add_document_link(title + ' - Fiscal Note', sn_url, on_duplicate='ignore')
+                    bill.add_document_link(title + ' - Fiscal Note', sn_url,
+                                           on_duplicate='ignore'
+                                           )
 
         all_links = doc.xpath(
             "//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href"
@@ -161,7 +169,8 @@ class KSBillScraper(Scraper):
                     amendment_name = 'Conference Committee Report'
                 else:
                     amendment_name = row_text.strip()
-                bill.add_document_link(amendment_name, amendment, on_duplicate='ignore')
+                bill.add_document_link(_clean_spaces(amendment_name), amendment,
+                                       on_duplicate='ignore')
 
     def parse_vote(self, bill, link):
         member_doc = lxml.html.fromstring(self.get(link).text)
