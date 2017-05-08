@@ -41,9 +41,8 @@ _categorizer_rules = (
     # Fix the chamber before moving on to the other rules.
     Rule(r'^H\.\s', stop=False, actor='lower'),
     Rule(r'^S\.\s', stop=False, actor='upper'),
-    Rule(r'Signed by S\. Speaker', actor='upper'),
-    Rule(r'Signed by H\. Speaker', actor='lower'),
-
+    Rule(r'Signed by S(\.|enate) Speaker', actor='upper'),
+    Rule(r'Signed by H(\.|ouse) Speaker', actor='lower'),
     # Extract the vote counts to help disambiguate chambers later.
     Rule(r'Ayes\s*(?P<yes_votes>\d+),\s*Nays\s*(?P<no_votes>\d+)', stop=False),
 
@@ -158,7 +157,7 @@ def actions_from_table(bill, actions_table):
     action_rows = actions_table.xpath("tr")
 
     # first row will say "Actions Taken on S|H(B|R|CR)..."
-    if 'Actions Taken on S' in action_rows[0].text_content():
+    if 'Actions For S' in action_rows[0].text_content():
         chamber = 'upper'
     else:
         chamber = 'lower'
@@ -169,7 +168,6 @@ def actions_from_table(bill, actions_table):
         strptime = datetime.datetime.strptime
         action_date = strptime(tds[1].text.strip(), '%m/%d/%Y')
         action_types, attrs = categorize_action(action_taken)
-
         # Overwrite any presumtive fields that are inaccurate, usually chamber.
         action = dict(action=action_taken, date=action_date,
                       type=action_types, actor=chamber)
@@ -191,25 +189,25 @@ class TNBillScraper(BillScraper):
 
     def scrape(self, term, chambers):
 
-        #The index page gives us links to the paginated bill pages
+        # The index page gives us links to the paginated bill pages
         if self.metadata['session_details'][term]['type'] == 'special':
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/SPSession1.aspx'
             xpath = '//h4[text()="%s"]/following-sibling::table[1]/tbody/tr/td/a' % self.metadata['session_details'][term]['_scraped_name']
         else:
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
             xpath = '//td[contains(@class,"webindex")]/a'
-        
+
         index_list_page = self.get(index_page).text
-        
+
         index_list_page = lxml.html.fromstring(index_list_page)
         index_list_page.make_links_absolute(index_page)
 
         for bill_listing in index_list_page.xpath(xpath):
 
-            bill_listing = bill_listing.attrib['href'] 
-       
+            bill_listing = bill_listing.attrib['href']
+
             bill_list_page = self.get(bill_listing).text
-            
+
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
@@ -220,7 +218,6 @@ class TNBillScraper(BillScraper):
                 self.scrape_bill(term, bill_link)
 
     def scrape_bill(self, term, bill_url):
-
         page = self.get(bill_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(bill_url)
@@ -239,9 +236,9 @@ class TNBillScraper(BillScraper):
             if '*' in secondary_bill_id:
                 bill_id, secondary_bill_id = secondary_bill_id, bill_id
                 secondary_bill_id = secondary_bill_id.strip()
-            secondary_bill_id = secondary_bill_id.replace('  ',' ')
-            
-        bill_id = bill_id.replace('*', '').replace('  ',' ').strip()
+            secondary_bill_id = secondary_bill_id.replace('  ', ' ')
+
+        bill_id = bill_id.replace('*', '').replace('  ', ' ').strip()
 
         if 'B' in bill_id:
             bill_type = 'bill'
@@ -249,7 +246,7 @@ class TNBillScraper(BillScraper):
             bill_type = 'joint resolution'
         elif 'R' in bill_id:
             bill_type = 'resolution'
-            
+
 
         primary_chamber = 'lower' if 'H' in bill_id else 'upper'
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
@@ -349,7 +346,7 @@ class TNBillScraper(BillScraper):
                       'Recommended for passage' in motion or
                       'Rec. for pass' in motion or
                       'Adopted' in raw_vote[1]
-                     )
+                      )
             vote_regex = re.compile('\d+$')
             aye_regex = re.compile('^.+voting aye were: (.+) -')
             no_regex = re.compile('^.+voting no were: (.+) -')
