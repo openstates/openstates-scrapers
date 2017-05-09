@@ -1,4 +1,3 @@
-from .lxmlize import LXMLMixin
 import re
 
 

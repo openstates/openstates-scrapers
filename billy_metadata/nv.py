@@ -1,9 +1,4 @@
 import datetime
-# from billy.scrape.utils import url_xpath
-# from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-# from .bills import NVBillScraper
-# from .legislators import NVLegislatorScraper
-# from .committees import NVCommitteeScraper
 
 metadata = {
     'name': 'Nevada',
@@ -38,18 +33,18 @@ metadata = {
             'name': '2015-2016',
             'start_year': 2015,
             'end_year': 2016,
-            'sessions': ['78', '2015Special29','2016Special30'],
+            'sessions': ['78', '2015Special29', '2016Special30'],
         },
         {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
             'sessions': ['79'],
-        },        
+        },
     ],
     'session_details': {
         '2010Special26': {
-            'type':'special',
+            'type': 'special',
             'display_name': '26th Special Session (2010)',
             '_scraped_name': '26th (2010) Special Session',
             'slug': '26th2010Special',
@@ -86,7 +81,7 @@ metadata = {
             '_committee_session': '28th2014Special',
             'slug': '28th2014Special',
         },
-	    '78': {
+        '78': {
             'type': 'primary',
             'start_date': datetime.date(2015, 2, 15),
             'end_date': datetime.date(2015, 6, 1),
@@ -111,8 +106,8 @@ metadata = {
             '_scraped_name': u'30th (2016) Special Session',
             '_committee_session': '30th2016Special',
             'slug': '30th2016Special',
-        },      
-        '79':{
+        },
+        '79': {
             'type': 'primary',
             'start_date': datetime.date(2017, 2, 15),
             'end_date': datetime.date(2017, 6, 1),
@@ -165,14 +160,3 @@ metadata = {
         '63rd (1985) Session',
     ],
 }
-
-
-def session_list():
-    import re
-    return [re.sub(ur'(\xa0|\(click to close\)|\(click to open\))', '', x.text_content()) for x in
-            url_xpath('http://www.leg.state.nv.us/Session/',
-                      '//*[@class="MainHeading"]')]
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))

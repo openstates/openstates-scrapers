@@ -1,6 +1,10 @@
+from utils.lxmlize import url_xpath
+from utils.fulltext import text_after_line_numbers, pdfdata_to_text
+
 from pupa.scrape import Jurisdiction, Organization
 from .people import NVPeopleScraper
 from .committees import NVCommitteeScraper
+from .bills import NVBillScraper
 
 
 class Nevada(Jurisdiction):
@@ -10,7 +14,8 @@ class Nevada(Jurisdiction):
     url = "http://www.leg.state.nv.us/"
     scrapers = {
         'people': NVPeopleScraper,
-        'committees': NVCommitteeScraper
+        'committees': NVCommitteeScraper,
+        'bills': NVBillScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -139,3 +144,12 @@ class Nevada(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        import re
+        return [re.sub(r'(\xa0|\(click to close\)|\(click to open\))', '', x.text_content()) for x in
+                url_xpath('http://www.leg.state.nv.us/Session/',
+                          '//*[@class="MainHeading"]')]
+
+    def get_extract_text(self, doc, data):
+        return text_after_line_numbers(pdfdata_to_text(data))
