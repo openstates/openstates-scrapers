@@ -61,6 +61,8 @@ class MALegislatorScraper(LegislatorScraper):
         doc.make_links_absolute("https://malegislature.gov")
 
         for member_url in doc.xpath('//td[@class="pictureCol"]/a/@href'):
+            if 'VAC_' in member_url:
+                continue
             self.scrape_member(chamber, term, member_url)
 
     def scrape_member(self, chamber, term, member_url):
@@ -71,8 +73,12 @@ class MALegislatorScraper(LegislatorScraper):
         photo_url = root.xpath('//div[@class="thumbPhoto"]/img/@src')[0]
         full_name = root.xpath('//h1/span')[0].tail.strip()
 
-        email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
-        email = email.replace('mailto:', '')
+        try:
+            email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
+            email = email.replace('mailto:', '')
+        except:
+            email = ''
+            self.info("seat may be vacant")
 
         party, district = root.xpath('//h1/span')[1].text.split('-')
         party = party.strip()
