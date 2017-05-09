@@ -341,10 +341,22 @@ class WABillScraper(Scraper, LXMLMixin):
                     actor = 'upper'
             elif 'H' in bill_id:
                 actor = 'lower'
+            temp = self.categorizer.categorize(action_name)
+            classification = temp['classification']
+            try:
+                committees = temp['committees']
+            except:
+                print(temp)
+                committees = []
+            related_entities = []
+            for committee in committees:
+                related_entities.append({
+                    "type": "committee",
+                    "name": committee
+                })
 
             bill.add_action(description=action_name, date=action_date, chamber=actor,
-                            classification=self.categorizer.categorize(action_name)
-                            ['classification'])
+                            classification=classification, related_entities=related_entities)
 
     def scrape_votes(self, bill):
         bill_num = bill.identifier.split()[1]

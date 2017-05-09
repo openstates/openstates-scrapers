@@ -81,7 +81,8 @@ class WAPersonScraper(Scraper, LXMLMixin):
 
             leg.add_contact_detail(type='address', value=capitol_address,
                                    note='Capitol Office')
-            leg.add_contact_detail(type='email', value=email)
+            leg.add_contact_detail(type='email', value=email,
+                                   note='Capitol Office')
             leg.add_contact_detail(type='voice', value=capitol_phone,
                                    note='Capitol Office')
             leg.add_contact_detail(type='fax', value=str(capitol_fax),
