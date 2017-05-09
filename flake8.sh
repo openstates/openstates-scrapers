@@ -1,6 +1,7 @@
 #!/bin/sh
 
 python3 -m flake8 \
+    openstates/ak \
     openstates/al \
     openstates/ar \
     openstates/az \

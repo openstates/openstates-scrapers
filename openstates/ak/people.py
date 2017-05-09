@@ -1,5 +1,3 @@
-import re
-import lxml.html
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
@@ -11,7 +9,9 @@ class AKPersonScraper(Scraper, LXMLMixin):
     def _scrape_offices(self, leg, url, email):
         doc = self.lxmlize(url)
 
-        capitol_office = doc.xpath('//strong[text()="Session Contact"]')[0].getparent().text_content().strip().splitlines()
+        capitol_office = doc.xpath(
+            '//strong[text()="Session Contact"]'
+        )[0].getparent().text_content().strip().splitlines()
         capitol_office = [line.strip() for line in capitol_office]
 
         assert capitol_office[0] == 'Session Contact'
@@ -19,32 +19,31 @@ class AKPersonScraper(Scraper, LXMLMixin):
         assert capitol_office[4].startswith('Fax:')
 
         leg.add_contact_detail(
-            type = 'address',
-            value = capitol_office[1] + '\n' + capitol_office[2],
-            note = 'Capitol Office',
+            type='address',
+            value=capitol_office[1] + '\n' + capitol_office[2],
+            note='Capitol Office',
         )
-        
-        
+
         if len(capitol_office[3]) > len('Phone:'):
             leg.add_contact_detail(
-                type='voice', 
-                value=capitol_office[3][len('Phone: '): ],
+                type='voice',
+                value=capitol_office[3][len('Phone: '):],
                 note='Capitol Office Phone',
             )
-        
+
         if len(capitol_office[4]) > len('Fax:'):
             leg.add_contact_detail(
-                type='fax', 
-                value=capitol_office[4][len('Fax: '): ],
+                type='fax',
+                value=capitol_office[4][len('Fax: '):],
                 note='Capitol Office Fax',
             )
-        
+
         leg.add_contact_detail(
-            type='email', 
+            type='email',
             value=email,
             note='E-mail',
         )
-        
+
         interim_office = doc.xpath('//strong[text()="Interim Contact"]')
         if interim_office:
             interim_office = interim_office[0].getparent().text_content().strip().splitlines()
@@ -53,29 +52,26 @@ class AKPersonScraper(Scraper, LXMLMixin):
             assert interim_office[3].startswith('Phone:')
             assert interim_office[4].startswith('Fax:')
 
-
             leg.add_contact_detail(
-                type = 'address',
-                note = 'District Office',
-                value = interim_office[1] + '\n' + interim_office[2],
-            
+                type='address',
+                note='District Office',
+                value=interim_office[1] + '\n' + interim_office[2],
+
             )
-        
+
             if len(interim_office[3]) > len('Phone:'):
                 leg.add_contact_detail(
-                    type='voice', 
-                    value=interim_office[3][len('Phone: '): ],
+                    type='voice',
+                    value=interim_office[3][len('Phone: '):],
                     note='District Office Phone',
                 )
-        
+
             if len(interim_office[4]) > len('Fax:'):
                 leg.add_contact_detail(
-                    type='fax', 
-                    value=interim_office[4][len('Fax: '): ],
+                    type='fax',
+                    value=interim_office[4][len('Fax: '):],
                     note='District Office Fax',
                 )
-            
-
 
     def scrape_chamber(self, chamber):
         self._party_map = {
@@ -104,7 +100,7 @@ class AKPersonScraper(Scraper, LXMLMixin):
             else:
                 self.warning('no email for ' + name)
 
-            party = district = phone = fax = None
+            party = district = None
             skip = False
 
             for dt in item.xpath('.//dt'):
@@ -114,10 +110,6 @@ class AKPersonScraper(Scraper, LXMLMixin):
                     party = dd
                 elif label == 'District:':
                     district = dd
-                elif label == 'Phone:':
-                    phone = dd
-                elif label == 'Fax:':
-                    fax = dd
                 elif label.startswith('Deceased'):
                     skip = True
                     self.warning('skipping deceased ' + name)
@@ -131,8 +123,6 @@ class AKPersonScraper(Scraper, LXMLMixin):
                 name=name,
                 party=self._party_map[party],
                 image=photo_url,
-                #email=email,
-                #url=leg_url,
             )
             person.add_source(leg_url)
             person.add_link(leg_url)
@@ -141,8 +131,7 @@ class AKPersonScraper(Scraper, LXMLMixin):
             self._scrape_offices(person, leg_url, email)
 
             yield person
-            
-            
+
     def scrape(self, chamber=None):
         if chamber:
             yield from self.scrape_chamber(chamber)
