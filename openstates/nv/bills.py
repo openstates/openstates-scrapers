@@ -1,4 +1,5 @@
 import re
+import pytz
 from datetime import datetime
 from collections import defaultdict
 import lxml.html
@@ -8,24 +9,24 @@ from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
 
 class NVBillScraper(Scraper, LXMLMixin):
-
+    _tz = pytz.timezone('PST8PDT')
     _classifiers = (
-        ('Approved by the Governor', 'governor:signed'),
-        ('Bill read. Veto not sustained', 'bill:veto_override:passed'),
-        ('Bill read. Veto sustained', 'bill:veto_override:failed'),
-        ('Enrolled and delivered to Governor', 'governor:received'),
-        ('From committee: .+? adopted', 'committee:passed'),
-        ('From committee: .+? pass', 'committee:passed'),
-        ('Prefiled. Referred', ['bill:introduced', 'committee:referred']),
-        ('Read first time. Referred', ['bill:reading:1', 'committee:referred']),
-        ('Read first time.', 'bill:reading:1'),
-        ('Read second time.', 'bill:reading:2'),
-        ('Read third time. Lost', ['bill:failed', 'bill:reading:3']),
-        ('Read third time. Passed', ['bill:passed', 'bill:reading:3']),
-        ('Read third time.', 'bill:reading:3'),
-        ('Rereferred', 'committee:referred'),
-        ('Resolution read and adopted', 'bill:passed'),
-        ('Vetoed by the Governor', 'governor:vetoed')
+        ('Approved by the Governor', 'executive-signature'),
+        ('Bill read. Veto not sustained', 'veto-override-passage'),
+        ('Bill read. Veto sustained', 'veto-override-failure'),
+        ('Enrolled and delivered to Governor', 'executive-receipt'),
+        ('From committee: .+? adopted', 'committee-passage'),
+        ('From committee: .+? pass', 'committee-passage'),
+        ('Prefiled. Referred', ['introduction', 'referral-committee']),
+        ('Read first time. Referred', ['reading-1', 'referral-committee']),
+        ('Read first time.', 'reading-1'),
+        ('Read second time.', 'reading-2'),
+        ('Read third time. Lost', ['failure', 'reading-3']),
+        ('Read third time. Passed', ['passage', 'reading-3']),
+        ('Read third time.', 'reading-3'),
+        ('Rereferred', 'referral-committee'),
+        ('Resolution read and adopted', 'passage'),
+        ('Vetoed by the Governor', 'executive-veto')
     )
 
     def scrape(self, chamber=None, session=None):
@@ -37,38 +38,29 @@ class NVBillScraper(Scraper, LXMLMixin):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        print(session)
         if 'Special' in session:
-            year = session[0:4]
-        elif int(session) >= 71:
-            year = ((int(session) - 71) * 2) + 2001
+            year = session[4:8]
+        elif int(session[:2]) >= 71:
+            year = ((int(session[:2]) - 71) * 2) + 20011
         else:
             return 'No data exists for %s' % session
             # raise NoDataForPeriod(session)
 
-        sessionsuffix = 'th'
-        if str(session)[-1] == '1':
-            sessionsuffix = 'st'
-        elif str(session)[-1] == '2':
-            sessionsuffix = 'nd'
-        elif str(session)[-1] == '3':
-            sessionsuffix = 'rd'
-
         self.subject_mapping = defaultdict(list)
-
         if 'Special' in session:
-            insert = session[-2:] + sessionsuffix + str(year) + "Special"
+            s = str(year) + "Special" + session[:2]
         else:
-            insert = str(session) + sessionsuffix + str(year)
-            self.scrape_subjects(insert, session, year)
+            s = session[:2]
+            self.scrape_subjects(session, s, year)
 
         if chamber == 'upper':
-            yield from self.scrape_senate_bills(chamber, insert, session, year)
+            yield from self.scrape_senate_bills(chamber, session, s, year)
         else:
-            yield from self.scrape_assem_bills(chamber, insert, session, year)
+            yield from self.scrape_assem_bills(chamber, session, s, year)
 
     def scrape_subjects(self, insert, session, year):
-        url = 'http://www.leg.state.nv.us/Session/%s/Reports/TablesAndIndex/%s_%s-index.html' % (insert, year, session)
+        url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
+              'TablesAndIndex/%s_%s-index.html' % (insert, year, session)
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -95,8 +87,9 @@ class NVBillScraper(Scraper, LXMLMixin):
         doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
                     8: 'joint resolution'}
 
-        for docnum, bill_type in doc_type.iteritems():
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
+        for docnum, bill_type in doc_type.items():
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
+                             'HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
             count = 0
             for link in links:
@@ -107,7 +100,8 @@ class NVBillScraper(Scraper, LXMLMixin):
                 page = page.replace(u"\xa0", " ")
                 root = lxml.html.fromstring(page)
 
-                bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
+                bill_id = root.xpath('string(/html/body/div[@id="content"]' +
+                                     '/table[1]/tr[1]/td[1]/font)')
                 title = self.get_node(
                     root,
                     '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
@@ -150,8 +144,7 @@ class NVBillScraper(Scraper, LXMLMixin):
                     minutes_date = mr.xpath(minutes_date_path).split()
                     minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Agenda"
                     # bill.add_document(minutes_date, minutes_url)
-                    bill.add_document_link(note='',
-                                           date=minutes_date,
+                    bill.add_document_link(note=minutes_date,
                                            url=minutes_url)
                     minutes_count = minutes_count + 1
 
@@ -160,13 +153,13 @@ class NVBillScraper(Scraper, LXMLMixin):
                 bill.add_source(page_path)
                 yield bill
 
-
     def scrape_assem_bills(self, chamber, insert, session, year):
 
         doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
-                    6: 'joint resolution',9:'petition'}
-        for docnum, bill_type in doc_type.iteritems():
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
+                    6: 'joint resolution', 9: 'petition'}
+        for docnum, bill_type in doc_type.items():
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/' + \
+                             'Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
             count = 0
             for link in links:
@@ -177,40 +170,45 @@ class NVBillScraper(Scraper, LXMLMixin):
                 root = lxml.html.fromstring(page)
                 root.make_links_absolute("http://www.leg.state.nv.us/")
 
-                bill_id = root.xpath('string(/html/body/div[@id="content"]/table[1]/tr[1]/td[1]/font)')
+                bill_id = root.xpath('string(/html/body/div[@id="content"]'
+                                     '/table[1]/tr[1]/td[1]/font)')
                 title = self.get_node(
                     root,
                     '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
                     'b[contains(text(), "By:")]]/td/em/text()')
 
-                bill = Bill(session, chamber, bill_id, title,
-                            type=bill_type)
-                bill['subjects'] = list(set(self.subject_mapping[bill_id]))
+                bill = Bill(bill_id, legislative_session=session, chamber=chamber,
+                            title=title, classification=bill_type)
+
+                bill.subject = list(set(self.subject_mapping[bill_id]))
                 billtext = root.xpath("//b[text()='Bill Text']")[0].getparent().getnext()
                 text_urls = billtext.xpath("./a")
                 for text_url in text_urls:
                     version_name = text_url.text.strip()
                     version_url = text_url.attrib['href']
-                    bill.add_version(version_name, version_url,
-                                 mimetype='application/pdf')
+                    bill.add_version_link(note=version_name, url=version_url,
+                                          media_type='application/pdf')
 
                 primary, secondary = self.scrape_sponsors(page)
 
                 for leg in primary:
-                    bill.add_sponsor('primary', leg)
+                    bill.add_sponsorship(classification='primary',
+                                         name=leg, entity_type='person',
+                                         primary=True)
                 for leg in secondary:
-                    bill.add_sponsor('cosponsor', leg)
+                    bill.add_sponsorship(classification='cosponsor',
+                                         name=leg, entity_type='person',
+                                         primary=False)
 
                 minutes_count = 2
                 for mr in root.xpath('//table[4]/tr/td[3]/a'):
-                    minutes =  mr.xpath("string(@href)")
+                    minutes = mr.xpath("string(@href)")
                     minutes_url = "http://www.leg.state.nv.us" + minutes
                     minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
                     minutes_date = mr.xpath(minutes_date_path).split()
                     minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
-                    bill.add_document(minutes_date, minutes_url)
-                    minutes_count = minutes_count + 1
-
+                    bill.add_document_link(note=minutes_date, url=minutes_url)
+                    minutes_count += 1
 
                 self.scrape_actions(root, bill, "lower")
                 yield from self.scrape_votes(page, page_path, bill, insert, year)
@@ -228,7 +226,6 @@ class NVBillScraper(Scraper, LXMLMixin):
                 web_end = mr.xpath('string(@href)')
                 links.append(web_end)
         return links
-
 
     def scrape_sponsors(self, page):
         primary = []
@@ -286,7 +283,7 @@ class NVBillScraper(Scraper, LXMLMixin):
                 elif 'Governor' in action:
                     actor = 'executive'
 
-                action_type = 'other'
+                action_type = None
                 for pattern, atype in self._classifiers:
                     if re.match(pattern, action):
                         action_type = atype
@@ -302,7 +299,7 @@ class NVBillScraper(Scraper, LXMLMixin):
                                  "name": committee
                                  })
                         bill.add_action(description=action,
-                                        date=date,
+                                        date=self._tz.localize(date),
                                         chamber=actor,
                                         classification=action_type,
                                         related_entities=related_entities
@@ -310,11 +307,9 @@ class NVBillScraper(Scraper, LXMLMixin):
                         continue
 
                 bill.add_action(description=action,
-                                date=date,
+                                date=self._tz.localize(date),
                                 chamber=actor,
                                 classification=action_type)
-
-
 
     def scrape_votes(self, bill_page, page_url, bill, insert, year):
         root = lxml.html.fromstring(bill_page)
@@ -324,11 +319,11 @@ class NVBillScraper(Scraper, LXMLMixin):
         for tr in trs[1:]:
             links = tr.xpath('td/a[contains(text(), "Passage")]')
             if len(links) == 0:
-                self.warning("Non-passage vote found for {}; ".format(bill['bill_id']) +
-                    "probably a motion for the calendar. It will be skipped.")
+                self.warning("Non-passage vote found for {}; ".format(bill.identifier) +
+                             "probably a motion for the calendar. It will be skipped.")
             else:
                 assert len(links) == 1, \
-                    "Too many votes found for XPath query, on bill {}".format(bill['bill_id'])
+                    "Too many votes found for XPath query, on bill {}".format(bill.identifier)
                 link = links[0]
 
             motion = link.text
@@ -342,8 +337,8 @@ class NVBillScraper(Scraper, LXMLMixin):
             for td in tds:
                 if td.text:
                     text = td.text.strip()
-                    date = re.match('... .*?, ....',text)
-                    count = re.match('(?P<category>.*?) (?P<votes>[0-9]+)[,]?',text)
+                    date = re.match('... .*?, ....', text)
+                    count = re.match('(?P<category>.*?) (?P<votes>[0-9]+)[,]?', text)
                     if date:
                         vote_date = datetime.strptime(text, '%b %d, %Y')
                     elif count:
@@ -357,13 +352,14 @@ class NVBillScraper(Scraper, LXMLMixin):
             other = excused + not_voting + absent
             passed = yes > no
 
-            vote = Vote(chamber=chamber, start_date=vote_date, motion_text=motion,
-                        result=passed, classification='passage', bill=bill,
+            vote = Vote(chamber=chamber, start_date=self._tz.localize(vote_date),
+                        motion_text=motion, result='pass' if passed else 'fail',
+                        classification='passage', bill=bill,
                         )
             vote.set_count('yes', yes)
             vote.set_count('no', no)
             vote.set_count('other', other)
-            vote.set_count('not_voting', not_voting)
+            vote.set_count('not voting', not_voting)
             vote.set_count('absent', absent)
             # try to get vote details
             try:

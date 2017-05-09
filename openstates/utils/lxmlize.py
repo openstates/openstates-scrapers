@@ -1,27 +1,10 @@
 import requests
 import lxml.html
-import subprocess
 
 
 def url_xpath(url, path):
     doc = lxml.html.fromstring(requests.get(url).text)
     return doc.xpath(path)
-
-
-def convert_pdf(filename, type='xml'):
-    commands = {'text': ['pdftotext', '-layout', filename, '-'],
-                'text-nolayout': ['pdftotext', filename, '-'],
-                'xml': ['pdftohtml', '-xml', '-stdout', filename],
-                'html': ['pdftohtml', '-stdout', filename]}
-    try:
-        pipe = subprocess.Popen(commands[type], stdout=subprocess.PIPE,
-                                close_fds=True).stdout
-    except OSError as e:
-        raise EnvironmentError("error running %s, missing executable? [%s]" %
-                               ' '.join(commands[type]), e)
-    data = pipe.read()
-    pipe.close()
-    return data
 
 
 class LXMLMixin(object):
