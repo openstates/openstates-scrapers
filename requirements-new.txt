@@ -7,3 +7,8 @@ spatula
 
 # dev
 ipdb
+
+#CT
+chardet
+unicodecsv
+
