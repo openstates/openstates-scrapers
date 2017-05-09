@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
+from .bills import AKBillScraper
 from .people import AKPersonScraper
 from .committees import AKCommitteeScraper
 
@@ -14,6 +15,7 @@ class Alaska(Jurisdiction):
     name = "Alaska"
     url = "http://w3.legis.state.ak.us/"
     scrapers = {
+        'bills': AKBillScraper,
         'people': AKPersonScraper,
         'committees': AKCommitteeScraper,
     }
