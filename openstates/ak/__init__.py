@@ -1,5 +1,10 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
 from .people import AKPersonScraper
+
+settings = dict(SCRAPELIB_TIMEOUT=600)
+
 
 class Alaska(Jurisdiction):
     division_id = "ocd-division/country:us/state:ak"
@@ -77,3 +82,9 @@ class Alaska(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath(
+            'http://www.legis.state.ak.us/basis/start.asp',
+            "//div[@id='rightnav']//a[contains(@href, 'start.asp?session=')]//nobr/text()"
+        )
