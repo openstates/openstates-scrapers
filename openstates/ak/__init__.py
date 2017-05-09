@@ -1,7 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
+
 from .people import AKPersonScraper
+from .committees import AKCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
@@ -13,6 +15,7 @@ class Alaska(Jurisdiction):
     url = "http://w3.legis.state.ak.us/"
     scrapers = {
         'people': AKPersonScraper,
+        'committees': AKCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
