@@ -48,7 +48,7 @@ DOC_TYPES = {
     'JRCA': 'constitutional amendment',
 }
 
-_action_classifiers = ( # see http://openstates.org/categorization/
+_action_classifiers = (  # see http://openstates.org/categorization/
     (re.compile(r'Amendment No. \d+ Filed'), 'amendment:introduced'),
     (re.compile(r'Amendment No. \d+ Tabled'), 'amendment:failed'),
     (re.compile(r'Amendment No. \d+ Adopted'), 'amendment:passed'),
@@ -127,6 +127,7 @@ def _categorize_action(action):
             return kwargs
     return {"type": 'other'}
 
+
 LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
 
 
@@ -156,9 +157,10 @@ class ILBillScraper(BillScraper, LXMLMixin):
             yield bill_url
 
     def scrape(self, chamber, session):
-
-        #self.scrape_bill(chamber, session, 'SB', 'http://ilga.gov/legislation/BillStatus.asp?DocNum=116&GAID=13&DocTypeID=SB&LegId=84055&SessionID=88&GA=99')
-
+        """
+        self.scrape_bill(chamber, session, 'SB',
+        'http://ilga.gov/legislation/BillStatus.asp?DocNum=116&GAID=13&DocTypeID=SB&LegId=84055&SessionID=88&GA=99')
+        """
         for doc_type in DOC_TYPES:
             doc_type = chamber_slug(chamber)+doc_type
             for bill_url in self.get_bill_urls(chamber, session, doc_type):
@@ -188,8 +190,10 @@ class ILBillScraper(BillScraper, LXMLMixin):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/text()')[0].strip()
-        summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/text()')[0].strip()
+        title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/'
+                          'text()')[0].strip()
+        summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/'
+                            'text()')[0].strip()
 
         bill = Bill(session, chamber, bill_id, title, type=bill_type,
                     summary=summary)
@@ -232,7 +236,6 @@ class ILBillScraper(BillScraper, LXMLMixin):
         # if there's more than 1 votehistory link, there are votes to grab
         if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
             votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-            print votes_url
             self.scrape_votes(session, bill, votes_url)
 
         self.save_bill(bill)
@@ -284,8 +287,9 @@ class ILBillScraper(BillScraper, LXMLMixin):
                 raise AssertionError(
                         "Date '{}' does not follow a format".format(date))
 
-            #manual fix for bad bill. TODO: better error catching here
-            vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(), link.get('href'))
+            # manual fix for bad bill. TODO: better error catching here
+            vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(),
+                                             link.get('href'))
             if vote:
                 bill.add_vote(vote)
 
@@ -302,7 +306,6 @@ class ILBillScraper(BillScraper, LXMLMixin):
             assert '404' in e.args[0], "File not found: {}".format(e)
             self.warning("404 error for vote; skipping vote")
             return False
-
 
     def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
         warned = False
@@ -421,7 +424,7 @@ class ILBillScraper(BillScraper, LXMLMixin):
                 spontype, sponsor, this_chamber, otype = tup
                 if this_chamber == chamber and sponsor == match.groupdict()['name']:
                     try:
-                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'])
+                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'].replace("as ",""))
                     except KeyError:
                         self.warning('[%s] Unknown sponsor refinement type [%s]' % (bill_id, match.groupdict()['spontype']))
                     return

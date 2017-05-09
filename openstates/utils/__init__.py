@@ -1,5 +1,8 @@
 import re
 
+from .lxmlize import LXMLMixin  # noqa
+from .lxmlize import url_xpath  # noqa
+
 
 def validate_phone_number(phone_number):
     is_valid = False

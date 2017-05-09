@@ -3,11 +3,15 @@ import re
 import time
 import itertools
 import requests
+import os
+
 from datetime import datetime
 
 import lxml.html
 
 from billy.scrape.bills import BillScraper, Bill
+from billy.scrape.votes import Vote
+from billy.scrape.utils import convert_pdf
 
 from .actions import Categorizer
 
@@ -45,23 +49,24 @@ class MABillScraper(BillScraper):
     def scrape(self, chamber, session):
         # for the chamber of the action
         #chamber_map = {'House': 'lower', 'Senate': 'upper', 'Joint': 'joint','Governor': 'executive'}
-        #self.scrape_bill(session,'S11',chamber)
+
+        # single bill test code
+        #self.scrape_bill(session,'H3654',chamber)
 
         # Pull the search page to get the filters
-        search_url = 'https://malegislature.gov/Bills/Search'
+        search_url = 'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1'
         page = lxml.html.fromstring(self.get(search_url).text)
-
         self.session_filters = self.get_refiners(page, 'lawsgeneralcourt')
         self.chamber_filters = self.get_refiners(page, 'lawsbranchname')
         #doctype_filters = self.get_refiners(page, 'lawsfilingtype')
 
+        # comment in before running for all bills
         lastPage = self.get_max_pages(session, chamber)
-
         for pageNumber in range(1, lastPage + 1):
             bills = self.list_bills(session, chamber, pageNumber)
             for bill in bills:
                 bill = self.format_bill_number(bill).replace(' ','')
-                self.scrape_bill(session, bill, chamber )
+                self.scrape_bill(session, bill, chamber)
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -83,7 +88,6 @@ class MABillScraper(BillScraper):
 
         search_url = u'https://malegislature.gov/Bills/Search?SearchTerms=&Page=1&Refinements%5Blawsgeneralcourt%5D={}&&Refinements%5Blawsbranchname%5D={}'.format(
             session_filter, chamber_filter)
-
         page = lxml.html.fromstring(requests.get(search_url).text)
 
         if page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick'):
@@ -103,7 +107,7 @@ class MABillScraper(BillScraper):
             response = requests.get(bill_url)
         except requests.exceptions.RequestException as e:
             self.warning(u'Server Error on {}'.format(bill_url))
-            return False 
+            return False
 
         html = response.text
 
@@ -146,7 +150,7 @@ class MABillScraper(BillScraper):
             bill.add_version('Bill Text', version_url,
                     mimetype='application/pdf')
 
-        self.scrape_actions(bill, bill_url)
+        self.scrape_actions(bill, bill_url, session)
 
         self.save_bill(bill)
 
@@ -168,20 +172,19 @@ class MABillScraper(BillScraper):
             if not any(sponsor['name'] == cosponsor_name for sponsor in bill['sponsors']):
                 bill.add_sponsor('cosponsor', cosponsor_name, district=cosponsor_district)
 
-    def scrape_actions(self, bill, bill_url):
+    def scrape_actions(self, bill, bill_url, session):
         # scrape_action_page adds the actions, and also returns the Page xpath object
         # so that we can check for a paginator
-        page = self.scrape_action_page(bill, bill_url, 1)
+        page = self.scrape_action_page(bill, bill_url, 1, session)
 
         max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
         if max_page:
             max_page = re.sub(r'[^\d]', '', max_page[0]).strip()
             for counter in range(2, int(max_page)+1):
-                page = self.scrape_action_page(bill, bill_url, counter)
+                page = self.scrape_action_page(bill, bill_url, counter, session)
                 #https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
-
-    def scrape_action_page(self, bill, bill_url, page_number):
+    def scrape_action_page(self, bill, bill_url, page_number, session):
         actions_url = "{}/BillHistory?pageNumber={}".format(bill_url, page_number)
         page = lxml.html.fromstring(self.get_as_ajax(actions_url).text)
         action_rows = page.xpath('//tbody/tr')
@@ -194,12 +197,168 @@ class MABillScraper(BillScraper):
                 action_actor = self.chamber_map_reverse[action_actor.strip()]
 
             action_name = row.xpath('string(td[3])')
-
             attrs = self.categorizer.categorize(action_name)
+
+            # House votes
+            if "Supplement" in action_name:
+                actor = "lower"
+                vote_action = action_name.split(' -')[0]
+                y = int(action_name.strip().split('-')[1].split('YEAS')[0])
+                n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
+                o = 160 - (y + n) #TODO: includes uncounted seats
+
+                # get supplement number
+                n_supplement = int(action_name.strip().split('No. ')[1].split(r')')[0])
+                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
+                bill.add_vote(cached_vote)
+
+                #TODO: future proof this
+                # 2018 code not tested and may break if MA website changes
+                if datetime(2018, 1, 1) <= action_date <= datetime(2018, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2018RCs.pdf'
+                if datetime(2017, 1, 1) <= action_date <= datetime(2017, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
+                # Change repository based on td in xpath
+                elif datetime(2016, 1, 1) <= action_date <= datetime(2016, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2016RCs.pdf'
+                #TODO: 2015 and 2014 pdfs formatted differently and will break
+                elif datetime(2015, 1, 1) <= action_date <= datetime(2015, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2015RCs.pdf'
+                elif datetime(2014, 1, 1) <= action_date <= datetime(2014, 12, 31):
+                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2014RCs.pdf'
+                # No data on website for years prior to 2014
+
+                # Only scrape votes from 2016 forward, TODO: enable 2015 & 14
+                if datetime(2016, 1, 1) <= action_date:
+                    self.scrape_house(cached_vote, housevote_pdf, n_supplement)
+
+            # Senate votes
+            if "Roll Call" in action_name:
+                actor = "upper"
+                 #placeholder
+                vote_action = action_name.split(' -')[0]
+                y = int(re.search(r"yeas\s*(\d*)", action_name.lower()).group(1))
+                n = int(re.search(r"nays\s*(\d*)", action_name.lower()).group(1))
+
+                #n = int(action_name.strip().split('Nays')[1])
+                o = 40 - (y + n) #TODO: this includes empty seats, inacurate count
+                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
+                bill.add_vote(cached_vote)
+
+                rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
+                self.scrape_senate(cached_vote, rollcall_pdf)
 
             #TODO: categorize action
             bill.add_action(action_actor, action_name, action_date, **attrs)
         return page
+
+    def scrape_house(self, vote, vurl, supplement):
+        #Point to PDF and read to memory
+        (path, resp) = self.urlretrieve(vurl)
+        pdflines = convert_pdf(path, 'text')
+        os.remove(path)
+        pdflines = pdflines.decode('utf-8').replace(u'\u2019', "'")
+
+        # get pdf data from supplement number
+        try:
+            vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
+        except IndexError:
+            self.info("No vote found in supplement for vote #%s" % supplement)
+            return
+
+
+        # create list of independant items in vote_text
+        rows = vote_text.splitlines()
+        lines = []
+        for row in rows:
+            lines.extend(row.split('   '))
+
+        # retrieving votes in columns
+        vote_tally = []
+        voters = []
+        for line in lines:
+            # removes whitespace and after-vote '*' tag
+            line = line.strip().strip('*').strip()
+
+            if 'NAYS' in line or 'YEAS' in line or '=' in line or '/' in line:
+                continue
+            elif line == '':
+                continue
+            elif line == 'N':
+                vote_tally.append('n')
+            elif line == 'Y':
+                vote_tally.append('y')
+            # Not Voting
+            elif line == 'X':
+                vote_tally.append('x')
+            #Present
+            elif line == 'P':
+                vote_tally.append('p')
+
+            #True for all records 2009 - 2017 - brittle code, this will change in the future
+            #elif line == 'Mr. Speaker':
+            #    voters.append('DeLeo')
+            else:
+                voters.append(line)
+
+        house_votes = list(zip(voters, vote_tally))
+        # iterate list and add individual names to vote.yes, vote.no
+        for tup1 in house_votes:
+            if tup1[1] == 'y':
+                vote.yes(tup1[0])
+            elif tup1[1] == 'n':
+                vote.no(tup1[0])
+            else:
+                vote.other(tup1[0])
+
+    def scrape_senate(self, vote, vurl):
+        # download file to server
+        (path, resp) = self.urlretrieve(vurl)
+        pdflines = convert_pdf(path, 'text')
+        os.remove(path)
+
+        # for y, n
+        mode = None
+
+        lines = pdflines.splitlines()
+
+        # handle individual lines in pdf to id legislator votes
+        for line in lines:
+            line = line.strip()
+            line = line.decode('utf-8').replace(u'\u2212', '-')
+            if line == '':
+                continue
+            # change mode accordingly
+            elif line.startswith('YEAS'):
+                mode = 'y'
+            elif line.startswith('NAYS'):
+                mode = 'n'
+            elif line.startswith('ABSENT OR'):
+                mode = 'o'
+            # else parse line with names
+            else:
+                nameline = line.split('   ')
+
+                for raw_name in nameline:
+                    raw_name = raw_name.strip()
+                    if raw_name == '':
+                        continue
+
+                    # handles vote count lines
+                    cut_name = raw_name.split('-')
+                    clean_name = ''
+                    if cut_name[len(cut_name) - 1].strip(' .').isdigit():
+                        del cut_name[-1]
+                        clean_name = ''.join(cut_name)
+                    else:
+                        clean_name = raw_name.strip()
+                    # update vote object with names
+                    if mode == 'y':
+                        vote.yes(clean_name)
+                    elif mode == 'n':
+                        vote.no(clean_name)
+                    elif mode == 'o':
+                        vote.other(clean_name)
 
     def get_as_ajax(self, url):
         #set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
@@ -209,4 +368,3 @@ class MABillScraper(BillScraper):
 
     def replace_non_digits(self, str):
         return re.sub(r'[^\d]', '', str).strip()
-

@@ -16,12 +16,13 @@ if __name__ == '__main__':
     mod = importlib.import_module(jurisdiction)
     metadata = mod.metadata
 
+    juris_dir = os.path.join(BILLY_DATA_DIR, jurisdiction)
+
     try:
-        shutil.rmtree(BILLY_DATA_DIR)
+        shutil.rmtree(juris_dir)
     except OSError:
         pass
 
-    juris_dir = os.path.join(BILLY_DATA_DIR, jurisdiction)
     os.makedirs(os.path.join(juris_dir, 'legislators'))
     os.makedirs(os.path.join(juris_dir, 'committees'))
     os.makedirs(os.path.join(juris_dir, 'bills'))

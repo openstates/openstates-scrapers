@@ -65,7 +65,7 @@ class {classname}(Jurisdiction):
         legislature_name = "{legislature_name}"
         lower_chamber_name = "{lower_chamber_name}"
         lower_seats = {lower_seats}
-        lower_title = "{lower_title}"
+        lower_title = "{upper_title}"
         upper_chamber_name = "{upper_chamber_name}"
         upper_seats = {upper_seats}
         upper_title = "{upper_title}"
@@ -110,7 +110,7 @@ class {classname}(Jurisdiction):
         sessions.append(s)
 
     sessions = indent_tail(format_json(sessions), 4)
-    ignored = indent_tail(format_json(metadata['_ignored_scraped_sessions']), 4)
+    ignored = indent_tail(format_json(metadata.get('_ignored_scraped_sessions', [])), 4)
 
     data = {
         'abbr': metadata['abbreviation'],

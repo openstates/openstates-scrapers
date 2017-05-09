@@ -72,6 +72,7 @@ metadata = dict(
         },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[
+        '2018 Regular Session',
         '2015 Regular Session',
         '2013 Regular Session',
         '2011 Regular Session', '2010 Regular Session',
