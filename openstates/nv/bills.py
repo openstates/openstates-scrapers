@@ -158,7 +158,7 @@ class NVBillScraper(Scraper, LXMLMixin):
         doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
                     6: 'joint resolution', 9: 'petition'}
         for docnum, bill_type in doc_type.items():
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/' + \
+            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/' \
                              'Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
             links = self.scrape_links(parentpage_url)
             count = 0
