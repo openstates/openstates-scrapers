@@ -1,2 +1,0 @@
-patterns = []
-sub_patterns = {}

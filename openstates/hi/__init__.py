@@ -1,119 +1,100 @@
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from pupa.scrape import Jurisdiction, Organization
+from .people import HIPersonScraper
+# from .events import HIEventScraper
 from .bills import HIBillScraper
-from .legislators import HILegislatorScraper
-from .events import HIEventScraper
-
+from .committees import HICommitteeScraper
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
-metadata = dict(
-    name='Hawaii',
-    abbreviation='hi',
-    capitol_timezone='Pacific/Honolulu',
-    legislature_name='Hawaii State Legislature',
-    legislature_url='http://www.capitol.hawaii.gov/',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms = [
-        {
-            'name': '2011-2012',
-            'sessions': [
-                '2011 Regular Session',
-            ],
-            'start_year' : 2011,
-            'end_year'   : 2012
-        },
-        {
-            'name': '2013-2014',
-            'sessions': [
-                '2013 Regular Session',
-                '2014 Regular Session',
-            ],
-            'start_year' : 2013,
-            'end_year'   : 2014
-        },
-        {
-            'name': '2015-2016',
-            'sessions': [
-                '2015 Regular Session',
-                '2016 Regular Session',
-            ],
-            'start_year' : 2015,
-            'end_year'   : 2016
-        },
-        {
-            'name': '2017-2018',
-            'sessions': [
-                '2017 Regular Session',
-            ],
-            'start_year' : 2017,
-            'end_year'   : 2018,
-        },
-     ],
-    session_details={
-        '2017 Regular Session' : {
-            'display_name'  : '2017 Regular Session',
-            '_scraped_name' : '2017'
-        },
-        '2016 Regular Session' : {
-            'display_name'  : '2016 Regular Session',
-            '_scraped_name' : '2016'
-        },
-        '2015 Regular Session' : {
-            'display_name'  : '2015 Regular Session',
-            '_scraped_name' : '2015'
-        },
-        '2014 Regular Session' : {
-            'display_name'  : '2014 Regular Session',
-            '_scraped_name' : '2014'
-        },
-        '2013 Regular Session' : {
-            'display_name'  : '2013 Regular Session',
-            '_scraped_name' : '2013'
-        },
-        '2011 Regular Session' : {
-            'display_name'  : '2011-2012 Regular Session',
-            # was 2011, now 2012 to make scraper keep working for 2011-2012
-            '_scraped_name' : '2012'
-        },
-    },
-    feature_flags=['subjects', 'events', 'capitol_maps', 'influenceexplorer'],
-    capitol_maps=[
-        {"name": "Chamber Floor",
-         "url": 'http://static.openstates.org/capmaps/hi/floorchamber.pdf'
-        },
-        {"name": "Floor 2",
-         "url": 'http://static.openstates.org/capmaps/hi/floor2.pdf'
-        },
-        {"name": "Floor 3",
-         "url": 'http://static.openstates.org/capmaps/hi/floor3.pdf'
-        },
-        {"name": "Floor 4",
-         "url": 'http://static.openstates.org/capmaps/hi/floor4.pdf'
-        },
-        {"name": "Floor 5",
-         "url": 'http://static.openstates.org/capmaps/hi/floor5.pdf'
-        },
-    ],
-    _ignored_scraped_sessions = [
-        # ignore odd years after they're over..
-        '2011',
-        '2010', '2009', '2008', '2007', '2006',
-        '2005', '2004', '2003', '2002', '2001',
-        '2000', '1999'
+
+class Hawaii(Jurisdiction):
+
+    division_id = "ocd-division/country:us/state:hi"
+    classification = "government"
+    name = "Hawaii"
+    url = "http://capitol.hawaii.gov"
+    scrapers = {
+        'people': HIPersonScraper,
+        'bills': HIBillScraper,
+        'committees': HICommitteeScraper,
+        # 'events': HIEventScraper
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
     ]
-)
+    legislative_sessions = [
+        {
+            "_scraped_name": "2012",
+            "identifier": "2011 Regular Session",
+            "name": "2011-2012 Regular Session"
+        },
+        {
+            "_scraped_name": "2013",
+            "identifier": "2013 Regular Session",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "2014",
+            "identifier": "2014 Regular Session",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015",
+            "identifier": "2015 Regular Session",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "2016",
+            "identifier": "2016 Regular Session",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017",
+            "identifier": "2017 Regular Session",
+            "name": "2017 Regular Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2011",
+        "2010",
+        "2009",
+        "2008",
+        "2007",
+        "2006",
+        "2005",
+        "2004",
+        "2003",
+        "2002",
+        "2001",
+        "2000",
+        "1999"
+    ]
 
-def session_list():
-    # doesn't include current session, we need to change it
-    from billy.scrape.utils import url_xpath
-    sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
-            "//div[@class='roundedrect gradientgray shadow']/a/text()"
-        )
-    sessions.remove("Archives Main")
-    return sessions
+    def get_organizations(self):
+        legislature_name = "Hawaii State Legislature"
+        lower_chamber_name = "House"
+        lower_seats = 51
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 25
+        upper_title = "Senator"
 
-def extract_text(doc, data):
-    if doc['mimetype'] == 'application/pdf':
-        return text_after_line_numbers(pdfdata_to_text(data))
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower

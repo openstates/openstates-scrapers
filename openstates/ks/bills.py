@@ -1,20 +1,30 @@
 import re
-import datetime
 import json
-import requests
-import lxml.html
+import datetime
+
 import scrapelib
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape import NoDataForPeriod
-import ksapi
+import lxml.html
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+from . import ksapi
 
 
-class KSBillScraper(BillScraper):
-    jurisdiction = 'ks'
-    latest_only = True
+def _clean_spaces(title):
+    return re.sub('\s+', ' ', title)
 
-    def scrape(self, chamber, session):
+
+class KSBillScraper(Scraper):
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         chamber_name = 'Senate' if chamber == 'upper' else 'House'
         chamber_letter = chamber_name[0]
         # perhaps we should save this data so we can make one request for both?
@@ -39,23 +49,34 @@ class KSBillScraper(BillScraper):
             title = bill_data['SHORTTITLE'] or bill_data['LONGTITLE']
 
             # main
-            bill = Bill(session, chamber, bill_id, title,
-                        type=btype, status=bill_data['STATUS'])
+            bill = Bill(
+                bill_id,
+                session,
+                title,
+                chamber=chamber,
+                classification=btype,
+            )
+            bill.extras = {'status': bill_data['STATUS']}
+
             bill.add_source(ksapi.url + 'bill_status/' + bill_id.lower())
 
             if (bill_data['LONGTITLE'] and
-                bill_data['LONGTITLE'] != bill['title']):
+                    bill_data['LONGTITLE'] != bill.title):
                 bill.add_title(bill_data['LONGTITLE'])
 
             for sponsor in bill_data['SPONSOR_NAMES']:
                 stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
                          else 'cosponsor')
                 if sponsor:
-                    bill.add_sponsor(stype, sponsor)
+                    bill.add_sponsorship(
+                        name=sponsor,
+                        entity_type='person',
+                        primary=stype == 'primary',
+                        classification=stype,
+                    )
 
             # history is backwards
             for event in reversed(bill_data['HISTORY']):
-
                 actor = ('upper' if event['chamber'] == 'Senate'
                          else 'lower')
 
@@ -71,26 +92,32 @@ class KSBillScraper(BillScraper):
                     self.warning('unknown action code on %s: %s %s' %
                                  (bill_id, event['action_code'],
                                   event['status']))
-                    atype = 'other'
+                    atype = None
                 else:
                     atype = ksapi.action_codes[event['action_code']]
-                bill.add_action(actor, action, date, type=atype)
+                bill.add_action(
+                    action, date.strftime('%Y-%m-%d'), chamber=actor, classification=atype)
 
             try:
-                self.scrape_html(bill)
+                yield from self.scrape_html(bill, session)
             except scrapelib.HTTPError as e:
                 self.warning('unable to fetch HTML for bill {0}'.format(
                     bill['bill_id']))
-            self.save_bill(bill)
 
-    def scrape_html(self, bill):
-        slug = self.metadata['session_details'][bill['session']]['_scraped_name']
+            yield bill
+
+    def scrape_html(self, bill, session):
+        meta = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == session
+        )
+        slug = meta['_scraped_name']
         # we have to go to the HTML for the versions & votes
         base_url = 'http://www.kslegislature.org/li/%s/measures/' % slug
-        if 'resolution' in bill['type']:
+        if 'resolution' in bill.classification:
             base_url = 'http://www.kslegislature.org/li/%s/year1/measures/' % slug
 
-        url = base_url + bill['bill_id'].lower() + '/'
+        url = base_url + bill.identifier.lower() + '/'
         doc = lxml.html.fromstring(self.get(url).text)
         doc.make_links_absolute(url)
 
@@ -101,27 +128,33 @@ class KSBillScraper(BillScraper):
         for row in version_rows:
             # version, docs, sn, fn
             tds = row.getchildren()
-            title = tds[0].text_content().strip()
+            title = _clean_spaces(tds[0].text_content().strip())
             doc_url = get_doc_link(tds[1])
             if doc_url:
-                bill.add_version(title, doc_url, mimetype='application/pdf')
+                bill.add_version_link(title, doc_url, media_type='application/pdf')
             if len(tds) > 2:
                 sn_url = get_doc_link(tds[2])
                 if sn_url:
-                    bill.add_document(title + ' - Supplementary Note', sn_url)
+                    bill.add_document_link(
+                        title + ' - Supplementary Note', sn_url,
+                        on_duplicate='ignore'
+                    )
             if len(tds) > 3:
-                fn_url = get_doc_link(tds[3])
                 if sn_url:
-                    bill.add_document(title + ' - Fiscal Note', sn_url)
+                    bill.add_document_link(title + ' - Fiscal Note', sn_url,
+                                           on_duplicate='ignore'
+                                           )
 
-        all_links = doc.xpath("//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href")
+        all_links = doc.xpath(
+            "//table[@class='bottom']/tbody[@class='tab-content-sub']/tr/td/a/@href"
+        )
         vote_members_urls = []
         for i in all_links:
             if "vote_view" in i:
                 vote_members_urls.append(str(i))
         if len(vote_members_urls) > 0:
             for link in vote_members_urls:
-                self.parse_vote(bill, link)
+                yield from self.parse_vote(bill, link)
 
         history_rows = doc.xpath('//tbody[starts-with(@id, "history-tab")]/tr')
         for row in history_rows:
@@ -136,7 +169,8 @@ class KSBillScraper(BillScraper):
                     amendment_name = 'Conference Committee Report'
                 else:
                     amendment_name = row_text.strip()
-                bill.add_document(amendment_name, amendment)
+                bill.add_document_link(_clean_spaces(amendment_name), amendment,
+                                       on_duplicate='ignore')
 
     def parse_vote(self, bill, link):
         member_doc = lxml.html.fromstring(self.get(link).text)
@@ -152,7 +186,7 @@ class KSBillScraper(BillScraper):
 
             for i in opinions:
                 try:
-                    count = int(i[i.find("(")+1:i.find(")")])
+                    count = int(i[i.find("(") + 1:i.find(")")])
                 except:
                     pass
                 if "yea" in i.lower():
@@ -163,20 +197,33 @@ class KSBillScraper(BillScraper):
                     p_count = count
                 elif "absent" in i.lower():
                     a_count = count
-            vote = Vote(vote_chamber, vote_date, vote_status,
-                        yes_count > no_count, yes_count, no_count, p_count+a_count)
+            vote = VoteEvent(
+                bill=bill,
+                start_date=vote_date.strftime('%Y-%m-%d'),
+                chamber=vote_chamber,
+                motion_text=vote_status,
+                result='pass' if yes_count > no_count else 'fail',
+                classification='passage',
+            )
+
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('abstain', p_count)
+            vote.set_count('absent', a_count)
+
             vote.add_source(link)
+
             a_links = member_doc.xpath("//div[@id='main_content']/a/text()")
             for i in range(1, len(a_links)):
                 if i <= yes_count:
-                    vote.yes(re.sub(',', '', a_links[i]).split()[0])
-                elif no_count != 0 and i > yes_count and i <= yes_count+no_count:
-                    vote.no(re.sub(',', '', a_links[i]).split()[0])
+                    vote.vote('yes', re.sub(',', '', a_links[i]).split()[0])
+                elif no_count != 0 and i > yes_count and i <= yes_count + no_count:
+                    vote.vote('no', re.sub(',', '', a_links[i]).split()[0])
                 else:
-                    vote.other(re.sub(',', '', a_links[i]).split()[0])
-            bill.add_vote(vote)
+                    vote.vote('other', re.sub(',', '', a_links[i]).split()[0])
+            yield vote
         else:
-            print self.warning("No Votes for: %s", link)
+            self.warning("No Votes for: %s", link)
 
 
 def get_doc_link(elem):
