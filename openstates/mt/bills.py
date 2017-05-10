@@ -441,14 +441,23 @@ class MTBillScraper(Scraper, LXMLMixin):
             if not text.strip(u'\xa0'):
                 continue
             v, name = filter(None, text.split(u'\xa0'))
+            # Considering Name is brackets as short name
+            regex = re.compile(".*?\((.*?)\)")
+            short_name = re.findall(regex, name)
+            if len(short_name) > 0:
+                note = 'Short Name: ' + short_name[0]
+            else:
+                note = ''
+            # Name without brackets like 'Kary, Douglas'
+            name = re.sub("[\(\[].*?[\)\]]", "", name)
             if v == 'Y':
-                vote.yes(name)
+                vote.yes(name, note=note)
             elif v == 'N':
-                vote.no(name)
+                vote.no(name, note=note)
             elif v == 'E':
-                vote.vote('excused', name)
+                vote.vote('excused', name, note=note)
             elif v == 'A':
-                vote.vote('absent', name)
+                vote.vote('absent', name, note=note)
 
         # code to deterimine value of `passed`
         passed = None

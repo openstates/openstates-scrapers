@@ -65,7 +65,7 @@ class {classname}(Jurisdiction):
         legislature_name = "{legislature_name}"
         lower_chamber_name = "{lower_chamber_name}"
         lower_seats = {lower_seats}
-        lower_title = "{lower_title}"
+        lower_title = "{upper_title}"
         upper_chamber_name = "{upper_chamber_name}"
         upper_seats = {upper_seats}
         upper_title = "{upper_title}"
@@ -77,11 +77,11 @@ class {classname}(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{{}}/sldu:{{}}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{{}}/sldl:{{}}'.format(self.division_id, n))
@@ -110,7 +110,7 @@ class {classname}(Jurisdiction):
         sessions.append(s)
 
     sessions = indent_tail(format_json(sessions), 4)
-    ignored = indent_tail(format_json(metadata['_ignored_scraped_sessions']), 4)
+    ignored = indent_tail(format_json(metadata.get('_ignored_scraped_sessions', [])), 4)
 
     data = {
         'abbr': metadata['abbreviation'],

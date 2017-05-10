@@ -1,10 +1,11 @@
 import re
 import csv
 import datetime
-import cStringIO as StringIO
+from io import StringIO
 
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 
+import pytz
 
 # ftp://www.arkleg.state.ar.us/dfadooas/ReadMeScheduledMeetings.txt
 TIMECODES = {
@@ -35,34 +36,34 @@ TIMECODES = {
 }
 
 
-class AREventScraper(EventScraper):
-    jurisdiction = 'ar'
+class AREventScraper(Scraper):
+    _tz = pytz.timezone('America/Chicago')
 
-    def scrape(self, session, chambers):
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
         url = "ftp://www.arkleg.state.ar.us/dfadooas/ScheduledMeetings.txt"
         page = self.get(url)
-        page = csv.reader(StringIO.StringIO(page.content), delimiter='|')
+        page = csv.reader(StringIO(page.text), delimiter='|')
 
         for row in page:
             # Deal with embedded newline characters, which cause fake new rows
             LINE_LENGTH = 11
             while len(row) < LINE_LENGTH:
-                row += page.next()
-                assert (len(row) <= LINE_LENGTH,
-                        "Line is too long: {}".format(row))
+                row += next(page)
 
             desc = row[7].strip()
 
             match = re.match(r'^(.*)- (HOUSE|SENATE)$', desc)
             if match:
-                comm_chamber = {'HOUSE': 'lower',
-                                'SENATE': 'upper'}[match.group(2)]
 
                 comm = match.group(1).strip()
                 comm = re.sub(r'\s+', ' ', comm)
                 location = row[5].strip() or 'Unknown'
                 when = datetime.datetime.strptime(row[2], '%Y-%m-%d %H:%M:%S')
-
+                when = self._tz.localize(when)
                 # Only assign events to a session if they are in the same year
                 # Given that session metadata have some overlap and
                 # missing end dates, this is the best option available
@@ -70,16 +71,19 @@ class AREventScraper(EventScraper):
                 if session_year != when.year:
                     continue
 
-                event = Event(session, when, 'committee:meeting',
-                              "%s MEETING" % comm,
-                              location=location)
+                description = "%s MEETING" % comm
+                event = Event(
+                        name=description,
+                        start_time=when,
+                        location_name=location,
+                        description=description,
+                        timezone=self._tz.zone
+                )
                 event.add_source(url)
 
-                event.add_participant('host', comm, 'committee',
-                                      chamber=comm_chamber)
+                event.add_participant(comm, type='committee', note='host')
+                # time = row[3].strip()
+                # if time in TIMECODES:
+                #     event['notes'] = TIMECODES[time]
 
-                time = row[3].strip()
-                if time in TIMECODES:
-                    event['notes'] = TIMECODES[time]
-
-                self.save_event(event)
+                yield event

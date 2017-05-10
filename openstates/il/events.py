@@ -4,7 +4,6 @@ import re
 from openstates.utils import LXMLMixin
 from billy.scrape.events import Event, EventScraper
 
-import lxml.html
 import pytz
 
 urls = {
@@ -20,8 +19,8 @@ class ILEventScraper(EventScraper, LXMLMixin):
     def scrape_page(self, url, session, chamber):
         page = self.lxmlize(url)
 
-        ctty_name = page.xpath("//span[@class='heading']")[0].text_content()
-
+        ctty_name = page.xpath("//span[@class='heading']")[0].text_content().replace(
+            "Hearing Notice For ", "")
         tables = page.xpath("//table[@cellpadding='3']")
         info = tables[0]
         rows = info.xpath(".//tr")
@@ -33,7 +32,8 @@ class ILEventScraper(EventScraper, LXMLMixin):
             metainf[key] = value
 
         where = metainf['Location:']
-        description = ctty_name
+        subject_matter = metainf['Subject Matter:']
+        description = "{}, {}".format(ctty_name, subject_matter)
 
         datetime = metainf['Scheduled Date:']
         datetime = re.sub("\s+", " ", datetime)

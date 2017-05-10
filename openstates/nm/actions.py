@@ -1,10 +1,3 @@
-'''
-
-'''
-import re
-from billy.scrape.actions import Rule, BaseCategorizer
-
-
 committees = [
     u'LEGISLATIVE FINANCE COMMITTEE COMMITTEE',
     u'NEW MEXICO FINANCE AUTHORITY OVERSIGHT COMMITTEE COMMITTEE',
@@ -59,39 +52,3 @@ committees_rgx = '(%s)' % '|'.join(sorted(committees, key=len, reverse=True))
 
 rules = (
     )
-
-
-class Categorizer(BaseCategorizer):
-    rules = rules
-
-    def categorize(self, text):
-        '''Wrap categorize and add boilerplate committees.
-        '''
-        attrs = BaseCategorizer.categorize(self, text)
-        committees = attrs['committees']
-        for committee in re.findall(committees_rgx, text, re.I):
-            if committee not in committees:
-                committees.append(committee)
-        return attrs
-
-    def post_categorize(self, attrs):
-        res = set()
-        if 'legislators' in attrs:
-            for text in attrs['legislators']:
-                rgx = r'(,\s+(?![a-z]\.)|\s+and\s+)'
-                legs = re.split(rgx, text)
-                legs = filter(lambda x: x not in [', ', ' and '], legs)
-                res |= set(legs)
-        attrs['legislators'] = list(res)
-
-        res = set()
-        if 'committees' in attrs:
-            for text in attrs['committees']:
-
-                # Strip stuff like "Rules on 1st reading"
-                for text in text.split('then'):
-                    text = re.sub(r' on .+', '', text)
-                    text = text.strip()
-                    res.add(text)
-        attrs['committees'] = list(res)
-        return attrs

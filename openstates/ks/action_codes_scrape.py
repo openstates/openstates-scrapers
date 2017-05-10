@@ -16,22 +16,21 @@ failed_codes = []
 numbers = []
 
 with open('action_codes') as action_codes:
-	action_codes_str = action_codes.read()
-	for line in action_codes_str.split('\n'):
-		if comment.match(line):
-			continue
-		if data.match(line):
-			match = data.match(line)
-			number = match.group(1)
-			numbers.append(number)
-			if voted.match(match.group(2)):
-				voted_codes.append(number)
-			if passed.match(match.group(2)):
-				passed_codes.append(number)
-			if failed.match(match.group(2)):
-				failed_codes.append(number)
+    action_codes_str = action_codes.read()
+    for line in action_codes_str.split('\n'):
+        if comment.match(line):
+            continue
+        if data.match(line):
+            match = data.match(line)
+            number = match.group(1)
+            numbers.append(number)
+            if voted.match(match.group(2)):
+                voted_codes.append(number)
+            if passed.match(match.group(2)):
+                passed_codes.append(number)
+            if failed.match(match.group(2)):
+                failed_codes.append(number)
 
 print("voted = %s" % voted_codes)
 print("passed = %s" % passed_codes)
 print("failed = %s" % failed_codes)
-

@@ -1,7 +1,6 @@
 import datetime
 import re
 
-from billy.scrape import NoDataForPeriod
 from billy.scrape.events import EventScraper, Event
 
 import lxml.html
@@ -68,9 +67,11 @@ class KYEventScraper(EventScraper):
             when = self._tz.localize(when)
 
             desc = div.xpath("string(span[2])").strip()
-            agenda = div.xpath("string(span[3])").strip()
-            # XXX: Process `agenda' for related bills.
-            if desc.lower().strip() in ["house convenes","senate convenes"]:
+
+            # TODO: Process `agenda' for related bills.
+            # agenda = div.xpath("string(span[3])").strip()
+
+            if desc.lower().strip() in ["house convenes", "senate convenes"]:
                 continue
 
             event = Event(session, when, 'committee:meeting',
@@ -88,6 +89,6 @@ class KYEventScraper(EventScraper):
                 self.logger.warning("Event %s chamber is unknown, skipping" % desc)
                 continue
 
-            event.add_participant('host', desc, 'committee', chamber = chamber)
+            event.add_participant('host', desc, 'committee', chamber=chamber)
 
             self.save_event(event)

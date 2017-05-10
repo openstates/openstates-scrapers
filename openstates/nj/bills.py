@@ -1,17 +1,21 @@
-import re
-import scrapelib
-import zipfile
-import csv
+import io
 import os
+import re
+import csv
+import pytz
+import zipfile
+import collections
 from datetime import datetime
-from .utils import chamber_name, MDBMixin
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+
+import scrapelib
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+from .utils import MDBMixin
+
+TIMEZONE = pytz.timezone('US/Eastern')
 
 
-class NJBillScraper(BillScraper, MDBMixin):
-    jurisdiction = 'nj'
-
+class NJBillScraper(Scraper, MDBMixin):
     _bill_types = {
         '': 'bill',
         'R': 'resolution',
@@ -20,84 +24,140 @@ class NJBillScraper(BillScraper, MDBMixin):
     }
 
     _actions = {
-        'INT 1RA AWR 2RA': ('Introduced, 1st Reading without Reference, 2nd Reading', 'bill:introduced'),
-        'INT 1RS SWR 2RS': ('Introduced, 1st Reading without Reference, 2nd Reading', 'bill:introduced'),
-        'REP 2RA': ('Reported out of Assembly Committee, 2nd Reading', 'committee:passed'),
-        'REP 2RS': ('Reported out of Senate Committee, 2nd Reading', 'committee:passed'),
-        'REP/ACA 2RA': ('Reported out of Assembly Committee with Amendments, 2nd Reading', 'committee:passed'),
-        'REP/SCA 2RS': ('Reported out of Senate Committee with Amendments, 2nd Reading', 'committee:passed'),
-        'R/S SWR 2RS': ('Received in the Senate without Reference, 2nd Reading', 'other'),
-        'R/A AWR 2RA': ('Received in the Assembly without Reference, 2nd Reading', 'other'),
-        'R/A 2RAC': ('Received in the Assembly, 2nd Reading on Concurrence', 'other'),
-        'R/S 2RSC': ('Received in the Senate, 2nd Reading on Concurrence', 'other'),
-        'REP/ACS 2RA': ('Reported from Assembly Committee as a Substitute, 2nd Reading', 'other'),
-        'REP/SCS 2RS': ('Reported from Senate Committee as a Substitute, 2nd Reading', 'other'),
-        'AA 2RA': ('Assembly Floor Amendment Passed', 'amendment:passed'),
-        'SA 2RS': ('Senate Amendment', 'amendment:passed'),
-        'SUTC REVIEWED': ('Reviewed by the Sales Tax Review Commission', 'other'),
-        'PHBC REVIEWED': ('Reviewed by the Pension and Health Benefits Commission', 'other'),
-        'SUB FOR': ('Substituted for', 'other'),
-        'SUB BY': ('Substituted by', 'other'),
-        'PA': ('Passed Assembly', 'bill:passed'),
-        'PS': ('Passed Senate', 'bill:passed'),
-        'PA PBH': ('Passed Assembly (Passed Both Houses)', 'bill:passed'),
-        'PS PBH': ('Passed Senate (Passed Both Houses)', 'bill:passed'),
-        'APP': ('Approved', 'governor:signed'),
-        'APP W/LIV': ('Approved with Line Item Veto', ['governor:signed', 'governor:vetoed:line-item']),
-        'AV R/A': ('Absolute Veto, Received in the Assembly', 'governor:vetoed'),
-        'AV R/S': ('Absolute Veto, Received in the Senate', 'governor:vetoed'),
-        'CV R/A': ('Conditional Veto, Received in the Assembly', 'governor:vetoed'),
-        'CV R/A 1RAG': ('Conditional Veto, Received in the Assembly, 1st Reading/Governor Recommendation', 'governor:vetoed'),
-        'CV R/S': ('Conditional Veto, Received in the Senate', 'governor:vetoed'),
-        'PV': ('Pocket Veto - Bill not acted on by Governor-end of Session', 'governor:vetoed'),
-        '2RSG': ("2nd Reading on Concur with Governor's Recommendations", 'other'),
-        'CV R/S 2RSG': ("Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations", 'other'),
-        'CV R/S 1RSG': ("Conditional Veto, Received, 1st Reading on Concur with Governor's Recommendations", 'other'),
-        '1RAG': ('First Reading/Governor Recommendations Only', 'other'),
-        '2RAG': ("2nd Reading in the Assembly on Concur. w/Gov's Recommendations", 'other'),
-        'R/S 2RSG': ("Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
-        'R/A 2RAG': ("Received in the Assembly, 2nd Reading - Concur. w/Gov's Recommendations", 'other'),
-        'R/A': ("Received in the Assembly", 'other'),
-        'REF SBA': ('Referred to Senate Budget and Appropriations Committee', 'committee:referred'),
-        'RSND/V': ('Rescind Vote', 'other'),
-        'RSND/ACT OF': ('Rescind Action', 'other'),
-        'RCON/V': ('Reconsidered Vote', 'other'),
-        'CONCUR AA': ("Concurred by Assembly Amendments", 'other'),
-        'CONCUR SA': ('Concurred by Senate Amendments', 'other'),
-        'SS 2RS': ('Senate Substitution', 'other'),
-        'AS 2RA': ('Assembly Substitution', 'other'),
-        'ER': ('Emergency Resolution', 'other'),
-        'FSS': ('Filed with Secretary of State', 'other'),
-        'LSTA': ('Lost in the Assembly', 'other'),
-        'LSTS': ('Lost in the Senate', 'other'),
-        'SEN COPY ON DESK': ('Placed on Desk in Senate', 'other'),
-        'ASM COPY ON DESK': ('Placed on Desk in Assembly', 'other'),
-        'COMB/W': ('Combined with', 'other'),
-        'MOTION': ('Motion', 'other'),
-        'PUBLIC HEARING': ('Public Hearing Held', 'other'),
-        'PH ON DESK SEN': ('Public Hearing Placed on Desk Senate Transcript Placed on Desk', 'other'),
-        'PH ON DESK ASM': ('Public Hearing Placed on Desk Assembly Transcript Placed on Desk', 'other'),
-        'W': ('Withdrawn from Consideration', 'bill:withdrawn'),
+        'INT 1RA AWR 2RA': (
+            'Introduced, 1st Reading without Reference, 2nd Reading',
+            'introduction',
+        ),
+        'INT 1RS SWR 2RS': (
+            'Introduced, 1st Reading without Reference, 2nd Reading',
+            'introduction',
+        ),
+        'REP 2RA': ('Reported out of Assembly Committee, 2nd Reading', 'committee-passage'),
+        'REP 2RS': ('Reported out of Senate Committee, 2nd Reading', 'committee-passage'),
+        'REP/ACA 2RA': (
+            'Reported out of Assembly Committee with Amendments, 2nd Reading',
+            'committee-passage',
+        ),
+        'REP/SCA 2RS': (
+            'Reported out of Senate Committee with Amendments, 2nd Reading',
+            'committee-passage',
+        ),
+        'R/S SWR 2RS': ('Received in the Senate without Reference, 2nd Reading', None),
+        'R/A AWR 2RA': ('Received in the Assembly without Reference, 2nd Reading', None),
+        'R/A 2RAC': ('Received in the Assembly, 2nd Reading on Concurrence', None),
+        'R/S 2RSC': ('Received in the Senate, 2nd Reading on Concurrence', None),
+        'REP/ACS 2RA': ('Reported from Assembly Committee as a Substitute, 2nd Reading', None),
+        'REP/SCS 2RS': ('Reported from Senate Committee as a Substitute, 2nd Reading', None),
+        'AA 2RA': ('Assembly Floor Amendment Passed', 'amendment-passage'),
+        'SA 2RS': ('Senate Amendment', 'amendment-passage'),
+        'SUTC REVIEWED': ('Reviewed by the Sales Tax Review Commission', None),
+        'PHBC REVIEWED': ('Reviewed by the Pension and Health Benefits Commission', None),
+        'SUB FOR': ('Substituted for', None),
+        'SUB BY': ('Substituted by', None),
+        'PA': ('Passed Assembly', 'passage'),
+        'PS': ('Passed Senate', 'passage'),
+        'PA PBH': ('Passed Assembly (Passed Both Houses)', 'passage'),
+        'PS PBH': ('Passed Senate (Passed Both Houses)', 'passage'),
+        'APP': ('Approved', 'executive-signature'),
+        'APP W/LIV': (
+            'Approved with Line Item Veto',
+            ['executive-signature', 'executive-veto-line-item'],
+        ),
+        'AV R/A': ('Absolute Veto, Received in the Assembly', 'executive-veto'),
+        'AV R/S': ('Absolute Veto, Received in the Senate', 'executive-veto'),
+        'CV R/A': ('Conditional Veto, Received in the Assembly', 'executive-veto'),
+        'CV R/A 1RAG': (
+            'Conditional Veto, Received in the Assembly, 1st Reading/Governor Recommendation',
+            'executive-veto',
+        ),
+        'CV R/S': ('Conditional Veto, Received in the Senate', 'executive-veto'),
+        'PV': ('Pocket Veto - Bill not acted on by Governor-end of Session', 'executive-veto'),
+        '2RSG': ("2nd Reading on Concur with Governor's Recommendations", None),
+        'CV R/S 2RSG': (
+            "Conditional Veto, Received, 2nd Reading on Concur with Governor's Recommendations",
+            None,
+        ),
+        'CV R/S 1RSG': (
+            "Conditional Veto, Received, 1st Reading on Concur with Governor's Recommendations",
+            None,
+        ),
+        '1RAG': ('First Reading/Governor Recommendations Only', None),
+        '2RAG': ("2nd Reading in the Assembly on Concur. w/Gov's Recommendations", None),
+        'R/S 2RSG': (
+            "Received in the Senate, 2nd Reading - Concur. w/Gov's Recommendations",
+            None,
+        ),
+        'R/A 2RAG': (
+            "Received in the Assembly, 2nd Reading - Concur. w/Gov's Recommendations",
+            None,
+        ),
+        'R/A': ("Received in the Assembly", None),
+        'REF SBA': (
+            'Referred to Senate Budget and Appropriations Committee',
+            'referral-committee',
+        ),
+        'RSND/V': ('Rescind Vote', None),
+        'RSND/ACT OF': ('Rescind Action', None),
+        'RCON/V': ('Reconsidered Vote', None),
+        'CONCUR AA': ("Concurred by Assembly Amendments", None),
+        'CONCUR SA': ('Concurred by Senate Amendments', None),
+        'SS 2RS': ('Senate Substitution', None),
+        'AS 2RA': ('Assembly Substitution', None),
+        'ER': ('Emergency Resolution', None),
+        'FSS': ('Filed with Secretary of State', None),
+        'LSTA': ('Lost in the Assembly', None),
+        'LSTS': ('Lost in the Senate', None),
+        'SEN COPY ON DESK': ('Placed on Desk in Senate', None),
+        'ASM COPY ON DESK': ('Placed on Desk in Assembly', None),
+        'COMB/W': ('Combined with', None),
+        'MOTION': ('Motion', None),
+        'PUBLIC HEARING': ('Public Hearing Held', None),
+        'PH ON DESK SEN': ('Public Hearing Placed on Desk Senate Transcript Placed on Desk', None),
+        'PH ON DESK ASM': (
+            'Public Hearing Placed on Desk Assembly Transcript Placed on Desk',
+            None
+        ),
+        'W': ('Withdrawn from Consideration', 'withdrawal'),
     }
 
     _com_actions = {
-        'INT 1RA REF': ('Introduced in the Assembly, Referred to', ['bill:introduced', 'committee:referred']),
-        'INT 1RS REF': ('Introduced in the Senate, Referred to', ['bill:introduced', 'committee:referred']),
-        'R/S REF': ('Received in the Senate, Referred to', 'committee:referred'),
-        'R/A REF': ('Received in the Assembly, Referred to', 'committee:referred'),
-        'TRANS': ('Transferred to', 'committee:referred'),
-        'RCM': ('Recommitted to', 'committee:referred'),
-        'REP/ACA REF': ('Reported out of Assembly Committee with Amendments and Referred to', 'committee:referred'),
-        'REP/ACS REF': ('Reported out of Senate Committee with Amendments and Referred to', 'committee:referred'),
-        'REP REF': ('Reported and Referred to', 'committee:referred'),
+        'INT 1RA REF': (
+            'Introduced in the Assembly, Referred to',
+            ['introduction', 'referral-committee'],
+        ),
+        'INT 1RS REF': (
+            'Introduced in the Senate, Referred to',
+            ['introduction', 'referral-committee'],
+        ),
+        'R/S REF': ('Received in the Senate, Referred to', 'referral-committee'),
+        'R/A REF': ('Received in the Assembly, Referred to', 'referral-committee'),
+        'TRANS': ('Transferred to', 'referral-committee'),
+        'RCM': ('Recommitted to', 'referral-committee'),
+        'REP/ACA REF': (
+            'Reported out of Assembly Committee with Amendments and Referred to',
+            'referral-committee',
+        ),
+        'REP/ACS REF': (
+            'Reported out of Senate Committee with Amendments and Referred to',
+            'referral-committee',
+        ),
+        'REP REF': ('Reported and Referred to', 'referral-committee'),
     }
 
     _com_vote_motions = {
         'r w/o rec.': 'Reported without recommendation',
-        'r w/o rec. ACS': 'Reported without recommendation out of Assembly committee as a substitute',
-        'r w/o rec. SCS': 'Reported without recommendation out of Senate committee as a substitute',
-        'r w/o rec. Sca': 'Reported without recommendation out of Senate committee with amendments',
-        'r w/o rec. Aca': 'Reported without recommendation out of Assembly committee with amendments',
+        'r w/o rec. ACS': (
+            'Reported without recommendation out of Assembly committee as a substitute'
+        ),
+        'r w/o rec. SCS': (
+            'Reported without recommendation out of Senate committee as a substitute'
+        ),
+        'r w/o rec. Sca': (
+            'Reported without recommendation out of Senate committee with amendments'
+        ),
+        'r w/o rec. Aca': (
+            'Reported without recommendation out of Assembly committee with amendments'
+        ),
         'r/ACS': 'Reported out of Assembly committee as a substitute',
         'r/Aca': 'Reported out of Assembly committee with amendments',
         'r/SCS': 'Reported out of Senate committee as a substitute',
@@ -106,29 +166,29 @@ class NJBillScraper(BillScraper, MDBMixin):
     }
 
     _doctypes = {
-        'FE':  'Legislative Fiscal Estimate',
-        'I':   'Introduced Version',
-        'S':   'Statement',
-        'V':   'Veto',
-        'FN':  'Fiscal Note',
-        'F':   'Fiscal Note',
-        'R':   'Reprint',
-        'FS':  'Floor Statement',
-        'TR':  'Technical Report',
-        'AL':  'Advance Law',
-        'PL':  'Pamphlet Law',
-        'RS':  'Reprint of Substitute',
+        'FE': 'Legislative Fiscal Estimate',
+        'I': 'Introduced Version',
+        'S': 'Statement',
+        'V': 'Veto',
+        'FN': 'Fiscal Note',
+        'F': 'Fiscal Note',
+        'R': 'Reprint',
+        'FS': 'Floor Statement',
+        'TR': 'Technical Report',
+        'AL': 'Advance Law',
+        'PL': 'Pamphlet Law',
+        'RS': 'Reprint of Substitute',
         'ACS': 'Assembly Committee Substitute',
-        'AS':  'Assembly Substitute',
+        'AS': 'Assembly Substitute',
         'SCS': 'Senate Committee Substitute',
-        'SS':  'Senate Substitute',
-        'GS':  "Governor's Statement",
+        'SS': 'Senate Substitute',
+        'GS': "Governor's Statement",
     }
 
     _version_types = ('I', 'R', 'RS', 'ACS', 'AS', 'SCS', 'SS')
 
     def initialize_committees(self, year_abr):
-        chamber = {'A':'Assembly', 'S': 'Senate', '':''}
+        chamber = {'A': 'Assembly', 'S': 'Senate', '': ''}
 
         com_csv = self.access_to_csv('Committee')
 
@@ -144,7 +204,7 @@ class NJBillScraper(BillScraper, MDBMixin):
         if act_str in self._actions:
             return self._actions[act_str]
 
-        for prefix, act_pair in self._com_actions.iteritems():
+        for prefix, act_pair in self._com_actions.items():
             if act_str.startswith(prefix):
                 last3 = act_str.rsplit(' ', 1)[-1]
                 com_name = self._committees[last3]
@@ -154,16 +214,20 @@ class NJBillScraper(BillScraper, MDBMixin):
         # warn about missing action
         self.warning('unknown action: {0} on {1}'.format(act_str, bill_id))
 
-        return (act_str, 'other')
+        return (act_str, None)
 
-    def scrape(self, session, chambers):
+    def scrape(self, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
         year_abr = ((int(session) - 209) * 2) + 2000
         self._init_mdb(year_abr)
         self.initialize_committees(year_abr)
-        self.scrape_bills(session, year_abr)
+        yield from self.scrape_bills(session, year_abr)
 
     def scrape_bills(self, session, year_abr):
-        #Main Bill information
+        # Main Bill information
         main_bill_csv = self.access_to_csv('MainBill')
 
         # keep a dictionary of bills (mapping bill_id to Bill obj)
@@ -183,15 +247,24 @@ class NJBillScraper(BillScraper, MDBMixin):
             if not title:
                 continue
 
-            bill = Bill(str(session), chamber, bill_id, title,
-                        type=self._bill_types[bill_type[1:]])
+            bill = Bill(
+                bill_id,
+                title=title,
+                chamber=chamber,
+                legislative_session=session,
+                classification=self._bill_types[bill_type[1:]],
+            )
             if rec['IdenticalBillNumber'].strip():
-                bill.add_companion(rec['IdenticalBillNumber'].split()[0])
+                bill.add_related_bill(
+                    rec['IdenticalBillNumber'].split()[0],
+                    legislative_session=session,
+                    relation_type='companion',
+                )
 
             # TODO: last session info is in there too
             bill_dict[bill_id] = bill
 
-        #Sponsors
+        # Sponsors
         bill_sponsors_csv = self.access_to_csv('BillSpon')
 
         for rec in bill_sponsors_csv:
@@ -208,10 +281,10 @@ class NJBillScraper(BillScraper, MDBMixin):
                 sponsor_type = "primary"
             else:
                 sponsor_type = "cosponsor"
-            bill.add_sponsor(sponsor_type, name)
+            bill.add_sponsorship(name, classification=sponsor_type, entity_type='person',
+                                 primary=sponsor_type == 'primary')
 
-
-        #Documents
+        # Documents
         bill_document_csv = self.access_to_csv('BillWP')
 
         for rec in bill_document_csv:
@@ -225,11 +298,12 @@ class NJBillScraper(BillScraper, MDBMixin):
             document = rec["Document"]
             document = document.split('\\')
             document = document[-2] + "/" + document[-1]
-            year = str(year_abr) + str((year_abr + 1))
 
-            #doc_url = "ftp://www.njleg.state.nj.us/%s/%s" % (year, document)
-            htm_url = 'http://www.njleg.state.nj.us/%s/Bills/%s' % (year_abr,
-                document.replace('.DOC', '.HTM'))
+            # doc_url = "ftp://www.njleg.state.nj.us/%s/%s" % (year, document)
+            htm_url = 'http://www.njleg.state.nj.us/{}/Bills/{}'.format(
+                year_abr,
+                document.replace('.DOC', '.HTM'),
+            )
 
             # name document based _doctype
             try:
@@ -250,22 +324,23 @@ class NJBillScraper(BillScraper, MDBMixin):
                 elif htm_url.endswith('wpd'):
                     mimetype = 'application/vnd.wordperfect'
                 try:
-                    bill.add_version(doc_name, htm_url, mimetype=mimetype)
+                    bill.add_version_link(doc_name, htm_url, media_type=mimetype)
                 except ValueError:
                     self.warning("Couldn't find a document for bill {}".format(bill_id))
                     pass
             else:
-                bill.add_document(doc_name, htm_url)
+                bill.add_document_link(doc_name, htm_url)
 
         # Votes
-        next_year = int(year_abr)+1
-        vote_info_list = ['A%s' % year_abr,
-                          'A%s' % next_year,
-                          'S%s' % year_abr,
-                          'S%s' % next_year,
-                          'CA%s-%s' % (year_abr, next_year),
-                          'CS%s-%s' % (year_abr, next_year),
-                         ]
+        next_year = int(year_abr) + 1
+        vote_info_list = [
+            'A%s' % year_abr,
+            'A%s' % next_year,
+            'S%s' % year_abr,
+            'S%s' % next_year,
+            'CA%s-%s' % (year_abr, next_year),
+            'CS%s-%s' % (year_abr, next_year),
+        ]
 
         for filename in vote_info_list:
             s_vote_url = 'ftp://www.njleg.state.nj.us/votes/%s.zip' % filename
@@ -274,10 +349,10 @@ class NJBillScraper(BillScraper, MDBMixin):
             except scrapelib.FTPError:
                 self.warning('could not find %s' % s_vote_url)
                 continue
-            zipedfile = zipfile.ZipFile(s_vote_zip)
+            zippedfile = zipfile.ZipFile(s_vote_zip)
             for vfile in ["%s.txt" % (filename), "%sEnd.txt" % (filename)]:
                 try:
-                    vote_file = zipedfile.open(vfile, 'U')
+                    vote_file = io.TextIOWrapper(zippedfile.open(vfile, 'rU'))
                 except KeyError:
                     #
                     # Right, so, 2011 we have an "End" file with more
@@ -300,7 +375,6 @@ class NJBillScraper(BillScraper, MDBMixin):
                     vote_file_type = 'chamber'
 
                 for rec in vdict_file:
-
                     if vote_file_type == 'chamber':
                         bill_id = rec["Bill"].strip()
                         leg = rec["Full_Name"]
@@ -322,55 +396,58 @@ class NJBillScraper(BillScraper, MDBMixin):
                     vote_id = '_'.join((bill_id, chamber, action))
                     vote_id = vote_id.replace(" ", "_")
 
-                    if vote_id not in votes:
-                        votes[vote_id] = Vote(chamber, date, action, None, None,
-                                              None, None, bill_id=bill_id)
-                    if vote_file_type == 'committee':
-                        votes[vote_id]['committee'] = self._committees[
-                            rec['Committee_House']]
-
-                    if leg_vote == "Y":
-                        votes[vote_id].yes(leg)
-                    elif leg_vote == "N":
-                        votes[vote_id].no(leg)
+                    if bill_id[0] == 'A':
+                        b_chamber = "lower"
                     else:
-                        votes[vote_id].other(leg)
+                        b_chamber = "upper"
+
+                    if vote_id not in votes:
+                        votes[vote_id] = VoteEvent(
+                            start_date=TIMEZONE.localize(date),
+                            chamber=chamber,
+                            motion_text=action,
+                            classification='passage',
+                            result=None,
+                            bill=bill_id,
+                            bill_chamber=b_chamber,
+                            legislative_session=session,
+                        )
+                    if leg_vote == "Y":
+                        votes[vote_id].vote('yes', leg)
+                    elif leg_vote == "N":
+                        votes[vote_id].vote('no', leg)
+                    else:
+                        votes[vote_id].vote('other', leg)
 
             # remove temp file
             os.remove(s_vote_zip)
 
-            #Counts yes/no/other votes and saves overall vote
-            for vote in votes.itervalues():
-                vote_yes_count = len(vote["yes_votes"])
-                vote_no_count = len(vote["no_votes"])
-                vote_other_count = len(vote["other_votes"])
-                vote["yes_count"] = vote_yes_count
-                vote["no_count"] = vote_no_count
-                vote["other_count"] = vote_other_count
+            # Counts yes/no/other votes and saves overall vote
+            for vote in votes.values():
+                counts = collections.defaultdict(int)
+                for count in vote.votes:
+                    counts[count['option']] += 1
+                vote.set_count('yes', counts['yes'])
+                vote.set_count('no', counts['no'])
+                vote.set_count('other', counts['other'])
 
                 # Veto override.
-                if vote['motion'] == 'OVERRIDE':
+                if vote.motion_text == 'OVERRIDE':
                     # Per the NJ leg's glossary, a veto override requires
                     # 2/3ds of each chamber. 27 in the senate, 54 in the house.
                     # http://www.njleg.state.nj.us/legislativepub/glossary.asp
-                    vote['passed'] = False
-                    if vote['chamber'] == 'lower':
-                        if vote_yes_count >= 54:
-                            vote['passed'] = True
+                    if vote.chamber == 'lower':
+                        vote.result = 'pass' if counts['yes'] >= 54 else 'fail'
                     elif vote['chamber'] == 'upper':
-                        if vote_yes_count >= 27:
-                            vote['passed'] = True
-
-                # Regular vote.
-                elif vote_yes_count > vote_no_count:
-                    vote["passed"] = True
+                        vote.result = 'pass' if counts['yes'] >= 27 else 'fail'
                 else:
-                    vote["passed"] = False
-                vote_bill_id = vote["bill_id"]
-                bill = bill_dict[vote_bill_id]
-                bill.add_vote(vote)
+                    # Regular vote.
+                    vote.result = 'pass' if counts['yes'] > counts['no'] else 'fail'
 
-        #Actions
+                vote.add_source('http://www.njleg.state.nj.us/downloads.asp')
+                yield vote
+
+        # Actions
         bill_action_csv = self.access_to_csv('BillHist')
         actor_map = {'A': 'lower', 'G': 'executive', 'S': 'upper'}
 
@@ -390,7 +467,12 @@ class NJBillScraper(BillScraper, MDBMixin):
             action, atype = self.categorize_action(action, bill_id)
             if comment:
                 action += (' ' + comment)
-            bill.add_action(actor, action, date, type=atype)
+            bill.add_action(
+                action,
+                date=TIMEZONE.localize(date),
+                classification=atype,
+                chamber=actor,
+            )
 
         # Subjects
         subject_csv = self.access_to_csv('BillSubj')
@@ -401,21 +483,21 @@ class NJBillScraper(BillScraper, MDBMixin):
                 continue
             bill = bill_dict.get(bill_id)
             if bill:
-                bill.setdefault('subjects', []).append(rec['SubjectKey'])
+                bill.subject.append(rec['SubjectKey'])
             else:
                 self.warning('invalid bill id in BillSubj: %s' % bill_id)
 
         phony_bill_count = 0
         # save all bills at the end
-        for bill in bill_dict.itervalues():
+        for bill in bill_dict.values():
             # add sources
-            if not bill['actions'] and not bill['versions']:
+            if not bill.actions and not bill.versions:
                 self.warning('probable phony bill detected %s',
-                             bill['bill_id'])
+                             bill.identifier)
                 phony_bill_count += 1
             else:
                 bill.add_source('http://www.njleg.state.nj.us/downloads.asp')
-                self.save_bill(bill)
+                yield bill
 
         if phony_bill_count:
             self.warning('%s total phony bills detected', phony_bill_count)

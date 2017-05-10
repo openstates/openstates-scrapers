@@ -1,74 +1,94 @@
-import datetime
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-from .bills import KSBillScraper
-from .legislators import KSLegislatorScraper
-from .committees import KSCommitteeScraper
+from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
+from openstates.ks.bills import KSBillScraper
+from openstates.ks.people import KSPersonScraper
+from openstates.ks.committees import KSCommitteeScraper
+
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
-# most info taken from http://www.kslib.info/constitution/art2.html
-# also ballotpedia.org
-metadata = dict(
-    name='Kansas',
-    abbreviation='ks',
-    legislature_name='Kansas State Legislature',
-    legislature_url='http://www.kslegislature.org/',
-    capitol_timezone='America/Chicago',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms=[
-        {'name': '2011-2012',
-         'sessions': ['2011-2012'],
-         'start_year': 2011, 'end_year': 2012,},
-        {'name': '2013-2014',
-         'sessions': ['2013-2014'],
-         'start_year': 2013, 'end_year': 2014,},
-        {'name': '2015-2016',
-         'sessions': ['2015-2016'],
-         'start_year': 2015, 'end_year': 2016,},
-        {'name': '2017-2018',
-         'sessions': ['2017-2018'],
-         'start_year': 2017, 'end_year': 2018,},
-    ],
-    session_details={
-        '2011-2012': {
-            'start_date': datetime.date(2011, 1, 12),
-            'display_name': '2011-2012 Regular Session',
-            'type': 'primary',
-            '_scraped_name': 'b2011_12',
-        },
-        '2013-2014': {
-            'start_date': datetime.date(2013, 1, 14),
-            'display_name': '2013-2014 Regular Session',
-            'type': 'primary',
-            '_scraped_name': 'b2013_14',
-        },
-        '2015-2016': {
-            'start_date': datetime.date(2013, 1, 14),
-            'display_name': '2015-2016 Regular Session',
-            'type': 'primary',
-            '_scraped_name': 'b2015_16',
-        },
-        '2017-2018': {
-            'start_date': datetime.date(2017, 1, 9),
-            'end_date': datetime.date(2017, 5, 19),
-            'display_name': '2017-2018 Regular Session',
-            'type': 'primary',
-            '_scraped_name': 'b2017_18',
-        },
-    },
-    feature_flags=['influenceexplorer'],
-)
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    url = url_xpath('http://www.kslegislature.org/li',
-        '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href')[0]
-    slug = url.split('/')[2]
-    return [slug]
+class Kansas(Jurisdiction):
+    division_id = "ocd-division/country:us/state:ks"
+    classification = "government"
+    name = "Kansas"
+    url = "http://www.kslegislature.org/"
+    scrapers = {
+        'bills': KSBillScraper,
+        'people': KSPersonScraper,
+        'committees': KSCommitteeScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "b2011_12",
+            "classification": "primary",
+            "identifier": "2011-2012",
+            "name": "2011-2012 Regular Session",
+            "start_date": "2011-01-12"
+        },
+        {
+            "_scraped_name": "b2013_14",
+            "classification": "primary",
+            "identifier": "2013-2014",
+            "name": "2013-2014 Regular Session",
+            "start_date": "2013-01-14"
+        },
+        {
+            "_scraped_name": "b2015_16",
+            "classification": "primary",
+            "identifier": "2015-2016",
+            "name": "2015-2016 Regular Session",
+            "start_date": "2013-01-14"
+        },
+        {
+            "_scraped_name": "b2017_18",
+            "classification": "primary",
+            "end_date": "2017-05-19",
+            "identifier": "2017-2018",
+            "name": "2017-2018 Regular Session",
+            "start_date": "2017-01-09"
+        }
+    ]
+    ignored_scraped_sessions = []
 
+    def get_organizations(self):
+        legislature_name = "Kansas State Legislature"
+        upper_chamber_name = "Senate"
+        lower_seats = 125
+        lower_title = "Representative"
+        lower_chamber_name = "House"
+        upper_seats = 40
+        upper_title = "Senator"
 
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        url = url_xpath(
+            'http://www.kslegislature.org/li',
+            '//div[@id="nav"]//a[contains(text(), "Senate Bills")]/@href',
+        )[0]
+        return [url.split('/')[2]]

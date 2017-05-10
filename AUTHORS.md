@@ -1,7 +1,7 @@
 Open States is only possible due to the dozens of contributors that have contributed scrapers and various other fixes over the years, for a full list see:
 https://github.com/openstates/openstates/graphs/contributors
 
-Current core developers: 
+Current core developers:
 * James Turk
 * Miles Watkins
 * Tim Showers
