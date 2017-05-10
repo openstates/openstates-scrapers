@@ -41,7 +41,7 @@ class NVBillScraper(Scraper, LXMLMixin):
         if 'Special' in session:
             year = session[4:8]
         elif int(session[:2]) >= 71:
-            year = ((int(session[:2]) - 71) * 2) + 20011
+            year = ((int(session[:2]) - 71) * 2) + 2001
         else:
             return 'No data exists for %s' % session
             # raise NoDataForPeriod(session)
