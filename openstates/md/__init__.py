@@ -1,8 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 
-from .people import MDPersonScraper
-
 from openstates.utils import url_xpath
+
+from .people import MDPersonScraper
+from .committees import MDCommitteeScraper
 
 
 class Maryland(Jurisdiction):
@@ -12,6 +13,7 @@ class Maryland(Jurisdiction):
     url = "http://mgaleg.maryland.gov/webmga/frm1st.aspx?tab=home"
     scrapers = {
         'people': MDPersonScraper,
+        'committees': MDCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
