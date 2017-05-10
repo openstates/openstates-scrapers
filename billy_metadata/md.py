@@ -1,6 +1,5 @@
 import datetime
 
-
 metadata = dict(
     name='Maryland',
     abbreviation='md',
@@ -106,7 +105,7 @@ metadata = dict(
                    '_scraped_name': '2017 Regular Session',
                     'start_date': datetime.date(2017, 1, 11),
                     'end_date': datetime.date(2017, 4, 10),
-                },                
+                },
     },
     feature_flags=['subjects', 'events', 'influenceexplorer'],
     _ignored_scraped_sessions=['1996 Regular Session',
@@ -123,10 +122,3 @@ metadata = dict(
                                '2006 Regular Session',
                                '2006 Special Session 1']
 )
-
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3',
-                     '//select[contains(@name, "cboSession")]/option/text()')
-

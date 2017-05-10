@@ -10,18 +10,15 @@ def _get_table_item(doc, name):
 
 
 class MDPersonScraper(Scraper):
-    jurisdiction = 'md'
-    latest_term = True
-
-    def scrape(self, chambers=None):
+    def scrape(self, chamber=None):
         url = 'http://mgaleg.maryland.gov/webmga/frmmain.aspx?pid=legisrpage&tab=subject6'
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         sen_tbl, house_tbl = doc.xpath('//div[@class="legislrlist"]//table[@class="grid"]')
-        if chambers is None:
-            chambers = ['upper', 'lower']
+
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
         if 'upper' in chambers:
             yield from self.scrape_table('upper', sen_tbl)
         if 'lower' in chambers:
@@ -76,7 +73,7 @@ class MDPersonScraper(Scraper):
                 district=district,
                 name=name,
                 party=party,
-                image=photo_url
+                image=photo_url,
             )
             leg.add_source(url=leg_url)
             leg.add_link(url=leg_url)
@@ -84,7 +81,7 @@ class MDPersonScraper(Scraper):
             if address:
                 leg.add_contact_detail(
                     type='address',
-                    value=address or None,
+                    value=address,
                     note='Capitol Office'
                 )
             if phone:
@@ -93,7 +90,6 @@ class MDPersonScraper(Scraper):
                     value=phone,
                     note='Capitol Office'
                 )
-
             if email:
                 leg.add_contact_detail(
                     type='email',

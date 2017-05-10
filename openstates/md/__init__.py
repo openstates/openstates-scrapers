@@ -1,5 +1,8 @@
-from .people import MDPersonScraper
 from pupa.scrape import Jurisdiction, Organization
+
+from .people import MDPersonScraper
+
+from openstates.utils import url_xpath
 
 
 class Maryland(Jurisdiction):
@@ -141,10 +144,10 @@ class Maryland(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Maryland General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 0 # was none
+        lower_seats = 141
         lower_title = "Delegate"
         upper_chamber_name = "Senate"
-        upper_seats = 0
+        upper_seats = 47
         upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
@@ -154,11 +157,11 @@ class Maryland(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
@@ -166,3 +169,8 @@ class Maryland(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def session_list():
+        return url_xpath(
+            'http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3',
+            '//select[contains(@name, "cboSession")]/option/text()')
