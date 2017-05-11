@@ -3,7 +3,6 @@ import re
 import pytz
 import operator
 import itertools
-import collections
 
 from lxml import etree, html
 from sqlalchemy.orm import sessionmaker
@@ -440,6 +439,7 @@ class CABillScraper(Scraper):
                         primary=author.primary_author_flg == 'Y',
                         entity_type='person',
                     )
+                    fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
             for action in bill.actions:
@@ -534,7 +534,7 @@ class CABillScraper(Scraper):
                 date = date.date()
                 if (actor, act_str, date) in seen_actions:
                     continue
-                action = fsbill.add_action(act_str, date, chamber=actor)
+                action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor)
                 for committee in kwargs.get('committees', []):
                     action.add_related_entity(committee, entity_type='organization')
                 seen_actions.add((actor, act_str, date))
@@ -604,6 +604,7 @@ class CABillScraper(Scraper):
                     organization=org,
                     bill=fsbill,
                 )
+                fsvote.extras = {'threshold': vote.threshold}
 
                 source_url = (
                     'http://leginfo.legislature.ca.gov/faces'
@@ -611,7 +612,7 @@ class CABillScraper(Scraper):
                 ).format(fsbill.identifier)
                 fsvote.add_source(source_url)
 
-                rc = collections.defaultdict(list)
+                rc = {'yes': [], 'no': [], 'other': []}
                 for record in vote.votes:
                     if record.vote_code == 'AYE':
                         rc['yes'].append(record.legislator_name)
