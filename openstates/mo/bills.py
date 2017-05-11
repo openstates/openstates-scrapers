@@ -36,28 +36,31 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def _get_action(self, actor, action):
         # Alright. This covers both chambers and everyting else.
-        flags = {
-            'Introduced': 'introduction',
-            'Offered': 'introduction',
-            'First Read': 'reading-1',
-            'Read Second Time': 'reading-2',
-            'Second Read': 'reading-2',
-            'Third Read': 'reading-3',
-            'Referred': 'referral-committee',
-            'Withdrawn': 'withdrawal',
-            'S adopted': 'passage',
-            'Truly Agreed To and Finally Passed': 'passage',
-            'Third Read and Passed': 'passage',
-            'Signed by Governor': 'executive-signature',
-            'Approved by Governor': 'executive-signature',
-            'Vetoed by Governor': 'executive-veto',
-            'Legislature voted to override Governor\'s veto': 'veto-override-passage',
-        }
-        found_action = None
-        for flag in flags:
+        flags = [
+            ('Introduced', 'introduction'),
+            ('Offered', 'introduction'),
+            ('First Read', 'reading-1'),
+            ('Read Second Time', 'reading-2'),
+            ('Second Read', 'reading-2'),
+            # make sure passage is checked before reading-3
+            ('Third Read and Passed', 'passage'),
+            ('Third Read', 'reading-3'),
+            ('Referred', 'referral-committee'),
+            ('Withdrawn', 'withdrawal'),
+            ('S adopted', 'passage'),
+            ('Truly Agreed To and Finally Passed', 'passage'),
+            ('Signed by Governor', 'executive-signature'),
+            ('Approved by Governor', 'executive-signature'),
+            ('Vetoed by Governor', 'executive-veto'),
+            ('Legislature voted to override Governor\'s veto', 'veto-override-passage'),
+        ]
+        categories = []
+        for flag, acat in flags:
             if flag in action:
-                found_action = flags[flag]
-        return found_action
+                categories.append(acat)
+
+        return categories or None
+
 
     def _get_votes(self, date, actor, action, bill, url):
         vre = r'(?P<leader>.*)(AYES|YEAS):\s+(?P<yeas>\d+)\s+(NOES|NAYS):\s+(?P<nays>\d+).*'
