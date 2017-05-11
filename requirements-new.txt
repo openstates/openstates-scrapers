@@ -5,6 +5,13 @@ pytz>=2010l
 feedparser>=4.1
 spatula
 
-# California
+# dev
+ipdb
+
+# CA
 SQLAlchemy
 mysqlclient
+
+# CT
+chardet
+unicodecsv

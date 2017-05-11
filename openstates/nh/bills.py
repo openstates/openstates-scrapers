@@ -292,7 +292,7 @@ class NHBillScraper(BillScraper):
 
             if session_yr == session and bill_id.strip() in self.bills_by_id:
                 try:
-                    leg = self.legislators[employee]['name']
+                    leg = " ".join(self.legislators[employee]['name'].split())
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
                     continue
@@ -302,7 +302,7 @@ class NHBillScraper(BillScraper):
                     self.warning("Skipping processing this vote:")
                     self.warning("Bad ID: %s" % ( body+v_num ) )
                     continue
-
+                    
                 #code = self.legislators[employee]['seat']
                 if vote == 'Yea':
                     votes[body+v_num].yes(leg)

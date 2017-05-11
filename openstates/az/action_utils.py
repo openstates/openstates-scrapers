@@ -9,6 +9,11 @@ action_chamber_map = {
     'Veto': 'executive'
 }
 
+status_action_map = {
+    'PASSED': 'passage',
+    'FAILED': 'failure',
+}
+
 action_map = {
     'House1stRead': {'name': 'House First Reading.',
                      'action': ['reading-1']
@@ -23,40 +28,40 @@ action_map = {
                        'action': ['reading-2']
                        },
     'HouseCaucusConcurRefuse': {'name': 'House Caucus Refuse to Concur',
-                                'action': ['']
+                                'action': None,
                                 },
     'HouseConsentCalendarDate': {'name': 'House Placed on Consent Calendar',
-                                 'action': ['']
+                                 'action': None,
                                  },
     'HouseConsentCalendarObject': {'name': '',
-                                   'action': ['']
+                                   'action': None,
                                    },
     'HouseConsentObjectDate': {'name': '',
-                               'action': ['']
+                               'action': None,
                                },
     'HouseMajCaucusDate': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'HouseMajCaucusDate2': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'HouseMajCaucusInd': {'name': '',
-                          'action': ['']
+                          'action': None,
                           },
     'HouseMajCaucusInd2': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'HouseMinCaucusDate': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'HouseMinCaucusDate2': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'HouseMinCaucusInd': {'name': '',
-                          'action': ['']
+                          'action': None,
                           },
     'HouseMinCaucusInd2': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'IntroducedDate': {'name': 'Introduced',
                        'action': ['introduced']
@@ -65,7 +70,7 @@ action_map = {
                     'action': ['filing']
                     },
     'RequestforEnactment': {'name': 'Request for Enactment',
-                            'action': ['']
+                            'action': None,
                             },
     'Senate1stRead': {'name': 'Senate First Reading',
                       'action': ['reading-1']
@@ -80,46 +85,46 @@ action_map = {
                         'action': ['reading-2']
                         },
     'SenateCaucusConcurRefuse': {'name': '',
-                                 'action': ['']
+                                 'action': None,
                                  },
     'SenateConsentCalendarDate': {'name': '',
-                                  'action': ['']
+                                  'action': None,
                                   },
     'SenateConsentCalendarObject': {'name': '',
-                                    'action': ['']
+                                    'action': None,
                                     },
     'SenateConsentObjectDate': {'name': '',
-                                'action': ['']
+                                'action': None,
                                 },
     'SenateMajCaucusDate': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'SenateMajCaucusDate2': {'name': '',
-                             'action': ['']
+                             'action': None,
                              },
     'SenateMajCaucusInd': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'SenateMajCaucusInd2': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'SenateMinCaucusDate': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'SenateMinCaucusDate2': {'name': '',
-                             'action': ['']
+                             'action': None,
                              },
     'SenateMinCaucusInd': {'name': '',
-                           'action': ['']
+                           'action': None,
                            },
     'SenateMinCaucusInd2': {'name': '',
-                            'action': ['']
+                            'action': None,
                             },
     'VetoOverride': {'name': 'Veto Overridden',
-                     'action': ['veto_override-passed']
+                     'action': ['veto-override-passage']
                      },
     # TODO: How do we tell signed from vetoed?
     'GovernorAction': {'name': '',
-                       'action': ['']
+                       'action': None,
                        },
 }

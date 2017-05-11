@@ -63,6 +63,9 @@ class {classname}(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "{legislature_name}"
+        lower_chamber_name = "{lower_chamber_name}"
+        lower_seats = {lower_seats}
+        lower_title = "{upper_title}"
         upper_chamber_name = "{upper_chamber_name}"
         upper_seats = {upper_seats}
         upper_title = "{upper_title}"
@@ -108,7 +111,7 @@ class {classname}(Jurisdiction):
         sessions.append(s)
 
     sessions = indent_tail(format_json(sessions), 4)
-    ignored = indent_tail(format_json(metadata['_ignored_scraped_sessions']), 4)
+    ignored = indent_tail(format_json(metadata.get('_ignored_scraped_sessions', [])), 4)
 
     data = {
         'abbr': metadata['abbreviation'],
@@ -117,9 +120,9 @@ class {classname}(Jurisdiction):
         'sessions': sessions,
         'ignored': ignored,
         'legislature_name': metadata['legislature_name'],
-        #'lower_chamber_name': metadata['chambers']['lower']['name'],
-        #'lower_title': metadata['chambers']['lower']['title'],
-        #'lower_seats': lower_max,
+        'lower_chamber_name': metadata['chambers']['lower']['name'],
+        'lower_title': metadata['chambers']['lower']['title'],
+        'lower_seats': lower_max,
         'upper_chamber_name': metadata['chambers']['upper']['name'],
         'upper_title': metadata['chambers']['upper']['title'],
         'upper_seats': upper_max,
