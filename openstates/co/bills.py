@@ -302,8 +302,8 @@ class COBillScraper(BillScraper, LXMLMixin):
         try:
             motion = page.xpath('//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
         except:
-            motion = 'withdrawn'
             self.warning("Vote Summary Page Broken ")
+            return
 
         if 'withdrawn' not in motion:
             # Every table row after the one with VOTE in a td/div/b/font
