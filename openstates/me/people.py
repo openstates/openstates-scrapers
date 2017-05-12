@@ -84,11 +84,12 @@ class MEPersonScraper(Scraper):
 
             person = Person(
                 name=member_name,
-                district=district_name,
+                district=district_number,
                 primary_org='lower',
                 party=party,
                 image=photo_url,
             )
+            person.extras['district_name'] = district_name
 
             person.add_link(leg_url)
             person.add_source(leg_url)
