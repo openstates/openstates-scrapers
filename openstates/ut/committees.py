@@ -7,7 +7,6 @@ from openstates.utils import LXMLMixin
 class UTCommitteeScraper(Scraper, LXMLMixin):
 
     def scrape(self, chamber=None):
-        # self.validate_term(term, latest_only=True)
         url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
         page = self.lxmlize(url)
 
