@@ -50,7 +50,8 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         # For some sessions the link doesn't go straight to the bill list
         doc = self.lxmlize(session_url)
-        replacement_session_url = doc.xpath('//a[text()="Numbered Bills" and contains(@href, "DynaBill/BillList")]/@href')
+        replacement_session_url = doc.xpath('//a[text()="Numbered Bills" and contains'
+                                            '(@href, "DynaBill/BillList")]/@href')
         if replacement_session_url:
             (session_url, ) = replacement_session_url
 
@@ -153,8 +154,8 @@ class UTBillScraper(Scraper, LXMLMixin):
                 media_type='application/pdf'
             )
 
-        for related in page.xpath(
-                '//b[text()="Related Documents "]/following-sibling::ul/li/a[contains(@class,"nlink")]'):
+        for related in page.xpath('//b[text()="Related Documents "]/following-sibling::ul/li/'
+                                  'a[contains(@class,"nlink")]'):
             href = related.xpath('@href')[0]
             if '.fn.pdf' in href:
                 bill.add_document_link("Fiscal Note", href, media_type='application/pdf')
@@ -404,16 +405,9 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         if actor == 'upper' or actor == 'lower':
             vote_chamber = actor
-            vote_location = ''
         else:
             vote_chamber = ''
-            vote_location = actor
 
-        """vote = Vote(vote_chamber, date,
-                    motion, passed, yes_count, no_count,
-                    other_count,
-                    location=vote_location,
-                    _vote_id=uniqid)"""
         vote = Vote(chamber=vote_chamber,
                     start_date=date,
                     motion_text=motion,
