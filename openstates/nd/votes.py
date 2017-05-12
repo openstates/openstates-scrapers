@@ -1,11 +1,9 @@
-from openstates.utils import LXMLMixin
-import requests.exceptions
-from billy.scrape.votes import VoteScraper, Vote
-from billy.scrape.utils import convert_pdf
-import datetime
-import lxml
 import os
 import re
+import datetime
+import requests.exceptions
+from openstates.utils import LXMLMixin, convert_pdf
+from pupa.scrape import Scraper, VoteEvent as Vote
 
 
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
@@ -13,10 +11,17 @@ chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 page_re = r"Page\s\d+"
 
 
-class NDVoteScraper(VoteScraper, LXMLMixin):
-    jurisdiction = 'nd'
+class NDVoteScraper(Scraper, LXMLMixin):
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         chamber_name = 'house' if chamber == 'lower' else 'senate'
         session_slug = {
                 '62': '62-2011',
@@ -49,7 +54,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                 continue
 
             # Convert the PDF to text
-            data = convert_pdf(path, type='text')
+            data = str(convert_pdf(path, type='text'))
             os.unlink(path)
 
             # Determine the date of the document
@@ -65,12 +70,15 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
             # Check each line of the text for motion and vote information
             lines = data.splitlines()
             for line in lines:
-
+                from pprint import pprint
+                pprint(line)
+                print("hi")
                 # Ignore lines with no information
                 if re.search(chamber_re, line) or \
                         re.search(date_re, line) or \
                         re.search(page_re, line) or \
                         line.strip() == "":
+                    print("pass above")
                     pass
 
                 # Ensure that motion and vote capturing are not _both_ active
@@ -87,6 +95,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                         in_motion = True
 
                 elif in_motion and not in_vote:
+                    print("in_motion")
                     if cur_motion == "":
                         cur_motion = line.strip()
                     else:
@@ -116,19 +125,21 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                         results[cur_vote] = who
 
                         name_may_be_continued = False if line.endswith(";") \
-                                else True
+                            else True
 
                     # Extracts bill numbers in the closing text
                     # used for when the closing text is multiple lines.
                     elif cur_vote is not None and\
                             re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line) and \
-                            not any(x in line.lower() for x in
-                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
+                            not any(x in line.lower() for x in ['passed', 'adopted',
+                                                                'sustained', 'prevailed',
+                                                                'lost', 'failed']):
                         bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
-                    
+
                     elif cur_vote is not None and \
-                            not any(x in line.lower() for x in
-                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
+                            not any(x in line.lower() for x in ['passed', 'adopted',
+                                                                'sustained', 'prevailed',
+                                                                'lost', 'failed']):
                         who = [x.strip() for x in line.split(";") if x.strip() != ""]
 
                         if name_may_be_continued:
@@ -136,13 +147,14 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                     " " + who.pop(0)
 
                         name_may_be_continued = False if line.endswith(";") \
-                                else True
+                            else True
 
                         results[cur_vote].extend(who)
 
                     # At the conclusion of a vote, save its data
-                    elif any(x in line.lower() for x in
-                            ['passed', 'adopted', 'sustained', 'prevailed', 'lost', 'failed']):
+                    elif any(x in line.lower() for x in ['passed', 'adopted',
+                                                         'sustained', 'prevailed',
+                                                         'lost', 'failed']):
 
                         in_vote = False
                         cur_vote = None
@@ -150,7 +162,7 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                         # Identify what is being voted on
                         # Throw a warning if impropper informaiton found
                         bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
-
+                        print("bills.extend")
                         if bills == [] or cur_motion.strip() == "":
                             results = {}
                             cur_motion = ""
@@ -183,18 +195,19 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
 
                         # Count the number of members voting each way
                         yes, no, other = \
-                                len(res['yes']), \
-                                len(res['no']), \
-                                len(res['other'])
+                            len(res['yes']), \
+                            len(res['no']), \
+                            len(res['other'])
                         chambers = {
                             "H": "lower",
                             "S": "upper",
                             "J": "joint"
                         }
 
-                        # Almost all of the time, a vote only applies to one bill and this loop will only be run once.
+                        # Almost all of the time, a vote only applies to one bill and this loop
+                        # will only be run once.
                         # Some exceptions exist.
-
+                        print("hello")
                         for bill in bills:
 
                             cur_bill_id = "%s%s%s %s" % bill
@@ -211,22 +224,21 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                 passed = (yes / (yes + no) > VETO_SUPERMAJORITY)
                             else:
                                 passed = (yes > no)
-
+                            print("Vote")
                             # Create a Vote object based on the scraped information
-                            vote = Vote(chamber,
-                                        cur_date,
-                                        cur_motion,
-                                        passed,
-                                        yes,
-                                        no,
-                                        other,
-                                        session=session,
-                                        bill_id=cur_bill_id,
+                            vote = Vote(chamber=chamber,
+                                        start_date=cur_date,
+                                        motion_text=cur_motion,
+                                        result='pass' if passed else 'fail',
+                                        legislative_session=session,
+                                        bill=cur_bill_id,
                                         bill_chamber=bc)
 
                             vote.add_source(pdf_url)
                             vote.add_source(url)
-
+                            vote.set_count('yes', yes)
+                            vote.set_count('no', no)
+                            vote.set_count('other', other)
                             # For each category of voting members,
                             # add the individuals to the Vote object
                             for key in res:
@@ -241,7 +253,12 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                 # so it can find, for example,  " 1 NAY "
                                 vote_re = r"(\d+)\s{}".format(category_name[:-1])
                                 motion_count = int(re.findall(vote_re, cur_motion)[0])
-                                vote_count = vote[keys[category_name] + "_count"]
+                                # vote_count = vote[keys[category_name] + "_count"]
+                                self.warning(keys[category_name])
+                                for item in vote.counts:
+                                    self.warning(item['option'])
+                                    if item['option'] == keys[category_name]:
+                                        vote_count = item['value']
 
                                 if motion_count != vote_count:
                                     self.warning(
@@ -249,9 +266,13 @@ class NDVoteScraper(VoteScraper, LXMLMixin):
                                             "differed from roll call counts ({}) ".format(vote_count) +
                                             "for {0} on {1}".format(category_name, cur_bill_id)
                                             )
-                                    vote[keys[category_name] + "_count"] = motion_count
+                                    # vote[keys[category_name] + "_count"] = motion_count
+                                    for item in vote.counts:
+                                        self.warning(item['option'])
+                                        if item['option'] == keys[category_name]:
+                                            vote_count = motion_count
 
-                            self.save_vote(vote)
+                            yield vote
 
                         # With the vote successfully processed,
                         # wipe its data and continue to the next one

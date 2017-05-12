@@ -1,18 +1,17 @@
-from billy.scrape.legislators import Legislator, LegislatorScraper
-from billy.scrape import NoDataForPeriod
+from pupa.scrape import Person, Scraper
 import lxml.html
 import logging
 import re
 
 logger = logging.getLogger('openstates')
 
-class NDLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'nd'
 
-    def scrape(self, term, chambers):
-        self.validate_term(term, latest_only=True)
+class NDLegislatorScraper(Scraper):
+
+    def scrape(self, chamber=None):
 
         # figuring out starting year from metadata
+        for item, _ in enumerate(self.jurisdiction.legislative_sessions):
         for t in self.metadata['terms']:
             if t['name'] == term:
                 start_year = t['start_year']

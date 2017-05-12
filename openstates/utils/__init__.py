@@ -1,7 +1,7 @@
 import re
 
 from .lxmlize import LXMLMixin  # noqa
-from .lxmlize import url_xpath  # noqa
+from .lxmlize import url_xpath, convert_pdf  # noqa
 
 
 def validate_phone_number(phone_number):

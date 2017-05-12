@@ -1,8 +1,8 @@
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 import lxml.html
 
-class NDCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'nd'
+
+class NDCommitteeScraper(Scraper):
 
     def scrape_committee(self, term, chambers, href, name):
         page = self.get(href).text
@@ -42,8 +42,7 @@ class NDCommitteeScraper(CommitteeScraper):
         cttie.add_source(href)
         self.save_committee(cttie)
 
-    def scrape(self, term, chambers):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
 
         # figuring out starting year from metadata
         for t in self.metadata['terms']:
