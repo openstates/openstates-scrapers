@@ -1,7 +1,7 @@
 from suds.client import Client
 import logging
 import socket
-import urllib2
+import urllib
 import time
 import suds
 
@@ -31,7 +31,7 @@ def backoff(function, *args, **kwargs):
     for attempt in range(retries):
         try:
             return _()
-        except (socket.timeout, urllib2.URLError, suds.WebFault) as e:
+        except (socket.timeout, urllib.error.URLError, suds.WebFault) as e:
             if "This Roll Call Vote is not published." in e.message:
                 raise ValueError("Roll Call Vote isn't published")
 
@@ -48,3 +48,12 @@ def backoff(function, *args, **kwargs):
     raise ValueError(
         "The server's not playing nice. We can't keep slamming it."
     )
+
+
+SESSION_SITE_IDS = {
+    '2017_18': 25,
+    '2015_16': 24,
+    '2013_14': 23,
+    '2011_ss': 22,
+    '2011_12': 21,
+}
