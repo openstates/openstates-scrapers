@@ -1,36 +1,36 @@
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 
 rules = (
-    Rule([(u'(?P<yes_votes>\d+) Yeas - (?P<no_votes>\d+) '
-           u'Nays- (?P<excused>\d+) Excused - (?P<absent>\d+) Absent'),
-          (u'(?P<yes_votes>\d+) -Yeas, (?P<no_votes>\d+) -Nays, '
-           u'(?P<excused>\d+) -Excused, (?P<absent>\d+) -Absent'),
-           u'(?P<committees>Committee on .+?) suggested and ordered printed',
-          (u'\(Yeas (?P<yes_votes>\d+) - Nays (?P<no_votes>\d+) - Absent '
-           u'(?P<absent>\d+) - Excused (?P<excused>\d+)\)( \(Vacancy '
-           u'(?P<vacant>\d+)\))?')]),
+    Rule([('(?P<yes_votes>\d+) Yeas - (?P<no_votes>\d+) '
+           'Nays- (?P<excused>\d+) Excused - (?P<absent>\d+) Absent'),
+          ('(?P<yes_votes>\d+) -Yeas, (?P<no_votes>\d+) -Nays, '
+           '(?P<excused>\d+) -Excused, (?P<absent>\d+) -Absent'),
+          '(?P<committees>Committee on .+?) suggested and ordered printed',
+          ('\(Yeas (?P<yes_votes>\d+) - Nays (?P<no_votes>\d+) - Absent '
+           '(?P<absent>\d+) - Excused (?P<excused>\d+)\)( \(Vacancy '
+           '(?P<vacant>\d+)\))?')]),
 
-    Rule([u'Representative (?P<legislators>.+?) of \S+',
-          u'Senator (?P<legislators>.+?of \S+)',
+    Rule(['Representative (?P<legislators>.+?) of \S+',
+          'Senator (?P<legislators>.+?of \S+)',
           'Representative (?P<legislators>[A-Z]+?( of [A-Za-z]+))',
-          u'Senator (?P<legislators>\S+ of \S+)',
-          u'Representative [A-Z ]+? of \S+']),
+          'Senator (?P<legislators>\S+ of \S+)',
+          'Representative [A-Z ]+? of \S+']),
 
-    Rule(u'REFERRED to the (?P<committees>Committee on [A-Z ]+(?![a-z]))',
-         'committee:referred'),
-    Rule(['READ A SECOND TIME'], ['bill:reading:2']),
-    Rule(['(?i)read once'], ['bill:reading:1']),
-    Rule('(?i)finally passed', 'bill:passed'),
-    Rule('(?i)passed to be enacted', 'bill:passed'),
+    Rule('REFERRED to the (?P<committees>Committee on [A-Z ]+(?![a-z]))',
+         'referral-committee'),
+    Rule(['READ A SECOND TIME'], ['reading-2']),
+    Rule(['(?i)read once'], ['reading-1']),
+    Rule('(?i)finally passed', 'passage'),
+    Rule('(?i)passed to be enacted', 'passage'),
     Rule('COMMITTED to the (?P<committees>Committee on .+?)\.',
-         'committee:referred'),
-    Rule(r'VETO was NOT SUSTAINED', 'bill:veto_override:passed'),
-    Rule(r'VETO was SUSTAINED', 'bill:veto_override:failed'),
+         'referral-committee'),
+    Rule(r'VETO was NOT SUSTAINED', 'veto-override-passage'),
+    Rule(r'VETO was SUSTAINED', 'veto-override-failure'),
     Rule(r'(?<![Aa]mendment)READ and (PASSED|ADOPTED)(, in concurrence)?\.$',
-            'bill:passed')
-    )
+         'passage')
+)
 
 
 class Categorizer(BaseCategorizer):
@@ -65,11 +65,14 @@ class Categorizer(BaseCategorizer):
         return attrs
 
 
-def get_actor(action_text, chamber, rgxs=(
-        (re.compile(r'(in|by) senate', re.I), 'upper'),
-        (re.compile(r'(in|by) house', re.I), 'lower'),
-        (re.compile(r'by governor', re.I), 'governor'),
-        )):
+actor_regex = [
+    (re.compile(r'(in|by) senate', re.I), 'upper'),
+    (re.compile(r'(in|by) house', re.I), 'lower'),
+    (re.compile(r'by governor', re.I), 'governor'),
+]
+
+
+def get_actor(action_text, chamber, rgxs=actor_regex):
     '''Guess the actor for a particular action.
     '''
     for r, actor in rgxs:
@@ -78,24 +81,25 @@ def get_actor(action_text, chamber, rgxs=(
             return actor
     return chamber
 
+
 committees = [
-    u'AGRICULTURE, CONSERVATION AND FORESTRY',
-    u'APPROPRIATIONS AND FINANCIAL AFFAIRS',
-    u'CRIMINAL JUSTICE AND PUBLIC SAFETY',
-    u'EDUCATION AND CULTURAL AFFAIRS',
-    u'ENERGY, UTILITIES AND TECHNOLOGY',
-    u'ENVIRONMENT AND NATURAL RESOURCES',
-    u'HEALTH AND HUMAN SERVICES',
-    u'INLAND FISHERIES AND WILDLIFE',
-    u'INSURANCE AND FINANCIAL SERVICES',
-    u'JOINT RULES',
-    u'JUDICIARY',
-    u'LABOR, COMMERCE, RESEARCH AND ECONOMIC DEVELOPMENT',
-    u'MARINE RESOURCES',
-    u'REGULATORY FAIRNESS AND REFORM',
-    u'STATE AND LOCAL GOVERNMENT',
-    u'TAXATION',
-    u'TRANSPORTATION',
-    u'VETERANS AND LEGAL AFFAIRS',
-    ]
+    'AGRICULTURE, CONSERVATION AND FORESTRY',
+    'APPROPRIATIONS AND FINANCIAL AFFAIRS',
+    'CRIMINAL JUSTICE AND PUBLIC SAFETY',
+    'EDUCATION AND CULTURAL AFFAIRS',
+    'ENERGY, UTILITIES AND TECHNOLOGY',
+    'ENVIRONMENT AND NATURAL RESOURCES',
+    'HEALTH AND HUMAN SERVICES',
+    'INLAND FISHERIES AND WILDLIFE',
+    'INSURANCE AND FINANCIAL SERVICES',
+    'JOINT RULES',
+    'JUDICIARY',
+    'LABOR, COMMERCE, RESEARCH AND ECONOMIC DEVELOPMENT',
+    'MARINE RESOURCES',
+    'REGULATORY FAIRNESS AND REFORM',
+    'STATE AND LOCAL GOVERNMENT',
+    'TAXATION',
+    'TRANSPORTATION',
+    'VETERANS AND LEGAL AFFAIRS',
+]
 committees_rgx = '(%s)' % '|'.join(sorted(committees, key=len, reverse=True))
