@@ -54,7 +54,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                 continue
 
             # Convert the PDF to text
-            data = str(convert_pdf(path, type='text'))
+            data = convert_pdf(path, type='text').decode('utf-8')
             os.unlink(path)
 
             # Determine the date of the document
@@ -70,15 +70,11 @@ class NDVoteScraper(Scraper, LXMLMixin):
             # Check each line of the text for motion and vote information
             lines = data.splitlines()
             for line in lines:
-                from pprint import pprint
-                pprint(line)
-                print("hi")
                 # Ignore lines with no information
                 if re.search(chamber_re, line) or \
                         re.search(date_re, line) or \
                         re.search(page_re, line) or \
                         line.strip() == "":
-                    print("pass above")
                     pass
 
                 # Ensure that motion and vote capturing are not _both_ active
@@ -95,7 +91,6 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         in_motion = True
 
                 elif in_motion and not in_vote:
-                    print("in_motion")
                     if cur_motion == "":
                         cur_motion = line.strip()
                     else:
@@ -162,7 +157,6 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         # Identify what is being voted on
                         # Throw a warning if impropper informaiton found
                         bills.extend(re.findall(r"(?i)(H|S|J)(C?)(B|R|M) (\d+)", line))
-                        print("bills.extend")
                         if bills == [] or cur_motion.strip() == "":
                             results = {}
                             cur_motion = ""
@@ -189,7 +183,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         res = {}
                         for key in keys:
                             if key in results:
-                                res[keys[key]] = filter(lambda a: a != "", results[key])
+                                res[keys[key]] = results[key]
                             else:
                                 res[keys[key]] = []
 
@@ -207,7 +201,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         # Almost all of the time, a vote only applies to one bill and this loop
                         # will only be run once.
                         # Some exceptions exist.
-                        print("hello")
+
                         for bill in bills:
 
                             cur_bill_id = "%s%s%s %s" % bill
@@ -224,13 +218,13 @@ class NDVoteScraper(Scraper, LXMLMixin):
                                 passed = (yes / (yes + no) > VETO_SUPERMAJORITY)
                             else:
                                 passed = (yes > no)
-                            print("Vote")
                             # Create a Vote object based on the scraped information
                             vote = Vote(chamber=chamber,
-                                        start_date=cur_date,
+                                        start_date=cur_date.strftime('%Y-%m-%d'),
                                         motion_text=cur_motion,
                                         result='pass' if passed else 'fail',
                                         legislative_session=session,
+                                        classification='passage',
                                         bill=cur_bill_id,
                                         bill_chamber=bc)
 
@@ -242,9 +236,8 @@ class NDVoteScraper(Scraper, LXMLMixin):
                             # For each category of voting members,
                             # add the individuals to the Vote object
                             for key in res:
-                                obj = getattr(vote, key)
-                                for person in res[key]:
-                                    obj(person)
+                                for voter in res[key]:
+                                    vote.vote(key, voter)
 
                             # Check the vote counts in the motion text against
                             # the parsed results
@@ -253,10 +246,8 @@ class NDVoteScraper(Scraper, LXMLMixin):
                                 # so it can find, for example,  " 1 NAY "
                                 vote_re = r"(\d+)\s{}".format(category_name[:-1])
                                 motion_count = int(re.findall(vote_re, cur_motion)[0])
-                                # vote_count = vote[keys[category_name] + "_count"]
-                                self.warning(keys[category_name])
+
                                 for item in vote.counts:
-                                    self.warning(item['option'])
                                     if item['option'] == keys[category_name]:
                                         vote_count = item['value']
 
@@ -266,9 +257,8 @@ class NDVoteScraper(Scraper, LXMLMixin):
                                             "differed from roll call counts ({}) ".format(vote_count) +
                                             "for {0} on {1}".format(category_name, cur_bill_id)
                                             )
-                                    # vote[keys[category_name] + "_count"] = motion_count
+
                                     for item in vote.counts:
-                                        self.warning(item['option'])
                                         if item['option'] == keys[category_name]:
                                             vote_count = motion_count
 
