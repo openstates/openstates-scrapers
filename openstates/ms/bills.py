@@ -202,7 +202,7 @@ class MSBillScraper(Scraper):
                 subjects = details_root.xpath('//H_NAME/text()')
                 subjects += details_root.xpath('//S_NAME/text()')
 
-                for subject in subjects:
+                for subject in set(subjects):
                     bill.add_subject(subject)
 
                 if act_vote:
