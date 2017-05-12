@@ -1,9 +1,6 @@
-import urlparse
 import lxml.etree
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from .utils import clean_committee_name
+from pupa.scrape import Person, Scraper
 
 import scrapelib
 import os.path
@@ -12,14 +9,17 @@ import os.path
 CAP_ADDRESS = """P. O. Box 1018
 Jackson, MS 39215"""
 
-class MSLegislatorScraper(LegislatorScraper):
-    jurisdiction = 'ms'
 
-    def scrape(self, chamber, term_name):
-        self.validate_term(term_name, latest_only=True)
-        self.scrape_legs(chamber, term_name)
+class MSLegislatorScraper(Scraper):
 
-    def scrape_legs(self, chamber, term_name):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_legs(chamber)
+        else:
+            yield from self.scrape_legs('upper')
+            yield from self.scrape_legs('lower')
+
+    def scrape_legs(self, chamber):
         if chamber == 'upper':
             url = 'http://billstatus.ls.state.ms.us/members/ss_membs.xml'
             range_num = 5
@@ -36,28 +36,28 @@ class MSLegislatorScraper(LegislatorScraper):
                 leg = mr.xpath(leg_path)
                 leg_link = mr.xpath(leg_link_path)
                 role = "member"
-                self.scrape_details(chamber, term_name, leg, leg_link, role)
+                yield from self.scrape_details(chamber, leg, leg_link, role)
         if chamber == 'lower':
             chair_name = root.xpath('string(//CHAIR_NAME)')
             chair_link = root.xpath('string(//CHAIR_LINK)')
             role = root.xpath('string(//CHAIR_TITLE)')
-            self.scrape_details(chamber, term_name, chair_name, chair_link, role)
+            yield from self.scrape_details(chamber, chair_name, chair_link, role)
         else:
-            #Senate Chair is the Governor. Info has to be hard coded
+            # Senate Chair is the Governor. Info has to be hard coded
             chair_name = root.xpath('string(//CHAIR_NAME)')
             role = root.xpath('string(//CHAIR_TITLE)')
             # TODO: if we're going to hardcode the governor, do it better
-            #district = "Governor"
-            #leg = Legislator(term_name, chamber, district, chair_name,
+            # district = "Governor"
+            # leg = Legislator(term_name, chamber, district, chair_name,
             #                 first_name="", last_name="", middle_name="",
             #                 party="Republican", role=role)
 
         protemp_name = root.xpath('string(//PROTEMP_NAME)')
         protemp_link = root.xpath('string(//PROTEMP_LINK)')
         role = root.xpath('string(//PROTEMP_TITLE)')
-        self.scrape_details(chamber, term_name, protemp_name, protemp_link, role)
+        yield from self.scrape_details(chamber, protemp_name, protemp_link, role)
 
-    def scrape_details(self, chamber, term, leg_name, leg_link, role):
+    def scrape_details(self, chamber, leg_name, leg_link, role):
         if not leg_link:
             # Vacant post, likely:
             if "Vacancy" in leg_name:
@@ -88,18 +88,20 @@ class MSLegislatorScraper(LegislatorScraper):
                 home_zip
             )
 
-            bis_phone = root.xpath('string(//B_PHONE)')
+            # bis_phone = root.xpath('string(//B_PHONE)')
             capital_phone = root.xpath('string(//CAP_PHONE)')
-            other_phone = root.xpath('string(//OTH_PHONE)')
+            # other_phone = root.xpath('string(//OTH_PHONE)')
             org_info = root.xpath('string(//ORG_INFO)')
             email_name = root.xpath('string(//EMAIL_ADDRESS)').strip()
             cap_room = root.xpath('string(//CAP_ROOM)')
 
             if leg_name in ('Lataisha Jackson', 'John G. Faulkner'):
-                assert not party, "Remove special-casing for this Democrat without a listed party: {}".format(leg_name)
+                assert not party, ("Remove special-casing for this Democrat without a "
+                                   "listed party: {}").format(leg_name)
                 party = 'Democratic'
             elif leg_name in ('James W. Mathis', 'John Glen Corley'):
-                assert not party, "Remove special-casing for this Republican without a listed party: {}".format(leg_name)
+                assert not party, ("Remove special-casing for this Republican without"
+                                   " a listed party: {}").format(leg_name)
                 party = 'Republican'
             elif party == 'D':
                 party = 'Democratic'
@@ -108,12 +110,16 @@ class MSLegislatorScraper(LegislatorScraper):
             else:
                 raise AssertionError(
                     "A member with no identifiable party was found: {}".format(leg_name))
-
-            leg = Legislator(term, chamber, district, leg_name, party=party, role=role,
-                             org_info=org_info, url=url, photo_url=photo)
+            leg = Person(primary_org=chamber,
+                         district=district,
+                         party=party,
+                         image=photo,
+                         name=leg_name,
+                         role=role
+                         )
+            leg.extras['org_info'] = org_info
             leg.add_source(url)
-
-            kwargs = {}
+            leg.add_link(url)
 
             if email_name != "":
                 if "@" in email_name:
@@ -121,29 +127,25 @@ class MSLegislatorScraper(LegislatorScraper):
                 else:
                     email = '%s@%s.ms.gov' % (email_name,
                                               {"upper": "senate", "lower": "house"}[chamber])
-                kwargs['email'] = email
+                leg.add_contact_detail(type='email', value=email, note='Capitol Office')
 
             if capital_phone != "":
-                kwargs['phone'] = capital_phone
+                leg.add_contact_detail(type='voice', value=capital_phone, note='Capitol Office')
 
             if cap_room != "":
-                kwargs["address"] = "Room %s\n%s" % (cap_room, CAP_ADDRESS)
+                address = "Room %s\n%s" % (cap_room, CAP_ADDRESS)
             else:
-                kwargs['address'] = CAP_ADDRESS
+                address = CAP_ADDRESS
+            leg.add_contact_detail(type='address', value=address, note='Capitol Office')
 
-            leg.add_office('capitol', 'Capitol Office', **kwargs)
-
-            kwargs = {}
             if home_phone != "":
-                kwargs['phone'] = home_phone
+                leg.add_contact_detail(type='voice', value=home_phone, note='District Office')
 
             if home_address_total != "":
-                kwargs['address'] = home_address_total
+                leg.add_contact_detail(type='address',
+                                       value=home_address_total,
+                                       note='District Office')
 
-            if kwargs != {}:
-                leg.add_office('district', 'District Office', **kwargs)
-
-            self.save_legislator(leg)
-        except scrapelib.HTTPError, e:
+            yield leg
+        except scrapelib.HTTPError as e:
             self.warning(str(e))
-
