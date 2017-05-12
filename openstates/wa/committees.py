@@ -31,9 +31,10 @@ class WACommitteeScraper(Scraper):
             name = xpath(comm, "string(wa:Name)")
             # comm_id = xpath(comm, "string(wa:Id)")
             # acronym = xpath(comm, "string(wa:Acronym)")
-            # phone = xpath(comm, "string(wa:Phone)")
+            phone = xpath(comm, "string(wa:Phone)")
 
             comm = Organization(name, chamber=chamber, classification='committee')
+            comm.extras['phone'] = phone
             self.scrape_members(comm, agency)
             comm.add_source(url)
             if not comm._related:
