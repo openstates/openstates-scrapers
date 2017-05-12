@@ -1,5 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import UTPersonScraper
+from .events import UTEventScraper
 
 
 class Utah(Jurisdiction):
@@ -9,6 +10,7 @@ class Utah(Jurisdiction):
     url = "TODO"
     scrapers = {
         'people': UTPersonScraper,
+        'event': UTEventScraper,
     }
     parties = [
         {'name': 'Republican'},

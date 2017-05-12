@@ -7,7 +7,7 @@ class UTPersonScraper(Scraper, LXMLMixin):
     latest_only = True
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber else ['upper', 'lower']
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
 
