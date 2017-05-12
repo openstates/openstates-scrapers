@@ -22,7 +22,8 @@ TIMEZONE = pytz.timezone('America/Chicago')
 class MOVoteScraper(Scraper, LXMLMixin):
     def _clean_line(self, obj):
         patterns = {
-            "\xe2\x80\x94": "-"
+            "\xe2\x80\x94": "-",
+            "—": "-",
         }
 
         for pattern in patterns:
