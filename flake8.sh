@@ -4,9 +4,9 @@ python3 -m flake8 \
     openstates/al \
     openstates/ar \
     openstates/az \
+    openstates/ct \
     openstates/dc \
     openstates/de \
-    openstates/ct \
     openstates/fl \
     openstates/hi \
     openstates/id \
@@ -17,6 +17,7 @@ python3 -m flake8 \
     openstates/mi \
     openstates/mn \
     openstates/mo \
+    openstates/ms \
     openstates/mt \
     openstates/nc \
     openstates/ne \
@@ -26,9 +27,9 @@ python3 -m flake8 \
     openstates/or \
     openstates/pa \
     openstates/sc \
-    openstates/va \
-    openstates/ms \
     openstates/sd \
+    openstates/va \
+    openstates/wa \
     openstates/wi \
     openstates/wy \
     openstates/utils \
