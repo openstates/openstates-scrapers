@@ -61,7 +61,6 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         return categories or None
 
-
     def _get_votes(self, date, actor, action, bill, url):
         vre = r'(?P<leader>.*)(AYES|YEAS):\s+(?P<yeas>\d+)\s+(NOES|NAYS):\s+(?P<nays>\d+).*'
         if 'YEAS' in action.upper() or 'AYES' in action.upper():
