@@ -1,10 +1,3 @@
-from billy.utils.fulltext import text_after_line_numbers
-from .util import get_client, backoff
-import lxml.html
-from .bills import GABillScraper
-from .legislators import GALegislatorScraper
-from .committees import GACommitteeScraper
-
 metadata = {
     'name': 'Georgia',
     'abbreviation': 'ga',
@@ -63,30 +56,3 @@ metadata = {
                                   '2001 1st Special Session',
                                   '2001-2002 Regular Session']
 }
-
-
-def session_list():
-    sessions = get_client("Session").service
-
-    # sessions = [x for x in backoff(sessions.GetSessions)['Session']]
-    # import pdb; pdb.set_trace()
-    # sessions <-- check the Id for the _guid
-
-    sessions = [x['Description'].strip()
-                for x in backoff(sessions.GetSessions)['Session']]
-    return sessions
-
-
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    lines = doc.xpath('//span/text()')
-    headers = ('A\r\nRESOLUTION', 'AN\r\nACT')
-    # take off everything before one of the headers
-    for header in headers:
-        if header in lines:
-            text = '\n'.join(lines[lines.index(header)+1:])
-            break
-    else:
-        text = ' '.join(lines)
-
-    return text

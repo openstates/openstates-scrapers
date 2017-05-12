@@ -23,7 +23,6 @@ def get_url(service):
 
 def backoff(function, *args, **kwargs):
     retries = 5
-    nice = 0
 
     def _():
         time.sleep(1)  # Seems like their server can't handle the load.
