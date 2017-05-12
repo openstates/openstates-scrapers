@@ -31,7 +31,9 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libxml2-dev \
     libxslt-dev \
     poppler-utils \
-    postgresql-dev && \
+    postgresql-dev \
+    mariadb-client \
+    mariadb-dev && \
   cd /tmp && \
     wget "https://github.com/brianb/mdbtools/archive/0.7.1.zip" && \
     unzip 0.7.1.zip && rm 0.7.1.zip && \
