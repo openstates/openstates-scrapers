@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import UTPersonScraper
 from .events import UTEventScraper
 from .committees import UTCommitteeScraper
+from .bills import UTBillScraper
 
 
 class Utah(Jurisdiction):
@@ -13,6 +14,7 @@ class Utah(Jurisdiction):
         'people': UTPersonScraper,
         'events': UTEventScraper,
         'committees': UTCommitteeScraper,
+        'bills': UTBillScraper,
     }
     parties = [
         {'name': 'Republican'},
