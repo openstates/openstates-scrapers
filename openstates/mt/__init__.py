@@ -84,6 +84,6 @@ class Montana(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        from billy.scrape.utils import url_xpath
+        from openstates.utils.lxmlize import url_xpath
         return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
                          "//td[@id='cont']/ul/li/a/text()")

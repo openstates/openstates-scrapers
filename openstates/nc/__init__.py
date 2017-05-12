@@ -148,7 +148,7 @@ class NorthCarolina(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        from billy.scrape.utils import url_xpath
+        from openstates.utils.lxmlize import url_xpath
         return url_xpath('http://www.ncleg.net',
                          '//select[@name="sessionToSearch"]/option/text()')
 
