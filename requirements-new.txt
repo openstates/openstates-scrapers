@@ -8,7 +8,10 @@ spatula
 # dev
 ipdb
 
-#CT
+# CA
+SQLAlchemy
+mysqlclient
+
+# CT
 chardet
 unicodecsv
-

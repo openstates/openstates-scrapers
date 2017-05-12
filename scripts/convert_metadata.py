@@ -97,6 +97,8 @@ class {classname}(Jurisdiction):
              }
         if v.get('type'):
             s['classification'] = v['type']
+        if v.get('_scraped_name'):
+            s['_scraped_name'] = v['_scraped_name']
         else:
             print(
                 'Warning: Missing classification on session {}'.format(k),
