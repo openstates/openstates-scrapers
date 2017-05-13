@@ -197,7 +197,7 @@ class OKPersonScraper(Scraper, LXMLMixin):
             else:
                 district = a.xpath('../../span')[1].text.split()[1]
 
-            if a.text is None:
+            if a.text.strip() == 'Vacant':
                 self.warning("District {} appears to be empty".format(district))
                 continue
             else:
