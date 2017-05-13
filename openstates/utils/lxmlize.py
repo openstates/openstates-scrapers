@@ -23,6 +23,7 @@ def convert_pdf(filename, type='xml'):
     pipe.close()
     return data
 
+
 class LXMLMixin(object):
     """Mixin for adding LXML helper functions to Open States code."""
 
