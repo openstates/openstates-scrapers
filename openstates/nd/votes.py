@@ -6,7 +6,8 @@ from openstates.utils import LXMLMixin, convert_pdf
 from pupa.scrape import Scraper, VoteEvent as Vote
 
 
-date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
+date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|" + \
+              "THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
 chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 page_re = r"Page\s\d+"
 
@@ -254,7 +255,8 @@ class NDVoteScraper(Scraper, LXMLMixin):
                                 if motion_count != vote_count:
                                     self.warning(
                                             "Motion text vote counts ({}) ".format(motion_count) +
-                                            "differed from roll call counts ({}) ".format(vote_count) +
+                                            "differed from roll call counts ({}) ".format(
+                                                vote_count) +
                                             "for {0} on {1}".format(category_name, cur_bill_id)
                                             )
 
