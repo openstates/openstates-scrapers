@@ -6,17 +6,13 @@ import re
 logger = logging.getLogger('openstates')
 
 
-class NDLegislatorScraper(Scraper):
+class NDPersonScraper(Scraper):
 
     def scrape(self, chamber=None):
 
         # figuring out starting year from metadata
-        for item, _ in enumerate(self.jurisdiction.legislative_sessions):
-        for t in self.metadata['terms']:
-            if t['name'] == term:
-                start_year = t['start_year']
-                break
-
+        start_year = self.jurisdiction.legislative_sessions[-1]['start_date'][:4]
+        term = self.jurisdiction.legislative_sessions[-1]['identifier']
         root = "http://www.legis.nd.gov/assembly"
         main_url = "%s/%s-%s/members/members-by-district" % (
             root,
@@ -27,9 +23,9 @@ class NDLegislatorScraper(Scraper):
         page = self.get(main_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
-        for person_url in page.xpath('//div[contains(@class, "all-members")]/div[@class="name"]/a/@href'):
-            self.scrape_legislator_page(term, person_url)
-
+        for person_url in page.xpath('//div[contains(@class, "all-members")]/'
+                                     'div[@class="name"]/a/@href'):
+            yield from self.scrape_legislator_page(term, person_url)
 
     def scrape_legislator_page(self, term, url):
         page = self.get(url).text
@@ -41,10 +37,6 @@ class NDLegislatorScraper(Scraper):
         district = district.replace("District", "").strip()
 
         committees = page.xpath("//a[contains(@href, 'committees')]/text()")
-
-        party = page.xpath(
-            "//div[contains(text(), 'Political Party')]"
-        )[0].getnext().text_content().strip()
 
         photo = page.xpath(
             "//div[@class='field-person-photo']/img/@src"
@@ -82,50 +74,36 @@ class NDLegislatorScraper(Scraper):
             "House": "lower"
         }[metainf['chamber']]
 
-        kwargs = {
-            "party": {"Democrat": "Democratic",
-                      "Republican": "Republican"}[metainf['party']]
-        }
-        if photo:
-            kwargs['photo_url'] = photo
+        party = {"Democrat": "Democratic", "Republican": "Republican"}[metainf['party']]
 
-        leg = Legislator(term,
-                         chamber,
-                         district,
-                         name,
-                         **kwargs)
-
-        kwargs = {"url": url}
-        for key, leg_key in [('email', 'email'),
-                             ('fax', 'fax'),
-                             ('office-telephone', 'phone')]:
+        person = Person(primary_org=chamber,
+                        district=district,
+                        name=name,
+                        party=party,
+                        image=photo)
+        person.add_link(url)
+        for key, person_key in [('email', 'email'),
+                                ('fax', 'fax'),
+                                ('office-telephone', 'voice')]:
             if key in metainf:
                 if metainf[key].strip():
-                    kwargs[leg_key] = metainf[key]
-
-        leg.add_office('capitol',
-                       'Capitol Office',
-                       **kwargs)
-
-        kwargs = {}
+                    person.add_contact_detail(type=person_key,
+                                              value=metainf[key],
+                                              note="Capitol Office")
         if address:
-            kwargs['address'] = address
-
+            person.add_contact_detail(type='address',
+                                      value=address,
+                                      note="District Office")
         if 'cellphone' in metainf:
-            kwargs['phone'] = metainf['cellphone']
-
+            person.add_contact_detail(type='voice',
+                                      value=metainf['cellphone'],
+                                      note="District Office")
         if 'home-telephone' in metainf:
-            kwargs['phone'] = metainf['home-telephone']
+            person.add_contact_detail(type='voice',
+                                      value=metainf['home-telephone'],
+                                      note="District Office")
 
-        leg.add_office('district',
-                       'District Office',
-                       **kwargs)
-
-        #for committee in committees:
-        #    leg.add_role('committee member',
-        #                 term=term,
-        #                 chamber=chamber,
-        #                 committee=committee)
-
-        leg.add_source(url)
-        self.save_legislator(leg)
+        for committee in committees:
+            person.add_membership(name_or_org=committee, role='committee member')
+        person.add_source(url)
+        yield person

@@ -1,6 +1,8 @@
 from pupa.scrape import Jurisdiction, Organization
 # from .committees import NDCommitteeScraper
 from .votes import NDVoteScraper
+from .people import NDPersonScraper
+
 
 class NorthDakota(Jurisdiction):
     division_id = "ocd-division/country:us/state:nd"
@@ -8,7 +10,7 @@ class NorthDakota(Jurisdiction):
     name = "North Dakota"
     url = "http://www.legis.nd.gov/"
     scrapers = {
-        #'committees': NDCommitteeScraper,
+        'people': NDPersonScraper,
         'votes': NDVoteScraper,
     }
     parties = [
@@ -38,7 +40,7 @@ class NorthDakota(Jurisdiction):
             "_scraped_name": "65th Legislative Assembly (2017-18)",
             "identifier": "65",
             "name": "65th Legislative Assembly (2017-2018)",
-            "start_date": "2015-01-03"
+            "start_date": "2017-01-03"
         }
     ]
     ignored_scraped_sessions = [

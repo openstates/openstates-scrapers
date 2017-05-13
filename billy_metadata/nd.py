@@ -34,7 +34,7 @@ metadata = dict(
                'display_name': '64th Legislative Assembly (2015-2016)',
                '_scraped_name': '64th Legislative Assembly (2015-16)',
                },
-        '65': {'start_date': datetime.date(2015, 1, 3),
+        '65': {'start_date': datetime.date(2017, 1, 3),
                'display_name': '65th Legislative Assembly (2017-2018)',
                '_scraped_name': '65th Legislative Assembly (2017-18)',
                },
