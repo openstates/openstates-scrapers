@@ -1,7 +1,7 @@
 from suds.client import Client
 import logging
 import socket
-import urllib
+import urllib.error
 import time
 import suds
 
@@ -32,7 +32,7 @@ def backoff(function, *args, **kwargs):
         try:
             return _()
         except (socket.timeout, urllib.error.URLError, suds.WebFault) as e:
-            if "This Roll Call Vote is not published." in e.message:
+            if "This Roll Call Vote is not published." in str(e):
                 raise ValueError("Roll Call Vote isn't published")
 
             backoff = ((attempt + 1) * 15)
