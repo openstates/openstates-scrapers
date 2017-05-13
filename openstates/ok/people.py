@@ -1,12 +1,10 @@
 import re
 import lxml
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin, validate_email_address
 
 
-class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'ok'
-    latest_only = True
+class OKPersonScraper(Scraper, LXMLMixin):
 
     _parties = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
 
@@ -15,7 +13,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         return re.sub(r'[\s\xa0]+', ' ', text)
 
     def _clean_office_info(self, office_info):
-        office_info = map(self._scrub, office_info.itertext())
+        office_info = list(map(self._scrub, office_info.itertext()))
         # Throw away anything after any email address, phone number, or
         # address lines.
         while office_info:
@@ -57,8 +55,11 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return email if validate_email_address(email) else ''
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')(term)
+    def scrape(self, chamber=None):
+        term = self.jurisdiction.legislative_sessions[-1]['identifier']
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
     def scrape_lower_chamber(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
@@ -118,26 +119,22 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                 legislator_page,
                 '//a[@id="ctl00_ContentPlaceHolder1_imgHiRes"]/@href')
 
-            legislator = Legislator(
-                _scraped_name=name_text,
-                full_name=name,
-                term=term,
-                chamber='lower',
-                district=district,
-                party=party,
-                photo_url=photo_url,
-                url=legislator_url
-            )
-
-            legislator.add_source(url)
-            legislator.add_source(legislator_url)
+            person = Person(primary_org='lower',
+                            district=district,
+                            name=name,
+                            party=party,
+                            image=photo_url)
+            person.extras['_scraped_name'] = name_text
+            person.add_link(legislator_url)
+            person.add_source(url)
+            person.add_source(legislator_url)
 
             # Scrape offices.
-            self.scrape_lower_offices(legislator_page, legislator)
+            self.scrape_lower_offices(legislator_page, person)
 
-            self.save_legislator(legislator)
+            yield person
 
-    def scrape_lower_offices(self, doc, legislator):
+    def scrape_lower_offices(self, doc, person):
 
         # Capitol offices:
         xpath = '//*[contains(text(), "Capitol Address")]'
@@ -165,23 +162,27 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             # Get the email address, extracted from a series of JS
             # "document.write" lines.
             email = self._extract_email(doc)
-
-            office = dict(name='Capitol Office', type='capitol', phone=phone,
-                          address=address)
             if email:
-                legislator['email'] = email
-                office['email'] = email
-
-            legislator.add_office(**office)
+                person.add_contact_detail(type='email', value=email,
+                                          note='Capitol Office')
+                person.extras['email'] = email
+            if phone:
+                person.add_contact_detail(type='voice', value=str(phone),
+                                          note='Capitol Office')
+            if address:
+                person.add_contact_detail(type='address', value=address,
+                                          note='Capitol Office')
 
         # District offices only have address, no other information
-        district_address = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictAddress"]/text()')
+        district_address = doc.xpath('//span[@id="ctl00_Content'
+                                     'PlaceHolder1_lblDistrictAddress"]/text()')
         if district_address:
-            district_city_state,  = doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDistrictCity"]/text()')
+            district_city_state,  = doc.xpath('//span[@id="ctl00_Content'
+                                              'PlaceHolder1_lblDistrictCity"]/text()')
             district_address = "{}\n{}".format(district_address[0], district_city_state)
-
-            office = dict(name='District Office', type='district', address=district_address)
-            legislator.add_office(**office)
+            if district_address:
+                person.add_contact_detail(type='address', value=district_address,
+                                          note='District Office')
 
     def scrape_upper_chamber(self, term):
         url = "http://oksenate.gov/Senators/Default.aspx"
@@ -205,15 +206,20 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             url = a.get('href')
 
-            leg = Legislator(term, 'upper', district, name.strip(), party=party, url=url)
-            leg.add_source(url)
-            self.scrape_upper_offices(leg, url)
-            self.save_legislator(leg)
+            person = Person(primary_org='upper',
+                            district=district,
+                            name=name.strip(),
+                            party=party,
+                            )
+            person.add_link(url)
+            person.add_source(url)
+            self.scrape_upper_offices(person, url)
+            yield person
 
-    def scrape_upper_offices(self, legislator, url):
+    def scrape_upper_offices(self, person, url):
         url = url.replace('aspx', 'html')
         html = self.get(url).text
-        legislator.add_source(url)
+        person.add_source(url)
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
@@ -231,7 +237,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
         if capitol_office_info:
             if '@' in capitol_office_info[-1]:
                 email = capitol_office_info.pop()
-                legislator['email'] = email
+                person.extras['email'] = email
             else:
                 email = None
 
@@ -243,15 +249,17 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
                     lambda string: re.search(r', OK|Lincoln Blvd|Room \d', string),
                     capitol_office_info))
 
-            office = dict(
-                name='Capitol Office',
-                type='capitol',
-                address='\n'.join(capitol_address_lines),
-                fax=None,
-                email=email,
-                phone=capitol_phone)
+            if email:
+                person.add_contact_detail(type='email', value=email,
+                                          note='Capitol Office')
+            if capitol_phone:
+                person.add_contact_detail(type='voice', value=str(capitol_phone),
+                                          note='Capitol Office')
 
-            legislator.add_office(**office)
+            capitol_address = '\n'.join(capitol_address_lines)
+            if capitol_address:
+                person.add_contact_detail(type='address', value=capitol_address,
+                                          note='Capitol Office')
 
         district_office_info = self._clean_office_info(col2)
         # This probably isn't a valid district office at less than two lines.
@@ -273,12 +281,9 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         district_phone = self._extract_phone(district_office_info)
 
-        office = dict(
-            name='District Office',
-            type='district',
-            address=district_address,
-            fax=None,
-            email=None,
-            phone=district_phone)
-
-        legislator.add_office(**office)
+        if capitol_phone:
+            person.add_contact_detail(type='voice', value=str(district_phone),
+                                      note='District Office')
+        if capitol_address_lines:
+            person.add_contact_detail(type='address', value=district_address,
+                                      note='District Office')
