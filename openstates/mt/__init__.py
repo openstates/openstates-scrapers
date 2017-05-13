@@ -82,3 +82,8 @@ class Montana(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        from openstates.utils.lxmlize import url_xpath
+        return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
+                         "//td[@id='cont']/ul/li/a/text()")
