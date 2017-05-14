@@ -177,6 +177,7 @@ class GABillScraper(Scraper):
                     vote = VoteEvent(
                         start_date=vote_['Date'].strftime('%Y-%m-%d'),
                         motion_text=vote_['Caption'] or 'Vote on Bill',
+                        chamber={'House': 'lower', 'Senate': 'upper'}[vote_['Branch']],
                         result='pass' if vote_['Yeas'] > vote_['Nays'] else 'fail',
                         classification='passage',
                         bill=bill,
