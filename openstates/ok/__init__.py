@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import OKPersonScraper
 from .committees import OKCommitteeScraper
+from .events import OKEventScraper
 # settings = dict(SCRAPELIB_TIMEOUT=120)
 
 
@@ -8,10 +9,11 @@ class Oklahoma(Jurisdiction):
     division_id = "ocd-division/country:us/state:ok"
     classification = "government"
     name = "Oklahoma"
-    url = "TODO"
+    url = "http://www.oklegislature.gov/"
     scrapers = {
         'people': OKPersonScraper,
         'committees': OKCommitteeScraper,
+        'events': OKEventScraper,
     }
     parties = [
         {'name': 'Republican'},
