@@ -29,7 +29,6 @@ class OKEventScraper(Scraper):
             when = datetime.datetime.strptime(when, "%A, %B %d, %Y")
 
             lines = filter(None, [x.strip() for x in data.splitlines()])
-            print(re.search(r'^\s*TIME:\s+(.+?)\s+\x96', data, re.M))
             time_ = re.search(r'^\s*TIME:\s+(.+?)\s+\x96', data, re.M).group(1)
             time_ = time_.replace('a.m.', 'AM').replace('p.m.', 'PM')
             time_ = time.strptime(time_, '%I:%M %p')
