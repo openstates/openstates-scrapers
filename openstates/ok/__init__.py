@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import OKPersonScraper
 from .committees import OKCommitteeScraper
 from .events import OKEventScraper
+from .bills import OKBillScraper
 # settings = dict(SCRAPELIB_TIMEOUT=120)
 
 
@@ -14,6 +15,7 @@ class Oklahoma(Jurisdiction):
         'people': OKPersonScraper,
         'committees': OKCommitteeScraper,
         'events': OKEventScraper,
+        'bills': OKBillScraper,
     }
     parties = [
         {'name': 'Republican'},
