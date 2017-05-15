@@ -37,4 +37,6 @@ class PupaCommitteeScraper(CommitteeScraper):
         for source in data['sources']:
             com.add_source(source['url'])
 
+        com.update(**data['extras'])
+
         self.save_committee(com)
