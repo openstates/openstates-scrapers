@@ -73,4 +73,6 @@ class PupaVoteScraper(VoteScraper):
         for source in data['sources']:
             vote.add_source(source['url'])
 
+        vote.update(**data['extras'])
+
         self.save_vote(vote)

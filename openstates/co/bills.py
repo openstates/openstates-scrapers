@@ -160,7 +160,7 @@ class COBillScraper(BillScraper, LXMLMixin):
                 seen_versions.append(version_url)
 
     def scrape_actions(self, bill, page):
-        chamber_map = {'Senate':'upper', 'House': 'lower', 
+        chamber_map = {'Senate':'upper', 'House': 'lower',
                        'Governor':'executive'}
 
         actions = page.xpath('//div[@id="bill-documents-tabs7"]//table//tbody//tr')
@@ -170,7 +170,7 @@ class COBillScraper(BillScraper, LXMLMixin):
             action_date = dt.datetime.strptime(action_date, '%m/%d/%Y')
 
             # If an action has no chamber, it's joint
-            # e.g. http://leg.colorado.gov/bills/sb17-100 
+            # e.g. http://leg.colorado.gov/bills/sb17-100
             if action.xpath('td[2]/text()'):
                 action_chamber = action.xpath('td[2]/text()')[0]
                 action_actor = chamber_map[action_chamber]
@@ -299,7 +299,11 @@ class COBillScraper(BillScraper, LXMLMixin):
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
 
-        motion = page.xpath('//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
+        try:
+            motion = page.xpath('//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
+        except:
+            self.warning("Vote Summary Page Broken ")
+            return
 
         if 'withdrawn' not in motion:
             # Every table row after the one with VOTE in a td/div/b/font
