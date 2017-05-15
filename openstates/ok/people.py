@@ -190,7 +190,8 @@ class OKPersonScraper(Scraper, LXMLMixin):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        for a in doc.xpath('//table[@summary]')[0].xpath('.//td//a[contains(@href, "biographies")]'):
+        for a in doc.xpath('//table[@summary]')[0]. \
+                xpath('.//td//a[contains(@href, "biographies")]'):
             tail = a.xpath('..')[0].tail
             if tail:
                 district = tail.split()[1]

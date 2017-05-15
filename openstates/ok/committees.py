@@ -17,7 +17,8 @@ class OKCommitteeScraper(Scraper):
 
         parents = {}
 
-        for link in page.xpath("//table[@id='ctl00_ContentPlaceHolder1_dgrdCommittee_ctl00']//a[contains(@href, 'Members')]"):
+        for link in page.xpath("//table[@id='ctl00_ContentPlace"
+                               "Holder1_dgrdCommittee_ctl00']//a[contains(@href, 'Members')]"):
             name = link.xpath("string()").strip()
 
             if 'Members' in name or 'Conference' in name:
