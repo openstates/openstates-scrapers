@@ -2,7 +2,8 @@ import os
 import re
 import datetime
 import requests.exceptions
-from openstates.utils import LXMLMixin, convert_pdf
+from openstates.utils import LXMLMixin
+from pupa.utils import convert_pdf
 from pupa.scrape import Scraper, VoteEvent as Vote
 
 
