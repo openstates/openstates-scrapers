@@ -74,7 +74,6 @@ class OKBillScraper(Scraper):
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
-        return bill_nums
 
     def scrape_bill(self, chamber, session, bill_id, url):
         try:
