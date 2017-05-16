@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import PRPersonScraper
 from .events import PREventScraper
+from .committees import PRCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
@@ -13,6 +14,7 @@ class PuertoRico(Jurisdiction):
     scrapers = {
         'people': PRPersonScraper,
         'events': PREventScraper,
+        'committees': PRCommitteeScraper,
     }
     parties = [
         {'name': 'Partido Nuevo Progresista'},
