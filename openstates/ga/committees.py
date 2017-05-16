@@ -37,14 +37,15 @@ class GACommitteeScraper(Scraper):
                 "Senate": "upper",
                 "Joint": "joint"
             }[typ]
-            if code not in self.ctty_cache:
+            ctty_key = '{}-{}'.format(typ, code)
+            if ctty_key not in self.ctty_cache:
                 ctty = Organization(chamber=comchamber, name=comname, classification='committee')
                 ctty.extras = {
                     'code': code,
                     'guid': guid,
                     'description': description,
                 }
-                self.ctty_cache[code] = ctty
+                self.ctty_cache[ctty_key] = ctty
 
             members = committee['Members']['CommitteeMember']
             for member in members:
@@ -52,31 +53,30 @@ class GACommitteeScraper(Scraper):
                 role = member['Role']
                 membership = ctty.add_member(name, role)
                 membership.extras = {'guid': member['Member']['Id']}
-                subcoms = member['SubCommittees']
-                if subcoms is not None:
-                    for subcom in subcoms:
-                        subcom = subcom[1][0]
-                        subguid = subcom['Id']
-                        subcommittee = subcom['Name']
-                        if subcommittee in subctty_cache:
-                            # Add member to existing subcommittee.
-                            subctty = subctty_cache[subcommittee]
-                        else:
-                            # Create subcommittee.
-                            subctty = Organization(
-                                name=subcommittee, classification='committee',
-                                parent_id={'classification': comchamber, 'name': comname})
-                            subctty.extras = {
-                                'guid': subguid,
-                            }
-                            subctty.add_source(self.csource)
-                            subctty.add_source(CTTIE_URL.format(**{
-                                "sid": sid,
-                                "cttie": guid,
-                            }))
-                            subctty_cache[subcommittee] = subctty
-                        membership = subctty.add_member(name, role)
-                        membership.extras = {'guid': member['Member']['Id']}
+                subcoms = member['SubCommittees'] or []
+                for subcom in subcoms:
+                    subcom = subcom[1][0]
+                    subguid = subcom['Id']
+                    subcommittee = subcom['Name']
+                    if subcommittee in subctty_cache:
+                        # Add member to existing subcommittee.
+                        subctty = subctty_cache[subcommittee]
+                    else:
+                        # Create subcommittee.
+                        subctty = Organization(
+                            name=subcommittee, classification='committee',
+                            parent_id={'classification': comchamber, 'name': comname})
+                        subctty.extras = {
+                            'guid': subguid,
+                        }
+                        subctty.add_source(self.csource)
+                        subctty.add_source(CTTIE_URL.format(**{
+                            "sid": sid,
+                            "cttie": guid,
+                        }))
+                        subctty_cache[subcommittee] = subctty
+                    membership = subctty.add_member(name, role)
+                    membership.extras = {'guid': member['Member']['Id']}
 
             for subctty in subctty_cache.values():
                 yield subctty
