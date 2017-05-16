@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-
+from .people import PRPersonScraper
 
 class PuertoRico(Jurisdiction):
     division_id = "ocd-division/country:us/state:pr"
@@ -7,6 +7,7 @@ class PuertoRico(Jurisdiction):
     name = "Puerto Rico"
     url = "http://www.oslpr.org/"
     scrapers = {
+        'people': PRPersonScraper,
     }
     parties = [
         {'name': 'Republican'},
