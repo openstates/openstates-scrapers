@@ -1,5 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import PRPersonScraper
+from .events import PREventScraper
+
+settings = dict(SCRAPELIB_TIMEOUT=300)
+
 
 class PuertoRico(Jurisdiction):
     division_id = "ocd-division/country:us/state:pr"
@@ -8,10 +12,12 @@ class PuertoRico(Jurisdiction):
     url = "http://www.oslpr.org/"
     scrapers = {
         'people': PRPersonScraper,
+        'events': PREventScraper,
     }
     parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Partido Nuevo Progresista'},
+        {'name': u'Partido Popular Democr\xe1tico'},
+        {'name': u'Partido Independentista Puertorrique\u00F1o'}
     ]
     legislative_sessions = [
         {
