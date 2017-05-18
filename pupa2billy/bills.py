@@ -75,7 +75,7 @@ class PupaBillScraper(BillScraper):
                             type=_action_categories(action['classification']),
                             committees=committees,
                             legislators=legislators,
-                            **action.get('extras', {}),
+                            **action.get('extras', {})
                             )
 
         for source in data['sources']:
