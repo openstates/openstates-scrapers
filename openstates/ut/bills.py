@@ -232,12 +232,12 @@ class UTBillScraper(Scraper, LXMLMixin):
                 typ = 'committee-passage-favorable'
             else:
                 typ = None
-            action = bill.add_action(description=action,
-                                     date=date,
-                                     chamber=actor,
-                                     classification=typ
-                                     )
-            action.extras = {"_vote_id": str(uniqid)}
+            act = bill.add_action(description=action,
+                                  date=date,
+                                  chamber=actor,
+                                  classification=typ
+                                  )
+            act.extras = {"_vote_id": str(uniqid)}
 
             # Check if this action is a vote
             vote_links = row.xpath('./td[4]//a')
@@ -292,7 +292,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         yes_count = vote_dict['yes']['count']
         no_count = vote_dict['no']['count'] or 0
         other_count = vote_dict['other']['count'] or 0
-
+        print(motion)
         vote = Vote(chamber=actor,
                     start_date=date,
                     motion_text=motion,
