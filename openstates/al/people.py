@@ -1,7 +1,7 @@
 import re
 from html.parser import HTMLParser
 
-from pupa.scrape import Scraper, Person
+from pupa.scrape import Scraper, Person, Organization
 
 from openstates.utils import LXMLMixin
 
@@ -15,9 +15,12 @@ class ALPersonScraper(Scraper, LXMLMixin):
     }
 
     def scrape(self, chamber=None):
+        self.committees = {}
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
             yield from self.scrape_chamber(chamber)
+        for committee in self.committees.values():
+            yield committee
 
     def scrape_chamber(self, chamber):
         # the url for each rep is unfindable (by me)
@@ -157,7 +160,7 @@ class ALPersonScraper(Scraper, LXMLMixin):
             # match rep to sponsor_id if possible
             ln, fn = name.split(',')
 
-            self.add_committees(legislator_page, person)
+            self.add_committees(legislator_page, person, chamber, legislator_url)
 
             person.add_link(legislator_url)
             person.add_source(legislator_url)
@@ -165,7 +168,7 @@ class ALPersonScraper(Scraper, LXMLMixin):
 
             yield person
 
-    def add_committees(self, legislator_page, legislator):
+    def add_committees(self, legislator_page, legislator, chamber, url):
         # as of today, both chambers do committees the same way! Yay!
         rows = self.get_nodes(
             legislator_page,
@@ -185,7 +188,13 @@ class ALPersonScraper(Scraper, LXMLMixin):
             role_text = self.get_node(row, './td[3]').text_content()
             role = role_text.strip()
 
-            legislator.add_membership(
-                name_or_org=committee_name,
+            if committee_name not in self.committees:
+                comm = Organization(
+                    name=committee_name, chamber=chamber, classification='committee')
+                comm.add_source(url)
+                self.committees[committee_name] = comm
+
+            self.committees[committee_name].add_member(
+                legislator.name,
                 role=role,
             )
