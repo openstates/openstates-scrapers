@@ -1,126 +1,128 @@
-import datetime
-from billy.utils.fulltext import worddata_to_text
-from .bills import COBillScraper
-from .legislators import COLegislatorScraper
+from pupa.scrape import Jurisdiction, Organization
+
+from .people import COLegislatorScraper
 from .committees import COCommitteeScraper
+from .bills import COBillScraper
 from .votes import COVoteScraper
 from .events import COEventScraper
 
-metadata = dict(
-    name='Colorado',
-    abbreviation='co',
-    legislature_name='Colorado General Assembly',
-    legislature_url='http://leg.colorado.gov/',
-    capitol_timezone='America/Denver',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms=[
-        {'name': '2011-2012',
-         'sessions': ['2011A', '2012A', '2012B'],
-         'start_year': 2011, 'end_year': 2012},
-        {'name': '2013-2014',
-         'sessions': ['2013A', '2014A'],
-         'start_year': 2013, 'end_year': 2014},
-        {'name': '2015-2016',
-         'sessions': ['2015A', '2016A'],
-         'start_year': 2015, 'end_year': 2016},
-        {'name': '2017-2018',
-         'sessions': ['2017A'],
-         'start_year': 2017, 'end_year': 2018},
-        ],
-    session_details={
-        '2011A': {
-            'start_date'   : datetime.date(2011,1,26),
-            'type'         : 'primary',
-             'display_name': '2011 Regular Session',
-             '_scraped_name' : "2011 Regular Session"
-         },
-        '2012A': {
-            'start_date'   : datetime.date(2012,1,11),
-            'type'         : 'primary',
-             'display_name': '2012 Regular Session',
-         },
-        '2012B': {
-            'start_date'   : datetime.date(2012,5,14),
-            'type'         : 'special',
-             'display_name': '2012 First Extraordinary Session',
-         },
-        '2013A': {
-            'type'         : 'primary',
-             'display_name': '2013 Regular Session',
-             '_scraped_name': '2013 Regular/Special Session',
-         },
-        '2014A': {
-            'type'         : 'primary',
-             'display_name': '2014 Regular Session',
-             '_scraped_name': '2014 Regular/Special Session',
-         },
-        '2015A': {
-            'type'         : 'primary',
-             'display_name': '2015 Regular Session',
-            '_scraped_name': "2015 Regular Session",
-         },
-        '2016A': {
-            'type'         : 'primary',
-             'display_name': '2016 Regular Session',
-            '_scraped_name': "2016 Regular Session",
-            '_data_id':'30'
-         },
-        '2017A': {
-            'type'         : 'primary',
-             'display_name': '2017 Regular Session',
-            '_scraped_name': "2017 Regular Session",
-            '_data_id':'10171'
-         },
-    },
-    feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions = [
-        '2013 Legislative Session',
-        '2012 First Special Session',
-        '2012 Legislative Session',
-        '2011 Legislative Session',
-        '2010 Legislative Session',
-        '2009 Legislative Session',
-        '2008 Legislative Session',
-        '2007 Legislative Session',
-        '2006 First Special Session',
-        '2006 Legislative Session',
-        '2005 Legislative Session',
-        '2004 Legislative Session',
-        '2003 Legislative Session',
-        '2002 First Special Session',
-        '2002 Legislative Session',
-        '2001 Second Special Session',
-        '2001 First Special Session',
-        '2001 Legislative Session',
-        '2000 Legislative Session',
-        '2010 Regular/Special Session'
+
+class Colorado(Jurisdiction):
+    division_id = "ocd-division/country:us/state:co"
+    classification = "government"
+    name = "Colorado"
+    url = "http://leg.colorado.gov/"
+    scrapers = {
+        'people': COLegislatorScraper,
+        'committee': COCommitteeScraper,
+        'bills': COBillScraper,
+        'events': COEventScraper
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
     ]
-)
+    legislative_sessions = [
+        {
+            "_scraped_name": "2011 Regular Session",
+            "classification": "primary",
+            "identifier": "2011A",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-26"
+        },
+        {
+            "_scraped_name": "2012 Regular Session",
+            "classification": "primary",
+            "identifier": "2012A",
+            "name": "2012 Regular Session",
+            "start_date": "2012-01-11"
+        },
+        {
+            "_scraped_name": "2012 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2012B",
+            "name": "2012 First Extraordinary Session",
+            "start_date": "2012-05-14"
+        },
+        {
+            "_scraped_name": "2013 Regular/Special Session",
+            "classification": "primary",
+            "identifier": "2013A",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "2014 Regular/Special Session",
+            "classification": "primary",
+            "identifier": "2014A",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015 Regular Session",
+            "classification": "primary",
+            "identifier": "2015A",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "2016 Regular Session",
+            "classification": "primary",
+            "identifier": "2016A",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "identifier": "2017A",
+            "name": "2017 Regular Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2013 Legislative Session",
+        "2012 First Special Session",
+        "2012 Legislative Session",
+        "2011 Legislative Session",
+        "2010 Legislative Session",
+        "2009 Legislative Session",
+        "2008 Legislative Session",
+        "2007 Legislative Session",
+        "2006 First Special Session",
+        "2006 Legislative Session",
+        "2005 Legislative Session",
+        "2004 Legislative Session",
+        "2003 Legislative Session",
+        "2002 First Special Session",
+        "2002 Legislative Session",
+        "2001 Second Special Session",
+        "2001 First Special Session",
+        "2001 Legislative Session",
+        "2000 Legislative Session",
+        "2010 Regular/Special Session"
+    ]
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    import re
-    tags = url_xpath('http://www.leg.state.co.us/clics/clics2014a/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
-        "//font/text()")
-    sessions = []
-    regex = "2[0-9][0-9][0-9]\ .*\ Session"
+    def get_organizations(self):
+        legislature_name = "Colorado General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 65
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 35
+        upper_title = "Senator"
 
-    for tag in tags:
-        sess = re.findall(regex, tag)
-        for session in sess:
-            sessions.append( session )
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
-    tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2016A/csl.nsf/Home?OpenForm&amp;BaseTarget=Bottom',
-        "//font/text()")
-    for tag in tags:
-        sess = re.findall(regex, tag)
-        for session in sess:
-            sessions.append( session )
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
-    return sessions
-
-def extract_text(doc, data):
-    return worddata_to_text(data)
+        yield legislature
+        yield upper
+        yield lower

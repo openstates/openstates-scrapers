@@ -5,8 +5,7 @@ from .utils.names import last_name_first_name_to_full_name
 
 from openstates.utils import LXMLMixin
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
-
+from pupa.scrape import Person, Scraper
 
 OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID = {
     'lower': 1,
@@ -23,35 +22,40 @@ ROLE_TO_ADDRESS = {
 }
 
 
-class COLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'co'
+class COLegislatorScraper(Scraper, LXMLMixin):
     legislators_url = 'http://leg.colorado.gov/legislators'
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
         """Scrape legislator information for the 2015-2016 term.
 
         The legislators page has an inactive dropdown to select the session.  When the dropdown is activated
         and we can see how it changes the page's query parameters, this scraper should be modified to filter to a
         session appropriate for the term.
         """
-        co_internal_chamber_id = OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID[chamber]
+        if chamber:
+            co_internal_chamber_ids = [OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID[chamber]]
+        else:
+            co_internal_chamber_ids = [OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID['lower'],
+                                       OPEN_STATES_CHAMBER_TO_CO_INTERNAL_CHAMBER_ID['upper']]
         # XXX: Filter by session when we find out the appropriate query params
-        filtered_legislators_page_url = '{legislators_url}/?field_chamber_target_id={internal_chamber_id}'.format(
-            legislators_url=self.legislators_url,
-            internal_chamber_id=co_internal_chamber_id,
-        )
+        for co_internal_chamber_id in co_internal_chamber_ids:
+            filtered_legislators_page_url = '{legislators_url}/?field_chamber_target_id={internal_chamber_id}'.format(
+                legislators_url=self.legislators_url,
+                internal_chamber_id=co_internal_chamber_id,
+            )
 
-        filtered_legislators_page = self.lxmlize(filtered_legislators_page_url)
+            filtered_legislators_page = self.lxmlize(filtered_legislators_page_url)
 
-        # '//table' is simple and safe. There is only one table on the legislator listings page, and it is unlikely
-        # that more will be added.
-        for row in filtered_legislators_page.xpath('//table//tr'):
-            legislator, profile_url = table_row_to_legislator_and_profile_url(row, chamber, term)
-            legislator_profile_page = self.lxmlize(profile_url)
-            legislator['photo_url'] = get_photo_url(legislator_profile_page)
-            legislator.add_source(self.legislators_url)
-            legislator.add_source(profile_url)
-            self.save_legislator(legislator)
+            # '//table' is simple and safe. There is only one table on the legislator listings page, and it is unlikely
+            # that more will be added.
+            for row in filtered_legislators_page.xpath('//table//tr'):
+                legislator,profile_url = table_row_to_legislator_and_profile_url(row, chamber)
+                legislator_profile_page = self.lxmlize(profile_url)
+                legislator.image = get_photo_url(legislator_profile_page)
+                legislator.add_source(profile_url)
+                legislator.add_source(self.legislators_url)
+                legislator.add_link(profile_url)
+                yield legislator
 
 
 def co_address_from_role(role):
@@ -62,7 +66,7 @@ def co_address_from_role(role):
 
 
 # Helpers to extract from information from the main listings page
-def table_row_to_legislator_and_profile_url(table_row_element, chamber, term):
+def table_row_to_legislator_and_profile_url(table_row_element, chamber):
     """Derive a Legislator from an HTML table row lxml Element, and a link to their profile"""
     td_elements = table_row_element.xpath('td')
     (role_element, name_element, district_element, party_element, phone_element, email_element) = td_elements
@@ -76,24 +80,21 @@ def table_row_to_legislator_and_profile_url(table_row_element, chamber, term):
     if party == 'Democrat':
         party = 'Democratic'
 
-    legislator = Legislator(term, chamber, district, full_name, party=party)
-
     role = role_element.text_content().strip()
     address = co_address_from_role(role)
     phone = phone_element.text_content().strip()
     email = email_element.text_content().strip()
-
-    legislator.add_office(
-        'capitol',
-        'Capitol Office',
-        address=address,
-        phone=phone,
-        email=email,
-    )
-
+    
     (profile_url, ) = name_element.xpath('a/@href')
+    legislator = Person(primary_org=chamber,
+                        name=full_name,
+                        district=district,
+                        party=party)
+    legislator.add_contact_detail(type='address', value=address, note='Capitol Office')
+    legislator.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+    legislator.add_contact_detail(type='email', value=email, note='Capitol Office')                                  
 
-    return legislator, profile_url
+    return legislator,profile_url
 
 
 # Helpers to extract information from each legislator's individual profile page
