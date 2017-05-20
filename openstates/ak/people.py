@@ -1,14 +1,14 @@
 import re
 import lxml.html
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
+class AKPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'ak'
     latest_only = True
 
-    def _scrape_offices(self, leg, url):
+    def _scrape_offices(self, leg, url, email):
         doc = self.lxmlize(url)
 
         capitol_office = doc.xpath('//strong[text()="Session Contact"]')[0].getparent().text_content().strip().splitlines()
@@ -18,16 +18,33 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
         assert capitol_office[3].startswith('Phone:')
         assert capitol_office[4].startswith('Fax:')
 
-        leg.add_office(
-            type = 'capitol',
-            name = 'Capitol Office',
-            address = capitol_office[1] + '\n' + capitol_office[2],
-            phone = capitol_office[3][len('Phone: '): ] if
-                len(capitol_office[3]) > len('Phone:') else None,
-            fax = capitol_office[4][len('Fax: '): ] if
-                len(capitol_office[4]) > len('Fax:') else None,
+        leg.add_contact_detail(
+            type = 'address',
+            value = capitol_office[1] + '\n' + capitol_office[2],
+            note = 'Capitol Office',
         )
-
+        
+        
+        if len(capitol_office[3]) > len('Phone:'):
+            leg.add_contact_detail(
+                type='voice', 
+                value=capitol_office[3][len('Phone: '): ],
+                note='Capitol Office Phone',
+            )
+        
+        if len(capitol_office[4]) > len('Fax:'):
+            leg.add_contact_detail(
+                type='fax', 
+                value=capitol_office[4][len('Fax: '): ],
+                note='Capitol Office Fax',
+            )
+        
+        leg.add_contact_detail(
+            type='email', 
+            value=email,
+            note='E-mail',
+        )
+        
         interim_office = doc.xpath('//strong[text()="Interim Contact"]')
         if interim_office:
             interim_office = interim_office[0].getparent().text_content().strip().splitlines()
@@ -36,18 +53,31 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
             assert interim_office[3].startswith('Phone:')
             assert interim_office[4].startswith('Fax:')
 
-            leg.add_office(
-                type = 'district',
-                name = 'District Office',
-                address = interim_office[1] + '\n' + interim_office[2],
-                phone = interim_office[3][len('Phone: '): ] if
-                    len(interim_office[3]) > len('Phone:') else None,
-                fax = interim_office[4][len('Fax: '): ] if
-                    len(interim_office[4]) > len('Fax:') else None,
+
+            leg.add_contact_detail(
+                type = 'address',
+                note = 'District Office',
+                value = interim_office[1] + '\n' + interim_office[2],
+            
             )
+        
+            if len(interim_office[3]) > len('Phone:'):
+                leg.add_contact_detail(
+                    type='voice', 
+                    value=interim_office[3][len('Phone: '): ],
+                    note='District Office Phone',
+                )
+        
+            if len(interim_office[4]) > len('Fax:'):
+                leg.add_contact_detail(
+                    type='fax', 
+                    value=interim_office[4][len('Fax: '): ],
+                    note='District Office Fax',
+                )
+            
 
 
-    def scrape(self, chamber, term):
+    def scrape_chamber(self, chamber):
         self._party_map = {
             'Democrat': 'Democratic',
             'Republican': 'Republican',
@@ -96,20 +126,26 @@ class AKLegislatorScraper(LegislatorScraper, LXMLMixin):
             if skip:
                 continue
 
-            leg = Legislator(
-                term=term,
-                chamber=chamber,
+            person = Person(
                 district=district,
-                full_name=name,
+                name=name,
                 party=self._party_map[party],
-                photo_url=photo_url,
-                email=email,
-                url=leg_url,
+                image=photo_url,
+                #email=email,
+                #url=leg_url,
             )
-            leg.add_source(url)
-            leg.add_source(leg_url)
+            person.add_source(leg_url)
+            person.add_link(leg_url)
 
             # scrape offices
-            self._scrape_offices(leg, leg_url)
+            self._scrape_offices(person, leg_url, email)
 
-            self.save_legislator(leg)
+            yield person
+            
+            
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
