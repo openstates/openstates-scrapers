@@ -1,4 +1,5 @@
 billy
+Django<1.10
 
 # scraping
 cffi
@@ -27,4 +28,4 @@ pyopenssl
 pymssql
 
 # Dev tools
-ipdb
+# ipdb   ## temporarily removed because of https://hub.docker.com/r/openstates/openstates/builds/bktcyjreg67jfcfvamd9o8x/

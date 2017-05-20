@@ -1,7 +1,7 @@
 from billy.scrape import Scraper
 import datetime
 import re
-from lxml import etree, html
+from lxml import etree
 
 word_key = (
     ('fifty', '50'),
@@ -23,6 +23,7 @@ word_key = (
     ('special', 's'),
 )
 
+
 # borrowed from django.contrib.humanize.templatetags
 def ordinal(value):
     """
@@ -34,9 +35,10 @@ def ordinal(value):
     except (TypeError, ValueError):
         return value
     t = ('th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th')
-    if value % 100 in (11, 12, 13): # special case
+    if value % 100 in (11, 12, 13):  # special case
         return u"%d%s" % (value, t[0])
     return u'%d%s' % (value, t[value % 10])
+
 
 def get_session_name(leg):
     l = leg.lower().replace('-', ' ').split()
@@ -53,12 +55,14 @@ def get_session_name(leg):
     except IndexError:
         return None
 
+
 def get_date(d):
     if d:
         d = datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S').date()
         return '%d, %d, %d' % (d.year, d.month, d.day)
     else:
         return ''
+
 
 class AZTermScraper(Scraper):
     state = 'az'
@@ -90,11 +94,11 @@ class AZTermScraper(Scraper):
                      'end_date': datetime.date(%s)},\n"""
         sessions = root.xpath('//session')
         sessions = sorted(sessions, key=lambda x: x.get('Sine_Die_Date') or
-                                        "%s" % datetime.datetime.today())
-        terms_text = ""
+                          "%s" % datetime.datetime.today())
         details_text = ""
         for session in sessions:
-            session_type = 'primary' if re.search('Regular', session.get('Session_Full_Name')) else 'special'
+            session_type = 'primary' if re.search('Regular', session.get('Session_Full_Name')) \
+                else 'special'
             start_date = get_date(session.get('Session_Start_Date', None))
             end_date = get_date(session.get('Sine_Die_Date', None))
             session_name = get_session_name(session.get('Session_Full_Name'))
@@ -128,6 +132,7 @@ class AZTermScraper(Scraper):
                 ))
         session_file.write(details_text)
         session_file.close()
+
 
 if __name__ == '__main__':
     from . import metadata

@@ -1,3 +1,4 @@
+import lxml
 from pupa.scrape import Jurisdiction, Organization
 from .people import NCPersonScraper
 from .committees import NCCommitteeScraper
@@ -9,7 +10,7 @@ class NorthCarolina(Jurisdiction):
     division_id = "ocd-division/country:us/state:nc"
     classification = "government"
     name = "North Carolina"
-    url = "TODO"
+    url = "http://www.ncleg.net/"
     scrapers = {
         'people': NCPersonScraper,
         'committees': NCCommitteeScraper,
@@ -145,3 +146,14 @@ class NorthCarolina(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        from openstates.utils.lxmlize import url_xpath
+        return url_xpath('http://www.ncleg.net',
+                         '//select[@name="sessionToSearch"]/option/text()')
+
+    def extract_text(self, doc, data):
+        doc = lxml.html.fromstring(data)
+        text = ' '.join([x.text_content() for x in
+                         doc.xpath('//p[starts-with(@class, "a")]')])
+        return text

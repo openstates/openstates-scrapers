@@ -1,29 +1,34 @@
-from billy.scrape.votes import VoteScraper, Vote
-from billy.scrape.utils import convert_pdf
+import os
+import re
+import pytz
+import collections
+import datetime as dt
 
 from openstates.utils import LXMLMixin
-import datetime as dt
-import lxml
-import re
-import os
+
+from pupa.utils.generic import convert_pdf
+from pupa.scrape import Scraper, VoteEvent
 
 motion_re = r"(?i)On motion of .*, .*"
 bill_re = r"(H|S)(C|J)?(R|M|B) (\d+)"
-date_re = r"(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)" \
-           ", (\w+) (\d+), (\d+)"
+date_re = (
+    r"(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)"
+    r", (\w+) (\d+), (\d+)"
+)
+
+TIMEZONE = pytz.timezone('America/Chicago')
 
 
-class MOVoteScraper(VoteScraper, LXMLMixin):
-    jurisdiction = 'mo'
-
+class MOVoteScraper(Scraper, LXMLMixin):
     def _clean_line(self, obj):
         patterns = {
-            "\xe2\x80\x94": "-"
+            "\xe2\x80\x94": "-",
+            "—": "-",
         }
 
         for pattern in patterns:
             obj = obj.replace(pattern, patterns[pattern])
-    
+
         return obj
 
     def _get_pdf(self, url):
@@ -52,7 +57,7 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
         journs = page.xpath("//table")[0].xpath(".//a")
         for a in journs:
             pdf_url = a.attrib['href']
-            data = self._get_pdf(pdf_url)
+            data = self._get_pdf(pdf_url).decode()
             lines = data.split("\n")
 
             in_vote = False
@@ -62,11 +67,7 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
             cur_motion = ''
             bc = None
             vote = {}
-            counts = {
-                "yes": 0,
-                "no": 0,
-                "other": 0
-            }
+            counts = collections.defaultdict(int)
 
             for line in lines:
                 line = line.strip()
@@ -97,51 +98,43 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
                     if cont:
                         continue
                 if in_vote:
-                    if (line == line.upper() and line.strip() != "") or \
-                       "The President" in line or (
-                           "senator" in line.lower() and
-                           (
-                               "moved" in line.lower() or
-                               "requested" in line.lower()
-                           )
-                       ) or \
-                       "assumed the chair" in line.lower():
+                    if is_vote_end(line):
                         in_vote = False
-                        yes, no, other = counts['yes'], counts['no'], \
-                                            counts['other']
+                        yes, no, other = counts['yes'], counts['no'], counts['other']
                         if bc is None:
                             continue
 
-                        v = Vote('upper',
-                                  date,
-                                  cur_motion,
-                                  (yes > no),
-                                  yes,
-                                  no,
-                                  other,
-                                  session=session,
-                                  bill_id=cur_bill,
-                                  bill_chamber=bc)
+                        v = VoteEvent(
+                            start_date=TIMEZONE.localize(date),
+                            motion_text=cur_motion,
+                            result='pass' if yes > no else 'fail',
+                            legislative_session=session,
+                            classification='passage',
+                            bill=cur_bill,
+                            bill_chamber=bc,
+                        )
+
                         v.add_source(url)
                         v.add_source(pdf_url)
+
+                        v.set_count('yes', yes)
+                        v.set_count('no', no)
+                        v.set_count('other', other)
+
                         for key in vote:
                             for person in vote[key]:
-                                getattr(v, key)(person)
+                                v.vote(key, person)
 
-                        self.save_vote(v)
+                        yield v
                         vote = {}
-                        counts = {  # XXX: Fix this. Dupe'd.
-                            "yes": 0,
-                            "no": 0,
-                            "other": 0
-                        }
+                        counts = collections.defaultdict(int)
                         continue
                     if "Journal of the Senate" in line:
                         continue
                     if re.match(
-                        r".*(Monday|Tuesday|Wednesday|Thursday|Friday|" \
-                         "Saturday|Sunday), .* \d+, \d+.*",
-                        line):
+                            r".*(Monday|Tuesday|Wednesday|Thursday|Friday|"
+                            "Saturday|Sunday), .* \d+, \d+.*",
+                            line):
                         continue
 
                     found = False
@@ -151,7 +144,7 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
                             if "none" in line.lower():
                                 continue
 
-                            if "Senator" in line and not "Senators" in line:
+                            if "Senator" in line and "Senators" not in line:
                                 line = self._clean_line(line)
                                 line = line[len(vote_type):]
                                 line = line.replace("-Senator ", "")
@@ -173,7 +166,7 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
                     lname = lname.rsplit("-", 1)
                     if len(lname) > 1:
                         person, count = lname
-                        if count.isdigit() == False:
+                        if count.isdigit() is False:
                             continue
 
                         names.pop(-1)
@@ -184,11 +177,29 @@ class MOVoteScraper(VoteScraper, LXMLMixin):
                         vote[vote_category].append(name)
 
     def _scrape_lower_chamber(self, session):
-        #house_url = 'http://www.house.mo.gov/journallist.aspx'
-        pass
+        # house_url = 'http://www.house.mo.gov/journallist.aspx'
+        yield from ()
 #  Ugh, so, the PDFs are in nasty shape. Scraping them is a mess, with
 #  crazy spacing to break up the names. Most votes aren't on bills, but rather
 #  the agenda of the day.
 
-    def scrape(self, chamber, session):
-        getattr(self, '_scrape_' + chamber + '_chamber')(session)
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        if chamber in ['upper', None]:
+            yield from self._scrape_upper_chamber(session)
+        if chamber in ['lower', None]:
+            yield from self._scrape_lower_chamber(session)
+
+
+def is_vote_end(line):
+    return (line == line.upper() and line.strip() != "") or \
+        "The President" in line or (
+            "senator" in line.lower() and
+            (
+                "moved" in line.lower() or
+                "requested" in line.lower()
+            )
+    ) or "assumed the chair" in line.lower()

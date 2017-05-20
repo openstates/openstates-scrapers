@@ -12,7 +12,8 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
         comName = link.text
         roles = {
             "Chair": "chair",
-            "Vice Chair": "vice-chair"
+            "Vice Chair": "vice-chair",
+            "Vice-Chair": "vice-chair",
         }
         committee = Committee(chamber, comName)
         committee.add_source(link.attrib['href'])

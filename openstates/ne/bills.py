@@ -1,19 +1,21 @@
 from datetime import datetime
-import lxml.html
-import urllib
-from billy.scrape.bills import BillScraper, Bill
+
+from pupa.scrape import Scraper, Bill
+
 from openstates.utils import LXMLMixin
 
 
-class NEBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'ne'
+class NEBillScraper(Scraper, LXMLMixin):
+    def scrape(self, session=None):
+        if session is None:
+            session = self.jurisdiction.legislative_sessions[-1]
+            self.info('no session specified, using %s', session['identifier'])
 
-    def scrape(self, session, chambers):
-        start_year = self.metadata['session_details'][session]['start_date'].year
-        end_year = self.metadata['session_details'][session]['end_date'].year
-        self.scrape_year(session, start_year)
+        start_year = datetime.strptime(session['start_date'], '%Y-%m-%d').year
+        end_year = datetime.strptime(session['end_date'], '%Y-%m-%d').year
+        yield from self.scrape_year(session['identifier'], start_year)
         if start_year != end_year:
-            self.scrape_year(session, end_year)
+            yield from self.scrape_year(session['identifier'], end_year)
 
     def scrape_year(self, session, year):
         main_url = 'http://nebraskalegislature.gov/bills/search_by_date.php?'\
@@ -26,23 +28,20 @@ class NEBillScraper(BillScraper, LXMLMixin):
             'table[@class="table table-condensed"]/tbody/tr/td[1]/a')
 
         for document_link in document_links:
-            bill_number = document_link.text
+            # bill_number = document_link.text
             bill_link = document_link.attrib['href']
 
-            #POST request for search form
-            #post_dict = {'DocumentNumber': bill_number, 'Legislature': session}
-            #headers = urllib.urlencode(post_dict)
-            #bill_resp = self.post('http://nebraskalegislature.gov/bills/'
-            #    'search_by_number.php', data=post_dict)
-            #bill_link = bill_resp.url
-            #bill_page = bill_resp.text
+            # POST request for search form
+            # post_dict = {'DocumentNumber': bill_number, 'Legislature': session}
+            # headers = urllib.urlencode(post_dict)
+            # bill_resp = self.post('http://nebraskalegislature.gov/bills/'
+            #     'search_by_number.php', data=post_dict)
+            # bill_link = bill_resp.url
+            # bill_page = bill_resp.text
 
-            #scrapes info from bill page
-            self.bill_info(bill_link, session, main_url)
+            yield self.bill_info(bill_link, session, main_url)
 
-    #Scrapes info from the bill page
     def bill_info(self, bill_link, session, main_url):
-
         bill_page = self.lxmlize(bill_link)
 
         long_title = self.get_node(
@@ -61,7 +60,7 @@ class NEBillScraper(BillScraper, LXMLMixin):
 
         bill_type = 'resolution' if 'LR' in bill_number else 'bill'
 
-        bill = Bill(session, 'upper', bill_number, title, type = bill_type)
+        bill = Bill(bill_number, session, title, classification=bill_type)
 
         bill.add_source(main_url)
         bill.add_source(bill_link)
@@ -76,7 +75,12 @@ class NEBillScraper(BillScraper, LXMLMixin):
                 '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/text()')
             introduced_by = introduced_by.split('Introduced By:')[1].strip()
 
-        bill.add_sponsor('primary', introduced_by)
+        bill.add_sponsorship(
+            name=introduced_by,
+            entity_type='person',
+            primary=True,
+            classification='primary',
+        )
 
         action_nodes = self.get_nodes(
             bill_page,
@@ -102,10 +106,15 @@ class NEBillScraper(BillScraper, LXMLMixin):
                 actor = 'upper'
 
             action_type = self.action_types(action)
-            bill.add_action(actor, action, date, action_type)
+            bill.add_action(
+                action,
+                date.strftime('%Y-%m-%d'),
+                chamber=actor,
+                classification=action_type,
+            )
 
         # Were in reverse chronological order.
-        bill['actions'].reverse()
+        bill.actions.reverse()
 
         # Grabs bill version documents.
         version_links = self.get_nodes(
@@ -118,8 +127,7 @@ class NEBillScraper(BillScraper, LXMLMixin):
             version_url = version_link.attrib['href']
             # replace Current w/ session number
             version_url = version_url.replace('Current', session)
-            bill.add_version(version_name, version_url,
-                mimetype='application/pdf')
+            bill.add_version_link(version_name, version_url, media_type='application/pdf')
 
         # Adds any documents related to amendments.
         amendment_links = self.get_nodes(
@@ -129,7 +137,7 @@ class NEBillScraper(BillScraper, LXMLMixin):
         for amendment_link in amendment_links:
             amendment_name = amendment_link.text
             amendment_url = amendment_link.attrib['href']
-            bill.add_document(amendment_name, amendment_url)
+            bill.add_document_link(amendment_name, amendment_url)
 
         # Related transcripts.
         transcript_links = self.get_nodes(
@@ -140,33 +148,33 @@ class NEBillScraper(BillScraper, LXMLMixin):
         for transcript_link in transcript_links:
             transcript_name = transcript_link.text
             transcript_url = transcript_link.attrib['href']
-            bill.add_document(transcript_name, transcript_url)
+            bill.add_document_link(transcript_name, transcript_url)
 
-        self.save_bill(bill)
+        return bill
 
     def action_types(self, action):
         if 'Date of introduction' in action:
-            action_type = 'bill:introduced'
+            action_type = 'introduction'
         elif 'Referred to' in action:
-            action_type = 'committee:referred'
+            action_type = 'referral-committee'
         elif 'Indefinitely postponed' in action:
-            action_type = 'committee:failed'
+            action_type = 'committee-failure'
         elif ('File' in action) or ('filed' in action):
-            action_type = 'bill:filed'
+            action_type = 'filing'
         elif 'Placed on Final Reading' in action:
-            action_type = 'bill:reading:3'
+            action_type = 'reading-3'
         elif 'Passed' in action or 'President/Speaker signed' in action:
-            action_type = 'bill:passed'
+            action_type = 'passage'
         elif 'Presented to Governor' in action:
-            action_type = 'governor:received'
+            action_type = 'executive-receipt'
         elif 'Approved by Governor' in action:
-            action_type = 'governor:signed'
+            action_type = 'executive-signature'
         elif 'Failed to pass notwithstanding the objections of the Governor' in action:
-            action_type = 'governor:vetoed'
+            action_type = 'executive-veto'
         elif 'Failed' in action:
-            action_type = 'bill:failed'
+            action_type = 'failure'
         elif 'Bill withdrawn' in action:
-            action_type = 'bill:withdrawn'
+            action_type = 'withdrawal'
         else:
-            action_type = ''
+            action_type = None
         return action_type
