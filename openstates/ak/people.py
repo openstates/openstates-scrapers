@@ -119,6 +119,7 @@ class AKPersonScraper(Scraper, LXMLMixin):
                 continue
 
             person = Person(
+                primary_org=chamber,
                 district=district,
                 name=name,
                 party=self._party_map[party],
