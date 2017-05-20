@@ -26,12 +26,14 @@ python3 -m flake8 \
     openstates/ne \
     openstates/nj \
     openstates/nm \
+    openstates/nv \
     openstates/oh \
     openstates/or \
     openstates/pa \
     openstates/sc \
     openstates/sd \
     openstates/ut \
+    openstates/va \
     openstates/va \
     openstates/wa \
     openstates/wi \
