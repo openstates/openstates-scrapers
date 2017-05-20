@@ -29,10 +29,10 @@ python3 -m flake8 \
     openstates/pa \
     openstates/sc \
     openstates/sd \
+    openstates/ut \
     openstates/va \
     openstates/wa \
     openstates/wi \
     openstates/wy \
     openstates/utils \
     pupa2billy
-
