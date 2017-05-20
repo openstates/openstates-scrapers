@@ -1,6 +1,6 @@
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 import xlrd
@@ -23,11 +23,18 @@ translate = {
 link_col_ix = 4
 
 
-class RILegislatorScraper(LegislatorScraper, LXMLMixin):
+class RIPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'ri'
     latest_only = True
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber(chamber='upper')
+            yield from self.scrape_chamber(chamber='lower')
+
+    def scrape_chamber(self, chamber=None):
         if chamber == 'upper':
             url = ('http://webserver.rilin.state.ri.us/Documents/Senators.xls')
             rep_type = 'Senator'
@@ -55,10 +62,10 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
         wb = xlrd.open_workbook('ri_leg.xls')
         sh = wb.sheet_by_index(0)
 
-        for rownum in xrange(1, sh.nrows):
+        for rownum in range(1, sh.nrows):
             d = {
                 field: sh.cell(rownum, col_num).value
-                for field, col_num in excel_mapping.iteritems()
+                for field, col_num in excel_mapping.items()
             }
 
             # Convert float to an int, and then to string, the format required by billy
@@ -82,21 +89,21 @@ class RILegislatorScraper(LegislatorScraper, LXMLMixin):
             detail_page = self.lxmlize(contact_info['detail_link'])
             (photo_url, ) = detail_page.xpath('//div[@class="ms-WPBody"]//img/@src')
 
-            leg = Legislator(
-                term, chamber, district, full_name,
-                first, last, middle, translate[d['party']],
-                photo_url=photo_url,
-                town_represented=d['town_represented'],
-                url=detail_link,
+            person = Person(
+                primary_org=chamber, district=district, name=full_name,
+                party=translate[d['party']], image=photo_url
             )
+            person.extras['town_represented'] = d['town_represented']
+            person.extras['name_first'] = first
+            person.extras['name_middle'] = middle
+            person.extras['name_last'] = last
+            person.add_link(detail_link)
 
-            leg.add_office(
-                'district',
-                'District Office',
-                address=d['address'],
-                phone=contact_info['phone'],
-                email=contact_info['email']
-            )
-            leg.add_source(contact_url)
-            leg.add_source(contact_info['detail_link'])
-            self.save_legislator(leg)
+            person.add_contact_detail(type='address', value=d['address'], note='District Office')
+            person.add_contact_detail(type='voice', value=contact_info['phone'], note='District Office')
+            person.add_contact_detail(type='email', value=contact_info['email'], note='District Office')
+
+            person.add_source(contact_url)
+            person.add_source(contact_info['detail_link'])
+
+            yield person
