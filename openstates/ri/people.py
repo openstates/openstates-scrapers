@@ -49,7 +49,8 @@ class RIPersonScraper(Scraper, LXMLMixin):
         for row in contact_page.xpath('//tr[@valign="TOP"]'):
             tds = row.xpath('td')
             (detail_link, ) = tds[link_col_ix].xpath('.//a/@href')
-            # Ignore name (2nd col). We have a regex built up below for the spreadsheet name I don't want to touch
+            # Ignore name (2nd col). We have a regex built up below for the spreadsheet name
+            # I don't want to touch
             district, _, email, phone = [td.text_content().strip() for td in tds[:link_col_ix]]
             contact_info_by_district[district] = {
                 'email': email,
@@ -84,8 +85,8 @@ class RIPersonScraper(Scraper, LXMLMixin):
             if re.match(r'^\S+\s[A-Z]\.\s\S+$', full_name):
                 (first, middle, last) = full_name.split()
 
-            # Note - if we ever need to speed this up, it looks like photo_url can be mapped from the detail_link a la
-            # /senators/Paolino/ -> /senators/pictures/Paolino.jpg
+            # Note - if we ever need to speed this up, it looks like photo_url can be mapped
+            # from the detail_link a la /senators/Paolino/ -> /senators/pictures/Paolino.jpg
             detail_page = self.lxmlize(contact_info['detail_link'])
             (photo_url, ) = detail_page.xpath('//div[@class="ms-WPBody"]//img/@src')
 
@@ -100,8 +101,10 @@ class RIPersonScraper(Scraper, LXMLMixin):
             person.add_link(detail_link)
 
             person.add_contact_detail(type='address', value=d['address'], note='District Office')
-            person.add_contact_detail(type='voice', value=contact_info['phone'], note='District Office')
-            person.add_contact_detail(type='email', value=contact_info['email'], note='District Office')
+            person.add_contact_detail(
+                type='voice', value=contact_info['phone'], note='District Office')
+            person.add_contact_detail(
+                type='email', value=contact_info['email'], note='District Office')
 
             person.add_source(contact_url)
             person.add_source(contact_info['detail_link'])

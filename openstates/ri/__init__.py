@@ -1,4 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .people import RIPersonScraper
 
 
@@ -89,11 +92,11 @@ class RhodeIsland(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
@@ -101,3 +104,8 @@ class RhodeIsland(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def session_list(self):
+        return url_xpath(
+            'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
+            '//select[@name="ctl00$rilinContent$cbYear"]/option/text()')
