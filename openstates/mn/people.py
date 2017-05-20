@@ -132,7 +132,7 @@ class RepList(Page):
         rep.add_link(url)
         rep.add_contact_detail(type='address', value=address, note='capitol')
         rep.add_contact_detail(type='voice', value=phone, note='capitol')
-        rep.add_contact_detail(type='email', value=email note='capitol')
+        rep.add_contact_detail(type='email', value=email, note='capitol')
         rep.add_source(self.url)
 
         yield rep
