@@ -103,7 +103,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             elif 'Speaker' in action:
                 actor = 'Speaker'
             else:
-                actor = 'upper'
+                actor = 'legislature'
 
             action_type = self.action_types(action)
             bill.add_action(
