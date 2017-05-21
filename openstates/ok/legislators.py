@@ -2,12 +2,7 @@ import re
 import lxml
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin, validate_email_address
-
-OK_PROXY = 'https://dcyqmf3d8vr92.cloudfront.net'
-
-
-def proxy_house_url(url):
-    return url.replace('http://www.okhouse.gov', OK_PROXY)
+from .utils import proxy_house_url
 
 
 class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
