@@ -3,6 +3,12 @@ import lxml
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin, validate_email_address
 
+OK_PROXY = 'https://dcyqmf3d8vr92.cloudfront.net'
+
+
+def proxy_house_url(url):
+    return url.replace('http://www.okhouse.gov', OK_PROXY)
+
 
 class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     jurisdiction = 'ok'
@@ -63,7 +69,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape_lower_chamber(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
 
-        page = self.lxmlize(url)
+        page = self.lxmlize(proxy_house_url(url))
 
         legislator_nodes = self.get_nodes(
             page,
@@ -112,7 +118,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             legislator_url = 'http://www.okhouse.gov/District.aspx?District=' + district
 
-            legislator_page = self.lxmlize(legislator_url)
+            legislator_page = self.lxmlize(proxy_house_url(legislator_url))
 
             photo_url = self.get_node(
                 legislator_page,
