@@ -109,5 +109,5 @@ class PupaBillScraper(BillScraper):
                                chamber
                                )
 
-        bill['alternate_bill_ids'] = [oi['identifier']  for oi in data['other_identifiers']]
+        bill['alternate_bill_ids'] = [oi['identifier'] for oi in data['other_identifiers']]
         self.save_bill(bill)
