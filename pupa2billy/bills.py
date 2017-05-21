@@ -108,4 +108,6 @@ class PupaBillScraper(BillScraper):
                                related['legislative_session'],
                                chamber
                                )
+
+        bill['alternate_bill_ids'] = [oi['identifier'] for oi in data['other_identifiers']]
         self.save_bill(bill)

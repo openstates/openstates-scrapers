@@ -1,22 +1,19 @@
-import time
+from pupa.scrape import Person, Scraper
 
 from openstates.utils import LXMLMixin
-from billy.scrape.legislators import LegislatorScraper, Legislator
-from .util import get_client, get_url, backoff
 
-import lxml
+from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 
 
 HOMEPAGE_URLS = {
     "lower": ("http://www.house.ga.gov/Representatives/en-US/"
-             "member.aspx?Member={code}&Session={sid}"),
+              "member.aspx?Member={code}&Session={sid}"),
     "upper": ("http://www.senate.ga.gov/SENATORS/en-US/"
               "member.aspx?Member={code}&Session={sid}")
 }
 
 
-class GALegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'ga'
+class GAPersonScraper(Scraper, LXMLMixin):
     sservice = get_client("Members").service
     ssource = get_url("Members")
 
@@ -39,9 +36,8 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return url, images[0].attrib['src']
 
-    def scrape_session(self, term, chambers, session):
-        session = self.metadata['session_details'][session]
-        sid = session['_guid']
+    def scrape_session(self, session, chambers):
+        sid = SESSION_SITE_IDS[session]
         members = backoff(
             self.sservice.GetMembersBySession,
             sid
@@ -53,9 +49,11 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
 
             # Check to see if the member has vacated; skip if so:
             try:
-                legislative_service = next(service for service
+                legislative_service = next(
+                    service for service
                     in member_info['SessionsInService']['LegislativeService']
-                    if service['Session']['Id'] == sid)
+                    if service['Session']['Id'] == sid
+                )
             except IndexError:
                 raise Exception("Something very bad is going on with the "
                                 "Legislative service")
@@ -98,32 +96,31 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
             url, photo = self.scrape_homepage(HOMEPAGE_URLS[chamber],
                                               {"code": guid, "sid": sid})
 
-
-            legislator = Legislator(
-                term,
-                chamber,
-                str(district),
-                full_name,
+            legislator = Person(
+                name=full_name,
+                district=str(district),
                 party=party,
-                last_name=last_name,
-                first_name=first_name,
-                url=url,
-                photo_url=photo,
-                _guid=guid
+                primary_org=chamber,
+                image=photo,
             )
+            legislator.extras = {
+                'last_name': last_name,
+                'first_name': first_name,
+                'guid': guid,
+            }
 
-            capital_address = self.clean_list([
+            capitol_address = self.clean_list([
                 member_info['Address'][x] for x in [
                     'Street', 'City', 'State', 'Zip'
                 ]
             ])
 
-            capital_address = (" ".join(
+            capitol_address = " ".join(
                 addr_component for addr_component
-                    in capital_address if addr_component
-            )).strip()
+                in capitol_address if addr_component
+            ).strip()
 
-            capital_contact_info = self.clean_list([
+            capitol_contact_info = self.clean_list([
                 member_info['Address'][x] for x in [
                     'Email', 'Phone', 'Fax'
                 ]
@@ -135,26 +132,28 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
             # 01X5dvct3G1lV6RQ7I9o926Q==&c=xT8jBs5X4S7ZX2TOajTx2W7CBprTaVlpcvUvHEv78GI=
             # 01X5dvct3G1lV6RQ7I9o926Q==&c=eSH9vpfdy3XJ989Gpw4MOdUa3n55NTA8ev58RPJuzA8=
 
-            if capital_contact_info[0] and '@' not in capital_contact_info[0]:
-                capital_contact_info[0] = None
+            if capitol_contact_info[0] and '@' not in capitol_contact_info[0]:
+                capitol_contact_info[0] = None
 
             # if we have more than 2 chars (eg state)
             # or a phone/fax/email address record the info
-            if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
-                if (capital_contact_info[0] \
-                        and 'quickrxdrugs@yahoo.com' in capital_contact_info[0]):
+            if len(capitol_address) > 2 or not capitol_contact_info.count(None) == 3:
+                if capitol_contact_info[0] and 'quickrxdrugs@yahoo.com' in capitol_contact_info[0]:
                     self.warning("XXX: GA SITE WAS HACKED.")
-                    capital_contact_info[1] = None
+                    capitol_contact_info[1] = None
 
-                if capital_address.strip() != "":
-                    legislator.add_office(
-                        'capitol',
-                        'Capitol Address',
-                        address=capital_address,
-                        phone=capital_contact_info[1],
-                        fax=capital_contact_info[2],
-                        email=capital_contact_info[0]
-                    )
+                if capitol_address.strip():
+                    legislator.add_contact_detail(
+                        type='address', value=capitol_address, note='Capitol Address')
+                if capitol_contact_info[1]:
+                    legislator.add_contact_detail(
+                        type='voice', value=capitol_contact_info[1], note='Capitol Address')
+                if capitol_contact_info[2]:
+                    legislator.add_contact_detail(
+                        type='fax', value=capitol_contact_info[2], note='Capitol Address')
+                if capitol_contact_info[0]:
+                    legislator.add_contact_detail(
+                        type='email', value=capitol_contact_info[0], note='Capitol Address')
 
             district_address = self.clean_list([
                 member_info['DistrictAddress'][x] for x in [
@@ -172,36 +171,42 @@ class GALegislatorScraper(LegislatorScraper, LXMLMixin):
             if district_contact_info[0] and '@' not in district_contact_info[0]:
                 district_contact_info[0] = None
 
-            district_address = (
-                " ".join(
-                    addr_component for addr_component
-                        in district_address if addr_component
-                )).strip()
+            district_address = " ".join(
+                addr_component for addr_component
+                in district_address if addr_component
+            ).strip()
 
-            if len(capital_address) > 2 or not capital_contact_info.count(None) == 3:
-                if (district_contact_info[1] and \
+            if len(capitol_address) > 2 or not capitol_contact_info.count(None) == 3:
+                if (district_contact_info[1] and
                         'quickrxdrugs@yahoo.com' in district_contact_info[1]):
                     self.warning("XXX: GA SITE WAS HACKED.")
                     district_contact_info[1] = None
 
-                if district_address.strip() != "":
-                    legislator.add_office(
-                        'district',
-                        'District Address',
-                        address=district_address,
-                        phone=district_contact_info[1],
-                        fax=district_contact_info[2],
-                        email=district_contact_info[0]
-                    )
+                if district_address.strip():
+                    legislator.add_contact_detail(
+                        type='address', value=district_address, note='District Address')
+                if district_contact_info[1]:
+                    legislator.add_contact_detail(
+                        type='voice', value=district_contact_info[1], note='District Address')
+                if district_contact_info[2]:
+                    legislator.add_contact_detail(
+                        type='fax', value=district_contact_info[2], note='District Address')
+                if district_contact_info[0]:
+                    legislator.add_contact_detail(
+                        type='email', value=district_contact_info[0], note='District Address')
 
+            legislator.add_link(url)
             legislator.add_source(self.ssource)
             legislator.add_source(HOMEPAGE_URLS[chamber].format(
                 **{"code": guid, "sid": sid}))
 
-            self.save_legislator(legislator)
+            yield legislator
 
-    def scrape(self, term, chambers):
-        for t in self.metadata['terms']:
-            if t['name'] == term:
-                for session in t['sessions']:
-                    self.scrape_session(term, chambers, session)
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+
+        yield from self.scrape_session(session, chambers)

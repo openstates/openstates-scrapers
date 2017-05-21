@@ -80,6 +80,7 @@ class NEPersonScraper(Scraper, LXMLMixin):
                     district=district,
                     party=party,
                     image=photo_url,
+                    primary_org='legislature',
                 )
 
                 person.add_link(rep_url)

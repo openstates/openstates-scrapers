@@ -76,7 +76,7 @@ class MICommitteeScraper(Scraper):
         headers = doc.xpath('(//div[@class="row"])[2]//h1')
         assert len(headers) == 1
         name = ' '.join(headers[0].xpath('./text()'))
-        name = name.replace(' Committee', '')
+        name = re.sub(r'\s+Committee.*$', '', name)
 
         com = Organization(chamber='upper', name=name, classification='committee')
 

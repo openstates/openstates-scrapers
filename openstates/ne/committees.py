@@ -32,7 +32,8 @@ class NECommitteeScraper(Scraper, LXMLMixin):
                 committee_name += name[x] + ' '
             committee_name = committee_name[0: -1]
 
-            org = Organization(name=committee_name, chamber='upper', classification='committee')
+            org = Organization(name=committee_name, chamber='legislature',
+                               classification='committee')
 
             members = self.get_nodes(
                 committee_page,
@@ -74,7 +75,8 @@ class NECommitteeScraper(Scraper, LXMLMixin):
                     committee_node,
                     './/h2[@class="panel-title"]/a/text()[normalize-space()]')
 
-            org = Organization(name=committee_name, chamber='upper', classification='committee')
+            org = Organization(name=committee_name, chamber='legislature',
+                               classification='committee')
             org.add_source(main_url)
 
             members = self.get_nodes(
