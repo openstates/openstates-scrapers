@@ -2,12 +2,7 @@ import re
 import lxml
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin, validate_email_address
-
-OK_PROXY = 'https://dcyqmf3d8vr92.cloudfront.net'
-
-
-def proxy_house_url(url):
-    return url.replace('http://www.okhouse.gov', OK_PROXY)
+from .utils import proxy_house_url
 
 
 class OKPersonScraper(Scraper, LXMLMixin):

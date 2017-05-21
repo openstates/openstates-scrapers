@@ -1,6 +1,7 @@
 import re
 import lxml.html
 from pupa.scrape import Scraper, Organization
+from .utils import proxy_house_url
 
 
 class OKCommitteeScraper(Scraper):
@@ -12,7 +13,7 @@ class OKCommitteeScraper(Scraper):
 
     def scrape_lower(self):
         url = "http://www.okhouse.gov/Committees/Default.aspx"
-        page = lxml.html.fromstring(self.get(url).text)
+        page = lxml.html.fromstring(self.get(proxy_house_url(url)).text)
         page.make_links_absolute(url)
 
         parents = {}
@@ -37,7 +38,7 @@ class OKCommitteeScraper(Scraper):
             yield from self.scrape_lower_committee(name, parent, link.attrib['href'])
 
     def scrape_lower_committee(self, name, parent, url):
-        page = lxml.html.fromstring(self.get(url).text)
+        page = lxml.html.fromstring(self.get(proxy_house_url(url)).text)
         page.make_links_absolute(url)
 
         if 'Joint' in name or (parent and 'Joint' in parent):
