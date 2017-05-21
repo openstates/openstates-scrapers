@@ -5,7 +5,7 @@ from pupa.scrape import Scraper, VoteEvent
 from pupa.utils.generic import convert_pdf
 
 BILL_RE = re.compile('^LEGISLATIVE (BILL|RESOLUTION) (\d+C?A?).')
-VETO_BILL_RE = re.compile('MOTION - Override (?:Line-Item )?Veto on (\w+)')
+VETO_BILL_RE = re.compile('- Override (?:Line-Item )?Veto on (\w+)')
 DATE_RE = re.compile(
     '(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER) '
     '(\d+), (\d{4})'
@@ -125,10 +125,15 @@ class NEVoteScraper(Scraper):
             if state == 'question_quote' and QUESTION_MATCH_END in question:
                 question = re.sub('\s+', ' ',
                                   question.replace(QUESTION_MATCH_END, '').strip())
+
+                if not bill_id:
+                    raise Exception('cannot save vote without bill_id')
+
                 # save prior vote
                 vote = VoteEvent(
                     bill=bill_id,
-                    chamber='upper',
+                    bill_chamber='legislature',
+                    chamber='legislature',
                     legislative_session=session,
                     start_date=date.strftime('%Y-%m-%d'),
                     motion_text=question,
