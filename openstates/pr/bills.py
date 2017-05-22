@@ -183,6 +183,7 @@ class PRBillScraper(Scraper):
                                      entity_type='person', primary=False)
 
         action_table = doc.xpath('//table')[-1]
+        bill_vote_chamber = None
         for row in action_table[1:]:
             tds = row.xpath('td')
             # ignore row missing date
@@ -231,11 +232,10 @@ class PRBillScraper(Scraper):
 
                 # TODO replace bill['votes']
                 elif u"Se reconsideró" in vote_name:
-                    """if bill['votes']:
-                        vote_chamber = bill['votes'][-1]['chamber']
+                    if bill_vote_chamber:
+                        vote_chamber = bill_vote_chamber
                     else:
-                        vote_chamber = chamber"""
-                    vote_chamber = chamber
+                        vote_chamber = chamber
 
                 else:
                     raise AssertionError(
@@ -263,6 +263,7 @@ class PRBillScraper(Scraper):
                 vote.set_count('other', other)
                 vote.add_source(url)
                 yield vote
+                bill_vote_chamber = chamber
 
         bill.add_source(url)
         yield bill
