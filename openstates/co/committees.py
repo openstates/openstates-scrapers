@@ -14,7 +14,7 @@ class COCommitteeScraper(Scraper, LXMLMixin):
             "Vice Chair": "vice-chair",
             "Vice-Chair": "vice-chair",
         }
-        committee = Organization(comName, 
+        committee = Organization(comName,
                                  chamber=chamber,
                                  classification='committee')
         committee.add_source(link.attrib['href'])

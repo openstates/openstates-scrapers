@@ -3,7 +3,6 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import COLegislatorScraper
 from .committees import COCommitteeScraper
 from .bills import COBillScraper
-from .votes import COVoteScraper
 from .events import COEventScraper
 
 
@@ -14,9 +13,9 @@ class Colorado(Jurisdiction):
     url = "http://leg.colorado.gov/"
     scrapers = {
         'people': COLegislatorScraper,
-        'committee': COCommitteeScraper,
+        'committees': COCommitteeScraper,
         'bills': COBillScraper,
-        'events': COEventScraper
+        'events': COEventScraper,
     }
     parties = [
         {'name': 'Republican'},

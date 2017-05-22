@@ -1,6 +1,5 @@
 import datetime as dt
 import pytz
-import lxml.html
 
 from pupa.scrape import Scraper, Event
 from openstates.utils import LXMLMixin
@@ -37,7 +36,8 @@ class COEventScraper(Scraper, LXMLMixin):
             for link in com_links:
                 page = self.lxmlize(link)
 
-                hearing_links = page.xpath('//div[contains(@class,"schedule-item-content")]/h4/a/@href')
+                hearing_links = page.xpath('//div[contains(@class,"schedule-item-content")]'
+                                           '/h4/a/@href')
 
                 for link in hearing_links:
                     try:
