@@ -1,3 +1,4 @@
+from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .people import LAPersonScraper
 from .committees import LACommitteeScraper
@@ -195,3 +196,9 @@ class Louisiana(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath(
+            'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
+            '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
+            '(text(), "Session")]/text()')

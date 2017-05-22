@@ -1,5 +1,4 @@
 import datetime
-import re
 
 metadata = {
     'name': 'Louisiana',
@@ -200,14 +199,3 @@ metadata = {
         'Sessions',
     ]
 }
-
-
-def session_list():
-    return url_xpath(
-        'http://www.legis.la.gov/Legis/SessionInfo/SessionInfo.aspx',
-        '//table[@id="ctl00_ctl00_PageBody_DataListSessions"]//a[contains'
-        '(text(), "Session")]/text()')
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))

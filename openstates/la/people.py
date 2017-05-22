@@ -13,20 +13,11 @@ def xpath_one(el, expr):
 
 
 class LAPersonScraper(Scraper, LXMLMixin):
-    jurisdiction = 'la'
-    latest_only = True
-    
     def scrape(self, chamber=None):
-            if chamber == "upper":
-                yield from self.scrape_upper(chamber)
-            
-            elif chamber == "lower":
-                yield from self.scrape_lower(chamber)
-                
-            else:
-                yield from self.scrape_upper("upper")
-                yield from self.scrape_lower("lower")
-    
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber)(chamber)
+
     def scrape_upper_leg_page(self, url, who):
         page = self.lxmlize(url)
 
@@ -78,27 +69,27 @@ class LAPersonScraper(Scraper, LXMLMixin):
         email = info[email_index]
         assert "@" in email, "Email info is not valid: {}".format(email)
 
-        person = Person(name = who, 
-                        district = district, 
-                        party = party, 
-                        primary_org = "upper")
-        
+        person = Person(name=who,
+                        district=district,
+                        party=party,
+                        primary_org="upper")
+
         contacts = [
-            (address, "address"), 
+            (address, "address"),
             (phone, "voice"),
             (email, "email"),
             (fax, "fax"),
         ]
-        
-        for (value, key) in contacts:
+
+        for value, key in contacts:
             if value:
-                person.add_contact_detail(type = key, 
-                                          value = value,
-                                          note = "District Office")
-        
+                person.add_contact_detail(type=key,
+                                          value=value,
+                                          note="District Office")
+
         person.add_source(url)
         person.add_link(url)
-                
+
         yield person
 
     def scrape_upper(self, chamber):
@@ -137,31 +128,30 @@ class LAPersonScraper(Scraper, LXMLMixin):
         email = page.xpath(
             '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
             )[0].strip()
- 
+
         district = leg_info['dist'].replace('Dist', '').strip()
 
-        person = Person(name = name, 
-                        party = party,
-                        district = district, 
-                        primary_org = 'lower',
-                        image = photo)
-                       
+        person = Person(name=name,
+                        party=party,
+                        district=district,
+                        primary_org='lower',
+                        image=photo)
+
         contacts = [
-            (leg_info["office"], "address"), 
+            (leg_info["office"], "address"),
             (leg_info["phone"], "voice"),
             (email, "email"),
         ]
-        
-        for (value, key) in contacts:
+
+        for value, key in contacts:
             if value:
-                person.add_contact_detail(type = key, 
-                                          value = value,
-                                          note = "District Office")
-        
+                person.add_contact_detail(type=key,
+                                          value= value,
+                                          note="District Office")
+
         person.add_source(url)
-        
         person.add_link(url)
-        
+
         yield person
 
     def scrape_lower(self, chamber):
