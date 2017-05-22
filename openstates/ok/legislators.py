@@ -2,6 +2,7 @@ import re
 import lxml
 from billy.scrape.legislators import LegislatorScraper, Legislator
 from openstates.utils import LXMLMixin, validate_email_address
+from .utils import proxy_house_url
 
 
 class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
@@ -63,7 +64,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
     def scrape_lower_chamber(self, term):
         url = "http://www.okhouse.gov/Members/Default.aspx"
 
-        page = self.lxmlize(url)
+        page = self.lxmlize(proxy_house_url(url))
 
         legislator_nodes = self.get_nodes(
             page,
@@ -112,7 +113,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             legislator_url = 'http://www.okhouse.gov/District.aspx?District=' + district
 
-            legislator_page = self.lxmlize(legislator_url)
+            legislator_page = self.lxmlize(proxy_house_url(legislator_url))
 
             photo_url = self.get_node(
                 legislator_page,
@@ -196,7 +197,7 @@ class OKLegislatorScraper(LegislatorScraper, LXMLMixin):
             else:
                 district = a.xpath('../../span')[1].text.split()[1]
 
-            if a.text is None:
+            if a.text is None or a.text.strip() == 'Vacant':
                 self.warning("District {} appears to be empty".format(district))
                 continue
             else:

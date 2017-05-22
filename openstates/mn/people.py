@@ -57,10 +57,10 @@ class SenList(CSV):
                      image=self.extra_info[name]['image'])
         leg.add_link(self.extra_info[name]['url'])
         leg.add_contact_detail(type='voice',
-                               value=self.extra_info[name]['office_phone'])
+                               value=self.extra_info[name]['office_phone'], note='capitol')
         if 'email' in self.extra_info[name]:
             leg.add_contact_detail(type='email',
-                                   value=self.extra_info[name]['email'])
+                                   value=self.extra_info[name]['email'], note='capitol')
 
         row['Zipcode'] = row['Zipcode'].strip()
         # Accommodate for multiple address column naming conventions.
@@ -130,9 +130,9 @@ class RepList(Page):
                      primary_org='lower', role='Representative',
                      image=photo_url)
         rep.add_link(url)
-        rep.add_contact_detail(type='address', value=address)
-        rep.add_contact_detail(type='voice', value=phone)
-        rep.add_contact_detail(type='email', value=email)
+        rep.add_contact_detail(type='address', value=address, note='capitol')
+        rep.add_contact_detail(type='voice', value=phone, note='capitol')
+        rep.add_contact_detail(type='email', value=email, note='capitol')
         rep.add_source(self.url)
 
         yield rep

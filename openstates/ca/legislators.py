@@ -244,5 +244,4 @@ class CALegislatorScraper(LegislatorScraper):
         if chamber == 'lower':
             return 'assemblymember.' +  last_name + '@assembly.ca.gov'
         else:
-            return 'senator.' +  last_name + '@sen.ca.gov'
-        
+            return 'senator.' +  last_name + '@senator.ca.gov'

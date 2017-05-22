@@ -12,3 +12,5 @@ ipdb
 chardet
 unicodecsv
 
+# GA
+suds-py3

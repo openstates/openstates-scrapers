@@ -1,6 +1,6 @@
 import lxml.html
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Organization, Scraper
 
 
 def clean_name(com_name):
@@ -59,12 +59,8 @@ def define_role(name):
     return (name, role)
 
 
-class MDCommitteeScraper(CommitteeScraper):
-
-    jurisdiction = 'md'
-
-    def scrape(self, term, chamber):
-        # committee list
+class MDCommitteeScraper(Scraper):
+    def scrape(self):
         url = 'http://mgaleg.maryland.gov/webmga/frmcommittees.aspx?pid=commpage&tab=subject7'
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -99,7 +95,7 @@ class MDCommitteeScraper(CommitteeScraper):
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
                 continue
 
-            self.scrape_committee(chamber, com_name, url)
+            yield from self.scrape_committee(chamber, com_name, url)
 
         for a in doc.xpath('//a[contains(@href, "AELR")]'):
             url = a.get('href')
@@ -110,14 +106,14 @@ class MDCommitteeScraper(CommitteeScraper):
                 continue
             com_name = clean_name(com_name)
 
-            self.scrape_committee(chamber, com_name, url)
+            yield from self.scrape_committee(chamber, com_name, url)
 
     def scrape_committee(self, chamber, com_name, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        com = Committee(chamber, com_name)
+        com = Organization(chamber=chamber, name=com_name, classification='committee')
         com.add_source(url)
 
         if 'stab=04' in url:
@@ -128,7 +124,9 @@ class MDCommitteeScraper(CommitteeScraper):
                 # new table - subcommittee
                 if sub_name != 'Full Committee':
                     sub_name = sub_name.replace("Subcommittee", "").strip()
-                    com = Committee(chamber, com_name, subcommittee=sub_name)
+                    com = Organization(
+                        name=sub_name, classification='committee',
+                        parent_id={'name': com_name, 'classification': chamber})
                     com.add_source(url)
 
                 for row in rows[1:]:
@@ -136,7 +134,7 @@ class MDCommitteeScraper(CommitteeScraper):
                     name, role = define_role(name)
                     com.add_member(name, role)
 
-                self.save_committee(com)
+                yield com
         else:
             table_source = doc.xpath('//table[@class="noncogrid"]')
 
@@ -148,18 +146,20 @@ class MDCommitteeScraper(CommitteeScraper):
                     if "Subcommittee" in sub_name_source[0]:
                         sub_name = sub_name_source[0]
                         sub_name = sub_name.replace("Subcommittee", "").strip()
-                        com = Committee(chamber, com_name, subcommittee=sub_name)
+                        com = Organization(
+                            name=sub_name, classification='committee',
+                            parent_id={'name': com_name, 'classification': chamber})
                         com.add_source(url)
 
                     for name in row:
                         name, role = define_role(name)
                         com.add_member(name, role)
 
-                    self.save_committee(com)
+                    yield com
             else:
                 row = doc.xpath('//table[@class="spco"]/tr[1]/td/text()')
                 for name in row:
                     name, role = define_role(name)
                     com.add_member(name, role)
 
-                self.save_committee(com)
+                yield com
