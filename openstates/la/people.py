@@ -146,7 +146,7 @@ class LAPersonScraper(Scraper, LXMLMixin):
         for value, key in contacts:
             if value:
                 person.add_contact_detail(type=key,
-                                          value= value,
+                                          value=value,
                                           note="District Office")
 
         person.add_source(url)

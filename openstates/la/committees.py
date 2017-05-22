@@ -1,8 +1,9 @@
 import re
-import name_tools
+# import name_tools
 
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Organization
+
 
 class LACommitteeScraper(Scraper, LXMLMixin):
 
@@ -97,12 +98,11 @@ class LACommitteeScraper(Scraper, LXMLMixin):
         url = 'http://house.louisiana.gov/H_Cmtes/SpecialCommittees.aspx'
         page = self.lxmlize(url)
 
-        committee_list = page.xpath('//table[@id="table106"]//div[@class="exBody1A"]'
-                                    '/div[@class="accordion"]')[0]
+        committee_list = page.xpath('//div[@class="accordion"]')[0]
         headers = committee_list.xpath('./h3')
 
         for header in headers:
-            committee_name_text = header.xpath('string()')
+            committee_name_text = header.text_content()
             committee_name = committee_name_text.strip()
             committee_name = self._normalize_committee_name(committee_name)
 
@@ -116,10 +116,11 @@ class LACommitteeScraper(Scraper, LXMLMixin):
                                                 '//tr[@class="linkStyle2"]')
 
             for row in committee_memberlist:
-                member_name = row.xpath('normalize-space(string(./td[1]))')
-                member_name = ' '.join(filter(None, name_tools.split(member_name)))
-                member_role = row.xpath('normalize-space(string(./td[2]))')
-
+                temp = row.text_content().split()
+                member_role = temp.pop()
+                if temp[-1].lower() in ['interim', 'vice', 'ex']:
+                    member_role = temp.pop() + ' ' + member_role
+                member_name = " ".join(temp)
                 member_role = self._normalize_member_role(member_role)
 
                 committee.add_member(member_name, member_role)
@@ -143,10 +144,10 @@ class LACommitteeScraper(Scraper, LXMLMixin):
                 yield from self._scrape_upper_committee(name, url2)
 
     def _scrape_lower_chamber(self):
-        self._scrape_lower_standing_committees()
-        self._scrape_lower_special_committees()
+        yield from self._scrape_lower_standing_committees()
+        yield from self._scrape_lower_special_committees()
 
     def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        chambers = [chamber] if chamber is not None else ['lower', 'upper']
         for chamber in chambers:
             yield from getattr(self, '_scrape_' + chamber + '_chamber')()
