@@ -229,8 +229,8 @@ class OKBillScraper(Scraper):
                 line = sib.xpath("string()").replace('\r\n', ' ').strip()
                 if "*****" in line:
                     break
-                regex = r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL' + \
-                    r'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)'
+                regex = (r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL '
+                         'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)')
                 match = re.match(regex, line)
                 if match:
                     if match.group(1) == 'YEAS' and 'RCS#' not in line:
