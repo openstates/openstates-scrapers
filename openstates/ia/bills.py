@@ -2,18 +2,15 @@ import re
 import datetime
 import lxml.html
 from collections import defaultdict
-from billy.scrape.bills import BillScraper, Bill
-from openstates.utils import LXMLMixin
-from .scraper import InvalidHTTPSScraper
-
+from pupa.scrape import Scraper, Bill
+import pdb
 
 def get_popup_url(link):
     onclick = link.attrib['onclick']
     return re.match(r'openWin\("(.*)"\)$', onclick).group(1)
 
 
-class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
-    jurisdiction = 'ia'
+class IABillScraper(Scraper):
 
     _subjects = defaultdict(list)
 
@@ -21,11 +18,11 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
         # if already built a subject map, skip doing it again
         if self._subjects:
             return
-
-        session_id = self.metadata['session_details'][session]['number']
+        
+        session_id = self.get_session_id()
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = self.lxmlize(url)
+        doc = lxml.html.fromstring(self.get(url).text)
 
         # get all subjects from dropdown
         for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
@@ -46,18 +43,27 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             for bill_id in bill_ids:
                 self._subjects[bill_id.replace(' ', '')].append(subject)
 
-    def scrape(self, chamber, session):
-
+    def scrape(self, session=None, chamber=None):
         self._build_subject_map(session)
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-        session_id = self.metadata['session_details'][session]['number']
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+
+    def scrape_chamber(self, chamber, session):
+
         bill_offset = "HF697"  # Try both. We need a good bill page to scrape
         bill_offset = "HF27"   # from. Check for "HF " + bill_offset
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
+        session_id = self.get_session_id()
         url = (base_url % (session_id, bill_offset))
-        page = self.lxmlize(url)
+        page = lxml.html.fromstring(self.get(url).text)
 
         if chamber == 'upper':
             bname = 'senateBills'
@@ -72,10 +78,10 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
 
             bill_url = (base_url % (session_id, bill_id))
 
-            self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
+            yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
 
     def scrape_bill(self, chamber, session, session_id, bill_id, url):
-        sidebar = self.lxmlize(url)
+        sidebar = lxml.html.fromstring(self.get(url).text)
 
         try:
             hist_url = sidebar.xpath('//a[contains(., "Bill History")]')[0].attrib['href']
@@ -84,7 +90,7 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             return
 
         try:
-            page = self.lxmlize(hist_url)
+            page = lxml.html.fromstring(self.get("https://www.legis.iowa.gov" + hist_url).text)
         except:
             self.warning("URL: %s gives us a 500 error. Aborting." % url)
             return 
@@ -108,7 +114,13 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
         else:
             bill_type = ['bill']
 
-        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill = Bill(
+                bill_id, 
+                legislative_session = session, 
+                chamber = chamber, 
+                title = title, 
+                classification = bill_type)
+
         bill.add_source(hist_url)
 
         # base url for text version (version_abbrev, session_id, bill_id)
@@ -130,8 +142,10 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
                     session_id,
                     bill_id.replace(' ', ''))
 
-                bill.add_version(version_name, version_html_url,
-                    mimetype='text/html')
+                bill.add_version_link(
+                        note = version_name, 
+                        url = version_html_url, 
+                        media_type = 'text/html')
 
                 # Get PDF document of bill version.
                 version_pdf_url = version_pdf_url_template.format(
@@ -139,8 +153,10 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
                     session_id,
                     bill_id.replace(' ', ''))
 
-                bill.add_version(version_name, version_pdf_url,
-                    mimetype='application/pdf')
+                bill.add_document_link(
+                        note = version_name, 
+                        url = version_pdf_url, 
+                        media_type = 'application/pdf')
 
         sponsors_str = page.xpath("string(//div[@id='content']/div[@class='divideVert']/div[@class='divideVert'])").strip()
         if re.search('^By ', sponsors_str):
@@ -168,7 +184,11 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
                 # https://sunlight.atlassian.net/browse/DATA-286
                 continue
 
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsorship(
+                    name = sponsor,
+                    classification = 'primary',
+                    entity_type = 'person',
+                    primary = True)
 
         for tr in page.xpath("//table[contains(@class, 'billActionTable')]/tbody/tr"):
             date = tr.xpath("string(td[contains(text(), ', 20')])").strip()
@@ -185,7 +205,8 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             action = re.sub(r'\s+', ' ', action)
 
             # Capture any amendment links.
-            version_urls = set(version['url'] for version in bill['versions'])
+            links = [link for link in [version['links'] for version in bill.versions]]
+            version_urls = [link['url'] for link in [i for sub in links for i in sub]]
             if 'amendment' in action.lower():
                 for anchor in tr.xpath('td[2]/a'):
                     if '-' in anchor.text:
@@ -196,8 +217,11 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
                             continue 
 
                         if url not in version_urls:
-                            bill.add_version(anchor.text, url, mimetype='text/html')
-                            version_urls.add(url)
+                            bill.add_version_link(
+                                    note = anchor.text, 
+                                    url = url, 
+                                    media_type = 'text/html')
+                            version_urls.append(url)
 
             if 'S.J.' in action or 'SCS' in action:
                 actor = 'upper'
@@ -209,45 +233,45 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
             action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action).strip()
 
             if action.startswith('Introduced'):
-                atype = ['bill:introduced']
+                atype = ['introduction']
                 if ', referred to' in action:
-                    atype.append('committee:referred')
+                    atype.append('referral-committee')
             elif action.startswith('Read first time'):
-                atype = 'bill:reading:1'
+                atype = 'reading-1'
             elif action.startswith('Referred to'):
-                atype = 'committee:referred'
+                atype = 'referral-committee'
             elif action.startswith('Sent to Governor'):
-                atype = 'governor:received'
+                atype = 'executive-receipt'
             elif action.startswith('Reported Signed by Governor'):
-                atype = 'governor:signed'
+                atype = 'executive-signature'
             elif action.startswith('Signed by Governor'):
-                atype = 'governor:signed'
+                atype = 'executive-signature'
             elif action.startswith('Vetoed by Governor'):
-                atype = 'governor:vetoed'
+                atype = 'executive-veto'
             elif action.startswith('Item veto'):
-                atype = 'governor:vetoed:line-item'
+                atype = 'executive-veto:line-item'
             elif re.match(r'Passed (House|Senate)', action):
-                atype = 'bill:passed'
+                atype = 'passage'
             elif re.match(r'Amendment (S|H)-\d+ filed', action):
-                atype = ['amendment:introduced']
+                atype = ['amendment-introduction']
                 if ', adopted' in action:
-                    atype.append('amendment:passed')
+                    atype.append('amendment-passage')
             elif re.match(r'Amendment (S|H)-\d+( as amended,)? adopted',
                           action):
-                atype = 'amendment:passed'
+                atype = 'amendment-passage'
             elif re.match('Amendment (S|N)-\d+ lost', action):
-                atype = 'amendment:failed'
+                atype = 'amendment-failure'
             elif action.startswith('Resolution filed'):
-                atype = 'bill:introduced'
+                atype = 'introduction'
             elif action.startswith('Resolution adopted'):
-                atype = 'bill:passed'
+                atype = 'passage'
             elif (action.startswith('Committee report') and
                   action.endswith('passage.')):
-                  atype = 'committee:passed'
+                  atype = 'committee-passage'
             elif action.startswith('Withdrawn'):
-                atype = 'bill:withdrawn'
+                atype = 'withdrawal'
             else:
-                atype = 'other'
+                atype = None
 
             if action.strip() == "":
                 continue
@@ -256,7 +280,20 @@ class IABillScraper(InvalidHTTPSScraper, BillScraper, LXMLMixin):
                 continue 
 
             if '$history' not in action:
-                bill.add_action(actor, action, date, type=atype)
+                bill.add_action(
+                        description = action, 
+                        date = date, 
+                        chamber = actor, 
+                        classification = atype)
 
-        bill['subjects'] = self._subjects[bill_id]
-        self.save_bill(bill)
+        for subject in self._subjects[bill_id]:
+            bill.add_subject(subject['Name'])
+
+        yield bill
+
+
+    def get_session_id(self):
+        return [x for x in 
+                self.jurisdiction.legislative_sessions 
+                if x['identifier'] == 
+                self.latest_session()][0]['number']
