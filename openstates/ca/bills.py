@@ -13,9 +13,9 @@ from pupa.scrape.base import ScrapeError
 from .models import CABill
 from .actions import CACategorizer
 
-SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
-                 'COAUTHOR': 'cosponsor',
-                 'PRINCIPAL_COAUTHOR': 'primary'}
+SPONSOR_TYPES = {'LEAD_AUTHOR': 'author',
+                 'COAUTHOR': 'coauthor',
+                 'PRINCIPAL_COAUTHOR': 'principal coauthor'}
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
 MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
@@ -534,7 +534,11 @@ class CABillScraper(Scraper):
                 date = date.date()
                 if (actor, act_str, date) in seen_actions:
                     continue
-                action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor)
+
+                kwargs.update(self.categorizer.categorize(act_str))
+
+                action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor,
+                                           classification=kwargs['classification'])
                 for committee in kwargs.get('committees', []):
                     action.add_related_entity(committee, entity_type='organization')
                 seen_actions.add((actor, act_str, date))
