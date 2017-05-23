@@ -2,7 +2,7 @@
 
 '''
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 
 committees = [
@@ -70,46 +70,46 @@ rules = (
     Rule(['Communicated to House', 'House received',
           'Ordered to House'], actor='lower'),
 
-    Rule('Read 1st time', 'bill:reading:1'),
-    Rule('Read 2nd time', 'bill:reading:2'),
-    Rule('Read 3rd time', 'bill:reading:3'),
-    Rule('Filed for introduction', 'bill:filed'),
-    Rule('^Introduced in', 'bill:introduced'),
-    Rule(['Passed Senate', 'Passed House'], 'bill:passed'),
-    Rule(['Reported do pass', 'With amendment, do pass'], 'committee:passed'),
+    Rule('Read 1st time', 'reading-1'),
+    Rule('Read 2nd time', 'reading-2'),
+    Rule('Read 3rd time', 'reading-3'),
+    Rule('Filed for introduction', 'filing'),
+    Rule('^Introduced in', 'introduction'),
+    Rule(['Passed Senate', 'Passed House'], 'passage'),
+    Rule(['Reported do pass', 'With amendment, do pass'], 'committee-passage'),
 
     Rule([u', but first to .+?; then (?P<committees>[^;]+)',
           u'To (?P<committees>.+?) then']),
     Rule(u'(?i)voice vote', voice_vote=True),
-    Rule([u'Amendment rejected'], [u'amendment:failed']),
-    Rule([u'To Governor'], [u'governor:received']),
-    Rule([u'Passed House'], [u'bill:passed']),
-    Rule([u'Read 2nd time'], [u'bill:reading:2']),
+    Rule([u'Amendment rejected'], [u'amendment-failure']),
+    Rule([u'To Governor'], [u'executive-receipt']),
+    Rule([u'Passed House'], [u'passage']),
+    Rule([u'Read 2nd time'], [u'reading-2']),
     Rule([u', but first to (?P<committees>[^;]+)', u'Rejected'], []),
-    Rule([u'Approved by Governor \d{1,2}/\d{1,2}/\d{1,2}$'], [u'governor:signed']),
-    Rule([u'^Introduced'], [u'bill:introduced']),
+    Rule([u'Approved by Governor \d{1,2}/\d{1,2}/\d{1,2}$'], [u'executive-signature']),
+    Rule([u'^Introduced'], [u'introduction']),
     Rule([u'To .+? then (?P<committees>.+)'], []),
-    Rule([u'^Filed for intro'], [u'bill:filed']),
-    Rule([u'(?i)referred to (?P<committees>.+)'], [u'committee:referred']),
+    Rule([u'^Filed for intro'], [u'filing']),
+    Rule([u'(?i)referred to (?P<committees>.+)'], [u'referral-committee']),
     Rule(u'Senator (?P<legislators>.+? )requests '
          u'to be removed as sponsor of bill'),
-    Rule([u'To House (?P<committees>[A-Z].+)'], [u'committee:referred']),
-    Rule([u'Passed Senate'], [u'bill:passed']),
+    Rule([u'To House (?P<committees>[A-Z].+)'], [u'referral-committee']),
+    Rule([u'Passed Senate'], [u'passage']),
     Rule([u'(?i)committed to (?P<committees>.+?) on'], []),
-    Rule([u'Vetoed by Governor'], [u'governor:vetoed']),
+    Rule([u'Vetoed by Governor'], [u'executive-veto']),
     Rule([u'(?i)House concurred in senate amendment'], []),
-    Rule([u'Be rejected'], [u'bill:failed']),
+    Rule([u'Be rejected'], [u'failure']),
     Rule([u'To .+? then (?P<committees>.+) then',
           u'reading to (?P<committees>.+)']),
-    Rule([u'Adopted by'], [u'bill:passed']),
+    Rule([u'Adopted by'], [u'passage']),
     Rule([u'House appointed conferees:  (?P<legislators>.+)'], []),
-    Rule([u'Read 3rd time'], [u'bill:reading:3']),
-    Rule([u'Be adopted$'], [u'bill:passed']),
+    Rule([u'Read 3rd time'], [u'reading-3']),
+    Rule([u'Be adopted$'], [u'passage']),
     Rule([u'(?i)originating in (House|Senate) (?P<committees>.+)',
           u'(?i)to house (?P<committees>.+)']),
-    Rule([u'Read 1st time'], [u'bill:reading:1']),
+    Rule([u'Read 1st time'], [u'reading-1']),
     Rule([u'To .+? then .+? then (?P<committees>.+)']),
-    Rule(r'To %s' % committees_rgx, 'committee:referred')
+    Rule(r'To %s' % committees_rgx, 'referral-committee')
     )
 
 

@@ -1,5 +1,3 @@
-import billy
-
 
 metadata = {
     'abbreviation': 'wv',
@@ -35,19 +33,19 @@ metadata = {
                  '_scraped_name': '2011'
                  },
         '2012': {'display_name': '2012 Regular Session',
-                'type': 'primary',
+                 'type': 'primary',
                  '_scraped_name': '2012'
                  },
         '2013': {'display_name': '2013 Regular Session',
-                'type': 'primary',
+                 'type': 'primary',
                  '_scraped_name': '2013'
                  },
         '2014': {'display_name': '2014 Regular Session',
-                'type': 'primary',
+                 'type': 'primary',
                  '_scraped_name': '2014'
                  },
         '2015': {'display_name': '2015 Regular Session',
-                'type': 'primary',
+                 'type': 'primary',
                  '_scraped_name': '2015'
                  },
         '2016': {'display_name': '2016 Regular Session',
@@ -55,10 +53,10 @@ metadata = {
                  '_scraped_name': '2016'
                  },
         '20161S': {'display_name': '2016 First Special Session',
-                 'type':'special',
-                 '_scraped_name': '2016',
-                 '_special_name': '1X'
-                 },
+                   'type': 'special',
+                   '_scraped_name': '2016',
+                   '_special_name': '1X'
+                   },
         '2017': {'display_name': '2017 Regular Session',
                  'type': 'primary',
                  '_scraped_name': '2017'
@@ -72,9 +70,3 @@ metadata = {
         '1995', '1994', '1993',
         ]
 }
-
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
-                     '//select[@name="year"]/option/text()')

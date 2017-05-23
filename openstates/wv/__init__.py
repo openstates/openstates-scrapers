@@ -2,6 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from .people import WVPersonScraper
 from .committees import WVCommitteeScraper
+from .bills import WVBillScraper
 
 
 class WestVirginia(Jurisdiction):
@@ -11,7 +12,8 @@ class WestVirginia(Jurisdiction):
     url = "http://www.legis.state.wv.us/"
     scrapers = {
         'people': WVPersonScraper,
-        'committees': WVCommitteeScraper
+        'committees': WVCommitteeScraper,
+        'bills': WVBillScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -116,3 +118,8 @@ class WestVirginia(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        from openstates.utils import url_xpath
+        return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
+                         '//select[@name="year"]/option/text()')

@@ -11,11 +11,9 @@ class WVPersonScraper(Scraper):
     jurisdiction = 'wv'
 
     def scrape(self, chamber=None):
-        if chamber:
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
             yield from self.scrape_chamber(chamber)
-        else:
-            yield from self.scrape_chamber('upper')
-            yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
         if chamber == 'upper':
@@ -33,9 +31,8 @@ class WVPersonScraper(Scraper):
             name = link.xpath("string()").strip()
             leg_url = self.urlescape(link.attrib['href'])
 
-            if name in ['Members', 'Senate Members', 'House Members',
-                'Vacancy', 'VACANT', 'Vacant', 'To Be Announced',
-                'To Be Appointed']:
+            if name in ['Members', 'Senate Members', 'House Members', 'Vacancy',
+                        'VACANT', 'Vacant', 'To Be Announced', 'To Be Appointed']:
                 continue
 
             yield from self.scrape_legislator(chamber, name, leg_url)
@@ -45,8 +42,8 @@ class WVPersonScraper(Scraper):
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
-        xpath = '//select[@name="sel_member"]/option[@selected]/text()'
-        district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop().split()[1].strip().lstrip('0')
+        district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop() \
+            .split()[1].strip().lstrip('0')
 
         party = page.xpath('//h2').pop().text_content()
         party = re.search(r'\((R|D|I)[ \-\]]', party).group(1)
@@ -60,12 +57,6 @@ class WVPersonScraper(Scraper):
 
         photo_url = page.xpath(
             "//img[contains(@src, 'images/members/')]")[0].attrib['src']
-        """
-            def __init__(self, name, *, birth_date='', death_date='', biography='', summary='', image='',
-                 gender='', national_identity='',
-                 # specialty fields
-                 district=None, party=None, primary_org='', role='member',
-                 start_date='', end_date='', primary_org_name=None):"""
 
         leg = Person(name, district=district, party=party, image=photo_url, primary_org=chamber)
         leg.add_link(url)
@@ -121,8 +112,8 @@ class WVPersonScraper(Scraper):
             legislator.add_contact_detail(type='voice', value=capitol_phone, note='Capitol Office')
 
         if capitol_address:
-            legislator.add_contact_detail(type='address', value=capitol_address, note='Capitol Office')
-
+            legislator.add_contact_detail(type='address', value=capitol_address,
+                                          note='Capitol Office')
 
         # If a business or home phone is listed, attempt to use the
         # home phone first, then fall back on the business phone for
@@ -144,10 +135,12 @@ class WVPersonScraper(Scraper):
 
         # Add district office entry only if data exists for it.
         if district_phone:
-            legislator.add_contact_detail(type='voice', value=district_phone, note='District Office')
+            legislator.add_contact_detail(type='voice', value=district_phone,
+                                          note='District Office')
 
         if district_address:
-            legislator.add_contact_detail(type='address', value=district_address, note='District Office')
+            legislator.add_contact_detail(type='address', value=district_address,
+                                          note='District Office')
 
     def urlescape(self, url):
         scheme, netloc, path, qs, anchor = parse.urlsplit(url)

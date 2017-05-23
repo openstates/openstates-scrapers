@@ -10,17 +10,14 @@ class WVCommitteeScraper(Scraper):
     # Manually resolved links between subcommittees and parent committees.
     subcommittee_parent_map = {
         'Post Audits Subcommittee': 'Government and Finance',
-        'Parks, Recreation and Natural Resources Subcommittee': \
-            'Government and Finance',
+        'Parks, Recreation and Natural Resources Subcommittee': 'Government and Finance',
         'Tax Reform Subcommittee A': 'Joint Tax Reform',
     }
 
     def scrape(self, chamber=None):
-        if chamber:
-            getattr(self, 'scrape_' + chamber)()
-        else:
-            yield from self.scrape_upper()
-            yield from self.scrape_lower()
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber)()
 
     def scrape_lower(self):
         url = 'http://www.legis.state.wv.us/committees/house/main.cfm'
