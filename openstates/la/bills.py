@@ -28,7 +28,7 @@ class LABillScraper(Scraper, LXMLMixin):
         '2017 1st Extraordinary Session': '171ES',
     }
 
-    def pdf_to_lxml(filename, type='html'):
+    def pdf_to_lxml(self, filename, type='html'):
         text = convert_pdf(filename, type)
         return lxml.html.fromstring(text)
 
@@ -159,7 +159,7 @@ class LABillScraper(Scraper, LXMLMixin):
             self.warning("BAD VOTE: date error")
             return
 
-        start_date = dt.datetime.strptime(date, '%Y-%m-%d')
+        start_date = dt.datetime.strptime(date, '%m/%d/%Y')
         d = defaultdict(list)
         for line in body.replace(u'\xa0', '\n').split('\n'):
             line = line.replace('&nbsp;', '').strip()
@@ -191,7 +191,7 @@ class LABillScraper(Scraper, LXMLMixin):
             passed = False
 
         vote = Vote(chamber=chamber,
-                    start_date=start_date,
+                    start_date=start_date.strftime('%Y-%m-%d'),
                     motion_text=motion,
                     result='pass' if passed else 'fail',
                     classification=type,
@@ -199,9 +199,8 @@ class LABillScraper(Scraper, LXMLMixin):
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
-        for key, values in d:
+        for key, values in d.items():
             for item in values:
-                print(key, item)
                 vote.vote(key, item)
         vote.add_source(url)
         yield vote
@@ -293,11 +292,11 @@ class LABillScraper(Scraper, LXMLMixin):
 
         for action in actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
-            session_year = self.jurisdiction.legislative_sessions['start_date'][0:4]
+            session_year = self.jurisdiction.legislative_sessions[-1]['start_date'][0:4]
             # Session is April -> June. Prefiles look like they're in
             # January at earliest.
             date += '/{}'.format(session_year)
-            date = dt.datetime.strptime(date, '%Y-%m-%d')
+            date = dt.datetime.strptime(date, '%m/%d/%Y')
             chamber = self._chambers[chamber]
 
             cat = []
@@ -305,10 +304,8 @@ class LABillScraper(Scraper, LXMLMixin):
                 if flag in text.lower():
                     cat += flags[flag]
 
-            if cat == []:
-                cat = ["other"]
             bill.add_action(description=text,
-                            date=date,
+                            date=date.strftime('%Y-%m-%d'),
                             chamber=chamber,
                             classification=cat)
 
