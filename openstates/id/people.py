@@ -1,7 +1,6 @@
 import re
 import lxml.html
 from pupa.scrape import Scraper, Person
-# from billy.scrape.legislators import LegislatorScraper, Legislator
 
 BASE_URL = 'https://legislature.idaho.gov/%s/membership/'
 CHAMBERS = {'upper': 'senate', 'lower': 'house'}

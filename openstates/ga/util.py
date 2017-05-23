@@ -6,7 +6,7 @@ import time
 import suds
 
 logging.getLogger('suds').setLevel(logging.WARNING)
-log = logging.getLogger('billy')
+log = logging.getLogger('pupa')
 
 
 url = 'http://webservices.legis.ga.gov/GGAServices/%s/Service.svc?wsdl'

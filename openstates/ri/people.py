@@ -69,7 +69,7 @@ class RIPersonScraper(Scraper, LXMLMixin):
                 for field, col_num in excel_mapping.items()
             }
 
-            # Convert float to an int, and then to string, the format required by billy
+            # Convert float to an int, and then to string, the format required by pupa
             district = str(int(d['district']))
             if d['full_name'].upper() == "VACANT":
                 self.warning(

@@ -234,7 +234,7 @@ class HIBillScraper(Scraper):
                 session_urlslug = i['_scraped_name']
         report_page_url = create_bill_report_url(chamber, session_urlslug,
                                                  billtype)
-        billy_billtype = {
+        billtype_map = {
             "bill": "bill",
             "cr": "concurrent resolution",
             "r": "resolution"
@@ -244,7 +244,7 @@ class HIBillScraper(Scraper):
         list_page = lxml.html.fromstring(list_html)
         for bill_url in list_page.xpath("//a[@class='report']"):
             bill_url = HI_URL_BASE + bill_url.attrib['href']
-            yield from self.scrape_bill(session, chamber, billy_billtype, bill_url)
+            yield from self.scrape_bill(session, chamber, billtype_map, bill_url)
 
     def scrape(self, chamber=None, session=None):
         get_short_codes(self)
