@@ -105,8 +105,9 @@ class CAPersonScraper(Scraper):
             person.add_contact_detail(type='address', value=addr.strip(), note=note)
             person.add_contact_detail(type='voice', value=phone.strip(), note=note)
 
+        n = 1
         for addr in div.xpath(office_path.format('views-field-field-senator-district-office')):
-            note = 'District Office'
+            note = 'District Office #{}'.format(n)
             for addr in addr.text_content().strip().splitlines():
                 try:
                     addr, phone = addr.strip().replace(u'\xa0', ' ').split('; ')
@@ -115,6 +116,7 @@ class CAPersonScraper(Scraper):
                 except ValueError:
                     addr = addr.strip().replace(u'\xa0', ' ')
                     person.add_contact_detail(type='address', value=addr.strip(), note=note)
+            n += 1
 
         return person
 
@@ -222,8 +224,8 @@ class CAPersonScraper(Scraper):
             # their public pages anymore
             offices[0]['email'] = self._construct_email(chamber, res['name'])
 
-            for office in addresses[1:]:
-                office.update(type='district', name='District Office')
+            for n, office in enumerate(addresses[1:]):
+                office.update(type='district', name='District Office #{}'.format(n+1))
                 offices.append(office)
 
             for office in offices:
@@ -235,7 +237,7 @@ class CAPersonScraper(Scraper):
                 if 'email' not in office:
                     office['email'] = None
 
-                note = 'District Office'
+                note = office['name']
                 person.add_contact_detail(type='address', value=office['address'], note=note)
                 if office['phone']:
                     person.add_contact_detail(type='voice', value=office['phone'], note=note)
