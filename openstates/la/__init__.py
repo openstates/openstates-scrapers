@@ -38,6 +38,7 @@ class Louisiana(Jurisdiction):
             "name": "2010 Regular Session",
             "start_date": "2010-03-29"
         },
+        {
             "_scraped_name": "2011 Regular Session",
             "classification": "primary",
             "end_date": "2011-06-23",
