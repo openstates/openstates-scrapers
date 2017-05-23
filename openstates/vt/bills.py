@@ -38,7 +38,7 @@ class VTBillScraper(Scraper, LXMLMixin):
         # Parse the information from each bill
         for info in bills:
             # Strip whitespace from strings
-            info = {k:v.strip() for k, v in info.items()}
+            info = {k: v.strip() for k, v in info.items()}
 
             # Identify the bill type and chamber
             if info['BillNumber'].startswith('J.R.H.'):
@@ -163,7 +163,7 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             chambers_passed = set()
             for action in actions:
-                action = {k:v.strip() for k, v in action.items()}
+                action = {k: v.strip() for k, v in action.items()}
 
                 if "Signed by Governor" in action['FullStatus']:
                     actor = 'governor'
@@ -178,12 +178,13 @@ class VTBillScraper(Scraper, LXMLMixin):
                 if "Signed by Governor" in action['FullStatus']:
                     assert chambers_passed == set("HS")
                     action_type = 'executive-signature'
-                elif actor == 'lower' and \
-                    any(x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
+                elif actor == 'lower' and any(x.lower().startswith('aspassed')
+                                              for x in action['keywords'].split(';')):
                     action_type = 'passage'
                     chambers_passed.add("H")
-                elif actor == 'upper' and \
-                    any(x.lower().startswith(' aspassed') or x.lower().startswith('aspassed') for x in action['keywords'].split(';')):
+                elif actor == 'upper' and any(x.lower().startswith(' aspassed')
+                                              or x.lower().startswith('aspassed')
+                                              for x in action['keywords'].split(';')):
                     action_type = 'passage'
                     chambers_passed.add("S")
                 else:
@@ -200,16 +201,17 @@ class VTBillScraper(Scraper, LXMLMixin):
                 )
 
             # Capture votes
-            votes_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.\
-                    format(year_slug, internal_bill_id)
+            votes_url = 'http://legislature.vermont.gov/bill/loadBillRollCalls/{0}/{1}'.format(
+                year_slug, internal_bill_id)
             votes_json = self.get(votes_url).text
             votes = json.loads(votes_json)['data']
             bill.add_source(votes_url)
 
             for vote in votes:
                 roll_call_id = vote['VoteHeaderID']
-                roll_call_url = 'http://legislature.vermont.gov/bill/loadBillRollCallDetails/{0}/{1}'.\
-                    format(year_slug, roll_call_id)
+                roll_call_url = ('http://legislature.vermont.gov/bill/'
+                                 'loadBillRollCallDetails/{0}/{1}'.format(
+                                     year_slug, roll_call_id))
                 roll_call_json = self.get(roll_call_url).text
                 roll_call = json.loads(roll_call_json)['data']
 
@@ -266,11 +268,12 @@ class VTBillScraper(Scraper, LXMLMixin):
 
                 yield vote_to_add
 
-            # Capture extra information
-            # This was not in the billy spec, but is available
-            # Not yet implemented
-            # Witnesses: http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
-            # Conference committee members: http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
-            # Committee meetings: http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
+            # Capture extra information-  Not yet implemented
+            # Witnesses:
+            #   http://legislature.vermont.gov/bill/loadBillWitnessList/{year_slug}/{internal_bill_id}
+            # Conference committee members:
+            #   http://legislature.vermont.gov/bill/loadBillConference/{year_slug}/{bill_number}
+            # Committee meetings:
+            #   http://legislature.vermont.gov/committee/loadHistoryByBill/{year_slug}?LegislationId={internal_bill_id}
 
             yield bill

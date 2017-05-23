@@ -40,8 +40,7 @@ python3 -m flake8 \
     openstates/tn \
     openstates/ut \
     openstates/va \
-    openstates/va \
-    openstates/va \
+    openstates/vt \
     openstates/wa \
     openstates/wi \
     openstates/wy \

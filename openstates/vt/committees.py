@@ -11,16 +11,15 @@ class VTCommitteeScraper(Scraper):
         year_slug = session[5:]
 
         # Load all committees via the private API
-        committee_dump_url = \
-                'http://legislature.vermont.gov/committee/loadList/{}/'.\
-                format(year_slug)
+        committee_dump_url = 'http://legislature.vermont.gov/committee/loadList/{}/'.format(
+            year_slug)
         json_data = self.get(committee_dump_url).text
         committees = json.loads(json_data)['data']
 
         # Parse the information from each committee
         for info in committees:
             # Strip whitespace from strings
-            info = {k:v.strip() for k, v in info.items()}
+            info = {k: v.strip() for k, v in info.items()}
 
             # Determine the chamber
             if info['CommitteeType'] == 'House Standing':
@@ -60,9 +59,9 @@ class VTCommitteeScraper(Scraper):
             for member in members:
                 # Strip out titles, and exclude committee assistants
                 if member.startswith("Rep. "):
-                    member = member[len("Rep. "): ]
+                    member = member[len("Rep. "):]
                 elif member.startswith("Sen. "):
-                    member = member[len("Sen. "): ]
+                    member = member[len("Sen. "):]
                 else:
                     self.info("Non-legislator member found: {}".format(member))
 

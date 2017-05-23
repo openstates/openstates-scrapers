@@ -73,7 +73,8 @@ class VTPersonScraper(Scraper, LXMLMixin):
                 )
             )
             if info['HomePhone']:
-                leg.add_contact_detail(note="District Office", type='voice', value=info['HomePhone'])
+                leg.add_contact_detail(note="District Office", type='voice',
+                                       value=info['HomePhone'])
             district_email = info['Email'] or info['HomeEmail'] or info['WorkEmail']
             if district_email:
                 leg.add_contact_detail(note="District Office", type='email', value=district_email)

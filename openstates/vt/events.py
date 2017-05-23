@@ -13,8 +13,7 @@ class VTEventScraper(Scraper):
             session = self.latest_session()
         year_slug = session[5:]
 
-        url = 'http://legislature.vermont.gov/committee/loadAllMeetings/{}'.\
-                format(year_slug)
+        url = 'http://legislature.vermont.gov/committee/loadAllMeetings/{}'.format(year_slug)
 
         json_data = self.get(url).text
         events = json.loads(json_data)['data']
