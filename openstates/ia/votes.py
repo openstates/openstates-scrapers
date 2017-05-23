@@ -55,7 +55,7 @@ class IAVoteScraper(Scraper):
 
                         date = datetime.strptime(filename, journal_format)
                         date = datetime.combine(
-                                date, 
+                                date,
                                 time(
                                     tzinfo=timezone(
                                         timedelta(hours=-5))))
@@ -153,19 +153,19 @@ class IAVoteScraper(Scraper):
             self.current_id = bill_id
             votes, passed = self.parse_votes(lines)
 
-            #at the very least, there should be a majority
-            #for the bill to have passed, so check that,
-            #but if the bill didn't pass, it could still be OK if it got a majority
-            #eg constitutional amendments
+            # at the very least, there should be a majority
+            # for the bill to have passed, so check that,
+            # but if the bill didn't pass, it could still be OK if it got a majority
+            # eg constitutional amendments
             if not ((passed == (votes['yes_count'] > votes['no_count'])) or (not passed)):
                 self.error("The bill passed without a majority?")
                 raise ValueError('invalid vote')
 
-
-            #also throw a warning if the bill failed but got a majority
-            #it could be OK, but is probably something we'd want to check
+            # also throw a warning if the bill failed but got a majority
+            # it could be OK, but is probably something we'd want to check
             if not passed and votes['yes_count'] > votes['no_count']:
-                self.logger.warning("The bill got a majority but did not pass. Could be worth confirming.")
+                self.logger.warning("The bill got a majority but did not pass. "
+                                    "Could be worth confirming.")
 
             result = ""
             if passed:
@@ -174,25 +174,22 @@ class IAVoteScraper(Scraper):
                 result = "fail"
 
             vote = VoteEvent(chamber=chamber,
-                    start_date=date,
-                    motion_text=re.sub('\xad', '-', motion),
-                    result=result,
-                    classification = 'passage',
-                    legislative_session=session, 
-                    bill=bill_id,
-                    bill_chamber=bill_chamber
-                    )
-            
-            yes_count = votes['yes_count'] or 0
-            no_count = votes['no_count'] or 0
-            other_count = votes['other_count'] or 0
-            skip_count = votes['skip_count'] or 0
-            
-            vote.set_count('yes', yes_count)
-            vote.set_count('no', no_count)
-            vote.set_count('other', other_count)
-            vote.set_count('absent', skip_count)
-            
+                             start_date=date,
+                             motion_text=re.sub('\xad', '-', motion),
+                             result=result,
+                             classification='passage',
+                             legislative_session=session,
+                             bill=bill_id,
+                             bill_chamber=bill_chamber
+                             )
+
+            # add votes and counts
+            for vtype in ('yes', 'no', 'absent', 'abstain'):
+                vcount = votes['{}_count'.format(vtype)] or 0
+                vote.set_count(vtype, vcount)
+                for voter in votes['{}_votes'.format(vtype)]:
+                    vote.vote(vtype, voter)
+
             vote.add_source(url)
             yield vote
 
@@ -205,8 +202,8 @@ class IAVoteScraper(Scraper):
             # Senate journal.
             ('Yeas', 'yes'),
             ('Nays', 'no'),
-            ('Absent', 'other'),
-            ('Present', 'skip'),
+            ('Absent', 'absent'),
+            ('Present', 'abstain'),
             ('Amendment', DONE),
             ('Resolution', DONE),
             ('The senate joint resolution', DONE),
@@ -216,7 +213,7 @@ class IAVoteScraper(Scraper):
             ('The ayes were', 'yes'),
             ('The yeas were', 'yes'),
             ('The nays were', 'no'),
-            ('Absent or not voting', 'other'),
+            ('Absent or not voting', 'absent'),
             ('The bill', DONE),
             ('The committee', DONE),
             ('The resolution', DONE),
@@ -226,7 +223,7 @@ class IAVoteScraper(Scraper):
             ('Under the', DONE)
         ]
 
-        passage_strings = ["passed","adopted","prevailed"]
+        passage_strings = ["passed", "adopted", "prevailed"]
 
         def is_boundary(text, patterns={}):
             for blurb, key in boundaries:
@@ -254,8 +251,7 @@ class IAVoteScraper(Scraper):
                     votecount = 0
             else:
                 votecount = int(m.group())
-            if key != 'skip':
-                counts['%s_count' % key] = votecount
+            counts['%s_count' % key] = votecount
 
             # Get the voter names.
             while True:
