@@ -1,22 +1,25 @@
-import re
 import os
+import re
+import pytz
 import operator
 import itertools
 
 from lxml import etree, html
-import pytz
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.scrape.base import ScrapeError
 
-from billy.core import settings
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
 from .models import CABill
 from .actions import CACategorizer
 
-SPONSOR_TYPES = {'LEAD_AUTHOR': 'primary',
-                 'COAUTHOR': 'cosponsor',
-                 'PRINCIPAL_COAUTHOR': 'primary'}
+SPONSOR_TYPES = {'LEAD_AUTHOR': 'author',
+                 'COAUTHOR': 'coauthor',
+                 'PRINCIPAL_COAUTHOR': 'principal coauthor'}
+
+MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
 
 def clean_title(s):
@@ -29,10 +32,10 @@ def clean_title(s):
     s = s.replace(u'\xc3\xa1', u'\u00E1')
     s = s.replace(u'\xe2\u20ac\u201c', u'\u2013')
 
-    s = re.sub(ur'[\u2018\u2019]', "'", s)
-    s = re.sub(ur'[\u201C\u201D]', '"', s)
-    s = re.sub(u'\u00e2\u20ac\u2122', u"'", s)
-    s = re.sub(ur'\xe2\u20ac\u02dc', "'", s)
+    s = re.sub(r'[\u2018\u2019]', "'", s)
+    s = re.sub(r'[\u201C\u201D]', '"', s)
+    s = re.sub('\u00e2\u20ac\u2122', "'", s)
+    s = re.sub(r'\xe2\u20ac\u02dc', "'", s)
     return s
 
 
@@ -243,54 +246,46 @@ def get_committee_name_regex():
     _committee_abbrs = itertools.chain.from_iterable(_committee_abbrs)
     _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
 
-    _committee_abbr_regex = ['%s' % '[\s,]*'.join(abbr.replace(',', '')
-        .split(' ')) for abbr in _committee_abbrs]
+    _committee_abbr_regex = [
+        '%s' % '[\s,]*'.join(abbr.replace(',', '').split(' '))
+        for abbr in _committee_abbrs
+    ]
     _committee_abbr_regex = re.compile('(%s)' % '|'.join(_committee_abbr_regex))
 
     return _committee_abbr_regex
 
 
-class CABillScraper(BillScraper):
-    jurisdiction = 'ca'
-
+class CABillScraper(Scraper):
     categorizer = CACategorizer()
 
     _tz = pytz.timezone('US/Pacific')
 
-    def __init__(self, metadata, host=None, user=None, pw=None,
-                 db='capublic', **kwargs):
-        super(CABillScraper, self).__init__(metadata, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        if host is None:
-            host = os.environ.get('MYSQL_HOST',
-                                  getattr(settings, 'MYSQL_HOST', 'localhost'))
-
-        if user is None:
-            user = os.environ.get('MYSQL_USER',
-                                  getattr(settings, 'MYSQL_USER', 'root'))
-        if pw is None:
-            pw = os.environ.get('MYSQL_PASSWORD',
-                                getattr(settings, 'MYSQL_PASSWORD', ''))
+        host = kwargs.pop('host', MYSQL_HOST)
+        user = kwargs.pop('user', MYSQL_USER)
+        pw = kwargs.pop('pw', MYSQL_PASSWORD)
 
         if (user is not None) and (pw is not None):
             conn_str = 'mysql://%s:%s@' % (user, pw)
         else:
             conn_str = 'mysql://'
         conn_str = '%s%s/%s?charset=utf8' % (
-            conn_str, host, db)
+            conn_str, host, kwargs.pop('db', 'capublic'))
         self.engine = create_engine(conn_str)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
     def committee_code_to_name(self, code,
-        committee_code_to_name=get_committee_code_data()):
+                               committee_code_to_name=get_committee_code_data()):
         '''Need to map committee codes to names.
         '''
         return committee_code_to_name[code]
 
     def committee_abbr_to_name(self, chamber, abbr,
-            committee_abbr_to_name=get_committee_abbr_data(),
-            slugify=slugify):
+                               committee_abbr_to_name=get_committee_abbr_data(),
+                               slugify=slugify):
         abbr = slugify(abbr).lower()
         try:
             return committee_abbr_to_name[chamber][slugify(abbr)]
@@ -301,8 +296,11 @@ class CABillScraper(BillScraper):
                 raise KeyError
             return committee_abbr_to_name[other_chamber][slugify(abbr)]
 
-    def scrape(self, chamber, session):
-        self.validate_session(session)
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
         bill_types = {
             'lower': {
@@ -311,21 +309,21 @@ class CABillScraper(BillScraper):
                 'ACR': 'concurrent resolution',
                 'AJR': 'joint resolution',
                 'HR': 'resolution',
-                },
+            },
             'upper': {
                 'SB': 'bill',
                 'SCA': 'constitutional amendment',
                 'SCR': 'concurrent resolution',
                 'SR': 'resolution',
-                }
             }
+        }
 
-        for abbr, type_ in bill_types[chamber].items():
-            self.scrape_bill_type(chamber, session, type_, abbr)
+        for chamber in chambers:
+            for abbr, type_ in bill_types[chamber].items():
+                yield from self.scrape_bill_type(chamber, session, type_, abbr)
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr,
-            committee_abbr_regex=get_committee_name_regex()):
-
+                         committee_abbr_regex=get_committee_name_regex()):
         if chamber == 'upper':
             chamber_name = 'SENATE'
         else:
@@ -342,7 +340,7 @@ class CABillScraper(BillScraper):
 
             bill_id = bill.short_bill_id
 
-            fsbill = Bill(bill_session, chamber, bill_id, '')
+            fsbill = Bill(bill_id, session, title='', chamber=chamber)
 
             # # Construct session for web query, going from '20092010' to '0910'
             # source_session = session[2:4] + session[6:8]
@@ -356,7 +354,7 @@ class CABillScraper(BillScraper):
                           'billNavClient.xhtml?bill_id=%s') % bill.bill_id
 
             fsbill.add_source(source_url)
-            fsbill.add_version(bill_id, source_url, 'text/html')
+            fsbill.add_version_link(bill_id, source_url, media_type='text/html')
 
             title = ''
             type_ = ['bill']
@@ -401,14 +399,16 @@ class CABillScraper(BillScraper):
 
                 if version.appropriation == 'Yes':
                     type_.append('appropriation')
+
+                tags = []
                 if version.fiscal_committee == 'Yes':
-                    type_.append('fiscal committee')
+                    tags.append('fiscal committee')
                 if version.local_program == 'Yes':
-                    type_.append('local program')
+                    tags.append('local program')
                 if version.urgency == 'Yes':
-                    type_.append('urgency')
+                    tags.append('urgency')
                 if version.taxlevy == 'Yes':
-                    type_.append('tax levy')
+                    tags.append('tax levy')
 
                 if version.subject:
                     subject = clean_title(version.subject)
@@ -417,22 +417,29 @@ class CABillScraper(BillScraper):
                 self.warning("Couldn't find title for %s, skipping" % bill_id)
                 continue
 
-            fsbill['title'] = title
-            fsbill['summary'] = summary
-            fsbill['type'] = type_
-            fsbill['subjects'] = filter(None, [subject])
-            fsbill['impact_clause'] = impact_clause
+            fsbill.title = title
+            if summary:
+                fsbill.add_abstract(summary, note='summary')
+            fsbill.classification = type_
+            fsbill.subject = [subject] if subject else []
+            fsbill.extras['impact_clause'] = impact_clause
+            fsbill.extras['tags'] = tags
 
             # We don't want the current title in alternate_titles
             all_titles.remove(title)
 
-            fsbill['alternate_titles'] = list(all_titles)
+            for title in all_titles:
+                fsbill.add_title(title)
 
             for author in version.authors:
                 if author.house == chamber_name:
-                    fsbill.add_sponsor(SPONSOR_TYPES[author.contribution],
-                                       author.name,
-                                       official_type=author.contribution)
+                    fsbill.add_sponsorship(
+                        author.name,
+                        classification=SPONSOR_TYPES[author.contribution],
+                        primary=author.primary_author_flg == 'Y',
+                        entity_type='person',
+                    )
+                    fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
             for action in bill.actions:
@@ -493,7 +500,7 @@ class CABillScraper(BillScraper):
                         code = code.group()
                         kwargs['actor_info'] = {'committee_code': code}
 
-                    assert len(committees) == len(matched_abbrs)
+                    assert len(list(committees)) == len(matched_abbrs)
                     for committee, abbr in zip(committees, matched_abbrs):
                         act_str = act_str.replace('Coms. on ', '')
                         act_str = act_str.replace('Com. on ' + abbr, committee)
@@ -527,7 +534,13 @@ class CABillScraper(BillScraper):
                 date = date.date()
                 if (actor, act_str, date) in seen_actions:
                     continue
-                fsbill.add_action(actor, act_str, date, **kwargs)
+
+                kwargs.update(self.categorizer.categorize(act_str))
+
+                action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor,
+                                           classification=kwargs['classification'])
+                for committee in kwargs.get('committees', []):
+                    action.add_related_entity(committee, entity_type='organization')
                 seen_actions.add((actor, act_str, date))
 
             for vote in bill.votes:
@@ -538,14 +551,12 @@ class CABillScraper(BillScraper):
 
                 if not vote.location:
                     continue
-                    
+
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
-                    vote_chamber = 'lower'
                     vote_location = ' '.join(full_loc.split(' ')[1:])
                 elif first_part.startswith('sen'):
-                    vote_chamber = 'upper'
                     vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
@@ -583,42 +594,52 @@ class CABillScraper(BillScraper):
                     self.warning("Got blank motion on vote for %s" % bill_id)
                     continue
 
-                fsvote = Vote(vote_chamber,
-                              self._tz.localize(vote.vote_date_time),
-                              motion,
-                              result,
-                              int(vote.ayes),
-                              int(vote.noes),
-                              int(vote.abstain),
-                              threshold=vote.threshold,
-                              type_=vtype)
+                org = (
+                    {'name': vote_location, 'classification': 'committee'}
+                    if vote_location != 'Floor'
+                    else None
+                )
 
-                if vote_location != 'Floor':
-                    fsvote['committee'] = vote_location
+                fsvote = VoteEvent(
+                    motion_text=motion,
+                    start_date=self._tz.localize(vote.vote_date_time),
+                    result='pass' if result else 'fail',
+                    classification=vtype,
+                    organization=org,
+                    bill=fsbill,
+                )
+                fsvote.extras = {'threshold': vote.threshold}
 
+                source_url = (
+                    'http://leginfo.legislature.ca.gov/faces'
+                    '/billVotesClient.xhtml?bill_id={}'
+                ).format(fsbill.identifier)
+                fsvote.add_source(source_url)
+
+                rc = {'yes': [], 'no': [], 'other': []}
                 for record in vote.votes:
                     if record.vote_code == 'AYE':
-                        fsvote.yes(record.legislator_name)
+                        rc['yes'].append(record.legislator_name)
                     elif record.vote_code.startswith('NO'):
-                        fsvote.no(record.legislator_name)
+                        rc['no'].append(record.legislator_name)
                     else:
-                        fsvote.other(record.legislator_name)
+                        rc['other'].append(record.legislator_name)
 
-                for s in ('yes', 'no', 'other'):
-                    # Kill dupe votes.
-                    key = s + '_votes'
-                    fsvote[key] = list(set(fsvote[key]))
+                # Handle duplicate votes
+                for key in rc.keys():
+                    rc[key] = list(set(rc[key]))
 
-                # In a small percentage of bills, the integer vote counts
-                # are inaccurate, so let's ignore them.
-                for k in ('yes', 'no', 'other'):
-                    fsvote[k + '_count'] = len(fsvote[k + '_votes'])
+                for key, voters in rc.items():
+                    for voter in voters:
+                        fsvote.vote(key, voter)
+                    # Set counts by summed votes for accuracy
+                    fsvote.set_count(key, len(voters))
 
-                fsbill.add_vote(fsvote)
+                yield fsvote
 
-            self.save_bill(fsbill)
+            yield fsbill
             self.session.expire_all()
 
+
 def etree_text_content(el):
-    el = html.fromstring(etree.tostring(el))
-    return el.text_content()
+    return html.fromstring(etree.tostring(el)).text_content()

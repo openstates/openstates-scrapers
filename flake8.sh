@@ -5,10 +5,12 @@ python3 -m flake8 \
     openstates/al \
     openstates/ar \
     openstates/az \
+    openstates/ca \
     openstates/co \
     openstates/ct \
     openstates/dc \
     openstates/de \
+    openstates/ct \
     openstates/fl \
     openstates/ga \
     openstates/hi \
