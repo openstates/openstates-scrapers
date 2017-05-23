@@ -7,3 +7,10 @@ spatula
 
 # dev
 ipdb
+
+#CT
+chardet
+unicodecsv
+
+# GA
+suds-py3

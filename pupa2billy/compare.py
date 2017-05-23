@@ -37,6 +37,8 @@ class Comparator:
                 for v in itertools.chain(v1, v2):
                     v['type'] = sorted([t for t in v['type'] if t != 'other'])
                 for i, (a1, a2) in enumerate(zip(v1, v2)):
+                    a1.pop('date')
+                    a2.pop('date')
                     if a1 != a2:
                         print('action', i, 'differ', a1, '!=', a2)
 
@@ -102,7 +104,7 @@ class VoteComparator(Comparator):
                     blobs.append(v)
         all_json = defaultdict(list)
         for d in blobs:
-            key = (fix_bill_id(d['bill_id']), d['motion'])
+            key = (fix_bill_id(d['bill_id']), d['motion'].strip())
             all_json[key].append(d)
         return all_json
 

@@ -1,14 +1,11 @@
 import re
-import lxml.html
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
+
+from pupa.scrape import Scraper, Organization
+
 from openstates.utils import LXMLMixin
 
 
-class NECommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'ne'
-    latest_only = True
-
+class NECommitteeScraper(Scraper, LXMLMixin):
     def _scrape_standing_committees(self):
         """Scrapes the Standing Committees page of the Nebraska state
         legislature."""
@@ -34,7 +31,9 @@ class NECommitteeScraper(CommitteeScraper, LXMLMixin):
             for x in range(len(name)):
                 committee_name += name[x] + ' '
             committee_name = committee_name[0: -1]
-            committee = Committee('upper', committee_name)
+
+            org = Organization(name=committee_name, chamber='legislature',
+                               classification='committee')
 
             members = self.get_nodes(
                 committee_page,
@@ -49,12 +48,12 @@ class NECommitteeScraper(CommitteeScraper, LXMLMixin):
                     member_role = 'Chairperson'
                 else:
                     member_role = 'member'
-                committee.add_member(member_name, member_role)
+                org.add_member(member_name, member_role)
 
-            committee.add_source(main_url)
-            committee.add_source(committee_page_url)
+            org.add_source(main_url)
+            org.add_source(committee_page_url)
 
-            self.save_committee(committee)
+            yield org
 
     def _scrape_select_special_committees(self):
         """Scrapes the Select and Special Committees page of the
@@ -76,8 +75,9 @@ class NECommitteeScraper(CommitteeScraper, LXMLMixin):
                     committee_node,
                     './/h2[@class="panel-title"]/a/text()[normalize-space()]')
 
-            committee = Committee('upper', committee_name)
-            committee.add_source(main_url)
+            org = Organization(name=committee_name, chamber='legislature',
+                               classification='committee')
+            org.add_source(main_url)
 
             members = self.get_nodes(
                 committee_node,
@@ -91,14 +91,14 @@ class NECommitteeScraper(CommitteeScraper, LXMLMixin):
                     member_role = 'Chairperson'
                 else:
                     member_role = 'member'
-                committee.add_member(member_name, member_role)
+                org.add_member(member_name, member_role)
 
-            if not committee['members']:
+            if not org._related:
                 self.warning('No members found in {} committee.'.format(
-                    committee['committee']))
+                    org.name))
             else:
-                self.save_committee(committee)
+                yield org
 
-    def scrape(self, term, chambers):
-        self._scrape_standing_committees()
-        self._scrape_select_special_committees()
+    def scrape(self):
+        yield from self._scrape_standing_committees()
+        yield from self._scrape_select_special_committees()

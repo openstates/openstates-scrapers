@@ -32,19 +32,19 @@ metadata = {
         '2011': {'display_name': '2011 Regular Session',
                  'years': [2011, 2012],
                  '_scraped_name': '2011 Regular Session',
-                },
+                 },
         '2013': {'display_name': '2013 Regular Session',
                  'years': [2013, 2014],
                  '_scraped_name': '2013 Regular Session',
-                },
+                 },
         '2015': {'display_name': '2015 Regular Session',
                  'years': [2015],
                  '_scraped_name': '2015 Regular Session',
-                },
+                 },
         '2017': {'display_name': '2017 Regular Session',
                  'years': [2017],
                  '_scraped_name': '2017 Regular Session',
-                },
+                 },
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': [
@@ -60,13 +60,3 @@ metadata = {
         '1999 Regular Session',
         '1999 Special     Session']
 }
-
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
-        "//td[@id='cont']/ul/li/a/text()")
-
-
-def extract_text(doc, data):
-    return text_after_line_numbers(pdfdata_to_text(data))

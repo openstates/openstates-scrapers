@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from openstates.utils import url_xpath
+
 from .people import VaPersonScraper
 from .bills import VaBillScraper
 
@@ -172,3 +174,9 @@ class Virginia(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def session_list():
+        sessions = url_xpath(
+            'http://lis.virginia.gov/',
+            "//div[@id='sLink']//select/option/text()")
+        return [s.strip() for s in sessions if 'Session' in s]
