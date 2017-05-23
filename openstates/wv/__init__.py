@@ -66,7 +66,7 @@ class WestVirginia(Jurisdiction):
             "_scraped_name": "2017",
             "classification": "primary",
             "identifier": "2017",
-            "name": "2017 Regular Session"
+            "name": "2017 Regular Session",
         }
     ]
     ignored_scraped_sessions = [

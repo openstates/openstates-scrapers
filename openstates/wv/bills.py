@@ -2,8 +2,7 @@ import os
 import re
 import datetime
 import collections
-from urllib.parse import unquote_plus, parse_qsl
-from urllib import parse
+from urllib.parse import unquote_plus, parse_qsl, urlparse
 
 import lxml.html
 
@@ -20,7 +19,7 @@ class _Url(object):
     and ordering of parameters in query strings.'''
 
     def __init__(self, url):
-        parts = parse(url.lower())
+        parts = urlparse(url.lower())
         _query = frozenset(parse_qsl(parts.query))
         _path = unquote_plus(parts.path)
         parts = parts._replace(query=_query, path=_path)
@@ -35,6 +34,11 @@ class _Url(object):
 
 class WVBillScraper(Scraper):
     categorizer = Categorizer()
+
+    _special_names = {
+        '20161S': '1X',
+        '2017': 'rs'
+    }
 
     bill_types = {'B': 'bill',
                   'R': 'resolution',
@@ -56,11 +60,11 @@ class WVBillScraper(Scraper):
             orig = 's'
 
         # scrape bills
-        if (self.metadata['session_details'][session]['type'] == 'special'):
+        if ('special' in self.jurisdiction.legislative_sessions[-1]['name'].lower()):
             url = ("http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
                    "year=%s&sessiontype=%s&btype=bill&orig=%s" % (
-                       self.metadata['session_details'][session]['_scraped_name'],
-                       self.metadata['session_details'][session]['_special_name'],
+                       self.jurisdiction.legislative_sessions[-1]['_scraped_name'],
+                       self._special_names[session],
                        orig))
         else:
             url = ("http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
@@ -79,15 +83,15 @@ class WVBillScraper(Scraper):
                                         link.attrib['href'])
 
         # scrape resolutions
-        if (self.metadata['session_details'][session]['type'] == 'special'):
+        if ('special' in self.jurisdiction.legislative_sessions[-1]['name'].lower()):
             res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
                        "&sessiontype=%s&btype=res" % (
-                           self.metadata['session_details'][session]['_scraped_name'],
-                           self.metadata['session_details'][session]['_special_name']))
+                           self.jurisdiction.legislative_sessions[-1]['_scraped_name'],
+                           self._special_names[session]))
         else:
             res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
                        "&sessiontype=rs&btype=res" % (
-                           self.metadata['session_details'][session]['_scraped_name']))
+                           self.jurisdiction.legislative_sessions[-1]['_scraped_name']))
 
         doc = lxml.html.fromstring(self.get(res_url).text)
         doc.make_links_absolute(res_url)
@@ -226,7 +230,7 @@ class WVBillScraper(Scraper):
         votes = collections.defaultdict(list)
 
         for idx, line in enumerate(lines):
-            line = line.rstrip()
+            line = line.rstrip().decode('utf-8')
             match = re.search(r'(\d+)/(\d+)/(\d{4,4})$', line)
             if match:
                 date = datetime.datetime.strptime(match.group(0), "%m/%d/%Y")
@@ -286,7 +290,7 @@ class WVBillScraper(Scraper):
 
         vote = Vote(chamber='lower',
                     start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=motion,
+                    motion_text=str(motion),
                     result='pass' if passed else 'fail',
                     classification='passage',
                     bill=bill)
@@ -299,10 +303,6 @@ class WVBillScraper(Scraper):
             for value in values:
                 vote.vote(key, value)
 
-        assert len(vote.counts['yes']) == yes_count
-        assert len(vote.counts['no']) == no_count
-        assert len(vote.counts['other']) == other_count
-
         yield vote
 
     def scrape_senate_vote(self, bill, url, date):
@@ -312,8 +312,6 @@ class WVBillScraper(Scraper):
             self.warning("missing vote file %s" % url)
             return
 
-        vote = Vote('upper', date, 'Passage', passed=None,
-                    yes_count=0, no_count=0, other_count=0)
         vote = Vote(
             chamber='upper',
             start_date=date.strftime("%Y-%m-%d"),
@@ -325,7 +323,7 @@ class WVBillScraper(Scraper):
         )
         vote.add_source(url)
 
-        text = convert_pdf(filename, 'text')
+        text = convert_pdf(filename, 'text').decode('utf-8')
         os.remove(filename)
 
         if re.search('Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
@@ -399,9 +397,9 @@ class WVBillScraper(Scraper):
         # updating result with actual value
         vote.result = 'pass' if yes_count > (no_count + other_count) else 'fail'
 
-        assert len(vote.counts['yes']) == int(counts['Yea'])
-        assert len(vote.counts['no']) == int(counts['Nay'])
-        assert len(vote.counts['other']) == int(counts['Absent'])
+        assert yes_count == int(counts['Yea'])
+        assert no_count == int(counts['Nay'])
+        assert other_count == int(counts['Absent'])
 
         yield vote
 
