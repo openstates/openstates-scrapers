@@ -53,11 +53,9 @@ class IABillScraper(Scraper):
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 
-
     def scrape_chamber(self, chamber, session):
-
-        bill_offset = "HF697"  # Try both. We need a good bill page to scrape
-        bill_offset = "HF27"   # from. Check for "HF " + bill_offset
+        # We need a good bill page to scrape from. Check for "HF " + bill_offset
+        bill_offset = "HF27"
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
@@ -92,6 +90,7 @@ class IABillScraper(Scraper):
 
         try:
             page = lxml.html.fromstring(self.get(hist_url).text)
+            page.make_links_absolute("https://www.legis.iowa.gov")
         except:
             self.warning("URL: %s gives us a 500 error. Aborting." % url)
             return
