@@ -290,7 +290,7 @@ class WVBillScraper(Scraper):
 
         vote = Vote(chamber='lower',
                     start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=str(motion),
+                    motion_text=motion.decode('utf-8'),
                     result='pass' if passed else 'fail',
                     classification='passage',
                     bill=bill)
