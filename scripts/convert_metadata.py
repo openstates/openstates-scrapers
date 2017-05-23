@@ -65,7 +65,7 @@ class {classname}(Jurisdiction):
         legislature_name = "{legislature_name}"
         lower_chamber_name = "{lower_chamber_name}"
         lower_seats = {lower_seats}
-        lower_title = "{lower_title}"
+        lower_title = "{upper_title}"
         upper_chamber_name = "{upper_chamber_name}"
         upper_seats = {upper_seats}
         upper_title = "{upper_title}"
@@ -94,15 +94,18 @@ class {classname}(Jurisdiction):
     for k, v in sorted(metadata['session_details'].items(), reverse=False):
         s = {'identifier': k,
              'name': v['display_name'],
-             '_scraped_name': v['_scraped_name'],
              }
         if v.get('type'):
             s['classification'] = v['type']
+        if v.get('_scraped_name'):
+            s['_scraped_name'] = v['_scraped_name']
         else:
             print(
                 'Warning: Missing classification on session {}'.format(k),
                 file=sys.stderr,
             )
+        if v.get('_scraped_name'):
+            s['_scraped_name'] = v['_scraped_name']
         if v.get('start_date'):
             s['start_date'] = v.get('start_date')
         if v.get('end_date'):
@@ -110,7 +113,7 @@ class {classname}(Jurisdiction):
         sessions.append(s)
 
     sessions = indent_tail(format_json(sessions), 4)
-    ignored = indent_tail(format_json(metadata['_ignored_scraped_sessions']), 4)
+    ignored = indent_tail(format_json(metadata.get('_ignored_scraped_sessions', [])), 4)
 
     data = {
         'abbr': metadata['abbreviation'],

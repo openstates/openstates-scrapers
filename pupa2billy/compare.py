@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import re
 import sys
 import json
 import glob
@@ -36,6 +37,8 @@ class Comparator:
                 for v in itertools.chain(v1, v2):
                     v['type'] = sorted([t for t in v['type'] if t != 'other'])
                 for i, (a1, a2) in enumerate(zip(v1, v2)):
+                    a1.pop('date')
+                    a2.pop('date')
                     if a1 != a2:
                         print('action', i, 'differ', a1, '!=', a2)
 
@@ -79,6 +82,12 @@ class Comparator:
         self.summary()
 
 
+def fix_bill_id(bill_id):
+    bill_id = bill_id.replace('.', '')
+    _bill_id_re = re.compile(r'([A-Z]*)\s*0*([-\d]+)')
+    return _bill_id_re.sub(r'\1 \2', bill_id, 1).strip()
+
+
 class VoteComparator(Comparator):
     def load_json(self, dirname):
         """ dirname => {key: jsonobj} """
@@ -91,11 +100,11 @@ class VoteComparator(Comparator):
             blobs = []
             for bill in bills:
                 for v in bill.get('votes'):
-                    v['bill_id'] = bill['bill_id']
+                    v['bill_id'] = fix_bill_id(bill['bill_id'])
                     blobs.append(v)
         all_json = defaultdict(list)
         for d in blobs:
-            key = (d['bill_id'], d['motion'])
+            key = (fix_bill_id(d['bill_id']), d['motion'].strip())
             all_json[key].append(d)
         return all_json
 

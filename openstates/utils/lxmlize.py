@@ -19,7 +19,7 @@ class LXMLMixin(object):
             Element: Document node representing the page.
         """
         try:
-            # This class is always mixed into subclasses of `billy.Scraper`,
+            # This class is always mixed into subclasses of `Scraper`,
             # which have a `get` method defined.
             response = self.get(url)
         except requests.exceptions.SSLError:

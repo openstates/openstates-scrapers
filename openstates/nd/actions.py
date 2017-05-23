@@ -1,20 +1,20 @@
-from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 # These are regex patterns that map to action categories.
 _categorizer_rules = (
-    Rule(r'Amendment proposed on floor', 'amendment:introduced'),
-    Rule(r'Amendment failed', 'amendment:failed'),
+    Rule(r'Amendment proposed on floor', 'amendment-introduction'),
+    Rule(r'Amendment failed', 'amendment-failure'),
     Rule(r'Amendment adopted, placed on calendar', ''),
-    Rule(r'^Filed with ', 'bill:introduced'),
-    Rule(r'^Introduced', 'bill:introduced'),
-    Rule(r'^Second reading', 'bill:reading:2'),
-    Rule(r'passed as amended', 'bill:passed'),
-    Rule(r'passed', 'bill:passed'),
-    Rule(r'Sent to Governor', 'governor:received'),
-    Rule(r'Reported back', 'committee:passed'),
-    Rule(r'Reported back.*do pass', 'committee:passed:favorable'),
-    Rule(r'Reported back.*do not pass', 'committee:passed:unfavorable'),
-    Rule(r'^Signed by Governor', 'governor:signed'),
+    Rule(r'^Filed with ', 'introduction'),
+    Rule(r'^Introduced', 'introduction'),
+    Rule(r'^Second reading', 'reading-2'),
+    Rule(r'passed as amended', 'passage'),
+    Rule(r'passed', 'passage'),
+    Rule(r'Sent to Governor', 'executive-receipt'),
+    Rule(r'Reported back', 'committee-passage'),
+    Rule(r'Reported back.*do pass', 'committee-passage-favorable'),
+    Rule(r'Reported back.*do not pass', 'committee-passage-unfavorable'),
+    Rule(r'^Signed by Governor', 'executive-signature'),
 )
 
 

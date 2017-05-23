@@ -6,15 +6,13 @@ The workflow is:
  - Inspect the FTP site with regex and determine which files have been updated, if any.
  - For each such file, unzip it & call import.
 '''
-import sys
 import os
 import re
 import glob
 import os.path
-import zipfile
 import subprocess
 import logging
-import urllib
+import urllib.request
 import lxml.html
 from datetime import datetime
 from os.path import join, split
@@ -24,17 +22,10 @@ from collections import namedtuple
 import MySQLdb
 import _mysql_exceptions
 
-from billy.core import settings
 
-
-MYSQL_HOST = getattr(settings, 'MYSQL_HOST', 'localhost')
-MYSQL_HOST = os.environ.get('MYSQL_HOST', MYSQL_HOST)
-
-MYSQL_USER = getattr(settings, 'MYSQL_USER', 'root')
-MYSQL_USER = os.environ.get('MYSQL_USER', MYSQL_USER)
-
-MYSQL_PASSWORD = getattr(settings, 'MYSQL_PASSWORD', '')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', MYSQL_PASSWORD)
+MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
 BASE_URL = 'http://downloads.leginfo.legislature.ca.gov/'
 
@@ -56,9 +47,9 @@ logger = logging.getLogger('billy.ca-update')
 
 def clean_text(s):
     # replace smart quote characters
-    s = re.sub(ur'[\u2018\u2019]', "'", s)
-    s = re.sub(ur'[\u201C\u201D]', '"', s)
-    s = s.replace(u'\xe2\u20ac\u02dc', "'")
+    s = re.sub(r'[\u2018\u2019]', "'", s)
+    s = re.sub(r'[\u201C\u201D]', '"', s)
+    s = s.replace('\xe2\u20ac\u02dc', "'")
     return s
 
 
@@ -67,7 +58,8 @@ def db_drop():
     logger.info('dropping capublic...')
 
     try:
-        connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db='capublic')
+        connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER,
+                                     passwd=MYSQL_PASSWORD, db='capublic')
     except _mysql_exceptions.OperationalError:
         # The database doesn't exist.
         logger.info('...no such database. Bailing.')
@@ -82,9 +74,41 @@ def db_drop():
     logger.info('...done.')
 
 
-
 # ---------------------------------------------------------------------------
 # Functions for updating the data.
+DatRow = namedtuple(
+    'DatRow',
+    [
+        'bill_version_id', 'bill_id', 'version_num',
+        'bill_version_action_date', 'bill_version_action',
+        'request_num', 'subject', 'vote_required',
+        'appropriation', 'fiscal_committee', 'local_program',
+        'substantive_changes', 'urgency', 'taxlevy',
+        'bill_xml', 'active_flg', 'trans_uid', 'trans_update'
+    ]
+)
+
+
+def dat_row_2_tuple(row):
+    '''Convert a row in the bill_version_tbl.dat file into a
+    namedtuple.
+    '''
+    cells = row.split('\t')
+    res = []
+    for cell in cells:
+        if cell.startswith('`') and cell.endswith('`'):
+            res.append(cell[1:-1])
+        elif cell == 'NULL':
+            res.append(None)
+        else:
+            res.append(cell)
+    return DatRow(*res)
+
+
+def encode_or_none(value):
+    return value.encode() if value else None
+
+
 def load_bill_versions(connection):
     '''
     Given a data folder, read its BILL_VERSION_TBL.dat file in python,
@@ -92,28 +116,6 @@ def load_bill_versions(connection):
     a time. This method is slower that letting mysql do the import,
     but doesn't fail mysteriously.
     '''
-    DatRow = namedtuple('DatRow', [
-                      'bill_version_id', 'bill_id', 'version_num',
-                      'bill_version_action_date', 'bill_version_action',
-                      'request_num', 'subject', 'vote_required',
-                      'appropriation', 'fiscal_committee', 'local_program',
-                      'substantive_changes', 'urgency', 'taxlevy',
-                      'bill_xml', 'active_flg', 'trans_uid', 'trans_update'])
-
-    def dat_row_2_tuple(row):
-        '''Convert a row in the bill_version_tbl.dat file into a
-        namedtuple.
-        '''
-        cells = row.split('\t')
-        res = []
-        for cell in cells:
-            if cell.startswith('`') and cell.endswith('`'):
-                res.append(cell[1:-1])
-            elif cell == 'NULL':
-                res.append(None)
-            else:
-                res.append(cell)
-        return DatRow(*res)
 
     sql = '''
         REPLACE INTO capublic.bill_version_tbl (
@@ -145,13 +147,13 @@ def load_bill_versions(connection):
         for row in f:
             # The files are supposedly already in utf-8, but with
             # copious bogus characters.
-            row = clean_text(row.decode('utf-8')).encode('utf-8')
+            row = clean_text(row)
             row = dat_row_2_tuple(row)
             with open(row.bill_xml) as f:
-                text = f.read().decode('utf-8')
-                text = clean_text(text).encode('utf-8')
+                text = f.read()
+                text = clean_text(text)
                 row = row._replace(bill_xml=text)
-                cursor.execute(sql, tuple(row))
+                cursor.execute(sql, [encode_or_none(column) for column in row])
 
     cursor.close()
 
@@ -220,18 +222,18 @@ def delete_session(session_year):
             'bill_tbl',
             'committee_hearing_tbl',
             'daily_file_tbl'
-            ],
+        ],
 
         'bill_version_id': [
             'bill_version_authors_tbl',
             'bill_version_tbl'
-            ],
+        ],
 
         'session_year': [
             'legislator_tbl',
             'location_code_tbl'
-            ]
-        }
+        ]
+    }
 
     logger.info('Deleting all data for session year %s...' % session_year)
 
@@ -287,7 +289,10 @@ def get_contents():
     resp = {}
     # for line in urllib.urlopen(BASE_URL).read().splitlines()[1:]:
     #     print line
-    #     date, filename = re.match('[drwx-]{10}\s+\d\s+\d{3}\s+\d{3}\s+\d+ (\w+\s+\d+\s+\d+:?\d*) (\w+.\w+)', line).groups()
+    #     date, filename = re.match(
+    #         '[drwx-]{10}\s+\d\s+\d{3}\s+\d{3}\s+\d+ (\w+\s+\d+\s+\d+:?\d*) (\w+.\w+)',
+    #         line,
+    #     ).groups()
     #     date = date.replace('  ', ' ')
     #     try:
     #         date = datetime.strptime(date, '%b %d %Y')
@@ -297,9 +302,9 @@ def get_contents():
     #     resp[filename] = date
     # return resp
 
-    html = urllib.urlopen(BASE_URL).read()
+    html = urllib.request.urlopen(BASE_URL).read()
     doc = lxml.html.fromstring(html)
-    #doc.make_links_absolute(BASE_URL)
+    # doc.make_links_absolute(BASE_URL)
     rows = doc.xpath('//table/tr')
     for row in rows[2:]:
         date = row.xpath('string(td[3])').strip()
@@ -309,9 +314,11 @@ def get_contents():
             resp[filename] = date
     return resp
 
+
 def _check_call(*args):
     logging.info('calling ' + ' '.join(args))
     subprocess.check_call(args)
+
 
 def get_zip(filename):
     dirname = filename.replace('.zip', '')
@@ -321,11 +328,11 @@ def get_zip(filename):
     _check_call('rm', '-rf', filename)
     return dirname
 
+
 def get_current_year(contents):
     newest_file = '2000'
     newest_file_date = datetime(2000, 1, 1)
     files_to_get = []
-    dirnames = []
 
     # get file for latest year
     for filename, date in contents.items():
@@ -345,6 +352,7 @@ def get_current_year(contents):
     for file in files_to_get:
         dirname = get_zip(file)
         load(dirname)
+
 
 if __name__ == '__main__':
     db_drop()

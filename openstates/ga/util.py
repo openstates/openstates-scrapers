@@ -1,12 +1,12 @@
 from suds.client import Client
 import logging
 import socket
-import urllib2
+import urllib.error
 import time
 import suds
 
 logging.getLogger('suds').setLevel(logging.WARNING)
-log = logging.getLogger('billy')
+log = logging.getLogger('pupa')
 
 
 url = 'http://webservices.legis.ga.gov/GGAServices/%s/Service.svc?wsdl'
@@ -23,7 +23,6 @@ def get_url(service):
 
 def backoff(function, *args, **kwargs):
     retries = 5
-    nice = 0
 
     def _():
         time.sleep(1)  # Seems like their server can't handle the load.
@@ -32,8 +31,8 @@ def backoff(function, *args, **kwargs):
     for attempt in range(retries):
         try:
             return _()
-        except (socket.timeout, urllib2.URLError, suds.WebFault) as e:
-            if "This Roll Call Vote is not published." in e.message:
+        except (socket.timeout, urllib.error.URLError, suds.WebFault) as e:
+            if "This Roll Call Vote is not published." in str(e):
                 raise ValueError("Roll Call Vote isn't published")
 
             backoff = ((attempt + 1) * 15)
@@ -49,3 +48,12 @@ def backoff(function, *args, **kwargs):
     raise ValueError(
         "The server's not playing nice. We can't keep slamming it."
     )
+
+
+SESSION_SITE_IDS = {
+    '2017_18': 25,
+    '2015_16': 24,
+    '2013_14': 23,
+    '2011_ss': 22,
+    '2011_12': 21,
+}
