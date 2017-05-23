@@ -1,5 +1,4 @@
 import re
-# import name_tools
 
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Organization
@@ -28,9 +27,14 @@ class LACommitteeScraper(Scraper, LXMLMixin):
 
         return role
 
+    def _normalize_member_name(self, member_name):
+        index = member_name.find(',')
+        member_name = member_name[index+2:] + ' ' + member_name[:index]
+        return " ".join(member_name.split())
+
     def _scrape_upper_committee(self, name, url2):
         cat = "Assignments.asp"
-        url3 = "".join((url2, cat))
+        url3 = url2.replace("default.asp", cat)
 
         committee = Organization(name,
                                  chamber="upper",
@@ -71,9 +75,8 @@ class LACommitteeScraper(Scraper, LXMLMixin):
 
         for row in rows:
             member_name = row.xpath('normalize-space(string(./td[1]/a))')
-            member_name = ' '.join(filter(None, name_tools.split(member_name)))
+            member_name = self._normalize_member_name(member_name)
             member_role = row.xpath('normalize-space(string(./td[2]))')
-
             member_role = self._normalize_member_role(member_role)
 
             committee.add_member(member_name, member_role)
@@ -83,12 +86,10 @@ class LACommitteeScraper(Scraper, LXMLMixin):
     def _scrape_lower_standing_committees(self):
         url = 'http://house.louisiana.gov/H_Reps/H_Reps_StandCmtees.aspx'
         page = self.lxmlize(url)
-
-        committee_cells = page.xpath('//table[@id="table11"]/tr/td[@class="auto-style1"]')
+        committee_cells = page.xpath('//div[@class="row1Cmtes clearfix"]/div[@id="links"]')
 
         for committee_cell in committee_cells:
             committee_link = committee_cell.xpath('.//a')[0]
-
             committee_url = committee_link.get('href')
             committee_name = committee_link.xpath('normalize-space(string())').strip()
 
@@ -99,10 +100,11 @@ class LACommitteeScraper(Scraper, LXMLMixin):
         page = self.lxmlize(url)
 
         committee_list = page.xpath('//div[@class="accordion"]')[0]
+
         headers = committee_list.xpath('./h3')
 
         for header in headers:
-            committee_name_text = header.text_content()
+            committee_name_text = header.xpath('string()')
             committee_name = committee_name_text.strip()
             committee_name = self._normalize_committee_name(committee_name)
 
@@ -116,11 +118,9 @@ class LACommitteeScraper(Scraper, LXMLMixin):
                                                 '//tr[@class="linkStyle2"]')
 
             for row in committee_memberlist:
-                temp = row.text_content().split()
-                member_role = temp.pop()
-                if temp[-1].lower() in ['interim', 'vice', 'ex']:
-                    member_role = temp.pop() + ' ' + member_role
-                member_name = " ".join(temp)
+                member_name = row.xpath('normalize-space(string(./th[1]))')
+                member_name = self._normalize_member_name(member_name)
+                member_role = row.xpath('normalize-space(string(./th[2]))')
                 member_role = self._normalize_member_role(member_role)
 
                 committee.add_member(member_name, member_role)
