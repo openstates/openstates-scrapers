@@ -37,10 +37,10 @@ class LAEventScraper(Scraper, LXMLMixin):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
-        title = page.xpath("//a[@id='linkTitle']//text()")
-        date = page.xpath("//span[@id='lDate']/text()")
-        time = page.xpath("//span[@id='lTime']/text()")
-        location = page.xpath("//span[@id='lLocation']/text()")
+        title = page.xpath("//a[@id='linkTitle']//text()")[0]
+        date = page.xpath("//span[@id='lDate']/text()")[0]
+        time = page.xpath("//span[@id='lTime']/text()")[0]
+        location = page.xpath("//span[@id='lLocation']/text()")[0]
 
         substs = {
             "AM": ["A.M.", "a.m."],

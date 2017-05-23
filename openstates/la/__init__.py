@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import LAPersonScraper
 from .committees import LACommitteeScraper
 from .events import LAEventScraper
+from .bills import LABillScraper
 
 
 class Louisiana(Jurisdiction):
@@ -14,6 +15,7 @@ class Louisiana(Jurisdiction):
         "people": LAPersonScraper,
         "committees": LACommitteeScraper,
         'events': LAEventScraper,
+        'bills': LABillScraper,
     }
     parties = [
         {'name': 'Republican'},
