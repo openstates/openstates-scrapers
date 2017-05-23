@@ -4,6 +4,7 @@ from .bills import IABillScraper
 from .votes import IAVoteScraper
 from .events import IAEventScraper
 
+
 class Iowa(Jurisdiction):
     division_id = "ocd-division/country:us/state:ia"
     classification = "government"

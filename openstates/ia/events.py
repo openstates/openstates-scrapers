@@ -5,6 +5,7 @@ import pytz
 
 from pupa.scrape import Scraper, Event
 
+
 class IAEventScraper(Scraper):
     _tz = pytz.timezone("US/Central")
 
@@ -13,11 +14,10 @@ class IAEventScraper(Scraper):
             session = self.latest_session()
 
         if chamber:
-            yield from self.scrape_chamber(chamber,session)
+            yield from self.scrape_chamber(chamber, session)
         else:
-            yield from self.scrape_chamber('upper',session)
-            yield from self.scrape_chamber('lower',session)
-
+            yield from self.scrape_chamber('upper', session)
+            yield from self.scrape_chamber('lower', session)
 
     def scrape_chamber(self, chamber, session):
         today = datetime.date.today()
@@ -41,7 +41,8 @@ class IAEventScraper(Scraper):
 
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):
+        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/"
+                               "tbody/tr[not(contains(@class, 'hidden'))]"):
             comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
 
@@ -81,16 +82,13 @@ class IAEventScraper(Scraper):
                         continue
 
             event = Event(
-                    name = desc,
-                    description = desc, 
-                    start_time = self._tz.localize(when),
-                    timezone = self._tz.zone,
-                    location_name = location)
-                    
+                    name=desc,
+                    description=desc,
+                    start_time=self._tz.localize(when),
+                    timezone=self._tz.zone,
+                    location_name=location)
+
             event.add_source(url)
-            event.add_participant(
-                    comm,
-                    note = 'host', 
-                    type = 'committee')
+            event.add_participant(comm, note='host', type='committee')
 
             yield event

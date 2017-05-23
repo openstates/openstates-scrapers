@@ -12,6 +12,7 @@ python3 -m flake8 \
     openstates/fl \
     openstates/ga \
     openstates/hi \
+    openstates/ia \
     openstates/id \
     openstates/in \
     openstates/ks \

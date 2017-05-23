@@ -1,12 +1,12 @@
 # -*- coding: utf8 -*-
-from datetime import datetime, time, tzinfo, timezone,timedelta
+from datetime import datetime, time, timezone, timedelta
 import re
 import collections
 import lxml.etree
 
-import pdb
 from pupa.utils.generic import convert_pdf
 from pupa.scrape import Scraper, VoteEvent
+
 
 class IAVoteScraper(Scraper):
 
@@ -15,12 +15,12 @@ class IAVoteScraper(Scraper):
             session = self.latest_session()
 
         if chamber:
-            yield from self.scrape_chamber(chamber,session)
+            yield from self.scrape_chamber(chamber, session)
         else:
-            yield from self.scrape_chamber('upper',session)
-            yield from self.scrape_chamber('lower',session)
+            yield from self.scrape_chamber('upper', session)
+            yield from self.scrape_chamber('lower', session)
 
-    def scrape_chamber(self, chamber,session):
+    def scrape_chamber(self, chamber, session):
         # Each PDF index page contains just one year, not a whole session
         # Therefore, we need to iterate over both years in the session
         session_years = [int(year) for year in session.split("-")]
@@ -62,7 +62,6 @@ class IAVoteScraper(Scraper):
                         yield self.scrape_journal(url, chamber, session, date)
                     except ValueError:
                         journal_format = '%m-%d-%Y.pdf'
-                        #journal_format = '%Y%m%d_{}.pdf'
                         try:
                             date = datetime.strptime(filename, journal_format)
                         except:
@@ -113,7 +112,7 @@ class IAVoteScraper(Scraper):
                 end_of_motion_re = r'.*Shall.*\?"?(\s{})?\s*'.format(bill_re)
 
             while not re.match(end_of_motion_re, line, re.IGNORECASE):
-                line += " " + next(lines)#lines.next()
+                line += " " + next(lines)
 
             try:
                 bill_id = re.search(bill_re, line).group(1)
