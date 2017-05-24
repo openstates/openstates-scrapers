@@ -1,7 +1,6 @@
 import re
-
 import lxml.html
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 
 def clean_district(district):
@@ -44,12 +43,16 @@ def clean_district(district):
     return district
 
 
-class MALegislatorScraper(LegislatorScraper):
-    jurisdiction = 'ma'
+class MAPersonScraper(Scraper):
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
+        if not chamber:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+        else:
+            yield from self.scrape_chamber(chamber)
 
+    def scrape_chamber(self, chamber):
         if chamber == 'upper':
             chamber_type = 'Senate'
         else:
@@ -63,9 +66,9 @@ class MALegislatorScraper(LegislatorScraper):
         for member_url in doc.xpath('//td[@class="pictureCol"]/a/@href'):
             if 'VAC_' in member_url:
                 continue
-            self.scrape_member(chamber, term, member_url)
+            yield self.scrape_member(chamber, member_url)
 
-    def scrape_member(self, chamber, term, member_url):
+    def scrape_member(self, chamber, member_url):
         page = self.get(member_url).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(member_url)
@@ -91,55 +94,42 @@ class MALegislatorScraper(LegislatorScraper):
         else:
             party = 'Other'
 
-        leg = Legislator(term, chamber, district, full_name, party=party,
-                         photo_url=photo_url, url=member_url)
+        leg = Person(primary_org=chamber,
+                     district=district,
+                     name=full_name,
+                     party=party,
+                     image=photo_url)
+        leg.add_url(member_url)
         leg.add_source(member_url)
 
+        leg.add_contact_detail(type='email', value=email, note='District Office')
+
         # offices
-
-        # this bool is so we only attach the email to one office
-        # and we make sure to create at least one office
-        email_stored = True
-        if email:
-            email_stored = False
-
         for addr in root.xpath('//address/div[@class="contactGroup"]'):
-            office_name = addr.xpath('../preceding-sibling::h4/text()'
-                                     )[0].strip()
+            office_name = addr.xpath('../preceding-sibling::h4/text()')[0].strip()
+            if 'District' in office_name:
+                note = 'District Office'
+            elif 'State' in office_name:
+                note = 'Capitol office'
+
             address = addr.xpath('a')[0].text_content()
             address = re.sub('\s{2,}', '\n', address)
+            leg.add_contact_detail(type='address', value=address, note=note)
 
-            phone = fax = next = None
+            next = None
             for phonerow in addr.xpath('./div/div'):
                 phonerow = phonerow.text_content().strip()
                 if phonerow == 'Phone:':
-                    next = 'phone'
+                    next = 'voice'
                 elif phonerow == 'Fax:':
                     next = 'fax'
-                elif next == 'phone':
-                    phone = phonerow
+                elif next == 'voice':
+                    leg.add_contact_detail(type='voice', value=phonerow, note=note)
                     next = None
                 elif next == 'fax':
-                    fax = phonerow
+                    leg.add_contact_detail(type='fax', value=phonerow, note=note)
                     next = None
                 else:
                     self.warning('unknown phonerow %s', phonerow)
 
-            # all pieces collected
-            if 'District' in office_name:
-                otype = 'district'
-            elif 'State' in office_name:
-                otype = 'capitol'
-
-            if not email_stored:
-                email_stored = True
-                leg.add_office(otype, office_name, phone=phone, fax=fax,
-                               address=address, email=email)
-            else:
-                leg.add_office(otype, office_name, phone=phone, fax=fax,
-                               address=address)
-
-        if not email_stored:
-            leg.add_office('capitol', 'Capitol Office', email=email)
-
-        self.save_legislator(leg)
+        return leg
