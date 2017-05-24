@@ -61,8 +61,7 @@ class PupaLegislatorScraper(LegislatorScraper):
                 chamber = 'upper'
                 district = post['label']
 
-        district_office = {}
-        capitol_office = {}
+        offices = defaultdict(dict)
         email = ''
         for detail in person['contact_details']:
             # rename voice->phone
@@ -70,10 +69,8 @@ class PupaLegislatorScraper(LegislatorScraper):
                 detail['type'] = 'phone'
             elif detail['type'] == 'email':
                 email = detail['value']
-            if 'district' in detail['note'].lower():
-                district_office[detail['type']] = detail['value']
-            elif 'capitol' in detail['note'].lower():
-                capitol_office[detail['type']] = detail['value']
+
+            offices[detail['note']][detail['type']] = detail['value']
 
         leg = Legislator(term, chamber, district, name,
                          party=party, url=url,
@@ -81,10 +78,9 @@ class PupaLegislatorScraper(LegislatorScraper):
                          email=email
                          )
 
-        if district_office:
-            leg.add_office('district', 'District Office', **district_office)
-        if capitol_office:
-            leg.add_office('capitol', 'Capitol Office', **capitol_office)
+        for note, details in offices.items():
+            otype = 'capitol' if 'capitol' in note.lower() else 'district'
+            leg.add_office(otype, note, **details)
 
         for source in person['sources']:
             leg.add_source(source['url'])

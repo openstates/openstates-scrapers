@@ -1,5 +1,5 @@
+import unicodedata
 from pupa.scrape import Scraper, Person
-
 from .utils import MDBMixin
 
 
@@ -51,6 +51,14 @@ class NJPersonScraper(Scraper, MDBMixin):
             email = None
             if rec["Email"]:
                 email = rec["Email"]
+
+            # Email has been removed from the Access DB, but it's
+            # still AsmLAST@njleg.org and SenLAST@njleg.org - many
+            # reps have these emails on their personal pages even if
+            # they're gone from the DB file
+            if not email:
+                email = self._construct_email(chamber, last_name)
+
             try:
                 photo_url = photos[rec['Roster Key']]
             except KeyError:
@@ -82,3 +90,16 @@ class NJPersonScraper(Scraper, MDBMixin):
                 person.add_contact_detail(type='email', value=email, note='District Office')
 
             yield person
+
+    def _construct_email(self, chamber, last_name):
+        # translate accents to non-accented versions for use in an
+        # email and drop apostrophes and hyphens
+        last_name = ''.join(c for c in
+                            unicodedata.normalize('NFD', str(last_name))
+                            if unicodedata.category(c) != 'Mn')
+        last_name = last_name.replace("'", "").replace("-", "").replace(' ', '')
+
+        if chamber == 'lower':
+            return 'Asm' + last_name + '@njleg.org'
+        else:
+            return 'Sen' + last_name + '@njleg.org'

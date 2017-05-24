@@ -4,8 +4,7 @@ import unicodedata
 from operator import methodcaller
 
 import lxml.html
-
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Scraper, Person
 
 
 def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
@@ -33,15 +32,16 @@ def parse_address(s, split=re.compile(r'[;,]\s{,3}').split):
     return res
 
 
-class CALegislatorScraper(LegislatorScraper):
-
-    jurisdiction = 'ca'
-
+class CAPersonScraper(Scraper):
     urls = {'upper': 'http://senate.ca.gov/senators',
             'lower': 'http://assembly.ca.gov/assemblymembers'}
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
 
+    def scrape_chamber(self, chamber):
         url = self.urls[chamber]
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -54,17 +54,17 @@ class CALegislatorScraper(LegislatorScraper):
             parse = self.parse_senate
 
         for tr in rows:
-            legislator = parse(tr, term, chamber)
-            if legislator is None:
+            person = parse(tr, chamber)
+            if person is None:
                 continue
-            if 'Vacant' in legislator['full_name']:
+            if 'Vacant' in person.name:
                 continue
 
-            legislator.add_source(url)
-            legislator['full_name'] = legislator['full_name'].strip()
-            self.save_legislator(legislator)
+            person.add_source(url)
 
-    def parse_senate(self, div, term, chamber):
+            yield person
+
+    def parse_senate(self, div, chamber):
         name = div.xpath('.//h3/text()')[0]
         if name.endswith(' (R)'):
             party = 'Republican'
@@ -79,35 +79,48 @@ class CALegislatorScraper(LegislatorScraper):
             './/div[contains(@class, "senator-district")]/div/text()'
         )[0].strip().lstrip('0')
         photo_url = div.xpath('.//img/@src')[0]
-        url = div.xpath('.//a/@href')[0]
 
-        leg = Legislator(term, chamber, full_name=name, party=party, district=district,
-                         photo_url=photo_url, url=url)
+        person = Person(
+            name=name,
+            party=party,
+            district=district,
+            primary_org=chamber,
+            image=photo_url,
+        )
+
+        url = div.xpath('.//a/@href')[0]
+        person.add_link(url)
 
         # CA senators have working emails, but they're not putting them on
         # their public pages anymore
         email = self._construct_email(chamber, name)
 
-        for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-capitol-office")]//p'):
-            addr, phone = addr.text_content().split('; ')
-            leg.add_office(
-                'capitol', 'Senate Office',
-                address=addr.strip(), phone=phone.strip(), email=email)
+        person.add_contact_detail(type='email', value=email, note='Senate Office')
 
-        for addr in div.xpath('.//div[contains(@class, "views-field-field-senator-district-office")]//p'):
+        office_path = './/div[contains(@class, "{}")]//p'
+
+        for addr in div.xpath(office_path.format('views-field-field-senator-capitol-office')):
+            note = 'Senate Office'
+            addr, phone = addr.text_content().split('; ')
+            person.add_contact_detail(type='address', value=addr.strip(), note=note)
+            person.add_contact_detail(type='voice', value=phone.strip(), note=note)
+
+        n = 1
+        for addr in div.xpath(office_path.format('views-field-field-senator-district-office')):
+            note = 'District Office #{}'.format(n)
             for addr in addr.text_content().strip().splitlines():
                 try:
                     addr, phone = addr.strip().replace(u'\xa0', ' ').split('; ')
-                    leg.add_office(
-                        'district', 'District Office',
-                        address=addr.strip(), phone=phone.strip())
+                    person.add_contact_detail(type='address', value=addr.strip(), note=note)
+                    person.add_contact_detail(type='voice', value=phone.strip(), note=note)
                 except ValueError:
                     addr = addr.strip().replace(u'\xa0', ' ')
-                    leg.add_office('district', 'District Office', address=addr)
+                    person.add_contact_detail(type='address', value=addr.strip(), note=note)
+            n += 1
 
-        return leg
+        return person
 
-    def parse_assembly(self, tr, term, chamber):
+    def parse_assembly(self, tr, chamber):
         '''
         Given a tr element, get specific data from it.
         '''
@@ -117,35 +130,34 @@ class CALegislatorScraper(LegislatorScraper):
         xpath = 'td[contains(@class, "views-field-field-%s-%s")]%s'
 
         xp = {
-            'url':       [('lname-sort', '/a[not(contains(text(), "edit"))]/@href')],
-            'district':  [('district', '/text()')],
-            'party':     [('party', '/text()')],
-            'full_name': [('office-information', '/a[not(contains(text(), "edit"))]/text()')],
-            'address':   [('office-information', '/h3/following-sibling::text()'),
-                          ('office-information', '/p/text()')]
-            }
+            'url': [('lname-sort', '/a[not(contains(text(), "edit"))]/@href')],
+            'district': [('district', '/text()')],
+            'party': [('party', '/text()')],
+            'name': [('office-information', '/a[not(contains(text(), "edit"))]/text()')],
+            'address': [('office-information', '/h3/following-sibling::text()'),
+                        ('office-information', '/p/text()')],
+        }
 
         titles = {'upper': 'senator', 'lower': 'member'}
 
         funcs = {
-            'full_name': lambda s: re.sub( # "Assembly" is misspelled once
+            'name': lambda s: re.sub(  # "Assembly" is misspelled once
                 r'Contact Assembl?y Member', '', s).strip(),
             'address': parse_address,
         }
 
-        rubberstamp = lambda _: _
         tr_xpath = tr.xpath
         res = collections.defaultdict(list)
         for k, xpath_info in xp.items():
             for vals in xpath_info:
-                f = funcs.get(k, rubberstamp)
+                f = funcs.get(k, lambda _: _)
                 vals = (titles[chamber],) + vals
                 vals = map(f, map(strip, tr_xpath(xpath % vals)))
                 res[k].extend(vals)
 
         # Photo.
         try:
-            res['photo_url'] = tr_xpath('td/p/img/@src')[0]
+            res['image'] = tr_xpath('td/p/img/@src')[0]
         except IndexError:
             pass
 
@@ -153,9 +165,35 @@ class CALegislatorScraper(LegislatorScraper):
         junk = 'Contact Assembly Member '
 
         try:
-            res['full_name'] = res['full_name'].pop().replace(junk, '')
+            res['name'] = res['name'].pop().replace(junk, '')
         except IndexError:
             return
+
+        # Normalize party.
+        for party in res['party'][:]:
+            if party:
+                if party == 'Democrat':
+                    party = 'Democratic'
+                res['party'] = party
+                break
+            else:
+                res['party'] = None
+
+        # strip leading zero
+        res['district'] = str(int(res['district'].pop()))
+
+        person = Person(
+            name=res['name'],
+            district=res.get('district'),
+            party=res.get('party'),
+            image=res.get('image'),
+            primary_org=chamber,
+        )
+
+        # Mariko Yamada also didn't have a url that lxml would parse
+        # as of 3/22/2013.
+        if res['url']:
+            person.add_link(res['url'].pop())
 
         # Addresses.
         addresses = res['address']
@@ -165,9 +203,9 @@ class CALegislatorScraper(LegislatorScraper):
             # Sometimes legislators only have one address, in which
             # case this awful hack is helpful.
             addresses = map(dict, filter(None, [addresses]))
+        addresses = list(addresses)
 
-        for address in addresses[:]:
-
+        for address in addresses:
             # Toss results that don't have required keys.
             if not set(['street', 'city', 'state_zip']) < set(address):
                 if address in addresses:
@@ -184,11 +222,10 @@ class CALegislatorScraper(LegislatorScraper):
 
             # CA reps have working emails, but they're not putting them on
             # their public pages anymore
-            offices[0]['email'] = \
-                  self._construct_email(chamber, res['full_name'])
+            offices[0]['email'] = self._construct_email(chamber, res['name'])
 
-            for office in addresses[1:]:
-                office.update(type='district', name='District Office')
+            for n, office in enumerate(addresses[1:]):
+                office.update(type='district', name='District Office #{}'.format(n+1))
                 offices.append(office)
 
             for office in offices:
@@ -200,48 +237,26 @@ class CALegislatorScraper(LegislatorScraper):
                 if 'email' not in office:
                     office['email'] = None
 
-                del office['street'], office['city'], office['state_zip']
+                note = office['name']
+                person.add_contact_detail(type='address', value=office['address'], note=note)
+                if office['phone']:
+                    person.add_contact_detail(type='voice', value=office['phone'], note=note)
+                if office['email']:
+                    person.add_contact_detail(type='email', value=office['email'], note=note)
 
-        res['offices'] = offices
-        del res['address']
+        return person
 
-        # Normalize party.
-        for party in res['party'][:]:
-            if party:
-                if party == 'Democrat':
-                    party = 'Democratic'
-                res['party'] = party
-                break
-            else:
-                res['party'] = None
-
-        # Mariko Yamada also didn't have a url that lxml would parse
-        # as of 3/22/2013.
-        if res['url']:
-            res['url'] = res['url'].pop()
-        else:
-            del res['url']
-
-        # strip leading zero
-        res['district'] = str(int(res['district'].pop()))
-
-        # Add a source for the url.
-        leg = Legislator(term, chamber, **res)
-        leg.update(**res)
-
-        return leg
-
-    def _construct_email(self, chamber, full_name):
-        last_name = re.split(r'\s+', full_name)[-1].lower()
+    def _construct_email(self, chamber, name):
+        last_name = re.split(r'\s+', name)[-1].lower()
 
         # translate accents to non-accented versions for use in an
         # email and drop apostrophes
         last_name = ''.join(c for c in
-                            unicodedata.normalize('NFD', unicode(last_name))
+                            unicodedata.normalize('NFD', last_name)
                             if unicodedata.category(c) != 'Mn')
         last_name = last_name.replace("'", "")
 
         if chamber == 'lower':
-            return 'assemblymember.' +  last_name + '@assembly.ca.gov'
+            return 'assemblymember.' + last_name + '@assembly.ca.gov'
         else:
-            return 'senator.' +  last_name + '@senator.ca.gov'
+            return 'senator.' + last_name + '@sen.ca.gov'
