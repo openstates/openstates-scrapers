@@ -4,14 +4,6 @@ from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-def xpath_one(el, expr):
-    ret = el.xpath(expr)
-    if len(ret) != 1:
-        print(ret, expr)
-        raise Exception
-    return ret[0]
-
-
 class LAPersonScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']

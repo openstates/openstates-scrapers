@@ -26,6 +26,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
     _session_ids = {
         '2017 1st Extraordinary Session': '171ES',
+        '2017': '17RS',
     }
 
     def pdf_to_lxml(self, filename, type='html'):
@@ -239,6 +240,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         bill_id = page.xpath(
             "//span[@id='ctl00_PageBody_LabelBillID']/text()")[0]
+
         bill_type = self._bill_types[bill_abbreviation[1:]]
         bill = Bill(bill_id,
                     legislative_session=session,
