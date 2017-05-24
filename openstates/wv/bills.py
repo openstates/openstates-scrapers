@@ -37,7 +37,8 @@ class WVBillScraper(Scraper):
 
     _special_names = {
         '20161S': '1X',
-        '2017': 'rs'
+        '2017': 'rs',
+        '20171S': '1X',
     }
 
     bill_types = {'B': 'bill',
