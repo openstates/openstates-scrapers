@@ -106,7 +106,8 @@ class Connecticut(Jurisdiction):
         text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
         sessions = [line.split()[-1] for line in text.splitlines()]
 
-        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', "apaac", 'FOI_1'):
+        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', "apaac",
+                                 'FOI_1', 'stainedglass', ):
             sessions.remove(not_session_name)
         return sessions
 

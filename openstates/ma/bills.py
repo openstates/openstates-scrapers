@@ -237,12 +237,16 @@ class MABillScraper(BillScraper):
                 actor = "upper"
                  #placeholder
                 vote_action = action_name.split(' -')[0]
-                y = int(re.search(r"yeas\s*(\d*)", action_name.lower()).group(1))
-                n = int(re.search(r"nays\s*(\d*)", action_name.lower()).group(1))
+                try:
+                    y, n = re.search('(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
+                    y = int(y)
+                    n = int(n)
+                except AttributeError:
+                    y = int(re.search(r"yeas\s*(\d*)", action_name.lower()).group(1))
+                    n = int(re.search(r"nays\s*(\d*)", action_name.lower()).group(1))
 
-                #n = int(action_name.strip().split('Nays')[1])
-                o = 40 - (y + n) #TODO: this includes empty seats, inacurate count
-                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, o)
+                # TODO: other count isn't included, set later
+                cached_vote = Vote(actor, action_date, vote_action, y > n, y, n, 0)
                 bill.add_vote(cached_vote)
 
                 rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
