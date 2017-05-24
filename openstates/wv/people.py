@@ -1,18 +1,21 @@
 import re
+from urllib import parse
 from collections import defaultdict
 
-from billy.utils import urlescape
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 
 import lxml.html
 
 
-class WVLegislatorScraper(LegislatorScraper):
+class WVPersonScraper(Scraper):
     jurisdiction = 'wv'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber)
 
+    def scrape_chamber(self, chamber):
         if chamber == 'upper':
             chamber_abbrev = 'Senate1'
         else:
@@ -26,22 +29,21 @@ class WVLegislatorScraper(LegislatorScraper):
             if not link.text:
                 continue
             name = link.xpath("string()").strip()
-            leg_url = urlescape(link.attrib['href'])
+            leg_url = self.urlescape(link.attrib['href'])
 
-            if name in ['Members', 'Senate Members', 'House Members',
-                'Vacancy', 'VACANT', 'Vacant', 'To Be Announced',
-                'To Be Appointed']:
+            if name in ['Members', 'Senate Members', 'House Members', 'Vacancy',
+                        'VACANT', 'Vacant', 'To Be Announced', 'To Be Appointed']:
                 continue
 
-            self.scrape_legislator(chamber, term, name, leg_url)
+            yield from self.scrape_legislator(chamber, name, leg_url)
 
-    def scrape_legislator(self, chamber, term, name, url):
+    def scrape_legislator(self, chamber, name, url):
         html = self.get(url).text
         page = lxml.html.fromstring(html)
         page.make_links_absolute(url)
 
-        xpath = '//select[@name="sel_member"]/option[@selected]/text()'
-        district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop().split()[1].strip().lstrip('0')
+        district = page.xpath('//h1[contains(., "DISTRICT")]/text()').pop() \
+            .split()[1].strip().lstrip('0')
 
         party = page.xpath('//h2').pop().text_content()
         party = re.search(r'\((R|D|I)[ \-\]]', party).group(1)
@@ -56,12 +58,12 @@ class WVLegislatorScraper(LegislatorScraper):
         photo_url = page.xpath(
             "//img[contains(@src, 'images/members/')]")[0].attrib['src']
 
-
-        leg = Legislator(term, chamber, district, name, party=party,
-                         photo_url=photo_url, url=url)
+        leg = Person(name, district=district, party=party, image=photo_url, primary_org=chamber)
+        leg.add_link(url)
         leg.add_source(url)
         self.scrape_offices(leg, page)
-        self.save_legislator(leg)
+
+        yield leg
 
     def scrape_offices(self, legislator, doc):
         # Retrieve element that should contain all contact information for the
@@ -103,16 +105,15 @@ class WVLegislatorScraper(LegislatorScraper):
         else:
             capitol_address = None
 
-        capitol = dict(
-            name='Capitol Office',
-            type='capitol',
-            phone=capitol_phone,
-            fax=None,
-            email=email,
-            address=capitol_address,
-        )
+        if email:
+            legislator.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-        legislator.add_office(**capitol)
+        if capitol_phone:
+            legislator.add_contact_detail(type='voice', value=capitol_phone, note='Capitol Office')
+
+        if capitol_address:
+            legislator.add_contact_detail(type='address', value=capitol_address,
+                                          note='Capitol Office')
 
         # If a business or home phone is listed, attempt to use the
         # home phone first, then fall back on the business phone for
@@ -133,12 +134,16 @@ class WVLegislatorScraper(LegislatorScraper):
             district_address = None
 
         # Add district office entry only if data exists for it.
-        if district_phone or officedata['Home:']:
-            district = dict(
-                name='District Office',
-                type='district',
-                phone=district_phone,
-                address=district_address,
-            )
+        if district_phone:
+            legislator.add_contact_detail(type='voice', value=district_phone,
+                                          note='District Office')
 
-            legislator.add_office(**district)
+        if district_address:
+            legislator.add_contact_detail(type='address', value=district_address,
+                                          note='District Office')
+
+    def urlescape(self, url):
+        scheme, netloc, path, qs, anchor = parse.urlsplit(url)
+        path = parse.quote(path, '/%')
+        qs = parse.quote_plus(qs, ':&=')
+        return parse.urlunsplit((scheme, netloc, path, qs, anchor))

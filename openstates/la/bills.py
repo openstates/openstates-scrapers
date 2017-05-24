@@ -1,19 +1,15 @@
 import datetime as dt
 import lxml.html
-import scrapelib
 import tempfile
 import os
 import re
-from billy.scrape import ScrapeError
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import pdf_to_lxml
+from collections import defaultdict
+from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.utils import convert_pdf
 from openstates.utils import LXMLMixin
 
 
-class LABillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'la'
-
+class LABillScraper(Scraper, LXMLMixin):
     _chambers = {
         'S': 'upper',
         'H': 'lower',
@@ -28,9 +24,18 @@ class LABillScraper(BillScraper, LXMLMixin):
         'CSR': 'concurrent study request',
     }
 
+    _session_ids = {
+        '2017 1st Extraordinary Session': '171ES',
+        '2017': '17RS',
+    }
+
+    def pdf_to_lxml(self, filename, type='html'):
+        text = convert_pdf(filename, type)
+        return lxml.html.fromstring(text)
+
     def _get_bill_abbreviations(self, session_id):
         page = self.lxmlize('http://www.legis.la.gov/legis/BillSearch.aspx?'
-            'sid={}'.format(session_id))
+                            'sid={}'.format(session_id))
         select_options = page.xpath('//select[contains(@id, "InstTypes")]/option')
 
         bill_abbreviations = {
@@ -50,7 +55,7 @@ class LABillScraper(BillScraper, LXMLMixin):
     def do_post_back(self, page, event_target, event_argument):
         form = page.xpath("//form[@id='aspnetForm']")[0]
         block = {name: value for name, value in [(obj.name, obj.value)
-                    for obj in form.xpath(".//input")]}
+                                                 for obj in form.xpath(".//input")]}
         block['__EVENTTARGET'] = event_target
         block['__EVENTARGUMENT'] = event_argument
         if form.method == "GET":
@@ -90,20 +95,21 @@ class LABillScraper(BillScraper, LXMLMixin):
         page = self.lxmlize(url)
         return page.xpath("//a")
 
-    def scrape(self, chamber, session):
-        session_id = self.metadata['session_details'][session]['_id']
-
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        session_id = self._session_ids[session]
         # Scan bill abbreviation list if necessary.
         self._bill_abbreviations = self._get_bill_abbreviations(session_id)
-
-        for bill_abbreviation in self._bill_abbreviations[chamber]:
-            for bill_page in self.bill_pages(session_id, bill_abbreviation):
-                for bill in bill_page.xpath(
-                        "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"):
-                    self.scrape_bill_page(chamber,
-                        session,
-                        bill.attrib['href'],
-                        bill_abbreviation)
+        for chamber in chambers:
+            for bill_abbreviation in self._bill_abbreviations[chamber]:
+                for bill_page in self.bill_pages(session_id, bill_abbreviation):
+                    for bill in bill_page.xpath(
+                            "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"):
+                        yield from self.scrape_bill_page(chamber, session, bill.attrib['href'],
+                                                         bill_abbreviation)
 
     def get_one_xpath(self, page, xpath):
         ret = page.xpath(xpath)
@@ -117,7 +123,7 @@ class LABillScraper(BillScraper, LXMLMixin):
         page.make_links_absolute(url)
 
         for a in page.xpath("//a[contains(@href, 'ViewDocument.aspx')]"):
-            self.scrape_vote(bill, a.text, a.attrib['href'])
+            yield from self.scrape_vote(bill, a.text, a.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
         match = re.match('^(Senate|House) Vote on [^,]*,(.*)$', name)
@@ -137,15 +143,10 @@ class LABillScraper(BillScraper, LXMLMixin):
         else:
             type = 'other'
 
-        vote = Vote(chamber, None, motion, None,
-                    None, None, None)
-        vote['type'] = type
-        vote.add_source(url)
-
         (fd, temp_path) = tempfile.mkstemp()
         self.urlretrieve(url, temp_path)
 
-        html = pdf_to_lxml(temp_path)
+        html = self.pdf_to_lxml(temp_path)
         os.close(fd)
         os.remove(temp_path)
 
@@ -159,8 +160,8 @@ class LABillScraper(BillScraper, LXMLMixin):
             self.warning("BAD VOTE: date error")
             return
 
-        vote['date'] = dt.datetime.strptime(date, '%m/%d/%Y')
-
+        start_date = dt.datetime.strptime(date, '%m/%d/%Y')
+        d = defaultdict(list)
         for line in body.replace(u'\xa0', '\n').split('\n'):
             line = line.replace('&nbsp;', '').strip()
             # Skip blank lines and "Total --"
@@ -174,34 +175,44 @@ class LABillScraper(BillScraper, LXMLMixin):
                 vote_type = None
             elif vote_type:
                 if vote_type == 'yes':
-                    vote.yes(line)
+                    d['yes'].append(line)
                 elif vote_type == 'no':
-                    vote.no(line)
+                    d['no'].append(line)
                 elif vote_type == 'other':
-                    vote.other(line)
+                    d['other'].append(line)
 
-        # tally counts
-        vote['yes_count'] = len(vote['yes_votes'])
-        vote['no_count'] = len(vote['no_votes'])
-        vote['other_count'] = len(vote['other_votes'])
-
+        yes_count = len(d['yes'])
+        no_count = len(d['no'])
+        other_count = len(d['other'])
         # The PDFs oddly don't say whether a vote passed or failed.
         # Hopefully passage just requires yes_votes > not_yes_votes
-        if vote['yes_count'] > (vote['no_count'] + vote['other_count']):
-            vote['passed'] = True
+        if yes_count > (no_count + other_count):
+            passed = True
         else:
-            vote['passed'] = False
+            passed = False
 
-        bill.add_vote(vote)
+        vote = Vote(chamber=chamber,
+                    start_date=start_date.strftime('%Y-%m-%d'),
+                    motion_text=motion,
+                    result='pass' if passed else 'fail',
+                    classification=type,
+                    bill=bill)
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('other', other_count)
+        for key, values in d.items():
+            for item in values:
+                vote.vote(key, item)
+        vote.add_source(url)
+        yield vote
 
     def scrape_bill_page(self, chamber, session, bill_url, bill_abbreviation):
         page = self.lxmlize(bill_url)
         author = self.get_one_xpath(
             page,
-            "//a[@id='ctl00_PageBody_LinkAuthor']/text()"
-        )
+            "//a[@id='ctl00_PageBody_LinkAuthor']/text()")
 
-        sbp = lambda x: self.scrape_bare_page(page.xpath(
+        def sbp(x): return self.scrape_bare_page(page.xpath(
             "//a[contains(text(), '%s')]" % (x))[0].attrib['href'])
 
         authors = [x.text for x in sbp("Authors")]
@@ -229,64 +240,75 @@ class LABillScraper(BillScraper, LXMLMixin):
 
         bill_id = page.xpath(
             "//span[@id='ctl00_PageBody_LabelBillID']/text()")[0]
-        bill_type = LABillScraper._bill_types[bill_abbreviation[1:]]
-        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+
+        bill_type = self._bill_types[bill_abbreviation[1:]]
+        bill = Bill(bill_id,
+                    legislative_session=session,
+                    chamber=chamber,
+                    title=title,
+                    classification=bill_type)
         bill.add_source(bill_url)
 
         authors.remove(author)
-        bill.add_sponsor('primary', author)
+        bill.add_sponsorship(author,
+                             classification='primary',
+                             entity_type='person',
+                             primary=True)
         for author in authors:
-            bill.add_sponsor('cosponsor', author)
+            bill.add_sponsorship(author,
+                                 classification='cosponsor',
+                                 entity_type='person',
+                                 primary=False)
 
         for digest in digests:
-            bill.add_document(digest.text,
-                              digest.attrib['href'],
-                              mimetype="application/pdf")
+            bill.add_document_link(note=digest.text,
+                                   url=digest.attrib['href'],
+                                   media_type="application/pdf")
 
         for version in versions:
-            bill.add_version(version.text,
-                             version.attrib['href'],
-                             mimetype="application/pdf")
+            bill.add_version_link(note=version.text,
+                                  url=version.attrib['href'],
+                                  media_type="application/pdf")
 
         for amendment in amendments:
-            bill.add_version(amendment.text,
-                             amendment.attrib['href'],
-                             mimetype="application/pdf")
+            bill.add_version_link(note=amendment.text,
+                                  url=amendment.attrib['href'],
+                                  media_type="application/pdf")
 
         flags = {
-            "prefiled": ["bill:filed"],
-            "referred to the committee": ["committee:referred"],
-            "sent to the house": ['bill:passed'],
-            "ordered returned to the house": ['bill:passed'],
-            "ordered to the senate": ['bill:passed'],
-            "signed by the governor": ['governor:signed'],
-            "sent to the governor": ['governor:received'],
+            "prefiled": ["filing"],
+            "referred to the committee": ["referral-committee"],
+            "sent to the house": ['passage'],
+            "ordered returned to the house": ['passage'],
+            "ordered to the senate": ['passage'],
+            "signed by the governor": ['executive-signature'],
+            "sent to the governor": ['executive-receipt'],
         }
 
         try:
             votes_link = page.xpath("//a[text() = 'Votes']")[0]
-            self.scrape_votes(bill, votes_link.attrib['href'])
+            yield from self.scrape_votes(bill, votes_link.attrib['href'])
         except IndexError:
             # Some bills don't have any votes
             pass
 
         for action in actions:
             date, chamber, page, text = [x.text for x in action.xpath(".//td")]
-            session_year = self.metadata['session_details'][session]\
-                ['start_date'].year
+            session_year = self.jurisdiction.legislative_sessions[-1]['start_date'][0:4]
             # Session is April -> June. Prefiles look like they're in
             # January at earliest.
             date += '/{}'.format(session_year)
             date = dt.datetime.strptime(date, '%m/%d/%Y')
-            chamber = LABillScraper._chambers[chamber]
+            chamber = self._chambers[chamber]
 
             cat = []
             for flag in flags:
                 if flag in text.lower():
                     cat += flags[flag]
 
-            if cat == []:
-                cat = ["other"]
-            bill.add_action(chamber, text, date, cat)
+            bill.add_action(description=text,
+                            date=date.strftime('%Y-%m-%d'),
+                            chamber=chamber,
+                            classification=cat)
 
-        self.save_bill(bill)
+        yield bill
