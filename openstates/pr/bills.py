@@ -41,8 +41,6 @@ _classifiers = (
     ('Aprobado con enmiendas', '', 'amendment-passage'),
     (u'Remitido a Comisión', '', 'referral-committee'),
     (u'Referido a Comisión', '', 'referral-committee'),
-    ('En el Calendario de Ordenes Especiales de la C', 'lower', 'other'),
-    ('Texto de Aprobación Final enviado al Senado', 'upper', 'other'),
     ('Retirada por su Autor', 'sponsor', 'withdrawal'),
     ('Comisión : * no recomienda aprobación de la medida', '', 'committee-passage-unfavorable'),
     ('Ley N', 'governor', 'executive-signature')
@@ -97,7 +95,7 @@ class PRBillScraper(Scraper):
         elif action.startswith('Res. Conj.'):
                 action = action[0:42]
         action_actor = ''
-        atype = 'other'
+        atype = None
         # check it has a url and is not just text
         if action_url:
             action_url = action_url[0]
@@ -125,15 +123,15 @@ class PRBillScraper(Scraper):
                     raise Exception('unknown version type: %s' % action_url)
                 if not erroneous_filename:
                     bill.add_version_link(note=action, url=action_url,
-                                          media_type=media_type, on_duplicate='use_old')
+                                          media_type=media_type, on_duplicate='ignore')
             else:
-                bill.add_document_link(action, action_url)
+                bill.add_document_link(action, action_url, on_duplicate='ignore')
             for pattern, action_actor, atype in _classifiers:
                 if re.match(pattern, action):
                     break
                 else:
                     action_actor = ''
-                    atype = 'other'
+                    atype = None
         if action_actor == '':
             if action.find('SENADO') != -1:
                 action_actor = 'upper'
@@ -164,7 +162,7 @@ class PRBillScraper(Scraper):
 
         bill = Bill(bill_id,
                     legislative_session=session,
-                    chanber=chamber,
+                    chamber=chamber,
                     title=title[0],
                     classification=bill_type)
 
@@ -256,7 +254,8 @@ class PRBillScraper(Scraper):
                     start_date=date.strftime('%Y-%m-%d'),
                     motion_text=vote_name,
                     result='pass' if (yes > no) else 'fail',
-                    bill=bill
+                    bill=bill,
+                    classification='passage',
                 )
                 vote.set_count('yes', yes)
                 vote.set_count('no', no)
