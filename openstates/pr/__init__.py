@@ -8,7 +8,7 @@ settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
 class PuertoRico(Jurisdiction):
-    division_id = "ocd-division/country:us/state:pr"
+    division_id = "ocd-division/country:us/territory:pr"
     classification = "government"
     name = "Puerto Rico"
     url = "http://www.oslpr.org/"
@@ -50,10 +50,8 @@ class PuertoRico(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Legislative Assembly of Puerto Rico"
         lower_chamber_name = "House"
-        lower_seats = None
         lower_title = "Senator"
         upper_chamber_name = "Senate"
-        upper_seats = 0
         upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
@@ -63,14 +61,18 @@ class PuertoRico(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
+        # 8 districts w/ 2 members, + 11 at larg
+        for d in ('I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'):
+            upper.add_post(label=d, role=upper_title,
+                           division_id='{}/sldu:{}'.format(self.division_id, d.lower()))
+
+        # lower house is 40 seats, + 11 at large
+        for n in range(1, 41):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        # TODO: add at large
 
         yield legislature
         yield upper
