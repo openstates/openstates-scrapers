@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-from billy.scrape.committees import CommitteeScraper, Committee
-from billy.scrape.utils import convert_pdf
+from pupa.scrape import Scraper, Organization
+from pupa.utils import convert_pdf
 from openstates.utils import LXMLMixin
 
 
-class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'pr'
-    latest_only = True
+class PRCommitteeScraper(Scraper, LXMLMixin):
 
     def _clean_spaces(self, string):
         """ Remove \xa0, collapse spaces, strip ends. """
@@ -34,8 +32,10 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
 
         return member, matched_title
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')()
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber + '_chamber')()
 
     def scrape_lower_chamber(self):
         url = 'http://www.tucamarapr.org/dnncamara/ActividadLegislativa/'\
@@ -49,14 +49,15 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
             '//a[contains(@id, "lnkCommission")]')
 
         for link in links:
-            self.scrape_lower_committee(link.text, link.get('href'))
+            yield from self.scrape_lower_committee(link.text, link.get('href'))
 
     def scrape_lower_committee(self, committee_name, url):
         page = self.lxmlize(url)
 
         committee_name = committee_name.strip()
-        committee = Committee('lower', committee_name)
-        committee.add_source(url)
+        comm = Organization(committee_name, chamber='lower',
+                            classification='committee')
+        comm.add_source(url)
 
         info_node = self.get_node(
             page,
@@ -81,14 +82,14 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
             member, title = self._match_title(member)
 
             if title is not None:
-                committee.add_member(member, title)
+                comm.add_member(member, title)
             else:
-                committee.add_member(member)
-            
+                comm.add_member(member)
+
             member_count += 1
 
         if member_count > 0:
-            self.save_committee(committee)
+            yield comm
 
     def scrape_upper_chamber(self):
         url = 'http://senado.pr.gov/comisiones/Pages/default.aspx'
@@ -96,7 +97,7 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
         for link in doc.xpath('//a[contains(@href, "ComposicionComisiones")]/@href'):
             doc = self.lxmlize(link)
             (pdf_link, ) = doc.xpath('//a[contains(@href,".pdf")]/@href')
-            self.scrape_upper_committee(pdf_link)
+            yield from self.scrape_upper_committee(pdf_link)
 
     def scrape_upper_committee(self, url):
         filename, resp = self.urlretrieve(url)
@@ -118,7 +119,7 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                 if comm:
                     # Joint committee rosters are not complete, unfortunately
                     if "Conjunta" not in comm_name:
-                        self.save_committee(comm)
+                        yield comm
                     comm = None
                     comm_name = ''
 
@@ -147,7 +148,8 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                     (re.search(r'^(?:Co.)?President', line) or
                      line.startswith('Miembr')) and
                     len(line) > len('Presidente ') + MINIMUM_NAME_LENGTH):
-                comm = Committee('upper', comm_name)
+                comm = Organization(comm_name, chamber='upper',
+                                    classification='committee')
                 comm.add_source(url)
 
             if comm:
@@ -169,7 +171,7 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                         title = 'member'
                     else:
                         raise AssertionError("Unknown member type: {}".
-                                format(title))
+                                             format(title))
 
                 # Many of the ex-officio members have appended titles
                 if ", " in name:
@@ -179,6 +181,6 @@ class PRCommitteeScraper(CommitteeScraper, LXMLMixin):
                     comm.add_member(name, title)
 
         if comm and "Conjunta" not in comm_name:
-            self.save_committee(comm)
+            yield comm
 
         os.remove(filename)

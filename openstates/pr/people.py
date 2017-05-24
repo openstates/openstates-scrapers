@@ -3,13 +3,11 @@ import lxml.html
 import re
 import unicodedata
 import scrapelib
-from billy.scrape import NoDataForPeriod
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'pr'
+class PRPersonScraper(Scraper, LXMLMixin):
 
     def validate_phone_number(self, phone_number):
         is_valid = False
@@ -22,17 +20,14 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return is_valid
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
-        self.logger.info('Scraping {} {} chamber.'.format(
-            self.jurisdiction.upper(),
-            chamber))
-
-        getattr(self, 'scrape_' + chamber + '_chamber')(term)
+    def scrape(self, chamber=None):
+        term = self.jurisdiction.legislative_sessions[-1]['identifier']
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
     def scrape_upper_chamber(self, term):
-        urls = { 
+        urls = {
             'At-Large': 'http://www.senadopr.us/Pages/SenadoresporAcumulacion.aspx',
             'I': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20I.aspx',
             'II': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20II.aspx',
@@ -44,23 +39,26 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
             'VIII': 'http://www.senadopr.us/Pages/Senadores%20Distrito%20VIII.aspx'
         }
 
-        for district, url in urls.iteritems():
+        for district, url in urls.items():
             leg_page_html = self.get(url).text
             doc = lxml.html.fromstring(leg_page_html)
             doc.make_links_absolute(url)
-            rows = doc.xpath('//table[@summary="Senadores 2013-2016"]/tr[not(@class="ms-viewheadertr")]')
+            rows = doc.xpath('//table[@summary="Senadores 2013-2016"]'
+                             '/tr[not(@class="ms-viewheadertr")]')
 
             for row in rows:
                 tds = row.xpath('td')
 
-                name = tds[0].text_content().title().replace('Hon.','',1).strip()
+                name = tds[0].text_content().title().replace('Hon.', '', 1).strip()
                 party = tds[1].text_content()
                 phone = tds[2].text_content()
                 email = tds[3].text_content()
 
-                #Code to guess the picture
-                namefixed = unicode(name.replace(".",". "))  #Those middle names abbreviations are sometimes weird.
-                namefixed = unicodedata.normalize('NFKD', namefixed).encode('ascii', 'ignore') #Remove the accents
+                # Code to guess the picture
+                # Those middle names abbreviations are sometimes weird.
+                namefixed = str(name.replace(".", ". "))
+                # Remove the accents
+                namefixed = unicodedata.normalize('NFKD', namefixed).encode('ascii', 'ignore')
                 nameparts = namefixed.split()
                 if nameparts[1].endswith('.'):
                     lastname = nameparts[2]
@@ -68,32 +66,37 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     lastname = nameparts[1]
 
                 # Construct the photo url
-                photo_url = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + (nameparts[0][0] + lastname).lower() + '.jpg'
+                photo_url = 'http://www.senadopr.us/Fotos%20Senadores/sen_' + \
+                            (nameparts[0][0] + lastname).lower() + '.jpg'
                 try:
-                    picture_data = self.head(photo_url)  # Checking to see if the file is there
+                    self.head(photo_url)  # Checking to see if the file is there
                 except scrapelib.HTTPError:         # If not, leave out the photo_url
                     photo_url = ''
 
-                leg = Legislator(
-                        term=term,
-                        chamber='upper',
-                        district=district,
-                        full_name=name,
-                        party=party,
-                        photo_url=photo_url
-                        )
-                leg.add_office('capitol', 'Oficina del Capitolio',
-                               phone=phone, email=email)
-                leg.add_source(url)
+                person = Person(primary_org='upper',
+                                district=district,
+                                name=name,
+                                party=party,
+                                image=photo_url)
+                if email:
+                    person.add_contact_deatil(type='email',
+                                              value=email,
+                                              note='Capitol Office')
+                if phone:
+                    person.add_contact_deatil(type='voice',
+                                              value=phone,
+                                              note='Capitol Office')
+                person.add_link(url)
+                person.add_source(url)
 
-                self.save_legislator(leg)
+                yield person
 
     def scrape_lower_chamber(self, term):
         # E-mail contact is now hidden behind webforms. Sadness.
 
         party_map = {'PNP': 'Partido Nuevo Progresista',
                      'PPD': u'Partido Popular Democr\xe1tico',
-                     'PIP': u'Partido Independentista Puertorrique\u00F1o', 
+                     'PIP': u'Partido Independentista Puertorrique\u00F1o',
                      }
 
         url = 'http://www.tucamarapr.org/dnncamara/ComposiciondelaCamara.aspx'
@@ -107,23 +110,23 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
         if member_nodes is not None:
             for member_node in member_nodes:
                 # Initialize default values for legislator attributes.
-                name      = None
-                district  = None
-                address   = None
-                party     = None
+                name = None
+                district = None
+                address = None
+                party = None
                 photo_url = None
-                phone     = None
-                fax       = None
+                phone = None
+                fax = None
 
                 photo_url = self.get_node(
                     member_node,
                     './/span[@class="identity"]/img/@src')
-    
+
                 # Node reference for convenience.
                 info_node = self.get_node(
                     member_node,
                     './/span[@class="info"]')
-    
+
                 name_node = self.get_node(
                     info_node,
                     './/span[@class="name"]')
@@ -133,14 +136,14 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     name_text = re.sub(r'^Hon\.[\s]*', '', name_text)
                     name_text = re.sub(r' - .*$', '', name_text)
                     name = ' '.join(name_text.split())
-    
+
                 party_node = self.get_node(
                     info_node,
                     './/span[@class="party"]/span')
                 if party_node is not None:
                     party_text = party_node.text.strip()
                     party = party_map[party_text]
-    
+
                 district_node = self.get_node(
                     info_node,
                     './/span[@class="district"]')
@@ -148,16 +151,16 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     district_text = district_node.text.strip()
 
                     try:
-                        district_number = re.search(r'0?(\d{1,2})',
-                            district_text).group(1)
+                        # district_number = re.search(r'0?(\d{1,2})',
+                        #                            district_text).group(1)
                         district = re.sub(r'^Distrito[\s]*', '',
-                            district_text).strip()
+                                          district_text).strip()
                     except AttributeError:
                         if "Distrito" not in district_text:
                             district = 'At-Large'
                         else:
                             warning = u'{} missing district number.'
-                            self.logger.warning(warning.format(name))
+                            self.warning(warning.format(name))
 
                 address_node = self.get_node(
                     info_node,
@@ -188,7 +191,7 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                         if self.validate_phone_number(phone_text):
                             phone = phone_text
                             has_valid_phone = True
-    
+
                 fax_node = self.get_node(
                     member_node,
                     './/span[@class="two-columns"]//span[@class="data-type"'
@@ -198,23 +201,27 @@ class PRLegislatorScraper(LegislatorScraper, LXMLMixin):
                     fax_text = re.sub(r'^Fax:[\s]*', '', fax_text).strip()
                     if self.validate_phone_number(fax_text):
                         fax = fax_text
-    
-                legislator = Legislator(
-                    term=term,
-                    chamber='lower',
-                    district=district,
-                    full_name=name,
-                    party=party,
-                    photo_url=photo_url
-                )
-    
-                legislator.add_source(url)
-                legislator.add_office(
-                    type='capitol',
-                    name='Oficina del Capitolio',
-                    address=address,
-                    phone=phone,
-                    fax=fax,
-                )
 
-                self.save_legislator(legislator)
+                person = Person(primary_org='lower',
+                                district=district,
+                                name=name,
+                                party=party,
+                                image=photo_url)
+
+                person.add_link(url)
+                person.add_source(url)
+
+                if address:
+                    person.add_contact_deatil(type='address',
+                                              value=address,
+                                              note='capitol Office')
+                if phone:
+                    person.add_contact_deatil(type='voice',
+                                              value=phone,
+                                              note='capitol Office')
+                if fax:
+                    person.add_contact_deatil(type='fax',
+                                              value=fax,
+                                              note='capitol Office')
+
+                yield person
