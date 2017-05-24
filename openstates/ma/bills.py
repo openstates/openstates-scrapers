@@ -238,7 +238,7 @@ class MABillScraper(BillScraper):
                  #placeholder
                 vote_action = action_name.split(' -')[0]
                 try:
-                    y, n = re.search('(\d+) yeas - (\d+) nays', action_name.lower()).groups()
+                    y, n = re.search('(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
                     y = int(y)
                     n = int(n)
                 except AttributeError:
