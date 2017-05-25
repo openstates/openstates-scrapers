@@ -13,6 +13,7 @@ class MABillScraper(Scraper):
     categorizer = Categorizer()
     session_filters = {}
     chamber_filters = {}
+    house_pdf_cache = {}
 
     chamber_map = {'lower': 'House', 'upper': 'Senate'}
     chamber_map_reverse = {'House': 'lower', 'Senate': 'upper',
@@ -201,7 +202,9 @@ class MABillScraper(Scraper):
         action_rows = page.xpath('//tbody/tr')
         for row in action_rows:
             action_date = row.xpath('td[1]/text()')[0]
-            action_date = datetime.strptime(action_date, '%m/%d/%Y').strftime('%Y-%m-%d')
+            action_date = datetime.strptime(action_date, '%m/%d/%Y')
+            action_year = action_date.year
+            action_date = action_date.strftime('%Y-%m-%d')
 
             if row.xpath('td[2]/text()'):
                 action_actor = row.xpath('td[2]/text()')[0]
@@ -229,25 +232,12 @@ class MABillScraper(Scraper):
                 cached_vote.set_count('yes', y)
                 cached_vote.set_count('no', n)
 
-                # TODO: future proof this
-                # 2018 code not tested and may break if MA website changes
-                if datetime(2018, 1, 1) <= action_date <= datetime(2018, 12, 31):
-                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2018RCs.pdf'
-                if datetime(2017, 1, 1) <= action_date <= datetime(2017, 12, 31):
-                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2017RCs.pdf'
-                # Change repository based on td in xpath
-                elif datetime(2016, 1, 1) <= action_date <= datetime(2016, 12, 31):
-                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2016RCs.pdf'
-                # TODO: 2015 and 2014 pdfs formatted differently and will break
-                elif datetime(2015, 1, 1) <= action_date <= datetime(2015, 12, 31):
-                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2015RCs.pdf'
-                elif datetime(2014, 1, 1) <= action_date <= datetime(2014, 12, 31):
-                    housevote_pdf = 'http://www.mass.gov/legis/journal/combined2014RCs.pdf'
-                # No data on website for years prior to 2014
-
-                # Only scrape votes from 2016 forward, TODO: enable 2015 & 14
-                if datetime(2016, 1, 1) <= action_date:
-                    self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
+                housevote_pdf = 'http://www.mass.gov/legis/journal/combined{}RCs.pdf'.format(
+                    action_year
+                )
+                # note: 2014-2015 different format and no data on website for years prior to 2014
+                self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
+                cached_vote.add_source(housevote_pdf)
 
                 yield cached_vote
 
@@ -278,6 +268,7 @@ class MABillScraper(Scraper):
 
                 rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
                 self.scrape_senate_vote(cached_vote, rollcall_pdf)
+                cached_vote.add_source(rollcall_pdf)
                 yield cached_vote
 
             attrs = self.categorizer.categorize(action_name)
@@ -290,13 +281,17 @@ class MABillScraper(Scraper):
             for com in attrs.get('committees', []):
                 action.add_related_entity(com, entity_type='organization')
 
-    def scrape_house_vote(self, vote, vurl, supplement):
-        # Point to PDF and read to memory
-        (path, resp) = self.urlretrieve(vurl)
-        pdflines = convert_pdf(path, 'text')
-        os.remove(path)
-        pdflines = pdflines.decode('utf-8').replace(u'\u2019', "'")
+    def get_house_pdf(self, vurl):
+        """ cache house PDFs since they are done by year """
+        if vurl not in self.house_pdf_cache:
+            (path, resp) = self.urlretrieve(vurl)
+            pdflines = convert_pdf(path, 'text')
+            os.remove(path)
+            self.house_pdf_cache[vurl] = pdflines.decode('utf-8').replace(u'\u2019', "'")
+        return self.house_pdf_cache[vurl]
 
+    def scrape_house_vote(self, vote, vurl, supplement): 
+        pdflines = self.get_house_pdf(vurl)
         # get pdf data from supplement number
         try:
             vote_text = pdflines.split('No. ' + str(supplement))[1].split('MASSACHUSETTS')[0]
