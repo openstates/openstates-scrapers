@@ -1,9 +1,3 @@
-import datetime
-import re
-import lxml
-
-settings = dict(SCRAPELIB_TIMEOUT=120)
-
 metadata = dict(
     name='New York',
     abbreviation='ny',
@@ -13,7 +7,7 @@ metadata = dict(
     # unfortunate - there isn't a decent combined site
     legislature_url='http://public.leginfo.state.ny.us/',
 
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
     },
@@ -56,4 +50,3 @@ metadata = dict(
 
     requests_per_minute=30,
 )
-

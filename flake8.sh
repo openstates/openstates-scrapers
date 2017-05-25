@@ -33,6 +33,7 @@ python3 -m flake8 \
     openstates/nj \
     openstates/nm \
     openstates/nv \
+    openstates/ny \
     openstates/oh \
     openstates/ok \
     openstates/or \

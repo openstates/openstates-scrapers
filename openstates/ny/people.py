@@ -6,8 +6,6 @@ from openstates.utils import LXMLMixin
 
 
 class NYPersonScraper(Scraper, LXMLMixin):
-    jurisdiction = 'ny'
-
     def _split_list_on_tag(self, elements, tag):
         data = []
         for element in elements:
@@ -17,7 +15,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
                 element_class = element.attrib['class']
             except:
                 pass
-            
+
             if element_class == tag:
                 yield data
                 data = []
@@ -37,7 +35,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
         NY_US_HOUSE_SEATS = 27
         NY_STATE_SENATE_SEATS = 63
         NY_STATE_ASSEMBLY_SEATS = 150
-        SKIP_SEATS = NY_US_HOUSE_SEATS + NY_STATE_SENATE_SEATS
 
         # Download the page and ingest using lxml
         MEMBER_LIST_URL = 'http://www.elections.ny.gov:8080/reports/rwservlet'\
@@ -60,7 +57,8 @@ class NYPersonScraper(Scraper, LXMLMixin):
             '/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
         for affiliation in affiliation_text:
             if capture_district and capture_party:
-                raise AssertionError('Assembly party parsing simultaneously'\
+                raise AssertionError(
+                    'Assembly party parsing simultaneously'
                     'looking for both district number and party name.')
 
             # Replace non-breaking spaces.
@@ -73,13 +71,15 @@ class NYPersonScraper(Scraper, LXMLMixin):
             except ValueError:
                 is_date = False
 
-            if is_date or affiliation == 'Elected Representatives for New York State by Office and District':
+            if is_date:
+                continue
+            if affiliation == 'Elected Representatives for New York State by Office and District':
                 continue
             # Otherwise, check to see if a District or Party is indicated.
-            elif affiliation == u'District : ':
+            elif affiliation == 'District : ':
                 capture_district = True
-                continue 
-            elif affiliation == u'Party : ':
+                continue
+            elif affiliation == 'Party : ':
                 capture_party = True
                 continue
 
@@ -96,21 +96,20 @@ class NYPersonScraper(Scraper, LXMLMixin):
                     capture_party = False
                     continue
 
-                assert affiliation, 'No party is indicated for district {}'\
-                    .format(district)
+                assert affiliation, 'No party is indicated for district {}'.format(district)
 
                 # Districts listed in order: Congressional, State Senate,
                 # then State Assembly.
                 # If a repeat district is seen, assume it's from the
                 # next body in that list.
-                if (int(district) <= NY_US_HOUSE_SEATS and\
-                    not congressional_affiliations.get(district)):
+                if (int(district) <= NY_US_HOUSE_SEATS and
+                        not congressional_affiliations.get(district)):
                     congressional_affiliations[district] = affiliation.title()
-                elif (int(district) <= NY_STATE_SENATE_SEATS and\
-                    not senate_affiliations.get(district)):
+                elif (int(district) <= NY_STATE_SENATE_SEATS and
+                        not senate_affiliations.get(district)):
                     senate_affiliations[district] = affiliation.title()
-                elif (int(district) <= NY_STATE_ASSEMBLY_SEATS and\
-                    not assembly_affiliations.get(district)):
+                elif (int(district) <= NY_STATE_ASSEMBLY_SEATS and
+                        not assembly_affiliations.get(district)):
                     assembly_affiliations[district] = affiliation.title()
                 else:
                     message = 'District {} appears too many times in party '\
@@ -119,7 +118,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
                 district = None
                 capture_party = False
-                entry_counter += 1                
+                entry_counter += 1
             else:
                 message = 'Assembly party parsing found bad text: "{}"'
                 raise AssertionError(message.format(affiliation))
@@ -140,15 +139,15 @@ class NYPersonScraper(Scraper, LXMLMixin):
             office_name_text = ()
 
         # Initializing default values for office attributes.
-        office_name    = None
-        office_type    = None
+        office_name = None
+        office_type = None
         street_address = None
-        city           = None
-        state          = None
-        zip_code       = None
-        address        = None
-        phone          = None
-        fax            = None
+        city = None
+        state = None
+        zip_code = None
+        address = None
+        phone = None
+        fax = None
 
         # Determine office names/types consistent with Open States internal
         # format.
@@ -197,9 +196,9 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
         # Build office physical address.
         if (street_address is not None and
-            city is not None and
-            state is not None and
-            zip_code is not None):
+                city is not None and
+                state is not None and
+                zip_code is not None):
             address = "{}\n{}, {} {}".format(
                 street_address, city, state, zip_code)
         else:
@@ -260,9 +259,9 @@ class NYPersonScraper(Scraper, LXMLMixin):
                 continue
 
             # Initialize default values for legislator attributes.
-            name      = None
-            district  = None
-            party     = None
+            name = None
+            district = None
+            party = None
             photo_url = None
 
             # Find legislator's name.
@@ -298,8 +297,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
                 elif party_text.startswith('(R'):
                     party = 'Republican'
                 else:
-                    raise ValueError('Unexpected party affiliation: {}'
-                        .format(party_text))
+                    raise ValueError('Unexpected party affiliation: {}'.format(party_text))
 
             # Find legislator's profile photograph.
             photo_node = self.get_node(
@@ -372,6 +370,8 @@ class NYPersonScraper(Scraper, LXMLMixin):
             page,
             '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
+        email = None
+
         for assembly_member_node in self._split_list_on_tag(
                 assembly_member_nodes, 'emailclear'):
             try:
@@ -402,7 +402,9 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             party = district_affiliations[district].strip()
             if not party or party is None:
-                self.warning('Party for {} (Assembly district {}) has not been listed yet'.format(name, district))
+                self.warning(
+                    'Party for {} (Assembly district {}) has not been listed yet'.format(
+                        name, district))
                 party = None
                 # If seats become empty, there may need to be a
                 # `continue` added back in here, assuming no name
@@ -421,16 +423,14 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             person.add_link(url)
 
-            self.scrape_lower_offices(person, legislator_url)
+            self.scrape_lower_offices(person, legislator_url, email)
 
             yield person
 
-    def scrape_lower_offices(self, person, url):
+    def scrape_lower_offices(self, person, url, email):
         person.add_source(url)
 
         page = self.lxmlize(url)
-
-        offices = False
 
         for data in page.xpath('//div[@class="officehdg"]'):
             data = (data.xpath('text()'),
@@ -462,9 +462,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
             if fax:
                 person.add_contact_detail(type='fax', value=fax,
                                           note=office_type + ' Office')
-
-            offices = True
-
-        if not offices and email:
-            person.add_contact_detail(type='address', value=address,
-                                      note=office_type + ' Office')
+            if email:
+                person.add_contact_detail(type='address', value=address,
+                                          note=office_type + ' Office')

@@ -4,11 +4,14 @@ from .people import NYPersonScraper
 from openstates.utils import url_xpath
 
 
+settings = dict(SCRAPELIB_TIMEOUT=120)
+
+
 class NewYork(Jurisdiction):
     division_id = "ocd-division/country:us/state:ny"
     classification = "government"
     name = "New York"
-    url = "TODO"
+    url = "http://public.leginfo.state.ny.us/"
     scrapers = {
         'people': NYPersonScraper,
         'committees': NYCommitteeScraper,
@@ -64,11 +67,11 @@ class NewYork(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats+1):
+        for n in range(1, upper_seats + 1):
             upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
+        for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
@@ -78,7 +81,7 @@ class NewYork(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        url = 'http://nysenate.gov/search/legislation'
-        sessions = url_xpath(url,
-            '//select[@name="bill_session_year"]/option[@value!=""]/@value')
-        return sessions
+        return url_xpath(
+            'http://nysenate.gov/search/legislation',
+            '//select[@name="bill_session_year"]/option[@value!=""]/@value'
+        )

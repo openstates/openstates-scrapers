@@ -2,6 +2,8 @@ import collections
 
 import lxml.html
 
+from pupa.utils import convert_pdf
+
 
 class CachedAttr(object):
     '''Computes attribute value and caches it in instance.

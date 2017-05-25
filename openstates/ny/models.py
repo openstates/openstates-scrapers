@@ -4,14 +4,10 @@ import datetime
 import collections
 from itertools import islice
 
-import lxml.html
-
-from billy.scrape.bills import Bill
 from billy.scrape.votes import Vote
-from billy.utils import term_for_session, metadata
 from openstates.utils import LXMLMixin
 
-from .utils import Urls, CachedAttr
+from .utils import Urls
 
 
 class AssemblyBillPage(LXMLMixin):
@@ -26,7 +22,7 @@ class AssemblyBillPage(LXMLMixin):
 
     def __init__(self, scraper, session, bill, details):
         (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
-          title, bill_id_parts) = details
+            title, bill_id_parts) = details
 
         self.bill = bill
         self.bill_id = bill_id
@@ -129,5 +125,4 @@ class AssemblyBillPage(LXMLMixin):
         for name, member in inspect.getmembers(self):
             if inspect.ismethod(member):
                 if name.startswith('_build_'):
-                    key = re.sub(r'^_build_', '', name)
                     member()
