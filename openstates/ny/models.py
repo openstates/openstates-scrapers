@@ -1,10 +1,6 @@
 import re
 import inspect
-import datetime
-import collections
-from itertools import islice
 
-from billy.scrape.votes import Vote
 from openstates.utils import LXMLMixin
 
 from .utils import Urls
@@ -28,10 +24,7 @@ class AssemblyBillPage(LXMLMixin):
         self.bill_id = bill_id
         # This works on the assumption that the metadata term ID is
         # only the start year.
-        for term in reversed(scraper.metadata['terms']):
-            if session in term['sessions']:
-                self.term_start_year = term['start_year']
-                break
+        self.term_start_year = session.split('-')[0]
 
         self.letter, self.number, self.version = bill_id_parts
         self.shared_url = 'http://assembly.state.ny.us/leg/?default_fld='\
@@ -54,70 +47,6 @@ class AssemblyBillPage(LXMLMixin):
         # Collapse whitespace.
         name = re.sub('\s+', ' ', name)
         return name.strip('(), ')
-
-    def _build_sponsors_memo(self):
-        url = self.shared_url + '&Memo=Y'
-        self.bill.add_document('Sponsor\'s Memorandum', url)
-
-    def _build_lower_votes(self):
-        url = self.shared_url + '&Votes=Y'
-        self.urls.add(votes=url)
-        self.bill.add_source(url)
-        doc = self.urls.votes.doc
-        if doc is None:
-            return
-
-        # Grab bill information.
-        try:
-            pre = doc.xpath('//pre')[0].text_content()
-
-            no_votes = ('There are no votes for this bill in this legislative '
-                        'session.')
-
-            if pre == no_votes:
-                raise ValueError('No votes for this bill.')
-        # Skip bill if votes can't be found.
-        except (IndexError, ValueError) as e:
-            return
-
-        actual_vote = collections.defaultdict(list)
-        for table in doc.xpath('//table'):
-
-            date = table.xpath('caption/label[contains(., "DATE:")]')
-            date = date[0].itersiblings().next().text
-            date = datetime.datetime.strptime(date, '%m/%d/%Y')
-
-            votes = table.xpath('caption/span/label[contains(., "YEA/NAY:")]')
-            votes = votes[0].itersiblings().next().text
-            yes_count, no_count = map(int, votes.split('/'))
-
-            passed = yes_count > no_count
-            vote = Vote('lower', date, 'Floor Vote', passed, yes_count,
-                        no_count, other_count=0)
-
-            tds = table.xpath('tr/td/text()')
-            votes = iter(tds)
-            while True:
-                try:
-                    data = list(islice(votes, 2))
-                    name, vote_val = data
-                except (StopIteration, ValueError):
-                    # End of data. Stop.
-                    break
-                name = self._scrub_name(name)
-
-                if vote_val.strip() == 'Y':
-                    vote.yes(name)
-                elif vote_val.strip() in ('N', 'NO'):
-                    vote.no(name)
-                else:
-                    vote.other(name)
-                    actual_vote[vote_val].append(name)
-
-            # The page doesn't provide an other_count.
-            vote['other_count'] = len(vote['other_votes'])
-            vote['actual_vote'] = actual_vote
-            self.bill.add_vote(vote)
 
     def build(self):
         '''Run all the build_* functions.

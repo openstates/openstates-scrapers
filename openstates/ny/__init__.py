@@ -1,7 +1,10 @@
-from .committees import NYCommitteeScraper
 from pupa.scrape import Jurisdiction, Organization
-from .people import NYPersonScraper
+
 from openstates.utils import url_xpath
+
+from .bills import NYBillScraper
+from .people import NYPersonScraper
+from .committees import NYCommitteeScraper
 
 
 settings = dict(SCRAPELIB_TIMEOUT=120)
@@ -13,6 +16,7 @@ class NewYork(Jurisdiction):
     name = "New York"
     url = "http://public.leginfo.state.ny.us/"
     scrapers = {
+        'bills': NYBillScraper,
         'people': NYPersonScraper,
         'committees': NYCommitteeScraper,
     }

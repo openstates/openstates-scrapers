@@ -24,12 +24,12 @@ class Rule(namedtuple('Rule', 'regexes types stop attrs')):
         'Create new instance of Rule(regex, types, attrs, stop)'
 
         # Regexes can be a string or a sequence.
-        if isinstance(regexes, basestring):
+        if isinstance(regexes, str):
             regexes = set([regexes])
         regexes = set(regexes or [])
 
         # Types can be a string or a sequence.
-        if isinstance(types, basestring):
+        if isinstance(types, str):
             types = set([types])
         types = set(types or [])
 
@@ -108,7 +108,7 @@ class BaseCategorizer(object):
     def after_categorize(self, return_val):
         '''A post-categorization hook. Takes, returns
         a tuple like (types, attrs), where types is a sequence
-        of categories (e.g., bill:passed), and attrs is a
+        of categories (e.g., passage), and attrs is a
         dictionary of addition attributes that can be used to
         augment the action (or whatever).
         '''
@@ -164,36 +164,36 @@ def before_categorize(f):
 _categorizer_rules = (
 
     # Senate passage.
-    Rule(r'(?i)^(RE)?PASSED', 'bill:passed'),
-    Rule(r'(?i)^ADOPTED', 'bill:passed'),
+    Rule(r'(?i)^(RE)?PASSED', 'passage'),
+    Rule(r'(?i)^ADOPTED', 'passage'),
 
     # Amended
-    Rule(r'(?i)AMENDED (?P<bill_id>\d+)', 'amendment:passed'),
+    Rule(r'(?i)AMENDED (?P<bill_id>\d+)', 'amendment-passage'),
     Rule(r'(?i)AMEND AND RECOMMIT TO (?P<committees>.+)',
-         ['amendment:passed', 'committee:referred']),
+         ['amendment-passage', 'referral-committee']),
     Rule(r'(?i)amend .+? and recommit to (?P<committees>.+)',
-         ['amendment:passed', 'committee:referred']),
+         ['amendment-passage', 'referral-committee']),
     Rule(r'(?i)AMENDED ON THIRD READING (\(T\) )?(?P<bill_id>.+)',
-         'amendment:passed'),
-    Rule(r'(?i)print number (?P<bill_id>\d+)', 'amendment:passed'),
-    Rule(r'(?i)tabled', 'amendment:tabled'),
+         'amendment-passage'),
+    Rule(r'(?i)print number (?P<bill_id>\d+)', 'amendment-passage'),
+    Rule(r'(?i)tabled', 'amendment-deferral'),
 
     # Committees
-    Rule(r'(?i)held .+? in (?P<committees>.+)', 'bill:failed'),
-    Rule(r'(?i)REFERRED TO (?P<committees>.+)', 'committee:referred'),
+    Rule(r'(?i)held .+? in (?P<committees>.+)', 'failure'),
+    Rule(r'(?i)REFERRED TO (?P<committees>.+)', 'referral-committee'),
     Rule(r'(?i)reference changed to (?P<committees>.+)',
-          'committee:referred'),
-    Rule(r'(?i) committed to (?P<committees>.+)', 'committee:referred'),
+         'referral-committee'),
+    Rule(r'(?i) committed to (?P<committees>.+)', 'referral-committee'),
     Rule(r'(?i)^reported$'),
 
     # Governor
-    Rule(r'(?i)signed chap.(?P<session_laws>\d+)', 'governor:signed'),
-    Rule(r'(?i)vetoed memo.(?P<veto_memo>.+)', 'governor:vetoed'),
-    Rule(r'(?i)DELIVERED TO GOVERNOR', 'governor:received'),
+    Rule(r'(?i)signed chap.(?P<session_laws>\d+)', 'executive-signature'),
+    Rule(r'(?i)vetoed memo.(?P<veto_memo>.+)', 'executive-veto'),
+    Rule(r'(?i)DELIVERED TO GOVERNOR', 'executive-receipt'),
 
     # Random.
     Rule(r'(?i)substituted by (?P<bill_id>\w\d+)')
-    )
+)
 
 
 class Categorizer(BaseCategorizer):
