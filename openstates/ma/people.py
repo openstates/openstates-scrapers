@@ -99,7 +99,7 @@ class MAPersonScraper(Scraper):
                      name=full_name,
                      party=party,
                      image=photo_url)
-        leg.add_url(member_url)
+        leg.add_link(member_url)
         leg.add_source(member_url)
 
         leg.add_contact_detail(type='email', value=email, note='District Office')
