@@ -336,7 +336,7 @@ class MABillScraper(Scraper):
             elif tup1[1] == 'n':
                 vote.no(tup1[0])
             else:
-                vote.other(tup1[0])
+                vote.vote('other', tup1[0])
 
     def scrape_senate_vote(self, vote, vurl):
         # download file to server
@@ -385,7 +385,7 @@ class MABillScraper(Scraper):
                     elif mode == 'n':
                         vote.no(clean_name)
                     elif mode == 'o':
-                        vote.other(clean_name)
+                        vote.vote('other', clean_name)
 
     def get_as_ajax(self, url):
         # set the X-Requested-With:XMLHttpRequest so the server only sends along the bits we want
