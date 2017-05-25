@@ -1,22 +1,22 @@
-import re
 import datetime as dt
+import pytz
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import Event, EventScraper
+from pupa.scrape import Event, Scraper
 from openstates.utils import LXMLMixin
 
-import pytz
-import lxml.html
 
 urls = "http://www.malegislature.gov/Events/%s"
 pages = {
-    "upper" : [ urls % "SenateSessions" ],
-    "lower" : [ urls % "HouseSessions" ],
-    "other" : [ urls % "JointSessions",
-                urls % "Hearings", urls % "SpecialEvents" ]
+    "upper": [urls % "SenateSessions"],
+    "lower": [urls % "HouseSessions"],
+    "other": [urls % "JointSessions",
+              urls % "Hearings",
+              urls % "SpecialEvents",
+              ]
 }
 
-class MAEventScraper(EventScraper, LXMLMixin):
+
+class MAEventScraper(Scraper, LXMLMixin):
     jurisdiction = 'ma'
 
     _tz = pytz.timezone('US/Eastern')
@@ -51,7 +51,7 @@ class MAEventScraper(EventScraper, LXMLMixin):
         for tr in trs:
             # Alright. Let's snag some stuff.
             cells = {
-                "num" : "agendaItemNum",
+                "num": "agendaItemNum",
                 "bill_id": "agendaBillNum",
                 "title": "agendaBillTitle",
                 "spons": "agendaBillSponsor"
@@ -61,7 +61,7 @@ class MAEventScraper(EventScraper, LXMLMixin):
                 metainf[cell] = tr.xpath(".//td[@class='" + cells[cell] + "']")
             if metainf['bill_id'] == []:
                 return
-            kwargs = { "type" : "consideration" }
+            kwargs = {"type": "consideration"}
             # Alright. We can assume we have at least the bill ID.
             bill_id = metainf['bill_id'][0].text_content().strip()
             if cells['title'] != []:
@@ -70,8 +70,7 @@ class MAEventScraper(EventScraper, LXMLMixin):
             # XXX: Add sponsors.
             event.add_related_bill(bill_id, **kwargs)
 
-
-    def parse_row(self, row, session, chamber):
+    def parse_row(self, row, chamber):
         dates = row.xpath("./td[@class='dateCell']")
         for date in dates:
             # alright, so we *may* not get a date, in which case the date
@@ -117,26 +116,36 @@ class MAEventScraper(EventScraper, LXMLMixin):
 
         loc_url = metainf['location'].xpath(".//a")
         loc_url = loc_url[0].attrib['href']
-        event = Event(session,
-                      when,
-                      'committee:meeting',
-                      metainf['event'].text_content().strip(),
-                      chamber=chamber,
-                      location=metainf['location'].text_content().strip(),
-                      location_url=loc_url)
-        event.add_participant("host", metainf['event'].text_content().strip(),
-                              'committee', chamber=chamber)
-        self.add_agenda(event, metainf['event'].xpath(".//a")[0].attrib['href'])
+        event = Event(
+            name=metainf['event'].text_content().strip(),
+            start_time=when,
+            timezone=self._tz.zone,
+            location_name=metainf['location'].text_content().strip(),
+            classification='committee-meeting',
+        )
+        event.add_link('loc_url', note='location url')
+        event.add_participant(metainf['event'].text_content().strip(),
+                              type='committee', note='host')
+        self.add_agenda_item(event, metainf['event'].xpath(".//a")[0].attrib['href'])
         return event
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+            yield from self.scrape_chamber('other')
+
+    def scrape_chamber(self, chamber):
         scrape_list = pages[chamber]
         self.year = dt.datetime.now().year
         for site in scrape_list:
             page = self.lxmlize(site)
-            rows = page.xpath("//tbody[not(contains(@id, 'noDates'))]/tr[contains(@class, 'dataRow')]")
+            rows = page.xpath("//tbody[not(contains(@id, 'noDates'))]/"
+                              "tr[contains(@class, 'dataRow')]")
             for row in rows:
-                event = self.parse_row(row, session, chamber)
+                event = self.parse_row(row, chamber)
                 if event:
                     event.add_source(site)
-                    self.save_event(event)
+                    yield event

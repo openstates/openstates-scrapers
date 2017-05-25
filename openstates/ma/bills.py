@@ -49,7 +49,6 @@ class MABillScraper(Scraper):
         else:
             yield from self.scrape_chamber(chamber, session)
 
-
     def scrape_chamber(self, chamber, session):
         # for the chamber of the action
 
@@ -64,7 +63,7 @@ class MABillScraper(Scraper):
             bills = self.list_bills(session, chamber, pageNumber)
             for bill in bills:
                 bill = self.format_bill_number(bill).replace(' ', '')
-                yield  from self.scrape_bill(session, bill, chamber)
+                yield from self.scrape_bill(session, bill, chamber)
 
     def list_bills(self, session, chamber, pageNumber):
         session_filter = self.session_filters[session]
@@ -173,7 +172,7 @@ class MABillScraper(Scraper):
             #     cosponsor_district = row.xpath('td[2]/text()')[0]
 
             # Filter the sponsor out of the petitioners list
-            if not any(sponsor['name'] == cosponsor_name 
+            if not any(sponsor['name'] == cosponsor_name
                        for sponsor in bill.sponsorships):
                 bill.add_sponsorship(cosponsor_name, classification='cosponsor',
                                      primary=False, entity_type='person',
@@ -290,7 +289,7 @@ class MABillScraper(Scraper):
             self.house_pdf_cache[vurl] = pdflines.decode('utf-8').replace(u'\u2019', "'")
         return self.house_pdf_cache[vurl]
 
-    def scrape_house_vote(self, vote, vurl, supplement): 
+    def scrape_house_vote(self, vote, vurl, supplement):
         pdflines = self.get_house_pdf(vurl)
         # get pdf data from supplement number
         try:
