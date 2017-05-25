@@ -90,7 +90,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
         roster_url = rosters[chamber]
         response = self.get(roster_url)
-        #auto detect encoding
+        # auto detect encoding
         response.encoding = response.apparent_encoding
         roster_page = lxml.html.fromstring(response.text)
         roster_page.make_links_absolute(roster_url)
@@ -99,8 +99,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
     def _scrape_upper(self, roster_page, roster_url):
         """
-        Retrieves a list of members of the upper legislative chamber, processes
-        them, and writes them to the database.
+        Retrieves a list of members of the upper legislative chamber.
         """
         # TODO: photo_urls http://www.senate.texas.gov/members.php
         #       also available on individual member screens
@@ -122,7 +121,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
             # Scrape office contact information from roster URL
             for addr in tbl.xpath('.//td[@headers]'):
-                fax = phone = address = None
+                fax = phone = None
                 lines = [addr.text]
                 for child in addr.getchildren():
                     # when we get to span tag we just ingested a phone #
@@ -158,8 +157,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
     def _scrape_lower(self, roster_page, roster_url):
         """
-        Retrieves a list of members of the lower legislative chamber, processes
-        them, and writes them to the database.
+        Retrieves a list of members of the lower legislative chamber.
         """
         member_urls = roster_page.xpath('//a[@class="member-img"]/@href')
         # Sort by district for easier spotting of omissions:
@@ -170,13 +168,12 @@ class TXPersonScraper(Scraper, LXMLMixin):
         for member_url in member_urls:
             yield from self._scrape_representative(member_url, parties)
 
-
     def _scrape_representative(self, url, parties):
         """
         Returns a Person object representing a member of the lower
         legislative chamber.
         """
-        #url = self.get(url).text.replace('<br>', '')
+        # url = self.get(url).text.replace('<br>', '')
         member_page = self.lxmlize(url)
 
         photo_url = member_page.xpath('//img[@class="member-photo"]/@src')[0]

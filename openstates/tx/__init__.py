@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import TXPersonScraper
 
+
 class Texas(Jurisdiction):
     division_id = "ocd-division/country:us/state:tx"
     classification = "government"
