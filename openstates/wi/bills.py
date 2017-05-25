@@ -1,14 +1,13 @@
-import datetime
-import lxml.html
-import os
 import re
+import pytz
+import datetime
 from collections import defaultdict
 
+import lxml.html
 import scrapelib
+from pupa.scrape import Scraper, Bill, VoteEvent
 
-from billy.scrape.utils import convert_pdf
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from .common import SESSION_TERMS, SESSION_SITE_IDS
 
 motion_classifiers = {
     '(Assembly|Senate)( substitute)? amendment': 'amendment',
@@ -16,33 +15,34 @@ motion_classifiers = {
     'Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment': 'amendment',
     'Report Assembly( Substitute)? Amendment': 'amendment',
     'Read a third time': 'passage',
-    'Adopted': 'passage'
+    'Adopted': 'passage',
 }
 
 action_classifiers = {
-    '(Senate|Assembly)( substitute)? amendment .* offered': 'amendment:introduced',
-    '(Senate|Assembly)( substitute)? amendment .* rejected': 'amendment:failed',
-    '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment:passed',
-    '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment:tabled',
-    '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment:withdrawn',
-    'Report (passage|concurrence).* recommended': 'committee:passed:favorable',
-    'Report approved by the Governor': 'governor:signed',
-    '.+ (withdrawn|added) as a co(author|sponsor)': 'other',
-    'R(ead (first time )?and r)?eferred to committee': 'committee:referred',
-    'Read a third time and (passed|concurred)': 'bill:passed',
-    'Adopted': 'bill:passed',
-    'Presented to the Governor': 'governor:received',
-    'Introduced by': 'bill:introduced',
-    'Read a second time': 'bill:reading:2',
+    '(Senate|Assembly)( substitute)? amendment .* offered': 'amendment-introduction',
+    '(Senate|Assembly)( substitute)? amendment .* rejected': 'amendment-failure',
+    '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment-passage',
+    '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment-deferral',
+    '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment-withdrawal',
+    'Report (passage|concurrence).* recommended': 'committee-passage-favorable',
+    'Report approved by the Governor': 'executive-signature',
+    '.+ (withdrawn|added) as a co(author|sponsor)': None,
+    'R(ead (first time )?and r)?eferred to committee': 'referral-committee',
+    'Read a third time and (passed|concurred)': 'passage',
+    'Adopted': 'passage',
+    'Presented to the Governor': 'executive-receipt',
+    'Introduced by': 'introduction',
+    'Read a second time': 'reading-2',
 }
 
+TIMEZONE = pytz.timezone('US/Central')
 
-class WIBillScraper(BillScraper):
-    jurisdiction = 'wi'
 
+class WIBillScraper(Scraper):
     def scrape_subjects(self, year, site_id):
         last_url = None
         next_url = 'http://docs.legis.wisconsin.gov/%s/related/subject_index/index/' % year
+        last_subject = None
 
         # if you visit this page in your browser it is infinite-scrolled
         # but if you disable javascript you'll see the 'Down' links
@@ -86,16 +86,20 @@ class WIBillScraper(BillScraper):
             if last_subject_div:
                 last_subject = last_subject_div[0]
 
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-    def scrape(self, chamber, session):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         # get year
-        for t in self.metadata['terms']:
-            if session in t['sessions']:
-                year = t['name'][0:4]
-                break
-
-        site_id = self.metadata['session_details'][session].get('site_id',
-                                                                'reg')
+        year = SESSION_TERMS[session][0:4]
+        site_id = SESSION_SITE_IDS.get(session, 'reg')
         chamber_slug = {'upper': 'sen', 'lower': 'asm'}[chamber]
 
         self.scrape_subjects(year, site_id)
@@ -106,7 +110,7 @@ class WIBillScraper(BillScraper):
             url = 'http://docs.legis.wisconsin.gov/%s/proposals/%s/%s/%s' % (
                 year, site_id, chamber_slug, type)
 
-            self.scrape_bill_list(chamber, session, url)
+            yield from self.scrape_bill_list(chamber, session, url)
 
     def scrape_bill_list(self, chamber, session, url):
         if 'joint_resolution' in url:
@@ -129,19 +133,28 @@ class WIBillScraper(BillScraper):
             bill_id = bill_url.rsplit('/', 1)[-1]
             bill_id = bill_id.upper()
 
-            title = b.xpath('./div[@class="span6"]/text()')[0].replace(' - Relating to: ', '').strip()
+            title = b.xpath(
+                './div[@class="span6"]/text()'
+            )[0].replace(' - Relating to: ', '').strip()
 
-            bill = Bill(session, chamber, bill_id, title,
-                        type=bill_type)
-            bill['subjects'] = list(set(self.subjects[bill_id]))
-            self.scrape_bill_history(bill, bill_url)
+            bill = Bill(
+                bill_id,
+                legislative_session=session,
+                title=title,
+                chamber=chamber,
+                classification=bill_type,
+            )
+            bill.subject = list(set(self.subjects[bill_id]))
+            yield from self.scrape_bill_history(bill, bill_url, chamber)
 
-    def scrape_bill_history(self, bill, url):
+            yield bill
+
+    def scrape_bill_history(self, bill, url, chamber):
         body = self.get(url).text
         doc = lxml.html.fromstring(body)
         doc.make_links_absolute(url)
 
-        bill['status'] = doc.xpath('//div[@class="propStatus"]/h2/text()')[0]
+        bill.extras['status'] = doc.xpath('//div[@class="propStatus"]/h2/text()')[0]
 
         # add versions
         for a in doc.xpath('//ul[@class="docLinks"]/li//a'):
@@ -149,27 +162,23 @@ class WIBillScraper(BillScraper):
             if not a.text:
                 continue
             elif ('Wisconsin Act' in a.text or
-                  'Memo' in a.text or
-                  'Government Accountability Board' in a.text or
-                  'Redistricting Attachment' in a.text or
-                  'Budget Index Report' in a.text or
-                  'Veto Message' in a.text
-                 ):
-                bill.add_document(a.text, a.get('href'))
+                    'Memo' in a.text or
+                    'Government Accountability Board' in a.text or
+                    'Redistricting Attachment' in a.text or
+                    'Budget Index Report' in a.text or
+                    'Veto Message' in a.text):
+                bill.add_document_link(a.text, a.get('href'))
             elif ('Bill Text' in a.text or
-                  'Resolution Text' in a.text or
-                  'Enrolled Joint Resolution' in a.text or
-                  'Engrossed Resolution' in a.text or
-                  'Text as Enrolled' in a.text
-                 ):
-
-                bill.add_version(a.text, a.get('href'),
-                                 on_duplicate="ignore", mimetype="text/html")
+                    'Resolution Text' in a.text or
+                    'Enrolled Joint Resolution' in a.text or
+                    'Engrossed Resolution' in a.text or
+                    'Text as Enrolled' in a.text):
+                bill.add_version_link(a.text, a.get('href'), media_type='text/html',
+                                      on_duplicate='ignore')
 
                 pdf = a.xpath('following-sibling::span/a/@href')[0]
-                bill.add_version(a.text, pdf,
-                                 on_duplicate="ignore",
-                                 mimetype="application/pdf")
+                bill.add_version_link(a.text, pdf, media_type='application/pdf',
+                                      on_duplicate='ignore')
 
             elif a.text in ('Amendments', 'Fiscal Estimates',
                             'Record of Committee Proceedings'):
@@ -178,9 +187,9 @@ class WIBillScraper(BillScraper):
                 extra_doc.make_links_absolute(extra_doc_url)
                 for extra_a in extra_doc.xpath('//ul[@class="docLinks"]/li//a'):
                     if extra_a.text:
-                        bill.add_document(extra_a.text, extra_a.get('href'))
+                        bill.add_document_link(extra_a.text, extra_a.get('href'))
             else:
-                self.warning('unknown document %s %s' % (bill['bill_id'],
+                self.warning('unknown document %s %s' % (bill.identifier,
                                                          a.text))
 
         # add actions (second history dl is the full list)
@@ -194,34 +203,34 @@ class WIBillScraper(BillScraper):
             action = action_td.text_content()
 
             if 'Introduced by' in action:
-                self.parse_sponsors(bill, action)
+                self.parse_sponsors(bill, action, chamber)
 
             # classify actions
-            atype = 'other'
-            for regex, type in action_classifiers.iteritems():
+            atype = None
+            for regex, type in action_classifiers.items():
                 if re.match(regex, action):
                     atype = type
                     break
 
             kwargs = {}
+            if "referral-committee" in (atype or ''):
+                kwargs['related_entities'] = [{
+                    'entity_type': 'committee',
+                    'name': re.sub('R(ead (first time )?and r)?eferred to committee',
+                                   '', action)
+                }]
 
-            if "committee:referred" in atype:
-                kwargs['committees'] = re.sub(
-                    'R(ead (first time )?and r)?eferred to committee',
-                    '', action)
-
-            bill.add_action(actor, action, date, atype, **kwargs)
+            bill.add_action(action, TIMEZONE.localize(date), chamber=actor, classification=atype)
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
                 vote_url = action_td.xpath('a/@href')
                 if vote_url:
-                    self.add_vote(bill, actor, date, action, vote_url[0])
+                    yield self.add_vote(bill, actor, date, action, vote_url[0])
 
         bill.add_source(url)
-        self.save_bill(bill)
 
-    def parse_sponsors(self, bill, action):
+    def parse_sponsors(self, bill, action, chamber):
         if ';' in action:
             lines = action.split(';')
         else:
@@ -229,7 +238,7 @@ class WIBillScraper(BillScraper):
 
         for line in lines:
             match = re.match(
-                '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',
+                '(Introduced|Cosponsored) by (?:joint )?(Senator|Representative|committee|Joint Legislative Council|Law Revision Committee)s?(.*)',  # noqa
                 line)
             if not match:
                 # So far, the only one that doens't match is
@@ -244,7 +253,7 @@ class WIBillScraper(BillScraper):
                     # Nothing to do here :)
                     continue
 
-                type  = "Introduced"
+                type = "Introduced"
                 title, names = match.groups()
                 raise Exception("Foo")
             else:
@@ -260,29 +269,43 @@ class WIBillScraper(BillScraper):
             elif title == 'Representative':
                 sponsor_chamber = 'lower'
             elif title == 'committee':
-                sponsor_chamber = bill['chamber']
+                sponsor_chamber = chamber
                 people = 'Committee ' + people
             elif title in ('Joint Legislative Council',
                            'Law Revision Committee'):
-                sponsor_chamber = bill['chamber']
+                sponsor_chamber = chamber
                 people = title
 
             for r in re.split(r'\sand\s|\,', people):
                 if r.strip():
-                    bill.add_sponsor(sponsor_type, r.strip(),
-                                     chamber=sponsor_chamber)
+                    bill.add_sponsorship(
+                        r.strip(),
+                        chamber=sponsor_chamber,
+                        classification=sponsor_type,
+                        primary=sponsor_type == 'primary',
+                        entity_type='person',
+                    )
 
     def add_vote(self, bill, chamber, date, text, url):
         votes = re.findall(r'Ayes,?[\s]?(\d+)[,;]\s+N(?:oes|ays),?[\s]?(\d+)', text)
-        (yes, no) = int(votes[0][0]), int(votes[0][1])
+        yes, no = int(votes[0][0]), int(votes[0][1])
 
         vtype = 'other'
-        for regex, type in motion_classifiers.iteritems():
+        for regex, type in motion_classifiers.items():
             if re.match(regex, text):
                 vtype = type
                 break
 
-        v = Vote(chamber, date, text, yes > no, yes, no, 0, type=vtype)
+        v = VoteEvent(
+            chamber=chamber,
+            start_date=TIMEZONE.localize(date),
+            motion_text=text,
+            result='pass' if yes > no else 'fail',
+            classification=vtype,
+            bill=bill,
+        )
+        v.set_count('yes', yes)
+        v.set_count('no', no)
 
         # fetch the vote itself
         if url:
@@ -293,11 +316,7 @@ class WIBillScraper(BillScraper):
             elif 'sv' in url:
                 self.add_senate_votes(v, url)
 
-        # other count is brute forced
-        v['other_count'] = len(v['other_votes'])
-        v.validate()
-        bill.add_vote(v)
-
+        return v
 
     def add_senate_votes(self, vote, url):
         try:
@@ -308,8 +327,7 @@ class WIBillScraper(BillScraper):
 
         doc = lxml.html.fromstring(html)
 
-        # what to do with the pieces
-        vfunc = None
+        yes_count = no_count = other_count = 0
 
         # a game of div-div-table
         for ddt in doc.xpath('//div/div/table'):
@@ -319,17 +337,25 @@ class WIBillScraper(BillScraper):
             elif 'AYES -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and 'AYES' not in name:
-                        vote.yes(name.strip())
+                        vote.vote('yes', name.strip())
+                        yes_count += 1
             elif 'NAYS -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and 'NAYS' not in name:
-                        vote.no(name.strip())
+                        vote.vote('no', name.strip())
+                        no_count += 1
             elif 'NOT VOTING -' in text:
                 for name in text.split('\n\n\n\n\n')[1:]:
                     if name.strip() and "NOT VOTING" not in name:
-                        vote.other(name.strip())
+                        vote.vote('other', name.strip())
+                        other_count += 1
             elif text.strip():
                 raise ValueError('unexpected block in vote')
+
+        if yes_count or no_count or other_count:
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
 
     def add_house_votes(self, vote, url):
         try:
@@ -343,15 +369,15 @@ class WIBillScraper(BillScraper):
         header_td = doc.xpath('//div/p[text()[contains(., "AYES")]]')[0].text_content()
         ayes_nays = re.findall(r'AYES - (\d+).*NAYS - (\d+).*', header_td)
 
-        vote['yes_count'] = int(ayes_nays[0][0])
-        vote['no_count'] = int(ayes_nays[0][1])
+        vote.set_count('yes', int(ayes_nays[0][0]))
+        vote.set_count('no', int(ayes_nays[0][1]))
 
         for td in doc.xpath('//tbody/tr/td[4]'):
             name = td.text_content()
             for vote_td in td.xpath('./preceding-sibling::td'):
                 if vote_td.text_content() == 'Y':
-                    vote.yes(name)
+                    vote.vote('yes', name)
                 elif vote_td.text_content() == 'N':
-                    vote.no(name)
+                    vote.vote('no', name)
                 elif vote_td.text_content() == 'NV':
-                    vote.other(name)
+                    vote.vote('other', name)

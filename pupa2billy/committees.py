@@ -32,9 +32,11 @@ class PupaCommitteeScraper(CommitteeScraper):
             com = Committee(chamber, data['name'])
 
         for member in self.memberships[data['_id']]:
-            com.add_member(member['person_name'], role=member['role'])
+            com.add_member(member['person_name'], role=member['role'], **member.get('extras', {}))
 
         for source in data['sources']:
             com.add_source(source['url'])
+
+        com.update(**data['extras'])
 
         self.save_committee(com)

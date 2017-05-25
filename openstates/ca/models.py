@@ -32,7 +32,7 @@ class CABill(Base):
     current_status = Column(String(60))
 
     actions = relation('CABillAction', backref=backref('bill'),
-                        order_by="CABillAction.bill_history_id")
+                       order_by="CABillAction.bill_history_id")
 
     versions = relation('CABillVersion', backref=backref('bill'),
                         order_by='desc(CABillVersion.version_num)')
@@ -213,9 +213,8 @@ class CAVoteSummary(Base):
             return '1/2'
 
         # Get the associated bill version (probably?)
-        version = filter(lambda v:
-                            v.bill_version_action_date <= self.vote_date_time,
-                        self.bill.versions)[0]
+        version = next(filter(lambda v: v.bill_version_action_date <= self.vote_date_time,
+                              self.bill.versions))
 
         if version.vote_required == 'Majority':
             return '1/2'

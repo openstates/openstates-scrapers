@@ -1,5 +1,4 @@
 import datetime
-from billy.scrape.utils import url_xpath
 
 
 metadata = {
@@ -160,11 +159,3 @@ metadata = {
         '1994 Special Session II',
     ]
 }
-
-
-def session_list():
-    sessions = url_xpath('http://lis.virginia.gov/',
-        "//div[@id='sLink']//select/option/text()")
-    sessions = [s.strip() for s in sessions if 'Session' in s]
-
-    return sessions

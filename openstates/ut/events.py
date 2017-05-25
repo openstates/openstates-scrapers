@@ -1,15 +1,15 @@
 import re
 import datetime
-
+import pytz
 from openstates.utils import LXMLMixin
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 from scrapelib import HTTPError
 
 
-class UTEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'ut'
+class UTEventScraper(Scraper, LXMLMixin):
+    _tz = pytz.timezone('MST7MDT')
 
-    def scrape(self, session, chambers):
+    def scrape(self, chamber=None):
         URL = 'http://utahlegislature.granicus.com/ViewPublisherRSS.php?view_id=2&mode=agendas'
         doc = self.lxmlize(URL)
         events = doc.xpath('//item')
@@ -18,16 +18,15 @@ class UTEventScraper(EventScraper, LXMLMixin):
             title_and_date = info.xpath('title/text()')[0].split(" - ")
             title = title_and_date[0]
             when = title_and_date[-1]
-            if not when.endswith(session[ :len("20XX")]):
-                continue
+            # if not when.endswith(session[ :len("20XX")]):
+            #    continue
 
-            event = Event(
-                    session=session,
-                    when=datetime.datetime.strptime(when, '%b %d, %Y'),
-                    type='committee:meeting',
-                    description=title,
-                    location='State Capitol'
-                    )
+            event = Event(name=title,
+                          start_time=self._tz.localize(datetime.datetime.strptime(when,
+                                                                                  '%b %d, %Y')),
+                          timezone=self._tz.zone,
+                          location_name='State Capitol'
+                          )
             event.add_source(URL)
 
             url = re.search(r'(http://.*?)\s', info.text_content()).group(1)
@@ -43,18 +42,8 @@ class UTEventScraper(EventScraper, LXMLMixin):
                 committee_doc = self.lxmlize(committee[0])
                 committee_name = committee_doc.xpath(
                         '//h3[@class="heading committee"]/text()')[0].strip()
-                if committee_name.lower().startswith("Senate"):
-                    chamber = "upper"
-                elif committee_name.lower().startswith("House"):
-                    chamber = "lower"
-                else:
-                    chamber = "joint"
-                event.add_participant(
-                        type='host',
-                        participant=committee_name,
-                        participant_type='committee',
-                        chamber = chamber
-                        )
+                event.add_participant(committee_name, type='committee',
+                                      note='host')
 
             documents = doc.xpath('.//td')
             for document in documents:
@@ -63,18 +52,14 @@ class UTEventScraper(EventScraper, LXMLMixin):
                     continue
                 url = url.group(1)
                 event.add_document(
-                        name=document.xpath('text()')[0],
+                        note=document.xpath('text()')[0],
                         url=url,
-                        mimetype='application/pdf'
+                        media_type='application/pdf'
                         )
                 bills = document.xpath('@onclick')
                 for bill in bills:
                     if "bills/static" in bill:
                         bill_name = bill.split("/")[-1].split(".")[0]
-                        event.add_related_bill(bill_name,
-                            type='consideration',
-                            description='Bill up for discussion')
-
-
-
-            self.save_event(event)
+                        item = event.add_agenda_item('Bill up for discussion')
+                        item.add_bill(bill_name)
+            yield event

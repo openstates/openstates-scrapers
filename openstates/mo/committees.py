@@ -1,46 +1,55 @@
-import datetime as datetime
 import re
+import datetime as datetime
+
 import lxml.html
-import xlrd
-import os
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
+
 from openstates.utils import LXMLMixin
 
 
-class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'mo'
-
+class MOCommitteeScraper(Scraper, LXMLMixin):
     _reps_url_base = 'http://www.house.mo.gov/'
     _senate_url_base = 'http://www.senate.mo.gov/'
     _no_members_text = 'This Committee does not have any members'
     # Committee page markup changed in 2016.
     _is_post_2015 = False
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-        sessions = term.split('-')
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-        for session in sessions:
-            # The second session in a two year term might not have details yet
-            if session not in self.metadata['session_details']:
-                continue
+        meta = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == session
+        )
+        session_start_date = datetime.datetime.strptime(meta['start_date'], '%Y-%m-%d').date()
 
-            session_start_date = self.metadata['session_details'][session]\
-                ['start_date']
+        meta_2016 = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == '2016'
+        )
+        session_start_date_2016 = datetime.datetime.strptime(
+            meta_2016['start_date'],
+            '%Y-%m-%d',
+        ).date()
 
-            if session_start_date > datetime.date.today():
-                self.log('{} session has not begun - ignoring.'.format(
-                    session))
-                continue
-            elif session_start_date >= self.metadata['session_details']\
-                ['2016']['start_date']:
-                self._is_post_2015 = True
+        if session_start_date > datetime.date.today():
+            self.info('{} session has not begun - ignoring.'.format(session))
+            return
+        elif session_start_date >= session_start_date_2016:
+            self._is_post_2015 = True
 
-            #joint committees scraped as part of lower
-            getattr(self, '_scrape_' + chamber + '_chamber')(session, chamber)
+        # joint committees scraped as part of lower
+        if chamber in ['upper', None]:
+            yield from self._scrape_upper_chamber(session)
+        if chamber in ['lower', None]:
+            yield from self._scrape_lower_chamber(session)
 
-    def _scrape_upper_chamber(self, session, chamber):
-        self.log('Scraping upper chamber for committees.')
+    def _scrape_upper_chamber(self, session):
+        self.info('Scraping upper chamber for committees.')
+
+        chamber = 'upper'
 
         if self._is_post_2015:
             url = '{base}{year}web/standing-committees'.format(
@@ -65,10 +74,10 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             comm_link = comm_link.attrib['href']
 
             if self._is_post_2015:
-                if not "web" in comm_link:
+                if "web" not in comm_link:
                     continue
             else:
-                if not "comm" in comm_link:
+                if "comm" not in comm_link:
                     continue
 
             comm_page = self.lxmlize(comm_link)
@@ -91,11 +100,11 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             comm_name = comm_name.replace(' Committee', '')
             comm_name = comm_name.strip()
 
-            committee = Committee(chamber, comm_name)
+            committee = Organization(comm_name, chamber=chamber, classification='committee')
 
             for member in members:
                 mem_link = member.attrib["href"]
-                if not "mem" in mem_link:
+                if "mem" not in mem_link:
                     continue
 
                 if self._is_post_2015:
@@ -107,20 +116,20 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                 # Senator title stripping mainly for post-2015.
                 mem_name = re.sub('^Senator[\s]+', '', mem_parts[0])
 
-                #this one time, MO forgot the comma between
-                #the member and his district. Very rarely relevant
+                # this one time, MO forgot the comma between
+                # the member and his district. Very rarely relevant
                 try:
-                    int(mem_name[-4:-2]) #the district's # is in this position
+                    int(mem_name[-4:-2])  # the district's # is in this position
                 except ValueError:
                     pass
                 else:
-                    mem_name = " ".join(mem_name.split(" ")[0:-1]) #member name fixed
+                    mem_name = " ".join(mem_name.split(" ")[0:-1])  # member name fixed
 
-                    #ok, so this next line. We don't care about
-                    #the first 2 elements of mem_parts anymore
-                    #so whatever. But if the member as a role, we want
-                    #to make sure there are 3 elements in mem_parts and
-                    #the last one is actually the role. This sucks, sorry.
+                    # ok, so this next line. We don't care about
+                    # the first 2 elements of mem_parts anymore
+                    # so whatever. But if the member as a role, we want
+                    # to make sure there are 3 elements in mem_parts and
+                    # the last one is actually the role. This sucks, sorry.
                     mem_parts.append(mem_parts[-1])
 
                 mem_role = 'member'
@@ -131,12 +140,16 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                     continue
 
                 committee.add_member(mem_name, role=mem_role)
+
             committee.add_source(url)
             committee.add_source(comm_link)
-            self.save_committee(committee)
 
-    def _scrape_lower_chamber(self, session, chamber):
-        self.log('Scraping lower chamber for committees.')
+            yield committee
+
+    def _scrape_lower_chamber(self, session):
+        self.info('Scraping lower chamber for committees.')
+
+        chamber = 'lower'
 
         url = '{base}ActiveCommittees.aspx'.format(base=self._reps_url_base)
         page_string = self.get(url).text
@@ -146,7 +159,7 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
         trs = table.xpath('tr')[:-1]
         for tr in trs:
             committee_parts = [part.strip()
-                                for part in tr.text_content().split(',')]
+                               for part in tr.text_content().split(',')]
             committee_name = committee_parts[0].title().strip()
             if len(committee_parts) > 0:
                 status = committee_parts[1].strip()
@@ -165,10 +178,14 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
             committee_name = committee_name.replace(' Committee', '')
             committee_name = committee_name.strip()
 
-            committee = Committee(actual_chamber, committee_name, status=status)
+            committee = Organization(
+                committee_name,
+                chamber=actual_chamber,
+                classification='committee',
+            )
+            committee.extras = {'status': status}
             committee_page_string = self.get(committee_url).text
-            committee_page = lxml.html.fromstring(
-                                committee_page_string)
+            committee_page = lxml.html.fromstring(committee_page_string)
             # First tr has the title (sigh)
             mem_trs = committee_page.xpath('id("memGroup")/tr')[1:]
             for mem_tr in mem_trs:
@@ -190,8 +207,10 @@ class MOCommitteeScraper(CommitteeScraper, LXMLMixin):
                     # role name
                     mem_role = ', '.join(
                         [p.strip() for p in mem_parts[2:]]).lower()
-                committee.add_member(mem_name, role=mem_role,
-                                    _code=mem_code)
+                membership = committee.add_member(mem_name, role=mem_role)
+                membership.extras = {'code': mem_code}
+
             committee.add_source(url)
             committee.add_source(committee_url)
-            self.save_committee(committee)
+
+            yield committee

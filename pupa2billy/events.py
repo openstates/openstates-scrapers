@@ -34,4 +34,6 @@ class PupaEventScraper(EventScraper):
         for source in data['sources']:
             event.add_source(source['url'])
 
+        event.update(**data['extras'])
+
         self.save_event(event)
