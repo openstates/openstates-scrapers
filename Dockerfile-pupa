@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     mdbtools
 
 RUN mkdir -p /opt/openstates/
+RUN mkdir -p /var/run/mysqld/
 
 RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
 RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
