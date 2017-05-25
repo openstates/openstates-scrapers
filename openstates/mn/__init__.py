@@ -100,6 +100,12 @@ class Minnesota(Jurisdiction):
             'identifier': '2017-2018',
             'name': '2017-2018 Regular Session'
         },
+        {
+            '_scraped_name': '90th Legislature, 2017 1st Special Session',
+            'classification': 'special',
+            'identifier': '2017s1',
+            'name': '2017, 1st Special Session'
+        },
     ]
     ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',
