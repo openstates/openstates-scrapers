@@ -11,12 +11,12 @@ from openstates.utils import LXMLMixin
 class SDBillScraper(Scraper, LXMLMixin):
 
     def scrape(self, chambers=None, session=None):
-        url = 'http://www.sdlegislature.gov/Legislative_Session' \
-              '/Bills/default.aspx?Session={}'.format(session)
-
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+
+        url = 'http://www.sdlegislature.gov/Legislative_Session' \
+              '/Bills/default.aspx?Session={}'.format(session)
 
         chambers = [chambers] if chambers else ['upper', 'lower']
 

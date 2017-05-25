@@ -69,6 +69,11 @@ class SouthDakota(Jurisdiction):
             "_scraped_name": "2017 (92nd) Session",
             "identifier": "2017",
             "name": "2017 Regular Session"
+        },
+        {
+            "_scraped_name": "2017 (92nd) Special Session",
+            "identifier": "2017s",
+            "name": "2017 Special Session"
         }
     ]
     ignored_scraped_sessions = [
