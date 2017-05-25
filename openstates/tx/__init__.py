@@ -1,4 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
 from .people import TXPersonScraper
 
 
@@ -125,6 +127,10 @@ class Texas(Jurisdiction):
         "71(1) - 1989",
         "71(R) - 1989"
     ]
+
+    def get_session_list(self):
+        return url_xpath('http://www.legis.state.tx.us/',
+                         '//select[@name="cboLegSess"]/option/text()')
 
     def get_organizations(self):
         legislature_name = "Texas Legislature"
