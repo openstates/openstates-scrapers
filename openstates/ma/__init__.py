@@ -1,4 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
+from .people import MAPersonScraper
+from .committees import MACommitteeScraper
+from .bills import MABillScraper
 
 
 class Massachusetts(Jurisdiction):
@@ -7,6 +10,9 @@ class Massachusetts(Jurisdiction):
     name = "Massachusetts"
     url = "http://mass.gov"
     scrapers = {
+        'people': MAPersonScraper,
+        'committees': MACommitteeScraper,
+        'bills': MABillScraper,
     }
     parties = [
         {'name': 'Republican'},
