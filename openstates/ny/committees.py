@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import re
 import lxml.html
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 
-class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = "ny"
+class NYCommitteeScraper(Scraper, LXMLMixin):
     latest_only = True
 
     def _parse_name(self, name):
@@ -41,9 +40,9 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
 
         return (name, role)
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')()
-
+    def scrape(self, chamber=None):
+        yield from self.scrape_upper_chamber()
+        yield from self.scrape_lower_chamber()
 
     def scrape_lower_chamber(self, only_names=None):
         url = 'http://assembly.state.ny.us/comm/'
@@ -73,7 +72,7 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 url = link_node.attrib['href']
                 committee = self.scrape_lower_committee(committee_name, url)
 
-                self.save_committee(committee)
+                yield committee
 
         return committees
 
@@ -81,7 +80,8 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
     def scrape_lower_committee(self, name, url):
         page = self.lxmlize(url)
 
-        committee = Committee('lower', name)
+        committee = Organization(chamber='lower', name=name,
+                                 classification="committee")
         committee.add_source(url)
 
         seen = set()
@@ -148,15 +148,15 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 committee = self.scrape_upper_committee(name,
                     committee_url)
 
-                self.save_committee(committee)
+                yield committee
 
         return committees
-
 
     def scrape_upper_committee(self, committee_name, url):
         page = self.lxmlize(url)
 
-        committee = Committee('upper', committee_name)
+        committee = Organization(chamber='upper', name=committee_name,
+                                 classification="committee")
         committee.add_source(url)
 
         # Committee member attributes.

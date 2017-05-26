@@ -1,13 +1,11 @@
 import re
-import itertools
 import datetime
-import lxml.html
-import logging
-from billy.scrape.legislators import LegislatorScraper, Legislator
+
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
+class NYPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'ny'
 
     def _split_list_on_tag(self, elements, tag):
@@ -232,10 +230,14 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return office
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')(term)
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_upper_chamber('upper')
+            yield from self.scrape_lower_chamber('lower')
 
-    def scrape_upper_chamber(self, term):
+    def scrape_upper_chamber(self, chamber):
         url = 'http://www.nysenate.gov/senators-committees'
 
         page = self.lxmlize(url)
@@ -307,28 +309,26 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             if photo_node is not None:
                 photo_url = photo_node.attrib['src']
 
-            legislator = Legislator(
-                full_name=name,
-                term=term,
-                chamber='upper',
-                district=district,
-                party=party,
-                photo_url=photo_url
-            )
+            person = Person(name=name,
+                            district=district,
+                            party=party,
+                            primary_org=chamber,
+                            image=photo_url)
 
-            legislator.add_source(url)
-            legislator['url'] = legislator_url
+            person.add_link(url)
 
             # Find legislator's offices.
             contact_url = legislator_url + '/contact'
-            self.scrape_upper_offices(legislator, contact_url)
+            person.add_link(contact_url)
 
-            self.save_legislator(legislator)
+            self.scrape_upper_offices(person, contact_url)
 
-    def scrape_upper_offices(self, legislator, url):
+            yield person
+
+    def scrape_upper_offices(self, person, url):
         legislator_page = self.lxmlize(url)
 
-        legislator.add_source(url)
+        person.add_source(url)
 
         # Find legislator e-mail address.
         email_node = self.get_node(
@@ -339,9 +339,8 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         if email_node is not None:
             email_text = email_node.attrib['href']
             email = re.sub(r'^mailto:', '', email_text)
-            legislator['email'] = email
-        else:
-            email = None
+            person.add_contact_detail(type='email', value=email,
+                                      note='Capitol Office')
 
         # Parse all offices.
         office_nodes = self.get_nodes(
@@ -352,9 +351,17 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             office = self._parse_office(office_node)
 
             if office is not None:
-                legislator.add_office(**office)
+                if office['address']:
+                    person.add_contact_detail(type='address', value=office['address'],
+                                              note='District Office')
+                if office['phone']:
+                    person.add_contact_detail(type='voice', value=office['phone'],
+                                              note='District Office')
+                if office['fax']:
+                    person.add_contact_detail(type='fax', value=office['fax'],
+                                              note='District Office')
 
-    def scrape_lower_chamber(self, term):
+    def scrape_lower_chamber(self, chamber):
         url = 'http://assembly.state.ny.us/mem/?sh=email'
 
         page = self.lxmlize(url)
@@ -366,7 +373,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
         for assembly_member_node in self._split_list_on_tag(
-            assembly_member_nodes, 'emailclear'):
+                assembly_member_nodes, 'emailclear'):
             try:
                 name_node, district_node, email_node = assembly_member_node
             except ValueError:
@@ -406,22 +413,20 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             legislator_url = name_anchor.get('href')
 
-            legislator = Legislator(
-                term,
-                'lower',
-                district,
-                name,
-                party=party,
-                url=legislator_url,
-                photo_url=photo_url)
-            legislator.add_source(url)
+            person = Person(name=name,
+                            district=district,
+                            party=party,
+                            primary_org=chamber,
+                            image=photo_url)
 
-            self.scrape_lower_offices(legislator_url, legislator, email)
+            person.add_link(url)
 
-            self.save_legislator(legislator)
+            self.scrape_lower_offices(person, legislator_url)
 
-    def scrape_lower_offices(self, url, legislator, email=None):
-        legislator.add_source(url)
+            yield person
+
+    def scrape_lower_offices(self, person, url):
+        person.add_source(url)
 
         page = self.lxmlize(url)
 
@@ -449,19 +454,17 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             address = '\n'.join(address)
 
-            legislator.add_office(
-                    name=office_name,
-                    type=office_type,
-                    phone=phone,
-                    fax=fax,
-                    address=address,
-                    email=email
-                    )
+            person.add_contact_detail(type='address', value=address,
+                                      note=office_type + ' Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note=office_type + ' Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax,
+                                          note=office_type + ' Office')
 
             offices = True
 
         if not offices and email:
-            legislator.add_office(
-                type="capitol",
-                name="Capitol Office",
-                email=email)
+            person.add_contact_detail(type='address', value=address,
+                                      note=office_type + ' Office')

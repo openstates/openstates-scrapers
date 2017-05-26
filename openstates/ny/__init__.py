@@ -1,78 +1,84 @@
-import re
-import lxml.html
-from billy.utils.fulltext import text_after_line_numbers
-from .bills import NYBillScraper
-from .legislators import NYLegislatorScraper
 from .committees import NYCommitteeScraper
-from .events import NYEventScraper
+from pupa.scrape import Jurisdiction, Organization
+from .people import NYPersonScraper
+from openstates.utils import url_xpath
 
-settings = dict(SCRAPELIB_TIMEOUT=120)
 
-metadata = dict(
-    name='New York',
-    abbreviation='ny',
-    capitol_timezone='America/New_York',
-    legislature_name='New York Legislature',
-
-    # unfortunate - there isn't a decent combined site
-    legislature_url='http://public.leginfo.state.ny.us/',
-
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'Assembly', 'title': 'Assembly Member'},
-    },
-    terms=[
-        dict(name='2009-2010', start_year=2010, end_year=2011,
-             sessions=['2009-2010']),
-        dict(name='2011-2012', start_year=2011, end_year=2012,
-             sessions=['2011-2012']),
-        dict(name='2013-2014', start_year=2013, end_year=2014,
-             sessions=['2013-2014']),
-        dict(name='2015-2016', start_year=2015, end_year=2016,
-             sessions=['2015-2016']),
-        dict(name='2017-2018', start_year=2017, end_year=2018,
-             sessions=['2017-2018']),
-        ],
-    session_details={
-        '2009-2010': {
-            'display_name': '2009 Regular Session',
-            '_scraped_name': '2009',
+class NewYork(Jurisdiction):
+    division_id = "ocd-division/country:us/state:ny"
+    classification = "government"
+    name = "New York"
+    url = "TODO"
+    scrapers = {
+        'people': NYPersonScraper,
+        'committees': NYCommitteeScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2009",
+            "identifier": "2009-2010",
+            "name": "2009 Regular Session"
         },
-        '2011-2012': {
-            'display_name': '2011 Regular Session',
-            '_scraped_name': '2011',
+        {
+            "_scraped_name": "2011",
+            "identifier": "2011-2012",
+            "name": "2011 Regular Session"
         },
-        '2013-2014': {
-            'display_name': '2013 Regular Session',
-            '_scraped_name': '2013',
+        {
+            "_scraped_name": "2013",
+            "identifier": "2013-2014",
+            "name": "2013 Regular Session"
         },
-        '2015-2016': {
-            'display_name': '2015 Regular Session',
-            '_scraped_name': '2015',
+        {
+            "_scraped_name": "2015",
+            "identifier": "2015-2016",
+            "name": "2015 Regular Session"
         },
-        '2017-2018': {
-            'display_name': '2017 Regular Session',
-            '_scraped_name': '2017',
-        },
-    },
-    feature_flags=['subjects', 'events', 'influenceexplorer'],
-    _ignored_scraped_sessions=['2009'],
+        {
+            "_scraped_name": "2017",
+            "identifier": "2017-2018",
+            "name": "2017 Regular Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2009"
+    ]
 
-    requests_per_minute=30,
-)
+    def get_organizations(self):
+        legislature_name = "New York Legislature"
+        lower_chamber_name = "Assembly"
+        lower_seats = 150
+        lower_title = "Assembly Member"
+        upper_chamber_name = "Senate"
+        upper_seats = 63
+        upper_title = "Senator"
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    url = 'http://nysenate.gov/search/legislation'
-    sessions = url_xpath(url,
-        '//select[@name="bill_session_year"]/option[@value!=""]/@value')
-    return sessions
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = doc.xpath('//pre')[0].text_content()
-    # if there's a header above a _________, ditch it
-    text = text.rsplit('__________', 1)[-1]
-    # strip numbers from lines (not all lines have numbers though)
-    text = re.sub('\n\s*\d+\s*', ' ', text)
-    return text
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        url = 'http://nysenate.gov/search/legislation'
+        sessions = url_xpath(url,
+            '//select[@name="bill_session_year"]/option[@value!=""]/@value')
+        return sessions
