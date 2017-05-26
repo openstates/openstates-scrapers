@@ -11,15 +11,15 @@ from openstates.utils import LXMLMixin
 _scrapable_types = ['Bill', 'Bill&Amend', 'CMZ Permit', 'Other', 'Resolution']
 
 _action_pairs = (
-    ('ctl00_ContentPlaceHolder_DateIntroLabel', 'Introduced', 'bill:introduced'),
-    ('ctl00_ContentPlaceHolder_DateRecLabel', 'Received', 'bill:filed'),
+    ('ctl00_ContentPlaceHolder_DateIntroLabel', 'Introduced', 'introduction'),
+    ('ctl00_ContentPlaceHolder_DateRecLabel', 'Received', 'filing'),
     ('ctl00_ContentPlaceHolder_DateAssignLabel', 'Assigned', 'other'),
     ('ctl00_ContentPlaceHolder_DateToSenLabel', 'Sent to Senator', 'other'),
-    ('ctl00_ContentPlaceHolder_DateToGovLabel', 'Sent to Governor', 'governor:received'),
-    ('ctl00_ContentPlaceHolder_DateAppGovLabel', 'Signed by Governor', 'governor:signed'),
-    ('ctl00_ContentPlaceHolder_DateVetoedLabel', 'Vetoed', 'governor:vetoed'),
+    ('ctl00_ContentPlaceHolder_DateToGovLabel', 'Sent to Governor', 'executive-receipt'),
+    ('ctl00_ContentPlaceHolder_DateAppGovLabel', 'Signed by Governor', 'executive-signature'),
+    ('ctl00_ContentPlaceHolder_DateVetoedLabel', 'Vetoed', 'executive-veto'),
     ('ctl00_ContentPlaceHolder_DateOverLabel', 'Governor Veto Overridden',
-     'bill:veto_override:passed'),
+     'veto-override-passage'),
 )
 
 _action_ids = (
@@ -30,11 +30,11 @@ _action_ids = (
 )
 
 _action_re = (
-    ('AMENDED AND REPORTED', ['committee:referred', 'amendment:passed']),
-    ('REPORTED OUT', 'committee:referred'),
-    ('ADOPTED', 'bill:passed'),
+    ('AMENDED AND REPORTED', ['referral-committee', 'amendment-passage']),
+    ('REPORTED OUT', 'referral-committee'),
+    ('ADOPTED', 'passage'),
     ('HELD IN COMMITTEE', 'other'),
-    ('AMENDED', 'amendment:passed'),
+    ('AMENDED', 'amendment-passage'),
 )
 
 _committees = (
