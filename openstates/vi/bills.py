@@ -163,11 +163,11 @@ class VIBillScraper(Scraper, LXMLMixin):
                 return False
 
         bill = Bill(
-            session=self.session,
-            chamber='upper',
-            bill_id=bill_no,
+            bill_no,
+            legislative_session=self.session,
+            chamber='legislature',
             title=title,
-            type='bill'
+            classification='bill'
         )
 
         bill.add_source(bill_page_url)
@@ -193,10 +193,10 @@ class VIBillScraper(Scraper, LXMLMixin):
         bill_version = bill_page.xpath(
             '//span[@id="ctl00_ContentPlaceHolder_BillNumberLabel"]/a/@href')
         if bill_version:
-            bill.add_version(name=bill_no,
-                             url='http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
-                             mimetype='application/pdf'
-                             )
+            bill.add_version_link(note=bill_no,
+                                  url='http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
+                                  media_type='application/pdf'
+                                  )
 
     def parse_acts(self, bill, bill_page):
         bill_act = bill_page.xpath('//span[@id="ctl00_ContentPlaceHolder_ActNumberLabel"]/a')
@@ -205,7 +205,11 @@ class VIBillScraper(Scraper, LXMLMixin):
             act_title = 'Act {}'.format(act_title)
             (act_link,) = bill_act[0].xpath('./@href')
             act_link = 'http://www.legvi.org/vilegsearch/{}'.format(act_link)
-            bill.add_document(name=act_title, url=act_link, mimetype='application/pdf')
+            bill.add_document_link(
+                note=act_title,
+                url=act_link,
+                media_type='application/pdf'
+            )
 
     def clean_names(self, name_str):
         # Clean up the names a bit to allow for comma splitting
@@ -217,7 +221,8 @@ class VIBillScraper(Scraper, LXMLMixin):
         sponsors = self.clean_names(sponsors)
         sponsors = sponsors.split(', ')
         for sponsor in sponsors:
-            bill.add_sponsor(type=sponsor_type, name=sponsor.strip())
+            bill.add_sponsorship(classification=sponsor_type, name=sponsor.strip(),
+                                 entity_type='person')
 
     def parse_date_actions(self, bill, bill_page):
         # There's a set of dates on the bill page denoting specific actions
@@ -225,10 +230,12 @@ class VIBillScraper(Scraper, LXMLMixin):
         for xpath, action_name, action_type in _action_pairs:
             action_date = bill_page.xpath('//span[@id="{}"]/text()'.format(xpath))
             if action_date:
-                bill.add_action(actor='upper',
-                                action=action_name,
-                                date=self.parse_date(action_date[0]),
-                                type=action_type)
+                bill.add_action(
+                    description=action_name,
+                    date=self.parse_date(action_date[0]),
+                    chamber='legislature',
+                    classification=action_type
+                )
 
     def parse_date(self, date_str):
         # manual typo fix
@@ -246,10 +253,12 @@ class VIBillScraper(Scraper, LXMLMixin):
             actions = bill_page.xpath('//span[@id="{}"]/text()'.format(xpath))
             if actions:
                 for action_date, action_text in self.split_action(actions[0]):
-                    bill.add_action(actor=actor,
-                                    action=action_text,
-                                    date=self.parse_date(action_date),
-                                    type=self.categorize_action(action_text))
+                    bill.add_action(
+                        description=action_text,
+                        chamber=actor,
+                        date=self.parse_date(action_date),
+                        classification=self.categorize_action(action_text)
+                    )
 
     def split_action(self, action_str):
         # Turns 01/01/2015 ACTION1 02/02/2016 ACTION2
