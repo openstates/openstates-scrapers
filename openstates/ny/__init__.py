@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import NYBillScraper
+from .events import NYEventScraper
 from .people import NYPersonScraper
 from .committees import NYCommitteeScraper
 
@@ -17,6 +18,7 @@ class NewYork(Jurisdiction):
     url = "http://public.leginfo.state.ny.us/"
     scrapers = {
         'bills': NYBillScraper,
+        'events': NYEventScraper,
         'people': NYPersonScraper,
         'committees': NYCommitteeScraper,
     }
