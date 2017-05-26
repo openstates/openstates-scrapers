@@ -1,4 +1,9 @@
+import re
+
+import requests
+import lxml.html
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import MAPersonScraper
 from .committees import MACommitteeScraper
 from .bills import MABillScraper
@@ -303,3 +308,12 @@ class Massachusetts(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        doc = lxml.html.fromstring(requests.get(
+            'https://malegislature.gov/Bills/Search').text)
+        sessions = doc.xpath("//div[@data-refinername='lawsgeneralcourt']/div/label/text()")
+
+        # Remove all text between parens, like (Current) (7364)
+        return list(
+            filter(None, [re.sub(r'\([^)]*\)', "", session).strip() for session in sessions]))

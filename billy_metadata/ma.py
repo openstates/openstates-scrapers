@@ -69,23 +69,3 @@ metadata = {
     },
     'feature_flags': ['events', 'influenceexplorer'],
 }
-
-
-def session_list():
-    import re
-    import requests
-    import lxml.html
-    doc = lxml.html.fromstring(requests.get(
-        'https://malegislature.gov/Bills/Search').text)
-    sessions = doc.xpath("//div[@data-refinername='lawsgeneralcourt']/div/label/text()")
-
-    # Remove all text between parens, like (Current) (7364)
-    sessions = list(filter(None, [re.sub(r'\([^)]*\)', "", session).strip() for session in sessions]))
-    return sessions
-
-
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = ' '.join([x.text_content()
-                     for x in doc.xpath('//td[@class="longTextContent"]//p')])
-    return text

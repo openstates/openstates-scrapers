@@ -113,7 +113,7 @@ class RhodeIsland(Jurisdiction):
         yield upper
         yield lower
 
-    def session_list(self):
+    def get_session_list(self):
         return url_xpath(
             'http://status.rilin.state.ri.us/bill_history.aspx?mode=previous',
             '//select[@name="ctl00$rilinContent$cbYear"]/option/text()')
