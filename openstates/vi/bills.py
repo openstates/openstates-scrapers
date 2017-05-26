@@ -4,7 +4,7 @@ import re
 import lxml.etree
 from itertools import izip
 
-from pupa.scrape import Bill, Scraper, VoteEvent
+from pupa.scrape import Bill, Scraper
 from openstates.utils import LXMLMixin
 
 # Skip Amendment for now, data is included in Bill entry
@@ -194,9 +194,9 @@ class VIBillScraper(Scraper, LXMLMixin):
             '//span[@id="ctl00_ContentPlaceHolder_BillNumberLabel"]/a/@href')
         if bill_version:
             bill.add_version(name=bill_no,
-                             url= 'http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
+                             url='http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
                              mimetype='application/pdf'
-            )
+                             )
 
     def parse_acts(self, bill, bill_page):
         bill_act = bill_page.xpath('//span[@id="ctl00_ContentPlaceHolder_ActNumberLabel"]/a')
@@ -205,13 +205,10 @@ class VIBillScraper(Scraper, LXMLMixin):
             act_title = 'Act {}'.format(act_title)
             (act_link,) = bill_act[0].xpath('./@href')
             act_link = 'http://www.legvi.org/vilegsearch/{}'.format(act_link)
-            bill.add_document(name=act_title,
-                    url=act_link,
-                    mimetype='application/pdf'
-            )
+            bill.add_document(name=act_title, url=act_link, mimetype='application/pdf')
 
     def clean_names(self, name_str):
-        #Clean up the names a bit to allow for comma splitting
+        # Clean up the names a bit to allow for comma splitting
         name_str = re.sub(", Jr", " Jr.", name_str, flags=re.I)
         name_str = re.sub(", Sr", " Sr.", name_str, flags=re.I)
         return name_str
@@ -234,7 +231,7 @@ class VIBillScraper(Scraper, LXMLMixin):
                                 type=action_type)
 
     def parse_date(self, date_str):
-        #manual typo fix
+        # manual typo fix
         date_str = date_str.replace('07/21/5', '07/21/15')
         try:
             return datetime.datetime.strptime(date_str, '%m/%d/%Y').date()
@@ -254,16 +251,15 @@ class VIBillScraper(Scraper, LXMLMixin):
                                     date=self.parse_date(action_date),
                                     type=self.categorize_action(action_text))
 
-
     def split_action(self, action_str):
         # Turns 01/01/2015 ACTION1 02/02/2016 ACTION2
         # Into (('01/01/2015', 'ACTION NAME'),('02/02/2016', 'ACTION2'))
         actions = re.split('(\d{1,2}/\d{1,2}/\d{1,2})', action_str)
         # Trim out whitespace and leading/trailing dashes
-        actions = [re.sub('^-\s+|^-|-$', '',action.strip()) for action in actions]
+        actions = [re.sub('^-\s+|^-|-$', '', action.strip()) for action in actions]
         # Trim out empty list items from re.split
         actions = list(filter(None, actions))
-        return self.grouped(actions,2)
+        return self.grouped(actions, 2)
 
     def categorize_action(self, action):
         for pattern, types in _action_re:

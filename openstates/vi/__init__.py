@@ -62,4 +62,3 @@ class USVirginIslands(Jurisdiction):
 
         yield legislature
         yield upper
-
