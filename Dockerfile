@@ -47,7 +47,7 @@ ENV BILLY_ENV /opt/openstates/venv-billy/
 ENV PUPA_ENV /opt/openstates/venv-pupa/
 
 ADD . /opt/openstates/openstates
-RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements-new.txt
+RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
 
 WORKDIR /opt/openstates/openstates/
 ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]
