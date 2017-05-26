@@ -1,15 +1,11 @@
 import re
-import itertools
 import datetime
-import lxml.html
-import logging
-from billy.scrape.legislators import LegislatorScraper, Legislator
+
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'ny'
-
+class NYPersonScraper(Scraper, LXMLMixin):
     def _split_list_on_tag(self, elements, tag):
         data = []
         for element in elements:
@@ -19,7 +15,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 element_class = element.attrib['class']
             except:
                 pass
-            
+
             if element_class == tag:
                 yield data
                 data = []
@@ -39,7 +35,6 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         NY_US_HOUSE_SEATS = 27
         NY_STATE_SENATE_SEATS = 63
         NY_STATE_ASSEMBLY_SEATS = 150
-        SKIP_SEATS = NY_US_HOUSE_SEATS + NY_STATE_SENATE_SEATS
 
         # Download the page and ingest using lxml
         MEMBER_LIST_URL = 'http://www.elections.ny.gov:8080/reports/rwservlet'\
@@ -62,7 +57,8 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             '/html/body/table/tr/td/font[@color="#0000ff"]/b/text()')
         for affiliation in affiliation_text:
             if capture_district and capture_party:
-                raise AssertionError('Assembly party parsing simultaneously'\
+                raise AssertionError(
+                    'Assembly party parsing simultaneously'
                     'looking for both district number and party name.')
 
             # Replace non-breaking spaces.
@@ -75,13 +71,15 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             except ValueError:
                 is_date = False
 
-            if is_date or affiliation == 'Elected Representatives for New York State by Office and District':
+            if is_date:
+                continue
+            if affiliation == 'Elected Representatives for New York State by Office and District':
                 continue
             # Otherwise, check to see if a District or Party is indicated.
-            elif affiliation == u'District : ':
+            elif affiliation == 'District : ':
                 capture_district = True
-                continue 
-            elif affiliation == u'Party : ':
+                continue
+            elif affiliation == 'Party : ':
                 capture_party = True
                 continue
 
@@ -98,21 +96,20 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                     capture_party = False
                     continue
 
-                assert affiliation, 'No party is indicated for district {}'\
-                    .format(district)
+                assert affiliation, 'No party is indicated for district {}'.format(district)
 
                 # Districts listed in order: Congressional, State Senate,
                 # then State Assembly.
                 # If a repeat district is seen, assume it's from the
                 # next body in that list.
-                if (int(district) <= NY_US_HOUSE_SEATS and\
-                    not congressional_affiliations.get(district)):
+                if (int(district) <= NY_US_HOUSE_SEATS and
+                        not congressional_affiliations.get(district)):
                     congressional_affiliations[district] = affiliation.title()
-                elif (int(district) <= NY_STATE_SENATE_SEATS and\
-                    not senate_affiliations.get(district)):
+                elif (int(district) <= NY_STATE_SENATE_SEATS and
+                        not senate_affiliations.get(district)):
                     senate_affiliations[district] = affiliation.title()
-                elif (int(district) <= NY_STATE_ASSEMBLY_SEATS and\
-                    not assembly_affiliations.get(district)):
+                elif (int(district) <= NY_STATE_ASSEMBLY_SEATS and
+                        not assembly_affiliations.get(district)):
                     assembly_affiliations[district] = affiliation.title()
                 else:
                     message = 'District {} appears too many times in party '\
@@ -121,7 +118,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
                 district = None
                 capture_party = False
-                entry_counter += 1                
+                entry_counter += 1
             else:
                 message = 'Assembly party parsing found bad text: "{}"'
                 raise AssertionError(message.format(affiliation))
@@ -142,15 +139,15 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             office_name_text = ()
 
         # Initializing default values for office attributes.
-        office_name    = None
-        office_type    = None
+        office_name = None
+        office_type = None
         street_address = None
-        city           = None
-        state          = None
-        zip_code       = None
-        address        = None
-        phone          = None
-        fax            = None
+        city = None
+        state = None
+        zip_code = None
+        address = None
+        phone = None
+        fax = None
 
         # Determine office names/types consistent with Open States internal
         # format.
@@ -199,9 +196,9 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         # Build office physical address.
         if (street_address is not None and
-            city is not None and
-            state is not None and
-            zip_code is not None):
+                city is not None and
+                state is not None and
+                zip_code is not None):
             address = "{}\n{}, {} {}".format(
                 street_address, city, state, zip_code)
         else:
@@ -232,10 +229,14 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return office
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')(term)
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_upper_chamber('upper')
+            yield from self.scrape_lower_chamber('lower')
 
-    def scrape_upper_chamber(self, term):
+    def scrape_upper_chamber(self, chamber):
         url = 'http://www.nysenate.gov/senators-committees'
 
         page = self.lxmlize(url)
@@ -258,9 +259,9 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 continue
 
             # Initialize default values for legislator attributes.
-            name      = None
-            district  = None
-            party     = None
+            name = None
+            district = None
+            party = None
             photo_url = None
 
             # Find legislator's name.
@@ -296,8 +297,7 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
                 elif party_text.startswith('(R'):
                     party = 'Republican'
                 else:
-                    raise ValueError('Unexpected party affiliation: {}'
-                        .format(party_text))
+                    raise ValueError('Unexpected party affiliation: {}'.format(party_text))
 
             # Find legislator's profile photograph.
             photo_node = self.get_node(
@@ -307,28 +307,26 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             if photo_node is not None:
                 photo_url = photo_node.attrib['src']
 
-            legislator = Legislator(
-                full_name=name,
-                term=term,
-                chamber='upper',
-                district=district,
-                party=party,
-                photo_url=photo_url
-            )
+            person = Person(name=name,
+                            district=district,
+                            party=party,
+                            primary_org=chamber,
+                            image=photo_url)
 
-            legislator.add_source(url)
-            legislator['url'] = legislator_url
+            person.add_link(url)
 
             # Find legislator's offices.
             contact_url = legislator_url + '/contact'
-            self.scrape_upper_offices(legislator, contact_url)
+            person.add_link(contact_url)
 
-            self.save_legislator(legislator)
+            self.scrape_upper_offices(person, contact_url)
 
-    def scrape_upper_offices(self, legislator, url):
+            yield person
+
+    def scrape_upper_offices(self, person, url):
         legislator_page = self.lxmlize(url)
 
-        legislator.add_source(url)
+        person.add_source(url)
 
         # Find legislator e-mail address.
         email_node = self.get_node(
@@ -339,9 +337,8 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
         if email_node is not None:
             email_text = email_node.attrib['href']
             email = re.sub(r'^mailto:', '', email_text)
-            legislator['email'] = email
-        else:
-            email = None
+            person.add_contact_detail(type='email', value=email,
+                                      note='Capitol Office')
 
         # Parse all offices.
         office_nodes = self.get_nodes(
@@ -352,9 +349,17 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             office = self._parse_office(office_node)
 
             if office is not None:
-                legislator.add_office(**office)
+                if office['address']:
+                    person.add_contact_detail(type='address', value=office['address'],
+                                              note='District Office')
+                if office['phone']:
+                    person.add_contact_detail(type='voice', value=office['phone'],
+                                              note='District Office')
+                if office['fax']:
+                    person.add_contact_detail(type='fax', value=office['fax'],
+                                              note='District Office')
 
-    def scrape_lower_chamber(self, term):
+    def scrape_lower_chamber(self, chamber):
         url = 'http://assembly.state.ny.us/mem/?sh=email'
 
         page = self.lxmlize(url)
@@ -365,8 +370,10 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
             page,
             '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
+        email = None
+
         for assembly_member_node in self._split_list_on_tag(
-            assembly_member_nodes, 'emailclear'):
+                assembly_member_nodes, 'emailclear'):
             try:
                 name_node, district_node, email_node = assembly_member_node
             except ValueError:
@@ -395,7 +402,9 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             party = district_affiliations[district].strip()
             if not party or party is None:
-                self.warning('Party for {} (Assembly district {}) has not been listed yet'.format(name, district))
+                self.warning(
+                    'Party for {} (Assembly district {}) has not been listed yet'.format(
+                        name, district))
                 party = None
                 # If seats become empty, there may need to be a
                 # `continue` added back in here, assuming no name
@@ -406,26 +415,22 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             legislator_url = name_anchor.get('href')
 
-            legislator = Legislator(
-                term,
-                'lower',
-                district,
-                name,
-                party=party,
-                url=legislator_url,
-                photo_url=photo_url)
-            legislator.add_source(url)
+            person = Person(name=name,
+                            district=district,
+                            party=party,
+                            primary_org=chamber,
+                            image=photo_url)
 
-            self.scrape_lower_offices(legislator_url, legislator, email)
+            person.add_link(url)
 
-            self.save_legislator(legislator)
+            self.scrape_lower_offices(person, legislator_url, email)
 
-    def scrape_lower_offices(self, url, legislator, email=None):
-        legislator.add_source(url)
+            yield person
+
+    def scrape_lower_offices(self, person, url, email):
+        person.add_source(url)
 
         page = self.lxmlize(url)
-
-        offices = False
 
         for data in page.xpath('//div[@class="officehdg"]'):
             data = (data.xpath('text()'),
@@ -449,19 +454,14 @@ class NYLegislatorScraper(LegislatorScraper, LXMLMixin):
 
             address = '\n'.join(address)
 
-            legislator.add_office(
-                    name=office_name,
-                    type=office_type,
-                    phone=phone,
-                    fax=fax,
-                    address=address,
-                    email=email
-                    )
-
-            offices = True
-
-        if not offices and email:
-            legislator.add_office(
-                type="capitol",
-                name="Capitol Office",
-                email=email)
+            person.add_contact_detail(type='address', value=address,
+                                      note=office_type + ' Office')
+            if phone:
+                person.add_contact_detail(type='voice', value=phone,
+                                          note=office_type + ' Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax,
+                                          note=office_type + ' Office')
+            if email:
+                person.add_contact_detail(type='address', value=address,
+                                          note=office_type + ' Office')

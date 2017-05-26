@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
 import re
-import lxml.html
-from billy.scrape.committees import CommitteeScraper, Committee
+
+from pupa.scrape import Scraper, Organization
+
 from openstates.utils import LXMLMixin
 
 
-class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = "ny"
-    latest_only = True
-
+class NYCommitteeScraper(Scraper, LXMLMixin):
     def _parse_name(self, name):
         """
         Split a committee membership string into name and role.
@@ -26,7 +23,7 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
         name = re.sub(r'\s+', ' ', name)
 
         roles = ['Chairwoman', 'Chairperson', 'Chair', 'Secretary',
-            'Treasurer', 'Parliamentarian', 'Chaplain']
+                 'Treasurer', 'Parliamentarian', 'Chaplain']
         match = re.match(
             r'([^(]+),? \(?((Co|Vice)?-?\s*(%s))\)?' % '|'.join(roles),
             name)
@@ -41,9 +38,9 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
 
         return (name, role)
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber + '_chamber')()
-
+    def scrape(self, chamber=None):
+        yield from self.scrape_upper_chamber()
+        yield from self.scrape_lower_chamber()
 
     def scrape_lower_chamber(self, only_names=None):
         url = 'http://assembly.state.ny.us/comm/'
@@ -73,15 +70,15 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 url = link_node.attrib['href']
                 committee = self.scrape_lower_committee(committee_name, url)
 
-                self.save_committee(committee)
+                yield committee
 
         return committees
-
 
     def scrape_lower_committee(self, name, url):
         page = self.lxmlize(url)
 
-        committee = Committee('lower', name)
+        committee = Organization(chamber='lower', name=name,
+                                 classification="committee")
         committee.add_source(url)
 
         seen = set()
@@ -119,7 +116,6 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
 
         return committee
 
-
     def scrape_upper_chamber(self):
         url = 'http://www.nysenate.gov/senators-committees'
 
@@ -145,18 +141,15 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
 
                 # Retrieve committee information.
                 committee_url = committee_node.attrib['href']
-                committee = self.scrape_upper_committee(name,
-                    committee_url)
+                committee = self.scrape_upper_committee(name, committee_url)
 
-                self.save_committee(committee)
-
-        return committees
-
+                yield committee
 
     def scrape_upper_committee(self, committee_name, url):
         page = self.lxmlize(url)
 
-        committee = Committee('upper', committee_name)
+        committee = Organization(chamber='upper', name=committee_name,
+                                 classification="committee")
         committee.add_source(url)
 
         # Committee member attributes.
@@ -183,8 +176,7 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 if member_name_text is not None:
                     member_name = member_name_text.strip()
                 else:
-                    warning = ('Could not find the name of the chair for the'
-                        ' {} committee')
+                    warning = 'Could not find the name of the chair for the {} committee'
                     self.logger.warning(warning.format(committee_name))
 
                 # Attempt to retrieve committee chair's role (explicitly).
@@ -198,15 +190,13 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
                 else:
                     # This seems like a silly case, but could still be useful
                     # to check for.
-                    warning = ('Could not find the role of the chair for the'
-                        ' {} committee')
+                    warning = 'Could not find the role of the chair for the {} committee'
                     self.logger.warning(warning.format(committee_name))
 
                 if member_name is not None and member_role is not None:
                     committee.add_member(member_name, member_role)
             else:
-                warning = ('Could not find information for the chair of the'
-                    ' {} committee.')
+                warning = 'Could not find information for the chair of the {} committee.'
                 self.logger.warning(warning.format(committee_name))
         else:
             warning = 'Missing chairperson for the {} committee.'
@@ -230,12 +220,11 @@ class NYCommitteeScraper(CommitteeScraper, LXMLMixin):
 
             if member_name_text is not None:
                 member_name = member_name_text.strip()
-            
+
             if member_name is not None:
                 committee.add_member(member_name, 'member')
             else:
-                warning = ('Could not find the name of a member in the {}'
-                    ' committee')
+                warning = 'Could not find the name of a member in the {} committee'
                 self.logger.warning(warning.format(committee_name))
 
         return committee
