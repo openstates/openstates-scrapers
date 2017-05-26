@@ -122,15 +122,17 @@ class MABillScraper(Scraper):
 
         bill_title = page.xpath('//div[@id="contentContainer"]/div/div/h2/text()')[0]
 
-        bill_summary = ''
-        if page.xpath('//p[@id="pinslip"]/text()'):
-            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
-
         bill_id = re.sub(r'[^S|H|D|\d]', '', bill_id)
 
         bill = Bill(bill_id, legislative_session=session, chamber=chamber,
                     title=bill_title, classification='bill')
-        bill.add_abstract(bill_summary, 'summary')
+
+        bill_summary = None
+        if page.xpath('//p[@id="pinslip"]/text()'):
+            bill_summary = page.xpath('//p[@id="pinslip"]/text()')[0]
+        if bill_summary:
+            bill.add_abstract(bill_summary, 'summary')
+
         bill.add_source(bill_url)
 
         # https://malegislature.gov/Bills/189/SD2739 has a presenter
@@ -272,7 +274,7 @@ class MABillScraper(Scraper):
 
             attrs = self.categorizer.categorize(action_name)
             action = bill.add_action(
-                action_name,
+                action_name.strip(),
                 action_date,
                 chamber=action_actor,
                 classification=attrs['classification'],
