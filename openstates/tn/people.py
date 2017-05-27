@@ -57,13 +57,11 @@ class TNPersonScraper(Scraper):
             address = address.strip()
 
             phone = [
-                    x.strip() for x in
-                    row.xpath('td[7]//text()')
-                    if x.strip()
-                    ][0]
+                x.strip() for x in
+                row.xpath('td[7]//text()')
+                if x.strip()
+            ][0]
 
-            email = html.parser.HTMLParser().unescape(
-                    row.xpath('td[1]/a/@href')[0][len("mailto:"):])
             member_url = (root_url + url_chamber_name + '/members/' + abbr +
                           district + '.html')
             member_photo_url = (root_url + url_chamber_name +
@@ -106,8 +104,13 @@ class TNPersonScraper(Scraper):
             # TODO: add district address from this page
             person.add_contact_detail(type='address', value=address,
                                       note='Capitol Office')
-            person.add_contact_detail(type='email', value=email,
-                                      note='Capitol Office')
             person.add_contact_detail(type='voice', value=phone,
                                       note='Capitol Office')
+
+            email_href = row.xpath('td[1]/a/@href')
+            if email_href:
+                email = html.parser.HTMLParser().unescape(email_href[0][len('mailto:'):])
+                person.add_contact_detail(type='email', value=email,
+                                          note='Capitol Office')
+
             yield person
