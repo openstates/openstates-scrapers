@@ -24,6 +24,16 @@ class AKEventScraper(Scraper, LXMLMixin):
                     info.xpath('span[@class="col01"]/text()')[0].lower():
                 continue
 
+            name = " ".join(
+                x.strip()
+                for x in doc.xpath('//div[@class="schedule"]//text()')
+                if x.strip()
+            )
+
+            # Skip events with no name
+            if not name:
+                continue
+
             event = Event(
                 start_time=self._TZ.localize(
                     datetime.datetime.strptime(
@@ -32,11 +42,7 @@ class AKEventScraper(Scraper, LXMLMixin):
                     )
                 ),
                 timezone=self._TZ.zone,
-                name=" ".join(
-                    x.strip()
-                    for x in doc.xpath('//div[@class="schedule"]//text()')
-                    if x.strip()
-                ),
+                name=name,
                 location_name=doc.xpath(
                     '//div[@class="heading-container"]/span/text()'
                 )[0].title()
