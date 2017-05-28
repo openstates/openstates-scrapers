@@ -1,8 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
-from .people import TXPersonScraper
+from .bills import TXBillScraper
 from .committees import TXCommitteeScraper
+from .people import TXPersonScraper
 
 
 class Texas(Jurisdiction):
@@ -12,7 +13,8 @@ class Texas(Jurisdiction):
     url = "http://www.capitol.state.tx.us/"
     scrapers = {
         'people': TXPersonScraper,
-        'committees': TXCommitteeScraper
+        'committees': TXCommitteeScraper,
+        'bills': TXBillScraper
     }
     parties = [
         {'name': 'Republican'},

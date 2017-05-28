@@ -2,16 +2,15 @@ import datetime
 import ftplib
 import re
 import time
-import urlparse
+from urllib import parse as urlparse
 import xml.etree.cElementTree as etree
 
-from billy.scrape import ScrapeError
-from billy.scrape.bills import BillScraper, Bill
+from pupa.scrape import Scraper, Bill
+from pupa.scrape.base import ScrapeError
 from openstates.utils import LXMLMixin
 
 
-class TXBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'tx'
+class TXBillScraper(Scraper, LXMLMixin):
     _FTP_ROOT = 'ftp.legis.state.tx.us'
     CHAMBERS = {'H': 'lower', 'S': 'upper'}
     NAME_SLUGS = {
@@ -39,7 +38,7 @@ class TXBillScraper(BillScraper, LXMLMixin):
             raise
         ftp.login()
         ftp.cwd('/' + dir_)
-        self.log('Searching an FTP folder for files ({})'.format(dir_))
+        self.logger.info('Searching an FTP folder for files ({})'.format(dir_))
 
         lines = []
         ftp.retrlines('LIST', lines.append)
@@ -57,8 +56,12 @@ class TXBillScraper(BillScraper, LXMLMixin):
             else:
                 yield '/'.join(['ftp://' + root, dir_, name])
 
-    def scrape(self, session, chambers):
-        self.validate_session(session)
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('No session specified; using %s', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
 
         session_code = self._format_session(session)
 
@@ -108,10 +111,10 @@ class TXBillScraper(BillScraper, LXMLMixin):
         for bill_url in history_files:
             if 'house' in bill_url:
                 if 'lower' in chambers:
-                    self.scrape_bill(session, bill_url)
+                    yield from self.scrape_bill(session, bill_url)
             elif 'senate' in bill_url:
                 if 'upper' in chambers:
-                    self.scrape_bill(session, bill_url)
+                    yield from self.scrape_bill(session, bill_url)
 
     def scrape_bill(self, session, history_url):
         history_xml = self.get(history_url).content
@@ -137,7 +140,13 @@ class TXBillScraper(BillScraper, LXMLMixin):
         else:
             raise ScrapeError("Invalid bill_id: %s" % bill_id)
 
-        bill = Bill(session, chamber, bill_id, bill_title, type=bill_type)
+        bill = Bill(
+            bill_id,
+            legislative_session=session,
+            chamber=chamber,
+            title=bill_title,
+            classification=bill_type
+        )
 
         bill.add_source(history_url)
 
@@ -147,36 +156,36 @@ class TXBillScraper(BillScraper, LXMLMixin):
 
         versions = [x for x in self.versions if x[0] == bill_id]
         for version in versions:
-            bill.add_version(
-                name=self.NAME_SLUGS[version[1][-5]],
+            bill.add_version_link(
+                note=self.NAME_SLUGS[version[1][-5]],
                 url=version[1],
-                mimetype='text/html'
+                media_type='text/html'
             )
 
         analyses = [x for x in self.analyses if x[0] == bill_id]
         for analysis in analyses:
-            bill.add_document(
-                name="Analysis ({})".format(self.NAME_SLUGS[analysis[1][-5]]),
+            bill.add_document_link(
+                note="Analysis ({})".format(self.NAME_SLUGS[analysis[1][-5]]),
                 url=analysis[1],
-                mimetype='text/html'
+                media_type='text/html'
             )
 
         fiscal_notes = [x for x in self.fiscal_notes if x[0] == bill_id]
         for fiscal_note in fiscal_notes:
-            bill.add_document(
-                name="Fiscal Note ({})".format(self.NAME_SLUGS
+            bill.add_document_link(
+                note="Fiscal Note ({})".format(self.NAME_SLUGS
                                                [fiscal_note[1][-5]]),
                 url=fiscal_note[1],
-                mimetype='text/html'
+                media_type='text/html'
             )
 
         witnesses = [x for x in self.witnesses if x[0] == bill_id]
         for witness in witnesses:
-            bill.add_document(
-                name="Witness List ({})".format(self.NAME_SLUGS
+            bill.add_document_link(
+                note="Witness List ({})".format(self.NAME_SLUGS
                                                 [witness[1][-5]]),
                 url=witness[1],
-                mimetype='text/html'
+                media_type='text/html'
             )
 
         for action in root.findall('actions/action'):
@@ -259,30 +268,34 @@ class TXBillScraper(BillScraper, LXMLMixin):
                     ctty = ctty.replace(r, "").strip()
                 extra['committees'] = ctty
 
-            bill.add_action(actor, action.findtext('description'),
-                            act_date, type=atype, **extra)
+            bill.add_action(
+                action.findtext('description'),
+                act_date,
+                chamber=actor,
+                classification=atype
+            )
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
-                bill.add_sponsor('primary', author, official_type='author')
+                bill.add_sponsorship(author, classification='primary',
+                                     entity_type='person', primary=True)
         for coauthor in root.findtext('coauthors').split(' | '):
             if coauthor != "":
-                bill.add_sponsor('cosponsor',
-                                 coauthor,
-                                 official_type='coauthor')
+                bill.add_sponsorship(coauthor, classification='cosponsor',
+                                     entity_type='person', primary=False)
         for sponsor in root.findtext('sponsors').split(' | '):
             if sponsor != "":
-                bill.add_sponsor('primary', sponsor, official_type='sponsor')
+                bill.add_sponsorship(sponsor, classification='primary',
+                                     entity_type='person', primary=True)
         for cosponsor in root.findtext('cosponsors').split(' | '):
             if cosponsor != "":
-                bill.add_sponsor('cosponsor',
-                                 cosponsor,
-                                 official_type='cosponsor')
+                bill.add_sponsorship(cosponsor, classification='cosponsor',
+                                     entity_type='person', primary=False)
 
         if root.findtext('companions'):
             self._get_companion(bill)
 
-        self.save_bill(bill)
+        yield bill
 
     def _get_companion(self, bill):
         url = self.companion_url.format(
@@ -294,10 +307,10 @@ class TXBillScraper(BillScraper, LXMLMixin):
         for link in links:
             parsed = urlparse.urlparse(link.attrib['href'])
             query = urlparse.parse_qs(parsed.query)
-            bill.add_companion(
-                query['Bill'][0],
-                query['LegSess'][0],
-                self.CHAMBERS[query['Bill'][0][0]],
+            bill.add_related_bill(
+                identifier=query['Bill'][0],
+                legislative_session=query['LegSess'][0],
+                relation_type='companion'
             )
 
     def _format_session(self, session):
