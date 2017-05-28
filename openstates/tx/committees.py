@@ -1,38 +1,51 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
+
 from openstates.utils import LXMLMixin
 
 
-class TXCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'tx'
-
-    def scrape(self, chamber, term):
-        if chamber == 'upper':
-            committee_list_url = 'http://www.capitol.state.tx.us/Committees/'\
-                'CommitteesMbrs.aspx?Chamber=S'
-        elif chamber == 'lower':
-            committee_list_url = 'http://www.capitol.state.tx.us/Committees/'\
-                'CommitteesMbrs.aspx?Chamber=H'
+class TXCommitteeScraper(Scraper, LXMLMixin):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
         else:
-            raise ValueError('Unknown chamber type "{}"'.format(chamber))
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
 
+    def scrape_chamber(self, chamber):
+        committee_list_urls = {
+            'lower': 'http://www.capitol.state.tx.us/Committees/'
+                     'CommitteesMbrs.aspx?Chamber=H',
+            'upper': 'http://www.capitol.state.tx.us/Committees/'
+                     'CommitteesMbrs.aspx?Chamber=S'
+        }
+
+        committee_list_url = committee_list_urls[chamber]
         committee_list_page = self.lxmlize(committee_list_url)
 
-        committee_nodes = self.get_nodes(committee_list_page,
-            '//form[@id="ctl00"]//a[@id="CmteList"]')
+        committee_nodes = self.get_nodes(
+            committee_list_page,
+            '//form[@id="ctl00"]//a[@id="CmteList"]'
+        )
 
         for committee_node in committee_nodes:
             committee_name = committee_node.text.strip()
-            committee = Committee(chamber, committee_name)
+            committee = Organization(
+                name=committee_name,
+                chamber=chamber,
+                classification='committee'
+            )
 
             # Get the committee profile page.
             committee_page_url = committee_node.get('href')
             committee_page = self.lxmlize(committee_page_url)
 
             # Capture table with committee membership data.
-            details_table = self.get_node(committee_page,
-                '//div[@id="content"]//table[2]')
+            details_table = self.get_node(
+                committee_page,
+                '//div[@id="content"]//table[2]'
+            )
             if details_table is not None:
                 # Skip the first row because it currently contains only headers
                 detail_rows = self.get_nodes(details_table, './tr')[1:]
@@ -47,17 +60,18 @@ class TXCommitteeScraper(CommitteeScraper, LXMLMixin):
                     else:
                         member_role = 'member'
 
-                    member_name_text = self.get_node(detail_row, 
-                        './td[2]/a/text()')
-
+                    member_name_text = self.get_node(
+                        detail_row,
+                        './td[2]/a/text()'
+                    )
 
                     # Clean titles from member names.
                     if chamber == 'upper':
-                        member_name = re.sub('^Sen\.[\s]*', '', 
-                            member_name_text)
+                        member_name = re.sub('^Sen\.[\s]*', '',
+                                             member_name_text)
                     elif chamber == 'lower':
-                        member_name = re.sub('^Rep\.[\s]*', '', 
-                            member_name_text)
+                        member_name = re.sub('^Rep\.[\s]*', '',
+                                             member_name_text)
 
                     # Collapse multiple whitespaces in member names.
                     member_name = re.sub('[\s]{2,}', ' ', member_name).strip()
@@ -67,4 +81,4 @@ class TXCommitteeScraper(CommitteeScraper, LXMLMixin):
             committee.add_source(committee_list_url)
             committee.add_source(committee_page_url)
 
-            self.save_committee(committee)
+            yield committee
