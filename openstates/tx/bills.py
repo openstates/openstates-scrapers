@@ -211,54 +211,54 @@ class TXBillScraper(Scraper, LXMLMixin):
             introduced = False
 
             if desc == 'Amended':
-                atype = 'amendment:passed'
+                atype = 'amendment-passage'
             elif desc == 'Amendment(s) offered':
-                atype = 'amendment:introduced'
+                atype = 'amendment-introduction'
             elif desc == 'Amendment amended':
-                atype = 'amendment:amended'
+                atype = 'amendment-amendment'
             elif desc == 'Amendment withdrawn':
-                atype = 'amendment:withdrawn'
+                atype = 'amendment-withdrawal'
             elif desc == 'Passed' or desc == 'Adopted':
-                atype = 'bill:passed'
+                atype = 'passage'
             elif re.match(r'^Received (by|from) the', desc):
                 if 'Secretary of the Senate' not in desc:
-                    atype = 'bill:introduced'
+                    atype = 'introduction'
                 else:
-                    atype = 'bill:filed'
+                    atype = 'filing'
             elif desc.startswith('Sent to the Governor'):
                 # But what if it gets lost in the mail?
-                atype = 'governor:received'
+                atype = 'executive-receipt'
             elif desc.startswith('Signed by the Governor'):
-                atype = 'governor:signed'
+                atype = 'executive-signature'
             elif desc == 'Vetoed by the Governor':
-                atype = 'governor:vetoed'
+                atype = 'executive-veto'
             elif desc == 'Read first time':
-                atype = ['bill:introduced', 'bill:reading:1']
+                atype = ['introduction', 'reading-1']
                 introduced = True
             elif desc == 'Read & adopted':
-                atype = ['bill:passed']
+                atype = ['passage']
                 if not introduced:
                     introduced = True
-                    atype.append('bill:introduced')
+                    atype.append('introduction')
             elif desc == "Passed as amended":
-                atype = 'bill:passed'
+                atype = 'passage'
             elif (desc.startswith('Referred to') or
                     desc.startswith("Recommended to be sent to ")):
-                atype = 'committee:referred'
+                atype = 'referral-committee'
             elif desc == "Reported favorably w/o amendment(s)":
-                atype = 'committee:passed'
+                atype = 'committee-passage'
             elif desc == "Filed":
-                atype = 'bill:filed'
+                atype = 'filing'
             elif desc == 'Read 3rd time':
-                atype = 'bill:reading:3'
+                atype = 'reading-3'
             elif desc == 'Read 2nd time':
-                atype = 'bill:reading:2'
+                atype = 'reading-2'
             elif desc.startswith('Reported favorably'):
-                atype = 'committee:passed:favorable'
+                atype = 'committee-passage-favorable'
             else:
-                atype = 'other'
+                atype = None
 
-            if 'committee:referred' in atype:
+            if 'referral-committee' in atype:
                 repls = [
                     'Referred to',
                     "Recommended to be sent to "
