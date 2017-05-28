@@ -1,5 +1,4 @@
 import datetime
-import lxml.html
 
 
 metadata = dict(
@@ -82,14 +81,3 @@ metadata = dict(
         '1998 Regular Session',
         '1997 Regular Session']
 )
-
-def session_list():
-    import requests
-    import os
-    apikey = os.environ['INDIANA_API_KEY']
-    headers = {"Authorization": apikey,
-               "Accept": "application/json"}
-    resp = requests.get("https://api.iga.in.gov/sessions", headers=headers, verify=False)
-    resp.raise_for_status()
-    return [session["name"] for session in resp.json()["items"]]
-

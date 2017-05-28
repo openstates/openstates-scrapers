@@ -174,7 +174,7 @@ class Maryland(Jurisdiction):
         yield upper
         yield lower
 
-    def session_list():
+    def get_session_list(self):
         return url_xpath(
             'http://mgaleg.maryland.gov/webmga/frmLegislation.aspx?pid=legisnpage&tab=subject3',
             '//select[contains(@name, "cboSession")]/option/text()')

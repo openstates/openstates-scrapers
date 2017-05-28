@@ -1,8 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from openstates.utils import url_xpath
+
 from .bills import TNBillScraper
 from .committees import TNCommitteeScraper
-from .common import url_xpath
 from .events import TNEventScraper
 from .people import TNPersonScraper
 
@@ -115,15 +116,14 @@ class Tennessee(Jurisdiction):
     def get_session_list(self):
         # Special sessions are available in the archive, but not in current session.
         # Solution is to scrape special session as part of regular session
-        sessions = [
-                x for x in
-                url_xpath(
-                    'http://www.capitol.tn.gov/legislation/archives.html',
-                    '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()'
-                )
-                if x.strip()
+        return [
+            x for x in
+            url_xpath(
+                'http://www.capitol.tn.gov/legislation/archives.html',
+                '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()'
+            )
+            if x.strip()
         ]
-        return sessions
 
     @property
     def sessions_by_id(self):

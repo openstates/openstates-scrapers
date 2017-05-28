@@ -198,9 +198,3 @@ metadata = {
     ],
     'feature_flags': ['events', 'influenceexplorer'],
 }
-
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/bills/',
-                     '//select[@id="billSessions"]/option/text()')

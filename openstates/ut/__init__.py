@@ -1,4 +1,9 @@
+import re
+
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .people import UTPersonScraper
 from .events import UTEventScraper
 from .committees import UTCommitteeScraper
@@ -9,7 +14,7 @@ class Utah(Jurisdiction):
     division_id = "ocd-division/country:us/state:ut"
     classification = "government"
     name = "Utah"
-    url = "TODO"
+    url = "http://le.utah.gov/"
     scrapers = {
         'people': UTPersonScraper,
         'events': UTEventScraper,
@@ -207,8 +212,6 @@ class Utah(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        from openstates.utils import url_xpath
-        import re
         sessions = url_xpath(
                 'http://le.utah.gov/Documents/bills.htm',
                 '//p/a[contains(@href, "session")]/text()'
