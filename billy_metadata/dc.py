@@ -38,10 +38,3 @@ metadata = dict(
                                '10', '9', '8']
 
 )
-
-def session_list():
-    import requests
-    from .utils import decode_json
-    r = requests.post('http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/LIMSLookups', headers={'content-type': 'application/json'})
-    data = decode_json(r.json())
-    return [c['Prefix'] for c in data['d']['CouncilPeriods']]

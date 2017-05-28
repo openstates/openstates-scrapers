@@ -1,10 +1,12 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
 from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 from .events import MNEventScraper
-from .common import url_xpath
 
 """
 Minnesota legislative data can be found at the Office of the Revisor

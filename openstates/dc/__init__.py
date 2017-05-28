@@ -1,8 +1,11 @@
+import requests
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import DCPersonScraper
 from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
 from .events import DCEventScraper
+from .utils import decode_json
 
 
 class DistrictOfColumbia(Jurisdiction):
@@ -68,3 +71,10 @@ class DistrictOfColumbia(Jurisdiction):
             council.add_post('Ward {}'.format(n), role="member",
                              division_id='{}/ward:{}'.format(self.division_id, n))
         yield council
+
+    def get_session_list(self):
+        r = requests.post(
+            'http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/LIMSLookups',
+            headers={'content-type': 'application/json'})
+        data = decode_json(r.json())
+        return [c['Prefix'] for c in data['d']['CouncilPeriods']]

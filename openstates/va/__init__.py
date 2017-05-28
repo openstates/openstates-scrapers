@@ -175,7 +175,7 @@ class Virginia(Jurisdiction):
         yield upper
         yield lower
 
-    def session_list():
+    def get_session_list(self):
         sessions = url_xpath(
             'http://lis.virginia.gov/',
             "//div[@id='sLink']//select/option/text()")
