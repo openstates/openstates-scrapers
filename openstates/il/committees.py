@@ -7,6 +7,10 @@ from ._utils import canonicalize_url
 class IlCommitteeScraper(Scraper):
 
     def scrape_members(self, o, url):
+        session = int(url.split('=')[-1])
+        start = 1917 + session
+        end = start + 1
+        
         data = self.get(url).text
         if 'No members added' in data:
             return
@@ -19,7 +23,8 @@ class IlCommitteeScraper(Scraper):
             role = tds[0].text_content().replace(':','').strip().lower()
 
             name = tds[1].text_content().strip()
-            o.add_member(name, role)
+            o.add_member(name, role,
+                         start_date=str(start), end_date=str(end))
 
 
     def scrape(self):
@@ -74,33 +79,34 @@ class IlCommitteeScraper(Scraper):
                           committees.items() if 'parent' in committee}
 
         for o_id, committee in list(top_level.items()):
-            o = dict_to_org(committee)
+            o = self.dict_to_org(committee)
             top_level[o_id] = o
             yield o
 
         for committee in sub_committees.values():
             committee['parent'] = top_level[committee['parent']]
-            o = dict_to_org(committee)
+            o = self.dict_to_org(committee)
             yield o
 
 
-def dict_to_org(committee):
-    names = sorted(committee['name'])
-    first_name = names.pop()
-    if 'chamber' in committee:
-        o = Organization(first_name,
-                         classification='committee',
-                         chamber=committee['chamber'])
-    else:
-        o = Organization(first_name,
-                         classification='committee',
-                         parent_id=committee['parent'])
-    for other_name in names:
-        o.add_name(other_name)
-    for code in committee['code']:
-        if code:
-            o.add_name(code)
-    for source in committee['source']:
-        o.add_source(source)
+    def dict_to_org(self, committee):
+        names = sorted(committee['name'])
+        first_name = names.pop()
+        if 'chamber' in committee:
+            o = Organization(first_name,
+                             classification='committee',
+                             chamber=committee['chamber'])
+        else:
+            o = Organization(first_name,
+                             classification='committee',
+                             parent_id=committee['parent'])
+        for other_name in names:
+            o.add_name(other_name)
+        for code in committee['code']:
+            if code:
+                o.add_name(code)
+        for source in committee['source']:
+            o.add_source(source)
+            self.scrape_members(o, source)
 
-    return o
+        return o
