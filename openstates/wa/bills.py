@@ -368,6 +368,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
         for rc in xpath(page, "//wa:RollCall"):
             motion = xpath(rc, "string(wa:Motion)")
+            seq_no = xpath(rc, "string(wa:SequenceNumber)")
 
             date = xpath(rc, "string(wa:VoteDate)").split("T")[0]
             date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
@@ -385,7 +386,7 @@ class WABillScraper(Scraper, LXMLMixin):
             chamber = {'House': 'lower', 'Senate': 'upper'}[agency]
 
             vote = Vote(chamber=chamber, start_date=date,
-                        motion_text=motion,
+                        motion_text='{} (#{})'.format(motion, seq_no),
                         result='pass' if yes_count > (no_count + other_count) else 'fail',
                         classification='other', bill=bill)
             vote.set_count('yes', yes_count)
