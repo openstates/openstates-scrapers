@@ -1,12 +1,10 @@
 import re
 
-from billy.scrape.legislators import LegislatorScraper, Legislator
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
 
-class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
-    jurisdiction = 'nh'
-    latest_only = True
+class NHPersonScraper(Scraper, LXMLMixin):
     members_url = 'http://www.gencourt.state.nh.us/downloads/Members.txt'
     lookup_url = 'http://www.gencourt.state.nh.us/house/members/memberlookup.aspx'
     house_profile_url = 'http://www.gencourt.state.nh.us/house/members/member.aspx?member={}'
@@ -26,7 +24,7 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         if chamber == 'upper':
             src = doc.xpath('//div[@id="page_content"]//img[contains(@src, '
-                '"images/senators") or contains(@src, "Senator")]/@src')
+                            '"images/senators") or contains(@src, "Senator")]/@src')
         elif chamber == 'lower':
             src = doc.xpath('//img[contains(@src, "images/memberpics")]/@src')
 
@@ -37,7 +35,7 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return photo_url
 
-    def _parse_legislator(self, row, chamber, term, seat_map):
+    def _parse_person(self, row, chamber, term, seat_map):
         # Capture legislator vitals.
         first_name = row['FirstName']
         middle_name = row['MiddleName']
@@ -49,22 +47,35 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
         party = self.party_map[row['party'].upper()]
         email = row['WorkEmail']
 
-        legislator = Legislator(term, chamber, district, full_name,
-                                first_name=first_name, last_name=last_name,
-                                middle_name=middle_name, party=party,
-                                email=email)
+        person = Person(primary_org=chamber,
+                        district=district,
+                        name=full_name,
+                        party=party)
+
+        extras = {
+            'first_name': first_name,
+            'middle_name': middle_name,
+            'last_name': last_name
+        }
+
+        person.extras = extras
+        if email:
+            person.add_contact_detail(type='email', value=email, note='District Office')
 
         # Capture legislator office contact information.
         district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
-            row['address2'], row['city'], row['State'], row['Zipcode']).strip()
+                                                      row['address2'],
+                                                      row['city'], row['State'],
+                                                      row['Zipcode']).strip()
 
         phone = row['Phone'].strip()
         if not phone:
             phone = None
 
-        legislator.add_office('district', 'Home Address',
-                              address=district_address,
-                              phone=phone)
+        if district_address:
+            person.add_contact_detail(type='address', value=district_address, note='Home Address')
+        if phone:
+            person.add_contact_detail(type='voice', value=phone, note='Home Office')
 
         # Retrieve legislator portrait.
         profile_url = None
@@ -78,10 +89,10 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
                 pass
 
         if profile_url:
-            legislator['photo_url'] = self._get_photo(profile_url, chamber)
-            legislator.add_source(profile_url)
+            person.image = self._get_photo(profile_url, chamber)
+            person.add_source(profile_url)
 
-        return legislator
+        return person
 
     def _parse_members_txt(self):
         lines = self.get(self.members_url).text.splitlines()
@@ -106,10 +117,13 @@ class NHLegislatorScraper(LegislatorScraper, LXMLMixin):
                     seat_map[res.groups()[0]] = option.attrib['value']
         return seat_map
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
         seat_map = self._parse_seat_map()
-        for row in self._parse_members_txt():
-            if self.chamber_map[row['LegislativeBody']] == chamber:
-                leg = self._parse_legislator(row, chamber, term, seat_map)
-                leg.add_source(self.members_url)
-                self.save_legislator(leg)
+        for chamber in chambers:
+            for row in self._parse_members_txt():
+                if self.chamber_map[row['LegislativeBody']] == chamber:
+                    person = self._parse_person(row, chamber, seat_map)
+                    person.add_source(self.members_url)
+                    person.add_link(self.members_url)
+                    yield person

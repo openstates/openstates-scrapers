@@ -1,69 +1,101 @@
-import lxml.html
-from .bills import NHBillScraper
-from .legislators import NHLegislatorScraper
-from .committees import NHCommitteeScraper
+import os
+import csv
+from pupa.scrape import Jurisdiction, Organization
+from .people import NHPersonScraper
 
-metadata = {
-    'abbreviation': 'nh',
-    'name': 'New Hampshire',
-    'capitol_timezone': 'America/New_York',
-    'legislature_name': 'New Hampshire General Court',
-    'legislature_url': 'http://www.gencourt.state.nh.us/',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    'terms': [
-        {'name': '2011-2012', 'sessions': ['2011', '2012'],
-         'start_year': 2011, 'end_year': 2012},
-        {'name': '2013-2014', 'sessions': ['2013', '2014'],
-         'start_year': 2013, 'end_year': 2014},
-        {'name': '2015-2016', 'sessions': ['2015', '2016'],
-         'start_year': 2015, 'end_year': 2016},
-        {'name': '2017-2018', 'sessions': ['2017'],
-         'start_year': 2017, 'end_year': 2018}
-    ],
-    'session_details': {
-        '2011': {'display_name': '2011 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2011%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2011 Session',
-                },
-        '2012': {'display_name': '2012 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2012%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2012 Session',
-                },
-        '2013': {'display_name': '2013 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2013%20Session%20Bill%20Status%20Tables.zip',
-                 # Their dump filename changed, probably just a hiccup.
-                 '_scraped_name': '2013',
-                 # '_scraped_name': '2013 Session',
-                },
-        '2014': {'display_name': '2014 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2014%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2014 Session',
-                },
-        '2015': {'display_name': '2015 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2015%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2015 Session',
-                },
-        '2016': {'display_name': '2016 Regular Session',
-                 'zip_url': 'http://gencourt.state.nh.us/downloads/2016%20Session%20Bill%20Status%20Tables.zip',
-                 '_scraped_name': '2016 Session',
-                },
-        '2017': {'display_name': '2017 Regular Session',
-                 '_scraped_name': '2017 Session',
-                },
-    },
-    'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': ['2013 Session','2017 Session Bill Status Tables Link.txt'],
-}
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    zips = url_xpath('http://gencourt.state.nh.us/downloads/',
-                     '//a[contains(@href, "Bill%20Status%20Tables")]/text()')
-    return [zip.replace(' Bill Status Tables.zip', '') for zip in zips]
+class NewHampshire(Jurisdiction):
+    division_id = "ocd-division/country:us/state:nh"
+    classification = "government"
+    name = "New Hampshire"
+    url = "TODO"
+    scrapers = {
+        'people': NHPersonScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2011 Session",
+            "identifier": "2011",
+            "name": "2011 Regular Session"
+        },
+        {
+            "_scraped_name": "2012 Session",
+            "identifier": "2012",
+            "name": "2012 Regular Session"
+        },
+        {
+            "_scraped_name": "2013",
+            "identifier": "2013",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "2014 Session",
+            "identifier": "2014",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015 Session",
+            "identifier": "2015",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "2016 Session",
+            "identifier": "2016",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017 Session",
+            "identifier": "2017",
+            "name": "2017 Regular Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2013 Session",
+        "2017 Session Bill Status Tables Link.txt"
+    ]
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    return doc.xpath('//html')[0].text_content()
+    def get_organizations(self):
+        legislature_name = "New Hampshire General Court"
+        lower_chamber_name = "House"
+        # lower_seats = None
+        lower_title = "Senator"
+        upper_chamber_name = "Senate"
+        # upper_seats = 0
+        upper_title = "Senator"
+
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        # NH names all their districts, so pull them manually.
+        csv_file = '{}/../../manual_data/districts/nh.csv'.format(os.path.dirname(__file__))
+        with open(csv_file, mode='r') as infile:
+            districts = csv.DictReader(infile)
+            for district in districts:
+                if district['chamber'] == 'lower':
+                    lower.add_post(
+                        label=district['name'],
+                        role=lower_title,
+                        division_id=district['division_id'])
+                elif district['chamber'] == 'upper':
+                    lower.add_post(
+                        label=district['name'],
+                        role=upper_title,
+                        division_id=district['division_id'])
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        from openstates.utils import url_xpath
+        zips = url_xpath('http://gencourt.state.nh.us/downloads/',
+                         '//a[contains(@href, "Bill%20Status%20Tables")]/text()')
+        return [zip.replace(' Bill Status Tables.zip', '') for zip in zips]
