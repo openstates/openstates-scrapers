@@ -3,6 +3,7 @@ import csv
 from pupa.scrape import Jurisdiction, Organization
 from .people import NHPersonScraper
 from .committees import NHCommitteeScraper
+from .bills import NHBillScraper
 
 
 class NewHampshire(Jurisdiction):
@@ -12,7 +13,8 @@ class NewHampshire(Jurisdiction):
     url = "TODO"
     scrapers = {
         'people': NHPersonScraper,
-        'committees': NHCommitteeScraper
+        'committees': NHCommitteeScraper,
+        'bills': NHBillScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -22,32 +24,44 @@ class NewHampshire(Jurisdiction):
         {
             "_scraped_name": "2011 Session",
             "identifier": "2011",
-            "name": "2011 Regular Session"
+            "name": "2011 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2011%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2012 Session",
             "identifier": "2012",
-            "name": "2012 Regular Session"
+            "name": "2012 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2012%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2013",
             "identifier": "2013",
-            "name": "2013 Regular Session"
+            "name": "2013 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2013%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2014 Session",
             "identifier": "2014",
-            "name": "2014 Regular Session"
+            "name": "2014 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2014%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2015 Session",
             "identifier": "2015",
-            "name": "2015 Regular Session"
+            "name": "2015 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2015%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2016 Session",
             "identifier": "2016",
-            "name": "2016 Regular Session"
+            "name": "2016 Regular Session",
+            'zip_url': ('http://gencourt.state.nh.us/downloads/2016%'
+                        '20Session%20Bill%20Status%20Tables.zip'),
         },
         {
             "_scraped_name": "2017 Session",
