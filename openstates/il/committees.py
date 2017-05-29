@@ -1,6 +1,9 @@
 from pupa.scrape import Scraper, Organization
 import lxml.html
 
+from ._committees import COMMITTEES
+from ._utils import canonicalize_url
+
 class IlCommitteeScraper(Scraper):
 
     def scrape_members(self, o, url):
@@ -21,46 +24,83 @@ class IlCommitteeScraper(Scraper):
 
     def scrape(self):
         chambers = (('upper', 'senate'), ('lower', 'house'))
-        seen_committees = set()
+        committees = {}
 
         for chamber, chamber_name in chambers:
 
-            url = 'http://ilga.gov/{0}/committees/default.asp'.format(chamber_name)
-            html = self.get(url).text
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(url)
+            for session in range(93, 101):
 
-            top_level_com = None
+                url = 'http://ilga.gov/{0}/committees/default.asp?GA={1}'.format(chamber_name, session)
+                html = self.get(url).text
+                doc = lxml.html.fromstring(html)
+                doc.make_links_absolute(url)
 
-            for a in doc.xpath('//a[contains(@href, "members.asp")]'):
-                name = a.text.strip()
-                code = a.getparent().getnext()
-                if name in seen_committees:
-                    continue
-                seen_committees.add(name)
-                if code is None:
-                    #committee doesn't have a code, maybe it's a taskforce?
-                    o = Organization(name,
-                                     classification='committee',
-                                     chamber=chamber)
+                top_level_com = None
 
-                else:
-                    code = code.text_content().strip()
-
-
-                    if 'Sub' in name:
-                        o = Organization(name,
-                                         classification='committee',
-                                         parent_id={'name' : top_level_com})
+                for a in doc.xpath('//a[contains(@href, "members.asp")]'):
+                    name = a.text.strip()
+                    code = a.getparent().getnext()
+                    com_url = canonicalize_url(a.get('href'))
+                    if 'TaskForce' in com_url:
+                        code = None
+                        o_id = (name, code)
                     else:
-                        top_level_com = name
-                        o = Organization(name,
-                                         classification='committee',
-                                         chamber=chamber)
+                        code = code.text_content().strip()
+                        o_id = COMMITTEES[(name, code)]
 
-                com_url = a.get('href')
-                o.add_source(com_url)
+                    if o_id in committees:
+                        committees[o_id]['name'].add(name)
+                        committees[o_id]['code'].add(code)
+                        committees[o_id]['source'].add(com_url)
 
-                self.scrape_members(o, com_url)
-                if o._related:
-                    yield o
+                    else:
+                        committees[o_id] = {'name': {name},
+                                            'code': {code},
+                                            'source': {com_url}}
+
+                    if (code is not None and
+                         '-' in code and
+                        code not in ('HSGA-SGAS',
+                                     'HAPE-APES')):
+                        committees[o_id]['parent'] = top_level
+                    else:
+                        committees[o_id]['chamber'] = chamber
+                        top_level = o_id
+
+        top_level = {o_id : committee for o_id, committee in
+                     committees.items() if 'chamber' in committee}
+
+        sub_committees = {o_id : committee for o_id, committee in
+                          committees.items() if 'parent' in committee}
+
+        for o_id, committee in list(top_level.items()):
+            o = dict_to_org(committee)
+            top_level[o_id] = o
+            yield o
+
+        for committee in sub_committees.values():
+            committee['parent'] = top_level[committee['parent']]
+            o = dict_to_org(committee)
+            yield o
+
+
+def dict_to_org(committee):
+    names = sorted(committee['name'])
+    first_name = names.pop()
+    if 'chamber' in committee:
+        o = Organization(first_name,
+                         classification='committee',
+                         chamber=committee['chamber'])
+    else:
+        o = Organization(first_name,
+                         classification='committee',
+                         parent_id=committee['parent'])
+    for other_name in names:
+        o.add_name(other_name)
+    for code in committee['code']:
+        if code:
+            o.add_name(code)
+    for source in committee['source']:
+        o.add_source(source)
+
+    return o

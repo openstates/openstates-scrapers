@@ -9,6 +9,8 @@ import scrapelib
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 
+from ._utils import canonicalize_url
+
 def group(lst, n):
     # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
     for i in range(0, len(lst), n):
@@ -55,16 +57,16 @@ _action_classifiers = ( # see http://openstates.org/categorization/
     (re.compile(r'(Recalled to )?Second Reading'), ['reading-2']),
     (re.compile(r'(Re-r|R)eferred to'), ['referral-committee']),
     (re.compile(r'(Re-a|A)ssigned to'), ['referral-committee']),
-    (re.compile(r'Sent to the Governor'), ['executive-received']),
+    (re.compile(r'Sent to the Governor'), ['executive-receipt']),
     (re.compile(r'Governor Approved'), ['executive-signature']),
     (re.compile(r'Governor Vetoed'), ['executive-veto']),
     (re.compile(r'Governor Item'), ['executive-veto-line-item']),
     (re.compile(r'Governor Amendatory Veto'), ['executive-veto']),
     (re.compile(r'^(?:Recommends )?Do Pass(?: as Amended)?(?: / Short Debate)?(?: / Standard Debate)?'), ['committee-passage']),
+    (re.compile(r'Amendment.+Concur'), []),
     (re.compile(r'Motion Do Pass(?: as Amended)?(?: - Lost)?'), ['committee-failure']),
     (re.compile(r'Motion Do Pass(?: as Amended)?'), ['committee-passage']),
-    (re.compile(r'.*Recommends Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
-    (re.compile(r'Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
+    (re.compile(r'.*Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
     (re.compile(r'Third Reading .+? Passed'), ['reading-3', 'passage']),
     (re.compile(r'Third Reading .+? Lost'), ['reading-3', 'failure']),
     (re.compile(r'Third Reading'), ['reading-3']),
@@ -132,7 +134,7 @@ COMMITTEE_CORRECTIONS = {
     'Appropriations-Elementary & Secondary Education': 'Approp-Elementary & Secondary Educ',
     'Tourism, Hospitality & Craft Industries': 'Tourism, Hospitality & Craft Ind.',
     'Government Consolidation &  Modernization': 'Government Consolidation &  Modern',
-    'Community College Access & Affordability': 'Community College Access & Afford.',}
+    'Community College Access & Affordability': 'Community College Access & Afford.'}
 
 DUPE_VOTES = {'http://ilga.gov/legislation/votehistory/100/house/committeevotes/10000HB2457_16401.pdf'}
 
@@ -227,26 +229,28 @@ class IlBillScraper(Scraper):
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
-        for date, actor, action in group(action_tds, 3):
+        for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(),
                                               "%m/%d/%Y")
             date = self.localize(date).date()
             actor = actor.text_content()
             if actor == 'House':
-                actor = 'Illinois House of Representatives'
+                actor_id = {'name': 'Illinois House of Representatives'}
             elif actor == 'Senate':
-                actor = 'Illinois Senate'
+                actor_id = {'name': 'Illinois Senate'}
 
-            action = action.text_content()
+            action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
-            # Subcommittee are very difficult, we'll need to keep
-            # track of actions to resolve these
-            if 'Subcommittee/' not in action and classification:
-                for each in classification:
-                    if each.startswith('committee'):
-                        actor = related_orgs[0]
+
+            if (related_orgs and
+                any(c.startswith('committee') for c in classification)):
+                source, = [a.get('href') for a in
+                           action_elem.xpath('a')
+                           if 'committee' in a.get('href')]
+                actor_id = {'sources__url': canonicalize_url(source)}
+
             bill.add_action(action, date,
-                            organization={'name': actor},
+                            organization=actor_id,
                             classification=classification,
                             related_entities=related_orgs)
 
@@ -462,7 +466,11 @@ class IlBillScraper(Scraper):
             vote_event.yes(name)
         for name in no_votes:
             vote_event.no(name)
+
         vote_event.add_source(href)
+
+        # for distinguishing between votes with the same id and on same day
+        vote_event.pupa_id=href
 
         if warned:
             self.warning("Warnings were issued. Best to check %s" % href)
@@ -574,4 +582,3 @@ def convert_pdf(filename, type='xml'):
     data = pipe.read()
     pipe.close()
     return data
-
