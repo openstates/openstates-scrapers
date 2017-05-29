@@ -129,6 +129,8 @@ class NorthCarolina(Jurisdiction):
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
+        executive = Organization(name='Executive Office of the Governor',
+                                 classification="executive")
         upper = Organization(upper_chamber_name, classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
@@ -144,6 +146,7 @@ class NorthCarolina(Jurisdiction):
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
+        yield executive
         yield upper
         yield lower
 
