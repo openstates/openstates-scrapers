@@ -2,6 +2,7 @@ import os
 import csv
 from pupa.scrape import Jurisdiction, Organization
 from .people import NHPersonScraper
+from .committees import NHCommitteeScraper
 
 
 class NewHampshire(Jurisdiction):
@@ -11,6 +12,7 @@ class NewHampshire(Jurisdiction):
     url = "TODO"
     scrapers = {
         'people': NHPersonScraper,
+        'committees': NHCommitteeScraper
     }
     parties = [
         {'name': 'Republican'},

@@ -1,12 +1,11 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 from .utils import db_cursor
 
 
-class NHCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'nh'
+class NHCommitteeScraper(Scraper):
 
     _chamber_map = {
         'upper': 'S',
@@ -33,7 +32,8 @@ class NHCommitteeScraper(CommitteeScraper):
             # records to cause issues here. Haven't decided how to
             # handle this yet, so we're throwing an exception instead.
             if row['committee_code'] not in committees.keys():
-                committee = Committee(chamber, row['committee_name'])
+                committee = Organization(chamber=chamber, name=row['committee_name'],
+                                         classification='committee')
                 committee_url = 'http://www.gencourt.state.nh.us/house/'\
                     'committees/committeedetails.aspx?code={}'\
                     .format(row['committee_code'])
@@ -69,7 +69,7 @@ class NHCommitteeScraper(CommitteeScraper):
         for row in self.db_cursor.fetchall():
             committee = committees[row['committee_code']]
             member_name = '{} {} {}'.format(row['first_name'],
-                row['middle_name'], row['last_name'])
+                                            row['middle_name'], row['last_name'])
             member_name = re.sub(r'[\s]{2,}', ' ', member_name)
 
             if row['comment'] in ('Chairman', 'V Chairman'):
@@ -81,11 +81,10 @@ class NHCommitteeScraper(CommitteeScraper):
 
         return committees
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber, year):
         self.db_cursor = db_cursor()
-
         committees = self._parse_committee_members(
             self._parse_committees(chamber))
 
-        for committee_code, committee in committees.iteritems():
-            self.save_committee(committee)
+        for committee_code, committee in committees.items():
+            yield committee
