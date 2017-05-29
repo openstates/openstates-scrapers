@@ -7,7 +7,17 @@ from openstates.nh import legacy_committees
 
 
 class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'nh'
+
+    terms: [
+        {'name': '2011-2012', 'sessions': ['2011', '2012'],
+         'start_year': 2011, 'end_year': 2012},
+        {'name': '2013-2014', 'sessions': ['2013', '2014'],
+         'start_year': 2013, 'end_year': 2014},
+        {'name': '2015-2016', 'sessions': ['2015', '2016'],
+         'start_year': 2015, 'end_year': 2016},
+        {'name': '2017-2018', 'sessions': ['2017'],
+         'start_year': 2017, 'end_year': 2018}
+    ]
     committees_url = 'http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt'
 
     _code_pattern = re.compile(r'[A-Z][0-9]{2}')
@@ -98,7 +108,8 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
         key = role.lower().replace('.', '')
         return self._role_map.get(key, 'member')
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
         years = [int(year) for year in term.split('-')]
         if years[0] < 2017:
             return legacy_committees.NHCommitteeScraper(

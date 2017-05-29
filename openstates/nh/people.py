@@ -35,7 +35,7 @@ class NHPersonScraper(Scraper, LXMLMixin):
 
         return photo_url
 
-    def _parse_person(self, row, chamber, term, seat_map):
+    def _parse_person(self, row, chamber, seat_map):
         # Capture legislator vitals.
         first_name = row['FirstName']
         middle_name = row['MiddleName']
