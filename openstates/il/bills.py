@@ -183,9 +183,14 @@ class IlBillScraper(Scraper):
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
 
-    def scrape(self):
-        for session in self.jurisdiction.legislative_sessions:
-            session_id = session['identifier']
+    def scrape(self, session=None):
+        if session is not None:
+            sessions = [session]
+        else:
+            sessions = [session['identifier']
+                        for session
+                        in self.jurisdiction.legislative_sessions]
+        for session_id in sessions:
             for chamber in ('lower', 'upper'):
                 doc_types = (list(DOC_TYPES) +
                              (['AM', 'JSR'] if chamber == 'upper' else []))
