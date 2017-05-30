@@ -86,11 +86,10 @@ class Ohio(Jurisdiction):
         yield upper
         yield lower
 
-
-def get_session_list():
-    sessions = url_xpath('http://archives.legislature.state.oh.us',
-                         '//form[@action="bill_search.cfm"]//input[@type="radio"'
-                         ' and @name="SESSION"]/@value')
-    # Archive does not include current session
-    sessions.append('131')
-    return sessions
+    def get_session_list(self):
+        sessions = url_xpath('http://archives.legislature.state.oh.us',
+                             '//form[@action="bill_search.cfm"]//input[@type="radio"'
+                             ' and @name="SESSION"]/@value')
+        # Archive does not include current session
+        sessions.append('131')
+        return sessions

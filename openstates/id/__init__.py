@@ -2,14 +2,10 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import IDPersonScraper
 from .committees import IDCommitteeScraper
 from .bills import IDBillScraper
+from openstates.utils.lxmlize import url_xpath
 
 
 class Idaho(Jurisdiction):
-
-    """
-    IDAHO Scraper
-    """
-
     division_id = "ocd-division/country:us/state:id"
     classification = "government"
     name = "Idaho"
@@ -129,3 +125,8 @@ class Idaho(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
+            '//select[@id="ddlsessions"]/option/text()')
+        return sessions

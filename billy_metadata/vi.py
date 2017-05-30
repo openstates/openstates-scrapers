@@ -36,9 +36,3 @@ metadata = dict(
     _ignored_scraped_sessions= ['21', '22', '23', '24', '25', '26', '27', '28', '29']
 
 )
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath(
-            'http://www.legvi.org/vilegsearch/',
-            '//select[@name="ctl00$ContentPlaceHolder$leginum"]/option/text()')

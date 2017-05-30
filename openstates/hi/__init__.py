@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from openstates.utils.lxmlize import url_xpath
 from .people import HIPersonScraper
 # from .events import HIEventScraper
 from .bills import HIBillScraper
@@ -98,3 +99,12 @@ class Hawaii(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+
+    def get_session_list(self):
+        # doesn't include current session, we need to change it
+        sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
+                "//div[@class='roundedrect gradientgray shadow']/a/text()"
+            )
+        sessions.remove("Archives Main")
+        return sessions

@@ -1,5 +1,4 @@
 import datetime
-from billy.scrape.utils import url_xpath
 
 metadata = {
     'name': 'New Mexico',

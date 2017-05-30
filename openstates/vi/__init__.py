@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import url_xpath
 
 
 class USVirginIslands(Jurisdiction):
@@ -62,3 +63,8 @@ class USVirginIslands(Jurisdiction):
 
         yield legislature
         yield upper
+
+    def session_list(self):
+        return url_xpath(
+                'http://www.legvi.org/vilegsearch/',
+                '//select[@name="ctl00$ContentPlaceHolder$leginum"]/option/text()')
