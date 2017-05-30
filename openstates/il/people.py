@@ -14,6 +14,56 @@ CHAMBER_ROLES = {'upper' : 'Senator',
 
 BIRTH_DATES = {'Daniel Biss' : '1977-08-27'}
 
+AKA = {'Jay Hoffman': 'Jay C. Hoffman',
+       'Chad Hays': 'Chad D Hays',
+       'Randy Hultgren': 'Randall M. Hultgren',
+       'Scott M Bennett': 'Scott M. Bennett',
+       'Arthur Turner': 'Arthur L. Turner',
+       'Kelly Burke': 'Kelly M. Burke',
+       'Michael Unes': 'Michael D. Unes',
+       'Deb Conroy': 'Deborah Conroy',
+       'Charles Meier': 'Charles E. Meier',
+       'Bill Brady': 'William E. Brady',
+       'Randy Ramey, Jr.': 'Harry R. Ramey, Jr.',
+       "John D'Amico": "John C. D'Amico",
+       'Sheri Jesiel': 'Sheri L Jesiel',
+       'Michael Zalewski': 'Michael J. Zalewski',
+       'David Reis': 'David B. Reis',
+       'Jason Barickman': 'Jason A. Barickman',
+       'Michael Tryon': 'Michael W. Tryon',
+       'Jehan Gordon-Booth': 'Jehan A. Gordon-Booth',
+       'John Cavaletto': 'John D. Cavaletto',
+       'Patrick J Verschoore': 'Patrick J. Verschoore',
+       'Patrick Verschoore': 'Patrick J. Verschoore',
+       'Ann Williams': 'Ann M. Williams',
+       'Norine Hammond': 'Norine K. Hammond',
+       'Nick Sauer': 'Nicholas Sauer',
+       'Greg Harris': 'Gregory Harris',
+       'Carol Sente': 'Carol A. Sente',
+       'David Luechtefeld': 'David S. Luechtefeld',
+       'Heather Steans': 'Heather A. Steans',
+       'Bill Cunningham': 'William Cunningham',
+       'Brad Halbrook': 'Brad E. Halbrook',
+       'Annazette Collins': 'Annazette R. Collins',
+       'Lawrence M. Walsh': 'Lawrence M. Walsh, Jr.',
+       'Lawrence Walsh, Jr.': 'Lawrence M. Walsh, Jr.',
+       'John Bradley': 'John E. Bradley',
+       'Toi W Hutchinson': 'Toi W. Hutchinson',
+       'Renee Kosel': 'Renée Kosel',
+       'La Shawn K. Ford': 'LaShawn K. Ford',
+       'Jerry Costello, II': 'Jerry F. Costello, II',
+       'Michael Connelly': 'Michael G. Connelly',
+       'Camille Y Lilly': 'Camille Y. Lilly',
+       'André Thapedi': 'André M. Thapedi',
+       'Careen M Gordon': 'Careen M. Gordon',
+       'Ron Sandack': 'Ronald Sandack',
+       'Ed Sullivan': 'Ed Sullivan, Jr.',
+       'Robert Martwick': 'Robert F. Martwick',
+       'Arthur J. Wilhelmi': 'Arthur J. Wilhelmi',
+       'Susana Mendoza': 'Susan A. Mendoza',
+       'Susana A Mendoza': 'Susana A. Mendoza'}
+
+
 class IlPersonScraper(Scraper):
     def scrape(self):
         for legislator, terms in self.legislators().values():
@@ -47,6 +97,8 @@ class IlPersonScraper(Scraper):
             if name.endswith('*'):
                 name = name.strip('*')
                 continue
+
+            name = AKA.get(name, name)
 
             if name in legs:
                 p, terms = legs[name]
