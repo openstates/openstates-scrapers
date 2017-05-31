@@ -4,6 +4,7 @@ from openstates.utils import url_xpath
 from .bills import TXBillScraper
 from .committees import TXCommitteeScraper
 from .people import TXPersonScraper
+from .votes import TXVoteScraper
 
 
 class Texas(Jurisdiction):
@@ -14,7 +15,8 @@ class Texas(Jurisdiction):
     scrapers = {
         'people': TXPersonScraper,
         'committees': TXCommitteeScraper,
-        'bills': TXBillScraper
+        'bills': TXBillScraper,
+        'votes': TXVoteScraper
     }
     parties = [
         {'name': 'Republican'},

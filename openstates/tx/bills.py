@@ -38,7 +38,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             raise
         ftp.login()
         ftp.cwd('/' + dir_)
-        self.logger.info('Searching an FTP folder for files ({})'.format(dir_))
+        self.info('Searching an FTP folder for files ({})'.format(dir_))
 
         lines = []
         ftp.retrlines('LIST', lines.append)

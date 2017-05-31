@@ -1,13 +1,12 @@
 import os
 import re
-import uuid
-import urlparse
+from urllib import parse as urlparse
 import datetime
 import scrapelib
 import collections
 
 import lxml.html
-from billy.scrape.votes import VoteScraper, Vote
+from pupa.scrape import Scraper, VoteEvent
 
 import tx
 
@@ -49,7 +48,7 @@ def clean_journal(root):
 
     for el in root.xpath("//p[contains(text(), 'JOURNAL')]"):
         if (("HOUSE JOURNAL" in el.text or "SENATE JOURNAL" in el.text) and
-            "Day" in el.text):
+                    "Day" in el.text):
 
             parent = el.getparent()
             parent.remove(el)
@@ -98,7 +97,7 @@ def names(el):
 
 
 def clean_name(name):
-    return re.split(ur'[\u2014:]', name)[-1]
+    return re.split(r'[\u2014:]', name)[-1]
 
 
 def votes(root, session):
@@ -264,7 +263,7 @@ def record_votes(root, session):
         if not mv.is_valid:
             continue
 
-        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed,
+        v = VoteEvent(None, None, 'passage' if mv.passed else 'other', mv.passed,
                  mv.yeas or 0, mv.nays or 0, mv.present or 0)
         v['bill_id'] = mv.bill_id
         v['bill_chamber'] = mv.chamber
@@ -283,13 +282,12 @@ def record_votes(root, session):
 
 
 def viva_voce_votes(root, session):
-    prev_id = None
     for el in root.xpath(u'//div[starts-with(., "All Members are deemed")]'):
         mv = MaybeViva(el)
         if not mv.is_valid:
             continue
 
-        v = Vote(None, None, 'passage' if mv.passed else 'other', mv.passed, 0, 0, 0)
+        v = VoteEvent(None, None, 'passage' if mv.passed else 'other', mv.passed, 0, 0, 0)
         v['bill_id'] = mv.bill_id
         v['bill_chamber'] = mv.chamber
         v['is_amendment'] = mv.is_amendment
@@ -299,14 +297,13 @@ def viva_voce_votes(root, session):
         yield v
 
 
-class TXVoteScraper(VoteScraper):
-    jurisdiction = 'tx'
-    #the 84th session doesn't seem to be putting journals on the ftp
-
+class TXVoteScraper(Scraper):
     _ftp_root = 'ftp://ftp.legis.state.tx.us/'
 
-    def scrape(self, chamber, session):
-        self.validate_session(session)
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('No session specified; using %s', session)
 
         if session == '821':
             self.warning('no journals for session 821')
@@ -315,47 +312,37 @@ class TXVoteScraper(VoteScraper):
         if len(session) == 2:
             session = "%sR" % session
 
-        #As of 1/30/15, the 84th session does not have journals on the ftp
-        """
-        journal_root = urlparse.urljoin(self._ftp_root, ("/journals/" +
-                                                         session +
-                                                         "/html/"),
-                                        True)
+        chambers = [chamber] if chamber else ['upper', 'lower']
 
-        if chamber == 'lower':
-            journal_root = urlparse.urljoin(journal_root, "house/", True)
-        else:
-            journal_root = urlparse.urljoin(journal_root, "senate/", True)
-
-        listing = self.get(journal_root).text
-        for name in parse_ftp_listing(listing):
-            if not name.startswith(session):
-                continue
-            url = urlparse.urljoin(journal_root, name)
-            self.scrape_journal(url, chamber, session)
-        """
-        #we're going to go through every day this year before today
-        #and see if there were any journals that day
+        # go through every day this year before today
+        # and see if there were any journals that day
         today = datetime.datetime.today()
         today = datetime.datetime(today.year, today.month, today.day)
         journal_day = datetime.datetime(today.year, 1, 1)
         day_num = 1
         while journal_day <= today:
-            if chamber == 'lower':
+            if 'lower' in chambers:
                 journal_root = "http://www.journals.house.state.tx.us/HJRNL/%s/HTML/" % session
                 journal_url = journal_root + session + "DAY" + str(day_num).zfill(2)+"FINAL.HTM"
-            else:
+                try:
+                    self.get(journal_url)
+                except scrapelib.HTTPError:
+                    continue
+                else:
+                    yield from self.scrape_journal(journal_url, chamber, session)
+
+            if 'upper' in chambers:
                 journal_root = "http://www.journals.senate.state.tx.us/SJRNL/%s/HTML/" % session
                 journal_url = journal_root + "%sSJ%s-%s-F.HTM" % (session,str(journal_day.month).zfill(2), str(journal_day.day).zfill(2))
+                try:
+                    self.get(journal_url)
+                except scrapelib.HTTPError:
+                    continue
+                else:
+                    yield from self.scrape_journal(journal_url, chamber, session)
+
             journal_day += datetime.timedelta(days=1)
             day_num += 1
-
-            try:
-                self.get(journal_url)
-            except scrapelib.HTTPError:
-                continue
-            else:
-                self.scrape_journal(journal_url, chamber, session)
 
     def scrape_journal(self, url, chamber, session):
         if "R" in session:
@@ -363,10 +350,8 @@ class TXVoteScraper(VoteScraper):
         else:
             session_num = session
         year = tx.metadata['session_details'][session_num]['start_date'].year
-        try:
-            page = self.get(url).text
-        except scrapelib.HTTPError:
-            return
+
+        page = self.get(url).text
 
         root = lxml.html.fromstring(page)
         clean_journal(root)
@@ -387,4 +372,4 @@ class TXVoteScraper(VoteScraper):
             vote['date'] = date
             vote['chamber'] = chamber
             vote.add_source(url)
-            self.save_vote(vote)
+            yield vote
