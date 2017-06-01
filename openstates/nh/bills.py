@@ -1,5 +1,6 @@
 import re
 import datetime as dt
+from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
@@ -257,6 +258,7 @@ class NHBillScraper(Scraper):
 
     def scrape_votes(self, session):
         votes = {}
+        other_counts = defaultdict(int)
         last_line = []
         vote_url = 'http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt'
         lines = self.get(vote_url).content.decode('utf-8').splitlines()
@@ -330,15 +332,16 @@ class NHBillScraper(Scraper):
                     self.warning("Skipping processing this vote:")
                     self.warning("Bad ID: %s" % (body+v_num))
                     continue
-                other_count = 0
                 # code = self.legislators[employee]['seat']
+
                 if vote == 'Yea':
                     votes[body+v_num].yes(leg)
                 elif vote == 'Nay':
                     votes[body+v_num].no(leg)
                 else:
                     votes[body+v_num].vote('other', leg)
-                    other_count += 1
-                votes[body+v_num].set_count('other', other_count)
+                    # hack-ish, but will keep the vote count sync'd
+                    other_counts[body+v_num] += 1
+                    votes[body+v_num].set_count('other', other_counts[body+v_num])
         for vid, vote in votes.items():
             yield vote
