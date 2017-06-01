@@ -108,7 +108,6 @@ class NHCommitteeScraper(Scraper, LXMLMixin):
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         year = int(self.jurisdiction.legislative_sessions[-1]['identifier'])
-        year = 2016
         for chamber in chambers:
             if year < 2017:
                 yield from legacy_committees.NHCommitteeScraper(
