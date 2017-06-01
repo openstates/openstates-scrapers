@@ -1,23 +1,23 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 import lxml.html
 
 
-class WVCommitteeScraper(CommitteeScraper):
-    jurisdiction = "wv"
+class WVCommitteeScraper(Scraper):
 
     # Manually resolved links between subcommittees and parent committees.
     subcommittee_parent_map = {
         'Post Audits Subcommittee': 'Government and Finance',
-        'Parks, Recreation and Natural Resources Subcommittee': \
-            'Government and Finance',
+        'Parks, Recreation and Natural Resources Subcommittee': 'Government and Finance',
         'Tax Reform Subcommittee A': 'Joint Tax Reform',
     }
 
-    def scrape(self, chamber, term):
-        getattr(self, 'scrape_' + chamber)()
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from getattr(self, 'scrape_' + chamber)()
 
     def scrape_lower(self):
         url = 'http://www.legis.state.wv.us/committees/house/main.cfm'
@@ -32,7 +32,7 @@ class WVCommitteeScraper(CommitteeScraper):
                 continue
             committee = self.scrape_lower_committee(link=link, name=text)
             committee.add_source(url)
-            self.save_committee(committee)
+            yield committee
 
         url = 'http://www.legis.state.wv.us/committees/interims/interims.cfm'
         html = self.get(url).text
@@ -45,7 +45,7 @@ class WVCommitteeScraper(CommitteeScraper):
                 continue
             committee = self.scrape_interim_committee(link=link, name=text)
             committee.add_source(url)
-            self.save_committee(committee)
+            yield committee
 
     def scrape_lower_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
@@ -53,7 +53,7 @@ class WVCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        comm = Committee('lower', name)
+        comm = Organization(name=name, chamber='lower', classification='committee')
         comm.add_source(url)
 
         xpath = '//a[contains(@href, "?member=")]'
@@ -78,9 +78,13 @@ class WVCommitteeScraper(CommitteeScraper):
             if parent is None:
                 parent = name.partition('Subcommittee')[0].strip()
 
-            comm = Committee('joint', parent, subcommittee=name)
+            comm = Organization(
+                name=name,
+                classification='committee',
+                parent_id={'name': parent, 'classification': 'joint'}
+            )
         else:
-            comm = Committee('joint', name)
+            comm = Organization(name=name, classification='committee', chamber='joint')
         comm.add_source(url)
 
         xpath = '//a[contains(@href, "?member=")]'
@@ -106,7 +110,7 @@ class WVCommitteeScraper(CommitteeScraper):
                 continue
             committee = self.scrape_upper_committee(link=link, name=text)
             committee.add_source(url)
-            self.save_committee(committee)
+            yield committee
 
     def scrape_upper_committee(self, link, name):
         url = re.sub(r'\s+', '', link.attrib['href'])
@@ -114,7 +118,7 @@ class WVCommitteeScraper(CommitteeScraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        comm = Committee('upper', name)
+        comm = Organization(name=name, chamber='upper', classification='committee')
         comm.add_source(url)
 
         xpath = '//a[contains(@href, "?member=")]'

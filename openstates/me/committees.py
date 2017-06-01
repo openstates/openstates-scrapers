@@ -1,33 +1,22 @@
 import re
-import urlparse
-import datetime
-from collections import defaultdict
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-from .utils import clean_committee_name
-
-import lxml.html
 import xlrd
+import lxml.html
+from pupa.scrape import Scraper, Organization
 
 
-class MECommitteeScraper(CommitteeScraper):
-    jurisdiction = 'me'
-
-    def scrape(self, chamber, term_name):
-        self.validate_term(term_name, latest_only=True)
-
-        if chamber == 'upper':
-            self.scrape_senate_comm()
-        elif chamber == 'lower':
-            self.scrape_reps_comm()
-            self.scrape_joint_comm()
+class MECommitteeScraper(Scraper):
+    def scrape(self, chamber=None):
+        if chamber in ['upper', None]:
+            yield from self.scrape_senate_comm()
+        if chamber in ['lower', None]:
+            yield from self.scrape_reps_comm()
+            yield from self.scrape_joint_comm()
 
     def scrape_reps_comm(self):
-        #As of 1/27/15, the committee page has the wrong
-        #session number (126th) at the top, but
-        #has newly elected people, so we're rolling with it.
-
+        # As of 1/27/15, the committee page has the wrong
+        # session number (126th) at the top, but
+        # has newly elected people, so we're rolling with it.
 
         url = 'http://legislature.maine.gov/house/hsecoms.htm'
         page = self.get(url).text
@@ -38,7 +27,7 @@ class MECommitteeScraper(CommitteeScraper):
         for n in range(1, 12, 2):
             path = 'string(//body/center[%s]/h1/a)' % (n)
             comm_name = root.xpath(path)
-            committee = Committee('lower', comm_name)
+            committee = Organization(chamber='lower', name=comm_name, classification='committee')
             count = count + 1
 
             path2 = '/html/body/ul[%s]/li/a' % (count)
@@ -56,52 +45,34 @@ class MECommitteeScraper(CommitteeScraper):
                 committee.add_member(rep, role)
             committee.add_source(url)
 
-            self.save_committee(committee)
+            yield committee
+
+    senate_committee_pattern = re.compile(r'^Senator (.*?) of .*?(, Chair)?$')
 
     def scrape_senate_comm(self):
-        url = 'http://legisweb1.mainelegislature.org/wp/senate/legislative-committees/'
+        url = (
+            'http://legislature.maine.gov/committee-information/'
+            'standing-committees-of-the-senate'
+        )
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
-        committee_urls = doc.xpath('//address/a/@href')
-        for committee_url in committee_urls:
 
-            # Exclude the committee listing document
-            if committee_url.endswith('.docx'):
-                continue
+        headings = doc.xpath('//p/strong')
+        for heading in headings:
+            committee = Organization(
+                chamber='upper', name=heading.text.strip(':'), classification='committee')
+            committee.add_source(url)
+            par = heading.getparent().getnext()
+            while True:
+                link = par.xpath('a')
+                if len(link) == 0:
+                    break
+                res = self.senate_committee_pattern.search(link[0].text)
+                name, chair = res.groups()
+                committee.add_member(name, 'chair' if chair is not None else 'member')
+                par = par.getnext()
 
-            html = self.get(committee_url).text
-            doc = lxml.html.fromstring(html)
-
-            (committee_name, ) = \
-                    doc.xpath('//h1[contains(@class, "entry-title")]/text()')
-            committee_name = re.sub(r'\(.*?\)', "", committee_name)
-
-            is_joint = (re.search(r'(?s)Committee Members.*Senate:.*House:.*', html))
-            if is_joint:
-                continue
-
-            committee = Committee('upper', committee_name)
-            committee.add_source(committee_url)
-
-            members = doc.xpath('//address/a/text()')
-            if not members:
-                members = doc.xpath('//p/a/text()')
-            for member in members:
-                if member.isspace():
-                    continue
-
-                member = re.sub(r'^Senator ', "", member)
-                member = re.sub(r' of .*', "", member)
-
-                if member.endswith(", Chair"):
-                    role = 'chair'
-                    member = re.sub(r', Chair', "", member)
-                else:
-                    role = 'member'
-
-                committee.add_member(member, role)
-
-            self.save_committee(committee)
+            yield committee
 
     def scrape_joint_comm(self):
         fileurl = 'http://www.maine.gov/legis/house/commlist.xls'
@@ -110,12 +81,10 @@ class MECommitteeScraper(CommitteeScraper):
         wb = xlrd.open_workbook(fname)
         sh = wb.sheet_by_index(0)
 
-        chamber = 'joint'
-
         # Special default dict.
         class Committees(dict):
             def __missing__(self, key):
-                val = Committee('joint', key)
+                val = Organization(chamber='joint', name=key, classification='committee')
                 self[key] = val
                 return val
         committees = Committees()
@@ -127,7 +96,6 @@ class MECommitteeScraper(CommitteeScraper):
 
             ischair = sh.cell(rownum, 1).value
             role = 'chair' if ischair else 'member'
-            chamber = sh.cell(rownum, 2).value
             first = sh.cell(rownum, 3).value
             middle = sh.cell(rownum, 4).value
             last = sh.cell(rownum, 5).value
@@ -143,4 +111,4 @@ class MECommitteeScraper(CommitteeScraper):
 
         for _, committee in committees.items():
             committee.add_source(fileurl)
-            self.save_committee(committee)
+            yield committee

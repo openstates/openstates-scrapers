@@ -1,5 +1,5 @@
-from sqlalchemy import (Table, Column, Integer, String, ForeignKey,
-                        DateTime, Numeric, desc, UnicodeText)
+from sqlalchemy import (Column, Integer, String, ForeignKey,
+                        DateTime, Numeric, UnicodeText)
 from sqlalchemy.sql import and_
 from sqlalchemy.orm import backref, relation
 from sqlalchemy.ext.declarative import declarative_base
@@ -32,7 +32,7 @@ class CABill(Base):
     current_status = Column(String(60))
 
     actions = relation('CABillAction', backref=backref('bill'),
-                        order_by="CABillAction.bill_history_id")
+                       order_by="CABillAction.bill_history_id")
 
     versions = relation('CABillVersion', backref=backref('bill'),
                         order_by='desc(CABillVersion.version_num)')
@@ -69,7 +69,7 @@ class CABillVersion(Base):
 
     @property
     def xml(self):
-        if not '_xml' in self.__dict__:
+        if '_xml' not in self.__dict__:
             self._xml = etree.fromstring(self.bill_xml.encode('utf-8'),
                                          etree.XMLParser(recover=True))
         return self._xml
@@ -213,9 +213,8 @@ class CAVoteSummary(Base):
             return '1/2'
 
         # Get the associated bill version (probably?)
-        version = filter(lambda v:
-                            v.bill_version_action_date <= self.vote_date_time,
-                        self.bill.versions)[0]
+        version = next(filter(lambda v: v.bill_version_action_date <= self.vote_date_time,
+                              self.bill.versions))
 
         if version.vote_required == 'Majority':
             return '1/2'

@@ -2,7 +2,7 @@
 set -e
 
 env
-mongodump --host ${BILLY_MONGO_HOST} --db fiftystates
+mongodump --host ${BILLY_MONGO_HOST} --db fiftystates --excludeCollection popularity_counts
 tar cvzf dump.tar.gz dump/
 s3cmd put dump.tar.gz s3://${S3_BUCKET}/mongo/`date +%Y-%m-%d`-mongo.tar.gz
 

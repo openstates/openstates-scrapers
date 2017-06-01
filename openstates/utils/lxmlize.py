@@ -2,6 +2,11 @@ import requests
 import lxml.html
 
 
+def url_xpath(url, path):
+    doc = lxml.html.fromstring(requests.get(url).text)
+    return doc.xpath(path)
+
+
 class LXMLMixin(object):
     """Mixin for adding LXML helper functions to Open States code."""
 
@@ -14,12 +19,12 @@ class LXMLMixin(object):
             Element: Document node representing the page.
         """
         try:
-            # This class is always mixed into subclasses of `billy.Scraper`,
+            # This class is always mixed into subclasses of `Scraper`,
             # which have a `get` method defined.
             response = self.get(url)
         except requests.exceptions.SSLError:
-            self.warning('`self.lxmlize()` failed due to SSL error, trying'\
-                'an unverified `self.get()` (i.e. `requests.get()`)')
+            self.warning('`self.lxmlize()` failed due to SSL error, trying '
+                         'an unverified `self.get()` (i.e. `requests.get()`)')
             response = self.get(url, verify=False)
 
         if raise_exceptions:

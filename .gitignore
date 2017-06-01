@@ -1,5 +1,7 @@
 data
 cache
+_cache
+_data
 *.pyc
 *.DS_Store
 *~
@@ -24,3 +26,5 @@ openstates.sqlite3
 dump/
 venv
 tmp.*
+*.mdb
+billydata

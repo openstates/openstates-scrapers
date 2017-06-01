@@ -1,20 +1,22 @@
 from openstates.utils import LXMLMixin
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 COMMITTEE_URL = ("http://leg.colorado.gov/content/committees")
 
 
-class COCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = "co"
+class COCommitteeScraper(Scraper, LXMLMixin):
 
-    def scrape_page(self, link, chamber, term):
+    def scrape_page(self, link, chamber=None):
         page = self.lxmlize(link.attrib['href'])
         comName = link.text
         roles = {
             "Chair": "chair",
-            "Vice Chair": "vice-chair"
+            "Vice Chair": "vice-chair",
+            "Vice-Chair": "vice-chair",
         }
-        committee = Committee(chamber, comName)
+        committee = Organization(comName,
+                                 chamber=chamber,
+                                 classification='committee')
         committee.add_source(link.attrib['href'])
 
         for member in page.xpath('//div[@class="members"]/' +
@@ -23,16 +25,17 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
             person = details.xpath('./h4')[0].text_content()
             # This page does random weird things with whitepace to names
             person = ' '.join(person.strip().split())
+            if not person:
+                continue
             role = details.xpath('./span[@class="member-role"]')
             if role:
                 role = roles[role[0].text]
             else:
                 role = 'member'
-            committee.add_member(person, role)
-        self.save_committee(committee)
-        return
+            committee.add_member(person, role=role)
+        yield committee
 
-    def scrape(self, term, chambers):
+    def scrape(self, chambers=None):
         page = self.lxmlize(COMMITTEE_URL)
         # Actual class names have jquery uuids in them, so use
         # contains as a workaround
@@ -51,4 +54,4 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
                 link = comm.xpath('.//a')
                 # ignore empty cells
                 if link:
-                    self.scrape_page(link[0], chamber, term)
+                    yield from self.scrape_page(link[0], chamber)

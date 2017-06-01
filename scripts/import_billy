@@ -1,7 +1,0 @@
-#!/bin/bash
-
-rm -rf dump
-rm -rf latest-mongo-dump.tar.gz
-wget http://static.openstates.org.s3.amazonaws.com/mongo/latest-mongo-dump.tar.gz
-tar xvf latest-mongo-dump.tar.gz
-mongorestore -drop dump/

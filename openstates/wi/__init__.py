@@ -1,162 +1,170 @@
-import datetime
-from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
+from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .bills import WIBillScraper
-from .legislators import WILegislatorScraper
-from .committees import WICommitteeScraper
 from .events import WIEventScraper
+from .people import WIPersonScraper
+from .committees import WICommitteeScraper
 
-metadata = {
-    'abbreviation': 'wi',
-    'name': 'Wisconsin',
-    'capitol_timezone': 'America/Chicago',
-    'legislature_name': 'Wisconsin State Legislature',
-    'legislature_url': 'http://legis.wisconsin.gov/',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'Assembly', 'title': 'Representative'},
-    },
-    'terms': [
-        #{'name': '2001-2002',
-        # 'sessions': ['2001 Regular Session',
-        #              'May 2002 Special Session',
-        #              'Jan 2002 Special Session',
-        #              'May 2001 Special Session'],
-        # 'start_year': 2001, 'end_year': 2002},
-        #{'name': '2003-2004',
-        # 'sessions': ['2003 Regular Session',
-        #              'Jan 2003 Special Session'],
-        # 'start_year': 2003, 'end_year': 2004},
-        #{'name': '2005-2006',
-        # 'sessions': ['2005 Regular Session',
-        #              'Jan 2005 Special Session'],
-        # 'start_year': 2005, 'end_year': 2006 },
-        #{'name': '2007-2008',
-        # 'sessions': ['March 2008 Special Session',
-        #              'April 2008 Special Session',
-        #              'Jan 2007 Special Session',
-        #              'Oct 2007 Special Session',
-        #              'Dec 2007 Special Session',
-        #              '2007 Regular Session' ],
-        # 'start_year': 2007, 'end_year': 2008 },
-        {'name': '2009-2010',
-         'sessions': ['June 2009 Special Session',
-                      'December 2009 Special Session',
-                      '2009 Regular Session'],
-         'start_year': 2009, 'end_year': 2010},
-        {'name': '2011-2012',
-         'sessions': ['2011 Regular Session', 'January 2011 Special Session',
-                      'September 2011 Special Session'],
-         'start_year': 2011, 'end_year': 2012},
-        {'name': '2013-2014',
-         'sessions': ['2013 Regular Session', 'October 2013 Special Session',
-                      'December 2013 Special Session', 'January 2014 Special Session' ],
-         'start_year': 2013, 'end_year': 2014},
-         {'name': '2015-2016',
-         'sessions': ['2015 Regular Session'],
-         'start_year': 2015, 'end_year': 2016},
-         {'name': '2017-2018',
-         'sessions': ['2017 Regular Session'],
-         'start_year': 2016, 'end_year': 2018},
-    ],
-    'session_details': {
-        '2009 Regular Session': {'start_date': datetime.date(2009,1,13),
-                                 'end_date': datetime.date(2011,1,3),
-                                 'type': 'primary',
-                                 'display_name': '2009 Regular Session',
-                                 '_scraped_name': '2009 Regular Session',
-                                },
-        'June 2009 Special Session': {
-            'type': 'special', 'site_id': 'jn9',
-            'display_name': 'Jun 2009 Special Session',
-            '_scraped_name': 'June 2009 Special Session',
-        },
-        'December 2009 Special Session': {
-            'type': 'special', 'site_id': 'de9',
-            'display_name': 'Dec 2009 Special Session',
-            '_scraped_name': 'December 2009 Special Session',
-        },
-        '2011 Regular Session': {'start_date': datetime.date(2011,1,11),
-                                 'end_date': datetime.date(2013,1,7),
-                                 'type': 'primary',
-                                 'display_name': '2011 Regular Session',
-                                 '_scraped_name': '2011 Regular Session',
-                                },
-        'January 2011 Special Session': {
-            'type': 'special', 'site_id': 'jr1',
-            'display_name': 'Jan 2011 Special Session',
-            '_scraped_name': 'January 2011 Special Session',
-        },
-        'September 2011 Special Session': {
-            'type': 'special', 'site_id': 'se1',
-            'display_name': 'Sep 2011 Special Session',
-            '_scraped_name': 'September 2011 Special Session',
-        },
-        '2013 Regular Session': {'start_date': datetime.date(2013,1,7),
-                                 'end_date': datetime.date(2014,1,13),
-                                 'type': 'primary',
-                                 'display_name': '2013 Regular Session',
-                                 '_scraped_name': '2013 Regular Session',
-                                },
-        'October 2013 Special Session': {
-            'type': 'special',
-            'display_name': 'Oct 2013 Special Session',
-            '_scraped_name': 'October 2013 Special Session',
-            'site_id': 'oc3'
-        },
-        'December 2013 Special Session': {
-            'type': 'special',
-            'display_name': 'Dec 2013 Special Session',
-            '_scraped_name': 'December 2013 Special Session',
-            'site_id': 'de3'
-        },
-        'January 2014 Special Session': {
-            'type': 'special',
-            'display_name': 'Jan 2014 Special Session',
-            '_scraped_name': 'January 2014 Special Session',
-            'site_id': 'jr4'
-        },
-        '2015 Regular Session': {
-            'start_date': datetime.date(2015, 1, 5),
-            'end_date': datetime.date(2016, 1, 11),
-            'type': 'primary',
-            'display_name': '2015 Regular Session',
-            '_scraped_name': '2015 Regular Session',
-        },
-        '2017 Regular Session': {
-            'start_date': datetime.date(2017, 1, 3),
-            'end_date': datetime.date(2017, 1, 11),
-            'type': 'primary',
-            'display_name': '2017 Regular Session',
-            '_scraped_name': '2017 Regular Session',
-        },
-    },
-    'feature_flags': ['subjects',
-                      'events', 
-                      'influenceexplorer'],
-    '_ignored_scraped_sessions': [
-        'February 2015 Extraordinary Session',
-        '2007 Regular Session', 'April 2008 Special Session',
-        'March 2008 Special Session', 'December 2007 Special Session',
-        'October 2007 Special Session', 'January 2007 Special Session',
-        'February 2006 Special Session',
-        '2005 Regular Session', 'January 2005 Special Session',
-        '2003 Regular Session', 'January 2003 Special Session',
-        '2001 Regular Session', 'May 2002 Special Session',
-        'January 2002 Special Session', 'May 2001 Special Session',
-        '1999 Regular Session', 'May 2000 Special Session',
-        'October 1999 Special Session', '1997 Regular Session',
-        'April 1998 Special Session', '1995 Regular Session',
-        'January 1995 Special Session', 'September 1995 Special Session']
-}
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    sessions = url_xpath('http://docs.legis.wisconsin.gov/search',
-                         "//select[@name='sessionNumber']/option/text()")
-    return [session.strip(' -') for session in sessions]
+class Wisconsin(Jurisdiction):
+    division_id = "ocd-division/country:us/state:wi"
+    classification = "government"
+    name = "Wisconsin"
+    url = "http://legis.wisconsin.gov/"
+    scrapers = {
+        'bills': WIBillScraper,
+        'events': WIEventScraper,
+        'people': WIPersonScraper,
+        'committees': WICommitteeScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2009 Regular Session",
+            "classification": "primary",
+            "end_date": "2011-01-03",
+            "identifier": "2009 Regular Session",
+            "name": "2009 Regular Session",
+            "start_date": "2009-01-13"
+        },
+        {
+            "_scraped_name": "2011 Regular Session",
+            "classification": "primary",
+            "end_date": "2013-01-07",
+            "identifier": "2011 Regular Session",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-11"
+        },
+        {
+            "_scraped_name": "2013 Regular Session",
+            "classification": "primary",
+            "end_date": "2014-01-13",
+            "identifier": "2013 Regular Session",
+            "name": "2013 Regular Session",
+            "start_date": "2013-01-07"
+        },
+        {
+            "_scraped_name": "2015 Regular Session",
+            "classification": "primary",
+            "end_date": "2016-01-11",
+            "identifier": "2015 Regular Session",
+            "name": "2015 Regular Session",
+            "start_date": "2015-01-05"
+        },
+        {
+            "_scraped_name": "December 2009 Special Session",
+            "classification": "special",
+            "identifier": "December 2009 Special Session",
+            "name": "Dec 2009 Special Session"
+        },
+        {
+            "_scraped_name": "December 2013 Special Session",
+            "classification": "special",
+            "identifier": "December 2013 Special Session",
+            "name": "Dec 2013 Special Session"
+        },
+        {
+            "_scraped_name": "January 2011 Special Session",
+            "classification": "special",
+            "identifier": "January 2011 Special Session",
+            "name": "Jan 2011 Special Session"
+        },
+        {
+            "_scraped_name": "January 2014 Special Session",
+            "classification": "special",
+            "identifier": "January 2014 Special Session",
+            "name": "Jan 2014 Special Session"
+        },
+        {
+            "_scraped_name": "June 2009 Special Session",
+            "classification": "special",
+            "identifier": "June 2009 Special Session",
+            "name": "Jun 2009 Special Session"
+        },
+        {
+            "_scraped_name": "October 2013 Special Session",
+            "classification": "special",
+            "identifier": "October 2013 Special Session",
+            "name": "Oct 2013 Special Session"
+        },
+        {
+            "_scraped_name": "September 2011 Special Session",
+            "classification": "special",
+            "identifier": "September 2011 Special Session",
+            "name": "Sep 2011 Special Session"
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "end_date": "2018-05-23",
+            "identifier": "2017 Regular Session",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-03"
+        },
+    ]
+    ignored_scraped_sessions = [
+        "January 2017 Special Session",
+        "February 2015 Extraordinary Session",
+        "2007 Regular Session",
+        "April 2008 Special Session",
+        "March 2008 Special Session",
+        "December 2007 Special Session",
+        "October 2007 Special Session",
+        "January 2007 Special Session",
+        "February 2006 Special Session",
+        "2005 Regular Session",
+        "January 2005 Special Session",
+        "2003 Regular Session",
+        "January 2003 Special Session",
+        "2001 Regular Session",
+        "May 2002 Special Session",
+        "January 2002 Special Session",
+        "May 2001 Special Session",
+        "1999 Regular Session",
+        "May 2000 Special Session",
+        "October 1999 Special Session",
+        "1997 Regular Session",
+        "April 1998 Special Session",
+        "1995 Regular Session",
+        "January 1995 Special Session",
+        "September 1995 Special Session"
+    ]
 
-def extract_text(doc, data):
-    is_pdf = (doc['mimetype'] == 'application/pdf' or
-              doc['url'].endswith('.pdf'))
-    if is_pdf:
-        return text_after_line_numbers(pdfdata_to_text(data))
+    def get_organizations(self):
+        legislature_name = "Wisconsin State Legislature"
+        lower_chamber_name = "Assembly"
+        lower_seats = 99
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 33
+        upper_title = "Senator"
+
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        sessions = url_xpath('http://docs.legis.wisconsin.gov/search',
+                             "//select[@name='sessionNumber']/option/text()")
+        return [session.strip(' -') for session in sessions]

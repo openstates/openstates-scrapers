@@ -1,91 +1,131 @@
-import lxml.html
+from pupa.scrape import Jurisdiction, Organization
 
-from .bills import WVBillScraper
-from .legislators import WVLegislatorScraper
+from .people import WVPersonScraper
 from .committees import WVCommitteeScraper
+from .bills import WVBillScraper
 
 
-metadata = {
-    'abbreviation': 'wv',
-    'capitol_timezone': 'America/New_York',
-    'name': 'West Virginia',
-    'legislature_name': 'West Virginia Legislature',
-    'legislature_url': 'http://www.legis.state.wv.us/',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Delegate'},
-    },
-    'terms': [
-        {'name': '2011-2012',
-         'start_year': 2011, 'end_year': 2012,
-         'sessions': ['2011', '2012'],
-         },
-        {'name': '2013-2014',
-         'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013', '2014'],
-         },
-        {'name': '2015-2016',
-         'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015', '2016', '20161S'],
-         },
-        {'name': '2017-2018',
-         'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017'],
-         },
-        ],
-    'session_details': {
-        '2011': {'display_name': '2011 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2011'
-                 },
-        '2012': {'display_name': '2012 Regular Session',
-                'type': 'primary',
-                 '_scraped_name': '2012'
-                 },
-        '2013': {'display_name': '2013 Regular Session',
-                'type': 'primary',
-                 '_scraped_name': '2013'
-                 },
-        '2014': {'display_name': '2014 Regular Session',
-                'type': 'primary',
-                 '_scraped_name': '2014'
-                 },
-        '2015': {'display_name': '2015 Regular Session',
-                'type': 'primary',
-                 '_scraped_name': '2015'
-                 },
-        '2016': {'display_name': '2016 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2016'
-                 },
-        '20161S': {'display_name': '2016 First Special Session',
-                 'type':'special',
-                 '_scraped_name': '2016',
-                 '_special_name': '1X'
-                 },
-        '2017': {'display_name': '2017 Regular Session',
-                 'type': 'primary',
-                 '_scraped_name': '2017'
-                 },
-    },
-    'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': [
-        '2010', '2009', '2008', '2007', '2006',
-        '2005', '2004', '2003', '2002', '2001',
-        '2000', '1999', '1998', '1997', '1996',
-        '1995', '1994', '1993',
-        ]
-}
+class WestVirginia(Jurisdiction):
+    division_id = "ocd-division/country:us/state:wv"
+    classification = "government"
+    name = "West Virginia"
+    url = "http://www.legis.state.wv.us/"
+    scrapers = {
+        'people': WVPersonScraper,
+        'committees': WVCommitteeScraper,
+        'bills': WVBillScraper
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2011",
+            "classification": "primary",
+            "identifier": "2011",
+            "name": "2011 Regular Session"
+        },
+        {
+            "_scraped_name": "2012",
+            "classification": "primary",
+            "identifier": "2012",
+            "name": "2012 Regular Session"
+        },
+        {
+            "_scraped_name": "2013",
+            "classification": "primary",
+            "identifier": "2013",
+            "name": "2013 Regular Session"
+        },
+        {
+            "_scraped_name": "2014",
+            "classification": "primary",
+            "identifier": "2014",
+            "name": "2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015",
+            "classification": "primary",
+            "identifier": "2015",
+            "name": "2015 Regular Session"
+        },
+        {
+            "_scraped_name": "2016",
+            "classification": "primary",
+            "identifier": "2016",
+            "name": "2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2016",
+            "classification": "special",
+            "identifier": "20161S",
+            "name": "2016 First Special Session"
+        },
+        {
+            "_scraped_name": "2017",
+            "classification": "primary",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+        },
+        {
+            "_scraped_name": "2017",
+            "classification": "special",
+            "identifier": "20171S",
+            "name": "2017 First Special Session",
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2010",
+        "2009",
+        "2008",
+        "2007",
+        "2006",
+        "2005",
+        "2004",
+        "2003",
+        "2002",
+        "2001",
+        "2000",
+        "1999",
+        "1998",
+        "1997",
+        "1996",
+        "1995",
+        "1994",
+        "1993"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "West Virginia Legislature"
+        lower_chamber_name = "House"
+        lower_seats = 67
+        lower_title = "Delegate"
+        upper_chamber_name = "Senate"
+        upper_seats = 17
+        upper_title = "Senator"
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
-                     '//select[@name="year"]/option/text()')
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
-def extract_text(doc, data):
-    if (doc.get('mimetype') == 'text/html' or 'bills_text.cfm' in doc['url']):
-        doc = lxml.html.fromstring(data)
-        return '\n'.join(p.text_content() for p in
-                         doc.xpath('//div[@id="bhistcontent"]/p'))
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        from openstates.utils import url_xpath
+        return url_xpath('http://www.legis.state.wv.us/Bill_Status/Bill_Status.cfm',
+                         '//select[@name="year"]/option/text()')

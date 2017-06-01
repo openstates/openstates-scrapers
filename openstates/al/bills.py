@@ -1,38 +1,41 @@
-import datetime
 import re
+import pytz
+import datetime
 
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
 import lxml.html
 import scrapelib
 
+from pupa.scrape import Scraper, Bill, VoteEvent
+from .common import SESSION_SITE_IDS
+
+TIMEZONE = pytz.timezone('US/Eastern')
 
 _action_re = (
-    ('Introduced', 'bill:introduced'),
-    ('(Forwarded|Delivered) to Governor', 'governor:received'),
-    ('Amendment (?:.*)Offered', 'amendment:introduced'),
-    ('Substitute (?:.*)Offered', 'amendment:introduced'),
-    ('Amendment (?:.*)adopted', 'amendment:passed'),
-    ('Amendment lost', 'amendment:failed'),
+    ('Introduced', 'introduction'),
+    ('(Forwarded|Delivered) to Governor', 'executive-receipt'),
+    ('Amendment (?:.*)Offered', 'amendment-introduction'),
+    ('Substitute (?:.*)Offered', 'amendment-introduction'),
+    ('Amendment (?:.*)adopted', 'amendment-passage'),
+    ('Amendment lost', 'amendment-failure'),
     ('Read for the first time and referred to',
-     ['bill:reading:1', 'committee:referred']),
-    ('(r|R)eferred to', 'committee:referred'),
-    ('Read for the second time', 'bill:reading:2'),
-    ('(S|s)ubstitute adopted', 'bill:substituted'),
-    ('(m|M)otion to Adopt (?:.*)adopted', 'amendment:passed'),
-    ('(m|M)otion to (t|T)able (?:.*)adopted', 'amendment:passed'),
-    ('(m|M)otion to Adopt (?:.*)lost', 'amendment:failed'),
-    ('(m|M)otion to Read a Third Time and Pass adopted', 'bill:passed'),
-    ('(m|M)otion to Concur In and Adopt adopted', 'bill:passed'),
-    ('Third Reading Passed', 'bill:passed'),
-    ('Reported from', 'committee:passed'),
-    ('Indefinitely Postponed', 'bill:failed'),
-    ('Passed by House of Origin', 'bill:passed'),
-    ('Passed Second House', 'bill:passed'),
+     ['reading-1', 'referral-committee']),
+    ('(r|R)eferred to', 'referral-committee'),
+    ('Read for the second time', 'reading-2'),
+    ('(S|s)ubstitute adopted', 'substitution'),
+    ('(m|M)otion to Adopt (?:.*)adopted', 'amendment-passage'),
+    ('(m|M)otion to (t|T)able (?:.*)adopted', 'amendment-passage'),
+    ('(m|M)otion to Adopt (?:.*)lost', 'amendment-failure'),
+    ('(m|M)otion to Read a Third Time and Pass adopted', 'passage'),
+    ('(m|M)otion to Concur In and Adopt adopted', 'passage'),
+    ('Third Reading Passed', 'passage'),
+    ('Reported from', 'committee-passage'),
+    ('Indefinitely Postponed', 'failure'),
+    ('Passed by House of Origin', 'passage'),
+    ('Passed Second House', 'passage'),
     # memorial resolutions can pass w/o debate
-    ('Joint Rule 11', ['bill:introduced', 'bill:passed']),
-    ('Lost in', 'bill:failed'),
-    ('Favorable from', 'committee:passed:favorable'),
+    ('Joint Rule 11', ['introduction', 'passage']),
+    ('Lost in', 'failure'),
+    ('Favorable from', 'committee-passage-favorable'),
 )
 
 
@@ -40,11 +43,10 @@ def _categorize_action(action):
     for pattern, types in _action_re:
         if re.findall(pattern, action):
             return types
-    return 'other'
+    return None
 
 
-class ALBillScraper(BillScraper):
-    jurisdiction = 'al'
+class ALBillScraper(Scraper):
     CHAMBERS = {'H': 'lower', 'S': 'upper'}
     DATE_FORMAT = '%m/%d/%Y'
 
@@ -62,13 +64,12 @@ class ALBillScraper(BillScraper):
 
         # Standard GET responses must have an ASP.NET VIEWSTATE
         # If they don't, it means the page is a trivial error message
-        elif (not lxml.html.fromstring(response.text).xpath(
-                  '//input[@id="__VIEWSTATE"]/@value') and
-              response.request.method == 'GET'):
-            return False
-
-        else:
-            return True
+        return bool(
+            lxml.html.fromstring(response.text).xpath(
+                '//input[@id="__VIEWSTATE"]/@value'
+            ) or
+            response.request.method != 'GET'
+        )
 
     def _set_session(self, session):
         ''' Activate an ASP.NET session, and set the legislative session '''
@@ -81,20 +82,23 @@ class ALBillScraper(BillScraper):
         (viewstategenerator, ) = doc.xpath(
             '//input[@id="__VIEWSTATEGENERATOR"]/@value')
 
-        # Find the link whose text matches the session metadata _scraped_name on the session list page
+        # Find the link whose text matches the session metadata _scraped_name on the
+        # session list page
         # The __EVENTARGUMENT form value we need to set the session is the second argument
-        # to the __doPostBack JS function, which is the href of each that link 
+        # to the __doPostBack JS function, which is the href of each that link
         (target_session, ) = doc.xpath('//table[@id="ContentPlaceHolder1_gvSessions"]//tr//a/font'
-                                        '[text()="{}"]/parent::a/@href'.format(self.session_name))
-        target_session = target_session.replace("javascript:__doPostBack('ctl00$ContentPlaceHolder1$gvSessions','",'')
-        target_session = target_session.replace("')",'')
+                                       '[text()="{}"]/parent::a/@href'.format(self.session_name))
+        target_session = target_session.replace(
+            "javascript:__doPostBack('ctl00$ContentPlaceHolder1$gvSessions','",
+            '',
+        )
+        target_session = target_session.replace("')", '')
 
         form = {
             '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$gvSessions',
             '__EVENTARGUMENT': target_session,
             '__VIEWSTATE': viewstate,
             '__VIEWSTATEGENERATOR': viewstategenerator,
-            
         }
         self.post(url=SESSION_SET_URL, data=form, allow_redirects=True)
 
@@ -110,19 +114,16 @@ class ALBillScraper(BillScraper):
             doc = lxml.html.fromstring(html)
 
             listing = doc.xpath('//table[@id="ContentPlaceHolder1_gvBills"]/tr')[1:]
+            instruments = doc.xpath(
+                '//span[@id="ContentPlaceHolder1_lblCount"]/font/text()'
+            )
 
             if listing:
                 return listing
-            elif doc.xpath(
-                    '//span[@id="ContentPlaceHolder1_lblCount"]/font/text()'
-                    ) == ["0 Instruments", ]:
+            elif instruments == ['0 Instruments']:
                 self.warning("Missing either bills or resolutions")
                 return []
             else:
-                print "Attempt"
-                print doc.xpath(
-                    '//span[@id="ContentPlaceHolder1_lblCount"]/text()'
-                    )
                 continue
         else:
             raise AssertionError("Bill list not found")
@@ -138,16 +139,19 @@ class ALBillScraper(BillScraper):
         # If a bill page doesn't exist yet, ignore redirects and timeouts
         except scrapelib.HTTPError:
             pass
-        return None
 
-    def scrape(self, session, chambers):
-        self.validate_session(session)
+    def scrape(self, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
         self.session = session
-        self.session_name = (self.metadata['session_details']
-                             [self.session]['_scraped_name'])
-        self.session_id = (self.metadata['session_details']
-                           [self.session]['internal_id'])
+        details = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == session
+        )
+        self.session_name = details['_scraped_name']
+        self.session_id = SESSION_SITE_IDS[session]
 
         self._set_session(session)
 
@@ -172,7 +176,7 @@ class ALBillScraper(BillScraper):
         }
         self.post(url=BILL_TYPE_URL, data=form, allow_redirects=True)
 
-        self.scrape_bill_list(BILL_LIST_URL)
+        yield from self.scrape_bill_list(BILL_LIST_URL)
 
         self._set_session(session)
 
@@ -188,7 +192,7 @@ class ALBillScraper(BillScraper):
         resText = self.get(url=RESOLUTION_TYPE_URL).text
 
         doc = lxml.html.fromstring(resText)
-        
+
         (viewstate, ) = doc.xpath('//input[@id="__VIEWSTATE"]/@value')
         (viewstategenerator, ) = doc.xpath(
             '//input[@id="__VIEWSTATEGENERATOR"]/@value')
@@ -201,16 +205,16 @@ class ALBillScraper(BillScraper):
             'ctl00$ScriptManager1': 'tctl00$UpdatePanel1|ctl00$'
                                     'MainDefaultContent$gvStatus$ctl02$ctl00'
         }
-        
-        deb = self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=True)
-        
-        self.scrape_bill_list(RESOLUTION_LIST_URL)
+
+        self.post(url=RESOLUTION_TYPE_URL, data=form, allow_redirects=True)
+
+        yield from self.scrape_bill_list(RESOLUTION_LIST_URL)
 
     def scrape_bill_list(self, url):
         bill_list = self._get_bill_list(url)
-        
+
         for bill_info in bill_list:
-            
+
             (bill_id, ) = bill_info.xpath('td[1]/font/input/@value')
             (sponsor, ) = bill_info.xpath('td[2]/font/input/@value')
             (subject, ) = bill_info.xpath('td[3]//text()')
@@ -228,16 +232,21 @@ class ALBillScraper(BillScraper):
                     "Unknown bill type for bill '{}'".format(bill_id))
 
             bill = Bill(
-                session=self.session,
+                bill_id,
+                legislative_session=self.session,
                 chamber=chamber,
-                bill_id=bill_id,
                 title='',
-                type=bill_type
+                classification=bill_type,
             )
             if subject:
-                bill['subjects'] = [subject]
+                bill.subject = [subject]
             if sponsor:
-                bill.add_sponsor(type='primary', name=sponsor)
+                bill.add_sponsorship(
+                    name=sponsor,
+                    entity_type='person',
+                    classification='primary',
+                    primary=True,
+                )
             bill.add_source(url)
 
             bill_url = ('http://alisondb.legislature.state.al.us/Alison/'
@@ -251,13 +260,13 @@ class ALBillScraper(BillScraper):
                 continue
             bill_doc = lxml.html.fromstring(bill_html)
 
-            if( bill_doc.xpath(
-                '//span[@id="ContentPlaceHolder1_lblShotTitle"]') ):
+            if (bill_doc.xpath('//span[@id="ContentPlaceHolder1_lblShotTitle"]')):
                 title = bill_doc.xpath(
-                '//span[@id="ContentPlaceHolder1_lblShotTitle"]')[0].text_content().strip()
+                    '//span[@id="ContentPlaceHolder1_lblShotTitle"]'
+                )[0].text_content().strip()
             if not title:
                 title = "[No title given by state]"
-            bill['title'] = title
+            bill.title = title
 
             version_url_base = (
                 'http://alisondb.legislature.state.al.us/ALISON/'
@@ -277,10 +286,11 @@ class ALBillScraper(BillScraper):
                     raise NotImplementedError(
                         "Unknown version type found: '{}'".format(name))
 
-                bill.add_version(
-                    name=name,
-                    url=version_url,
-                    mimetype='application/pdf'
+                bill.add_version_link(
+                    name,
+                    version_url,
+                    media_type='application/pdf',
+                    on_duplicate='ignore',
                 )
 
             # Fiscal notes exist, but I can't figure out how to build their URL
@@ -310,10 +320,10 @@ class ALBillScraper(BillScraper):
                     bir_type, bir.xpath('td[3]/font/text()')[0].strip())
 
                 bill.add_action(
-                    actor=bir_chamber,
-                    action=bir_text,
-                    date=bir_date,
-                    type="other"
+                    bir_text,
+                    TIMEZONE.localize(bir_date),
+                    chamber=bir_chamber,
+                    classification='other',
                 )
 
                 try:
@@ -325,12 +335,12 @@ class ALBillScraper(BillScraper):
                 if bir_vote_id.startswith("Roll "):
                     bir_vote_id = bir_vote_id.split(" ")[-1]
 
-                    self.scrape_vote(
+                    yield from self.scrape_vote(
                         bill=bill,
                         vote_chamber=bir_type[0],
                         bill_id="{0}%20for%20{1}".format(bir_type, bill_id),
                         vote_id=bir_vote_id,
-                        vote_date=bir_date,
+                        vote_date=TIMEZONE.localize(bir_date),
                         action_text=bir_text
                     )
 
@@ -349,8 +359,8 @@ class ALBillScraper(BillScraper):
 
                 # check for occasional extra last row
                 if not action_chamber.strip():
-                    continue 
-                    
+                    continue
+
                 # The committee cell is just an abbreviation, so get its name
                 actor = self.CHAMBERS[action_chamber]
                 try:
@@ -360,31 +370,33 @@ class ALBillScraper(BillScraper):
                 except AttributeError:
                     action_committee = ''
 
-                bill.add_action(
-                    actor=actor,
-                    action=action_text,
-                    date=action_date,
-                    type=action_type,
-                    committees=action_committee if action_committee else None
+                act = bill.add_action(
+                    action_text,
+                    TIMEZONE.localize(action_date),
+                    chamber=actor,
+                    classification=action_type,
                 )
+                if action_committee:
+                    act.add_related_entity(action_committee, entity_type='organization')
 
                 try:
                     vote_button = action.xpath('td[9]//text()')[0].strip()
-                except:
+                except IndexError:
                     vote_button = ''
+
                 if vote_button.startswith("Roll "):
                     vote_id = vote_button.split(" ")[-1]
 
-                    self.scrape_vote(
+                    yield from self.scrape_vote(
                         bill=bill,
                         vote_chamber=action_chamber,
                         bill_id=bill_id,
                         vote_id=vote_id,
-                        vote_date=action_date,
+                        vote_date=TIMEZONE.localize(action_date),
                         action_text=action_text
                     )
 
-            self.save_bill(bill)
+            yield bill
 
     def scrape_vote(self, bill, vote_chamber, bill_id, vote_id, vote_date,
                     action_text):
@@ -434,15 +446,23 @@ class ALBillScraper(BillScraper):
             assert total_absent == len(voters['A']), "Absent count incorrect"
         total_other = len(voters['P']) + len(voters['A'])
 
-        vote = Vote(
-            self.CHAMBERS[vote_chamber[0]], vote_date, action_text,
-            total_yea > total_nay, total_yea, total_nay, total_other)
+        vote = VoteEvent(
+            chamber=self.CHAMBERS[vote_chamber[0]],
+            start_date=vote_date,
+            motion_text=action_text,
+            result='pass' if total_yea > total_nay else 'fail',
+            classification='passage',
+            bill=bill,
+        )
+        vote.set_count('yes', total_yea)
+        vote.set_count('no', total_nay)
+        vote.set_count('other', total_other)
         vote.add_source(url)
         for member in voters['Y']:
-            vote.yes(member)
+            vote.vote('yes', member)
         for member in voters['N']:
-            vote.no(member)
+            vote.vote('no', member)
         for member in (voters['A'] + voters['P']):
-            vote.other(member)
+            vote.vote('other', member)
 
-        bill.add_vote(vote)
+        yield vote

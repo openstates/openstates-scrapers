@@ -1,13 +1,20 @@
 import os
-import datetime
 from zipfile import ZipFile
+from pupa.scrape import VoteEvent, Scraper
 
-from billy.scrape.votes import VoteScraper, Vote
 
-class NCVoteScraper(VoteScraper):
-    jurisdiction = 'nc'
+class NCVoteScraper(Scraper):
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         # special sessions need a ftp_session set
         if 'E' in session:
             ftp_session = session.replace('E', '_E')
@@ -26,7 +33,6 @@ class NCVoteScraper(VoteScraper):
             naming_scheme = '{file_label}_{session}.txt'
             delimiter = "\t"
         fname, resp = self.urlretrieve(vote_data_url)
-        # fname = "/Users/brian/Downloads/Vote Data 2009.zip"
         zf = ZipFile(fname)
 
         chamber_code = 'H' if chamber == 'lower' else 'S'
@@ -40,7 +46,7 @@ class NCVoteScraper(VoteScraper):
         member_file = zf.open(naming_scheme.format(file_label='Members', session=ftp_session))
         members = {}
         for line in member_file.readlines():
-            data = line.split(delimiter)
+            data = line.decode().split(delimiter)
             if data[1] == chamber_code:
                 members[data[0]] = data[2]
 
@@ -62,30 +68,38 @@ class NCVoteScraper(VoteScraper):
         # 20: PASSED/FAILED
         # 21: legislative day
         vote_file = zf.open(naming_scheme.format(file_label='Votes', session=ftp_session))
-        bill_chambers = {'H':'lower', 'S':'upper'}
+        bill_chambers = {'H': 'lower', 'S': 'upper'}
         votes = {}
         for line in vote_file.readlines():
-            data = line.split(delimiter)
+            data = line.decode().split(delimiter)
             if len(data) < 24:
                 self.warning('line too short %s', data)
                 continue
             if data[1] == chamber_code:
-                date = datetime.datetime.strptime(data[2][:16],
-                                                  '%Y-%m-%d %H:%M')
+                date = data[2][:19]
                 if data[3][0] not in bill_chambers:
                     # skip votes that aren't on bills
-                    self.log('skipping vote %s' % data[0])
+                    self.info('skipping vote %s' % data[0])
                     continue
 
-                votes[data[0]] = Vote(chamber, date, data[13],
-                                      'PASS' in data[20],
-                                      int(data[5]),
-                                      int(data[6]),
-                                      int(data[7])+int(data[8])+int(data[9]),
-                                      bill_chamber=bill_chambers[data[3][0]],
-                                      bill_id=data[3]+data[4], session=session)
+                ve = VoteEvent(chamber=chamber,
+                               start_date=date,
+                               motion_text=data[13],
+                               result='pass' if 'PASS' in data[20] else 'fail',
+                               bill_chamber=bill_chambers[data[3][0]],
+                               bill=data[3] + data[4],
+                               legislative_session=session,
+                               classification='passage',
+                               )
+                ve.set_count('yes', int(data[5]))
+                ve.set_count('no', int(data[6]))
+                ve.set_count('absent', int(data[7]))
+                ve.set_count('excused', int(data[8]))
+                ve.set_count('not voting', int(data[9]))
+                votes[data[0]] = ve
 
-        member_vote_file = zf.open(naming_scheme.format(file_label='MemberVotes', session=ftp_session))
+        member_vote_file = zf.open(naming_scheme.format(file_label='MemberVotes',
+                                                        session=ftp_session))
         # 0: member id
         # 1: chamber (S/H)
         # 2: vote id
@@ -95,7 +109,7 @@ class NCVoteScraper(VoteScraper):
         # 6: pair order
         # If a vote is paired then it should be counted as an 'other'
         for line in member_vote_file.readlines():
-            data = line.split(delimiter)
+            data = line.decode().split(delimiter)
             if data[1] == chamber_code:
                 try:
                     member_voting = members[data[0]]
@@ -108,26 +122,34 @@ class NCVoteScraper(VoteScraper):
                     self.debug('Vote %s not found.' % data[2])
                     continue
 
-                # -1 votes are Lt. Gov, not included in count, so we add them
+                # -1 votes are Lt. Gov, not included in count, so we use a hacky way to
+                # increment the counts
                 if data[4] == 'Y' and not data[5]:
                     if data[0] == '-1':
-                        vote['yes_count'] += 1
+                        for c in ve.counts:
+                            if c['option'] == 'yes':
+                                c['count'] += 1
                     vote.yes(member_voting)
                 elif data[4] == 'N' and not data[5]:
                     if data[0] == '-1':
-                        vote['no_count'] += 1
+                        for c in ve.counts:
+                            if c['option'] == 'no':
+                                c['count'] += 1
                     vote.no(member_voting)
                 else:
-                    # for some reason other_count is high for paired votes
+                    # for some reason other_count is high for paired votes so we use the hack
+                    # to decrement counts
                     if data[5]:
-                        vote['other_count'] -= 1
+                        for c in ve.counts:
+                            if c['option'] == 'other':
+                                c['count'] -= 1
                     # is either E: excused, X: no vote, or paired (doesn't count)
-                    vote.other(member_voting)
+                    vote_type = {'E': 'excused', 'X': 'not voting', 'V': 'other'}[data[4]]
+                    vote.vote(vote_type, member_voting)
 
-        for vote in votes.itervalues():
-            #vote.validate()
+        for vote in votes.values():
             vote.add_source(vote_data_url)
-            self.save_vote(vote)
+            yield vote
 
         # remove file
         zf.close()

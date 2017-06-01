@@ -216,8 +216,10 @@ class IlBillScraper(Scraper):
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
-        title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/text()')[0].strip()
-        summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/text()')[0].strip()
+        title = doc.xpath('//span[text()="Short Description:"]/following-sibling::span[1]/'
+                          'text()')[0].strip()
+        summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/'
+                            'text()')[0].strip()
 
         bill = Bill(identifier=bill_id,
                     legislative_session=session,
@@ -379,7 +381,6 @@ class IlBillScraper(Scraper):
             self.warning("404 error for vote; skipping vote")
             return False
 
-
     def scrape_pdf_for_votes(self, session, actor, date, motion, href):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
@@ -434,8 +435,11 @@ class IlBillScraper(Scraper):
             elif name == 'Mr. President':
                 name = self.jurisdiction.session_details[session]['president']
             if vcode == 'Y':
+                # Converts "Davis,William" to "Davis, William".
+                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 yes_votes.append(name)
             elif vcode == 'N':
+                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 no_votes.append(name)
             elif vcode == 'P':
                 present_votes.append(name)
@@ -497,7 +501,7 @@ class IlBillScraper(Scraper):
                 spontype, sponsor, this_chamber, otype = tup
                 if this_chamber == chamber and sponsor == match.groupdict()['name']:
                     try:
-                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'])
+                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'].replace("as ",""))
                     except KeyError:
                         self.warning('[%s] Unknown sponsor refinement type [%s]' % (bill_id, match.groupdict()['spontype']))
                     return

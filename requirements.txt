@@ -1,4 +1,5 @@
 billy
+Django<1.10
 
 # scraping
 cffi
@@ -25,8 +26,3 @@ pyopenssl
 #NH Database Connectivity
 #NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
 pymssql
-
-#pupa
-git+https://github.com/opencivicdata/pupa.git#egg=pupa
-https://github.com/opencivicdata/python-opencivicdata-django/zipball/master
-

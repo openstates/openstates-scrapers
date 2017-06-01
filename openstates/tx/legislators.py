@@ -57,20 +57,21 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
                'cfm?leg={}&chamber={}').format(term, chamber_map[chamber])
         page = self.lxmlize(url)
 
-        rows = self.get_nodes(
+        # table is broken and doesn't have proper <tr> tags
+        # so we'll group the td tags into groups of 9
+        tds = self.get_nodes(
             page,
-            '//div[@class="body2ndLevel"]/table/tr[contains(@class, '
-            '"resultRow")]')
+            '//div[@class="body2ndLevel"]/table//td[contains(@class, '
+            '"result")]')
 
-        for row in rows:
-            details = self.get_nodes(row, './/td[@class="results"]')
-
-            district = details[1].text_content().strip()
-
-            party_code = details[5].text_content().strip()[0]
-            party = party_map[party_code]
-
-            parties[district] = party
+        for td_index, td in enumerate(tds):
+            # 2nd and 6th column
+            if td_index % 9 == 2:
+                district = td.text_content().strip()
+            if td_index % 9 == 6:
+                party_code = td.text_content().strip()[0]
+                party = party_map[party_code]
+                parties[district] = party
 
         return parties
 

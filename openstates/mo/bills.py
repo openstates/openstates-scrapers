@@ -1,33 +1,29 @@
 import re
+import pytz
 import datetime as dt
-import scrapelib
-
 from collections import defaultdict
 
 import lxml.html
-from lxml import etree
+from pupa.scrape import Scraper, Bill, VoteEvent
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-
-from utils import (clean_text, house_get_actor_from_action,
-                   senate_get_actor_from_action,find_nodes_with_matching_text)
 from openstates.utils import LXMLMixin
 
+from .utils import (clean_text, house_get_actor_from_action,
+                    senate_get_actor_from_action)
+
 bill_types = {
-    'HB ' : 'bill',
-    'HJR' : 'joint resolution',
-    'HCR' : 'concurrent resolution',
-    'SB ' : 'bill',
-    'SJR' : 'joint resolution',
-    'SCR' : 'concurrent resolution'
+    'HB ': 'bill',
+    'HJR': 'joint resolution',
+    'HCR': 'concurrent resolution',
+    'SB ': 'bill',
+    'SJR': 'joint resolution',
+    'SCR': 'concurrent resolution'
 }
 
+TIMEZONE = pytz.timezone('America/Chicago')
 
-class MOBillScraper(BillScraper, LXMLMixin):
 
-    jurisdiction = 'mo'
+class MOBillScraper(Scraper, LXMLMixin):
     _senate_base_url = 'http://www.house.mo.gov'
     # List of URLS that aren't working when we try to visit them (but
     # probably should work):
@@ -35,72 +31,69 @@ class MOBillScraper(BillScraper, LXMLMixin):
     _subjects = defaultdict(list)
 
     def __init__(self, *args, **kwargs):
-        super(BillScraper, self).__init__(*args, **kwargs)
-        latest_session = self.metadata['terms'][-1]['sessions'][-1]
-        self._scrape_subjects(latest_session)
+        super().__init__(*args, **kwargs)
+        self._scrape_subjects(self.latest_session())
 
     def _get_action(self, actor, action):
         # Alright. This covers both chambers and everyting else.
-        flags = {
-            'Introduced'       : 'bill:introduced',
-            'Offered'          : 'bill:introduced',
-            'First Read'       : 'bill:reading:1',
-            'Read Second Time' : 'bill:reading:2',
-            'Second Read'      : 'bill:reading:2',
-            'Third Read'       : 'bill:reading:3',
-            'Referred'         : 'committee:referred',
-            'Withdrawn'        : 'bill:withdrawn',
-            'S adopted'        : 'bill:passed',
-            'Truly Agreed To and Finally Passed' : 'bill:passed',
-            'Third Read and Passed' : 'bill:passed',
-            'Signed by Governor' : 'governor:signed',
-            'Approved by Governor'  : 'governor:signed',
-            'Vetoed by Governor' : 'governor:vetoed',
-            'Legislature voted to override Governor\'s veto': 'bill:veto_override:passed',
-        }
-        found_action = 'other'
-        for flag in flags:
+        flags = [
+            ('Introduced', 'introduction'),
+            ('Offered', 'introduction'),
+            ('First Read', 'reading-1'),
+            ('Read Second Time', 'reading-2'),
+            ('Second Read', 'reading-2'),
+            # make sure passage is checked before reading-3
+            ('Third Read and Passed', 'passage'),
+            ('Third Read', 'reading-3'),
+            ('Referred', 'referral-committee'),
+            ('Withdrawn', 'withdrawal'),
+            ('S adopted', 'passage'),
+            ('Truly Agreed To and Finally Passed', 'passage'),
+            ('Signed by Governor', 'executive-signature'),
+            ('Approved by Governor', 'executive-signature'),
+            ('Vetoed by Governor', 'executive-veto'),
+            ('Legislature voted to override Governor\'s veto', 'veto-override-passage'),
+        ]
+        categories = []
+        for flag, acat in flags:
             if flag in action:
-                found_action = flags[flag]
-        return found_action
+                categories.append(acat)
 
-    def _get_votes(self, date, actor, action):
-        ret = []
+        return categories or None
+
+    def _get_votes(self, date, actor, action, bill, url):
         vre = r'(?P<leader>.*)(AYES|YEAS):\s+(?P<yeas>\d+)\s+(NOES|NAYS):\s+(?P<nays>\d+).*'
         if 'YEAS' in action.upper() or 'AYES' in action.upper():
             match = re.match(vre, action)
             if match:
                 v = match.groupdict()
                 yes, no = int(v['yeas']), int(v['nays'])
-                vote = Vote(actor, date, v['leader'],
-                            (yes > no), yes, no, 0)
-                ret.append(vote)
-        return ret
+                vote = VoteEvent(
+                    chamber=actor,
+                    motion_text=v['leader'],
+                    result='pass' if yes > no else 'fail',
+                    classification='passage',
+                    start_date=TIMEZONE.localize(date),
+                    bill=bill,
+                )
+                vote.add_source(url)
+                yield vote
 
     def _parse_cosponsors_from_bill(self, bill, url):
         bill_page = self.get(url).text
         bill_page = lxml.html.fromstring(bill_page)
-        sponsors_text = find_nodes_with_matching_text(bill_page,'//p/span',r'\s*INTRODUCED.*')
-        if len(sponsors_text) == 0:
-            # probably its withdrawn
-            return
-        sponsors_text = sponsors_text[0].text_content()
-        sponsors = clean_text(sponsors_text).split(',')
-        if len(sponsors) > 1: # if there are several comma separated entries, list them.
-            # the sponsor and the cosponsor were already got from the previous page, so ignore those:
-            sponsors = sponsors[2::]
-            for part in sponsors:
-                parts = re.split(r' (?i)and ',part)
-                for sponsor in parts:
-                    cosponsor_name = clean_text(sponsor)
-                    if cosponsor_name != "":
-                        cosponsor_name = cosponsor_name.replace(
-                            u'\u00a0', " ") # epic hax
-                        for name in re.split(r'\s+AND\s+', cosponsor_name):
-                        # for name in cosponsor_name.split("AND"):
-                            name = name.strip()
-                            if name:
-                                bill.add_sponsor('cosponsor', name)
+        table = bill_page.xpath('//table[@id="CoSponsorTable"]')
+        assert len(table) == 1
+        for row in table[0].xpath('./tr'):
+            name = row[0].text_content()
+            if re.search(r'no co-sponsors', name, re.IGNORECASE):
+                continue
+            bill.add_sponsorship(
+                row[0].text_content(),
+                entity_type='person',
+                classification='cosponsor',
+                primary=False,
+            )
 
     def _scrape_subjects(self, session):
         self._scrape_senate_subjects(session)
@@ -138,7 +131,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
         bill_id = bill_page.xpath('//*[@id="lblBillNum"]')[0].text_content()
         bill_title = bill_page.xpath('//*[@id="lblBillTitle"]')[0].text_content()
         bill_desc = bill_page.xpath('//*[@id="lblBriefDesc"]')[0].text_content()
-        bill_lr = bill_page.xpath('//*[@id="lblLRNum"]')[0].text_content()
+        # bill_lr = bill_page.xpath('//*[@id="lblLRNum"]')[0].text_content()
 
         bill_type = "bill"
         triplet = bill_id[:3]
@@ -150,45 +143,58 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
         if bid in self._subjects:
             subs = self._subjects[bid]
-            self.log("With subjects for this bill")
+            self.info("With subjects for this bill")
 
-        self.log(bid)
+        self.info(bid)
 
-        bill = Bill(year, 'upper', bill_id, bill_desc,
-                    bill_lr=bill_lr, type=bill_type, subjects=subs)
+        bill = Bill(
+            bill_id,
+            title=bill_desc,
+            legislative_session=year,
+            classification=bill_type,
+        )
+        bill.subject = subs
+        bill.add_abstract(bill_desc, note='abstract')
         bill.add_source(bill_url)
+
+        if bill_title:
+            bill.add_title(bill_title)
 
         # Get the primary sponsor
         sponsor = bill_page.xpath('//a[@id="hlSponsor"]')[0]
         bill_sponsor = sponsor.text_content()
-        bill_sponsor_link = sponsor.attrib.get('href')
-        bill.add_sponsor('primary', bill_sponsor, sponsor_link=bill_sponsor_link)
+        # bill_sponsor_link = sponsor.attrib.get('href')
+        bill.add_sponsorship(
+            bill_sponsor,
+            entity_type='person',
+            classification='primary',
+            primary=True,
+        )
 
         # cosponsors show up on their own page, if they exist
         cosponsor_tag = bill_page.xpath('//a[@id="hlCoSponsors"]')
-        if len(cosponsor_tag) > 0 and cosponsor_tag[0].attrib.has_key('href'):
+        if len(cosponsor_tag) > 0 and cosponsor_tag[0].attrib.get('href'):
             self._parse_senate_cosponsors(bill, cosponsor_tag[0].attrib['href'])
 
         # get the actions
         action_url = bill_page.xpath('//a[@id="hlAllActions"]')
         if len(action_url) > 0:
-            action_url =  action_url[0].attrib['href']
-            #print "actions = %s" % action_url
+            action_url = action_url[0].attrib['href']
             self._parse_senate_actions(bill, action_url)
 
         # stored on a separate page
         versions_url = bill_page.xpath('//a[@id="hlFullBillText"]')
-        if len(versions_url) > 0 and versions_url[0].attrib.has_key('href'):
+        if len(versions_url) > 0 and versions_url[0].attrib.get('href'):
             self._parse_senate_bill_versions(bill, versions_url[0].attrib['href'])
 
-        self.save_bill(bill)
+        yield bill
 
     def _parse_senate_bill_versions(self, bill, url):
         bill.add_source(url)
         versions_page = self.get(url).text
         versions_page = lxml.html.fromstring(versions_page)
         version_tags = versions_page.xpath('//li/font/a')
-        
+
         # some pages are updated and use different structure
         if not version_tags:
             version_tags = versions_page.xpath('//tr/td/a[contains(@href, ".pdf")]')
@@ -200,8 +206,8 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 mimetype = 'application/pdf'
             else:
                 mimetype = None
-            bill.add_version(description, pdf_url, mimetype=mimetype,
-                             on_duplicate='use_new')
+            bill.add_version_link(description, pdf_url, media_type=mimetype,
+                                  on_duplicate='ignore')
 
     def _parse_senate_actions(self, bill, url):
         bill.add_source(url)
@@ -215,7 +221,8 @@ class MOBillScraper(BillScraper, LXMLMixin):
             action = row[1].text_content()
             actor = senate_get_actor_from_action(action)
             type_class = self._get_action(actor, action)
-            bill.add_action(actor, action, date, type=type_class)
+            bill.add_action(
+                action, TIMEZONE.localize(date), chamber=actor, classification=type_class)
 
     def _parse_senate_cosponsors(self, bill, url):
         bill.add_source(url)
@@ -223,7 +230,6 @@ class MOBillScraper(BillScraper, LXMLMixin):
         cosponsors_page = lxml.html.fromstring(cosponsors_page)
         # cosponsors are all in a table
         cosponsors = cosponsors_page.xpath('//table[@id="dgCoSponsors"]/tr/td/a')
-        #print "looking for cosponsors = %s" % cosponsors
 
         for cosponsor_row in cosponsors:
             # cosponsors include district, so parse that out
@@ -233,11 +239,21 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
             # they give us a link to the congressperson, so we might
             # as well keep it.
-            if cosponsor_row.attrib.has_key('href'):
-                cosponsor_url = cosponsor_row.attrib['href']
-                bill.add_sponsor('cosponsor', cosponsor, sponsor_link=cosponsor_url)
+            if cosponsor_row.attrib.get('href'):
+                # cosponsor_url = cosponsor_row.attrib['href']
+                bill.add_sponsorship(
+                    cosponsor,
+                    entity_type='person',
+                    classification='cosponsor',
+                    primary=False,
+                )
             else:
-                bill.add_sponsor('cosponsor', cosponsor)
+                bill.add_sponsorship(
+                    cosponsor,
+                    entity_type='person',
+                    classification='cosponsor',
+                    primary=False,
+                )
 
     def _scrape_house_subjects(self, session):
         self.info('Collecting subject tags from lower house.')
@@ -298,21 +314,20 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 actor = house_get_actor_from_action(action)
                 type_class = self._get_action(actor, action)
 
-                votes = self._get_votes(date, actor, action)
-                for vote in votes:
-                    bill.add_vote(vote)
+                yield from self._get_votes(date, actor, action, bill, url)
 
-                bill.add_action(actor, action, date, type=type_class)
+                bill.add_action(
+                    action, TIMEZONE.localize(date), chamber=actor, classification=type_class)
 
     def _parse_house_billpage(self, url, year):
-        url_root = re.match("(.*//.*?/)", url).group(1)
-
         bill_list_page = self.get(url).text
         bill_list_page = lxml.html.fromstring(bill_list_page)
         # find the first center tag, take the text after
         # 'House of Representatives' and before 'Bills' as
         # the session name
-        header_tag = bill_list_page.xpath('//*[@id="ContentPlaceHolder1_lblAssemblyInfo"]')[0].text_content()
+        header_tag = bill_list_page.xpath(
+            '//*[@id="ContentPlaceHolder1_lblAssemblyInfo"]'
+        )[0].text_content()
         if header_tag.find('1st Extraordinary Session') != -1:
             session = year + ' 1st Extraordinary Session'
         elif header_tag.find('2nd Extraordinary Session') != -1:
@@ -328,21 +343,20 @@ class MOBillScraper(BillScraper, LXMLMixin):
             if not isEven:
                 # the non even rows contain bill links, the other rows contain brief
                 # descriptions of the bill.
-                #print "bill = %s" % bill[0][0].attrib['href']
                 count = count + 1
-                #if (count > 1140):
-                self._parse_house_bill(bill[0][0].attrib['href'], session)
+                yield from self._parse_house_bill(bill[0][0].attrib['href'], session)
             isEven = not isEven
 
     def _parse_house_bill(self, url, session):
-        # using the print page makes the page simpler, and also *drastically* smaller (8k rather than 100k)
+        # using the print page makes the page simpler, and also *drastically* smaller
+        # (8k rather than 100k)
         url = re.sub("billsummary", "billsummaryprn", url)
-        url = '%s/%s' % (self._senate_base_url,url)
+        url = '%s/%s' % (self._senate_base_url, url)
 
-        #the URL is an iframed version now, so swap in for the actual bill page
+        # the URL is an iframed version now, so swap in for the actual bill page
 
-        url = url.replace('Bill.aspx','BillContent.aspx')
-        url = url.replace('&code=R','&code=R&style=new')
+        url = url.replace('Bill.aspx', 'BillContent.aspx')
+        url = url.replace('&code=R', '&code=R&style=new')
 
         # http://www.house.mo.gov/Bill.aspx?bill=HB26&year=2017&code=R
         # http://www.house.mo.gov/BillContent.aspx?bill=HB26&year=2017&code=R&style=new
@@ -353,7 +367,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
         bill_id = bill_page.xpath('//*[@class="entry-title"]/div')
         if len(bill_id) == 0:
-            self.log("WARNING: bill summary page is blank! (%s)" % url)
+            self.info("WARNING: bill summary page is blank! (%s)" % url)
             self._bad_urls.append(url)
             return
         bill_id = bill_id[0].text_content()
@@ -363,19 +377,20 @@ class MOBillScraper(BillScraper, LXMLMixin):
         bill_desc = clean_text(bill_desc)
 
         table_rows = bill_page.xpath('//table/tr')
-        # if there is a cosponsor all the rows are pushed down one for the extra row for the cosponsor:
+        # if there is a cosponsor all the rows are pushed down one for the extra row
+        # for the cosponsor:
         cosponsorOffset = 0
         if table_rows[2][0].text_content().strip() == 'Co-Sponsor:':
             cosponsorOffset = 1
 
-        lr_label_tag = table_rows[3+cosponsorOffset]
+        lr_label_tag = table_rows[3 + cosponsorOffset]
         assert lr_label_tag[0].text_content().strip() == 'LR Number:'
-        bill_lr = lr_label_tag[1].text_content()
+        # bill_lr = lr_label_tag[1].text_content()
 
         lastActionOffset = 0
-        if table_rows[4+cosponsorOffset][0].text_content().strip() == 'Governor Action:':
+        if table_rows[4 + cosponsorOffset][0].text_content().strip() == 'Governor Action:':
             lastActionOffset = 1
-        official_title_tag = table_rows[5+cosponsorOffset+lastActionOffset]
+        official_title_tag = table_rows[5 + cosponsorOffset + lastActionOffset]
         assert official_title_tag[0].text_content().strip() == 'Bill String:'
         official_title = official_title_tag[1].text_content()
 
@@ -392,54 +407,48 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
         if bid in self._subjects:
             subs = self._subjects[bid]
-            self.log("With subjects for this bill")
+            self.info("With subjects for this bill")
 
-        self.log(bid)
+        self.info(bid)
 
         if bill_desc == "":
-            print("ERROR: Blank title. Skipping. {} / {} / {}".format(
-                bill_id, bill_desc, official_title
-            ))
-            # XXX: Some pages full of blank bills.
-            return
+            if int(bid[2:]) <= 20:
+                # blank bill titles early in session are approp. bills
+                bill_desc = 'Appropriations Bill'
+            else:
+                self.error("Blank title. Skipping. {} / {} / {}".format(
+                    bill_id, bill_desc, official_title
+                ))
+                return
 
-        bill = Bill(session, 'lower', bill_id, bill_desc, bill_url=url,
-                    bill_lr=bill_lr, official_title=official_title,
-                    type=bill_type, subjects=subs)
+        bill = Bill(
+            bill_id,
+            chamber='lower',
+            title=bill_desc,
+            legislative_session=session,
+            classification=bill_type,
+        )
+        bill.subject = subs
+        bill.add_title(official_title, note='official')
+
         bill.add_source(url)
 
         bill_sponsor = clean_text(table_rows[0][1].text_content())
-        try:
-            bill_sponsor_link = table_rows[0][1][0].attrib['href']
-        except IndexError:
-            return
-        bill.add_sponsor('primary', bill_sponsor, sponsor_link=bill_sponsor_link)
+        # try:
+        #     bill_sponsor_link = table_rows[0][1][0].attrib['href']
+        # except IndexError:
+        #     return
+        bill.add_sponsorship(
+            bill_sponsor,
+            entity_type='person',
+            classification='primary',
+            primary=True,
+        )
 
         # check for cosponsors
-        if cosponsorOffset == 1:
-            if len(table_rows[2][1]) == 1: # just a name
-                cosponsor = table_rows[2][1][0]
-                bill.add_sponsor('cosponsor', cosponsor.text_content(),
-                                 sponsor_link='%s/%s' % (
-                                     self._senate_base_url,
-                                     cosponsor.attrib['href']
-                                ))
-            else: # name ... etal
-                try:
-                    cosponsor = table_rows[2][1][0]
-                    bill.add_sponsor('cosponsor',
-                                     clean_text(cosponsor.text_content()),
-                                     sponsor_link='%s/%s' % (
-                                         self._senate_base_url,
-                                         cosponsor.attrib['href']
-                                     ))
-                    sponsors_url, = bill_page.xpath(
-                        "//a[contains(@href, 'CoSponsors.aspx')]/@href")
-                    self._parse_cosponsors_from_bill(bill, sponsors_url)
-                except scrapelib.HTTPError as e:
-                    self.log("WARNING: " + str(e))
-                    self._bad_urls.append(url)
-                    self.log( "WARNING: no bill summary page (%s)" % url )
+        sponsors_url, = bill_page.xpath(
+            "//a[contains(@href, 'CoSponsorsPrn.aspx')]/@href")
+        self._parse_cosponsors_from_bill(bill, sponsors_url)
 
         # actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
         # actions_link = '%s/%s' % (self._senate_base_url,actions_link_tag.attrib['href'])
@@ -447,7 +456,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
 
         actions_link, = bill_page.xpath(
             "//a[contains(@href, 'BillActionsPrn.aspx')]/@href")
-        self._parse_house_actions(bill, actions_link)
+        yield from self._parse_house_actions(bill, actions_link)
 
         # get bill versions
         doc_tags = bill_page.xpath('//div[@class="BillDocsSection"][1]/span')
@@ -457,8 +466,7 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 self._senate_base_url,
                 doc_tag[0].attrib['href']
             )
-            bill.add_document(doc, text_url,
-                              mimetype="text/html")
+            bill.add_document_link(doc, text_url, media_type='text/html')
 
         # get bill versions
         version_tags = bill_page.xpath('//div[@class="BillDocsSection"][2]/span')
@@ -469,14 +477,15 @@ class MOBillScraper(BillScraper, LXMLMixin):
                     mimetype = 'application/pdf'
                 else:
                     mimetype = 'text/html'
-                bill.add_version(version, vurl.attrib['href'],
-                                 on_duplicate='use_new', mimetype=mimetype)
+                bill.add_version_link(version, vurl.attrib['href'], media_type=mimetype,
+                                      on_duplicate='ignore')
 
         # house bill versions
         # everything between the row containing "Bill Text"" and the next div.DocHeaderRow
-        version_rows = bill_page.xpath('//div[contains(text(),"Bill Text")]/'
-                                       'following-sibling::div[contains(@class,"DocRow") '
-                                       'and count(preceding-sibling::div[contains(@class,"DocHeaderRow")])=1]')
+        version_rows = bill_page.xpath(
+            '//div[contains(text(),"Bill Text")]/'
+            'following-sibling::div[contains(@class,"DocRow") '
+            'and count(preceding-sibling::div[contains(@class,"DocHeaderRow")])=1]')
         for row in version_rows:
             # some rows are just broken links, not real versions
             if row.xpath('.//div[contains(@class,"textType")]/a/@href'):
@@ -486,19 +495,21 @@ class MOBillScraper(BillScraper, LXMLMixin):
                     mimetype = 'application/pdf'
                 else:
                     mimetype = 'text/html'
-                bill.add_version(version, path,
-                                on_duplicate='use_new', mimetype=mimetype)
+                bill.add_version_link(version, path, media_type=mimetype,
+                                      on_duplicate='ignore')
 
         # house bill summaries
         # everything between the row containing "Bill Summary"" and the next div.DocHeaderRow
-        summary_rows = bill_page.xpath('//div[contains(text(),"Bill Summary")]/'
-                                       'following-sibling::div[contains(@class,"DocRow") '
-                                       'and count(following-sibling::div[contains(@class,"DocHeaderRow")])=1]')
+        summary_rows = bill_page.xpath(
+            '//div[contains(text(),"Bill Summary")]/'
+            'following-sibling::div[contains(@class,"DocRow") '
+            'and count(following-sibling::div[contains(@class,"DocHeaderRow")])=1]')
 
         # if there are no amedments, we need a different xpath for summaries
         if not summary_rows:
-           summary_rows = bill_page.xpath('//div[contains(text(),"Bill Summary")]/'
-                                         'following-sibling::div[contains(@class,"DocRow")]')
+            summary_rows = bill_page.xpath(
+                '//div[contains(text(),"Bill Summary")]/'
+                'following-sibling::div[contains(@class,"DocRow")]')
 
         for row in reversed(summary_rows):
             version = row.xpath('.//div[contains(@class,"textType")]/a/text()')[0].strip()
@@ -509,8 +520,8 @@ class MOBillScraper(BillScraper, LXMLMixin):
                     mimetype = 'application/pdf'
                 else:
                     mimetype = 'text/html'
-                bill.add_document(summary_name, path,
-                                on_duplicate='use_new', mimetype=mimetype)
+                bill.add_document_link(summary_name, path, media_type=mimetype,
+                                       on_duplicate='ignore')
 
         # house bill amendments
         amendment_rows = bill_page.xpath('//div[contains(text(),"Amendment")]/'
@@ -537,15 +548,12 @@ class MOBillScraper(BillScraper, LXMLMixin):
                 mimetype = 'application/pdf'
             else:
                 mimetype = 'text/html'
-            bill.add_version(summary_name, path,
-                             on_duplicate='use_new', mimetype=mimetype)
-        self.save_bill(bill)
+            bill.add_version_link(summary_name, path, media_type=mimetype,
+                                  on_duplicate='ignore')
+
+        yield bill
 
     def _scrape_upper_chamber(self, year):
-        # We only have data back to 2005.
-        if int(year) < 2005:
-            raise NoDataForPeriod(year)
-
         self.info('Scraping bills from upper chamber.')
 
         year2 = "%02d" % (int(year) % 100)
@@ -565,25 +573,28 @@ class MOBillScraper(BillScraper, LXMLMixin):
         for bill_table in bill_tables:
             # Here we just search the whole table string to get the BillID that
             # the MO senate site uses.
-            if re.search(r'dgBillList.*hlBillNum',bill_table.attrib['id']):
-                #print "keys = %s" % bill_table.attrib['id']
-                #print "table = %s " % bill_table.attrib.get('href')
-                self._parse_senate_billpage(bill_root + bill_table.attrib.get('href'), year)
-                #print "one down!"
+            if re.search(r'dgBillList.*hlBillNum', bill_table.attrib['id']):
+                yield from self._parse_senate_billpage(
+                    bill_root + bill_table.attrib.get('href'),
+                    year,
+                )
 
     def _scrape_lower_chamber(self, year):
-        # We only have data back to 2000.
-        if int(year) < 2000:
-            raise NoDataForPeriod(year)
-
         self.info('Scraping bills from lower chamber.')
 
         bill_page_url = '{}/BillList.aspx?year={}'.format(
-            self._senate_base_url,year)
-        self._parse_house_billpage(bill_page_url, year)
+            self._senate_base_url, year)
+        yield from self._parse_house_billpage(bill_page_url, year)
 
-    def scrape(self, chamber, year):
-        getattr(self, '_scrape_' + chamber + '_chamber')(year)
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        if chamber in ['upper', None]:
+            yield from self._scrape_upper_chamber(session)
+        if chamber in ['lower', None]:
+            yield from self._scrape_lower_chamber(session)
 
         if len(self._bad_urls) > 0:
             self.warning('WARNINGS:')

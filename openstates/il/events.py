@@ -3,7 +3,6 @@ import re
 
 from pupa.scrape import Scraper, Event
 
-import lxml.html
 import pytz
 
 urls = {
@@ -33,7 +32,8 @@ class IlEventScraper(Scraper):
             metainf[key] = value
 
         where = metainf['Location:']
-        description = ctty_name
+        subject_matter = metainf['Subject Matter:']
+        description = "{}, {}".format(ctty_name, subject_matter)
 
         datetime = metainf['Scheduled Date:']
         datetime = re.sub("\s+", " ", datetime)

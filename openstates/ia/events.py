@@ -1,18 +1,25 @@
 import re
 import datetime
-
-from billy.scrape.events import EventScraper, Event
-from .scraper import InvalidHTTPSScraper
-
 import lxml.html
+import pytz
 
-class IAEventScraper(InvalidHTTPSScraper, EventScraper):
-    jurisdiction = 'ia'
+from pupa.scrape import Scraper, Event
 
-    def scrape(self, chamber, session):
-        if chamber == 'other':
-            return
 
+class IAEventScraper(Scraper):
+    _tz = pytz.timezone("US/Central")
+
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+
+        if chamber:
+            yield from self.scrape_chamber(chamber, session)
+        else:
+            yield from self.scrape_chamber('upper', session)
+            yield from self.scrape_chamber('lower', session)
+
+    def scrape_chamber(self, chamber, session):
         today = datetime.date.today()
         start_date = today - datetime.timedelta(days=10)
         end_date = today + datetime.timedelta(days=10)
@@ -34,7 +41,8 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
 
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
-        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/tbody/tr[not(contains(@class, 'hidden'))]"):
+        for link in page.xpath("//div[contains(@class, 'meetings')]/table[1]/"
+                               "tbody/tr[not(contains(@class, 'hidden'))]"):
             comm = link.xpath("string(./td[2]/a[1]/text())").strip()
             desc = comm + " Committee Hearing"
 
@@ -73,8 +81,14 @@ class IAEventScraper(InvalidHTTPSScraper, EventScraper):
                         self.warning('error parsing timestamp %s', when)
                         continue
 
-            event = Event(session, when, 'committee:meeting',
-                          desc, location)
+            event = Event(
+                    name=desc,
+                    description=desc,
+                    start_time=self._tz.localize(when),
+                    timezone=self._tz.zone,
+                    location_name=location)
+
             event.add_source(url)
-            event.add_participant('host', comm, 'committee', chamber=chamber)
-            self.save_event(event)
+            event.add_participant(comm, note='host', type='committee')
+
+            yield event

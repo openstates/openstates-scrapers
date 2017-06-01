@@ -1,19 +1,15 @@
 import re
 import datetime
-import scrapelib
-import lxml.html
-import lxml.etree
 from collections import defaultdict
-from billy.utils import term_for_session
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from apiclient import OpenLegislationAPIClient
+
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+from .apiclient import OpenLegislationAPIClient
 from .models import AssemblyBillPage
 from .actions import Categorizer
 
 
-class NYBillScraper(BillScraper):
-    jurisdiction = 'ny'
+class NYBillScraper(Scraper):
     categorizer = Categorizer()
 
     def _parse_bill_number(self, bill_id):
@@ -27,12 +23,12 @@ class NYBillScraper(BillScraper):
         bill_chamber, bill_type = {
             'S': ('upper', 'bill'),
             'R': ('upper', 'resolution'),
-            'J': ('upper', 'legislative resolution'),
+            'J': ('upper', 'resolution'),
             'B': ('upper', 'concurrent resolution'),
             'C': ('lower', 'concurrent resolution'),
             'A': ('lower', 'bill'),
             'E': ('lower', 'resolution'),
-            'K': ('lower', 'legislative resolution'),
+            'K': ('lower', 'resolution'),
             'L': ('lower', 'joint resolution')}[bill_prefix]
 
         return (bill_chamber, bill_type)
@@ -53,7 +49,7 @@ class NYBillScraper(BillScraper):
         if not title:
             self.logger.warn('Bill missing title.')
             return
-        
+
         # Determine the chamber the bill originated from.
         if bill['billType']['chamber'] == 'SENATE':
             bill_chamber = 'upper'
@@ -72,61 +68,65 @@ class NYBillScraper(BillScraper):
         assembly_url = (
             'http://assembly.state.ny.us/leg/?default_fld=&bn={bill_id}'
             '&Summary=Y&Actions=Y&Text=Y'
-            ).format(bill_id=bill_id)
+        ).format(bill_id=bill_id)
 
         return (senate_url, assembly_url, bill_chamber, bill_type, bill_id,
                 title, (prefix, number, active_version))
 
-    def _parse_senate_votes(self, vote_data):
-        vote_datetime = datetime.datetime.strptime(vote_data['voteDate'],
-            '%Y-%m-%d')
-
-        vote = Vote(
-            chamber='upper',
-            date=vote_datetime.date(),
-            motion='[No motion available.]',
-            passed=False,
-            yes_votes=[],
-            no_votes=[],
-            other_votes=[],
-            yes_count=0,
-            no_count=0,
-            other_count=0)
+    def _parse_senate_votes(self, vote_data, bill, url):
+        vote_datetime = datetime.datetime.strptime(vote_data['voteDate'], '%Y-%m-%d')
 
         if vote_data['voteType'] == 'FLOOR':
-            vote['motion'] = 'Floor Vote'
+            motion = 'Floor Vote'
         elif vote_data['voteType'] == 'COMMITTEE':
-            vote['motion'] = '{} Vote'.format(vote_data['committee']['name'])
+            motion = '{} Vote'.format(vote_data['committee']['name'])
         else:
             raise ValueError('Unknown vote type encountered.')
 
+        vote = VoteEvent(
+            chamber='upper',
+            start_date=vote_datetime.strftime('%Y-%m-%d'),
+            motion_text=motion,
+            classification='passage',
+            result='fail',
+            bill=bill,
+        )
+
+        vote.add_source(url)
+
         vote_rolls = vote_data['memberVotes']['items']
+
+        yes_count, no_count, other_count = 0, 0, 0
 
         # Count all yea votes.
         if 'items' in vote_rolls.get('AYE', {}):
             for legislator in vote_rolls['AYE']['items']:
                 vote.yes(legislator['fullName'])
-                vote['yes_count'] += 1
+                yes_count += 1
+
         if 'items' in vote_rolls.get('AYEWR', {}):
             for legislator in vote_rolls['AYEWR']['items']:
                 vote.yes(legislator['fullName'])
-                vote['yes_count'] += 1
+                yes_count += 1
 
         # Count all nay votes.
         if 'items' in vote_rolls.get('NAY', {}):
             for legislator in vote_rolls['NAY']['items']:
                 vote.no(legislator['fullName'])
-                vote['no_count'] += 1
+                no_count += 1
 
         # Count all other types of votes.
         other_vote_types = ('EXC', 'ABS', 'ABD')
         for vote_type in other_vote_types:
             if vote_rolls.get(vote_type, []):
                 for legislator in vote_rolls[vote_type]['items']:
-                    vote.other(legislator['fullName'])
-                    vote['other_count'] += 1
+                    vote.vote('other', legislator['fullName'])
+                    other_count += 1
 
-        vote['passed'] = vote['yes_count'] > vote['no_count']
+        vote.result = 'pass' if yes_count > no_count else 'fail'
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('other', other_count)
 
         return vote
 
@@ -149,11 +149,12 @@ class NYBillScraper(BillScraper):
 
             # Response should be a dict of the JSON data returned from
             # the Open Legislation API.
-            response = self.api_client.get('bills', session_year=start_year,
+            response = self.api_client.get(
+                'bills', session_year=start_year,
                 limit=limit, offset=offset, full=full)
 
-            if response['responseType'] == 'empty list'\
-                or response['offsetStart'] > response['offsetEnd']:
+            if (response['responseType'] == 'empty list' or
+                    response['offsetStart'] > response['offsetEnd']):
                 break
             else:
                 bills = response['result']['items']
@@ -168,31 +169,45 @@ class NYBillScraper(BillScraper):
          title, (prefix, number, active_version)) = details
 
         bill = Bill(
-            session,
-            bill_chamber,
             bill_id,
-            title,
-            type=bill_type,
-            summary=bill_data['summary'])
+            legislative_session=session,
+            chamber=bill_chamber,
+            title=title or bill_data['summary'],
+            classification=bill_type,
+        )
 
-        if bill_data['title'] is None:
-            bill['title'] = bill_data['summary']
+        if bill_data['summary']:
+            bill.add_abstract(bill_data['summary'], note='')
 
         bill_active_version = bill_data['amendments']['items'][active_version]
 
         # Parse sponsors.
         if bill_data['sponsor'] is not None:
-            if bill_data['sponsor']['rules'] == True:
-                bill.add_sponsor('primary', 'Rules Committee',
-                                 chamber=bill_chamber)
+            if bill_data['sponsor']['rules'] is True:
+                bill.add_sponsorship(
+                    'Rules Committee',
+                    entity_type='organization',
+                    classification='primary',
+                    primary=True,
+                )
             elif not bill_data['sponsor']['budget']:
                 primary_sponsor = bill_data['sponsor']['member']
-                bill.add_sponsor('primary', primary_sponsor['shortName'])
+                bill.add_sponsorship(
+                    primary_sponsor['shortName'],
+                    entity_type='person',
+                    classification='primary',
+                    primary=True,
+                )
 
                 # There *shouldn't* be cosponsors if there is no sponsor.
                 cosponsors = bill_active_version['coSponsors']['items']
                 for cosponsor in cosponsors:
-                    bill.add_sponsor('cosponsor', cosponsor['shortName'])
+                    bill.add_sponsorship(
+                        cosponsor['shortName'],
+                        entity_type='person',
+                        classification='cosponsor',
+                        primary=False,
+                    )
 
         # List companion bill.
         same_as = bill_active_version.get('sameAs', {})
@@ -206,17 +221,11 @@ class NYBillScraper(BillScraper):
             end_year = start_year + 1
             companion_bill_session = '-'.join([str(start_year), str(end_year)])
 
-            # Determine companion bill chamber.
-            companion_bill_prefix = self._parse_bill_number(
-                same_as['items'][0]['basePrintNo'])[0]
-            companion_bill_chamber = self._parse_bill_prefix(
-                companion_bill_prefix)[0]
-
             # Attach companion bill data.
-            bill.add_companion(
+            bill.add_related_bill(
                 companion_bill_id,
                 companion_bill_session,
-                companion_bill_chamber,
+                relation_type='companion',
             )
 
         # Parse actions.
@@ -227,46 +236,16 @@ class NYBillScraper(BillScraper):
 
         for action in bill_data['actions']['items']:
             chamber = chamber_map[action['chamber'].lower()]
-            action_datetime = datetime.datetime.strptime(action['date'],
-                '%Y-%m-%d')
+            action_datetime = datetime.datetime.strptime(action['date'], '%Y-%m-%d')
             action_date = action_datetime.date()
-            types, attrs = NYBillScraper.categorizer.categorize(action['text'])
+            types, _ = NYBillScraper.categorizer.categorize(action['text'])
 
             bill.add_action(
-                chamber,
                 action['text'],
-                action_date,
-                type=types,
-                **attrs)
-
-        # Chamber-specific processing.
-        if bill_chamber == 'upper':
-            # Collect votes.
-            for vote_data in bill_data['votes']['items']:
-                vote = self._parse_senate_votes(vote_data)
-                bill.add_vote(vote)
-        elif bill_chamber == 'lower':
-            assembly = AssemblyBillPage(self, session, bill, details)
-            assembly.build()
-            assembly_bill_data = assembly.bill
-
-        # A little strange the way it works out, but the Assembly
-        # provides the HTML version documents and the Senate provides
-        # the PDF version documents.
-        amendments = bill_data['amendments']['items']
-        for key, amendment in amendments.iteritems():
-            version = amendment['printNo']
-
-            html_version = version + ' HTML'
-            html_url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn='\
-                '{}&term={}'.format(bill_id, self.term_start_year)
-            bill.add_version(html_version, html_url, on_duplicate='use_new', mimetype='text/html')
-
-            pdf_version = version + ' PDF'
-            pdf_url = 'http://legislation.nysenate.gov/pdf/bills/{}/{}'\
-                .format(self.term_start_year, bill_id)
-            bill.add_version(pdf_version, pdf_url, on_duplicate='use_new', 
-                mimetype='application/pdf')
+                action_date.strftime('%Y-%m-%d'),
+                chamber=chamber,
+                classification=types,
+            )
 
         # Handling of sources follows. Sources serving either chamber
         # maintain duplicate data, so we can see certain bill data
@@ -278,25 +257,61 @@ class NYBillScraper(BillScraper):
         # thoroughness. - Andy Lo
 
         # List Open Legislation API endpoint as a source.
-        bill.add_source(self.api_client.root + self.api_client.\
-            resources['bill'].format(
-                session_year=session,
-                bill_id=bill_id,
-                summary='',
-                detail=''))
+        api_url = self.api_client.root + self.api_client.resources['bill'].format(
+            session_year=session,
+            bill_id=bill_id,
+            summary='',
+            detail='')
+        bill.add_source(api_url)
         bill.add_source(senate_url)
         bill.add_source(assembly_url)
 
-        return bill
+        # Chamber-specific processing.
+        if bill_chamber == 'upper':
+            # Collect votes.
+            for vote_data in bill_data['votes']['items']:
+                yield self._parse_senate_votes(vote_data, bill, api_url)
+        elif bill_chamber == 'lower':
+            assembly = AssemblyBillPage(self, session, bill, details)
+            assembly.build()
 
-    def scrape(self, session, chambers):
+        # A little strange the way it works out, but the Assembly
+        # provides the HTML version documents and the Senate provides
+        # the PDF version documents.
+        amendments = bill_data['amendments']['items']
+        for key, amendment in amendments.items():
+            version = amendment['printNo']
+
+            html_version = version + ' HTML'
+            html_url = 'http://assembly.state.ny.us/leg/?sh=printbill&bn='\
+                '{}&term={}'.format(bill_id, self.term_start_year)
+            bill.add_version_link(
+                html_version,
+                html_url,
+                on_duplicate='ignore',
+                media_type='text/html',
+            )
+
+            pdf_version = version + ' PDF'
+            pdf_url = 'http://legislation.nysenate.gov/pdf/bills/{}/{}'\
+                .format(self.term_start_year, bill_id)
+            bill.add_version_link(
+                pdf_version,
+                pdf_url,
+                on_duplicate='ignore',
+                media_type='application/pdf',
+            )
+
+        yield bill
+
+    def scrape(self, session=None):
         self.api_client = OpenLegislationAPIClient(self)
 
-        for term in reversed(self.metadata['terms']):
-            if session in term['sessions']:
-                self.term_start_year = term['start_year']
-                break
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        self.term_start_year = session.split('-')[0]
 
         for bill in self._generate_bills(session):
-            bill_object = self._scrape_bill(session, bill)
-            self.save_bill(bill_object)
+            yield from self._scrape_bill(session, bill)

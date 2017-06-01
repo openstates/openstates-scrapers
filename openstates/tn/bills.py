@@ -3,8 +3,11 @@ import lxml.html
 import re
 from collections import namedtuple
 
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.scrape import (
+    Bill,
+    Scraper,
+    VoteEvent,
+)
 
 
 class Rule(namedtuple('Rule', 'regex types stop attrs')):
@@ -23,7 +26,7 @@ class Rule(namedtuple('Rule', 'regex types stop attrs')):
         'Create new instance of Rule(regex, types, attrs, stop)'
 
         # Types can be a string or a sequence.
-        if isinstance(types, basestring):
+        if isinstance(types, str):
             types = set([types])
         types = set(types or [])
 
@@ -35,95 +38,96 @@ class Rule(namedtuple('Rule', 'regex types stop attrs')):
 
 
 # These are regex patterns that map to action categories.
+# TODO: Check that these are up to date
 _categorizer_rules = (
 
     # Some actions are listed in the wrong chamber column.
     # Fix the chamber before moving on to the other rules.
-    Rule(r'^H\.\s', stop=False, actor='lower'),
-    Rule(r'^S\.\s', stop=False, actor='upper'),
-    Rule(r'Signed by S\. Speaker', actor='upper'),
-    Rule(r'Signed by H\. Speaker', actor='lower'),
+    Rule(r'^H\.\s', stop=False, chamber='lower'),
+    Rule(r'^S\.\s', stop=False, chamber='upper'),
+    Rule(r'Signed by S(\.|enate) Speaker', chamber='upper'),
+    Rule(r'Signed by H(\.|ouse) Speaker', chamber='lower'),
 
     # Extract the vote counts to help disambiguate chambers later.
     Rule(r'Ayes\s*(?P<yes_votes>\d+),\s*Nays\s*(?P<no_votes>\d+)', stop=False),
 
     # Committees
-    Rule(r'(?i)ref\. to (?P<committees>.+?Comm\.)', 'committee:referred'),
-    Rule(r'^Failed In S\.(?P<committees>.+?Comm\.)', 'committee:failed'),
-    Rule(r'^Failed In s/c (?P<committees>.+)', 'committee:failed'),
+    Rule(r'(?i)ref\. to (?P<committees>.+?Comm\.)', 'referral-committee'),
+    Rule(r'^Failed In S\.(?P<committees>.+?Comm\.)', 'committee-failure'),
+    Rule(r'^Failed In s/c (?P<committees>.+)', 'committee-failure'),
     Rule(r'Rcvd\. from H., ref\. to S\. (?P<committees>.+)',
-         'committee:referred', actor='upper'),
+         'referral-committee', chamber='upper'),
     Rule(r'Placed on cal\. (?P<committees>.+?) for', stop=False),
     Rule(r'Taken off notice for cal in s/c (?P<committees>.+)'),
     Rule(r'to be heard in (?P<committees>.+?Comm\.)'),
     Rule(r'Action Def. in S. (?P<committees>.+?Comm.)',
-         actor='upper'),
+         chamber='upper'),
     Rule(r'(?i)Placed on S. (?P<committees>.+?Comm\.) cal. for',
-         actor='upper'),
+         chamber='upper'),
     Rule(r'(?i)Assigned to (?P<committees>.+?comm\.)'),
     Rule(r'(?i)Placed on S. (?P<committees>.+?Comm.) cal.',
-         actor='upper'),
+         chamber='upper'),
     Rule(r'(?i)Taken off Notice For cal\. in s/c.+?\sof\s(?P<committees>.+?)'),
     Rule(r'(?i)Taken off Notice For cal\. in s/c.+?\sof\s(?P<committees>.+?)'),
     Rule(r'(?i)Taken off Notice For cal\. in[: ]+(?!s/c)(?P<committees>.+)'),
-    Rule(r'(?i)Re-referred To:\s+(?P<committees>.+)', 'committee:referred'),
+    Rule(r'(?i)Re-referred To:\s+(?P<committees>.+)', 'referral-committee'),
     Rule(r'Recalled from S. (?P<committees>.+?Comm.)'),
 
     # Amendments
-    Rule(r'^Am\..+?tabled', 'amendment:tabled'),
+    Rule(r'^Am\..+?tabled', 'amendment-deferral'),
     Rule('^Am\. withdrawn\.\(Amendment \d+ \- (?P<version>\S+)',
-         'amendment:withdrawn'),
+         'amendment-withdrawal'),
     Rule(r'^Am\. reconsidered(, withdrawn)?\.\(Amendment \d \- (?P<version>.+?\))',
-         'amendment:withdrawn'),
+         'amendment-withdrawal'),
     Rule(r'adopted am\.\(Amendment \d+ of \d+ - (?P<version>\S+)\)',
-         'amendment:passed'),
-    Rule(r'refused to concur.+?in.+?am', 'amendment:failed'),
+         'amendment-passage'),
+    Rule(r'refused to concur.+?in.+?am', 'amendment-failure'),
 
     # Bill passage
-    Rule(r'^Passed H\.', 'bill:passed', actor='lower'),
-    Rule(r'^Passed S\.', 'bill:passed', actor='upper'),
-    Rule(r'^R/S Adopted', 'bill:passed'),
-    Rule(r'R/S Intro., adopted', 'bill:passed'),
-    Rule(r'R/S Concurred', 'bill:passed'),
+    Rule(r'^Passed H\.', 'passage', chamber='lower'),
+    Rule(r'^Passed S\.', 'passage', chamber='upper'),
+    Rule(r'^R/S Adopted', 'passage'),
+    Rule(r'R/S Intro., adopted', 'passage'),
+    Rule(r'R/S Concurred', 'passage'),
 
     # Veto
-    Rule(r'(?i)veto', 'governor:vetoed'),
+    Rule(r'(?i)veto', 'executive-veto'),
 
     # The existing rules for TN categorization:
-    Rule('Amendment adopted', 'amendment:passed'),
-    Rule('Amendment failed', 'amendment:failed'),
-    Rule('Amendment proposed', 'amendment:introduced'),
-    Rule('adopted am.', 'amendment:passed'),
-    Rule('Am. withdrawn', 'amendment:withdrawn'),
-    Rule('Divided committee report', 'committee:passed'),
-    Rule('Filed for intro.', ['bill:introduced', 'bill:reading:1']),
-    Rule('Reported back amended, do not pass', 'committee:passed:unfavorable'),
-    Rule('Reported back amended, do pass', 'committee:passed:favorable'),
-    Rule('Rec. For Pass.', 'committee:passed:favorable'),
-    Rule('Rec. For pass.', 'committee:passed:favorable'),
-    Rule('Reported back amended, without recommendation', 'committee:passed'),
-    Rule('Reported back, do not pass', 'committee:passed:unfavorable'),
-    Rule('w/ recommend', 'committee:passed:favorable'),
-    Rule('Ref. to', 'committee:referred'),
-    Rule('ref. to', 'committee:referred'),
-    Rule('Assigned to', 'committee:referred'),
-    Rule('Received from House', 'bill:introduced'),
-    Rule('Received from Senate', 'bill:introduced'),
-    Rule('Adopted, ', ['bill:passed']),
-    Rule('Concurred, ', ['bill:passed']),
-    Rule('Passed H., ', ['bill:passed']),
-    Rule('Passed S., ', ['bill:passed']),
-    Rule('Second reading, adopted', ['bill:passed', 'bill:reading:2']),
-    Rule('Second reading, failed', ['bill:failed', 'bill:reading:2']),
-    Rule('Second reading, passed', ['bill:passed', 'bill:reading:2']),
-    Rule('Transmitted to Gov. for action.', 'governor:received'),
-    Rule('Transmitted to Governor for his action.', 'governor:received'),
-    Rule('Signed by Governor, but item veto', 'governor:vetoed:line-item'),
-    Rule('Signed by Governor', 'governor:signed'),
-    Rule('Withdrawn', 'bill:withdrawn'),
-    Rule('tabled', 'amendment:tabled'),
-    Rule('widthrawn', 'amendment:withdrawn'),
-    Rule(r'Intro', 'bill:introduced'),
+    Rule('Amendment adopted', 'amendment-passage'),
+    Rule('Amendment failed', 'amendment-failure'),
+    Rule('Amendment proposed', 'amendment-introduction'),
+    Rule('adopted am.', 'amendment-passage'),
+    Rule('Am. withdrawn', 'amendment-withdrawal'),
+    Rule('Divided committee report', 'committee-passage'),
+    Rule('Filed for intro.', ['introduction', 'reading-1']),
+    Rule('Reported back amended, do not pass', 'committee-passage-unfavorable'),
+    Rule('Reported back amended, do pass', 'committee-passage-favorable'),
+    Rule('Rec. For Pass.', 'committee-passage-favorable'),
+    Rule('Rec. For pass.', 'committee-passage-favorable'),
+    Rule('Reported back amended, without recommendation', 'committee-passage'),
+    Rule('Reported back, do not pass', 'committee-passage-unfavorable'),
+    Rule('w/ recommend', 'committee-passage-favorable'),
+    Rule('Ref. to', 'referral-committee'),
+    Rule('ref. to', 'referral-committee'),
+    Rule('Assigned to', 'referral-committee'),
+    Rule('Received from House', 'introduction'),
+    Rule('Received from Senate', 'introduction'),
+    Rule('Adopted, ', ['passage']),
+    Rule('Concurred, ', ['passage']),
+    Rule('Passed H., ', ['passage']),
+    Rule('Passed S., ', ['passage']),
+    Rule('Second reading, adopted', ['passage', 'reading-2']),
+    Rule('Second reading, failed', ['failure', 'reading-2']),
+    Rule('Second reading, passed', ['passage', 'reading-2']),
+    Rule('Transmitted to Gov. for action.', 'executive-receipt'),
+    Rule('Transmitted to Governor for his action.', 'executive-receipt'),
+    Rule('Signed by Governor, but item veto', 'executive-veto:line-item'),
+    Rule('Signed by Governor', 'executive-signature'),
+    Rule('Withdrawn', 'withdrawal'),
+    Rule('tabled', 'amendment-deferral'),
+    Rule('widthrawn', 'amendment-withdrawal'),
+    Rule(r'Intro', 'introduction'),
 )
 
 
@@ -158,7 +162,7 @@ def actions_from_table(bill, actions_table):
     action_rows = actions_table.xpath("tr")
 
     # first row will say "Actions Taken on S|H(B|R|CR)..."
-    if 'Actions Taken on S' in action_rows[0].text_content():
+    if 'Actions For S' in action_rows[0].text_content():
         chamber = 'upper'
     else:
         chamber = 'lower'
@@ -167,60 +171,126 @@ def actions_from_table(bill, actions_table):
         tds = ar.xpath('td')
         action_taken = tds[0].text
         strptime = datetime.datetime.strptime
-        action_date = strptime(tds[1].text.strip(), '%m/%d/%Y')
+        action_date = strptime(tds[1].text.strip(), '%m/%d/%Y').date()
         action_types, attrs = categorize_action(action_taken)
-
         # Overwrite any presumtive fields that are inaccurate, usually chamber.
         action = dict(action=action_taken, date=action_date,
-                      type=action_types, actor=chamber)
+                      classification=action_types, chamber=chamber)
         action.update(**attrs)
 
         # Finally, if a vote tally is given, switch the chamber.
         if set(['yes_votes', 'no_votes']) & set(attrs):
             total_votes = int(attrs['yes_votes']) + int(attrs['no_votes'])
+            # TODO: Should this be 33, or does it include other entities in the vote?
             if total_votes > 35:
-                action['actor'] = 'lower'
+                action['chamber'] = 'lower'
             if total_votes <= 35:
-                action['actor'] = 'upper'
+                action['chamber'] = 'upper'
 
-        bill.add_action(**action)
+        # TODO: Add `committees` scraped from the action using related_entities
+        # Can we also make use of `version`?
+        bill.add_action(
+            action['action'],
+            action['date'],
+            chamber=action['chamber'],
+            classification=action['classification'],
+        )
 
 
-class TNBillScraper(BillScraper):
-    jurisdiction = 'tn'
+# Map the OpenStates chamber identifier to TN bill prefixes for that chamber
+CHAMBER_TO_PREFIXES = {
+    # Senate Bill, Senate Joint Resolution, Senate Resolution
+    'upper': ['SB', 'SJR', 'SR'],
+    'lower': ['HB', 'HJR', 'HR'],
+}
 
-    def scrape(self, term, chambers):
+# Set of all prefixes so we can make sure we're not missing any
+PREFIXES = {p for prefixes in CHAMBER_TO_PREFIXES.values() for p in prefixes}
 
-        #The index page gives us links to the paginated bill pages
-        if self.metadata['session_details'][term]['type'] == 'special':
+# Bill listing is something like "BillIndex.aspx?StartNum=HB0001&EndNum=HB0100"
+# This is meant to always return only one result, the prefix for this bill listing
+BILL_LISTING_PREFIX_RE = re.compile(r'StartNum=([A-Z]{2,3})')
+
+
+def listing_matches_chamber(listing, chamber):
+    """ Returns True if the listing url matches the passed chamber
+
+    This parses the URL to pull out the bill prefix (e.g. HB, SB, etc.), and uses some knowledge
+    encoded in the constants above to say if it is a valid prefix for the chamber.
+
+    This takes a conservative approach and raises an exception if
+    * The match anything other than a single prefix in the URL
+    * The matched prefix isn't in our list of known prefixes
+    In these cases either the regex is broken or our list of prefixes is incomplete. An exception
+    highlights either case for a quick fix.
+    """
+    (prefix,) = BILL_LISTING_PREFIX_RE.findall(listing)
+    if prefix not in CHAMBER_TO_PREFIXES[chamber]:
+        if prefix not in PREFIXES:
+            raise Exception("Unknown bill prefix: {}".format(prefix))
+
+        return False
+
+    return True
+
+
+class TNBillScraper(Scraper):
+
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
+        session_details = self.jurisdiction.sessions_by_id[session]
+
+        # The index page gives us links to the paginated bill pages
+        if session_details['classification'] == 'special':
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/SPSession1.aspx'
-            xpath = '//h4[text()="%s"]/following-sibling::table[1]/tbody/tr/td/a' % self.metadata['session_details'][term]['_scraped_name']
+            xpath = '//h4[text()="{}"]/following-sibling::table[1]/tbody/tr/td/a'.format(
+                session_details['_scraped_name']
+            )
         else:
             index_page = 'http://wapp.capitol.tn.gov/apps/indexes/'
             xpath = '//td[contains(@class,"webindex")]/a'
-        
+
         index_list_page = self.get(index_page).text
-        
+
         index_list_page = lxml.html.fromstring(index_list_page)
         index_list_page.make_links_absolute(index_page)
 
         for bill_listing in index_list_page.xpath(xpath):
 
-            bill_listing = bill_listing.attrib['href'] 
-       
+            bill_listing = bill_listing.attrib['href']
+
+            if not listing_matches_chamber(bill_listing, chamber):
+                self.logger.info(
+                    "Skipping bill listing '{bill_listing}' "
+                    "Does not match chamber '{chamber}'".format(
+                        bill_listing=bill_listing,
+                        chamber=chamber,
+                    )
+                )
+                continue
+
             bill_list_page = self.get(bill_listing).text
-            
+
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
             for bill_link in bill_list_page.xpath(
                 '//h1[text()="Legislation"]/following-sibling::div/'
                 'div/div/div/label//a/@href'
-                ):
-                self.scrape_bill(term, bill_link)
+            ):
+                bill = self.scrape_bill(session, bill_link)
+                if bill:
+                    yield bill
 
-    def scrape_bill(self, term, bill_url):
-
+    def scrape_bill(self, session, bill_url):
         page = self.get(bill_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(bill_url)
@@ -239,9 +309,9 @@ class TNBillScraper(BillScraper):
             if '*' in secondary_bill_id:
                 bill_id, secondary_bill_id = secondary_bill_id, bill_id
                 secondary_bill_id = secondary_bill_id.strip()
-            secondary_bill_id = secondary_bill_id.replace('  ',' ')
-            
-        bill_id = bill_id.replace('*', '').replace('  ',' ').strip()
+            secondary_bill_id = secondary_bill_id.replace('  ', ' ')
+
+        bill_id = bill_id.replace('*', '').replace('  ', ' ').strip()
 
         if 'B' in bill_id:
             bill_type = 'bill'
@@ -249,7 +319,6 @@ class TNBillScraper(BillScraper):
             bill_type = 'joint resolution'
         elif 'R' in bill_id:
             bill_type = 'resolution'
-            
 
         primary_chamber = 'lower' if 'H' in bill_id else 'upper'
         # secondary_chamber = 'upper' if primary_chamber == 'lower' else 'lower'
@@ -265,38 +334,55 @@ class TNBillScraper(BillScraper):
         subjects = [s.strip() for s in title[:subject_pos - 1].split(',')]
         subjects = filter(None, subjects)
 
-        bill = Bill(term, primary_chamber, bill_id, title, type=bill_type,
-                    subjects=subjects)
+        bill = Bill(
+            bill_id,
+            legislative_session=session,
+            chamber=primary_chamber,
+            title=title,
+            classification=bill_type,
+        )
+        for subject in subjects:
+            bill.add_subject(subject)
+
         if secondary_bill_id:
-            bill['alternate_bill_ids'] = [secondary_bill_id]
+            bill.add_identifier(secondary_bill_id)
+
         bill.add_source(bill_url)
 
         # Primary Sponsor
         sponsor = page.xpath("//span[@id='lblBillPrimeSponsor']")[0].text_content().split("by")[-1]
         sponsor = sponsor.replace('*', '').strip()
         if sponsor:
-            bill.add_sponsor('primary', sponsor)
+            bill.add_sponsorship(
+                sponsor,
+                classification='primary',
+                entity_type='person',
+                primary=True,
+            )
 
         # bill text
         btext = page.xpath("//span[@id='lblBillNumber']/a")[0]
-        bill.add_version('Current Version', btext.get('href'),
-                         mimetype='application/pdf')
+        bill.add_version_link('Current Version', btext.get('href'),
+                              media_type='application/pdf')
 
         # documents
         summary = page.xpath('//a[contains(@href, "BillSummaryArchive")]')
         if summary:
-            bill.add_document('Summary', summary[0].get('href'))
+            bill.add_document_link('Summary', summary[0].get('href'))
         fiscal = page.xpath('//span[@id="lblFiscalNote"]//a')
         if fiscal:
-            bill.add_document('Fiscal Note', fiscal[0].get('href'))
+            bill.add_document_link('Fiscal Note', fiscal[0].get('href'))
         amendments = page.xpath('//a[contains(@href, "/Amend/")]')
         for amendment in amendments:
-            bill.add_document('Amendment ' + amendment.text,
-                              amendment.get('href'))
+            bill.add_document_link('Amendment ' + amendment.text, amendment.get('href'))
         # amendment notes in image with alt text describing doc inside <a>
         amend_fns = page.xpath('//img[contains(@alt, "Fiscal Memo")]')
         for afn in amend_fns:
-            bill.add_document(afn.get('alt'), afn.getparent().get('href'))
+            bill.add_document_link(
+                afn.get('alt'),
+                afn.getparent().get('href'),
+                on_duplicate='ignore'
+            )
 
         # actions
         atable = page.xpath("//table[@id='gvBillActionHistory']")[0]
@@ -305,32 +391,41 @@ class TNBillScraper(BillScraper):
         # if there is a matching bill
         if secondary_bill_id:
             # secondary sponsor
-            secondary_sponsor = page.xpath("//span[@id='lblCompPrimeSponsor']")[0].text_content().split("by")[-1]
+            secondary_sponsor = page.xpath(
+                "//span[@id='lblCompPrimeSponsor']")[0].text_content().split("by")[-1]
             secondary_sponsor = secondary_sponsor.replace('*', '').replace(')', '').strip()
             # Skip black-name sponsors.
             if secondary_sponsor:
-                bill.add_sponsor('primary', secondary_sponsor)
+                bill.add_sponsorship(
+                    secondary_sponsor,
+                    classification='primary',
+                    entity_type='person',
+                    primary=True,
+                )
 
             # secondary actions
             cotable = page.xpath("//table[@id='gvCoActionHistory']")[0]
             actions_from_table(bill, cotable)
 
         # votes
-        votes_link = page.xpath("//span[@id='lblBillVotes']/a/@href")
-        if len(votes_link) > 0:
-            bill = self.scrape_votes(bill, votes_link[0])
-        votes_link = page.xpath("//span[@id='lblCompVotes']/a/@href")
-        if len(votes_link) > 0:
-            bill = self.scrape_votes(bill, votes_link[0])
+        yield from self.scrape_vote_events(bill, page, bill_url)
 
-        bill['actions'].sort(key=lambda a: a['date'])
-        self.save_bill(bill)
+        bill.actions.sort(key=lambda a: a['date'])
+        yield bill
 
-    def scrape_votes(self, bill, link):
-        page = self.get(link).text
-        page = lxml.html.fromstring(page)
-        raw_vote_data = page.xpath("//span[@id='lblVoteData']")[0].text_content()
-        raw_vote_data = re.split('\w+? by [\w ]+?\s+-', raw_vote_data.strip())[1:]
+    def scrape_vote_events(self, bill, page, link):
+        chamber_labels = (
+            ('lower', 'lblHouseVoteData'),
+            ('upper', 'lblSenateVoteData')
+        )
+        for chamber, element_id in chamber_labels:
+            raw_vote_data = page.xpath("//*[@id='{}']".format(element_id))[0].text_content()
+            votes = self.scrape_votes_for_chamber(chamber, raw_vote_data, bill, link)
+            for vote in votes:
+                yield vote
+
+    def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
+        raw_vote_data = re.split('\w+? by [\w ]+?\s+-', vote_data.strip())[1:]
         for raw_vote in raw_vote_data:
             raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
             motion = raw_vote[0]
@@ -339,20 +434,22 @@ class TNBillScraper(BillScraper):
             if vote_date:
                 vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
-            passed = ('Passed' in motion or
-                      'Recommended for passage' in motion or
-                      'Adopted' in raw_vote[1]
-                     )
+            passed = (
+                'Passed' in motion or
+                'Recommended for passage' in motion or
+                'Rec. for pass' in motion or
+                'Adopted' in raw_vote[1]
+            )
             vote_regex = re.compile('\d+$')
             aye_regex = re.compile('^.+voting aye were: (.+) -')
             no_regex = re.compile('^.+voting no were: (.+) -')
-            other_regex = re.compile('^.+present and not voting were: (.+) -')
+            not_voting_regex = re.compile('^.+present and not voting were: (.+) -')
             yes_count = 0
             no_count = 0
-            other_count = 0
+            not_voting_count = 0
             ayes = []
             nos = []
-            others = []
+            not_voting = []
 
             for v in raw_vote[1:]:
                 v = v.strip()
@@ -361,21 +458,25 @@ class TNBillScraper(BillScraper):
                 elif v.startswith('Noes...') and vote_regex.search(v):
                     no_count = int(vote_regex.search(v).group())
                 elif v.startswith('Present and not voting...') and vote_regex.search(v):
-                    other_count += int(vote_regex.search(v).group())
+                    not_voting_count += int(vote_regex.search(v).group())
                 elif aye_regex.search(v):
                     ayes = aye_regex.search(v).groups()[0].split(', ')
                 elif no_regex.search(v):
                     nos = no_regex.search(v).groups()[0].split(', ')
-                elif other_regex.search(v):
-                    others += other_regex.search(v).groups()[0].split(', ')
+                elif not_voting_regex.search(v):
+                    not_voting += not_voting_regex.search(v).groups()[0].split(', ')
 
-            if 'ChamberVoting=H' in link:
-                chamber = 'lower'
-            else:
-                chamber = 'upper'
-
-            vote = Vote(chamber, vote_date, motion, passed, yes_count,
-                        no_count, other_count)
+            vote = VoteEvent(
+                motion_text=motion.strip(),
+                start_date=vote_date.strftime('%Y-%m-%d') if vote_date else None,
+                classification='passage',
+                result='pass' if passed else 'fail',
+                chamber=chamber,
+                bill=bill,
+            )
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('not voting', not_voting_count)
             vote.add_source(link)
 
             seen = set()
@@ -389,13 +490,10 @@ class TNBillScraper(BillScraper):
                     continue
                 vote.no(n)
                 seen.add(n)
-            for o in others:
-                if o in seen:
+            for n in not_voting:
+                if n in seen:
                     continue
-                vote.other(o)
-                seen.add(o)
+                vote.vote('not voting', n)
+                seen.add(n)
 
-            # vote.validate()
-            bill.add_vote(vote)
-
-        return bill
+            yield vote

@@ -1,134 +1,112 @@
-import datetime
-import lxml.html
-import logging
-from billy.utils.fulltext import text_after_line_numbers
-from billy.scrape.utils import url_xpath
-from .bills import VABillScraper
-from .legislators import VALegislatorScraper
+from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
+from .people import VaPersonScraper
+from .bills import VaBillScraper
+
 
 settings = {
     'SCRAPELIB_RPM': 40
 }
 
-metadata = {
-    'name': 'Virginia',
-    'abbreviation': 'va',
-    'capitol_timezone': 'America/New_York',
-    'legislature_name': 'Virginia General Assembly',
-    'legislature_url': 'http://virginiageneralassembly.gov/',
-    'chambers': {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Delegate'},
-    },
-    'terms': [
+
+class Virginia(Jurisdiction):
+    division_id = "ocd-division/country:us/state:va"
+    classification = "government"
+    name = "Virginia"
+    url = "http://virginiageneralassembly.gov/"
+    scrapers = {
+        "people": VaPersonScraper,
+        "bills": VaBillScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+
+    legislative_sessions = [
         {
-            'name': '2009-2011',
-            'sessions': ['2010', '2011', '2011specialI'],
-            'start_year': 2010,
-            'end_year': 2011,
-        },
-        {
-            'name': '2012-2013',
-            'sessions': ['2012', '2012specialI', '2013', '2013specialI'],
-            'start_year': 2012,
-            'end_year': 2013,
-        },
-        {
-            'name': '2014-2015',
-            'sessions': ['2014', '2014specialI', '2015', '2015specialI'],
-            'start_year': 2014,
-            'end_year': 2015,
+            "_scraped_name": "2010 Session",
+            "identifier": "2010",
+            "name": "2010 Regular Session",
+            "start_date": "2010-01-13",
         },
         {
-            'name': '2016-2017',
-            'sessions': ['2016','2017'],
-            'start_year': 2016,
-            'end_year': 2017,
+            "_scraped_name": "2011 Session",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-12",
         },
-    ],
-    'session_details': {
-        '2010': {
-            'start_date': datetime.date(2010, 1, 13),
-            'site_id': '101',
-            'display_name': '2010 Regular Session',
-            '_scraped_name': '2010 Session',
+        {
+            "_scraped_name": "2011 Special Session I",
+            "identifier": "2011specialI",
+            "name": "2011, 1st Special Session",
         },
-        '2011': {
-            'start_date': datetime.date(2011, 1, 12),
-            'site_id': '111',
-            'display_name': '2011 Regular Session',
-            '_scraped_name': '2011 Session',
+        {
+            "_scraped_name": "2012 Session",
+            "identifier": "2012",
+            "name": "2012 Regular Session",
+            "start_date": "2012-01-11",
         },
-        '2011specialI': {
-            'site_id': '112',
-            'display_name': '2011, 1st Special Session',
-            '_scraped_name': '2011 Special Session I',
+        {
+            "_scraped_name": "2012 Special Session I",
+            "identifier": "2012specialI",
+            "name": "2012, 1st Special Session",
+            "start_date": "2012-03-11",
         },
-        '2012': {
-            'start_date': datetime.date(2012, 1, 11),
-            'site_id': '121',
-            'display_name': '2012 Regular Session',
-            '_scraped_name': '2012 Session',
+        {
+            "_scraped_name": "2013 Session",
+            "identifier": "2013",
+            "name": "2013 Regular Session",
+            "start_date": "2013-01-09",
         },
-        '2012specialI': {
-            'start_date': datetime.date(2012, 3, 11),
-            'site_id': '122',
-            'display_name': '2012, 1st Special Session',
-            '_scraped_name': '2012 Special Session I',
+        {
+            "_scraped_name": "2013 Special Session I",
+            "identifier": "2013specialI",
+            "name": "2013, 1st Special Session",
         },
-        '2013': {
-            'start_date': datetime.date(2013, 1, 9),
-            'site_id': '131',
-            'display_name': '2013 Regular Session',
-            '_scraped_name': '2013 Session',
+        {
+            "_scraped_name": "2014 Session",
+            "identifier": "2014",
+            "name": "2014 Regular Session",
+            "start_date": "2014-01-09",
         },
-        '2013specialI': {
-            'site_id': '132',
-            'display_name': '2013, 1st Special Session',
-            '_scraped_name': '2013 Special Session I',
+        {
+            "_scraped_name": "2014 Special Session I",
+            "identifier": "2014specialI",
+            "name": "2014, 1st Special Session",
         },
-        '2014': {
-            'start_date': datetime.date(2014, 1, 9),
-            'site_id': '141',
-            'display_name': '2014 Regular Session',
-            '_scraped_name': '2014 Session',
+        {
+            "_scraped_name": "2015 Session",
+            "end_date": "2015-02-27",
+            "identifier": "2015",
+            "name": "2015 Regular Session",
+            "start_date": "2015-01-14",
         },
-        '2014specialI': {
-            'site_id': '142',
-            'display_name': '2014, 1st Special Session',
-            '_scraped_name': '2014 Special Session I',
+        {
+            "_scraped_name": "2015 Special Session I",
+            "end_date": "2015-08-17",
+            "identifier": "2015specialI",
+            "name": "2015, 1st Special Session",
+            "start_date": "2015-08-17",
         },
-        '2015': {
-            'start_date': datetime.date(2015, 1, 14),
-            'end_date': datetime.date(2015, 2, 27),
-            'site_id': '151',
-            'display_name': '2015 Regular Session',
-            '_scraped_name': '2015 Session',
+        {
+            "_scraped_name": "2016 Session",
+            "end_date": "2016-03-12",
+            "identifier": "2016",
+            "name": "2016 Regular Session",
+            "start_date": "2016-01-13",
         },
-        '2015specialI': {
-            'start_date': datetime.date(2015, 8, 17),
-            'end_date': datetime.date(2015, 8, 17),
-            'site_id': '152',
-            'display_name': '2015, 1st Special Session',
-            '_scraped_name': '2015 Special Session I',
-        },
-        '2016': {
-            'start_date': datetime.date(2016, 1, 13),
-            'end_date': datetime.date(2016, 3, 12),
-            'site_id': '161',
-            'display_name': '2016 Regular Session',
-            '_scraped_name': '2016 Session',
-        },
-        '2017': {
-            'start_date': datetime.date(2017, 1, 11),
-            'end_date': datetime.date(2017, 2, 9),
-            'site_id': '171',
-            'display_name': '2017 Regular Session',
-            '_scraped_name': '2017 Session',
-        },        
-    },
-    'feature_flags': ['subjects', 'influenceexplorer'],
-    '_ignored_scraped_sessions': [
+        {
+            "_scraped_name": "2017 Session",
+            "end_date": "2017-02-09",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-11",
+        }
+    ]
+    ignored_scraped_sessions = [
         '2015 Special Session I',
         '2015 Session',
         '2014 Special Session I',
@@ -167,19 +145,38 @@ metadata = {
         '1994 Special Session I',
         '1994 Special Session II',
     ]
-}
 
+    def get_organizations(self):
+        legislature_name = "Virginia General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 100
+        lower_title = "Delegate"
+        upper_chamber_name = "Senate"
+        upper_seats = 40
+        upper_title = "Senator"
 
-def session_list():
-    sessions = url_xpath( 'http://lis.virginia.gov/',
-        "//div[@id='sLink']//select/option/text()")
-    sessions = [s.strip() for s in sessions if 'Session' in s]
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
-    return sessions
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield legislature
+        yield upper
+        yield lower
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = ' '.join(x.text_content()
-        for x in doc.xpath('//div[@id="mainC"]/p'))
-    return text
+    def session_list():
+        sessions = url_xpath(
+            'http://lis.virginia.gov/',
+            "//div[@id='sLink']//select/option/text()")
+        return [s.strip() for s in sessions if 'Session' in s]

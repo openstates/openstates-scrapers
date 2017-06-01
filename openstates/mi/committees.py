@@ -1,19 +1,18 @@
 import re
-import urllib
 
-from billy.scrape.committees import CommitteeScraper, Committee
 import lxml.html
+from pupa.scrape import Scraper, Organization
 
-class MICommitteeScraper(CommitteeScraper):
-    jurisdiction = 'mi'
 
-    def scrape(self, chamber, term):
-        self.validate_term(term, latest_only=True)
-
+class MICommitteeScraper(Scraper):
+    def scrape(self, chamber=None):
         if chamber == 'lower':
-            self.scrape_house_committees()
+            yield from self.scrape_house_committees()
+        elif chamber == 'upper':
+            yield from self.scrape_senate_committees()
         else:
-            self.scrape_senate_committees()
+            yield from self.scrape_house_committees()
+            yield from self.scrape_senate_committees()
 
     def scrape_house_committees(self):
         base_url = 'http://house.mi.gov/MHRPublic/CommitteeInfo.aspx?comkey='
@@ -30,9 +29,9 @@ class MICommitteeScraper(CommitteeScraper):
                 self.warning('no committees yet for the house')
                 return
             com_url = base_url + opt.get('value')
-            com_html =  self.get(com_url).text
+            com_html = self.get(com_url).text
             cdoc = lxml.html.fromstring(com_html)
-            com = Committee(chamber='lower', committee=name)
+            com = Organization(chamber='lower', name=name, classification='committee')
             com.add_source(com_url)
 
             for a in doc.xpath('//a[starts-with(@id, "memberLink")]'):
@@ -43,9 +42,9 @@ class MICommitteeScraper(CommitteeScraper):
             for mem in members:
                 name = mem.xpath('./a')
                 if name:
-                    name=name[0].text.strip()
+                    name = name[0].text.strip()
                 else:
-                    #this is a blank row
+                    # this is a blank row
                     continue
                 text = mem.xpath('./span')[0].text
                 if 'Committee Chair' in text:
@@ -56,7 +55,7 @@ class MICommitteeScraper(CommitteeScraper):
                     role = 'member'
                 com.add_member(name, role=role)
 
-            self.save_committee(com)
+            yield com
 
     def scrape_senate_committees(self):
         url = 'http://www.senate.michigan.gov/committee.html'
@@ -66,53 +65,51 @@ class MICommitteeScraper(CommitteeScraper):
 
         for link in doc.xpath('//li/a[contains(@href, "/committee/")]/@href'):
             if link.endswith('appropssubcommittee.html'):
-                self.scrape_approp_subcommittees(link)
-            elif not link.endswith(('statutory.htm','pdf','taskforce.html')):
-                self.scrape_senate_committee(link)
-
+                yield from self.scrape_approp_subcommittees(link)
+            elif not link.endswith(('statutory.htm', 'pdf', 'taskforce.html')):
+                yield from self.scrape_senate_committee(link)
 
     def scrape_senate_committee(self, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
-        name = doc.xpath('//div[@id="committeeleft"]//h2[1]/text()')[0]
-        name = name.replace(' Committee', '')
+        headers = doc.xpath('(//div[@class="row"])[2]//h1')
+        assert len(headers) == 1
+        name = ' '.join(headers[0].xpath('./text()'))
+        name = re.sub(r'\s+Committee.*$', '', name)
 
-        com = Committee(chamber='upper', committee=name)
+        com = Organization(chamber='upper', name=name, classification='committee')
 
-        for member in doc.xpath('//div[@id="committeeright"]//a'):
-            member_name = member.text.strip()
-
-            # don't add clerks
-            if member_name == 'Committee Clerk':
-                continue
-
-            # skip phone links
-            if member.get("href").startswith("tel:"):
-                continue
-
-            if 'Committee Chair' in member.tail:
+        for member in doc.xpath('(//div[@class="row"])[3]/div[1]/ul[1]/li'):
+            text = member.text_content()
+            member_name = member.xpath('./a/text()')[0].replace('Representative ', '')
+            if 'Committee Chair' in text:
                 role = 'chair'
-            elif 'Majority Vice' in member.tail:
-                role = 'majority vice chair'
-            elif 'Minority Vice' in member.tail:
+            elif 'Minority Vice' in text:
                 role = 'minority vice chair'
+            elif 'Vice' in text:
+                role = 'majority vice chair'
             else:
                 role = 'member'
 
             com.add_member(member_name, role=role)
 
         com.add_source(url)
-        self.save_committee(com)
-
+        yield com
 
     def scrape_approp_subcommittees(self, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         for strong in doc.xpath('//strong'):
-            com = Committee(chamber='upper', committee='Appropriations',
-                            subcommittee=strong.text.strip())
+            com = Organization(
+                name=strong.text.strip(),
+                parent_id={
+                    'name': 'Appropriations',
+                    'classification': 'committee',
+                },
+                classification='committee',
+            )
             com.add_source(url)
 
             legislators = strong.getnext().tail.replace('Senators', '').strip()
@@ -130,4 +127,4 @@ class MICommitteeScraper(CommitteeScraper):
                     role = 'member'
                 com.add_member(leg, role=role)
 
-            self.save_committee(com)
+            yield com

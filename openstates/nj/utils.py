@@ -4,6 +4,7 @@ import csv
 import zipfile
 import subprocess
 
+
 def clean_committee_name(comm_name):
     comm_name = comm_name.strip()
     comm_name = re.sub(' ?[-,] (Co|Vice)?[- ]?Chair$', '', comm_name)
@@ -26,6 +27,7 @@ def chamber_name(chamber):
     else:
         return 'assembly'
 
+
 class MDBMixin(object):
 
     def _init_mdb(self, year):
@@ -41,6 +43,6 @@ class MDBMixin(object):
         """ using mdbtools, read access tables as CSV """
         commands = ['mdb-export', self.mdbfile, table]
         pipe = subprocess.Popen(commands, stdout=subprocess.PIPE,
-                                                        close_fds=True).stdout
-        csvfile = csv.DictReader(pipe)
+                                close_fds=True).stdout
+        csvfile = csv.DictReader(line.decode() for line in pipe)
         return csvfile

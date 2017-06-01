@@ -1,33 +1,33 @@
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 
 rules = (
-    Rule([u'Amendment (?P<bills>.+?) -\s+Laid On Table'], ['amendment:tabled']),
-    Rule([u'Favorable'], ['committee:passed:favorable']),
-    Rule([u'(?i)Amendment (?P<bills>.+?) defeated'], ['amendment:failed']),
+    Rule([u'Amendment (?P<bills>.+?) -\s+Laid On Table'], ['amendment-deferral']),
+    Rule([u'Favorable'], ['committee-passage-favorable']),
+    Rule([u'(?i)Amendment (?P<bills>.+?) defeated'], ['amendment-failure']),
     Rule([u'(?i)introduced and adopted in lieu of (?P<bills>.+)'],
-         ['bill:introduced']),
+         ['introduction']),
     Rule([u'(?i)assigned to (?P<committees>.+?) Committee in'],
-         ['committee:referred', 'bill:introduced']),
-    Rule([u'Signed by Governor'], ['governor:signed']),
+         ['referral-committee', 'introduction']),
+    Rule([u'Signed by Governor'], ['executive-signature']),
     Rule([u'(?i)Amendment (?P<bills>[\w\s]+?) Introduced'],
-         ['amendment:introduced']),
-    Rule([u'Amendment (?P<bills>.+?) -  Passed'], ['amendment:passed']),
-    Rule([u'^Passed by'], ['bill:passed']),
-    Rule([u'^Defeated'], ['bill:failed']),
-    Rule([u'(?i)unfavorable'], ['committee:passed:unfavorable']),
+         ['amendment-introduction']),
+    Rule([u'Amendment (?P<bills>.+?) -  Passed'], ['amendment-passage']),
+    Rule([u'^Passed by'], ['passage']),
+    Rule([u'^Defeated'], ['failure']),
+    Rule([u'(?i)unfavorable'], ['committee-passage-unfavorable']),
     Rule([u'Reported Out of Committee \((?P<committees>.+?)\)'],
-         ['committee:passed']),
-    Rule([u'Vetoed by Governor'], ['governor:vetoed']),
+         ['committee-passage']),
+    Rule([u'Vetoed by Governor'], ['executive-veto']),
     Rule([u'(?i)Amendment (?P<bills>.+?)\s+-\s+Introduced'],
-         ['amendment:introduced']),
-    Rule([u'(?i)Amendment (?P<bills>[\w\s]+?) Passed'], ['amendment:passed']),
+         ['amendment-introduction']),
+    Rule([u'(?i)Amendment (?P<bills>[\w\s]+?) Passed'], ['amendment-passage']),
     Rule([u'Amendment (?P<bills>.+?) -  Defeated by House of .+?\. Votes: Defeated'],
-         ['amendment:failed']),
-    Rule([u'^Introduced'], ['bill:introduced']),
-    Rule([u'Amendment (?P<bills>.+?) -  Defeated in House'], ['amendment:failed']),
-    Rule([u'^Passed in House'], ['bill:passed'])
+         ['amendment-failure']),
+    Rule([u'^Introduced'], ['introduction']),
+    Rule([u'Amendment (?P<bills>.+?) -  Defeated in House'], ['amendment-failure']),
+    Rule([u'^Passed in House'], ['passage'])
     )
 
 
