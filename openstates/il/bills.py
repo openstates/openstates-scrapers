@@ -185,21 +185,19 @@ class IlBillScraper(Scraper):
 
     def scrape(self, session=None):
         if session is not None:
-            sessions = [session]
+            session_id = session
         else:
-            sessions = [session['identifier']
-                        for session
-                        in self.jurisdiction.legislative_sessions]
-        for session_id in sessions:
-            for chamber in ('lower', 'upper'):
-                doc_types = (list(DOC_TYPES) +
-                             (['AM', 'JSR'] if chamber == 'upper' else []))
-                for doc_type in doc_types:
-                    doc_type = chamber_slug(chamber)+doc_type
-                    for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
-                        bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
-                        yield bill
-                        yield from votes
+            session_id = self.latest_session()
+
+        for chamber in ('lower', 'upper'):
+            doc_types = (list(DOC_TYPES) +
+                         (['AM', 'JSR'] if chamber == 'upper' else []))
+            for doc_type in doc_types:
+                doc_type = chamber_slug(chamber)+doc_type
+                for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                    bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
+                    yield bill
+                    yield from votes
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
