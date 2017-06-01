@@ -8,18 +8,6 @@ import collections
 import lxml.html
 from pupa.scrape import Scraper, VoteEvent
 
-import tx
-
-
-def prev_tag(el):
-    """
-    Return previous tag, skipping <br>s.
-    """
-    el = el.getnext()
-    while el.tag == 'br':
-        el = el.getnext()
-    return el
-
 
 def next_tag(el):
     """
@@ -257,26 +245,36 @@ vote_selectors = [
     '[@class = "textpara"]',
     '[contains(translate(., "YEAS", "yeas"), "yeas")]',
 ]
+
+
 def record_votes(root, session):
     for el in root.xpath('//div{}'.format(''.join(vote_selectors))):
         mv = MaybeVote(el)
         if not mv.is_valid:
             continue
 
-        v = VoteEvent(None, None, 'passage' if mv.passed else 'other', mv.passed,
-                 mv.yeas or 0, mv.nays or 0, mv.present or 0)
-        v['bill_id'] = mv.bill_id
-        v['bill_chamber'] = mv.chamber
-        v['is_amendment'] = mv.is_amendment
-        v['session'] = session[0:2]
-        v['method'] = 'record'
+        v = VoteEvent(
+            chamber=None,
+            start_date=None,
+            motion_text='passage' if mv.passed else 'other',
+            result='pass' if mv.passed else 'fail',
+            classification='passage' if mv.passed else 'other',
+            legislative_session=session[0:2],
+            bill=mv.bill_id,
+            bill_chamber=mv.chamber
+        )
+
+        v.set_count('yes', mv.yeas or 0)
+        v.set_count('no', mv.nays or 0)
 
         for each in mv.votes['yeas']:
             v.yes(each)
         for each in mv.votes['nays']:
             v.no(each)
-        for each in mv.votes['present'] + mv.votes['absent']:
-            v.other(each)
+        for each in mv.votes['present']:
+            v.vote('not voting', each)
+        for each in mv.votes['absent']:
+            v.vote('absent', each)
 
         yield v
 
@@ -287,12 +285,21 @@ def viva_voce_votes(root, session):
         if not mv.is_valid:
             continue
 
-        v = VoteEvent(None, None, 'passage' if mv.passed else 'other', mv.passed, 0, 0, 0)
-        v['bill_id'] = mv.bill_id
-        v['bill_chamber'] = mv.chamber
-        v['is_amendment'] = mv.is_amendment
-        v['session'] = session[0:2]
-        v['method'] = 'viva voce'
+        v = VoteEvent(
+            chamber=None,
+            start_date=None,
+            motion_text='passage' if mv.passed else 'other',
+            result='pass' if mv.passed else 'fail',
+            classification='passage' if mv.passed else 'other',
+            legislative_session=session[0:2],
+            bill=mv.bill_id,
+            bill_chamber=mv.chamber
+        )
+
+        v.set_count('yes', 0)
+        v.set_count('no', 0)
+        v.set_count('absent', 0)
+        v.set_count('not voting', 0)
 
         yield v
 
@@ -349,7 +356,12 @@ class TXVoteScraper(Scraper):
             session_num = session.strip("R")
         else:
             session_num = session
-        year = tx.metadata['session_details'][session_num]['start_date'].year
+        session_instance = next((s for s in self.jurisdiction.legislative_sessions if s['identifier'] == session_num), None)
+
+        if session_instance is None:
+            self.warning('Session metadata could not be found for %s', session)
+            return
+        year = session_instance['start_date'].year
 
         page = self.get(url).text
 
