@@ -73,7 +73,7 @@ class NHPersonScraper(Scraper, LXMLMixin):
             phone = None
 
         if district_address:
-            person.add_contact_detail(type='address', value=district_address, note='Home Address')
+            person.add_contact_detail(type='address', value=district_address, note='Home Office')
         if phone:
             person.add_contact_detail(type='voice', value=phone, note='Home Office')
 
