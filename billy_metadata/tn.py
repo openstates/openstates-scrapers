@@ -70,16 +70,3 @@ metadata = dict(
         '99th General Assembly'
     ]
 )
-
-
-def session_list():
-    # Special sessions are available in the archive, but not in current session.
-    # Solution is to scrape special session as part of regular session
-    from billy.scrape.utils import url_xpath
-    sessions = [
-            x for x in
-            url_xpath('http://www.capitol.tn.gov/legislation/archives.html',
-            '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()')
-            if x.strip()
-            ]
-    return sessions

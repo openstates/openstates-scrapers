@@ -13,7 +13,7 @@ class Washington(Jurisdiction):
     name = "Washington"
     url = "http://www.leg.wa.gov"
     scrapers = {
-        'person': WAPersonScraper,
+        'people': WAPersonScraper,
         'events': WAEventScraper,
         'committees': WACommitteeScraper,
         'bills': WABillScraper,

@@ -1,1 +1,5 @@
 *.pyc
+data
+_data
+cache
+_cache

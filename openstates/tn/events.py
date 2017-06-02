@@ -4,7 +4,7 @@ from pupa.scrape import (
     Event,
     Scraper,
 )
-from openstates.utils import LXMLMixin
+from openstates.utils import LXMLMixin, url_xpath
 
 import pytz
 
@@ -20,10 +20,6 @@ class TNEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Central')
     _utc = pytz.timezone('UTC')
 
-    def url_xpath(self, url, xpath):
-        page = self.lxmlize(url)
-        return page.xpath(xpath)
-
     def _add_agenda_main(self, url, event):
         page = self.lxmlize(url)
         # OK. We get two kinds of links. Either a list to a bunch of agendas
@@ -36,7 +32,7 @@ class TNEventScraper(Scraper, LXMLMixin):
         return self._add_agenda_list(url, event)
 
     def _add_agenda_real(self, url, event):
-        trs = self.url_xpath(url, "//tr")
+        trs = url_xpath(url, "//tr")
         for tr in trs:
             tds = tr.xpath("./*")
             billinf = tds[0].attrib['id']  # TN uses bill_ids as the id
@@ -48,7 +44,7 @@ class TNEventScraper(Scraper, LXMLMixin):
         return event
 
     def _add_agenda_list(self, url, event):
-        trs = self.url_xpath(url, "//tr")
+        trs = url_xpath(url, "//tr")
         for tr in trs:
             things = tr.xpath("./td/a")
             for thing in things:
@@ -69,8 +65,8 @@ class TNEventScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber=None):
         # If chamber is None, don't exclude any events from the results based on chamber
         chmbr = cal_chamber_text.get(chamber)
-        tables = self.url_xpath(cal_weekly_events,
-                                "//table[@class='date-table']")
+        tables = url_xpath(cal_weekly_events,
+                           "//table[@class='date-table']")
         for table in tables:
             date = table.xpath("../.")[0].getprevious().text_content()
             trs = table.xpath("./tr")

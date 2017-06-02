@@ -1,8 +1,8 @@
 import re
 import datetime as dt
+from collections import defaultdict
 
-from billy.scrape.bills import Bill, BillScraper
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
 from openstates.nh.legacyBills import NHLegacyBillScraper
 
@@ -17,16 +17,16 @@ bill_type_map = {
     'A': 'address',
 }
 action_classifiers = [
-    ('Ought to Pass', ['bill:passed']),
-    ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
-    ('.*Ought to Pass', ['committee:passed:favorable']),
-    ('.*Introduced(.*) and (R|r)eferred', ['bill:introduced', 'committee:referred']),
-    ('.*Inexpedient to Legislate', ['committee:passed:unfavorable']),
-    ('Proposed(.*) Amendment', 'amendment:introduced'),
-    ('Amendment .* Adopted', 'amendment:passed'),
-    ('Amendment .* Failed', 'amendment:failed'),
-    ('Signed', 'governor:signed'),
-    ('Vetoed', 'governor:vetoed'),
+    ('Ought to Pass', ['passage']),
+    ('Passed by Third Reading', ['reading-3', 'passage']),
+    ('.*Ought to Pass', ['committee-passage-favorable']),
+    ('.*Introduced(.*) and (R|r)eferred', ['introduction', 'referral-committee']),
+    ('.*Inexpedient to Legislate', ['committee-passage-unfavorable']),
+    ('Proposed(.*) Amendment', 'amendment-introduction'),
+    ('Amendment .* Adopted', 'amendment-passage'),
+    ('Amendment .* Failed', 'amendment-failure'),
+    ('Signed', 'executive-signature'),
+    ('Vetoed', 'executive-veto'),
 ]
 VERSION_URL = 'http://www.gencourt.state.nh.us/legislation/%s/%s.html'
 AMENDMENT_URL = 'http://www.gencourt.state.nh.us/legislation/amendments/%s.html'
@@ -36,7 +36,7 @@ def classify_action(action):
     for regex, classification in action_classifiers:
         if re.match(regex, action):
             return classification
-    return 'other'
+    return None
 
 
 def extract_amendment_id(action):
@@ -45,13 +45,20 @@ def extract_amendment_id(action):
         return piece[0]
 
 
-class NHBillScraper(BillScraper):
-    jurisdiction = 'nh'
+class NHBillScraper(Scraper):
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         if int(session) < 2017:
-            legacy = NHLegacyBillScraper(self.metadata, self.output_dir, self.strict_validation)
-            legacy.scrape(chamber, session)
+            legacy = NHLegacyBillScraper(self.metadata, self.datadir)
+            yield from legacy.scrape(chamber, session)
             # This throws an error because object_count isn't being properly incremented,
             # even though it saves fine. So fake the output_names
             self.output_names = ['1']
@@ -68,7 +75,8 @@ class NHBillScraper(BillScraper):
         self.scrape_amendments()
 
         last_line = []
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt').content.split("\n"):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LSRs.txt') \
+                .content.decode('utf-8').split("\n"):
             line = line.split('|')
             if len(line) < 1:
                 continue
@@ -88,7 +96,7 @@ class NHBillScraper(BillScraper):
             lsr = line[1]
             title = line[2]
             body = line[3]
-            type_num = line[4]
+            # type_num = line[4]
             expanded_bill_id = line[9]
             bill_id = line[10]
 
@@ -105,8 +113,11 @@ class NHBillScraper(BillScraper):
                 if title.startswith('('):
                     title = title.split(')', 1)[1].strip()
 
-                self.bills[lsr] = Bill(session, chamber, bill_id, title,
-                                       type=bill_type)
+                self.bills[lsr] = Bill(legislative_session=session,
+                                       chamber=chamber,
+                                       identifier=bill_id,
+                                       title=title,
+                                       classification=bill_type)
 
                 # http://www.gencourt.state.nh.us/bill_status/billText.aspx?sy=2017&id=95&txtFormat=html
                 if lsr in self.versions_by_lsr:
@@ -115,27 +126,28 @@ class NHBillScraper(BillScraper):
                                   'billText.aspx?sy={}&id={}&txtFormat=html' \
                                   .format(session, version_id)
 
-                    self.bills[lsr].add_version('latest version', version_url,
-                                                mimetype='text/html', on_duplicate='use_new')
-
+                    self.bills[lsr].add_version_link(note='latest version',
+                                                     url=version_url,
+                                                     media_type='text/html')
 
                 # http://gencourt.state.nh.us/bill_status/billtext.aspx?sy=2017&txtFormat=amend&id=2017-0464S
                 if lsr in self.amendments_by_lsr:
                     amendment_id = self.amendments_by_lsr[lsr]
                     amendment_url = 'http://www.gencourt.state.nh.us/bill_status/' \
-                                  'billText.aspx?sy={}&id={}&txtFormat=amend' \
-                                  .format(session, amendment_id)
+                                    'billText.aspx?sy={}&id={}&txtFormat=amend' \
+                                    .format(session, amendment_id)
                     amendment_name = 'Amendment #{}'.format(amendment_id)
 
-                    self.bills[lsr].add_version(amendment_name, amendment_url,
-                                                mimetype='application/pdf', on_duplicate='use_new')
-
+                    self.bills[lsr].add_version_link(note=amendment_name,
+                                                     url=amendment_url,
+                                                     media_type='application/pdf')
 
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators
         self.legislators = {}
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt').content.split("\n"):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/legislators.txt') \
+                        .content.decode('utf-8').split("\n"):
             if len(line) < 1:
                 continue
 
@@ -150,10 +162,11 @@ class NHBillScraper(BillScraper):
 
             self.legislators[employee_num] = {'name': name,
                                               'seat': line[5]}
-            #body = line[4]
+            # body = line[4]
 
         # sponsors
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt').content.split("\n"):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrSponsors.txt') \
+                        .content.decode('utf-8').split("\n"):
             if len(line) < 1:
                 continue
 
@@ -162,15 +175,18 @@ class NHBillScraper(BillScraper):
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
                 try:
-                    self.bills[lsr].add_sponsor(sp_type,
-                                        self.legislators[employee]['name'],
-                                        _code=self.legislators[employee]['seat'])
+                    self.bills[lsr].add_sponsorship(classification=sp_type,
+                                                    name=self.legislators[employee]['name'],
+                                                    entity_type='person',
+                                                    primary=True if sp_type == 'primary'
+                                                    else False)
+                    self.bills[lsr].extras = {'_code': self.legislators[employee]['seat']}
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
 
-
         # actions
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt') \
+                        .content.decode('utf-8').split("\n"):
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
@@ -183,29 +199,34 @@ class NHBillScraper(BillScraper):
             if session_yr == session and lsr in self.bills:
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
-                                                  '%m/%d/%Y %H:%M:%S %p')
+                                            '%m/%d/%Y %H:%M:%S %p')
                 action = action.strip()
                 atype = classify_action(action)
-                self.bills[lsr].add_action(actor, action, time, type=atype)
+                self.bills[lsr].add_action(chamber=actor, description=action,
+                                           date=time.strftime("%Y-%m-%d"),
+                                           classification=atype)
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:
-                    self.bills[lsr].add_document('amendment %s' % amendment_id,
-                                                 AMENDMENT_URL % amendment_id)
+                    self.bills[lsr].add_document_link(note='amendment %s' % amendment_id,
+                                                      url=AMENDMENT_URL % amendment_id)
 
-        self.scrape_votes(session)
+        yield from self.scrape_votes(session)
 
         # save all bills
         for bill in self.bills:
-            #bill.add_source(zip_url)
+            # bill.add_source(zip_url)
             self.add_source(self.bills[bill], bill, session)
-            self.save_bill(self.bills[bill])
+            yield self.bills[bill]
 
     def add_source(self, bill, lsr, session):
-        bill_url = 'http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?lsr={}&sy={}&sortoption=&txtsessionyear={}'.format(lsr, session, session)
+        bill_url = 'http://www.gencourt.state.nh.us/bill_Status/bill_status.aspx?' + \
+                   'lsr={}&sy={}&sortoption=&txtsessionyear={}'.format(lsr, session, session)
         bill.add_source(bill_url)
 
     def scrape_version_ids(self):
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt').content.split("\n"):
+
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/LsrsOnly.txt') \
+                        .content.decode('utf-8').split("\n"):
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
@@ -219,7 +240,8 @@ class NHBillScraper(BillScraper):
             self.versions_by_lsr[lsr] = file_id
 
     def scrape_amendments(self):
-        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt').content.split("\n"):
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/Docket.txt') \
+                        .content.decode('utf-8').split("\n"):
             if len(line) < 1:
                 continue
             # a few blank/irregular lines, irritating
@@ -236,9 +258,10 @@ class NHBillScraper(BillScraper):
 
     def scrape_votes(self, session):
         votes = {}
+        other_counts = defaultdict(int)
         last_line = []
-
-        lines = self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt').content.splitlines()
+        vote_url = 'http://gencourt.state.nh.us/dynamicdatafiles/RollCallSummary.txt'
+        lines = self.get(vote_url).content.decode('utf-8').splitlines()
 
         for line in lines:
 
@@ -263,22 +286,29 @@ class NHBillScraper(BillScraper):
             bill_id = line[4].strip()
             yeas = int(line[5])
             nays = int(line[6])
-            present = int(line[7])
-            absent = int(line[8])
+            # present = int(line[7])
+            # absent = int(line[8])
             motion = line[11].strip() or '[not available]'
 
             if session_yr == session and bill_id in self.bills_by_id:
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
-                                                  '%m/%d/%Y %I:%M:%S %p')
+                                            '%m/%d/%Y %I:%M:%S %p')
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
-                vote = Vote(actor, time, motion, passed, yeas, nays,
-                            other_count=0)
+                vote = Vote(chamber=actor,
+                            start_date=time.strftime("%Y-%m-%d"),
+                            motion_text=motion,
+                            result='pass' if passed else 'fail',
+                            classification='passage',
+                            bill=self.bills_by_id[bill_id])
+                vote.set_count('yes', yeas)
+                vote.set_count('no', nays)
+                vote.add_source(vote_url)
                 votes[body+vote_num] = vote
-                self.bills_by_id[bill_id].add_vote(vote)
 
-        for line in  self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt').content.splitlines():
+        for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt') \
+                        .content.decode('utf-8').splitlines():
             if len(line) < 2:
                 continue
 
@@ -300,14 +330,18 @@ class NHBillScraper(BillScraper):
                 vote = vote.strip()
                 if body+v_num not in votes:
                     self.warning("Skipping processing this vote:")
-                    self.warning("Bad ID: %s" % ( body+v_num ) )
+                    self.warning("Bad ID: %s" % (body+v_num))
                     continue
-                    
-                #code = self.legislators[employee]['seat']
+                # code = self.legislators[employee]['seat']
+
                 if vote == 'Yea':
                     votes[body+v_num].yes(leg)
                 elif vote == 'Nay':
                     votes[body+v_num].no(leg)
                 else:
-                    votes[body+v_num].other(leg)
-                    votes[body+v_num]['other_count'] += 1
+                    votes[body+v_num].vote('other', leg)
+                    # hack-ish, but will keep the vote count sync'd
+                    other_counts[body+v_num] += 1
+                    votes[body+v_num].set_count('other', other_counts[body+v_num])
+        for vid, vote in votes.items():
+            yield vote

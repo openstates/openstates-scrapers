@@ -1,5 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
+from openstates.utils import url_xpath
+
 from .bills import PABillScraper
 from .events import PAEventScraper
 from .people import PALegislatorScraper
@@ -211,3 +213,7 @@ class Pennsylvania(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/bills/',
+                         '//select[@id="billSessions"]/option/text()')

@@ -1,21 +1,20 @@
 import lxml
-import re
-
-from billy.scrape.committees import Committee, CommitteeScraper
+from pupa.scrape import Scraper   # , Organization
 
 
-class VICommitteeScraper(CommitteeScraper):
-    jurisdiction = 'vi'
+class VICommitteeScraper(Scraper):
 
     def scrape(self, session, chambers):
-        
-        com_url = 'http://www.legvi.org/index.php/committees/committees-of-the-31st-legislature'
+
+        com_url = ('http://www.legvi.org/index.php/'
+                   'committees/committees-of-the-31st-legislature')
         doc = lxml.html.fromstring(self.get(url=com_url).text)
 
-        coms = doc.xpath('//*[@id="sp-component"]/article/section/table/tbody/tr/td[1]/p/span/strong/span/text()')
+        coms = doc.xpath('//*[@id="sp-component"]/article/section/table/'
+                         'tbody/tr/td[1]/p/span/strong/span/text()')
         index = 0
         for com in coms:
-            print com
+            print(com)
             members = doc.xpath('//p/following::p[contains(.,"{} consists of")]'.format(com))
-            print members
+            print(members)
             index = index + 1
