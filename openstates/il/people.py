@@ -65,8 +65,8 @@ AKA = {'Jay Hoffman': 'Jay C. Hoffman',
 
 
 class IlPersonScraper(Scraper):
-    def scrape(self):
-        for legislator, terms in self.legislators().values():
+    def scrape(self, latest_only=True):
+        for legislator, terms in self.legislators(latest_only).values():
             for chamber, district, start, end, party in self._join_contiguous(terms):
                 role = CHAMBER_ROLES[chamber]
                 legislator.add_term(role, chamber,
@@ -77,10 +77,10 @@ class IlPersonScraper(Scraper):
             
             yield legislator
 
-    def legislators(self):
+    def legislators(self, latest_only):
         legs = {}
     
-        for member, chamber, term, url in self._memberships():
+        for member, chamber, term, url in self._memberships(latest_only):
             name, _, _, district, party = member.xpath('td')
             district = district.text
             detail_url = name.xpath('a/@href')[0]
@@ -104,10 +104,12 @@ class IlPersonScraper(Scraper):
                 p, terms = legs[name]
                 terms.append((chamber, district, term, party))
             else :
-                p = Person(name)
+                p = Person(name, party=party)
                 legs[name] = p, [(chamber, district, term, party)]
             
             p.add_source(url)
+            p.add_source(detail_url)
+            p.add_link(detail_url)
 
             birth_date = BIRTH_DATES.get(name, None)
             if birth_date:
@@ -134,7 +136,7 @@ class IlPersonScraper(Scraper):
             # email
             email = leg_doc.xpath('//b[text()="Email: "]')
             if email:
-                p.add_contact_detail(type='email', value=email[0].tail.strip())
+                p.add_contact_detail(type='email', value=email[0].tail.strip(), note='capitol')
 
             offices = {'capitol' : '//table[contains(string(), "Springfield Office")]',
                        'district' : '//table[contains(string(), "District Office")]'}
@@ -168,8 +170,12 @@ class IlPersonScraper(Scraper):
         if addr:
             yield 'address', addr
             
-    def _memberships(self):
-        for term in range(93, 101):
+    def _memberships(self, latest_only):
+        CURRENT_TERM = 100
+
+        terms = [CURRENT_TERM] if latest_only else range(93, CURRENT_TERM+1)
+
+        for term in terms:
             for chamber, base_url in CHAMBER_URLS.items():
                 url = base_url.format(term=term)
                 
