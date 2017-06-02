@@ -117,7 +117,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                     yield from self.scrape_bill(session, bill_url)
 
     def scrape_bill(self, session, history_url):
-        history_xml = self.get(history_url).content
+        history_xml = self.get(history_url).text
         root = etree.fromstring(history_xml)
 
         bill_title = root.findtext("caption")
@@ -150,9 +150,8 @@ class TXBillScraper(Scraper, LXMLMixin):
 
         bill.add_source(history_url)
 
-        bill['subjects'] = []
         for subject in root.iterfind('subjects/subject'):
-            bill['subjects'].append(subject.text.strip())
+            bill.add_subject(subject.text.strip())
 
         versions = [x for x in self.versions if x[0] == bill_id]
         for version in versions:
@@ -258,7 +257,7 @@ class TXBillScraper(Scraper, LXMLMixin):
             else:
                 atype = None
 
-            if 'referral-committee' in atype:
+            if atype and 'referral-committee' in atype:
                 repls = [
                     'Referred to',
                     "Recommended to be sent to "
@@ -299,8 +298,8 @@ class TXBillScraper(Scraper, LXMLMixin):
 
     def _get_companion(self, bill):
         url = self.companion_url.format(
-            self._format_session(bill['session']),
-            self._format_bill_id(bill['bill_id']),
+            self._format_session(bill.legislative_session),
+            self._format_bill_id(bill.identifier),
         )
         page = self.lxmlize(url)
         links = page.xpath('//table[@id="Table6"]//a')
