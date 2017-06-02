@@ -190,14 +190,24 @@ class IlBillScraper(Scraper):
             session_id = self.latest_session()
 
         for chamber in ('lower', 'upper'):
-            doc_types = (list(DOC_TYPES) +
-                         (['AM', 'JSR'] if chamber == 'upper' else []))
-            for doc_type in doc_types:
-                doc_type = chamber_slug(chamber)+doc_type
+            for doc_type in [chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES]:
                 for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
                     bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
                     yield bill
                     yield from votes
+
+        # special non-chamber cases
+        for bill_url in self.get_bill_urls(chamber, session_id, 'AM'):
+            bill, votes = self.scrape_bill(chamber, session_id, 'AM', bill_url, 'appointment')
+            yield bill
+            yield from votes
+
+        # TODO: get joint session resolution added to python-opencivicdata
+        # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
+        #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
+        #                                    'joint session resolution')
+        #     yield bill
+        #     yield from votes
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
@@ -240,9 +250,9 @@ class IlBillScraper(Scraper):
             date = self.localize(date).date()
             actor = actor.text_content()
             if actor == 'House':
-                actor_id = {'name': 'Illinois House of Representatives'}
+                actor_id = {'classification': 'lower'}
             elif actor == 'Senate':
-                actor_id = {'name': 'Illinois Senate'}
+                actor_id = {'classification': 'upper'}
 
             action = action_elem.text_content()
             classification, related_orgs = _categorize_action(action)
@@ -252,7 +262,8 @@ class IlBillScraper(Scraper):
                 source, = [a.get('href') for a in
                            action_elem.xpath('a')
                            if 'committee' in a.get('href')]
-                actor_id = {'sources__url': canonicalize_url(source)}
+                actor_id = {'sources__url': canonicalize_url(source),
+                            'classification': 'committee'}
 
             bill.add_action(action, date,
                             organization=actor_id,
@@ -319,8 +330,8 @@ class IlBillScraper(Scraper):
 
             vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
             if vote_type == 'Committee Hearing Votes':
-                
-                actor = re.sub(' *Committee *$', '', pieces[1])
+                actor = {'name': re.sub(' *Committee *$', '', pieces[1]),
+                         'classification': 'committee'}
                 # depends on bill type
                 motion = 'Do Pass'
                 if pieces[0].startswith(('SCA', 'HCA')):
@@ -343,9 +354,9 @@ class IlBillScraper(Scraper):
 
                 actor = link.xpath('../following-sibling::td/text()')[0]
                 if actor == 'HOUSE':
-                    actor = 'Illinois House of Representatives'
+                    actor = {'classification': 'lower'}
                 elif actor == 'SENATE':
-                    actor = 'Illinois Senate'
+                    actor = {'classification': 'upper'}
                 else:
                     self.warning('unknown actor %s' % actor)
                     
@@ -402,6 +413,9 @@ class IlBillScraper(Scraper):
         yes_votes = []
         no_votes = []
         present_votes = []
+        excused_votes = []
+        not_voting = []
+        absent_votes = []
         passed = None
         counts_found = False
         vote_lines = []
@@ -432,15 +446,23 @@ class IlBillScraper(Scraper):
                 name = self.jurisdiction.session_details[session]['speaker']
             elif name == 'Mr. President':
                 name = self.jurisdiction.session_details[session]['president']
-            if vcode == 'Y':
+            else:
                 # Converts "Davis,William" to "Davis, William".
                 name = re.sub(r'\,([a-zA-Z])', r', \1', name)
+
+            if vcode == 'Y':
                 yes_votes.append(name)
             elif vcode == 'N':
-                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 no_votes.append(name)
             elif vcode == 'P':
                 present_votes.append(name)
+            elif vcode == 'E':
+                excused_votes.append(name)
+            elif vcode == 'NV':
+                not_voting.append(name)
+            elif vcode == 'A':
+                absent_votes.append(name)
+
         # fake the counts
         if yes_count == 0 and no_count == 0 and present_count == 0:
             yes_count = len(yes_votes)
@@ -452,12 +474,9 @@ class IlBillScraper(Scraper):
             if no_count != len(no_votes):
                 self.warning("Mismatched no count [expect: %i] [have: %i]" % (no_count, len(no_votes)))
                 warned = True
-            if present_count != len(present_votes):
-                self.warning("Mismatched present count [expect: %i] [have: %i]" % (present_count, len(present_votes)))
-                warned = True
 
         if passed is None:
-            if actor == 'Illinois House':  # senate doesn't have these lines
+            if actor['classification'] == 'lower':  # senate doesn't have these lines
                 self.warning("No pass/fail word found; fall back to comparing yes and no vote.")
                 warned = True
             passed = 'pass' if yes_count > no_count else 'fail'
@@ -466,13 +485,28 @@ class IlBillScraper(Scraper):
         vote_event = VoteEvent(legislative_session=session,
                                motion_text=motion,
                                classification=classification,
-                               organization={'name': actor},
+                               organization=actor,
                                start_date=date,
                                result=passed)
         for name in yes_votes:
             vote_event.yes(name)
         for name in no_votes:
             vote_event.no(name)
+        for name in present_votes:
+            vote_event.vote('other', name)
+        for name in excused_votes:
+            vote_event.vote('excused', name)
+        for name in not_voting:
+            vote_event.vote('not voting', name)
+        for name in absent_votes:
+            vote_event.vote('absent', name)
+
+        vote_event.set_count('yes', yes_count)
+        vote_event.set_count('no', no_count)
+        vote_event.set_count('other', present_count)
+        vote_event.set_count('excused', len(excused_votes))
+        vote_event.set_count('absent', len(absent_votes))
+        vote_event.set_count('not voting', len(not_voting))
 
         vote_event.add_source(href)
 
