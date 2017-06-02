@@ -121,6 +121,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
             person.add_link(leg_url)
 
             # Scrape office contact information from roster URL
+            office_num = 1
             for addr in tbl.xpath('.//td[@headers]'):
                 fax = phone = None
                 lines = [addr.text]
@@ -136,7 +137,8 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
                 address = '\n'.join(line.strip() for line in lines if line)
                 if 'CAP' in addr.get('headers'):
-                    office_name = 'Capitol Office'
+                    office_name = 'Capitol Office #{}'.format(office_num)
+                    office_num += 1
                 else:
                     office_name = 'District Office'
 
