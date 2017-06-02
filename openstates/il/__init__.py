@@ -14,7 +14,7 @@ class Il(Jurisdiction):
         "bills": IlBillScraper,
         "people": IlPersonScraper,
         "events": IlEventScraper,
-        "organizations": IlCommitteeScraper,
+        "committees": IlCommitteeScraper,
     }
 
     parties = [{'name': 'Republican'},

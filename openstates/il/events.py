@@ -1,4 +1,5 @@
 import datetime as dt
+import lxml
 import re
 
 from pupa.scrape import Scraper, Event

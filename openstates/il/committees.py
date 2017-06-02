@@ -27,13 +27,16 @@ class IlCommitteeScraper(Scraper):
                          start_date=str(start), end_date=str(end))
 
 
-    def scrape(self):
+    def scrape(self, latest_only=True):
         chambers = (('upper', 'senate'), ('lower', 'house'))
         committees = {}
 
         for chamber, chamber_name in chambers:
 
-            for session in range(93, 101):
+            CURRENT_SESSION = 100
+            sessions = [CURRENT_SESSION] if latest_only else range(93, CURRENT_SESSION+1)
+
+            for session in sessions:
 
                 url = 'http://ilga.gov/{0}/committees/default.asp?GA={1}'.format(chamber_name, session)
                 html = self.get(url).text
