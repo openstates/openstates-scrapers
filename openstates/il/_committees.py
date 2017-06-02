@@ -756,4 +756,3 @@ COMMITTEES = {('8th District Education Oversight Su', 'HAPE-HDEO'): '97',
               ('Workforce Reconciliation Subcommitt', 'HLBR-WORK'): '40',
               ('Youth & Young Adults', 'HYYA'): '646',
               ('Youth and Family', 'HYOF'): '647'}
-             

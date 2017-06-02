@@ -1,18 +1,16 @@
-from collections import defaultdict
-import itertools
-
 from pupa.scrape import Scraper, Person
 import lxml.html
+
 
 CHAMBER_URLS = {
     'upper': 'http://ilga.gov/senate/default.asp?GA={term}',
     'lower': 'http://ilga.gov/house/default.asp?GA={term}',
 }
 
-CHAMBER_ROLES = {'upper' : 'Senator',
-                 'lower' : 'Representative'}
+CHAMBER_ROLES = {'upper': 'Senator',
+                 'lower': 'Representative'}
 
-BIRTH_DATES = {'Daniel Biss' : '1977-08-27'}
+BIRTH_DATES = {'Daniel Biss': '1977-08-27'}
 
 AKA = {'Jay Hoffman': 'Jay C. Hoffman',
        'Chad Hays': 'Chad D Hays',
@@ -74,25 +72,23 @@ class IlPersonScraper(Scraper):
                                     start_date=str(start),
                                     end_date=str(end))
 
-            
             yield legislator
 
     def legislators(self, latest_only):
         legs = {}
-    
+
         for member, chamber, term, url in self._memberships(latest_only):
             name, _, _, district, party = member.xpath('td')
             district = district.text
             detail_url = name.xpath('a/@href')[0]
-            
+
             if party.text_content().strip() == "":
                 self.warning("Garbage party: Skipping!")
                 continue
-            
-            party = {'D':'Democratic', 'R': 'Republican',
-                     'I': 'Independent'}[party.text]
+
+            party = {'D': 'Democratic', 'R': 'Republican', 'I': 'Independent'}[party.text]
             name = name.text_content().strip()
-            
+
             # inactive legislator, skip them for now
             if name.endswith('*'):
                 name = name.strip('*')
@@ -103,10 +99,10 @@ class IlPersonScraper(Scraper):
             if name in legs:
                 p, terms = legs[name]
                 terms.append((chamber, district, term, party))
-            else :
+            else:
                 p = Person(name, party=party)
                 legs[name] = p, [(chamber, district, term, party)]
-            
+
             p.add_source(url)
             p.add_source(detail_url)
             p.add_link(detail_url)
@@ -114,7 +110,7 @@ class IlPersonScraper(Scraper):
             birth_date = BIRTH_DATES.get(name, None)
             if birth_date:
                 p.birth_date = birth_date
-            
+
             leg_html = self.get(detail_url).text
             leg_doc = lxml.html.fromstring(leg_html)
             leg_doc.make_links_absolute(detail_url)
@@ -128,7 +124,6 @@ class IlPersonScraper(Scraper):
                 self.logger.warning('No legislator bio available for ' + name)
                 continue
 
-
             photo_url = leg_doc.xpath('//img[contains(@src, "/members/")]/@src')[0]
             p.image = photo_url
 
@@ -138,8 +133,8 @@ class IlPersonScraper(Scraper):
             if email:
                 p.add_contact_detail(type='email', value=email[0].tail.strip(), note='capitol')
 
-            offices = {'capitol' : '//table[contains(string(), "Springfield Office")]',
-                       'district' : '//table[contains(string(), "District Office")]'}
+            offices = {'capitol': '//table[contains(string(), "Springfield Office")]',
+                       'district': '//table[contains(string(), "District Office")]'}
 
             for location, xpath in offices.items():
                 table = leg_doc.xpath(xpath)
@@ -169,7 +164,7 @@ class IlPersonScraper(Scraper):
 
         if addr:
             yield 'address', addr
-            
+
     def _memberships(self, latest_only):
         CURRENT_TERM = 100
 
@@ -178,7 +173,7 @@ class IlPersonScraper(Scraper):
         for term in terms:
             for chamber, base_url in CHAMBER_URLS.items():
                 url = base_url.format(term=term)
-                
+
                 html = self.get(url).text
                 page = lxml.html.fromstring(html)
                 page.make_links_absolute(url)
@@ -188,7 +183,8 @@ class IlPersonScraper(Scraper):
 
     def _join_contiguous(self, terms):
         joined_terms = []
-        terms = sorted(terms, key=lambda x : x[2])
+        terms = sorted(terms, key=lambda x: x[2])
+        previous = None
         for chamber, district, term, party in terms:
             year = 1917 + term
             if not joined_terms or (chamber, district, year - 1, party) != previous:

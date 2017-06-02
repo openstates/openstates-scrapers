@@ -4,13 +4,14 @@ import lxml.html
 from ._committees import COMMITTEES
 from ._utils import canonicalize_url
 
+
 class IlCommitteeScraper(Scraper):
 
     def scrape_members(self, o, url):
         session = int(url.split('=')[-1])
         start = 1917 + session
         end = start + 1
-        
+
         data = self.get(url).text
         if 'No members added' in data:
             return
@@ -20,12 +21,11 @@ class IlCommitteeScraper(Scraper):
             tds = row.xpath('td')
 
             # remove colon and lowercase role
-            role = tds[0].text_content().replace(':','').strip().lower()
+            role = tds[0].text_content().replace(':', '').strip().lower()
 
             name = tds[1].text_content().strip()
             o.add_member(name, role,
                          start_date=str(start), end_date=str(end))
-
 
     def scrape(self, latest_only=True):
         chambers = (('upper', 'senate'), ('lower', 'house'))
@@ -38,7 +38,8 @@ class IlCommitteeScraper(Scraper):
 
             for session in sessions:
 
-                url = 'http://ilga.gov/{0}/committees/default.asp?GA={1}'.format(chamber_name, session)
+                url = 'http://ilga.gov/{0}/committees/default.asp?GA={1}'.format(
+                    chamber_name, session)
                 html = self.get(url).text
                 doc = lxml.html.fromstring(html)
                 doc.make_links_absolute(url)
@@ -66,19 +67,17 @@ class IlCommitteeScraper(Scraper):
                                             'code': {code},
                                             'source': {com_url}}
 
-                    if (code is not None and
-                         '-' in code and
-                        code not in ('HSGA-SGAS',
-                                     'HAPE-APES')):
-                        committees[o_id]['parent'] = top_level
+                    if (code is not None and '-' in code and code not in ('HSGA-SGAS',
+                                                                          'HAPE-APES')):
+                        committees[o_id]['parent'] = top_level_com
                     else:
                         committees[o_id]['chamber'] = chamber
                         top_level = o_id
 
-        top_level = {o_id : committee for o_id, committee in
+        top_level = {o_id: committee for o_id, committee in
                      committees.items() if 'chamber' in committee}
 
-        sub_committees = {o_id : committee for o_id, committee in
+        sub_committees = {o_id: committee for o_id, committee in
                           committees.items() if 'parent' in committee}
 
         for o_id, committee in list(top_level.items()):
@@ -90,7 +89,6 @@ class IlCommitteeScraper(Scraper):
             committee['parent'] = top_level[committee['parent']]
             o = self.dict_to_org(committee)
             yield o
-
 
     def dict_to_org(self, committee):
         names = sorted(committee['name'])
