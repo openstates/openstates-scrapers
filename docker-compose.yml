@@ -1,7 +1,7 @@
 version: "3"
 services:
   scrape:
-    image: openstates/openstates-pupa
+    image: openstates/openstates
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
@@ -34,7 +34,7 @@ services:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
   ca-download:
-    image: openstates/openstates-pupa
+    image: openstates/openstates
     entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
     environment:
     - MYSQL_HOST=mysql
