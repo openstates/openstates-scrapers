@@ -351,18 +351,6 @@ class TXVoteScraper(Scraper):
             day_num += 1
 
     def scrape_journal(self, url, chamber, session):
-        if "R" in session:
-            session_num = session.strip("R")
-        else:
-            session_num = session
-        session_instance = next((s for s in self.jurisdiction.legislative_sessions
-                                 if s['identifier'] == session_num), None)
-
-        if session_instance is None:
-            self.warning('Session metadata could not be found for %s', session)
-            return
-        year = datetime.datetime.strptime(session_instance['start_date'], '%Y-%m-%d').year
-
         page = self.get(url).text
 
         root = lxml.html.fromstring(page)
@@ -374,6 +362,9 @@ class TXVoteScraper(Scraper):
             date = datetime.datetime.strptime(
                 date_str, "%A, %B %d, %Y").date()
         else:
+            year = self.get_session_year(session)
+            if year is None:
+                return
             fname = os.path.split(urlparse.urlparse(url).path)[-1]
             date_str = re.match(r'%sSJ(\d\d-\d\d).*\.HTM' % session,
                                 fname).group(1) + " %s" % year
@@ -385,3 +376,17 @@ class TXVoteScraper(Scraper):
             vote['chamber'] = chamber
             vote.add_source(url)
             yield vote
+
+    def get_session_year(self, session):
+        if "R" in session:
+            session_num = session.strip("R")
+        else:
+            session_num = session
+        session_instance = next((s for s in self.jurisdiction.legislative_sessions
+                                 if s['identifier'] == session_num), None)
+
+        if session_instance is None:
+            self.warning('Session metadata could not be found for %s', session)
+            return None
+        year = datetime.datetime.strptime(session_instance['start_date'], '%Y-%m-%d').year
+        return year
