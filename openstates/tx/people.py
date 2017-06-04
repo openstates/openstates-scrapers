@@ -3,16 +3,16 @@ import re
 import lxml.html
 import lxml.html.builder
 
-from billy.scrape.legislators import (LegislatorScraper, Legislator)
+from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 from .utils import extract_phone, extract_fax
 
 
-class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
+class TXPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'tx'
 
     def __init__(self, *args, **kwargs):
-        super(TXLegislatorScraper, self).__init__(*args, **kwargs)
+        super(TXPersonScraper, self).__init__(*args, **kwargs)
 
         self.district_re = re.compile(r'District +(\d+)')
 
@@ -36,7 +36,7 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             flags=re.DOTALL | re.IGNORECASE
         )
 
-    def _get_chamber_parties(self, chamber, term):
+    def _get_chamber_parties(self, chamber):
         """
         Return a dictionary that maps each district to its representative
         party for the given legislative chamber.
@@ -54,7 +54,7 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         parties = {}
 
         url = ('http://www.lrl.state.tx.us/legeLeaders/members/membersearch.'
-               'cfm?leg={}&chamber={}').format(term, chamber_map[chamber])
+               'cfm?leg={}&chamber={}').format(self.latest_session(), chamber_map[chamber])
         page = self.lxmlize(url)
 
         # table is broken and doesn't have proper <tr> tags
@@ -75,7 +75,14 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         return parties
 
-    def scrape(self, chamber, term):
+    def scrape(self, chamber=None):
+        if chamber:
+            yield from self.scrape_chamber(chamber)
+        else:
+            yield from self.scrape_chamber('upper')
+            yield from self.scrape_chamber('lower')
+
+    def scrape_chamber(self, chamber):
         rosters = {
             'lower': 'http://www.house.state.tx.us/members/',
             'upper': 'http://www.senate.texas.gov/directory.php'
@@ -88,23 +95,32 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         roster_page = lxml.html.fromstring(response.text)
         roster_page.make_links_absolute(roster_url)
 
-        getattr(self, '_scrape_' + chamber)(roster_page, roster_url, term)
+        yield from getattr(self, '_scrape_' + chamber)(roster_page, roster_url)
 
-    def _scrape_upper(self, roster_page, roster_url, term):
+    def _scrape_upper(self, roster_page, roster_url):
+        """
+        Retrieves a list of members of the upper legislative chamber, processes
+        them, and writes them to the database.
+        """
         # TODO: photo_urls http://www.senate.texas.gov/members.php
+        #       also available on individual member screens
+        # TODO: email addresses could be scraped from secondary sources
+        #       https://github.com/openstates/openstates/issues/1292
 
         for tbl in roster_page.xpath('//table[@class="memdir"]'):
+            # Scrape legislator information from roster URL
             leg_a = tbl.xpath('.//a')[0]
             name = leg_a.text
             leg_url = leg_a.get('href')
             district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail.lstrip('0')
             party = tbl.xpath('.//span[contains(text(), "Party:")]')[0].tail
-            legislator = Legislator(
-                term, 'upper', district, name,
-                party=party,
-                url=leg_url
-            )
 
+            # Create Person object
+            person = Person(name=name, district=district, party=party,
+                            primary_org='upper')
+            person.add_link(leg_url)
+
+            # Scrape office contact information from roster URL
             for addr in tbl.xpath('.//td[@headers]'):
                 fax = phone = address = None
                 lines = [addr.text]
@@ -120,19 +136,27 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
 
                 address = '\n'.join(line.strip() for line in lines if line)
                 if 'CAP' in addr.get('headers'):
-                    office_type = 'capitol'
                     office_name = 'Capitol Office'
                 else:
-                    office_type = 'district'
                     office_name = 'District Office'
-                legislator.add_office(office_type, office_name,
-                                      address=address, phone=phone, fax=fax)
 
-            legislator.add_source(roster_url)
-            legislator.add_source(leg_url)
-            self.save_legislator(legislator)
+                # Add office contact information to Person object
+                if address:
+                    person.add_contact_detail(type='address', value=address,
+                                              note=office_name)
+                if phone:
+                    person.add_contact_detail(type='voice', value=phone,
+                                              note=office_name)
+                if fax:
+                    person.add_contact_detail(type='fax', value=fax,
+                                              note=office_name)
 
-    def _scrape_lower(self, roster_page, roster_url, term):
+            # Add source links to Person object
+            person.add_source(roster_url)
+            person.add_source(leg_url)
+            yield person
+
+    def _scrape_lower(self, roster_page, roster_url):
         """
         Retrieves a list of members of the lower legislative chamber, processes
         them, and writes them to the database.
@@ -141,22 +165,21 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
         # Sort by district for easier spotting of omissions:
         member_urls.sort(key=lambda url: int(re.search(r'\d+$', url).group()))
 
-        parties = self._get_chamber_parties('lower', term)
+        parties = self._get_chamber_parties('lower')
 
         for member_url in member_urls:
-            legislator = self._scrape_representative(member_url, term, parties)
-            self.save_legislator(legislator)
+            yield from self._scrape_representative(member_url, parties)
 
-    def _scrape_representative(self, url, term, parties):
+
+    def _scrape_representative(self, url, parties):
         """
-        Returns a Legislator object representing a member of the lower
+        Returns a Person object representing a member of the lower
         legislative chamber.
         """
         #url = self.get(url).text.replace('<br>', '')
         member_page = self.lxmlize(url)
 
-        photo_url = member_page.xpath(
-            '//img[@class="member-photo"]/@src')[0]
+        photo_url = member_page.xpath('//img[@class="member-photo"]/@src')[0]
         if photo_url.endswith('/.jpg'):
             photo_url = None
 
@@ -172,17 +195,18 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
 
         # Vacant house "members" are named after their district numbers:
         if re.match(r'^\d+$', scraped_name):
-            return None
+            yield None
 
         party = parties[district]
 
-        legislator = Legislator(term, 'lower', district, name,
-                                party=party, url=url,
-                                _scraped_name=scraped_name)
-        if photo_url is not None:
-            legislator['photo_url'] = photo_url
+        person = Person(name=name, district=district, party=party,
+                        primary_org='lower')
 
-        legislator.add_source(url)
+        if photo_url is not None:
+            person.image = photo_url
+
+        person.add_link(url)
+        person.add_source(url)
 
         def office_name(element):
             """Returns the office address type."""
@@ -235,8 +259,14 @@ class TXLegislatorScraper(LegislatorScraper, LXMLMixin):
             phone_number = extract_phone(details)
             fax_number = extract_fax(details)
 
-            legislator.add_office(office_text['type'], office_text['name'],
-                                  address=address, phone=phone_number,
-                                  fax=fax_number)
+            if address:
+                person.add_contact_detail(type='address', value=address,
+                                          note=office_text['name'])
+            if phone_number:
+                person.add_contact_detail(type='voice', value=phone_number,
+                                          note=office_text['name'])
+            if fax_number:
+                person.add_contact_detail(type='fax', value=fax_number,
+                                          note=office_text['name'])
 
-        return legislator
+        yield person
