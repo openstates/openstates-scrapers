@@ -191,15 +191,10 @@ class TXBillScraper(Scraper, LXMLMixin):
             act_date = datetime.datetime.strptime(action.findtext('date'),
                                                   "%m/%d/%Y").date()
 
-            extra = {}
-            extra['action_number'] = action.find('actionNumber').text
-            comment = action.find('comment')
-            if comment is not None and comment.text:
-                extra['comment'] = comment.text.strip()
-
+            action_number = action.find('actionNumber').text
             actor = {'H': 'lower',
                      'S': 'upper',
-                     'E': 'executive'}[extra['action_number'][0]]
+                     'E': 'executive'}[action_number[0]]
 
             desc = action.findtext('description').strip()
 
@@ -257,6 +252,13 @@ class TXBillScraper(Scraper, LXMLMixin):
             else:
                 atype = None
 
+            act = bill.add_action(
+                action.findtext('description'),
+                act_date,
+                chamber=actor,
+                classification=atype
+            )
+
             if atype and 'referral-committee' in atype:
                 repls = [
                     'Referred to',
@@ -265,14 +267,7 @@ class TXBillScraper(Scraper, LXMLMixin):
                 ctty = desc
                 for r in repls:
                     ctty = ctty.replace(r, "").strip()
-                extra['committees'] = ctty
-
-            bill.add_action(
-                action.findtext('description'),
-                act_date,
-                chamber=actor,
-                classification=atype
-            )
+                act.add_related_entity(name=ctty, entity_type='organization')
 
         for author in root.findtext('authors').split(' | '):
             if author != "":
