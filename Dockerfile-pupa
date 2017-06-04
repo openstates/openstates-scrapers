@@ -35,7 +35,7 @@ RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/opensta
 RUN /opt/openstates/venv-billy/bin/pip install python-dateutil
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata.git#egg=python-opencivicdata
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa
 
 ENV PYTHONIOENCODING 'utf-8'

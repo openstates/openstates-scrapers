@@ -18,3 +18,6 @@ unicodecsv
 
 # GA
 suds-py3
+
+#NH
+pymssql

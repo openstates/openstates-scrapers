@@ -1,23 +1,75 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-from collections import defaultdict
 import datetime
-from urllib import urlencode
+
+import pytz
 import scrapelib
+import lxml.html
+from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.utils import convert_pdf
 
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
-from openstates.utils import LXMLMixin
+from ._utils import canonicalize_url
 
 
-def group(lst, n):
-    # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
-    for i in range(0, len(lst), n):
-        val = lst[i:i+n]
-        if len(val) == n:
-            yield tuple(val)
+session_details = {
+    '100th': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '100', 'SessionId': '91'},
+    },
+    '99th': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '99', 'SessionId': '88'},
+    },
+    '98th': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '98', 'SessionId': '85'},
+
+    },
+    '97th': {
+        'params': {'GA': '97', 'SessionId': '84'},
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+    },
+    '96th': {
+        'params': {'GA': '96', 'SessionId': '76'},
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+    },
+    '96th-special': {
+        'params': {'GA': '96', 'SessionId': '82', 'SpecSess': '1'},
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+    },
+    '95th': {
+        'params': {'GA': '95', 'SessionId': '51'},
+        'speaker': 'Madigan',
+        'president': 'Jones, E.',
+    },
+    '95th-special': {
+        'params': {'GA': '95', 'SessionId': '52', 'SpecSess': '1'},
+        'speaker': 'Madigan',
+        'president': 'Jones, E.',
+    },
+    '94th': {
+        'params': {'GA': '94', 'SessionId': '50'},
+        'speaker': 'Madigan',
+        'president': 'Jones, E.',
+    },
+    '93rd': {
+        'params': {'GA': '93', 'SessionId': '3'},
+        'speaker': 'Madigan',
+        'president': 'Jones, E.',
+    },
+    '93rd-special': {
+        'params': {'GA': '93', 'SessionID': '14', 'SpecSess': '1'},
+        'speaker': 'Madigan',
+        'president': 'Jones, E.'
+    }
+}
 
 
 TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
@@ -48,31 +100,38 @@ DOC_TYPES = {
     'JRCA': 'constitutional amendment',
 }
 
-_action_classifiers = (  # see http://openstates.org/categorization/
-    (re.compile(r'Amendment No. \d+ Filed'), 'amendment:introduced'),
-    (re.compile(r'Amendment No. \d+ Tabled'), 'amendment:failed'),
-    (re.compile(r'Amendment No. \d+ Adopted'), 'amendment:passed'),
-    (re.compile(r'(Pref|F)iled with'), 'bill:filed'),
-    (re.compile(r'Arrived? in'), 'bill:introduced'),
-    (re.compile(r'First Reading'), 'bill:reading:1'),
-    (re.compile(r'(Recalled to )?Second Reading'), 'bill:reading:2'),
-    (re.compile(r'(Re-r|R)eferred to'), 'committee:referred'),
-    (re.compile(r'(Re-a|A)ssigned to'), 'committee:referred'),
-    (re.compile(r'Sent to the Governor'), 'governor:received'),
-    (re.compile(r'Governor Approved'), 'governor:signed'),
-    (re.compile(r'Governor Vetoed'), 'governor:vetoed'),
-    (re.compile(r'Governor Item'), 'governor:vetoed:line-item'),
-    (re.compile(r'Governor Amendatory Veto'), 'governor:vetoed'),
-    (re.compile(r'Do Pass'), 'committee:passed'),
-    (re.compile(r'Recommends Be Adopted'), 'committee:passed:favorable'),
-    (re.compile(r'Be Adopted'), 'committee:passed:favorable'),
-    (re.compile(r'Third Reading .+? Passed'), ['bill:reading:3', 'bill:passed']),
-    (re.compile(r'Third Reading .+? Lost'), ['bill:reading:3', 'bill:failed']),
-    (re.compile(r'Third Reading'), 'bill:reading:3'),
-    (re.compile(r'Resolution Adopted'), 'bill:passed'),
-    (re.compile(r'Resolution Lost'), 'bill:failed'),
-    (re.compile(r'Session Sine Die',), 'bill:failed'),
-    (re.compile(r'Tabled'), 'bill:withdrawn'),
+# see http://openstates.org/categorization/
+_action_classifiers = (
+    (re.compile(r'Amendment No. \d+ Filed'), ['amendment-introduction']),
+    (re.compile(r'Amendment No. \d+ Tabled'), ['amendment-failure']),
+    (re.compile(r'Amendment No. \d+ Adopted'), ['amendment-passage']),
+    (re.compile(r'(Pref|F)iled with'), ['filing']),
+    (re.compile(r'Arrived? in'), ['introduction']),
+    (re.compile(r'First Reading'), ['reading-1']),
+    (re.compile(r'(Recalled to )?Second Reading'), ['reading-2']),
+    (re.compile(r'(Re-r|R)eferred to'), ['referral-committee']),
+    (re.compile(r'(Re-a|A)ssigned to'), ['referral-committee']),
+    (re.compile(r'Sent to the Governor'), ['executive-receipt']),
+    (re.compile(r'Governor Approved'), ['executive-signature']),
+    (re.compile(r'Governor Vetoed'), ['executive-veto']),
+    (re.compile(r'Governor Item'), ['executive-veto-line-item']),
+    (re.compile(r'Governor Amendatory Veto'), ['executive-veto']),
+    (re.compile(
+        r'^(?:Recommends )?Do Pass(?: as Amended)?(?: / Short Debate)?(?: / Standard Debate)?'),
+        ['committee-passage']
+     ),
+    (re.compile(r'Amendment.+Concur'), []),
+    (re.compile(r'Motion Do Pass(?: as Amended)?(?: - Lost)?'), ['committee-failure']),
+    (re.compile(r'Motion Do Pass(?: as Amended)?'), ['committee-passage']),
+    (re.compile(r'.*Be Adopted(?: as Amended)?'), ['committee-passage-favorable']),
+    (re.compile(r'Third Reading .+? Passed'), ['reading-3', 'passage']),
+    (re.compile(r'Third Reading .+? Lost'), ['reading-3', 'failure']),
+    (re.compile(r'Third Reading'), ['reading-3']),
+    (re.compile(r'Resolution Adopted'), ['passage']),
+    (re.compile(r'Resolution Lost'), ['failure']),
+    (re.compile(r'Session Sine Die',), ['failure']),
+    (re.compile(r'Tabled'), ['withdrawal']),
+    (re.compile(r'Motion To Adopt'), ['passage']),
 )
 
 OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
@@ -117,26 +176,53 @@ OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
 
 VOTE_VALUES = ['NV', 'Y', 'N', 'E', 'A', 'P', '-']
 
+COMMITTEE_CORRECTIONS = {
+    'Elementary & Secondary Education: School Curriculum & Policies':
+        'Elem Sec Ed: School Curric Policies',
+    'Elementary & Secondary Education: Licensing, Administration & Oversight':
+        'Elem Sec Ed: Licensing, Admin.',
+    'Elementary & Secondary Education:  Charter School Policy':
+        'Elem Sec Ed:  Charter School Policy',
+    'Transportation: Regulation, Roads & Bridges': 'Transportation: Regulation, Roads',
+    'Business Incentives for Local Communities': 'Business Incentives for Local Comm.',
+    'Museums, Arts, & Cultural Enhancement': 'Museums, Arts, & Cultural Enhanceme',
+    'Health Care Availability & Accessibility': 'Health Care Availability & Access',
+    'Construction Industry & Code Enforcement': 'Construction Industry & Code Enforc',
+    'Appropriations-Elementary & Secondary Education': 'Approp-Elementary & Secondary Educ',
+    'Tourism, Hospitality & Craft Industries': 'Tourism, Hospitality & Craft Ind.',
+    'Government Consolidation &  Modernization': 'Government Consolidation &  Modern',
+    'Community College Access & Affordability': 'Community College Access & Afford.'}
+
+DUPE_VOTES = {'http://ilga.gov/legislation/votehistory/100/house/committeevotes/'
+              '10000HB2457_16401.pdf'}
+
+
+def group(lst, n):
+    # from http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
+    for i in range(0, len(lst), n):
+        val = lst[i:i+n]
+        if len(val) == n:
+            yield tuple(val)
+
 
 def _categorize_action(action):
+    related_orgs = []
+
     for pattern, atype in _action_classifiers:
+
         if pattern.findall(action):
-            kwargs = {"type": atype}
-            if "committee:referred" in atype:
-                kwargs['committees'] = [pattern.sub("", action).strip()]
-            return kwargs
-    return {"type": 'other'}
+            if "referral-committee" in atype:
+                related_orgs = [pattern.sub("", action).strip()]
+            for each in atype:
+                if each.startswith("committee"):
+                    org = pattern.sub("", action).split(';')[0].strip()
+                    org = re.sub(' *Committee *$', '', org)
+                    if org in COMMITTEE_CORRECTIONS:
+                        org = COMMITTEE_CORRECTIONS[org]
+                    related_orgs = [org]
+            return atype, related_orgs
 
-
-LEGISLATION_URL = ('http://ilga.gov/legislation/grplist.asp')
-
-
-def build_url_for_legislation_list(metadata, chamber, session, doc_type):
-    params = metadata['session_details'][session].get('params', {})
-    params['num1'] = '1'
-    params['num2'] = '10000'
-    params['DocTypeID'] = doc_type
-    return '?'.join([LEGISLATION_URL, urlencode(params)])
+    return None, related_orgs
 
 
 def chamber_slug(chamber):
@@ -145,41 +231,54 @@ def chamber_slug(chamber):
     return 'S'
 
 
-class ILBillScraper(BillScraper, LXMLMixin):
-
-    jurisdiction = 'il'
+class IlBillScraper(Scraper):
+    LEGISLATION_URL = 'http://ilga.gov/legislation/grplist.asp'
+    localize = pytz.timezone('America/Chicago').localize
 
     def get_bill_urls(self, chamber, session, doc_type):
-        url = build_url_for_legislation_list(self.metadata, chamber, session,
-                                             doc_type)
-        doc = self.lxmlize(url)
+        params = session_details[session]['params']
+        params['num1'] = '1'
+        params['num2'] = '10000'
+        params['DocTypeID'] = doc_type
+
+        html = self.get(self.LEGISLATION_URL, params=params).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(self.LEGISLATION_URL)
+
         for bill_url in doc.xpath('//li/a/@href'):
             yield bill_url
 
-    def scrape(self, chamber, session):
-        """
-        self.scrape_bill(chamber, session, 'SB',
-        'http://ilga.gov/legislation/BillStatus.asp?DocNum=116&GAID=13&DocTypeID=SB&LegId=84055&SessionID=88&GA=99')
-        """
-        for doc_type in DOC_TYPES:
-            doc_type = chamber_slug(chamber)+doc_type
-            for bill_url in self.get_bill_urls(chamber, session, doc_type):
-                self.scrape_bill(chamber, session, doc_type, bill_url)
-        if chamber == 'upper':
-            # add appointments and JSRs as upper chamber, not perfectly
-            # accurate but it'll do
-            for bill_url in self.get_bill_urls(chamber, session, 'AM'):
-                self.scrape_bill(chamber, session, 'AM', bill_url,
-                                 'appointment')
-            for bill_url in self.get_bill_urls(chamber, session, 'JSR'):
-                self.scrape_bill(chamber, session, 'JSR', bill_url,
-                                 'joint session resolution')
-            # TODO: also add EO's - they aren't voted upon anyway & we don't
-            # handle governor so they are omitted for now
+    def scrape(self, session=None):
+        if session is not None:
+            session_id = session
+        else:
+            session_id = self.latest_session()
+
+        for chamber in ('lower', 'upper'):
+            for doc_type in [chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES]:
+                for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
+                    bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
+                    yield bill
+                    yield from votes
+
+        # special non-chamber cases
+        for bill_url in self.get_bill_urls(chamber, session_id, 'AM'):
+            bill, votes = self.scrape_bill(chamber, session_id, 'AM', bill_url, 'appointment')
+            yield bill
+            yield from votes
+
+        # TODO: get joint session resolution added to python-opencivicdata
+        # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
+        #     bill, votes = self.scrape_bill(chamber, session_id, 'JSR', bill_url,
+        #                                    'joint session resolution')
+        #     yield bill
+        #     yield from votes
 
     def scrape_bill(self, chamber, session, doc_type, url, bill_type=None):
         try:
-            doc = self.lxmlize(url)
+            html = self.get(url).text
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
         except scrapelib.HTTPError as e:
             assert '500' in e.args[0], "Unexpected error when accessing page: {}".format(e)
             self.warning("500 error for bill page; skipping bill")
@@ -195,8 +294,13 @@ class ILBillScraper(BillScraper, LXMLMixin):
         summary = doc.xpath('//span[text()="Synopsis As Introduced"]/following-sibling::span[1]/'
                             'text()')[0].strip()
 
-        bill = Bill(session, chamber, bill_id, title, type=bill_type,
-                    summary=summary)
+        bill = Bill(identifier=bill_id,
+                    legislative_session=session,
+                    title=title,
+                    classification=bill_type,
+                    chamber=chamber)
+
+        bill.add_abstract(summary, note='')
 
         bill.add_source(url)
         # sponsors
@@ -205,81 +309,123 @@ class ILBillScraper(BillScraper, LXMLMixin):
 
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
-        for date, actor, action in group(action_tds, 3):
+        for date, actor, action_elem in group(action_tds, 3):
             date = datetime.datetime.strptime(date.text_content().strip(),
                                               "%m/%d/%Y")
+            date = self.localize(date).date()
             actor = actor.text_content()
             if actor == 'House':
-                actor = 'lower'
+                actor_id = {'classification': 'lower'}
             elif actor == 'Senate':
-                actor = 'upper'
+                actor_id = {'classification': 'upper'}
 
-            action = action.text_content()
-            bill.add_action(actor, action, date,
-                            **_categorize_action(action))
+            action = action_elem.text_content()
+            classification, related_orgs = _categorize_action(action)
+
+            if (related_orgs and any(c.startswith('committee') for c in classification)):
+                source, = [a.get('href') for a in
+                           action_elem.xpath('a')
+                           if 'committee' in a.get('href')]
+                actor_id = {'sources__url': canonicalize_url(source),
+                            'classification': 'committee'}
+
+            bill.add_action(action, date,
+                            organization=actor_id,
+                            classification=classification,
+                            related_entities=related_orgs)
+
             if action.lower().find('sponsor') != -1:
                 self.refine_sponsor_list(actor, action, sponsor_list, bill_id)
 
         # now add sponsors
         for spontype, sponsor, chamber, official_type in sponsor_list:
-            if chamber:
-                bill.add_sponsor(spontype, sponsor,
-                                 official_type=official_type, chamber=chamber)
+            if official_type == 'primary':
+                primary = True
             else:
-                bill.add_sponsor(spontype, sponsor,
-                                 official_type=official_type)
+                primary = False
+            if chamber:
+                bill.add_sponsorship(sponsor, spontype, 'person',
+                                     primary=primary,
+                                     chamber=chamber)
+            else:
+                bill.add_sponsorship(spontype, sponsor, 'person',
+                                     primary=primary)
 
         # versions
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
 
-        # if there's more than 1 votehistory link, there are votes to grab
-        if len(doc.xpath('//a[contains(@href, "votehistory")]')) > 1:
-            votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-            self.scrape_votes(session, bill, votes_url)
+        votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
+        votes = self.scrape_votes(session, bill, votes_url)
 
-        self.save_bill(bill)
+        return bill, votes
 
     def scrape_documents(self, bill, version_url):
-        doc = self.lxmlize(version_url)
+        html = self.get(version_url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(version_url)
 
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
             url = link.get('href')
             if name in VERSION_TYPES:
-                bill.add_version(name, url + '&print=true',
-                                 mimetype='text/html')
+                bill.add_version_link(name, url + '&print=true',
+                                      media_type='text/html')
             elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
-                bill.add_document(name, url)
+                bill.add_document_link(name, url)
             elif 'Printer-Friendly' in name:
                 pass
             else:
                 self.warning('unknown document type %s - adding as document' % name)
-                bill.add_document(name, url)
+                bill.add_document_link(name, url)
 
     def scrape_votes(self, session, bill, votes_url):
-        doc = self.lxmlize(votes_url)
+        html = self.get(votes_url).text
+        doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(votes_url)
 
         for link in doc.xpath('//a[contains(@href, "votehistory")]'):
 
+            if link.get('href') in DUPE_VOTES:
+                continue
+
             pieces = link.text.split(' - ')
             date = pieces[-1]
-            if len(pieces) == 3:
-                motion = pieces[1]
-            else:
-                motion = 'Third Reading'
 
-            chamber = link.xpath('../following-sibling::td/text()')[0]
-            if chamber == 'HOUSE':
-                chamber = 'lower'
-            elif chamber == 'SENATE':
-                chamber = 'upper'
+            vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
+            if vote_type == 'Committee Hearing Votes':
+                actor = {'name': re.sub(' *Committee *$', '', pieces[1]),
+                         'classification': 'committee'}
+                # depends on bill type
+                motion = 'Do Pass'
+                if pieces[0].startswith(('SCA', 'HCA')):
+                    amendment_num = int(re.split(r'SCA|HCA', pieces[0])[-1])
+                    amendment = ', Amendment %s' % amendment_num
+                    motion += amendment
             else:
-                self.warning('unknown chamber %s' % chamber)
+                if len(pieces) == 3:
+                    motion = pieces[1].strip()
+                else:
+                    motion = 'Third Reading'
+
+                if pieces[0].startswith(('SFA', 'HFA')):
+                    amendment_num = int(re.split(r'SFA|HFA', pieces[0])[-1])
+                    amendment = ', Amendment %s' % amendment_num
+                    motion += amendment
+
+                actor = link.xpath('../following-sibling::td/text()')[0]
+                if actor == 'HOUSE':
+                    actor = {'classification': 'lower'}
+                elif actor == 'SENATE':
+                    actor = {'classification': 'upper'}
+                else:
+                    self.warning('unknown actor %s' % actor)
+
+            classification, _ = _categorize_action(motion)
 
             for date_format in ["%b %d, %Y", "%A, %B %d, %Y"]:
                 try:
-                    date = datetime.datetime.strptime(date, date_format)
+                    date = self.localize(datetime.datetime.strptime(date, date_format)).date()
                     break
                 except ValueError:
                     continue
@@ -288,12 +434,11 @@ class ILBillScraper(BillScraper, LXMLMixin):
                         "Date '{}' does not follow a format".format(date))
 
             # manual fix for bad bill. TODO: better error catching here
-            vote = self.scrape_pdf_for_votes(session, chamber, date, motion.strip(),
+            vote = self.scrape_pdf_for_votes(session, actor, date, motion.strip(),
                                              link.get('href'))
             if vote:
-                bill.add_vote(vote)
-
-            bill.add_source(votes_url)
+                vote.set_bill(bill)
+                yield vote
 
     def fetch_pdf_lines(self, href):
         # download the file
@@ -307,18 +452,20 @@ class ILBillScraper(BillScraper, LXMLMixin):
             self.warning("404 error for vote; skipping vote")
             return False
 
-    def scrape_pdf_for_votes(self, session, chamber, date, motion, href):
+    def scrape_pdf_for_votes(self, session, actor, date, motion, href):
         warned = False
         # vote indicator, a few spaces, a name, newline or multiple spaces
-        VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
-        COUNT_RE = re.compile(r'^(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$')
+        # VOTE_RE = re.compile('(Y|N|E|NV|A|P|-)\s{2,5}(\w.+?)(?:\n|\s{2})')
+        COUNT_RE = re.compile(
+            r'^(\d+)\s+YEAS?\s+(\d+)\s+NAYS?\s+(\d+)\s+PRESENT(?:\s+(\d+)\s+NOT\sVOTING)?\s*$'
+        )
         PASS_FAIL_WORDS = {
-            'PASSED': True,
-            'PREVAILED': True,
-            'ADOPTED': True,
-            'CONCURRED': True,
-            'FAILED': False,
-            'LOST': False,
+            'PASSED': 'pass',
+            'PREVAILED': 'fail',
+            'ADOPTED': 'pass',
+            'CONCURRED': 'pass',
+            'FAILED': 'fail',
+            'LOST': 'fail',
         }
 
         pdflines = self.fetch_pdf_lines(href)
@@ -326,11 +473,13 @@ class ILBillScraper(BillScraper, LXMLMixin):
         if not pdflines:
             return False
 
-        yes_count = no_count = present_count = other_count = 0
+        yes_count = no_count = present_count = 0
         yes_votes = []
         no_votes = []
         present_votes = []
-        other_vote_detail = defaultdict(list)
+        excused_votes = []
+        not_voting = []
+        absent_votes = []
         passed = None
         counts_found = False
         vote_lines = []
@@ -344,7 +493,8 @@ class ILBillScraper(BillScraper, LXMLMixin):
                     raise Exception("Duplicate pass/fail matches in [%s]" % href)
                 passed = PASS_FAIL_WORDS[line.strip()]
             elif COUNT_RE.match(line):
-                yes_count, no_count, present_count, not_voting_count = COUNT_RE.match(line).groups()
+                (yes_count, no_count, present_count,
+                 not_voting_count) = COUNT_RE.match(line).groups()
                 yes_count = int(yes_count)
                 no_count = int(no_count)
                 present_count = int(present_count)
@@ -358,55 +508,81 @@ class ILBillScraper(BillScraper, LXMLMixin):
         votes = find_columns_and_parse(vote_lines)
         for name, vcode in votes.items():
             if name == 'Mr. Speaker':
-                name = self.metadata['session_details'][session]['speaker']
+                name = session_details[session]['speaker']
             elif name == 'Mr. President':
-                name = self.metadata['session_details'][session]['president']
-            if vcode == 'Y':
+                name = session_details[session]['president']
+            else:
                 # Converts "Davis,William" to "Davis, William".
                 name = re.sub(r'\,([a-zA-Z])', r', \1', name)
+
+            if vcode == 'Y':
                 yes_votes.append(name)
             elif vcode == 'N':
-                name = re.sub(r'\,([a-zA-Z])', r', \1', name)
                 no_votes.append(name)
-            else:
-                other_vote_detail[vcode].append(name)
-                other_count += 1
-                if vcode == 'P':
-                    present_votes.append(name)
+            elif vcode == 'P':
+                present_votes.append(name)
+            elif vcode == 'E':
+                excused_votes.append(name)
+            elif vcode == 'NV':
+                not_voting.append(name)
+            elif vcode == 'A':
+                absent_votes.append(name)
+
         # fake the counts
         if yes_count == 0 and no_count == 0 and present_count == 0:
             yes_count = len(yes_votes)
             no_count = len(no_votes)
         else:  # audit
             if yes_count != len(yes_votes):
-                self.warning("Mismatched yes count [expect: %i] [have: %i]" % (yes_count, len(yes_votes)))
+                self.warning("Mismatched yes count [expect: %i] [have: %i]" %
+                             (yes_count, len(yes_votes)))
                 warned = True
             if no_count != len(no_votes):
-                self.warning("Mismatched no count [expect: %i] [have: %i]" % (no_count, len(no_votes)))
-                warned = True
-            if present_count != len(present_votes):
-                self.warning("Mismatched present count [expect: %i] [have: %i]" % (present_count, len(present_votes)))
+                self.warning("Mismatched no count [expect: %i] [have: %i]" %
+                             (no_count, len(no_votes)))
                 warned = True
 
         if passed is None:
-            if chamber == 'lower':  # senate doesn't have these lines
+            if actor['classification'] == 'lower':  # senate doesn't have these lines
                 self.warning("No pass/fail word found; fall back to comparing yes and no vote.")
                 warned = True
-            passed = yes_count > no_count
-        vote = Vote(chamber, date, motion, passed, yes_count, no_count,
-                    other_count, other_vote_detail=other_vote_detail)
+            passed = 'pass' if yes_count > no_count else 'fail'
+
+        classification, _ = _categorize_action(motion)
+        vote_event = VoteEvent(legislative_session=session,
+                               motion_text=motion,
+                               classification=classification,
+                               organization=actor,
+                               start_date=date,
+                               result=passed)
         for name in yes_votes:
-            vote.yes(name)
+            vote_event.yes(name)
         for name in no_votes:
-            vote.no(name)
-        for other_type, names in other_vote_detail.iteritems():
-            for name in names:
-                vote.other(name)
-        vote.add_source(href)
+            vote_event.no(name)
+        for name in present_votes:
+            vote_event.vote('other', name)
+        for name in excused_votes:
+            vote_event.vote('excused', name)
+        for name in not_voting:
+            vote_event.vote('not voting', name)
+        for name in absent_votes:
+            vote_event.vote('absent', name)
+
+        vote_event.set_count('yes', yes_count)
+        vote_event.set_count('no', no_count)
+        vote_event.set_count('other', present_count)
+        vote_event.set_count('excused', len(excused_votes))
+        vote_event.set_count('absent', len(absent_votes))
+        vote_event.set_count('not voting', len(not_voting))
+
+        vote_event.add_source(href)
+
+        # for distinguishing between votes with the same id and on same day
+        vote_event.pupa_id = href
 
         if warned:
             self.warning("Warnings were issued. Best to check %s" % href)
-        return vote
+        return vote_event
 
     def refine_sponsor_list(self, chamber, action, sponsor_list, bill_id):
         if action.lower().find('removed') != -1:
@@ -424,11 +600,17 @@ class ILBillScraper(BillScraper, LXMLMixin):
                 spontype, sponsor, this_chamber, otype = tup
                 if this_chamber == chamber and sponsor == match.groupdict()['name']:
                     try:
-                        sponsor_list[i] = (SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']], sponsor, this_chamber, match.groupdict()['spontype'].replace("as ",""))
+                        sponsor_list[i] = (
+                            SPONSOR_TYPE_REFINEMENTS[match.groupdict()['spontype']],
+                            sponsor,
+                            this_chamber, match.groupdict()['spontype'].replace("as ", "")
+                        )
                     except KeyError:
-                        self.warning('[%s] Unknown sponsor refinement type [%s]' % (bill_id, match.groupdict()['spontype']))
+                        self.warning('[%s] Unknown sponsor refinement type [%s]' %
+                                     (bill_id, match.groupdict()['spontype']))
                     return
-            self.warning("[%s] Couldn't find sponsor [%s,%s] to refine" % (bill_id, chamber, match.groupdict()['name']))
+            self.warning("[%s] Couldn't find sponsor [%s,%s] to refine" %
+                         (bill_id, chamber, match.groupdict()['name']))
         else:
             self.debug("[%s] Don't know how to refine [%s]" % (bill_id, action))
 
@@ -468,7 +650,8 @@ def find_columns(vote_lines):
         starter.intersection_update(pc)
     last_row_cols = potential_columns[-1]
     if not last_row_cols.issubset(starter):
-        raise Exception("Row's columns [%s] don't align with candidate final columns [%s]: %s" % (last_row_cols, starter, line))
+        raise Exception("Row's columns [%s] don't align with candidate final columns [%s]: %s" %
+                        (last_row_cols, starter, line))
     # we should now only have values that appeared in every line
     return sorted(starter)
 

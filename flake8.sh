@@ -16,6 +16,7 @@ python3 -m flake8 \
     openstates/hi \
     openstates/ia \
     openstates/id \
+    openstates/il \
     openstates/in \
     openstates/ks \
     openstates/ky \
@@ -31,6 +32,7 @@ python3 -m flake8 \
     openstates/nc \
     openstates/nd \
     openstates/ne \
+    openstates/nh \
     openstates/nj \
     openstates/nm \
     openstates/nv \
@@ -44,6 +46,7 @@ python3 -m flake8 \
     openstates/sc \
     openstates/sd \
     openstates/tn \
+    openstates/tx \
     openstates/ut \
     openstates/va \
     openstates/vt \

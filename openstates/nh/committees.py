@@ -1,13 +1,13 @@
 import re
 
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
 from openstates.nh import legacy_committees
 
 
-class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'nh'
+class NHCommitteeScraper(Scraper, LXMLMixin):
+
     committees_url = 'http://gencourt.state.nh.us/dynamicdatafiles/Committees.txt'
 
     _code_pattern = re.compile(r'[A-Z][0-9]{2}')
@@ -29,10 +29,16 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
     def _parse_committees_text(self, chamber):
         lines = self.get(self.committees_url).text.splitlines()
         rows = [line.split('|') for line in lines]
-        committees = [self._parse_row(row) for row in rows]
+        committees = {}
+        for row in rows:
+            try:
+                committee, com_chamber = self._parse_row(row)
+                committees[committee] = com_chamber
+            except TypeError:
+                self.warning("Skipping Bad Row")
         return [
-            committee for committee in committees
-            if committee and committee['chamber'] == chamber
+            committee for committee, com_chamber in committees.items()
+            if committee and com_chamber == chamber
         ]
 
     def _parse_row(self, row):
@@ -43,13 +49,14 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
         code = self._parse_code(code)
         url = self._parse_url(code)
         chamber = self._parse_chamber(code)
-        committee = Committee(chamber, name)
+        committee = Organization(chamber=chamber, name=name,
+                                 classification='committee')
         committee.add_source(url)
         if chamber == 'lower':
             self._parse_members_house(committee, url)
         else:
             self._parse_members_senate(committee, url)
-        return committee
+        return committee, chamber
 
     def _parse_code(self, code):
         return self._code_pattern.search(code).group()
@@ -98,13 +105,15 @@ class NHCommitteeScraper(CommitteeScraper, LXMLMixin):
         key = role.lower().replace('.', '')
         return self._role_map.get(key, 'member')
 
-    def scrape(self, chamber, term):
-        years = [int(year) for year in term.split('-')]
-        if years[0] < 2017:
-            return legacy_committees.NHCommitteeScraper(
-                self.metadata,
-                self.output_dir,
-                self.strict_validation,
-            ).scrape(chamber, term)
-        for committee in self._parse_committees_text(chamber):
-            self.save_committee(committee)
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        year = int(self.jurisdiction.legislative_sessions[-1]['identifier'])
+        for chamber in chambers:
+            if year < 2017:
+                yield from legacy_committees.NHCommitteeScraper(
+                    self.jurisdiction,
+                    self.datadir,
+                ).scrape(chamber, year)
+                return
+            for committee in self._parse_committees_text(chamber):
+                yield committee

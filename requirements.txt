@@ -9,9 +9,9 @@ pytz>=2010l
 feedparser>=4.1
 # California
 SQLAlchemy>=0.5.3
-MySQL-python
+#MySQL-python
 # GA
-suds
+#suds
 chardet
 
 # Massachussetts votes
@@ -26,6 +26,3 @@ pyopenssl
 #NH Database Connectivity
 #NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
 pymssql
-
-# Dev tools
-# ipdb   ## temporarily removed because of https://hub.docker.com/r/openstates/openstates/builds/bktcyjreg67jfcfvamd9o8x/
