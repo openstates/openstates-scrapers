@@ -154,7 +154,7 @@ class AZBillScraper(Scraper):
                         date=action_date,
                         classification=action_utils.action_map[action]['action'],
                     )
-                except ValueError:
+                except (ValueError, TypeError):
                     self.info("Invalid Action Time {} for {}".format(page[action], action))
 
         # Governor Signs and Vetos get different treatment
