@@ -40,6 +40,7 @@ python3 -m flake8 \
     openstates/sc \
     openstates/sd \
     openstates/tn \
+    openstates/tx \
     openstates/ut \
     openstates/va \
     openstates/vt \
