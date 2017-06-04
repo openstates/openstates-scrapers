@@ -38,7 +38,7 @@ git clone git@github.com:openstates/openstates.git
 # Our USB drives are 4 GB in capacity, so to fit the essentials,
 # the openstates/openstates.org image is excluded
 mkdir docker-images
-images="openstates/openstates-pupa openstates/openstates mongo"
+images="openstates/openstates mongo"
 for image in $images; do
 	docker pull "${image}"
 	# Need to strip the forward slash so they can act as filenames
