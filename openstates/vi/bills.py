@@ -193,10 +193,11 @@ class VIBillScraper(Scraper, LXMLMixin):
         bill_version = bill_page.xpath(
             '//span[@id="ctl00_ContentPlaceHolder_BillNumberLabel"]/a/@href')
         if bill_version:
-            bill.add_version_link(note=bill_no,
-                                  url='http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
-                                  media_type='application/pdf'
-                                  )
+            bill.add_version_link(
+                note=bill_no,
+                url='http://www.legvi.org/vilegsearch/{}'.format(bill_version[0]),
+                media_type='application/pdf'
+            )
 
     def parse_acts(self, bill, bill_page):
         bill_act = bill_page.xpath('//span[@id="ctl00_ContentPlaceHolder_ActNumberLabel"]/a')

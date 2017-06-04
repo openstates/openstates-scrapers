@@ -100,11 +100,10 @@ class Hawaii(Jurisdiction):
         yield upper
         yield lower
 
-
     def get_session_list(self):
         # doesn't include current session, we need to change it
         sessions = url_xpath('http://www.capitol.hawaii.gov/archives/main.aspx',
-                "//div[@class='roundedrect gradientgray shadow']/a/text()"
-            )
+                             "//div[@class='roundedrect gradientgray shadow']/a/text()"
+                             )
         sessions.remove("Archives Main")
         return sessions
