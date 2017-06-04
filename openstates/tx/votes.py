@@ -303,8 +303,6 @@ def viva_voce_votes(root, session, chamber):
 
 
 class TXVoteScraper(Scraper):
-    _ftp_root = 'ftp://ftp.legis.state.tx.us/'
-
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
