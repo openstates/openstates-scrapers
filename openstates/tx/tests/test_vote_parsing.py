@@ -7,10 +7,12 @@ from openstates.tx import votes
 
 here = os.path.dirname(__file__)
 
+
 def load_fixture(path):
     return lxml.html.fromstring(
         open(os.path.join(here, 'fixtures', path)).read()
     )
+
 
 class TestVoteParsing(object):
     def test_roll_call(self):
@@ -20,8 +22,10 @@ class TestVoteParsing(object):
         assert_equal(mv.chamber, 'upper')
         assert_equal(mv.yeas, 29)
         assert_equal(mv.nays, 2)
+        assert_equal(mv.present, 1)
         assert_true(mv.is_valid)
         assert_false(mv.is_amendment)
+
 
 if __name__ == '__main__':
     unittest.main()
