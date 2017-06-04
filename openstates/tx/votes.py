@@ -86,10 +86,10 @@ def clean_name(name):
     return re.split(r'[\u2014:]', name)[-1]
 
 
-def votes(root, session):
-    for vote in record_votes(root, session):
+def votes(root, session, chamber):
+    for vote in record_votes(root, session, chamber):
         yield vote
-    for vote in viva_voce_votes(root, session):
+    for vote in viva_voce_votes(root, session, chamber):
         yield vote
 
 
@@ -244,14 +244,14 @@ vote_selectors = [
 ]
 
 
-def record_votes(root, session):
+def record_votes(root, session, chamber):
     for el in root.xpath('//div{}'.format(''.join(vote_selectors))):
         mv = MaybeVote(el)
         if not mv.is_valid:
             continue
 
         v = VoteEvent(
-            chamber=None,
+            chamber=chamber,
             start_date=None,
             motion_text='passage' if mv.passed else 'other',
             result='pass' if mv.passed else 'fail',
@@ -277,14 +277,14 @@ def record_votes(root, session):
         yield v
 
 
-def viva_voce_votes(root, session):
+def viva_voce_votes(root, session, chamber):
     for el in root.xpath(u'//div[starts-with(., "All Members are deemed")]'):
         mv = MaybeViva(el)
         if not mv.is_valid:
             continue
 
         v = VoteEvent(
-            chamber=None,
+            chamber=chamber,
             start_date=None,
             motion_text='passage' if mv.passed else 'other',
             result='pass' if mv.passed else 'fail',
@@ -332,9 +332,9 @@ class TXVoteScraper(Scraper):
                 try:
                     self.get(journal_url)
                 except scrapelib.HTTPError:
-                    continue
+                    pass
                 else:
-                    yield from self.scrape_journal(journal_url, chamber, session)
+                    yield from self.scrape_journal(journal_url, 'lower', session)
 
             if 'upper' in chambers:
                 journal_root = "http://www.journals.senate.state.tx.us/SJRNL/%s/HTML/" % session
@@ -343,9 +343,9 @@ class TXVoteScraper(Scraper):
                 try:
                     self.get(journal_url)
                 except scrapelib.HTTPError:
-                    continue
+                    pass
                 else:
-                    yield from self.scrape_journal(journal_url, chamber, session)
+                    yield from self.scrape_journal(journal_url, 'upper', session)
 
             journal_day += datetime.timedelta(days=1)
             day_num += 1
@@ -371,9 +371,8 @@ class TXVoteScraper(Scraper):
             date = datetime.datetime.strptime(date_str,
                                               "%m-%d %Y").date()
 
-        for vote in votes(root, session):
-            vote['date'] = date
-            vote['chamber'] = chamber
+        for vote in votes(root, session, chamber):
+            vote.start_date = date
             vote.add_source(url)
             yield vote
 
