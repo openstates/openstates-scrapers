@@ -3,6 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import TXBillScraper
 from .committees import TXCommitteeScraper
+from .events import TXEventScraper
 from .people import TXPersonScraper
 from .votes import TXVoteScraper
 
@@ -16,7 +17,8 @@ class Texas(Jurisdiction):
         'people': TXPersonScraper,
         'committees': TXCommitteeScraper,
         'bills': TXBillScraper,
-        'votes': TXVoteScraper
+        'votes': TXVoteScraper,
+        'events': TXEventScraper
     }
     parties = [
         {'name': 'Republican'},

@@ -1,70 +1,73 @@
 from openstates.utils import LXMLMixin
 import re
 import datetime as dt
-from collections import OrderedDict
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 
 import pytz
 
 
-class TXEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'tx'
+class TXEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Central')
 
-    def scrape(self, chamber, session):
-        if not session.startswith(session):  # XXX: Fixme
-            raise NoDataForPeriod(session)
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('No session specified; using %s', session)
 
-        self.scrape_committee_upcoming(session, chamber)
+        if chamber:
+            yield from self.scrape_committee_upcoming(session, chamber)
+        else:
+            yield from self.scrape_committee_upcoming(session, 'upper')
+            yield from self.scrape_committee_upcoming(session, 'lower')
 
     def scrape_event_page(self, session, chamber, url, datetime):
         page = self.lxmlize(url)
         info = page.xpath("//p")
-        metainf = {}
+        metainfo = {}
         plaintext = ""
         for p in info:
             content = re.sub("\s+", " ", p.text_content())
             plaintext += content + "\n"
             if ":" in content:
                 key, val = content.split(":", 1)
-                metainf[key.strip()] = val.strip()
-        ctty = metainf['COMMITTEE']
-        where = metainf['PLACE']
+                metainfo[key.strip()] = val.strip()
+        committee = metainfo['COMMITTEE']
+        where = metainfo['PLACE']
         if "CHAIR" in where:
             where, chair = where.split("CHAIR:")
-            metainf['PLACE'] = where.strip()
-            metainf['CHAIR'] = chair.strip()
+            metainfo['PLACE'] = where.strip()
+            metainfo['CHAIR'] = chair.strip()
 
         chair = None
-        if "CHAIR" in metainf:
-            chair = metainf['CHAIR']
+        if "CHAIR" in metainfo:
+            chair = metainfo['CHAIR']
 
         plaintext = re.sub("\s+", " ", plaintext).strip()
         regexp = r"(S|J|H)(B|M|R) (\d+)"
         bills = re.findall(regexp, plaintext)
 
-        event = Event(session,
-                      datetime,
-                      'committee:meeting',
-                      ctty,
-                      chamber=chamber,
-                      location=where,
-                      agenda=plaintext)
+        event = Event(
+            name=committee,
+            start_time=self._tz.localize(datetime),
+            timezone=self._tz.zone,
+            location_name=where
+        )
+
         event.add_source(url)
-        event.add_participant('host', ctty, 'committee', chamber=chamber)
+        event.add_participant(committee, type='committee', note='host')
         if chair is not None:
-            event.add_participant('chair', chair, 'legislator', chamber=chamber)
+            event.add_participant(chair, type='legislator', note='chair')
 
         for bill in bills:
             chamber, type, number = bill
-            bill_id = "%s%s %s" % ( chamber, type, number )
-            event.add_related_bill(bill_id,
-                                   type='consideration',
-                                   description='Bill up for discussion')
+            bill_id = "%s%s %s" % (chamber, type, number)
+            item = event.add_agenda_item('Bill up for discussion')
+            item.add_bill(bill_id)
 
-        self.save_event(event)
+        event.add_agenda_item(plaintext)
+
+        yield event
 
     def scrape_page(self, session, chamber, url):
         page = self.lxmlize(url)
@@ -73,7 +76,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
             peers = event.getparent().getparent().xpath("./*")
             date = peers[0].text_content()
             time = peers[1].text_content()
-            tad = "%s %s" % ( date, time )
+            tad = "%s %s" % (date, time)
             tad = re.sub(r"(PM|AM).*", r"\1", tad)
             tad_fmt = "%m/%d/%Y %I:%M %p"
             if "AM" not in tad and "PM" not in tad:
@@ -82,7 +85,7 @@ class TXEventScraper(EventScraper, LXMLMixin):
 
             # Time expressed as 9:00 AM, Thursday, May 17, 2012
             datetime = dt.datetime.strptime(tad, tad_fmt)
-            self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
+            yield from self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
 
     def scrape_upcoming_page(self, session, chamber, url):
         page = self.lxmlize(url)
@@ -109,22 +112,22 @@ class TXEventScraper(EventScraper, LXMLMixin):
                 datetime = datetime.group(1)
                 datetime = dt.datetime.strptime(datetime, "%A, %B %d, %Y %I:%M %p")
 
-                self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
+                yield from self.scrape_event_page(session, chamber, event.attrib['href'], datetime)
 
     def scrape_committee_upcoming(self, session, chamber):
         chid = {'upper': 'S',
-                        'lower': 'H',
-                        'other': 'J'}[chamber]
+                'lower': 'H',
+                'other': 'J'}[chamber]
 
         url = "http://www.capitol.state.tx.us/Committees/Committees.aspx" + \
-                "?Chamber=" + chid
+              "?Chamber=" + chid
 
         page = self.lxmlize(url)
         refs = page.xpath("//div[@id='content']//a")
         for ref in refs:
-            self.scrape_page(session, chamber, ref.attrib['href'])
-
+            yield from self.scrape_page(session, chamber, ref.attrib['href'])
 
         url = "http://www.capitol.state.tx.us/Committees/MeetingsUpcoming.aspx" + \
-                "?Chamber=" + chid
-        self.scrape_upcoming_page(session, chamber, url)
+              "?Chamber=" + chid
+
+        yield from self.scrape_upcoming_page(session, chamber, url)
