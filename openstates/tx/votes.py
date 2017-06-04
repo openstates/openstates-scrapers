@@ -361,7 +361,7 @@ class TXVoteScraper(Scraper):
         if session_instance is None:
             self.warning('Session metadata could not be found for %s', session)
             return
-        year = session_instance['start_date'].year
+        year = datetime.datetime.strptime(session_instance['start_date'], '%Y-%m-%d').year
 
         page = self.get(url).text
 
