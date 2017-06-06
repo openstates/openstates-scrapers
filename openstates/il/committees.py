@@ -72,7 +72,7 @@ class IlCommitteeScraper(Scraper):
                         committees[o_id]['parent'] = top_level_com
                     else:
                         committees[o_id]['chamber'] = chamber
-                        top_level = o_id
+                        top_level_com = o_id
 
         top_level = {o_id: committee for o_id, committee in
                      committees.items() if 'chamber' in committee}
