@@ -36,6 +36,7 @@ class Florida(Jurisdiction):
         {'name': '2015 Special Session C', 'identifier': '2015C', 'classification': 'special'},
         {'name': '2016 Regular Session', 'identifier': '2016', 'classification': 'primary'},
         {'name': '2017 Regular Session', 'identifier': '2017', 'classification': 'primary'},
+        {'name': '2017 Special Session A', 'identifier': '2017A', 'classification': 'special'},
     ]
     ignored_scraped_sessions = ['2010', '2010A', '2010O', '2012O', '2016O', '2014O']
 
