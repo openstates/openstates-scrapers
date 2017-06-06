@@ -47,8 +47,7 @@ class IlEventScraper(Scraper):
         datetime = self.localize(dt.datetime.strptime(datetime, "%b %d, %Y %I:%M %p"))
 
         event = Event(description,
-                      start_time=datetime,
-                      timezone='America/Chicago',
+                      start_date=datetime,
                       location_name=where)
         event.add_source(url)
 

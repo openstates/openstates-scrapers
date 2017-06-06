@@ -399,14 +399,17 @@ class IlBillScraper(Scraper):
             vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
             if vote_type == 'Committee Hearing Votes':
                 name = re.sub(' *Committee *$', '', pieces[1])
-                if name.startswith('Executive'):
+                if name.startswith(('Executive',
+                                    'Human Services',
+                                    'State Government')):
                     chamber = link.xpath('../following-sibling::td/text()')[0].lower()
+                    first_word = name.split()[0]
                     try:
                         source, = [url for url, committee
                                    in committee_actors.items()
-                                   if committee.startswith('Executive') and
+                                   if committee.startswith(first_word) and
                                    chamber in url]
-                        actor = {'source__url': source,
+                        actor = {'sources__url': source,
                                  'classification': 'committee'}
                     except ValueError:
                         self.warning("Can't resolve voting body for %s" %
