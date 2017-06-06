@@ -50,6 +50,8 @@ class IlCommitteeScraper(Scraper):
                     name = a.text.strip()
                     code = a.getparent().getnext()
                     com_url = canonicalize_url(a.get('href'))
+                    if '&GA=' not in com_url:
+                        com_url += ('&GA=' + str(session))
                     if 'TaskForce' in com_url:
                         code = None
                         o_id = (name, code)
