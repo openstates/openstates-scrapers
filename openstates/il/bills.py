@@ -307,6 +307,8 @@ class IlBillScraper(Scraper):
         sponsor_list = build_sponsor_list(doc.xpath('//a[@class="content"]'))
         # don't add just yet; we can make them better using action data
 
+        committee_actors = {}
+        
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
         for date, actor, action_elem in group(action_tds, 3):
@@ -323,11 +325,13 @@ class IlBillScraper(Scraper):
             classification, related_orgs = _categorize_action(action)
 
             if (related_orgs and any(c.startswith('committee') for c in classification)):
-                source, = [a.get('href') for a in
-                           action_elem.xpath('a')
-                           if 'committee' in a.get('href')]
-                actor_id = {'sources__url': canonicalize_url(source),
+                (name, source), = [(a.text, a.get('href')) for a in
+                                   action_elem.xpath('a')
+                                   if 'committee' in a.get('href')]
+                source = canonicalize_url(source)
+                actor_id = {'sources__url': source,
                             'classification': 'committee'}
+                committee_actors[source] = name
 
             bill.add_action(action, date,
                             organization=actor_id,
@@ -356,7 +360,7 @@ class IlBillScraper(Scraper):
         self.scrape_documents(bill, version_url)
 
         votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        votes = self.scrape_votes(session, bill, votes_url)
+        votes = self.scrape_votes(session, bill, votes_url, committee_actors)
 
         return bill, votes
 
@@ -379,7 +383,7 @@ class IlBillScraper(Scraper):
                 self.warning('unknown document type %s - adding as document' % name)
                 bill.add_document_link(name, url)
 
-    def scrape_votes(self, session, bill, votes_url):
+    def scrape_votes(self, session, bill, votes_url, committee_actors):
         html = self.get(votes_url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(votes_url)
@@ -394,8 +398,26 @@ class IlBillScraper(Scraper):
 
             vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
             if vote_type == 'Committee Hearing Votes':
-                actor = {'name': re.sub(' *Committee *$', '', pieces[1]),
-                         'classification': 'committee'}
+                name = re.sub(' *Committee *$', '', pieces[1])
+                if name.startswith('Executive'):
+                    chamber = link.xpath('../following-sibling::td/text()')[0].lower()
+                    try:
+                        source, = [url for url, committee
+                                   in committee_actors.items()
+                                   if committee.startswith('Executive') and
+                                   chamber in url]
+                        actor = {'source__url': source,
+                                 'classification': 'committee'}
+                    except ValueError:
+                        self.warning("Can't resolve voting body for %s" %
+                                     link.get('href'))
+                        continue
+                        
+                else:
+                    actor = {'name': name,
+                             'classification': 'committee'}
+
+                
                 # depends on bill type
                 motion = 'Do Pass'
                 if pieces[0].startswith(('SCA', 'HCA')):
