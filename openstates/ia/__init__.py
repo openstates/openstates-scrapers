@@ -1,3 +1,6 @@
+import re
+import lxml.html
+import requests
 from pupa.scrape import Jurisdiction, Organization
 from .people import IAPersonScraper
 from .bills import IABillScraper
@@ -91,3 +94,20 @@ class Iowa(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        def url_xpath(url, path):
+            doc = lxml.html.fromstring(requests.get(url, verify=False).text)
+            return doc.xpath(path)
+
+        sessions = url_xpath(
+            'https://www.legis.iowa.gov/legislation/findLegislation',
+            "//section[@class='grid_6']//li/a/text()[normalize-space()]"
+        )
+
+        sessions = [x[0] for x in filter(lambda x: x != [], [
+            re.findall(r'^.*Assembly: [0-9]+', session)
+            for session in sessions
+        ])]
+
+        return sessions

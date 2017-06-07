@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import url_xpath
 from .bills import MIBillScraper
 from .events import MIEventScraper
 from .people import MIPersonScraper
@@ -86,3 +86,7 @@ class Michigan(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def session_list(self):
+        return url_xpath('http://www.legislature.mi.gov/mileg.aspx?'
+                         'page=LegBasicSearch', '//option/text()')

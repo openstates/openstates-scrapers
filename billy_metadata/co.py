@@ -6,7 +6,7 @@ metadata = dict(
     legislature_name='Colorado General Assembly',
     legislature_url='http://leg.colorado.gov/',
     capitol_timezone='America/Denver',
-    chambers = {
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
@@ -26,53 +26,53 @@ metadata = dict(
         ],
     session_details={
         '2011A': {
-            'start_date'   : datetime.date(2011,1,26),
-            'type'         : 'primary',
-             'display_name': '2011 Regular Session',
-             '_scraped_name' : "2011 Regular Session"
+            'start_date': datetime.date(2011, 1, 26),
+            'type': 'primary',
+            'display_name': '2011 Regular Session',
+            '_scraped_name': "2011 Regular Session"
          },
         '2012A': {
-            'start_date'   : datetime.date(2012,1,11),
-            'type'         : 'primary',
+            'start_date': datetime.date(2012, 1, 11),
+            'type': 'primary',
             'display_name': '2012 Regular Session',
             '_scraped_name': '2012 Regular Session',
          },
         '2012B': {
-            'start_date'   : datetime.date(2012,5,14),
-            'type'         : 'special',
+            'start_date': datetime.date(2012, 5, 14),
+            'type': 'special',
             'display_name': '2012 First Extraordinary Session',
             '_scraped_name': '2012 First Extraordinary Session',
          },
         '2013A': {
-            'type'         : 'primary',
-             'display_name': '2013 Regular Session',
-             '_scraped_name': '2013 Regular/Special Session',
+            'type': 'primary',
+            'display_name': '2013 Regular Session',
+            '_scraped_name': '2013 Regular/Special Session',
          },
         '2014A': {
-            'type'         : 'primary',
-             'display_name': '2014 Regular Session',
-             '_scraped_name': '2014 Regular/Special Session',
+            'type': 'primary',
+            'display_name': '2014 Regular Session',
+            '_scraped_name': '2014 Regular/Special Session',
          },
         '2015A': {
-            'type'         : 'primary',
-             'display_name': '2015 Regular Session',
+            'type': 'primary',
+            'display_name': '2015 Regular Session',
             '_scraped_name': "2015 Regular Session",
          },
         '2016A': {
-            'type'         : 'primary',
-             'display_name': '2016 Regular Session',
+            'type': 'primary',
+            'display_name': '2016 Regular Session',
             '_scraped_name': "2016 Regular Session",
-            '_data_id':'30'
+            '_data_id': '30'
          },
         '2017A': {
-            'type'         : 'primary',
-             'display_name': '2017 Regular Session',
+            'type': 'primary',
+            'display_name': '2017 Regular Session',
             '_scraped_name': "2017 Regular Session",
-            '_data_id':'10171'
+            '_data_id': '10171'
          },
     },
     feature_flags=['influenceexplorer'],
-    _ignored_scraped_sessions = [
+    _ignored_scraped_sessions=[
         '2013 Legislative Session',
         '2012 First Special Session',
         '2012 Legislative Session',
@@ -95,4 +95,3 @@ metadata = dict(
         '2010 Regular/Special Session'
     ]
 )
-

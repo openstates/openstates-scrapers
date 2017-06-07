@@ -1,5 +1,7 @@
-from pupa.scrape import Jurisdiction, Organization
+import re
+from openstates.utils import url_xpath
 
+from pupa.scrape import Jurisdiction, Organization
 from .people import COLegislatorScraper
 from .committees import COCommitteeScraper
 from .bills import COBillScraper
@@ -125,3 +127,23 @@ class Colorado(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        tags = url_xpath('http://www.leg.state.co.us/clics/clics2014a/cslFrontPages.nsf/'
+                         'PrevSessionInfo?OpenForm', "//font/text()")
+        sessions = []
+        regex = "2[0-9][0-9][0-9]\ .*\ Session"
+
+        for tag in tags:
+            sess = re.findall(regex, tag)
+            for session in sess:
+                sessions.append(session)
+
+        tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2016A/csl.nsf/Home?OpenForm'
+                         '&amp;BaseTarget=Bottom', "//font/text()")
+        for tag in tags:
+            sess = re.findall(regex, tag)
+            for session in sess:
+                sessions.append(session)
+
+        return sessions

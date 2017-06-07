@@ -1,4 +1,5 @@
 # encoding=utf-8
+from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .bills import IlBillScraper
 from .people import IlPersonScraper
@@ -55,3 +56,7 @@ class Illinois(Jurisdiction):
         yield legis
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath('http://ilga.gov/PreviousGA.asp',
+                         '//option/text()')
