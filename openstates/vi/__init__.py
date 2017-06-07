@@ -1,13 +1,15 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
+# from .bills import VIBillScraper
 
 
 class USVirginIslands(Jurisdiction):
     division_id = "ocd-division/country:us/state:vi"
     classification = "government"
     name = "US Virgin Islands"
-    url = "TODO"
+    url = "http://www.legvi.org"
     scrapers = {
+        # 'bills': VIBillScraper,
     }
     parties = [
         {'name': 'Republican'},
@@ -64,7 +66,7 @@ class USVirginIslands(Jurisdiction):
         yield legislature
         yield upper
 
-    def session_list(self):
+    def get_session_list(self):
         return url_xpath(
                 'http://www.legvi.org/vilegsearch/',
                 '//select[@name="ctl00$ContentPlaceHolder$leginum"]/option/text()')

@@ -1,16 +1,16 @@
 import datetime
 
 metadata = dict(
-    name = 'Iowa',
-    abbreviation = 'ia',
-    capitol_timezone = 'America/Chicago',
-    legislature_name = 'Iowa General Assembly',
-    legislature_url = 'https://www.legis.iowa.gov/',
-    chambers = {
+    name='Iowa',
+    abbreviation='ia',
+    capitol_timezone='America/Chicago',
+    legislature_name='Iowa General Assembly',
+    legislature_url='https://www.legis.iowa.gov/',
+    chambers={
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},
     },
-    terms = [
+    terms=[
         {
             'name': '2011-2012',
             'start_year': 2011,
@@ -36,7 +36,7 @@ metadata = dict(
             'sessions': ['2017-2018'],
         },
     ],
-    session_details = {
+    session_details={
         '2011-2012': {
             'display_name': '2011-2012 Regular Session',
             '_scraped_name': 'General Assembly: 84',
@@ -60,8 +60,8 @@ metadata = dict(
             'number': '87',
         },
     },
-    feature_flags = ['events', 'influenceexplorer'],
-    _ignored_scraped_sessions = [
+    feature_flags=['events', 'influenceexplorer'],
+    _ignored_scraped_sessions=[
         'Legislative Assembly: 86',
         'General Assembly: 83',
         'General Assembly: 82',
@@ -76,4 +76,3 @@ metadata = dict(
         'General Assembly: 76',
     ]
 )
-
