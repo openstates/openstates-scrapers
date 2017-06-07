@@ -23,7 +23,8 @@ class Alaska(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Independent'},
     ]
     legislative_sessions = [
         {
@@ -77,10 +78,10 @@ class Alaska(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats + 1):
+        for letter in 'ABCDEFGHIJKLMNOPQRST':
             upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
+                label=letter, role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, letter.lower()))
         for n in range(1, lower_seats + 1):
             lower.add_post(
                 label=str(n), role=lower_title,
