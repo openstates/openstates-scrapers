@@ -55,8 +55,8 @@ class HIEventScraper(Scraper, LXMLMixin):
             notice_name = notice.text
             when = dt.datetime.strptime(when, "%m/%d/%Y %I:%M %p")
             when = pytz.utc.localize(when)
-            event = Event(name=descr, start_time=when, classification='committee-meeting',
-                          description=descr, location_name=where, timezone=tz.zone)
+            event = Event(name=descr, start_date=when, classification='committee-meeting',
+                          description=descr, location_name=where)
 
             if "/" in committee:
                 committees = committee.split("/")

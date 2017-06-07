@@ -118,8 +118,7 @@ class TNEventScraper(Scraper, LXMLMixin):
 
                 event = Event(
                     name=description,
-                    start_time=when,
-                    timezone=when.tzname(),
+                    start_date=when,
                     location_name=location,
                     description=description,
                 )

@@ -152,8 +152,7 @@ class SCEventScraper(Scraper):
                 #     meeting_type = 'other:meeting'
 
                 event = Event(name=description,  # Event Name
-                              start_time=date_time,  # When the event will take place
-                              timezone=self._tz.zone,  # the local timezone for the event
+                              start_date=date_time,  # When the event will take place
                               location_name=location)  # Where the event will be
 
                 event.add_source(events_url)

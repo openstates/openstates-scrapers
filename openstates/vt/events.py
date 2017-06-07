@@ -37,8 +37,7 @@ class VTEventScraper(Scraper):
                 all_day = False
 
             event = Event(
-                start_time=self.TIMEZONE.localize(start_time),
-                timezone='America/New_York',
+                start_date=self.TIMEZONE.localize(start_time),
                 all_day=all_day,
                 name="Meeting of the {}".format(info['LongName']),
                 description="committee meeting",
