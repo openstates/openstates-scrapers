@@ -24,7 +24,7 @@ TIMEZONE = pytz.timezone('America/Chicago')
 
 
 class MOBillScraper(Scraper, LXMLMixin):
-    _senate_base_url = 'http://www.house.mo.gov'
+    _house_base_url = 'http://www.house.mo.gov'
     # List of URLS that aren't working when we try to visit them (but
     # probably should work):
     _bad_urls = []
@@ -99,11 +99,15 @@ class MOBillScraper(Scraper, LXMLMixin):
         self._scrape_senate_subjects(session)
         self._scrape_house_subjects(session)
 
+    def session_type(self, session):
+        # R or S1
+        return 'R' if len(session) == 4 else session[4:]
+
     def _scrape_senate_subjects(self, session):
         self.info('Collecting subject tags from upper house.')
 
         subject_list_url = 'http://www.senate.mo.gov/{}info/BTS_Web/'\
-            'Keywords.aspx?SessionType=R'.format(session[2:4])
+            'Keywords.aspx?SessionType=%s'.format(session[2:4], self.session_type(session))
         subject_page = self.lxmlize(subject_list_url)
 
         # Create a list of all possible bill subjects.
@@ -325,15 +329,15 @@ class MOBillScraper(Scraper, LXMLMixin):
         # find the first center tag, take the text after
         # 'House of Representatives' and before 'Bills' as
         # the session name
-        header_tag = bill_list_page.xpath(
-            '//*[@id="ContentPlaceHolder1_lblAssemblyInfo"]'
-        )[0].text_content()
-        if header_tag.find('1st Extraordinary Session') != -1:
-            session = year + ' 1st Extraordinary Session'
-        elif header_tag.find('2nd Extraordinary Session') != -1:
-            session = year + ' 2nd Extraordinary Session'
-        else:
-            session = year
+        # header_tag = bill_list_page.xpath(
+        #     '//*[@id="ContentPlaceHolder1_lblAssemblyInfo"]'
+        # )[0].text_content()
+        # if header_tag.find('1st Extraordinary Session') != -1:
+        #     session = year + ' 1st Extraordinary Session'
+        # elif header_tag.find('2nd Extraordinary Session') != -1:
+        #     session = year + ' 2nd Extraordinary Session'
+        # else:
+        session = year
 
         bills = bill_list_page.xpath('//table[@id="billAssignGroup"]/tr')
 
@@ -351,7 +355,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         # using the print page makes the page simpler, and also *drastically* smaller
         # (8k rather than 100k)
         url = re.sub("billsummary", "billsummaryprn", url)
-        url = '%s/%s' % (self._senate_base_url, url)
+        url = '%s/%s' % (self._house_base_url, url)
 
         # the URL is an iframed version now, so swap in for the actual bill page
 
@@ -451,7 +455,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         self._parse_cosponsors_from_bill(bill, sponsors_url)
 
         # actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
-        # actions_link = '%s/%s' % (self._senate_base_url,actions_link_tag.attrib['href'])
+        # actions_link = '%s/%s' % (self._house_base_url,actions_link_tag.attrib['href'])
         # actions_link = re.sub("content", "print", actions_link)
 
         actions_link, = bill_page.xpath(
@@ -463,7 +467,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         for doc_tag in reversed(doc_tags):
             doc = clean_text(doc_tag.text_content())
             text_url = '%s%s' % (
-                self._senate_base_url,
+                self._house_base_url,
                 doc_tag[0].attrib['href']
             )
             bill.add_document_link(doc, text_url, media_type='text/html')
@@ -553,14 +557,14 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         yield bill
 
-    def _scrape_upper_chamber(self, year):
+    def _scrape_upper_chamber(self, session):
         self.info('Scraping bills from upper chamber.')
 
-        year2 = "%02d" % (int(year) % 100)
+        year2 = "%02d" % (int(session[:4]) % 100)
 
         # Save the root URL, since we'll use it later.
         bill_root = 'http://www.senate.mo.gov/{}info/BTS_Web/'.format(year2)
-        index_url = bill_root + 'BillList.aspx?SessionType=R'
+        index_url = bill_root + 'BillList.aspx?SessionType=' + self.session_type(session)
 
         index_page = self.get(index_url).text
         index_page = lxml.html.fromstring(index_page)
@@ -576,14 +580,21 @@ class MOBillScraper(Scraper, LXMLMixin):
             if re.search(r'dgBillList.*hlBillNum', bill_table.attrib['id']):
                 yield from self._parse_senate_billpage(
                     bill_root + bill_table.attrib.get('href'),
-                    year,
+                    session,
                 )
 
-    def _scrape_lower_chamber(self, year):
+    def _scrape_lower_chamber(self, session):
         self.info('Scraping bills from lower chamber.')
 
-        bill_page_url = '{}/BillList.aspx?year={}'.format(
-            self._senate_base_url, year)
+        if 'S' in session:
+            year = session[:4]
+            code = session[4:]
+        else:
+            year = session
+            code = 'R'
+
+        bill_page_url = '{}/BillList.aspx?year={}&code={}'.format(
+            self._house_base_url, year, code)
         yield from self._parse_house_billpage(bill_page_url, year)
 
     def scrape(self, chamber=None, session=None):
