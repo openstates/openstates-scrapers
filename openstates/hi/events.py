@@ -35,7 +35,6 @@ class HIEventScraper(Scraper, LXMLMixin):
         return ret
 
     def scrape(self):
-        tz = pytz.timezone("US/Eastern")
         get_short_codes(self)
         page = self.lxmlize(URL)
         table = page.xpath(
