@@ -17,7 +17,7 @@ chamber_urls = {
 chambers = {
     "Senate": "upper",
     "House": "lower",
-    "Joint": "joint"
+    "Joint": "legislature"
 }
 
 
@@ -35,9 +35,8 @@ class DEEventScraper(Scraper, LXMLMixin):
         location_name = str(item['AddressAliasNickname'])
         # description is provided because of WARNING
         # billy: Value u'' for field '<obj>.description' cannot be blank'
-        event = Event(timezone=self._tz.zone,
-                      location_name=location_name,
-                      start_time=self._tz.localize(start_time),
+        event = Event(location_name=location_name,
+                      start_date=self._tz.localize(start_time),
                       name=event_name,
                       description='Committee Meeting Status: {}'
                       .format(item['CommitteeMeetingStatusName'])
