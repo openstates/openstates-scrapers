@@ -68,7 +68,6 @@ class Alaska(Jurisdiction):
         lower_seats = 40
         lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 0
         upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,

@@ -14,7 +14,8 @@ class ARLegislatorScraper(Scraper):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
         url = ('http://www.arkleg.state.ar.us/assembly/%s/%s/Pages/'
-               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (session[:4], session)
+               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (session[:4],
+                                                                                 session)
         page = self.get(url).text
         root = lxml.html.fromstring(page)
 
