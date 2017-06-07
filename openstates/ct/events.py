@@ -41,8 +41,7 @@ class CTEventScraper(Scraper):
             # end = datetime.datetime.strptime(info['end'], DATETIME_FORMAT)
             where = "{0} {1}".format(info['building'].strip(), info['location'].strip())
             # end_time=self._tz.localize(end),
-            event = Event(start_time=self._tz.localize(when),
-                          timezone=self._tz.zone,
+            event = Event(start_date=self._tz.localize(when),
                           location_name=where,
                           name=info['title'],
                           description=info['title'],)
