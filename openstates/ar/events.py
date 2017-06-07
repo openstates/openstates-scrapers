@@ -74,10 +74,9 @@ class AREventScraper(Scraper):
                 description = "%s MEETING" % comm
                 event = Event(
                         name=description,
-                        start_time=when,
+                        start_date=when,
                         location_name=location,
                         description=description,
-                        timezone=self._tz.zone
                 )
                 event.add_source(url)
 
