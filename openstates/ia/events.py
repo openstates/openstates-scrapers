@@ -84,8 +84,7 @@ class IAEventScraper(Scraper):
             event = Event(
                     name=desc,
                     description=desc,
-                    start_time=self._tz.localize(when),
-                    timezone=self._tz.zone,
+                    start_date=self._tz.localize(when),
                     location_name=location)
 
             event.add_source(url)

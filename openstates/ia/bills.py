@@ -19,7 +19,7 @@ class IABillScraper(Scraper):
         if self._subjects:
             return
 
-        session_id = self.get_session_id()
+        session_id = self.get_session_id(session)
         url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
                'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
         doc = lxml.html.fromstring(self.get(url).text)
@@ -44,10 +44,11 @@ class IABillScraper(Scraper):
                 self._subjects[bill_id.replace(' ', '')].append(subject)
 
     def scrape(self, session=None, chamber=None):
-        self._build_subject_map(session)
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+
+        self._build_subject_map(session)
 
         chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
@@ -59,7 +60,7 @@ class IABillScraper(Scraper):
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
-        session_id = self.get_session_id()
+        session_id = self.get_session_id(session)
         url = (base_url % (session_id, bill_offset))
         page = lxml.html.fromstring(self.get(url).text)
 
@@ -231,7 +232,7 @@ class IABillScraper(Scraper):
             elif 'H.J.' in action or 'HCS' in action:
                 actor = 'lower'
             else:
-                actor = "other"
+                actor = "legislature"
 
             action = re.sub(r'(H|S)\.J\.\s+\d+\.$', '', action).strip()
 
@@ -294,8 +295,8 @@ class IABillScraper(Scraper):
 
         yield bill
 
-    def get_session_id(self):
-        return [x for x in
-                self.jurisdiction.legislative_sessions
-                if x['identifier'] ==
-                self.latest_session()][0]['number']
+    def get_session_id(self, session):
+        return {"2011-2012": "84",
+                "2013-2014": "85",
+                "2015-2016": "86",
+                "2017-2018": "87"}[session]

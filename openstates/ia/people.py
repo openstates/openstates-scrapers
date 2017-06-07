@@ -37,6 +37,8 @@ class IAPersonScraper(Scraper):
 
         if party == 'Democrat':
             party = 'Democratic'
+        elif party == 'No Party Specified':
+            party = 'Independent'
 
         pid = re.search("personID=(\d+)", link.attrib['href']).group(1)
         photo_url = ("https://www.legis.iowa.gov/photo"

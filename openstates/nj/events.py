@@ -80,9 +80,8 @@ class NJEventScraper(Scraper, MDBMixin):
 
             event = Event(
                 name=description,
-                start_time=self._tz.localize(date_time),
+                start_date=self._tz.localize(date_time),
                 location_name=record['Location'] or 'Statehouse',
-                timezone=self._tz.zone,
             )
             item = None
             for bill in related_bills:
