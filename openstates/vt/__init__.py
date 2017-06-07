@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import url_xpath
 from .people import VTPersonScraper
 from .committees import VTCommitteeScraper
 from .bills import VTBillScraper
@@ -85,3 +85,8 @@ class Vermont(Jurisdiction):
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return url_xpath(
+                'http://legislature.vermont.gov/bill/search/2016',
+                '//fieldset/div[@id="selected_session"]/div/select/option/text()')
