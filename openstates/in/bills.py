@@ -64,7 +64,7 @@ class INBillScraper(Scraper):
             date_str = " ".join(date_parts).title() + " " + lines[2].strip()
 
             vote_date = datetime.datetime.strptime(date_str, "%b %d, %Y %I:%M:%S %p")
-            vote_date = vote_date.strftime("%Y-%m-%d %H:%M:%S")
+            vote_date = vote_date.strftime("%Y-%m-%dT%H:%M:%S")
 
             passed = None
 

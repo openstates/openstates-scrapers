@@ -83,7 +83,7 @@ class NCVoteScraper(Scraper):
                     continue
 
                 ve = VoteEvent(chamber=chamber,
-                               start_date=date,
+                               start_date=date.replace(' ', 'T'),
                                motion_text=data[13],
                                result='pass' if 'PASS' in data[20] else 'fail',
                                bill_chamber=bill_chambers[data[3][0]],
