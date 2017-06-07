@@ -16,6 +16,10 @@ SESSION_DATA_ID = {
     '2017A': '10171'
 }
 
+BAD_URLS = [
+    'http://leg.colorado.gov/content/ssa2017a2017-05-04t104016z-hb17-1312-1-activity-vote-summary',
+]
+
 
 class COBillScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Mountain')
@@ -187,7 +191,7 @@ class COBillScraper(Scraper, LXMLMixin):
                 action_chamber = action.xpath('td[2]/text()')[0]
                 action_actor = chamber_map[action_chamber]
             else:
-                action_actor = 'joint'
+                action_actor = 'legislature'
 
             action_name = action.xpath('td[3]/text()')[0]
 
@@ -317,6 +321,9 @@ class COBillScraper(Scraper, LXMLMixin):
 
                 date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
 
+                if vote_url in BAD_URLS:
+                    continue
+
                 yield from self.scrape_vote(bill, vote_url, chamber, date)
 
     def scrape_vote(self, bill, vote_url, chamber, date):
@@ -360,8 +367,9 @@ class COBillScraper(Scraper, LXMLMixin):
                              motion_text=motion,
                              result='pass' if passed else 'fail',
                              bill=bill,
-                             classification='passage'
+                             classification='passage',
                              )
+            vote.pupa_id = vote_url
             vote.set_count('yes', int(yes_count))
             vote.set_count('no', int(no_count))
             vote.set_count('excused', int(exc_count))

@@ -48,7 +48,7 @@ class COCommitteeScraper(Scraper, LXMLMixin):
             elif "Senate Committees" in header:
                 chamber = 'upper'
             else:
-                chamber = 'joint'
+                chamber = 'legislature'
             for comm in comType.xpath('./div[@class="view-content"]' +
                                       '/table/tbody/tr/td'):
                 link = comm.xpath('.//a')

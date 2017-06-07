@@ -54,7 +54,7 @@ rules = (
     Rule('^Senate', actor='upper'),
     Rule('^Introduced in Senate', actor='upper'),
     Rule('^Introduced in House', actor='lower'),
-    Rule('^Governor', actor='governor'),
+    Rule('^Governor', actor='executive'),
 
     Rule('Governor Action - Partial Veto', 'executive-veto:line-item'),
     Rule('Sent to the Governor', 'executive-receipt'),

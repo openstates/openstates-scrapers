@@ -114,6 +114,7 @@ class Colorado(Jurisdiction):
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
+        executive = Organization('Office of the Governor', classification='executive')
 
         for n in range(1, upper_seats + 1):
             upper.add_post(
@@ -125,6 +126,7 @@ class Colorado(Jurisdiction):
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
+        yield executive
         yield upper
         yield lower
 
