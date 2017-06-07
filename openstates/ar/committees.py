@@ -20,8 +20,8 @@ class ARCommitteeScraper(Scraper):
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-        base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%sR/"
-                    "Pages/Committees.aspx?committeetype=") % (session, session)
+        base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
+                    "Pages/Committees.aspx?committeetype=") % (session[:4], session)
 
         for chamber, url_ext in COMM_TYPES.items():
             chamber_url = base_url + url_ext
@@ -40,8 +40,8 @@ class ARCommitteeScraper(Scraper):
                 name = re.sub(r'\s*-\s*(SENATE|HOUSE)$', '', a.text).strip()
 
                 comm_url = a.get('href').replace('../', '/')
-                if chamber == 'task_force':
-                    chamber = 'joint'
+                if chamber in ('task_force', 'joint'):
+                    chamber = 'legislature'
 
                 yield from self.scrape_committee(chamber, name, comm_url)
 
