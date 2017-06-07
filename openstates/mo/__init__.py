@@ -69,7 +69,12 @@ class Missouri(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-04"
-        }
+        },
+        {
+            "classification": "special",
+            "identifier": "2017S1",
+            "name": "2017 First Extraordinary Session",
+        },
     ]
     ignored_scraped_sessions = [
         "2014 - 97th General Assembly - 2nd Regular Session",
