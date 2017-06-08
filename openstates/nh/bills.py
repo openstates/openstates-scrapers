@@ -1,6 +1,7 @@
 import re
 import datetime as dt
 from collections import defaultdict
+import pytz
 
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
@@ -294,10 +295,11 @@ class NHBillScraper(Scraper):
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
                                             '%m/%d/%Y %I:%M:%S %p')
+                time = pytz.timezone('America/New_York').localize(time).isoformat()
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
                 vote = Vote(chamber=actor,
-                            start_date=time.strftime("%Y-%m-%d"),
+                            start_date=time,
                             motion_text=motion,
                             result='pass' if passed else 'fail',
                             classification='passage',
@@ -305,6 +307,7 @@ class NHBillScraper(Scraper):
                 vote.set_count('yes', yeas)
                 vote.set_count('no', nays)
                 vote.add_source(vote_url)
+                vote.pupa_id = session_yr + body + vote_num     # unique ID for vote
                 votes[body+vote_num] = vote
 
         for line in self.get('http://gencourt.state.nh.us/dynamicdatafiles/RollCallHistory.txt') \

@@ -43,10 +43,15 @@ class NHPersonScraper(Scraper, LXMLMixin):
         full_name = '{} {} {}'.format(first_name, middle_name, last_name)
         full_name = re.sub(r'[\s]{2,}', ' ', full_name)
 
-        district = '{} {}'.format(row['County'], int(row['District'])).strip()
+        if chamber == 'lower':
+            district = '{} {}'.format(row['County'], int(row['District'])).strip()
+        else:
+            district = str(int(row['District'])).strip()
+
         party = self.party_map[row['party'].upper()]
         email = row['WorkEmail']
 
+        print(district)
         person = Person(primary_org=chamber,
                         district=district,
                         name=full_name,

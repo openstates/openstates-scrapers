@@ -18,7 +18,8 @@ class NewHampshire(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Libertarian'},
     ]
     legislative_sessions = [
         {
@@ -89,7 +90,7 @@ class NewHampshire(Jurisdiction):
                         role=lower_title,
                         division_id=district['division_id'])
                 elif district['chamber'] == 'upper':
-                    lower.add_post(
+                    upper.add_post(
                         label=district['name'],
                         role=upper_title,
                         division_id=district['division_id'])
