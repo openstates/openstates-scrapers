@@ -6,6 +6,16 @@ import datetime as dt
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 
 
+zip_urls = {
+    '2011': ('http://gencourt.state.nh.us/downloads/2011%20Session%20Bill%20Status%20Tables.zip'),
+    '2012': ('http://gencourt.state.nh.us/downloads/2012%20Session%20Bill%20Status%20Tables.zip'),
+    '2013': ('http://gencourt.state.nh.us/downloads/2013%20Session%20Bill%20Status%20Tables.zip'),
+    '2014': ('http://gencourt.state.nh.us/downloads/2014%20Session%20Bill%20Status%20Tables.zip'),
+    '2015': ('http://gencourt.state.nh.us/downloads/2015%20Session%20Bill%20Status%20Tables.zip'),
+    '2016': ('http://gencourt.state.nh.us/downloads/2016%20Session%20Bill%20Status%20Tables.zip'),
+}
+
+
 body_code = {'lower': 'H', 'upper': 'S'}
 bill_type_map = {'B': 'bill',
                  'R': 'resolution',
@@ -46,10 +56,7 @@ def extract_amendment_id(action):
 class NHLegacyBillScraper(Scraper):
 
     def scrape(self, chamber, session):
-        for session_details in self.jurisdiction.legislative_sessions:
-            if session_details['identifier'] == session:
-                zip_url = session_details['zip_url']
-                break
+        zip_url = zip_urls[session]
 
         fname, resp = self.urlretrieve(zip_url)
         self.zf = zipfile.ZipFile(open(fname))
