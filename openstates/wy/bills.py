@@ -22,6 +22,7 @@ def split_names(voters):
     return [
         x.strip() for x in
         re.split(r'(?:,\s(?![A-Z]\.))|(?:\sand\s)', voters)
+        if len(x.strip()) < 300
     ]
 
 

@@ -30,7 +30,7 @@ class WYCommitteeScraper(Scraper):
             page = lxml.html.fromstring(page)
             if re.match('\d{1,2}-', c):
                 c = c.split('-', 1)[1]
-            jcomm = Organization(name=c.strip(), chamber='joint', classification='committee')
+            jcomm = Organization(name=c.strip(), chamber='legislature', classification='committee')
             for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
                 rows = table.xpath(".//tr")
                 chamber = rows[0].xpath('.//td')[0].text_content().strip()
