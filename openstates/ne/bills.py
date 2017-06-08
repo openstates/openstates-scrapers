@@ -99,9 +99,9 @@ class NEBillScraper(Scraper, LXMLMixin):
                 './td[2]').text_content()
 
             if 'Governor' in action:
-                actor = 'Governor'
+                actor = 'executive'
             elif 'Speaker' in action:
-                actor = 'Speaker'
+                actor = 'legislature'
             else:
                 actor = 'legislature'
 

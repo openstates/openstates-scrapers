@@ -27,6 +27,7 @@ class NEVoteScraper(Scraper):
                 'http://www.nebraskalegislature.gov/FloorDocs/Current/PDF/Journal/r1journal.pdf',
             ],
         }
+        self._seen = set()
         for url in urls[session]:
             yield from self.scrape_journal(session, url)
 
@@ -130,6 +131,13 @@ class NEVoteScraper(Scraper):
                     raise Exception('cannot save vote without bill_id')
 
                 # save prior vote
+                vtuple = (bill_id, date, question)
+                if vtuple in self._seen:
+                    vote = None
+                    continue
+                else:
+                    self._seen.add(vtuple)
+
                 vote = VoteEvent(
                     bill=bill_id,
                     bill_chamber='legislature',

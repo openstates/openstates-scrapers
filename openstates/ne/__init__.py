@@ -19,8 +19,7 @@ class Nebraska(Jurisdiction):
         'committees': NECommitteeScraper,
     }
     parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Nonpartisan'},
     ]
     legislative_sessions = [
         {
@@ -73,12 +72,15 @@ class Nebraska(Jurisdiction):
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
+        executive = Organization(name='Office of the Governor',
+                                   classification="executive")
         for n in range(1, seats + 1):
             legislature.add_post(
                 label=str(n), role=title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
 
         yield legislature
+        yield executive
 
     def get_session_list(self):
         return url_xpath('http://nebraskalegislature.gov/bills/',
