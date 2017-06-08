@@ -57,8 +57,7 @@ class PREventScraper(Scraper):
                 if where is None or where == "":
                     where = 'State House'
                 event = Event(name=description,
-                              start_time=when,
-                              timezone=self._tz.zone,
+                              start_date=when,
                               location_name=where)
                 if td[20].text is None:
                     participants = meeting_lead

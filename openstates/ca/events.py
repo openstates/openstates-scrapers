@@ -72,8 +72,7 @@ class CAEventScraper(Scraper):
             desc = 'Committee Meeting: ' + committee_name
             event = Event(
                 name=desc,
-                start_time=date,
-                timezone=self._tz.zone,
+                start_date=date,
                 location_name=committee_name,
             )
             for bill_id in bills:

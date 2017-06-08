@@ -35,13 +35,12 @@ class AKEventScraper(Scraper, LXMLMixin):
                 continue
 
             event = Event(
-                start_time=self._TZ.localize(
+                start_date=self._TZ.localize(
                     datetime.datetime.strptime(
                         info.xpath('span[@class="col02"]/text()')[0],
                         self._DATETIME_FORMAT,
                     )
                 ),
-                timezone=self._TZ.zone,
                 name=name,
                 location_name=doc.xpath(
                     '//div[@class="heading-container"]/span/text()'

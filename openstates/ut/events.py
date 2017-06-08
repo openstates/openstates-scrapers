@@ -22,9 +22,8 @@ class UTEventScraper(Scraper, LXMLMixin):
             #    continue
 
             event = Event(name=title,
-                          start_time=self._tz.localize(datetime.datetime.strptime(when,
+                          start_date=self._tz.localize(datetime.datetime.strptime(when,
                                                                                   '%b %d, %Y')),
-                          timezone=self._tz.zone,
                           location_name='State Capitol'
                           )
             event.add_source(URL)

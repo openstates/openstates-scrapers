@@ -22,10 +22,10 @@ class PupaEventScraper(EventScraper):
         session = self.metadata['terms'][-1]['name']
 
         event = Event(session=session,
-                      when=parse_datetime(data['start_time']),
+                      when=parse_datetime(data['start_date']),
                       type='committee:meeting',
                       description=data['description'],
-                      timezone=data['timezone'],
+                      # timezone=data['timezone'],
                       location=data['location']['name'],
                       end=data['end_time'])
 

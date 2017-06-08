@@ -47,8 +47,8 @@ class MNEventScraper(Scraper, LXMLMixin):
             location = self.get_location(meeting)
 
             if when and description and location:
-                event = Event(name=description, start_time=when.replace(tzinfo=self.tz),
-                              timezone=self.tz.zone, description=description,
+                event = Event(name=description, start_date=when.replace(tzinfo=self.tz),
+                              description=description,
                               location_name=location)
                 agenda = self.get_agenda(meeting)
                 if agenda:

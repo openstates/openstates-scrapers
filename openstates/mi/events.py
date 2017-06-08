@@ -71,8 +71,7 @@ class MIEventScraper(Scraper):
 
         event = Event(
             name=title,
-            start_time=self._tz.localize(datetime),
-            timezone=self._tz.zone,
+            start_date=self._tz.localize(datetime),
             location_name=where,
         )
         event.add_source(url)

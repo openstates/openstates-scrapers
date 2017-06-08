@@ -37,7 +37,7 @@ class PAEventScraper(Scraper):
                 bills = row.xpath('.//a[contains(@href, "billinfo")]')
 
                 try:
-                    start_time = datetime.datetime.strptime(
+                    start_date = datetime.datetime.strptime(
                         '{} {}'.format(date_string, time_string),
                         '%m/%d/%Y %I:%M %p',
                     )
@@ -46,9 +46,8 @@ class PAEventScraper(Scraper):
 
                 event = Event(
                     name=description,
-                    start_time=self._tz.localize(start_time),
+                    start_date=self._tz.localize(start_date),
                     location_name=location,
-                    timezone=self._tz.zone,
                 )
                 event.add_source(url)
 

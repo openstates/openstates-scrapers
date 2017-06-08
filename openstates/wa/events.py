@@ -76,8 +76,8 @@ class WAEventScraper(Scraper, LXMLMixin):
 
                 location = (where or '').strip() or "unknown"
 
-                event = Event(name=meeting_title, start_time=self._tz.localize(when),
-                              timezone=self._tz.zone, location_name=location,
+                event = Event(name=meeting_title, start_date=self._tz.localize(when),
+                              location_name=location,
                               description=meeting_title)
 
                 event.add_participant(who.strip(), type='committee', note='host')

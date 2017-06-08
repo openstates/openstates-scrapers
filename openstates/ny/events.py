@@ -109,8 +109,7 @@ class NYEventScraper(Scraper, LXMLMixin):
 
             event = Event(
                 name=title,
-                start_time=self._tz.localize(datetime),
-                timezone=self._tz.zone,
+                start_date=self._tz.localize(datetime),
                 location_name=metainf['Place:'],
             )
             event.extras = {'contact': metainf['Contact:']}

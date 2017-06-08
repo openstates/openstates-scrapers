@@ -71,8 +71,7 @@ class COEventScraper(Scraper, LXMLMixin):
                         agenda = "\n".join(agendas) if agendas else ''
 
                         event = Event(name=title,
-                                      start_time=self._tz.localize(date),
-                                      timezone=self._tz.zone,
+                                      start_date=self._tz.localize(date),
                                       location_name=location
                                       )
                         if agenda:

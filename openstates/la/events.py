@@ -78,8 +78,7 @@ class LAEventScraper(Scraper, LXMLMixin):
             return
 
         event = Event(name=description,
-                      start_time=self._tz.localize(when),
-                      timezone=self._tz.zone,
+                      start_date=self._tz.localize(when),
                       location_name=location,
                       all_day=all_day)
         event.add_source(url)
@@ -154,8 +153,7 @@ class LAEventScraper(Scraper, LXMLMixin):
             self.warning("logger.debug" + description)
 
             event = Event(name=description,
-                          start_time=self._tz.localize(when),
-                          timezone=self._tz.zone,
+                          start_date=self._tz.localize(when),
                           location_name=location)
             event.add_source(url)
             event.add_participant(committee_name, type='committee', note='host')
