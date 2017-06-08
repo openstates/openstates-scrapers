@@ -12,11 +12,11 @@ class NDCommitteeScraper(Scraper):
                              "//a[contains(@href, 'members')]")
 
         if '/joint/' in href:
-            chamber = 'joint'
+            chamber = 'legislature'
         elif '/interim/' in href:
             # Better to scrape the interim committees as joint,
             # rather than miss them altogether
-            chamber = 'joint'
+            chamber = 'legislature'
         elif '/senate/' in href:
             chamber = 'upper'
         elif '/house/' in href:

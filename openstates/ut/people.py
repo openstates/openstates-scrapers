@@ -24,7 +24,7 @@ class UTPersonScraper(Scraper, LXMLMixin):
             district = person_info["district"]
             party = {
                 "R": "Republican",
-                "D": "Democrat",
+                "D": "Democratic",
             }[person_info["party"]]
             photo_url = person_info["image"]
             person_id = person_info["id"]

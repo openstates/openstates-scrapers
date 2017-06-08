@@ -197,7 +197,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                         chambers = {
                             "H": "lower",
                             "S": "upper",
-                            "J": "joint"
+                            "J": "legislature"
                         }
 
                         # Almost all of the time, a vote only applies to one bill and this loop

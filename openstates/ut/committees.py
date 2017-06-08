@@ -18,7 +18,7 @@ class UTCommitteeScraper(Scraper, LXMLMixin):
             elif "Senate" in comm_name:
                 chamber = "upper"
             else:
-                chamber = "joint"
+                chamber = "legislature"
 
             # Drop leading "House" or "Senate" from name
             comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
