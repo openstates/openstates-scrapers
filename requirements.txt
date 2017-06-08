@@ -14,10 +14,6 @@ ipdb
 
 #CT
 chardet
-unicodecsv
 
 # GA
 suds-py3
-
-#NH
-pymssql

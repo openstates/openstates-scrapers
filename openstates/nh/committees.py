@@ -3,8 +3,6 @@ import re
 from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
-from openstates.nh import legacy_committees
-
 
 class NHCommitteeScraper(Scraper, LXMLMixin):
 
@@ -109,11 +107,5 @@ class NHCommitteeScraper(Scraper, LXMLMixin):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         year = int(self.jurisdiction.legislative_sessions[-1]['identifier'])
         for chamber in chambers:
-            if year < 2017:
-                yield from legacy_committees.NHCommitteeScraper(
-                    self.jurisdiction,
-                    self.datadir,
-                ).scrape(chamber, year)
-                return
             for committee in self._parse_committees_text(chamber):
                 yield committee
