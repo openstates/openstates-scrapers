@@ -166,7 +166,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                 action = {k: v.strip() for k, v in action.items()}
 
                 if "Signed by Governor" in action['FullStatus']:
-                    actor = 'governor'
+                    actor = 'executive'
                 elif action['ChamberCode'] == 'H':
                     actor = 'lower'
                 elif action['ChamberCode'] == 'S':

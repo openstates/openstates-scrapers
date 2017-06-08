@@ -27,14 +27,14 @@ class VTCommitteeScraper(Scraper):
             elif info['CommitteeType'] == 'Senate Standing':
                 chamber = 'upper'
             elif info['CommitteeType'] == 'Joint Committee':
-                chamber = 'joint'
+                chamber = 'legislature'
             elif info['CommitteeType'] in ('Study Committee', 'Commissions'):
                 if info['CommitteeName'].startswith("House"):
                     chamber = 'lower'
                 elif info['CommitteeName'].startswith("Senate"):
                     chamber = 'upper'
                 else:
-                    chamber = 'joint'
+                    chamber = 'legislature'
             else:
                 raise AssertionError(
                     "Unknown committee type found: '{}'".
