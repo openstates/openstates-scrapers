@@ -73,7 +73,7 @@ class Nebraska(Jurisdiction):
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         executive = Organization(name='Office of the Governor',
-                                   classification="executive")
+                                 classification="executive")
         for n in range(1, seats + 1):
             legislature.add_post(
                 label=str(n), role=title,

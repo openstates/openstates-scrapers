@@ -19,7 +19,8 @@ class Nevada(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Nonpartisan'},
     ]
     legislative_sessions = [
         {
