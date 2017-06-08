@@ -71,7 +71,7 @@ class MTCommitteeScraper(Scraper):
                     self.info("Beginning scrape of joint subcommittees")
 
                 in_senate_subcommittees = True
-                chamber = 'joint'
+                chamber = 'legislature'
                 continue
 
             if is_committee_name(line):
