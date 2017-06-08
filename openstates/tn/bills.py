@@ -241,6 +241,7 @@ class TNBillScraper(Scraper):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
+        self._seen_votes = set()
         chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
@@ -426,6 +427,9 @@ class TNBillScraper(Scraper):
 
     def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
         raw_vote_data = re.split('\w+? by [\w ]+?\s+-', vote_data.strip())[1:]
+
+        motion_count = 1
+
         for raw_vote in raw_vote_data:
             raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
             motion = raw_vote[0]
@@ -466,8 +470,14 @@ class TNBillScraper(Scraper):
                 elif not_voting_regex.search(v):
                     not_voting += not_voting_regex.search(v).groups()[0].split(', ')
 
+            motion = motion.strip()
+            if motion in self._seen_votes:
+                motion = '{} ({})'.format(motion, motion_count)
+                motion_count += 1
+            self._seen_votes.add(motion)
+
             vote = VoteEvent(
-                motion_text=motion.strip(),
+                motion_text=motion,
                 start_date=vote_date.strftime('%Y-%m-%d') if vote_date else None,
                 classification='passage',
                 result='pass' if passed else 'fail',
