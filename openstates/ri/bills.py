@@ -166,7 +166,7 @@ class RIBillScraper(Scraper):
 
     def process_actions(self, actions, bill):
         for action in actions:
-            actor = "joint"
+            actor = "legislature"
 
             if "house" in action.lower():
                 actor = "lower"
@@ -175,9 +175,9 @@ class RIBillScraper(Scraper):
                 if actor == "joint":
                     actor = "upper"
                 else:
-                    actor = "joint"
+                    actor = "legislature"
             if "governor" in action.lower():
-                actor = "governor"
+                actor = "executive"
             date = action.split(" ")[0]
             date = dt.datetime.strptime(date, "%m/%d/%Y")
             bill.add_action(
