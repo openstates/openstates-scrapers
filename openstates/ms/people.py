@@ -35,27 +35,31 @@ class MSLegislatorScraper(Scraper):
                 leg_link_path = "string(M%s_LINK)" % num
                 leg = mr.xpath(leg_path)
                 leg_link = mr.xpath(leg_link_path)
-                role = "member"
+                role = ""
                 yield from self.scrape_details(chamber, leg, leg_link, role)
-        if chamber == 'lower':
-            chair_name = root.xpath('string(//CHAIR_NAME)')
-            chair_link = root.xpath('string(//CHAIR_LINK)')
-            role = root.xpath('string(//CHAIR_TITLE)')
-            yield from self.scrape_details(chamber, chair_name, chair_link, role)
-        else:
+
+        # TODO: come back and do roles correctly at some point
+
+        # if chamber == 'lower':
+            # chair_name = root.xpath('string(//CHAIR_NAME)')
+            # chair_link = root.xpath('string(//CHAIR_LINK)')
+            # role = root.xpath('string(//CHAIR_TITLE)')
+            # yield from self.scrape_details(chamber, chair_name, chair_link, role)
+        # else:
             # Senate Chair is the Governor. Info has to be hard coded
-            chair_name = root.xpath('string(//CHAIR_NAME)')
-            role = root.xpath('string(//CHAIR_TITLE)')
+            # chair_name = root.xpath('string(//CHAIR_NAME)')
+            # role = root.xpath('string(//CHAIR_TITLE)')
             # TODO: if we're going to hardcode the governor, do it better
             # district = "Governor"
             # leg = Legislator(term_name, chamber, district, chair_name,
             #                 first_name="", last_name="", middle_name="",
             #                 party="Republican", role=role)
 
-        protemp_name = root.xpath('string(//PROTEMP_NAME)')
-        protemp_link = root.xpath('string(//PROTEMP_LINK)')
-        role = root.xpath('string(//PROTEMP_TITLE)')
-        yield from self.scrape_details(chamber, protemp_name, protemp_link, role)
+        # disabling this since it creates duplicates right now
+        # protemp_name = root.xpath('string(//PROTEMP_NAME)')
+        # protemp_link = root.xpath('string(//PROTEMP_LINK)')
+        # role = root.xpath('string(//PROTEMP_TITLE)')
+        # yield from self.scrape_details(chamber, protemp_name, protemp_link, role)
 
     def scrape_details(self, chamber, leg_name, leg_link, role):
         if not leg_link:
