@@ -27,7 +27,7 @@ class PupaEventScraper(EventScraper):
                       description=data['description'],
                       # timezone=data['timezone'],
                       location=data['location']['name'],
-                      end=data['end_time'])
+                      end=data['end_date'])
 
         # TODO: participants, documents, related_bills
 
