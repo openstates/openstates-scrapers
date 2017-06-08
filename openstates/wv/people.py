@@ -25,7 +25,7 @@ class WVPersonScraper(Scraper):
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
-        for link in page.xpath("//a[contains(@href, '?member=')]"):
+        for link in page.xpath("//td/a[contains(@href, '?member=')]"):
             if not link.text:
                 continue
             name = link.xpath("string()").strip()
@@ -34,7 +34,7 @@ class WVPersonScraper(Scraper):
             if name in ['Members', 'Senate Members', 'House Members', 'Vacancy',
                         'VACANT', 'Vacant', 'To Be Announced', 'To Be Appointed']:
                 continue
-
+            print(name)
             yield from self.scrape_legislator(chamber, name, leg_url)
 
     def scrape_legislator(self, chamber, name, url):
