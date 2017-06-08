@@ -31,7 +31,7 @@ class KSCommitteeScraper(Scraper):
             for committee_data in committees:
 
                 # set to joint if we are using the special_committees
-                com_chamber = ('joint' if com_type == 'special_committees'
+                com_chamber = ('legislature' if com_type == 'special_committees'
                                else chamber)
 
                 committee = Organization(
