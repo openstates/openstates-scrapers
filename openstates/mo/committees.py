@@ -168,7 +168,7 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
                                                  url=committee_url)
             actual_chamber = chamber
             if 'joint' in committee_name.lower():
-                actual_chamber = 'joint'
+                actual_chamber = 'legislature'
 
             committee_name = committee_name.replace('Committee On ', '')
             committee_name = committee_name.replace('Special', '')

@@ -74,6 +74,7 @@ class Missouri(Jurisdiction):
             "classification": "special",
             "identifier": "2017S1",
             "name": "2017 First Extraordinary Session",
+            "start_date": "2017-06-01",
         },
     ]
     ignored_scraped_sessions = [
@@ -124,6 +125,7 @@ class Missouri(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower

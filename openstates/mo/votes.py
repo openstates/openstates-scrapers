@@ -38,12 +38,17 @@ class MOVoteScraper(Scraper, LXMLMixin):
         return data
 
     def _scrape_upper_chamber(self, session):
-        if int(session) >= 2016:
-            senate_url = 'http://www.senate.mo.gov/%sinfo/jrnlist/default.aspx'
+        if int(session[:4]) >= 2016:
+            if len(session) == 4:
+                # regular session
+                url = 'http://www.senate.mo.gov/%sinfo/jrnlist/default.aspx' % (session[-2:],)
+            else:
+                # special session
+                url = 'http://www.senate.mo.gov/%sinfo/jrnlist/%sJournals.aspx' % (
+                    session[-4:-2], session[-2:]
+                )
         else:
-            senate_url = 'http://www.senate.mo.gov/%sinfo/jrnlist/journals.aspx'
-
-        url = senate_url % (session[-2:])
+            url = 'http://www.senate.mo.gov/%sinfo/jrnlist/journals.aspx' % (session[-2:])
 
         vote_types = {
             'YEAS': 'yes',
@@ -90,7 +95,7 @@ class MOVoteScraper(Scraper, LXMLMixin):
                             if bill != []:
                                 bc = {'H': 'lower',
                                       'S': 'upper',
-                                      'J': 'joint'}[bill[0][0]]
+                                      'J': 'legislature'}[bill[0][0]]
 
                                 cur_bill = "%s%s%s %s" % bill[0]
                             in_vote = True

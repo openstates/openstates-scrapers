@@ -16,7 +16,7 @@ def house_get_actor_from_action(text):
     m = re.search(r"\((\bH\b|\bS\b)\)", text)
     if not m:
         if text.endswith('Governor'):
-            return 'Governor'
+            return 'executive'
         else:
             return 'lower'
 
@@ -33,7 +33,7 @@ def senate_get_actor_from_action(text):
     m = re.search(r"(\bH\b|\bS\b|House)", text)
     if not m:
         if text.endswith('Governor'):
-            return 'Governor'
+            return 'executive'
         else:
             return 'upper'
 
