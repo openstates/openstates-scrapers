@@ -24,7 +24,8 @@ class ORCommitteeScraper(Scraper):
 
         for committee in committees_response:
             org = Organization(
-                chamber={'S': 'upper', 'H': 'lower', 'J': 'joint'}[committee['HouseOfAction']],
+                chamber={'S': 'upper', 'H': 'lower',
+                         'J': 'legislature'}[committee['HouseOfAction']],
                 name=committee['CommitteeName'],
                 classification='committee')
             org.add_source(

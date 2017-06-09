@@ -12,7 +12,7 @@ logger = logging.getLogger('openstates')
 
 class ORVoteScraper(Scraper):
     tz = get_timezone()
-    chamber_code = {'S': 'upper', 'H': 'lower', 'J': 'joint'}
+    chamber_code = {'S': 'upper', 'H': 'lower', 'J': 'legislature'}
     vote_code = {
             'Aye': 'yes',
             'Nay': 'no',
