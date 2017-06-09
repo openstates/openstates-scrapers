@@ -263,8 +263,8 @@ class GABillScraper(Scraper):
                         'Version'
                     ]
                 ]
-                link = bill.add_version_link(
-                    name, url, media_type='application/pdf')
+                # link = bill.add_version_link(
+                #     name, url, media_type='application/pdf')
                 # link['extras'] = {
                 #     '_internal_document_id': doc_id,
                 #     '_version_id': version_id
