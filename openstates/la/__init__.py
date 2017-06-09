@@ -19,7 +19,8 @@ class Louisiana(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Independent'},
     ]
     legislative_sessions = [
         {
@@ -113,19 +114,27 @@ class Louisiana(Jurisdiction):
         {
             "_scraped_name": "2017 Regular Session",
             "classification": "primary",
-            "end_date": "2017-06-08",
             "identifier": "2017",
             "name": "2017 Regular Session",
-            "start_date": "2017-04-10"
+            "start_date": "2017-04-10",
+            "end_date": "2017-06-08",
         },
         {
             "_scraped_name": "2017 First Extraordinary Session",
             "classification": "special",
-            "end_date": "2017-02-22",
             "identifier": "2017 1st Extraordinary Session",
             "name": "2017, 1st Extraordinary Session",
-            "start_date": "2017-02-13"
-        }
+            "start_date": "2017-02-13",
+            "end_date": "2017-02-22",
+        },
+        {
+            "_scraped_name": "2017 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "2017 2nd Extraordinary Session",
+            "name": "2017, 2nd Extraordinary Session",
+            "start_date": "2017-06-17",
+            "end_date": "2017-06-29",
+        },
     ]
     ignored_scraped_sessions = [
         "2016 Organizational Session",

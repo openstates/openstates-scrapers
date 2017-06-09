@@ -13,7 +13,7 @@ class LABillScraper(Scraper, LXMLMixin):
     _chambers = {
         'S': 'upper',
         'H': 'lower',
-        'J': 'joint',
+        'J': 'legislature',
     }
 
     _bill_types = {
@@ -26,6 +26,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
     _session_ids = {
         '2017 1st Extraordinary Session': '171ES',
+        '2017 2nd Extraordinary Session': '172ES',
         '2017': '17RS',
     }
 

@@ -108,7 +108,7 @@ class LACommitteeScraper(Scraper, LXMLMixin):
             committee_name = committee_name_text.strip()
             committee_name = self._normalize_committee_name(committee_name)
 
-            chamber = 'joint' if committee_name.startswith('Joint') else 'lower'
+            chamber = 'legislature' if committee_name.startswith('Joint') else 'lower'
 
             committee = Organization(committee_name, chamber=chamber,
                                      classification='committee')
