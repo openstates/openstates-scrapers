@@ -202,6 +202,7 @@ class MDBillScraper(Scraper):
             classification='passage',
             result='pass' if passed else 'fail',
         )
+        vote.pupa_id = vote_url     # contains sequence number
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
@@ -359,6 +360,7 @@ class MDBillScraper(Scraper):
                     vote.vote(vfunc, leg)
 
         vote.add_source(url)
+        vote.pupa_id = url      # contains vote sequence number
         yield vote
 
     def scrape_bill(self, chamber, session, bill_id, url):

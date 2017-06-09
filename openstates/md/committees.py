@@ -84,13 +84,13 @@ class MDCommitteeScraper(Scraper):
             elif 'House' in chamber_name:
                 chamber = 'lower'
             elif 'Joint' in chamber_name:
-                chamber = 'joint'
+                chamber = 'legislature'
             elif 'Statutory' in chamber_name:
-                chamber = 'joint'
+                chamber = 'legislature'
             elif 'Special Joint' in chamber_name:
-                chamber = 'joint'
+                chamber = 'legislature'
             elif 'Other' in chamber_name:
-                chamber = 'joint'
+                chamber = 'legislature'
             else:
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
                 continue
@@ -100,7 +100,7 @@ class MDCommitteeScraper(Scraper):
         for a in doc.xpath('//a[contains(@href, "AELR")]'):
             url = a.get('href')
             chamber_name = a.xpath('../../..//th/text()')[0]
-            chamber = 'joint'
+            chamber = 'legislature'
             com_name = a.text
             if com_name is None:
                 continue
