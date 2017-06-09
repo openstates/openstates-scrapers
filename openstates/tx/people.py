@@ -115,6 +115,9 @@ class TXPersonScraper(Scraper, LXMLMixin):
             district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail.lstrip('0')
             party = tbl.xpath('.//span[contains(text(), "Party:")]')[0].tail
 
+            if party == 'Democrat':
+                party = 'Democratic'
+
             # Create Person object
             person = Person(name=name, district=district, party=party,
                             primary_org='upper')
