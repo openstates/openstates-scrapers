@@ -324,9 +324,9 @@ class NMBillScraper(Scraper):
             action_date = datetime.strptime(action['EntryDate'].split()[0],
                                             '%m/%d/%y').strftime('%Y-%m-%d')
             if action['LocationCode']:
-                actor = location_map.get(action['LocationCode'][0], 'other')
+                actor = location_map.get(action['LocationCode'][0], 'legislature')
             else:
-                actor = 'other'
+                actor = 'legislature'
             action_code = action['ActionCode']
 
             try:

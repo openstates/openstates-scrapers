@@ -82,6 +82,7 @@ def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
         bill=bill_id,
         bill_chamber='upper' if bill_id[0] is 'S' else 'lower'
     )
+    vote_event.pupa_id = url
     vote_event.set_count('yes', len(vote_record['yes']))
     vote_event.set_count('no', len(vote_record['no']))
     vote_event.set_count('excused', len(vote_record['excused']))
