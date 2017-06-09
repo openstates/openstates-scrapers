@@ -19,7 +19,7 @@ class IDCommitteeScraper(Scraper):
     def get_joint_committees_data(self, name, url):
         page = self.get(url, verify=False).text
         html = lxml.html.fromstring(page)
-        org = Organization(name=name, chamber='joint', classification="committee")
+        org = Organization(name=name, chamber='legislature', classification="committee")
         table = html.xpath("//section[@class=' row-equal-height no-padding']")
         for td in table:
             senate_members = td.xpath('div[1]/div/div/div[2]/div/p/strong')
