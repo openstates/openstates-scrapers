@@ -185,6 +185,8 @@ class OKBillScraper(Scraper):
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.get(url).text.replace(u'\xa0', ' '))
 
+        seen_rcs = set()
+
         re_ns = "http://exslt.org/regular-expressions"
         path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
@@ -212,8 +214,13 @@ class OKBillScraper(Scraper):
 
             rcs_p = header.xpath(
                 "following-sibling::p[contains(., 'RCS#')]")[0]
-            # rcs_line = rcs_p.xpath("string()").replace(u'\xa0', ' ')
-            # rcs = re.search(r'RCS#\s+(\d+)', rcs_line).group(1)
+            rcs_line = rcs_p.xpath("string()").replace(u'\xa0', ' ')
+            rcs = re.search(r'RCS#\s+(\d+)', rcs_line).group(1)
+
+            if rcs in seen_rcs:
+                continue
+            else:
+                seen_rcs.add(rcs)
 
             date_line = rcs_p.getnext().xpath("string()")
             date = re.search(r'\d+/\d+/\d+', date_line).group(0)
@@ -269,6 +276,7 @@ class OKBillScraper(Scraper):
             vote.set_count('yes', counts['yes'])
             vote.set_count('no', counts['no'])
             vote.set_count('other', counts['other'])
+            vote.pupa_id = url + '#' + rcs
 
             vote.add_source(url)
 
