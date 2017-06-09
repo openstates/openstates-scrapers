@@ -55,16 +55,16 @@ class GABillScraper(Scraper):
             'H': 'lower',
             'S': 'upper',
             'J': 'joint',
-            'E': 'other',  # Effective date
+            'E': 'legislature',  # Effective date
         }
 
         action_code_map = {
-            'HI': ['other'],
-            'SI': ['other'],
-            'HH': ['other'],
-            'SH': ['other'],
+            'HI': None,
+            'SI': None,
+            'HH': None,
+            'SH': None,
             'HPF': ['introduction'],
-            'HDSAS': ['other'],
+            'HDSAS': None,
             'SPF': ['introduction'],
             'HSR': ['reading-2'],
             'SSR': ['reading-2'],
@@ -77,48 +77,48 @@ class GABillScraper(Scraper):
             'HRA': ['passage'],
             'SRA': ['passage'],
             'HPA': ['passage'],
-            'HRECO': ['other'],
+            'HRECO': None,
             'SPA': ['passage'],
-            'HTABL': ['other'],  # 'House Tabled' - what is this?
-            'SDHAS': ['other'],
+            'HTABL': None,  # 'House Tabled' - what is this?
+            'SDHAS': None,
             'HCFR': ['committee-passage-favorable'],
             'SCFR': ['committee-passage-favorable'],
             'HRAR': ['referral-committee'],
             'SRAR': ['referral-committee'],
             'STR': ['reading-3'],
-            'SAHAS': ['other'],
+            'SAHAS': None,
             'SE': ['passage'],
             'SR': ['referral-committee'],
             'HTRL': ['reading-3', 'failure'],
             'HTR': ['reading-3'],
             'S3RLT': ['reading-3', 'failure'],
-            'HASAS': ['other'],
-            'S3RPP': ['other'],
-            'STAB': ['other'],
-            'SRECO': ['other'],
-            'SAPPT': ['other'],
-            'HCA': ['other'],
-            'HNOM': ['other'],
-            'HTT': ['other'],
-            'STT': ['other'],
-            'SRECP': ['other'],
-            'SCRA': ['other'],
-            'SNOM': ['other'],
+            'HASAS': None,
+            'S3RPP': None,
+            'STAB': None,
+            'SRECO': None,
+            'SAPPT': None,
+            'HCA': None,
+            'HNOM': None,
+            'HTT': None,
+            'STT': None,
+            'SRECP': None,
+            'SCRA': None,
+            'SNOM': None,
             'S2R': ['reading-2'],
             'H2R': ['reading-2'],
             'SENG': ['passage'],
             'HENG': ['passage'],
-            'HPOST': ['other'],
-            'HCAP': ['other'],
+            'HPOST': None,
+            'HCAP': None,
             'SDSG': ['executive-signature'],
             'SSG': ['executive-receipt'],
             'Signed Gov': ['executive-signature'],
             'HDSG': ['executive-signature'],
             'HSG': ['executive-receipt'],
-            'EFF': ['other'],
-            'HRP': ['other'],
-            'STH': ['other'],
-            'HTS': ['other'],
+            'EFF': None,
+            'HRP': None,
+            'STH': None,
+            'HTS': None,
         }
 
         if not session:
@@ -217,15 +217,16 @@ class GABillScraper(Scraper):
 
                     self.logger.warning(error_msg)
 
-                    action_types = ['other']
+                    action_types = None
 
                 committees = []
-                if any(('committee' in x for x in action_types)):
+                if action_types and any(('committee' in x for x in action_types)):
                     committees = [str(x) for x in ccommittees.get(
                         action_chamber, [])]
 
                 act = bill.add_action(
                     action['action'], action['date'].strftime('%Y-%m-%d'),
+                    classification=action_types,
                     chamber=action_chamber)
                 for committee in committees:
                     act.add_related_entity(committee, 'organization')
@@ -264,10 +265,10 @@ class GABillScraper(Scraper):
                 ]
                 link = bill.add_version_link(
                     name, url, media_type='application/pdf')
-                link['extras'] = {
-                    '_internal_document_id': doc_id,
-                    '_version_id': version_id
-                }
+                # link['extras'] = {
+                #     '_internal_document_id': doc_id,
+                #     '_version_id': version_id
+                # }
 
             bill.add_source(self.msource)
             bill.add_source(self.lsource)
