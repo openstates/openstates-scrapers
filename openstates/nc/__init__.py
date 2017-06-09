@@ -86,6 +86,12 @@ class NorthCarolina(Jurisdiction):
             "identifier": "2017",
             "name": "2017-2018 Session",
         },
+        {
+            "_scraped_name": "2017 Extra Session",
+            "classification": "special",
+            "identifier": "2017E1",
+            "name": "2017 Extra Session",
+        },
     ]
     ignored_scraped_sessions = [
         '2008 Extra Session',

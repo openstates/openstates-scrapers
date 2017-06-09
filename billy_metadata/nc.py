@@ -61,7 +61,7 @@ metadata = dict(
                       '2015E5'],
          'start_year': 2015, 'end_year': 2016},
         {'name': '2017-2018',
-         'sessions': ['2017'],
+         'sessions': ['2017', '2017E1'],
          'start_year': 2017, 'end_year': 2018},
         ],
     session_details={
@@ -104,6 +104,9 @@ metadata = dict(
         '2017': {'type': 'primary',
                  'display_name': '2017-2018 Session',
                  '_scraped_name': '2017-2018 Session',
+                 },
+        '2017': {'type': 'special',
+                 'display_name': '2017 Extra Session 1',
                  },
     },
     _ignored_scraped_sessions=[
