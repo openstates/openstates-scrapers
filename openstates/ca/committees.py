@@ -190,7 +190,7 @@ class CACommitteeScraper(Scraper, LXMLMixin):
             comm_doc = self.lxmlize(comm_url)
 
             if comm_name.startswith("Joint"):
-                org['chamber'] = 'joint'
+                org['chamber'] = 'legislature'
                 org['committee'] = (comm_name.
                                     replace("Joint ", "").
                                     replace("Committee on ", "").

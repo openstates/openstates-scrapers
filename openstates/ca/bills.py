@@ -454,7 +454,7 @@ class CABillScraper(Scraper):
                     actor = {'Assembly': 'lower',
                              'Senate': 'upper'}[match.group(1)]
                 elif actor.startswith('Governor'):
-                    actor = 'other'
+                    actor = 'executive'
                 else:
                     def replacer(matchobj):
                         if matchobj:
@@ -510,13 +510,13 @@ class CABillScraper(Scraper):
 
                 # Determine which chamber the action originated from.
                 changed = False
-                for committee_chamber in ['upper', 'lower', 'joint']:
+                for committee_chamber in ['upper', 'lower', 'legislature']:
                     if actor.startswith(committee_chamber):
                         actor = committee_chamber
                         changed = True
                         break
                 if not changed:
-                    actor = 'other'
+                    actor = 'legislature'
 
                 if actor != action.actor:
                     actor_info = kwargs.get('actor_info', {})
