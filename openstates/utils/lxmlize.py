@@ -2,8 +2,8 @@ import requests
 import lxml.html
 
 
-def url_xpath(url, path):
-    doc = lxml.html.fromstring(requests.get(url).text)
+def url_xpath(url, path, verify=True):
+    doc = lxml.html.fromstring(requests.get(url, verify=verify).text)
     return doc.xpath(path)
 
 

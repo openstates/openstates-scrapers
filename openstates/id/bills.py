@@ -121,7 +121,7 @@ class IDBillScraper(Scraper):
         self._subjects = defaultdict(list)
 
         url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
-        html = self.get(url).text
+        html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
 
         # loop through anchors
@@ -150,7 +150,7 @@ class IDBillScraper(Scraper):
     def scrape_bill_url(self, chamber, session):
         """scrapes legislation for 2009 and above"""
         url = BILLS_URL % session
-        bill_index = self.get(url).text
+        bill_index = self.get(url, verify=False).text
         html = lxml.html.fromstring(bill_index)
         # I check for rows with an id that contains 'bill' and startswith
         # 'H' or 'S' to make sure I dont get any links from the menus
@@ -171,7 +171,7 @@ class IDBillScraper(Scraper):
         bills from the 2009 session and above.
         """
         url = BILL_URL % (session, bill_id.replace(' ', ''))
-        bill_page = self.get(url).text
+        bill_page = self.get(url, verify=False).text
         html = lxml.html.fromstring(bill_page)
         html.make_links_absolute('http://legislature.idaho.gov/legislation/%s/' % session)
         bill_tables = html.xpath('//table[contains(@class, "bill-table")]')
