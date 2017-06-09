@@ -171,7 +171,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         elif location.startswith('Senate'):
             chamber = 'upper'
         elif location.startswith('Joint'):
-            chamber = 'joint'
+            chamber = 'legislature'
         else:
             raise ScrapeError("Bad chamber: %s" % location)
 
@@ -209,6 +209,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                              classification=type,
                              bill=bill
                              )
+            vote.pupa_id = url      # vote id is in URL
 
             vote.add_source(url)
             vote.set_count('yes', yes_count)

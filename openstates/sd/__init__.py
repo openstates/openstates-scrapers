@@ -83,11 +83,10 @@ class SouthDakota(Jurisdiction):
     def get_organizations(self):
         legislature_name = "South Dakota State Legislature"
         lower_chamber_name = "House"
-        lower_seats = 0
         lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 0
         upper_title = "Senator"
+        seats = 35
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
@@ -96,14 +95,27 @@ class SouthDakota(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
+        for n in range(1, seats + 1):
+            # 26 and 28 are special
+            if n in (26, 28):
+                continue
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        lower.add_post(label='26A', role=lower_title,
+                       division_id='{}/sldl:26a'.format(self.division_id))
+        lower.add_post(label='26B', role=lower_title,
+                       division_id='{}/sldl:26b'.format(self.division_id))
+        lower.add_post(label='28A', role=lower_title,
+                       division_id='{}/sldl:28a'.format(self.division_id))
+        lower.add_post(label='28B', role=lower_title,
+                       division_id='{}/sldl:28b'.format(self.division_id))
+
+        for n in range(1, seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
