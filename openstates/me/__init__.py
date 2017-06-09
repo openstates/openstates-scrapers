@@ -90,6 +90,7 @@ class Maine(Jurisdiction):
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
+        yield Organization(name='Office of the Governor', classification='executive')
         yield upper
         yield lower
 

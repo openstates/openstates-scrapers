@@ -68,7 +68,7 @@ class Categorizer(BaseCategorizer):
 actor_regex = [
     (re.compile(r'(in|by) senate', re.I), 'upper'),
     (re.compile(r'(in|by) house', re.I), 'lower'),
-    (re.compile(r'by governor', re.I), 'governor'),
+    (re.compile(r'by governor', re.I), 'executive'),
 ]
 
 

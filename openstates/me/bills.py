@@ -190,7 +190,7 @@ class MEBillScraper(Scraper):
             else:
                 bill.add_action(
                     "Signed by Governor", date=dt.strftime('%Y-%m-%d'),
-                    chamber="governor", classification=["executive-signature"])
+                    chamber="executive", classification=["executive-signature"])
 
         xpath = "//a[contains(@href, 'rollcalls.asp')]"
         votes_link = page.xpath(xpath)[0]
@@ -308,6 +308,7 @@ class MEBillScraper(Scraper):
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
         vote.add_source(url)
+        vote.pupa_id = url
 
         member_cell = page.xpath("//td[text() = 'Member']")[0]
         for row in member_cell.xpath("../../tr")[1:]:
