@@ -44,6 +44,7 @@ metadata = {
                 '2016 2nd Extraordinary Session',
                 '2017',
                 '2017 1st Extraordinary Session',
+                '2017 2nd Extraordinary Session',
             ],
         },
     ],
@@ -146,11 +147,11 @@ metadata = {
         },
         '2017 1st Extraordinary Session': {
             'type': 'special',
-            'start_date': datetime.date(2017, 2, 13),
-            'end_date': datetime.date(2017, 2, 22),
             'display_name': '2017, 1st Extraordinary Session',
-            '_id': '171ES',
-            '_scraped_name': '2017 First Extraordinary Session',
+        },
+        '2017 2nd Extraordinary Session': {
+            'type': 'special',
+            'display_name': '2017, 2nd Extraordinary Session',
         },
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
