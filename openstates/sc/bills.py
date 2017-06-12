@@ -1,4 +1,5 @@
 import scrapelib
+
 import datetime
 import os
 import re
@@ -170,7 +171,6 @@ class SCBillScraper(Scraper):
 
                 # Provide a Bill instance to link with the VoteEvent...
                 bill=bill,
-
             )
 
             vote.set_count('yes', yeas)
@@ -183,6 +183,12 @@ class SCBillScraper(Scraper):
             rollcall_pdf = vote_link.get('href')
             self.scrape_rollcall(vote, rollcall_pdf)
             vote.add_source(rollcall_pdf)
+            if rollcall_pdf in self._seen_vote_ids:
+                self.warning('duplicate usage of %s, skipping', rollcall_pdf)
+                continue
+            else:
+                self._seen_vote_ids.add(rollcall_pdf)
+            vote.pupa_id = rollcall_pdf     # distinct KEY for each one
 
             yield vote
 
@@ -328,7 +334,7 @@ class SCBillScraper(Scraper):
             date = datetime.datetime.strptime(date_td.text, "%m/%d/%y")
             action_chamber = {'Senate': 'upper',
                               'House': 'lower',
-                              None: 'other'}[chamber_td.text]
+                              None: 'legislature'}[chamber_td.text]
 
             action = action_td.text_content()
             action = action.split('(House Journal')[0]
@@ -362,6 +368,8 @@ class SCBillScraper(Scraper):
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+
+        self._seen_vote_ids = set()
 
         # start with subjects
         self.scrape_subjects(session)
