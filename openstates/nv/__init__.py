@@ -22,30 +22,31 @@ class Nevada(Jurisdiction):
         {'name': 'Democratic'},
         {'name': 'Nonpartisan'},
     ]
+
     legislative_sessions = [
         {
             "_scraped_name": "26th (2010) Special Session",
             "classification": "special",
-            "identifier": "26th2010Special",
+            "identifier": "2010Special26",
             "name": "26th Special Session (2010)"
         },
         {
             "_scraped_name": "27th (2013) Special Session",
             "classification": "special",
-            "identifier": "27th2013Special",
+            "identifier": "2013Special27",
             "name": "27th Special Session (2013)"
         },
         {
             "_scraped_name": "28th (2014) Special Session",
             "classification": "special",
-            "identifier": "28th2014Special",
+            "identifier": "2014Special28",
             "name": "28th Special Session (2014)"
         },
         {
             "_scraped_name": "29th (2015) Special Session",
             "classification": "special",
             "end_date": "2015-12-19",
-            "identifier": "29th2015Special",
+            "identifier": "2015Special29",
             "name": "29th Special Session (2015)",
             "start_date": "2015-12-16"
         },
@@ -53,33 +54,33 @@ class Nevada(Jurisdiction):
             "_scraped_name": "30th (2016) Special Session",
             "classification": "special",
             "end_date": "2016-10-14",
-            "identifier": "30th2016Special",
+            "identifier": "2016Special30",
             "name": "30th Special Session (2016)",
             "start_date": "2016-10-10"
         },
         {
             "_scraped_name": "75th (2009) Session",
             "classification": "primary",
-            "identifier": "75th2009",
+            "identifier": "75",
             "name": "2009 Regular Session"
         },
         {
             "_scraped_name": "76th (2011) Session",
             "classification": "primary",
-            "identifier": "76th2011",
+            "identifier": "76",
             "name": "2011 Regular Session"
         },
         {
             "_scraped_name": "77th (2013) Session",
             "classification": "primary",
-            "identifier": "77th2013",
+            "identifier": "77",
             "name": "2013 Regular Session"
         },
         {
             "_scraped_name": "78th (2015) Session",
             "classification": "primary",
             "end_date": "2015-06-01",
-            "identifier": "78th2015",
+            "identifier": "78",
             "name": "2015 Regular Session",
             "start_date": "2015-02-15"
         },
@@ -87,7 +88,7 @@ class Nevada(Jurisdiction):
             "_scraped_name": "79th (2017) Session",
             "classification": "primary",
             "end_date": "2017-06-01",
-            "identifier": "79th2017",
+            "identifier": "79",
             "name": "2017 Regular Session",
             "start_date": "2017-02-15"
         }
@@ -142,6 +143,7 @@ class Nevada(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield Organization('Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower
@@ -154,3 +156,17 @@ class Nevada(Jurisdiction):
 
     def get_extract_text(self, doc, data):
         return text_after_line_numbers(pdfdata_to_text(data))
+
+    session_slugs = {
+        "2010Special26": "26th2010Special",
+        "2013Special27": "27th2013Special",
+        "2014Special28": "28th2014Special",
+        "2015Special29": "29th2015Special",
+        "2016Special30": "30th2016Special",
+        "75": "75th2009",
+        "76": "76th2011",
+        "77": "77th2013",
+        "78": "78th2015",
+        "79": "79th2017",
+    }
+

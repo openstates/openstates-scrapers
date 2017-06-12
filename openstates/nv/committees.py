@@ -15,7 +15,7 @@ class NVCommitteeScraper(Scraper):
         else:
             chambers = ['upper', 'lower']
         for chamber in chambers:
-            insert = self.latest_session()
+            insert = self.jurisdiction.session_slugs[self.latest_session()]
 
             chamber_names = {'lower': 'Assembly', 'upper': 'Senate'}
             list_url = '%s/%s/HomeCommittee/LoadCommitteeListTab' % (nelis_root, insert)

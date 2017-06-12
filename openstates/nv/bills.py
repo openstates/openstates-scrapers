@@ -5,7 +5,7 @@ from collections import defaultdict
 import lxml.html
 import scrapelib
 from openstates.utils.lxmlize import LXMLMixin
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 
 class NVBillScraper(Scraper, LXMLMixin):
@@ -34,29 +34,28 @@ class NVBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
         chambers = [chamber] if chamber else ['upper', 'lower']
+        self._seen_votes = set()
         for chamber in chambers:
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        if 'Special' in session:
-            year = session[4:8]
-        elif int(session[:2]) >= 71:
-            year = ((int(session[:2]) - 71) * 2) + 2001
+
+        session_slug = self.jurisdiction.session_slugs[session]
+        if 'Special' in session_slug:
+            year = session_slug[4:8]
+        elif int(session_slug[:2]) >= 71:
+            year = ((int(session_slug[:2]) - 71) * 2) + 2001
         else:
             return 'No data exists for %s' % session
-            # raise NoDataForPeriod(session)
 
         self.subject_mapping = defaultdict(list)
-        if 'Special' in session:
-            s = str(year) + "Special" + session[:2]
-        else:
-            s = session[:2]
-            self.scrape_subjects(session, s, year)
+        if 'Special' not in session_slug:
+            self.scrape_subjects(session_slug, session, year)
 
         if chamber == 'upper':
-            yield from self.scrape_senate_bills(chamber, session, s, year)
+            yield from self.scrape_senate_bills(chamber, session_slug, session, year)
         else:
-            yield from self.scrape_assem_bills(chamber, session, s, year)
+            yield from self.scrape_assem_bills(chamber, session_slug, session, year)
 
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
@@ -352,10 +351,10 @@ class NVBillScraper(Scraper, LXMLMixin):
             other = excused + not_voting + absent
             passed = yes > no
 
-            vote = Vote(chamber=chamber, start_date=self._tz.localize(vote_date),
-                        motion_text=motion, result='pass' if passed else 'fail',
-                        classification='passage', bill=bill,
-                        )
+            vote = VoteEvent(chamber=chamber, start_date=self._tz.localize(vote_date),
+                             motion_text=motion, result='pass' if passed else 'fail',
+                             classification='passage', bill=bill,
+                             )
             vote.set_count('yes', yes)
             vote.set_count('no', no)
             vote.set_count('other', other)
@@ -365,6 +364,14 @@ class NVBillScraper(Scraper, LXMLMixin):
             try:
                 vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
                     insert, link.get('href'))
+                vote.pupa_id = vote_url
+                vote.add_source(vote_url)
+
+                if vote_url in self._seen_votes:
+                    self.warning('%s is included twice, skipping second', vote_url)
+                    continue
+                else:
+                    self._seen_votes.add(vote_url)
 
                 page = self.get(vote_url).text
                 page = page.replace(u"\xa0", " ")
