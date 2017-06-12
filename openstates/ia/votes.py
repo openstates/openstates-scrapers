@@ -148,6 +148,8 @@ class IAVoteScraper(Scraper):
 
                 bill_id = bill_id.replace(word, letter)
 
+            bill_id = bill_id.replace('.', '')
+
             bill_chamber = dict(h='lower', s='upper')[bill_id.lower()[0]]
             self.current_id = bill_id
             votes, passed = self.parse_votes(lines)
