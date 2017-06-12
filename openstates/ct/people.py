@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pupa.scrape import Person, Scraper
+from pupa.scrape import Person, Scraper, Organization
 from .utils import open_csv
 
 
@@ -41,16 +41,12 @@ HEADERS = [
 
 
 class CTPersomScraper(Scraper):
-    latest_only = True
-
-    def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
-
-    def scrape_chamber(self, chambers):
+    def scrape(self):
+        # chambers = [chamber] if chamber is not None else ['upper', 'lower']
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"
         page = self.get(leg_url)
+
+        committees = {}
 
         # Ensure that the spreadsheet's structure hasn't generally changed
         _row_headers = page.text.split('\r\n')[0].replace('"', '').split(',')
@@ -116,18 +112,22 @@ class CTPersomScraper(Scraper):
                                            note='District Office')
             leg.add_source(leg_url)
 
-            for comm in row['committee member1'].split(';'):
-                if comm:
-                    if ' (' in comm:
-                        comm, role = comm.split(' (')
-                        role = role.strip(')').lower()
+            for comm_name in row['committee member1'].split(';'):
+                if ' (' in comm_name:
+                    comm_name, role = comm_name.split(' (')
+                    role = role.strip(')').lower()
+                else:
+                    role = 'member'
+                comm_name = comm_name.strip()
+                if comm_name:
+                    if comm_name in committees:
+                        com = committees[comm_name]
                     else:
-                        role = 'member'
-                    comm = comm.strip()
-                    if comm:
-                        leg.add_membership(
-                            name_or_org=comm,
-                            role=role
-                        )
+                        com = Organization(comm_name, classification='committee', chamber=chamber)
+                        com.add_source(leg_url)
+                        committees[comm_name] = com
+                        yield com
+
+                    leg.add_membership(name_or_org=com, role=role)
 
             yield leg
