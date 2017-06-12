@@ -1,9 +1,6 @@
 from pupa.scrape import Person, Scraper
 import lxml.html
-import logging
 import re
-
-logger = logging.getLogger('openstates')
 
 
 class NDPersonScraper(Scraper):
@@ -35,8 +32,6 @@ class NDPersonScraper(Scraper):
         name = re.sub(r'^(Representative|Senator)\s', '', name)
         district = page.xpath("//a[contains(@href, 'district')]/text()")[0]
         district = district.replace("District", "").strip()
-
-        committees = page.xpath("//a[contains(@href, 'committees')]/text()")
 
         photo = page.xpath(
             "//div[@class='field-person-photo']/img/@src"
@@ -103,7 +98,5 @@ class NDPersonScraper(Scraper):
                                       value=metainf['home-telephone'],
                                       note="District Office")
 
-        for committee in committees:
-            person.add_membership(name_or_org=committee, role='committee member')
         person.add_source(url)
         yield person
