@@ -241,7 +241,7 @@ class WVBillScraper(Scraper):
                 r'\s+YEAS: (\d+)\s+NAYS: (\d+)\s+NOT VOTING: (\d+)',
                 line)
             if match:
-                motion = lines[idx - 2].strip()
+                motion = (lines[idx - 2].strip()).decode('utf-8')
                 if not motion:
                     self.warning("No motion text found for vote")
                     motion = "PASSAGE"
@@ -291,7 +291,7 @@ class WVBillScraper(Scraper):
 
         vote = Vote(chamber='lower',
                     start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=motion.decode('utf-8'),
+                    motion_text=motion,
                     result='pass' if passed else 'fail',
                     classification='passage',
                     bill=bill)
