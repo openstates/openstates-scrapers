@@ -17,7 +17,7 @@ chamber_urls = {
 chambers = {
     "Senate": "upper",
     "House": "lower",
-    "Joint": "joint"
+    "Joint": "legislature"
 }
 
 

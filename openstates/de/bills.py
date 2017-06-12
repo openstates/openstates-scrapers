@@ -2,14 +2,12 @@ import datetime as dt
 import json
 import math
 
-
 from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 from openstates.utils import LXMLMixin
 from .actions import Categorizer
 
 
 class DEBillScraper(Scraper, LXMLMixin):
-    jurisdiction = 'de'
     categorizer = Categorizer()
     chamber_codes = {'upper': 1, 'lower': 2}
     chamber_codes_rev = {1: 'upper', 2: 'lower'}
@@ -50,14 +48,29 @@ class DEBillScraper(Scraper, LXMLMixin):
                     yield from self.scrape_bill(row, chamber, session)
 
     def scrape_bill(self, row, chamber, session):
-        bill_id = row['LegislationNumber']
+        bill_id = row['LegislationDisplayCode']
 
-        # TODO: re-evaluate if these should be separate bills
-        if 'SA' in bill_id or 'HA' in bill_id:
-            self.warning('skipping amendment %s', bill_id)
+        if 'Substituted' in row['StatusName']:
+            # skip substituted bills, the replacement is picked up instead
+            self.warning('skipping %s: %s', bill_id, row['StatusName'])
             return
 
+        if bill_id.count(' ') > 1:
+            if 'w/' in bill_id:
+                bill_id = bill_id.split(' w/ ')[0]
+            elif 'SA' in bill_id or 'HA' in bill_id:
+                # TODO: re-evaluate if these should be separate bills
+                self.warning('skipping amendment %s', bill_id)
+                return
+            elif 'for' in bill_id:
+                print(bill_id)
+                import ipdb; ipdb.set_trace()
+                bill_id = bill_id.split(' for ')[1]
+            else:
+                raise ValueError('unknown bill_id format: ' + bill_id)
+
         bill_type = self.classify_bill(bill_id)
+
         bill = Bill(identifier=bill_id,
                     legislative_session=session,
                     chamber=chamber,
