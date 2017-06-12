@@ -186,17 +186,19 @@ class UTBillScraper(Scraper, LXMLMixin):
             action = row.xpath('string(td[2])').strip()
             actor = chamber
 
-            if '/' in action:
-                actor = action.split('/')[0].strip()
+            if '/ ' in action:
+                actor = action.split('/ ')[0].strip()
 
                 if actor == 'House':
                     actor = 'lower'
                 elif actor == 'Senate':
                     actor = 'upper'
                 elif actor == 'LFA':
-                    actor = 'Office of the Legislative Fiscal Analyst'
+                    actor = 'legislature'  # 'Office of the Legislative Fiscal Analyst'
+                else:
+                    raise Exception(actor)
 
-                action = '/'.join(action.split('/')[1:]).strip()
+                action = '/'.join(action.split('/ ')[1:]).strip()
 
             if action == 'Governor Signed':
                 actor = 'executive'

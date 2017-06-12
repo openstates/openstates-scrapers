@@ -4,14 +4,8 @@ from pupa.scrape import Person, Scraper
 
 
 class UTPersonScraper(Scraper, LXMLMixin):
-    latest_only = True
 
-    def scrape(self, chamber=None):
-        chambers = [chamber] if chamber is not None else ['upper', 'lower']
-        for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
-
-    def scrape_chamber(self, chamber):
+    def scrape(self):
         house_base_url = "http://le.utah.gov/house2/"
         senate_base_url = "http://senate.utah.gov/"
 
@@ -78,11 +72,6 @@ class UTPersonScraper(Scraper, LXMLMixin):
                     person.add_contact_detail(type='email', value=email, note='District Office')
                 if fax:
                     person.add_contact_detail(type='fax', value=fax, note="District Office")
-
-                conflict_of_interest = (senate_base_url +
-                                        "disclosures/2015/{id}.pdf".format(id=person_id))
-
-                person.extras["links"] = [conflict_of_interest]
 
             person.add_source(json_link)
             yield person

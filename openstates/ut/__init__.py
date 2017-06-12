@@ -207,7 +207,14 @@ class Utah(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        # fiscal analyst
+        # fisc = Organization('Office of the Legislative Fiscal Analyst',
+        #                     classification='department',
+        #                     parent_id=legislature._id,
+        #                     )
+
         yield legislature
+        yield Organization('Office of the Governor', classification='executive')
         yield upper
         yield lower
 
