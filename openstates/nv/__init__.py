@@ -169,4 +169,3 @@ class Nevada(Jurisdiction):
         "78": "78th2015",
         "79": "79th2017",
     }
-
