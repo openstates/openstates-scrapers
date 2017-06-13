@@ -128,8 +128,8 @@ class BillDetailPage(Page, Spatula):
     # count. That's because we've actually encountered this.
     # There's also a catch-all for dashes before the number in No count
     vote_strip_re = re.compile(r'(.+)\((\d+)-[\d]*Y -?(\d+)-N(?: (\d+)-A)?\)')
-    actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'governor',
-                 'Conference': 'conference'}
+    actor_map = {'House': 'lower', 'Senate': 'upper', 'Governor': 'executive',
+                 'Conference': 'legislature'}
 
     def handle_page(self):
         summary = self.doc.xpath('/'.join([
@@ -248,7 +248,7 @@ class BillDetailPage(Page, Spatula):
                         # Cached vote doesn't match up to the current
                         # one. Save, then cache the current vote to
                         # begin the next search.
-                        yield cached_vote
+                        yield from add_pupa_id(cached_vote)
                         cached_vote = VoteEvent(
                             start_date=date,
                             chamber=actor,
@@ -268,13 +268,13 @@ class BillDetailPage(Page, Spatula):
                         continue
 
                 if vote is not None:
-                    yield vote
+                    yield from add_pupa_id(vote)
             else:
                 # If this action isn't a vote, but the last one was,
                 # there's obviously no additional vote data to match.
                 # Go ahead and save the cached data.
                 if cached_vote is not None:
-                    yield cached_vote
+                    yield from add_pupa_id(cached_vote)
 
             cached_vote = cached_action = None
 
@@ -333,6 +333,26 @@ class VotePage(Page):
                 ]
         else:
             return []
+
+
+_seen_pupa_ids = set()
+
+
+def add_pupa_id(vote):
+    """ adds a distinct pupa_id to a vote based on the unique vote URL """
+    for source in vote.sources:
+        if '+vot+' in source['url']:
+            vote.pupa_id = source['url']
+            break
+    else:
+        vote.pupa_id = None
+
+    if vote.pupa_id in _seen_pupa_ids:
+        # skip over votes we've already seen
+        return
+    else:
+        _seen_pupa_ids.add(vote.pupa_id)
+        yield vote
 
 
 class VaBillScraper(Scraper, Spatula):

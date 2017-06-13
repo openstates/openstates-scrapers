@@ -199,6 +199,6 @@ class VaPersonScraper(Scraper, Spatula):
 def maybe_date(text):
     try:
         date = datetime.datetime.strptime(text, '%Y-%d-%m')
-        return TIMEZONE.localize(date)
+        return date.strftime('%Y-%m-%d')
     except ValueError:
         return ''
