@@ -1,4 +1,3 @@
-import lxml
 import datetime
 
 metadata = {
@@ -146,14 +145,3 @@ metadata = {
         '71(R) - 1989',
     ]
 }
-
-
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath( 'http://www.legis.state.tx.us/',
-        '//select[@name="cboLegSess"]/option/text()')
-
-
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    return doc.xpath('//html')[0].text_content()
