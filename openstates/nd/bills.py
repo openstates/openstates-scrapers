@@ -166,11 +166,14 @@ class NDBillScraper(Scraper, LXMLMixin):
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
         for bill in bills:
             bt = bill.text_content().strip().split()
-            typ, idd = bt[0], bt[1]
-            bid = "%s %s" % (typ, idd)
-            if bid not in self.subjects.keys():
-                self.subjects[bid] = []
-            self.subjects[bid].append(subject)
+            try:
+                typ, idd = bt[0], bt[1]
+                bid = "%s %s" % (typ, idd)
+                if bid not in self.subjects.keys():
+                    self.subjects[bid] = []
+                self.subjects[bid].append(subject)
+            except IndexError:
+                self.warning("Bill ID and Type Not Found!")
 
     def scrape(self, session=None, chamber=None):
         if not session:
