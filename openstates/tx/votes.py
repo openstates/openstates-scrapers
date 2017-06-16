@@ -124,8 +124,8 @@ class BaseVote(object):
     @property
     def bill_id(self):
         bill_id = (
-            get_bold_text(self.el) or
-            get_bold_text(self.previous)
+            get_bill(self.el) or
+            get_bill(self.previous)
         )
         return clean_bill_id(bill_id)
 
@@ -225,16 +225,17 @@ class MaybeViva(BaseVote):
         return bool(self.passed_pattern.search(self.text))
 
 
-def get_bold_text(el):
-    b = el.find('b')
-    if b is not None:
-        return b.text_content()
+def get_bill(el):
+    b = re.findall('[HS][BR] \d+', el.text_content())
+    if b:
+        return b[0]
 
 
 def clean_bill_id(bill_id):
     if bill_id:
         bill_id = bill_id.replace(u'\xa0', ' ')
         bill_id = re.sub(r'CS(SB|HB)', r'\1', bill_id)
+        bill_id = bill_id.split(' - ')[0]        # clean off things like " - continued"
     return bill_id
 
 
@@ -369,9 +370,14 @@ class TXVoteScraper(Scraper):
             date = datetime.datetime.strptime(date_str,
                                               "%m-%d %Y").date()
 
-        for vote in votes(root, session, chamber):
+        for vn, vote in enumerate(votes(root, session, chamber)):
             vote.start_date = date
             vote.add_source(url)
+
+            # no good identifier on votes, so we'll try this.
+            # vote pages in journal shouldn't change so ordering should be OK
+            # but might cause an issue if they do change a journal page
+            vote.pupa_id = '{}#{}'.format(url, vn)
             yield vote
 
     def get_session_year(self, session):
