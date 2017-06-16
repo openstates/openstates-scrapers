@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     mysql-server \
     libmysqlclient-dev \
+    mongodb-clients \
     mdbtools
 
 RUN mkdir -p /opt/openstates/
