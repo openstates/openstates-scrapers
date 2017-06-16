@@ -122,7 +122,7 @@ _categorizer_rules = (
     Rule('Second reading, passed', ['passage', 'reading-2']),
     Rule('Transmitted to Gov. for action.', 'executive-receipt'),
     Rule('Transmitted to Governor for his action.', 'executive-receipt'),
-    Rule('Signed by Governor, but item veto', 'executive-veto:line-item'),
+    Rule('Signed by Governor, but item veto', 'executive-veto-line-item'),
     Rule('Signed by Governor', 'executive-signature'),
     Rule('Withdrawn', 'withdrawal'),
     Rule('tabled', 'amendment-deferral'),

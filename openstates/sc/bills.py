@@ -22,7 +22,7 @@ def action_type(action):
                    ('Amended and adopted',
                     ['passage', 'amendment-passage']),
                    ('Amended', 'amendment-passage'),
-                   ('Certain items vetoed', 'executive-veto:line-item'),
+                   ('Certain items vetoed', 'executive-veto-line-item'),
                    ('Committed to', 'referral-committee'),
                    ('Committee Amendment Adopted', 'amendment-passage'),
                    ('Committee Amendment Amended and Adopted',
