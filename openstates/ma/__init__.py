@@ -305,6 +305,7 @@ class Massachusetts(Jurisdiction):
         for name, division_id in upper_divs:
             upper.add_post(label=name, role=upper_title, division_id=division_id)
 
+        yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower

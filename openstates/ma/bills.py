@@ -17,7 +17,7 @@ class MABillScraper(Scraper):
 
     chamber_map = {'lower': 'House', 'upper': 'Senate'}
     chamber_map_reverse = {'House': 'lower', 'Senate': 'upper',
-                           'Executive': 'executive', 'Joint': 'joint'}
+                           'Executive': 'executive', 'Joint': 'legislature'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -239,6 +239,8 @@ class MABillScraper(Scraper):
                 # note: 2014-2015 different format and no data on website for years prior to 2014
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
+
+                cached_vote.pupa_id = '{}#{}'.format(housevote_pdf, n_supplement)
 
                 yield cached_vote
 

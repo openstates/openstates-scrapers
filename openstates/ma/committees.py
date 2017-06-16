@@ -14,7 +14,7 @@ class MACommitteeScraper(Scraper):
 
         chamber_mapping = {'Senate': 'upper',
                            'House': 'lower',
-                           'Joint': 'joint'}
+                           'Joint': 'legislature'}
 
         for page_type in page_types:
             url = 'http://www.malegislature.gov/Committees/' + page_type
