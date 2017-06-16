@@ -12,7 +12,7 @@ action_codes = {
     'gov_avm_336': 'veto-override-passage',
     # change sequence
     'mot_cgo_200': None, 'mot_cgo_201': None, 'mot_cgo_202': None,
-    'gov_mg_378': 'executive-veto:line-item',
+    'gov_mg_378': 'executive-veto-line-item',
     'fa_fabc_115': 'failure',
     'cr_rsc_292': 'committee-passage-favorable',
     'cr_rsc_276': 'committee-passage',

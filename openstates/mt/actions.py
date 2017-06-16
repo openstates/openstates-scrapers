@@ -132,7 +132,7 @@ _categories = {
         },
 
     # The governor has issued a line-item (partial) veto
-    "executive-veto:line-item": {
+    "executive-veto-line-item": {
         'rgxs': [
             u"Returned with Governor's Line-item Veto",
             ],
