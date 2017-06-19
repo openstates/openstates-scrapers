@@ -288,13 +288,16 @@ class WVBillScraper(Scraper):
                     if not name:
                         continue
                     votes[vote_type].append(name)
-
-        vote = Vote(chamber='lower',
-                    start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=motion,
-                    result='pass' if passed else 'fail',
-                    classification='passage',
-                    bill=bill)
+        try:
+            vote = Vote(chamber='lower',
+                        start_date=date.strftime("%Y-%m-%d"),
+                        motion_text=motion,
+                        result='pass' if passed else 'fail',
+                        classification='passage',
+                        bill=bill)
+        except UnboundLocalError:
+            self.warning("Syntax Error/Warning using 'convert_pdf'")
+            return
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
