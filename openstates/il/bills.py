@@ -401,6 +401,8 @@ class IlBillScraper(Scraper):
                 name = re.sub(' *Committee *$', '', pieces[1])
                 if name.startswith(('Executive',
                                     'Human Services',
+                                    'Financial Institutions',
+                                    'Higher Education',
                                     'State Government')):
                     chamber = link.xpath('../following-sibling::td/text()')[0].lower()
                     first_word = name.split()[0]

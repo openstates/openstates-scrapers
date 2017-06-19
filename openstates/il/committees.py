@@ -59,6 +59,13 @@ class IlCommitteeScraper(Scraper):
                         code = code.text_content().strip()
                         o_id = COMMITTEES[(name, code)]
 
+                    if (name, code) in {('Energy Resources Subcommittee', 'HENE-ENRE'),
+                                        ("Workers' Compensation Subcommittee", 'HLBR-WORK'),
+                                        ('Subcommittee on Readiness', 'SENE-SENR'),
+                                        ('Trans. Regulation Accountability', 'HTRR-TRAS'),
+                                        ('Subcommittee on Airports', 'STRN-STRA')}:
+                        code = None
+
                     if o_id in committees:
                         committees[o_id]['name'].add(name)
                         committees[o_id]['code'].add(code)
