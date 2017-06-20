@@ -50,6 +50,8 @@ class IlCommitteeScraper(Scraper):
                     name = a.text.strip()
                     code = a.getparent().getnext()
                     com_url = canonicalize_url(a.get('href'))
+                    if '&GA=' not in com_url:
+                        com_url += ('&GA=' + str(session))
                     if 'TaskForce' in com_url:
                         code = None
                         o_id = (name, code)
@@ -57,18 +59,27 @@ class IlCommitteeScraper(Scraper):
                         code = code.text_content().strip()
                         o_id = COMMITTEES[(name, code)]
 
+                    skip_code = False
+                    if (name, code) in {('Energy Resources Subcommittee', 'HENE-ENRE'),
+                                        ("Workers' Compensation Subcommittee", 'HLBR-WORK'),
+                                        ('Subcommittee on Readiness', 'SENE-SENR'),
+                                        ('Trans. Regulation Accountability', 'HTRR-TRAS'),
+                                        ('Subcommittee on Airports', 'STRN-STRA')}:
+                        skip_code = True
+
                     if o_id in committees:
                         committees[o_id]['name'].add(name)
-                        committees[o_id]['code'].add(code)
                         committees[o_id]['source'].add(com_url)
-
+                        if not skip_code:
+                            committees[o_id]['code'].add(code)
                     else:
                         committees[o_id] = {'name': {name},
-                                            'code': {code},
+                                            'code': set(),
                                             'source': {com_url}}
+                        if not skip_code:
+                            committees[o_id]['code'].add(code)
 
-                    if (code is not None and '-' in code and code not in ('HSGA-SGAS',
-                                                                          'HAPE-APES')):
+                    if code is not None and '-' in code:
                         committees[o_id]['parent'] = top_level_com
                     else:
                         committees[o_id]['chamber'] = chamber
