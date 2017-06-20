@@ -59,25 +59,28 @@ class IlCommitteeScraper(Scraper):
                         code = code.text_content().strip()
                         o_id = COMMITTEES[(name, code)]
 
+                    skip_code = False
                     if (name, code) in {('Energy Resources Subcommittee', 'HENE-ENRE'),
                                         ("Workers' Compensation Subcommittee", 'HLBR-WORK'),
                                         ('Subcommittee on Readiness', 'SENE-SENR'),
                                         ('Trans. Regulation Accountability', 'HTRR-TRAS'),
                                         ('Subcommittee on Airports', 'STRN-STRA')}:
-                        code = None
+                        skip_code = True
 
                     if o_id in committees:
                         committees[o_id]['name'].add(name)
-                        committees[o_id]['code'].add(code)
                         committees[o_id]['source'].add(com_url)
-
+                        if not skip_code:
+                            committees[o_id]['code'].add(code)
                     else:
                         committees[o_id] = {'name': {name},
-                                            'code': {code},
+                                            'code': set(),
                                             'source': {com_url}}
+                        if not skip_code:
+                            committees[o_id]['code'].add(code)
 
-                    if (code is not None and '-' in code and code not in ('HSGA-SGAS',
-                                                                          'HAPE-APES')):
+
+                    if code is not None and '-' in code:
                         committees[o_id]['parent'] = top_level_com
                     else:
                         committees[o_id]['chamber'] = chamber
@@ -115,6 +118,7 @@ class IlCommitteeScraper(Scraper):
         for code in committee['code']:
             if code:
                 o.add_name(code)
+        years = {int(url.split('=')[-1]) for url in committee['source']}
         for source in committee['source']:
             o.add_source(source)
             self.scrape_members(o, source)

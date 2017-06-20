@@ -399,28 +399,20 @@ class IlBillScraper(Scraper):
             vote_type = link.xpath('../ancestor::table[1]//td[1]/text()')[0]
             if vote_type == 'Committee Hearing Votes':
                 name = re.sub(' *Committee *$', '', pieces[1])
-                if name.startswith(('Executive',
-                                    'Human Services',
-                                    'Financial Institutions',
-                                    'Higher Education',
-                                    'State Government')):
-                    chamber = link.xpath('../following-sibling::td/text()')[0].lower()
-                    first_word = name.split()[0]
-                    try:
-                        source, = [url for url, committee
-                                   in committee_actors.items()
-                                   if committee.startswith(first_word) and
-                                   chamber in url]
-                        actor = {'sources__url': source,
-                                 'classification': 'committee'}
-                    except ValueError:
-                        self.warning("Can't resolve voting body for %s" %
-                                     link.get('href'))
-                        continue
-                        
-                else:
-                    actor = {'name': name,
+                chamber = link.xpath('../following-sibling::td/text()')[0].lower()
+                first_word = name.split()[0]
+                try:
+                    source, = [url for url, committee
+                               in committee_actors.items()
+                               if committee.startswith(first_word) and
+                               chamber in url]
+                    actor = {'sources__url': source,
                              'classification': 'committee'}
+                except ValueError:
+                    self.warning("Can't resolve voting body for %s" %
+                                 link.get('href'))
+                    continue
+                        
 
                 
                 # depends on bill type
