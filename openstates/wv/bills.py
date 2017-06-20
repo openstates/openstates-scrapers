@@ -229,6 +229,7 @@ class WVBillScraper(Scraper):
 
         vote_type = None
         votes = collections.defaultdict(list)
+        date = None
 
         for idx, line in enumerate(lines):
             line = line.rstrip().decode('utf-8')
@@ -288,23 +289,26 @@ class WVBillScraper(Scraper):
                     if not name:
                         continue
                     votes[vote_type].append(name)
+        if date:
+            vote = Vote(chamber='lower',
+                        start_date=date.strftime("%Y-%m-%d"),
+                        motion_text=motion,
+                        result='pass' if passed else 'fail',
+                        classification='passage',
+                        bill=bill)
 
-        vote = Vote(chamber='lower',
-                    start_date=date.strftime("%Y-%m-%d"),
-                    motion_text=motion,
-                    result='pass' if passed else 'fail',
-                    classification='passage',
-                    bill=bill)
-        vote.set_count('yes', yes_count)
-        vote.set_count('no', no_count)
-        vote.set_count('other', other_count)
-        vote.add_source(url)
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
+            vote.add_source(url)
 
-        for key, values in votes.items():
-            for value in values:
-                vote.vote(key, value)
+            for key, values in votes.items():
+                for value in values:
+                    vote.vote(key, value)
 
-        yield vote
+            yield vote
+        else:
+            self.warning("Syntax Error/Warning using 'convert_pdf'")
 
     def scrape_senate_vote(self, bill, url, date):
         try:

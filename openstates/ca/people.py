@@ -247,8 +247,16 @@ class CAPersonScraper(Scraper):
         return person
 
     def _construct_email(self, chamber, name):
-        last_name = re.split(r'\s+', name)[-1].lower()
-
+        suffix = ["Ph.D.", "Ret.", "Sr.", "Jr.", "Ed.D.", "II", "III", "IV", "V",
+                  "B.V.M.", "CFRE", "CLU", "CPA", "C.S.C.", "C.S.J.", "D.C.", "D.D.",
+                  "D.D.S.", "D.M.D.", "D.O.", "D.V.M.", "Inc.", "J.D.", "LL.D.", "Ltd.",
+                  "M.D.", "O.D.", "O.S.B.", "P.C.", "P.E.", "R.G.S", "R.N.", "R.N.C.",
+                  "S.H.C.J.", "S.J.", "S.N.J.M.", "S.S.M.O.", "USA", "USAF", "USAFR",
+                  "USAR", "USCG", "USMC", "USMCR", "USN", "USNR"]
+        if any(check in name for check in suffix):
+            last_name = re.split(r'\s+', name)[-2].lower()
+        else:
+            last_name = re.split(r'\s+', name)[-1].lower()
         # translate accents to non-accented versions for use in an
         # email and drop apostrophes
         last_name = ''.join(c for c in
