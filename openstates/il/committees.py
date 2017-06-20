@@ -79,7 +79,6 @@ class IlCommitteeScraper(Scraper):
                         if not skip_code:
                             committees[o_id]['code'].add(code)
 
-
                     if code is not None and '-' in code:
                         committees[o_id]['parent'] = top_level_com
                     else:
@@ -118,7 +117,6 @@ class IlCommitteeScraper(Scraper):
         for code in committee['code']:
             if code:
                 o.add_name(code)
-        years = {int(url.split('=')[-1]) for url in committee['source']}
         for source in committee['source']:
             o.add_source(source)
             self.scrape_members(o, source)

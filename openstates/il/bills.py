@@ -308,7 +308,7 @@ class IlBillScraper(Scraper):
         # don't add just yet; we can make them better using action data
 
         committee_actors = {}
-        
+
         # actions
         action_tds = doc.xpath('//a[@name="actions"]/following-sibling::table[1]/td')
         for date, actor, action_elem in group(action_tds, 3):
@@ -412,9 +412,7 @@ class IlBillScraper(Scraper):
                     self.warning("Can't resolve voting body for %s" %
                                  link.get('href'))
                     continue
-                        
 
-                
                 # depends on bill type
                 motion = 'Do Pass'
                 if pieces[0].startswith(('SCA', 'HCA')):
