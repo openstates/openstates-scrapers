@@ -20,11 +20,13 @@ class NDPersonScraper(Scraper):
         page = self.get(main_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(main_url)
-        for person_url in page.xpath('//div[contains(@class, "all-members")]/'
-                                     'div[@class="name"]/a/@href'):
-            yield from self.scrape_legislator_page(term, person_url)
+        for idx, person_url in enumerate(page.xpath('//div[contains(@class, "all-members")]/'
+                                                    'div[@class="name"]/a/@href')):
+            political_party = page.xpath('//div[contains(@class, "all-members")]/'
+                                         'div[@class="party"]/text()')[idx].strip()
+            yield from self.scrape_legislator_page(term, person_url, political_party)
 
-    def scrape_legislator_page(self, term, url):
+    def scrape_legislator_page(self, term, url, political_party):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -55,22 +57,18 @@ class NDPersonScraper(Scraper):
             "fax": "fax"
         }
         metainf = {}
-
         for block in page.xpath("//div[contains(@class, 'field-label-inline')]"):
             label, items = block.xpath("./*")
             key = label.text_content().strip().lower()
             if key.endswith(":"):
                 key = key[:-1]
-
             metainf[item_mapping[key]] = items.text_content().strip()
 
         chamber = {
             "Senate": "upper",
             "House": "lower"
         }[metainf['chamber']]
-
-        party = {"Democrat": "Democratic", "Republican": "Republican"}[metainf['party']]
-
+        party = {"Democrat": "Democratic", "Republican": "Republican"}[political_party]
         person = Person(primary_org=chamber,
                         district=district,
                         name=name,
