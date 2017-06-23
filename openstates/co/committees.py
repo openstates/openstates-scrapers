@@ -42,7 +42,7 @@ class COCommitteeScraper(Scraper, LXMLMixin):
         comList = page.xpath('//div[contains(@class,' +
                              '"view-committees-overview")]')
         for comType in comList:
-            header = comType.xpath('./div[@class="view-header"]/h3')[0].text
+            header = comType.xpath('./div[@class="view-header"]/h3/text()')
             if "House Committees" in header:
                 chamber = 'lower'
             elif "Senate Committees" in header:
