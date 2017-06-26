@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libgeos-dev \
     libgdal-dev \
+    gdal-bin \
     s3cmd \
     freetds-dev \
     curl \
