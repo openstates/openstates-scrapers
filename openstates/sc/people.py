@@ -54,14 +54,10 @@ class SCPersonScraper(Scraper):
                 photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
             except IndexError:
                 self.warning("No Photo URL for {}".format(full_name))
-                photo_url = None
-            if photo_url:
-                person = Person(name=full_name, district=district,
-                                party=party, primary_org=chamber,
-                                image=photo_url)
-            else:
-                person = Person(name=full_name, district=district,
-                                party=party, primary_org=chamber)
+                photo_url = ''
+            person = Person(name=full_name, district=district,
+                            party=party, primary_org=chamber,
+                            image=photo_url)
 
             # office address / phone
             try:
