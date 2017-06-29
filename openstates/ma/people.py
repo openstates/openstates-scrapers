@@ -111,11 +111,12 @@ class MAPersonScraper(Scraper):
                 note = 'District Office'
             elif 'State' in office_name:
                 note = 'Capitol office'
-
-            address = addr.xpath('a')[0].text_content()
-            address = re.sub('\s{2,}', '\n', address)
-            leg.add_contact_detail(type='address', value=address, note=note)
-
+            try:
+                address = addr.xpath('a')[0].text_content()
+                address = re.sub('\s{2,}', '\n', address)
+                leg.add_contact_detail(type='address', value=address, note=note)
+            except:
+                self.warning("No address info found in `contactGroup`")
             next = None
             for phonerow in addr.xpath('./div/div'):
                 phonerow = phonerow.text_content().strip()
