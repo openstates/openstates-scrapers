@@ -38,7 +38,7 @@ class Florida(Jurisdiction):
         {'name': '2017 Regular Session', 'identifier': '2017', 'classification': 'primary'},
         {'name': '2017 Special Session A', 'identifier': '2017A', 'classification': 'special'},
     ]
-    ignored_scraped_sessions = ['2010', '2010A', '2010O', '2012O', '2016O', '2014O']
+    ignored_scraped_sessions = ['2010', '2010A', '2010O', '2012O', '2016O', '2014O', '2018']
 
     def get_organizations(self):
         legis = Organization(name="Florida Legislature", classification="legislature")
