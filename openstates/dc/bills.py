@@ -396,11 +396,11 @@ class DCBillScraper(Scraper):
             t = None
 
         bill.add_action(motion, date, classification=t)
-
-        if "amendment" in t:
-            vote["type"] = "amendment"
-        elif "reading" in t:
-            vote["type"] = t.replace("bill:", "")
+        if t:
+            if "amendment" in t:
+                vote["type"] = "amendment"
+            elif "reading" in t:
+                vote["type"] = t.replace("bill:", "")
 
         # some documents/versions are hiding in votes.
         if "AttachmentPath" in vote:
