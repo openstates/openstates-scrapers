@@ -88,5 +88,7 @@ class Michigan(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        return url_xpath('http://www.legislature.mi.gov/mileg.aspx?'
-                         'page=LegBasicSearch', '//option/text()')
+        return [s.strip() for s in
+                url_xpath('http://www.legislature.mi.gov/mileg.aspx?page=LegBasicSearch',
+                          '//option/text()')
+                if s.strip()]
