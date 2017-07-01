@@ -4,6 +4,7 @@ from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin, validate_email_address
 from .utils import LXMLMixinOK
 
+
 class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
 
     _parties = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}

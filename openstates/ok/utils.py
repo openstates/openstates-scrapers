@@ -1,6 +1,7 @@
 import subprocess
 import lxml.html
 
+
 class LXMLMixinOK(object):
     def curl_lxmlize(self, url):
         """Parses document into an LXML object and makes links absolute.
