@@ -262,7 +262,7 @@ class CAPersonScraper(Scraper):
         last_name = ''.join(c for c in
                             unicodedata.normalize('NFD', last_name)
                             if unicodedata.category(c) != 'Mn')
-        last_name = last_name.replace("'", "")
+        last_name = last_name.replace("'", "").replace(",", "")
 
         if chamber == 'lower':
             return 'assemblymember.' + last_name + '@assembly.ca.gov'
