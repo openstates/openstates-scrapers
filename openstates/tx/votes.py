@@ -54,35 +54,43 @@ def clean_journal(root):
 
 def names(el):
     text = (el.text or '') + (el.tail or '')
+    split_name_list = text.split(';')
+    if len(split_name_list) < 7:
+        # probably failed to properly split on semi-colons; try commas:
+        split_name_list = text.split(',')
 
     names = []
-    for name in text.split(';'):
+    for name in split_name_list:
         name = name.strip().replace('\r\n', '').replace('  ', ' ')
 
         if not name:
             continue
 
-        if name == 'Gonzalez Toureilles':
-            name = 'Toureilles'
-        elif name == 'Mallory Caraway':
-            name = 'Caraway'
-        elif name == 'Martinez Fischer':
-            name = 'Fischer'
-        elif name == 'Rios Ybarra':
-            name = 'Ybarra'
-
+        name = clean_name_special_cases(name)
         names.append(name)
 
     if names:
-        # First name will have stuff to ignore before an mdash
-        names[0] = clean_name(names[0]).strip()
+        # First item in the list will have stuff to ignore before an mdash
+        names[0] = clean_starting_name(names[0]).strip()
         # Get rid of trailing '.'
         names[-1] = names[-1][0:-1]
 
     return names
 
 
-def clean_name(name):
+def clean_name_special_cases(name):
+    if name == 'Gonzalez Toureilles':
+        name = 'Toureilles'
+    elif name == 'Mallory Caraway':
+        name = 'Caraway'
+    elif name == 'Martinez Fischer':
+        name = 'Fischer'
+    elif name == 'Rios Ybarra':
+        name = 'Ybarra'
+    return name
+
+
+def clean_starting_name(name):
     return re.split(r'[\u2014:]', name)[-1]
 
 

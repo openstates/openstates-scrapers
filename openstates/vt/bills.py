@@ -231,7 +231,8 @@ class VTBillScraper(Scraper, LXMLMixin):
 
                 if "Passed -- " in vote['FullStatus']:
                     did_pass = True
-                elif "Failed -- " in vote['FullStatus']:
+                elif ("Failed -- " in vote['FullStatus'] or
+                      'Veto of the Governor sustained' in vote['FullStatus']):
                     did_pass = False
                 else:
                     raise AssertionError("Roll call vote result is unclear")
