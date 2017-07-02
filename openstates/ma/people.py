@@ -66,7 +66,9 @@ class MAPersonScraper(Scraper):
         for member_url in doc.xpath('//td[@class="pictureCol"]/a/@href'):
             if 'VAC_' in member_url:
                 continue
-            yield self.scrape_member(chamber, member_url)
+            member = self.scrape_member(chamber, member_url)
+            if member:
+                yield member
 
     def scrape_member(self, chamber, member_url):
         page = self.get(member_url).text
@@ -94,6 +96,10 @@ class MAPersonScraper(Scraper):
         else:
             party = 'Other'
 
+        if 'Vacant' in full_name:
+            self.info('skipping %s %s', full_name, district)
+            return
+
         leg = Person(primary_org=chamber,
                      district=district,
                      name=full_name,
@@ -102,7 +108,8 @@ class MAPersonScraper(Scraper):
         leg.add_link(member_url)
         leg.add_source(member_url)
 
-        leg.add_contact_detail(type='email', value=email, note='District Office')
+        if email:
+            leg.add_contact_detail(type='email', value=email, note='District Office')
 
         # offices
         for addr in root.xpath('//address/div[@class="contactGroup"]'):
