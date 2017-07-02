@@ -2,10 +2,10 @@ import re
 import lxml
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin, validate_email_address
-from .utils import proxy_house_url
+from .utils import LXMLMixinOK
 
 
-class OKPersonScraper(Scraper, LXMLMixin):
+class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
 
     _parties = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
 
@@ -63,9 +63,8 @@ class OKPersonScraper(Scraper, LXMLMixin):
             yield from getattr(self, 'scrape_' + chamber + '_chamber')(term)
 
     def scrape_lower_chamber(self, term):
-        url = "http://www.okhouse.gov/Members/Default.aspx"
-
-        page = self.lxmlize(proxy_house_url(url))
+        url = "https://www.okhouse.gov/Members/Default.aspx"
+        page = self.curl_lxmlize(url)
 
         legislator_nodes = self.get_nodes(
             page,
@@ -112,9 +111,8 @@ class OKPersonScraper(Scraper, LXMLMixin):
 
             party = self._parties[party_text]
 
-            legislator_url = 'http://www.okhouse.gov/District.aspx?District=' + district
-
-            legislator_page = self.lxmlize(proxy_house_url(legislator_url))
+            legislator_url = 'https://www.okhouse.gov/District.aspx?District=' + district
+            legislator_page = self.curl_lxmlize(legislator_url)
 
             photo_url = self.get_node(
                 legislator_page,
@@ -142,7 +140,7 @@ class OKPersonScraper(Scraper, LXMLMixin):
         for bold in doc.xpath(xpath):
 
             # Get the address.
-            address_div = bold.getparent().itersiblings().next()
+            address_div = next(bold.getparent().itersiblings())
 
             # Get the room number.
             xpath = '//*[contains(@id, "CapitolRoom")]/text()'
