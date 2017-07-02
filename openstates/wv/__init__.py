@@ -67,6 +67,8 @@ class WestVirginia(Jurisdiction):
             "classification": "primary",
             "identifier": "2017",
             "name": "2017 Regular Session",
+            "start_date": "2017-02-08",
+            "end_date": "2017-04-09",
         },
         {
             "_scraped_name": "2017",

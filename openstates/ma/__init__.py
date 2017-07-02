@@ -52,7 +52,9 @@ class Massachusetts(Jurisdiction):
             "_scraped_name": "190th",
             "classification": "primary",
             "identifier": "190th",
-            "name": "190th Legislature (2017-2018)"
+            "name": "190th Legislature (2017-2018)",
+            'start_date': '2017-01-04',
+            'end_date': '2017-11-15',
         }
     ]
     ignored_scraped_sessions = []

@@ -53,7 +53,9 @@ class Vermont(Jurisdiction):
             "_scraped_name": "2017-2018 Session",
             "classification": "primary",
             "identifier": "2017-2018",
-            "name": "2017-2018 Regular Session"
+            "name": "2017-2018 Regular Session",
+            "start_date": "2017-01-04",
+            "end_date": "2017-05-08",
         }
     ]
     ignored_scraped_sessions = [

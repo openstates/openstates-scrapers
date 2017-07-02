@@ -44,7 +44,9 @@ class Georgia(Jurisdiction):
         {
             "_scraped_name": "2017-2018 Regular Session",
             "identifier": "2017_18",
-            "name": "2017-2018 Regular Session"
+            "name": "2017-2018 Regular Session",
+            'start_date': '2017-01-09',
+            'end_date': '2017-03-31'
         }
     ]
     ignored_scraped_sessions = [

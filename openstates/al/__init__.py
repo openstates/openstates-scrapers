@@ -88,8 +88,10 @@ class Alabama(Jurisdiction):
         {
             "_scraped_name": "Regular Session 2017",
             "classification": "primary",
+            "end_date": "2017-05-31",
             "identifier": "2017rs",
-            "name": "2017 Regular Session"
+            "name": "2017 Regular Session",
+            "start_date": "2017-02-07"
         }
     ]
     ignored_scraped_sessions = [

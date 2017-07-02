@@ -72,7 +72,9 @@ class Delaware(Jurisdiction):
         {
             "_scraped_name": "2016 - 2018 (GA 149)",
             "identifier": "149",
-            "name": "149th General Assembly (2017-2018)"
+            "name": "149th General Assembly (2017-2018)",
+            "start_date": "2017-01-10",
+            "end_date": "2017-06-30"
         }
     ]
     ignored_scraped_sessions = []

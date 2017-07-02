@@ -205,8 +205,10 @@ class Arizona(Jurisdiction):
         {
             "_scraped_name": "2017 - Fifty-third Legislature - First Regular Session",
             "classification": "primary",
+            "end_date": "2017-05-03",
             "identifier": "53rd-1st-regular",
-            "name": "53rd Legislature - 1st Regular Session"
+            "name": "53rd Legislature - 1st Regular Session",
+            "start_date": "2017-01-09"
         }
     ]
     ignored_scraped_sessions = [

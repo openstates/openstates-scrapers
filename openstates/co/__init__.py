@@ -73,7 +73,9 @@ class Colorado(Jurisdiction):
             "_scraped_name": "2017 Regular Session",
             "classification": "primary",
             "identifier": "2017A",
-            "name": "2017 Regular Session"
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-11",
+            "end_date": "2017-05-10",
         }
     ]
     ignored_scraped_sessions = [

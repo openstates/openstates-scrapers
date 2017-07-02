@@ -62,7 +62,9 @@ class Wyoming(Jurisdiction):
             "_scraped_name": "2017 General Session",
             "classification": "primary",
             "identifier": "2017",
-            "name": "2017 General Session"
+            "name": "2017 General Session",
+            "start_date": "2017-01-10",
+            "end_date": "2017-03-03",
         }
     ]
     ignored_scraped_sessions = [

@@ -59,7 +59,9 @@ class Maine(Jurisdiction):
         {
             "_scraped_name": "128th Legislature",
             "identifier": "128",
-            "name": "128th Legislature (2017-2018)"
+            "name": "128th Legislature (2017-2018)",
+            "start_date": "2016-12-07",
+            "end_date": "2017-06-14",
         }
     ]
     ignored_scraped_sessions = []

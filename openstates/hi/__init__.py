@@ -52,7 +52,9 @@ class Hawaii(Jurisdiction):
         {
             "_scraped_name": "2017",
             "identifier": "2017 Regular Session",
-            "name": "2017 Regular Session"
+            "name": "2017 Regular Session",
+            'start_date': '2017-01-18',
+            'end_date': '2017-05-04'
         }
     ]
     ignored_scraped_sessions = [

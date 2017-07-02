@@ -60,7 +60,9 @@ class Pennsylvania(Jurisdiction):
             "_scraped_name": "2017-2018 Regular Session",
             "classification": "primary",
             "identifier": "2017-2018",
-            "name": "2017-2018 Regular Session"
+            "name": "2017-2018 Regular Session",
+            "start_date": "2017-01-03",
+            "end_date": "2017-12-31"
         }
     ]
     ignored_scraped_sessions = [

@@ -99,6 +99,7 @@ class Kentucky(Jurisdiction):
         {
             "_scraped_name": "2017 Regular Session",
             "classification": "primary",
+            "end_date": "2017-03-30",
             "identifier": "2017RS",
             "name": "2017 Regular Session",
             "start_date": "2017-01-03"

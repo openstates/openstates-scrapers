@@ -50,7 +50,9 @@ class NewYork(Jurisdiction):
         {
             "_scraped_name": "2017",
             "identifier": "2017-2018",
-            "name": "2017 Regular Session"
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-04",
+            "end_date": "2017-12-31",
         }
     ]
     ignored_scraped_sessions = [

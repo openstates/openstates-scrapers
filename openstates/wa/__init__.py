@@ -46,7 +46,9 @@ class Washington(Jurisdiction):
         {
             "_scraped_name": "2017-18",
             "identifier": "2017-2018",
-            "name": "2017-2018 Regular Session"
+            "name": "2017-2018 Regular Session",
+            "start_date": "2017-01-09",
+            "end_date": "2017-04-23",
         }
     ]
     ignored_scraped_sessions = [

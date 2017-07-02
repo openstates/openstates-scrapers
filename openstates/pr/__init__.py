@@ -37,7 +37,9 @@ class PuertoRico(Jurisdiction):
         {
             "_scraped_name": "2017-2020",
             "identifier": "2017-2020",
-            "name": "2017-2020 Session"
+            "name": "2017-2020 Session",
+            "start_date": "2017-01-02",
+            "end_date": "2021-01-01",
         }
     ]
     ignored_scraped_sessions = [

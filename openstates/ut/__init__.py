@@ -138,7 +138,8 @@ class Utah(Jurisdiction):
             "classification": "primary",
             "identifier": "2017",
             "name": "2017 General Session",
-            "start_date": "2017-01-23"
+            "start_date": "2017-01-23",
+            "end_date": "2017-03-09",
         }
     ]
     ignored_scraped_sessions = [
