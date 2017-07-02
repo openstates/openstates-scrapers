@@ -1,16 +1,16 @@
 from datetime import datetime
 import lxml.html
-from billy.scrape.bills import Bill, BillScraper
+from pupa.scrape import Scraper, Bill
 from .actions import NDCategorizer
 import re
 from openstates.utils import LXMLMixin
 
-class NDBillScraper(BillScraper, LXMLMixin):
+
+class NDBillScraper(Scraper, LXMLMixin):
     """
     Scrapes available legislative information from the website of the North
     Dakota legislature and stores it in the openstates  backend.
     """
-    jurisdiction = 'nd'
     categorizer = NDCategorizer()
 
     house_list_url = "http://www.legis.nd.gov/assembly/%s-%s/bill-text/house-bill.html"
@@ -49,13 +49,12 @@ class NDBillScraper(BillScraper, LXMLMixin):
         if type_ == "CR":
             bill_type = "concurrent resolution"
 
-        bill = Bill(session,
-                    chamber,
-                    bid,
-                    title,
-                    subjects=subjects,
-                    type=bill_type)
-
+        bill = Bill(bid,
+                    legislative_session=session,
+                    chamber=chamber,
+                    title=title,
+                    classification=bill_type)
+        bill.subject = subjects
         bill.add_source(href)
 
         for row in ttrows:
@@ -71,9 +70,8 @@ class NDBillScraper(BillScraper, LXMLMixin):
                 for sponsor in [
                     x.strip() for x in sponsors['sponsors'].split(",")
                 ]:
-                    bill.add_sponsor('primary',
-                                     sponsor)
-
+                    bill.add_sponsorship(sponsor, classification='primary',
+                                         entity_type='person', primary=True)
 
         dt = None
         oldchamber = 'other'
@@ -106,16 +104,18 @@ class NDBillScraper(BillScraper, LXMLMixin):
             if date != '':
                 dt = datetime.strptime("%s %s" % (date, self.year), "%m/%d %Y")
 
-            kwargs = self.categorizer.categorize(action)
+            classif = self.categorizer.categorize(action)
 
-            bill.add_action(chamber, action, dt, **kwargs)
+            bill.add_action(chamber=chamber, description=action,
+                            date=dt.strftime('%Y-%m-%d'),
+                            classification=classif['classification'])
 
         version_url = page.xpath("//a[contains(text(), 'Versions')]")
         if len(version_url) == 1:
             href = version_url[0].attrib['href']
             bill = self.scrape_versions(bill, href)
 
-        self.save_bill(bill)
+        yield bill
 
     def scrape_versions(self, bill, href):
         page = self.lxmlize(href)
@@ -128,21 +128,23 @@ class NDBillScraper(BillScraper, LXMLMixin):
                 self.warning('No action name found to use as bill version name')
                 (name, ) = row.xpath('td[1]/a/text()')
             (url, ) = row.xpath('td[1]/a/@href')
-            bill.add_version(name, url, mimetype='application/pdf')
+            bill.add_version_link(note=name,
+                                  url=url,
+                                  media_type='application/pdf')
 
             try:
                 (marked_up_url, ) = row.xpath('td[3]/a/@href')
-                bill.add_version(
+                bill.add_version_link(
                     '{} (Marked Up)'.format(name),
                     marked_up_url,
-                    mimetype='application/pdf'
+                    media_type='application/pdf'
                 )
             except ValueError:
                 pass
 
         return bill
 
-    def scrape_subjects(self, term):
+    def scrape_subjects(self, session):
         page = self.get(self.subjects_url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(self.subjects_url)
@@ -164,35 +166,41 @@ class NDBillScraper(BillScraper, LXMLMixin):
         bills = page.xpath("//a[contains(@href, 'bill-actions')]")
         for bill in bills:
             bt = bill.text_content().strip().split()
-            typ, idd = bt[0], bt[1]
-            bid = "%s %s" % (typ, idd)
-            if bid not in self.subjects.keys():
-                self.subjects[bid] = []
-            self.subjects[bid].append(subject)
+            try:
+                typ, idd = bt[0], bt[1]
+                bid = "%s %s" % (typ, idd)
+                if bid not in self.subjects.keys():
+                    self.subjects[bid] = []
+                self.subjects[bid].append(subject)
+            except IndexError:
+                self.warning("Bill ID and Type Not Found!")
 
-    def scrape(self, term, chambers):
+    def scrape(self, session=None, chamber=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        # chambers = [chamber] if chamber else ['upper', 'lower']
         # figuring out starting year from metadata
-        for t in self.metadata['terms']:
-            if t['name'] == term:
-                start_year = t['start_year']
+        for item in self.jurisdiction.legislative_sessions:
+            if item['identifier'] == session:
+                start_year = item['start_date'][:4]
                 self.year = start_year
                 break
-
         # Get the subjects for every bill
         # Sometimes, at least with prefiles, a bill will not be given subjects
-        self.subjects_url = self.subjects_url % (term, start_year)
+        self.subjects_url = self.subjects_url % (session, start_year)
         self.subjects = {}
-        self.scrape_subjects(term)
+        self.scrape_subjects(session)
 
         for chamber, url in {
-            'lower': self.house_list_url % (term, start_year),
-            'upper': self.senate_list_url % (term, start_year)
+            'lower': self.house_list_url % (session, start_year),
+            'upper': self.senate_list_url % (session, start_year)
         }.items():
             doc = self.lxmlize(url)
             bill_urls = doc.xpath('//table['
-                'contains(@summary, "Bills")'
-                'or contains(@summary, "Resolutions")'
-                ']//tr/th/a/@href')
+                                  'contains(@summary, "Bills")'
+                                  'or contains(@summary, "Resolutions")'
+                                  ']//tr/th/a/@href')
             # Each version of a bill is its own row, so de-dup the links
             for bill_url in set(bill_urls):
-                self.scrape_actions(term, bill_url)
+                yield from self.scrape_actions(session, bill_url)

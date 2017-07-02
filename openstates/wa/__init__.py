@@ -1,78 +1,102 @@
-import lxml.html
-import datetime
-from billy.utils.fulltext import text_after_line_numbers
-from .bills import WABillScraper
-from .legislators import WALegislatorScraper
-from .committees import WACommitteeScraper
+from pupa.scrape import Jurisdiction, Organization
+from .people import WAPersonScraper
 from .events import WAEventScraper
+from .committees import WACommitteeScraper
+from .bills import WABillScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
-metadata = dict(
-    name='Washington',
-    abbreviation='wa',
-    capitol_timezone='America/Los_Angeles',
-    legislature_name='Washington State Legislature',
-    legislature_url='http://www.leg.wa.gov/',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms=[
-        {'name': '2009-2010', 'start_year': 2009, 'end_year': 2010,
-         'sessions': ['2009-2010']},
-        {'name': '2011-2012', 'start_year': 2011, 'end_year': 2012,
-         'sessions': ['2011-2012']},
-        {'name': '2013-2014', 'start_year': 2013, 'end_year': 2014,
-         'sessions': ['2013-2014']},
-        {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
-         'sessions': ['2015-2016']},
-         {'name': '2017-2018', 'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017-2018']},
-        ],
-    session_details = {
-        '2009-2010': {'display_name': '2009-2010 Regular Session',
-                      '_scraped_name': '2009-10',
-                     },
-        '2011-2012': {'display_name': '2011-2012 Regular Session',
-                      '_scraped_name': '2011-12',
-                     },
-        '2013-2014': {'display_name': '2013-2014 Regular Session',
-                      '_scraped_name': '2013-14',
-                     },
-        '2015-2016': {'display_name': '2015-2016 Regular Session',
-                      '_scraped_name': '2015-16',
-                     },
-        '2017-2018': {'display_name': '2017-2018 Regular Session',
-                      '_scraped_name': '2017-18',
-                      'start_date': datetime.date(2017, 1, 9),
-                      'end_date': datetime.date(2017, 4, 23),
-                     },
-    },
-    feature_flags = ['events', 'subjects', 'capitol_maps', 'influenceexplorer'],
-    capitol_maps=[
-        {"name": "Floor 1",
-         "url": 'http://static.openstates.org/capmaps/wa/f1.gif'
-        },
-        {"name": "Floor 2",
-         "url": 'http://static.openstates.org/capmaps/wa/f2.gif'
-        },
-        {"name": "Floor 3",
-         "url": 'http://static.openstates.org/capmaps/wa/f3.gif'
-        },
-        {"name": "Floor 4",
-         "url": 'http://static.openstates.org/capmaps/wa/f4.gif'
-        },
-    ],
-    _ignored_scraped_sessions=['2007-08', '2005-06', '2003-04', '2001-02', '1999-00', '1997-98', '1995-96', '1993-94', '1991-92', '1989-90', '1987-88', '1985-86'],
-)
 
-def session_list():
-    from billy.scrape.utils import url_xpath
-    return url_xpath('http://apps.leg.wa.gov/billinfo/',
-     '//select[starts-with(@id, "ctl00_ContentPlaceHolder1_biennia")]/option/@value')
+class Washington(Jurisdiction):
+    division_id = "ocd-division/country:us/state:wa"
+    classification = "government"
+    name = "Washington"
+    url = "http://www.leg.wa.gov"
+    scrapers = {
+        'people': WAPersonScraper,
+        'events': WAEventScraper,
+        'committees': WACommitteeScraper,
+        'bills': WABillScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
+        {
+            "_scraped_name": "2009-10",
+            "identifier": "2009-2010",
+            "name": "2009-2010 Regular Session"
+        },
+        {
+            "_scraped_name": "2011-12",
+            "identifier": "2011-2012",
+            "name": "2011-2012 Regular Session"
+        },
+        {
+            "_scraped_name": "2013-14",
+            "identifier": "2013-2014",
+            "name": "2013-2014 Regular Session"
+        },
+        {
+            "_scraped_name": "2015-16",
+            "identifier": "2015-2016",
+            "name": "2015-2016 Regular Session"
+        },
+        {
+            "_scraped_name": "2017-18",
+            "identifier": "2017-2018",
+            "name": "2017-2018 Regular Session",
+            "start_date": "2017-01-09",
+            "end_date": "2017-04-23",
+        }
+    ]
+    ignored_scraped_sessions = [
+        "2007-08",
+        "2005-06",
+        "2003-04",
+        "2001-02",
+        "1999-00",
+        "1997-98",
+        "1995-96",
+        "1993-94",
+        "1991-92",
+        "1989-90",
+        "1987-88",
+        "1985-86"
+    ]
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    text = ' '.join(x.text_content() for x in doc.xpath('//body/p'))
-    return text
+    def get_organizations(self):
+        legislature_name = "Washington State Legislature"
+        lower_chamber_name = "House"
+        lower_seats = 49
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 49
+        upper_title = "Senator"
+
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats + 1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        from utils.lxmlize import url_xpath
+        return url_xpath('http://apps.leg.wa.gov/billinfo/',
+                         '//select[starts-with(@id, "ctl00_ContentPlaceHolder'
+                         '1_biennia")]/option/@value')

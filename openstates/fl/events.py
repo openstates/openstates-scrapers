@@ -24,8 +24,7 @@ class FlEventScraper(Scraper):
             location = entry['summary'].split(' - ')[1]
 
             event = Event(name=desc,
-                          start_time=when,
-                          timezone=self.tz.zone,
+                          start_date=when,
                           description=desc,
                           location_name=location)
 

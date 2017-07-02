@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-
+from openstates.utils import url_xpath
 from .bills import MIBillScraper
 from .events import MIEventScraper
 from .people import MIPersonScraper
@@ -77,14 +77,20 @@ class Michigan(Jurisdiction):
                              parent_id=legislature._id)
 
         for n in range(1, upper_seats + 1):
-            lower.add_post(
+            upper.add_post(
                 label=str(n), role=upper_title,
                 division_id='{}/sldu:{}'.format(self.division_id, n))
         for n in range(1, lower_seats + 1):
-            upper.add_post(
+            lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        return [s.strip() for s in
+                url_xpath('http://www.legislature.mi.gov/mileg.aspx?page=LegBasicSearch',
+                          '//option/text()')
+                if s.strip()]

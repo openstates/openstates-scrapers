@@ -1,13 +1,12 @@
 from openstates.utils import LXMLMixin
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 
 COMMITTEE_URL = ("http://leg.colorado.gov/content/committees")
 
 
-class COCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = "co"
+class COCommitteeScraper(Scraper, LXMLMixin):
 
-    def scrape_page(self, link, chamber, term):
+    def scrape_page(self, link, chamber=None):
         page = self.lxmlize(link.attrib['href'])
         comName = link.text
         roles = {
@@ -15,7 +14,9 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
             "Vice Chair": "vice-chair",
             "Vice-Chair": "vice-chair",
         }
-        committee = Committee(chamber, comName)
+        committee = Organization(comName,
+                                 chamber=chamber,
+                                 classification='committee')
         committee.add_source(link.attrib['href'])
 
         for member in page.xpath('//div[@class="members"]/' +
@@ -31,27 +32,30 @@ class COCommitteeScraper(CommitteeScraper, LXMLMixin):
                 role = roles[role[0].text]
             else:
                 role = 'member'
-            committee.add_member(person, role)
-        self.save_committee(committee)
-        return
+            committee.add_member(person, role=role)
+        yield committee
 
-    def scrape(self, term, chambers):
+    def scrape(self, chambers=None):
         page = self.lxmlize(COMMITTEE_URL)
         # Actual class names have jquery uuids in them, so use
         # contains as a workaround
         comList = page.xpath('//div[contains(@class,' +
                              '"view-committees-overview")]')
         for comType in comList:
-            header = comType.xpath('./div[@class="view-header"]/h3')[0].text
+            try:
+                header = comType.xpath('./div[@class="view-header"]/h3/text()')[0]
+            except IndexError:
+                self.warning("Blank committees list found.")
+                break
             if "House Committees" in header:
                 chamber = 'lower'
             elif "Senate Committees" in header:
                 chamber = 'upper'
             else:
-                chamber = 'joint'
+                chamber = 'legislature'
             for comm in comType.xpath('./div[@class="view-content"]' +
                                       '/table/tbody/tr/td'):
                 link = comm.xpath('.//a')
                 # ignore empty cells
                 if link:
-                    self.scrape_page(link[0], chamber, term)
+                    yield from self.scrape_page(link[0], chamber)

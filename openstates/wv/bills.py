@@ -1,16 +1,13 @@
-
 import os
 import re
 import datetime
 import collections
-from urlparse import urlparse, parse_qsl
-from urllib import quote, unquote_plus
+from urllib.parse import unquote_plus, parse_qsl, urlparse
 
 import lxml.html
 
-from billy.scrape.utils import convert_pdf
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
+from pupa.utils import convert_pdf
+from pupa.scrape import Scraper, Bill, VoteEvent as Vote
 import scrapelib
 
 from .actions import Categorizer
@@ -35,34 +32,45 @@ class _Url(object):
         return hash(self.parts)
 
 
-class WVBillScraper(BillScraper):
-    jurisdiction = 'wv'
+class WVBillScraper(Scraper):
     categorizer = Categorizer()
+
+    _special_names = {
+        '20161S': '1X',
+        '2017': 'rs',
+        '20171S': '1X',
+    }
 
     bill_types = {'B': 'bill',
                   'R': 'resolution',
                   'CR': 'concurrent resolution',
                   'JR': 'joint resolution'}
 
-    def scrape(self, chamber, session):
+    def scrape(self, chamber=None, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         if chamber == 'lower':
             orig = 'h'
         else:
             orig = 's'
 
         # scrape bills
-        if (self.metadata['session_details'][session]['type'] == 'special'):
-            url = ("http://www.legis.state.wv.us/Bill_Status/"
-               "Bills_all_bills.cfm?year=%s&sessiontype=%s"
-               "&btype=bill&orig=%s" 
-               % (self.metadata['session_details'][session]['_scraped_name'],
-               self.metadata['session_details'][session]['_special_name'],
-               orig))
+        if ('special' in self.jurisdiction.legislative_sessions[-1]['name'].lower()):
+            url = ("http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
+                   "year=%s&sessiontype=%s&btype=bill&orig=%s" % (
+                       self.jurisdiction.legislative_sessions[-1]['_scraped_name'],
+                       self._special_names[session],
+                       orig))
         else:
-            url = ("http://www.legis.state.wv.us/Bill_Status/"
-               "Bills_all_bills.cfm?year=%s&sessiontype=RS"
-               "&btype=bill&orig=%s" % (session, orig))
-               
+            url = ("http://www.legis.state.wv.us/Bill_Status/Bills_all_bills.cfm?"
+                   "year=%s&sessiontype=RS&btype=bill&orig=%s" % (session, orig))
+
         page = lxml.html.fromstring(self.get(url).text)
         page.make_links_absolute(url)
 
@@ -70,20 +78,22 @@ class WVBillScraper(BillScraper):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
-                self.logger.warning("Can't find bill title, using ID as title")
+                self.warning("Can't find bill title, using ID as title")
                 title = bill_id
-            self.scrape_bill(session, chamber, bill_id, title,
-                             link.attrib['href'])
+            yield from self.scrape_bill(session, chamber, bill_id, title,
+                                        link.attrib['href'])
 
         # scrape resolutions
-        if (self.metadata['session_details'][session]['type'] == 'special'):
-            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s&sessiontype=%s&btype=res" 
-                % (self.metadata['session_details'][session]['_scraped_name'], 
-                self.metadata['session_details'][session]['_special_name']))
+        if ('special' in self.jurisdiction.legislative_sessions[-1]['name'].lower()):
+            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
+                       "&sessiontype=%s&btype=res" % (
+                           self.jurisdiction.legislative_sessions[-1]['_scraped_name'],
+                           self._special_names[session]))
         else:
-            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s&sessiontype=rs&btype=res" 
-                   % (self.metadata['session_details'][session]['_scraped_name']))
-                   
+            res_url = ("http://www.legis.state.wv.us/Bill_Status/res_list.cfm?year=%s"
+                       "&sessiontype=rs&btype=res" % (
+                           self.jurisdiction.legislative_sessions[-1]['_scraped_name']))
+
         doc = lxml.html.fromstring(self.get(res_url).text)
         doc.make_links_absolute(res_url)
 
@@ -92,10 +102,10 @@ class WVBillScraper(BillScraper):
             bill_id = link.xpath("string()").strip()
             title = link.xpath("string(../../td[2])").strip()
             if not title:
-                self.logger.warning("Can't find bill title, using ID as title")
+                self.warning("Can't find bill title, using ID as title")
                 title = bill_id
-            self.scrape_bill(session, chamber, bill_id, title,
-                             link.attrib['href'])
+            yield from self.scrape_bill(session, chamber, bill_id, title,
+                                        link.attrib['href'])
 
     def scrape_bill(self, session, chamber, bill_id, title, url,
                     strip_sponsors=re.compile(r'\s*\(.{,50}\)\s*').sub):
@@ -107,15 +117,19 @@ class WVBillScraper(BillScraper):
 
         bill_type = self.bill_types[bill_id.split()[0][1:]]
 
-        bill = Bill(session, chamber, bill_id, title, type=bill_type)
+        bill = Bill(bill_id,
+                    legislative_session=session,
+                    chamber=chamber,
+                    title=title,
+                    classification=bill_type)
         bill.add_source(url)
 
         xpath = ('//strong[contains(., "SUBJECT")]/../'
                  'following-sibling::td/a/text()')
-        bill['subjects'] = page.xpath(xpath)
+        bill.subject = page.xpath(xpath)
 
         for version in self.scrape_versions(session, chamber, page, bill_id):
-            bill.add_version(**version)
+            bill.add_version_link(**version)
 
         # Resolution pages have different html.
         values = {}
@@ -130,12 +144,17 @@ class WVBillScraper(BillScraper):
             values[heading] = value
 
         # summary was always same as title
-        #bill['summary'] = values['SUMMARY:']
+        # bill['summary'] = values['SUMMARY:']
 
         # Add primary sponsor.
         primary = strip_sponsors('', values.get('LEAD SPONSOR:', ''))
         if primary:
-            bill.add_sponsor('primary', primary)
+            bill.add_sponsorship(
+                name=primary,
+                classification='primary',
+                entity_type='person',
+                primary=True
+            )
 
         # Add cosponsors.
         if values.get('SPONSORS:'):
@@ -148,12 +167,22 @@ class WVBillScraper(BillScraper):
                     match = re.search('(.+?), ([DM]\. Hall)', name)
                     if match:
                         for name in match.groups():
-                            bill.add_sponsor('cosponsor', name)
+                            bill.add_sponsorship(
+                                name=name,
+                                classification='cosponsor',
+                                entity_type='person',
+                                primary=False
+                            )
                     else:
-                        bill.add_sponsor('cosponsor', name)
+                        bill.add_sponsorship(
+                            name=name,
+                            classification='cosponsor',
+                            entity_type='person',
+                            primary=False
+                        )
 
         for link in page.xpath("//a[contains(@href, 'votes/house')]"):
-            self.scrape_house_vote(bill, link.attrib['href'])
+            yield from self.scrape_house_vote(bill, link.attrib['href'])
 
         for tr in reversed(page.xpath("//table[@class='tabborder']/descendant::tr")[1:]):
             tds = tr.xpath('td')
@@ -170,13 +199,22 @@ class WVBillScraper(BillScraper):
             action = tds[1].text_content().strip()
             if action.lower().startswith('passed senate'):
                 for href in tds[1].xpath('a/@href'):
-                    self.scrape_senate_vote(bill, href, date)
+                    yield from self.scrape_senate_vote(bill, href, date)
 
-            attrs = dict(actor=chamber, action=action, date=date)
-            attrs.update(self.categorizer.categorize(action))
+            attrs = dict(chamber=chamber, description=action, date=date.strftime("%Y-%m-%d"))
+            temp = self.categorizer.categorize(action)
+            related_entities = []
+            for key, values in temp.items():
+                if key != 'classification':
+                    for value in values:
+                        related_entities.append({
+                            "type": key,
+                            "name": value
+                        })
+            attrs.update(classification=temp['classification'], related_entities=related_entities)
             bill.add_action(**attrs)
 
-        self.save_bill(bill)
+        yield bill
 
     def scrape_house_vote(self, bill, url):
         try:
@@ -191,9 +229,10 @@ class WVBillScraper(BillScraper):
 
         vote_type = None
         votes = collections.defaultdict(list)
+        date = None
 
         for idx, line in enumerate(lines):
-            line = line.rstrip()
+            line = line.rstrip().decode('utf-8')
             match = re.search(r'(\d+)/(\d+)/(\d{4,4})$', line)
             if match:
                 date = datetime.datetime.strptime(match.group(0), "%m/%d/%Y")
@@ -203,7 +242,7 @@ class WVBillScraper(BillScraper):
                 r'\s+YEAS: (\d+)\s+NAYS: (\d+)\s+NOT VOTING: (\d+)',
                 line)
             if match:
-                motion = lines[idx - 2].strip()
+                motion = (lines[idx - 2].strip()).decode('utf-8')
                 if not motion:
                     self.warning("No motion text found for vote")
                     motion = "PASSAGE"
@@ -250,20 +289,26 @@ class WVBillScraper(BillScraper):
                     if not name:
                         continue
                     votes[vote_type].append(name)
+        if date:
+            vote = Vote(chamber='lower',
+                        start_date=date.strftime("%Y-%m-%d"),
+                        motion_text=motion,
+                        result='pass' if passed else 'fail',
+                        classification='passage',
+                        bill=bill)
 
-        vote = Vote('lower', date, motion, passed,
-                    yes_count, no_count, other_count)
-        vote.add_source(url)
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('other', other_count)
+            vote.add_source(url)
 
-        vote['yes_votes'] = votes['yes']
-        vote['no_votes'] = votes['no']
-        vote['other_votes'] = votes['other']
+            for key, values in votes.items():
+                for value in values:
+                    vote.vote(key, value)
 
-        assert len(vote['yes_votes']) == yes_count
-        assert len(vote['no_votes']) == no_count
-        assert len(vote['other_votes']) == other_count
-
-        bill.add_vote(vote)
+            yield vote
+        else:
+            self.warning("Syntax Error/Warning using 'convert_pdf'")
 
     def scrape_senate_vote(self, bill, url, date):
         try:
@@ -272,20 +317,33 @@ class WVBillScraper(BillScraper):
             self.warning("missing vote file %s" % url)
             return
 
-        vote = Vote('upper', date, 'Passage', passed=None,
-                    yes_count=0, no_count=0, other_count=0)
+        vote = Vote(
+            chamber='upper',
+            start_date=date.strftime("%Y-%m-%d"),
+            motion_text='Passage',
+            # setting 'fail' for now.
+            result='fail',
+            classification='passage',
+            bill=bill
+        )
         vote.add_source(url)
 
-        text = convert_pdf(filename, 'text')
+        text = convert_pdf(filename, 'text').decode('utf-8')
         os.remove(filename)
 
         if re.search('Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
-            return self.scrape_senate_vote_3col(bill, vote, text, url, date)
+            yield from self.scrape_senate_vote_3col(bill, vote, text, url, date)
+            return
 
         data = re.split(r'(Yea|Nay|Absent)s?:', text)[::-1]
         data = filter(None, data)
         keymap = dict(yea='yes', nay='no')
         actual_vote = collections.defaultdict(int)
+        vote_count = {
+            'yes': 0,
+            'no': 0,
+            'other': 0
+        }
         while True:
             if not data:
                 break
@@ -300,13 +358,18 @@ class WVBillScraper(BillScraper):
                 name = name.strip('-1234567890 \n')
                 if not name:
                     continue
-                getattr(vote, key)(name)
+                vote.vote(key, name)
                 actual_vote[vote_val] += 1
-                vote[key + '_count'] += 1
-            assert actual_vote[vote_val] == vote[key + '_count']
+                vote_count[key] += 1
+            assert actual_vote[vote_val] == vote_count[key]
 
-        vote['passed'] = vote['no_count'] < vote['yes_count']
-        bill.add_vote(vote)
+        for key, value in vote_count.items():
+            vote.set_count(key, value)
+        # updating result with actual value
+        vote.result = 'pass' if vote_count['yes'] > (vote_count['no'] +
+                                                     vote_count['other']) else 'fail'
+
+        yield vote
 
     def scrape_senate_vote_3col(self, bill, vote, text, url, date):
         '''Scrape senate votes like this one:
@@ -315,6 +378,9 @@ class WVBillScraper(BillScraper):
         counts = dict(re.findall(r'(Yea|Nay|Absent): (\d+)', text))
         lines = filter(None, text.splitlines())
         actual_vote = collections.defaultdict(int)
+        yes_count = 0
+        no_count = 0
+        other_count = 0
         for line in lines:
             vals = re.findall(r'(?<!\w)(Y|N|A)\s+((?:\S+ ?)+)', line)
             for vote_val, name in vals:
@@ -322,21 +388,25 @@ class WVBillScraper(BillScraper):
                 name = name.strip()
                 if vote_val == 'Y':
                     vote.yes(name)
-                    vote['yes_count'] += 1
+                    yes_count += 1
                 elif vote_val == 'N':
                     vote.no(name)
-                    vote['no_count'] += 1
+                    no_count += 1
                 else:
-                    vote.other(name)
-                    vote['other_count'] += 1
+                    vote.vote('other', name)
+                    other_count += 1
                 actual_vote[vote_val] += 1
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('other', other_count)
+        # updating result with actual value
+        vote.result = 'pass' if yes_count > (no_count + other_count) else 'fail'
 
-        vote['passed'] = vote['no_count'] < vote['yes_count']
+        assert yes_count == int(counts['Yea'])
+        assert no_count == int(counts['Nay'])
+        assert other_count == int(counts['Absent'])
 
-        assert vote['yes_count'] == int(counts['Yea'])
-        assert vote['no_count'] == int(counts['Nay'])
-        assert vote['other_count'] == int(counts['Absent'])
-        bill.add_vote(vote)
+        yield vote
 
     def _scrape_versions_normally(self, session, chamber, page, bill_id,
                                   get_name=re.compile(r'\"(.+)"').search):
@@ -346,8 +416,8 @@ class WVBillScraper(BillScraper):
         for link in page.xpath("//a[starts-with(@title, 'HTML -')]"):
             # split name out of HTML - Introduced Version - SB 1
             name = link.xpath('@title')[0].split('-')[1].strip()
-            yield {'name': name, 'url': link.get('href'),
-                   'mimetype': 'text/html'}
+            yield {'note': name, 'url': link.get('href'),
+                   'media_type': 'text/html'}
 
     def scrape_versions(self, session, chamber, page, bill_id):
         '''

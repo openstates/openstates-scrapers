@@ -1,4 +1,8 @@
+import os
+
+import requests
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import INPersonScraper
 from .committees import INCommitteeScraper
 from .bills import INBillScraper
@@ -115,6 +119,15 @@ class Indiana(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower
+
+    def get_session_list(self):
+        apikey = os.environ['INDIANA_API_KEY']
+        headers = {"Authorization": apikey,
+                   "Accept": "application/json"}
+        resp = requests.get("https://api.iga.in.gov/sessions", headers=headers, verify=False)
+        resp.raise_for_status()
+        return [session["name"] for session in resp.json()["items"]]

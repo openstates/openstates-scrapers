@@ -3,8 +3,17 @@ import re
 import zipfile
 import datetime as dt
 
-from billy.scrape.bills import Bill, BillScraper
-from billy.scrape.votes import Vote
+from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+
+
+zip_urls = {
+    '2011': ('http://gencourt.state.nh.us/downloads/2011%20Session%20Bill%20Status%20Tables.zip'),
+    '2012': ('http://gencourt.state.nh.us/downloads/2012%20Session%20Bill%20Status%20Tables.zip'),
+    '2013': ('http://gencourt.state.nh.us/downloads/2013%20Session%20Bill%20Status%20Tables.zip'),
+    '2014': ('http://gencourt.state.nh.us/downloads/2014%20Session%20Bill%20Status%20Tables.zip'),
+    '2015': ('http://gencourt.state.nh.us/downloads/2015%20Session%20Bill%20Status%20Tables.zip'),
+    '2016': ('http://gencourt.state.nh.us/downloads/2016%20Session%20Bill%20Status%20Tables.zip'),
+}
 
 
 body_code = {'lower': 'H', 'upper': 'S'}
@@ -14,7 +23,7 @@ bill_type_map = {'B': 'bill',
                  'JR': 'joint resolution',
                  'CO': 'concurrent order',
                  'A': "address"
-                }
+                 }
 action_classifiers = [
     ('Ought to Pass', ['bill:passed']),
     ('Passed by Third Reading', ['bill:reading:3', 'bill:passed']),
@@ -35,7 +44,7 @@ def classify_action(action):
     for regex, classification in action_classifiers:
         if re.match(regex, action):
             return classification
-    return 'other'
+    return None
 
 
 def extract_amendment_id(action):
@@ -44,11 +53,10 @@ def extract_amendment_id(action):
         return piece[0]
 
 
-class NHLegacyBillScraper(BillScraper):
-    jurisdiction = 'nh'
+class NHLegacyBillScraper(Scraper):
 
     def scrape(self, chamber, session):
-        zip_url = self.metadata['session_details'][session]['zip_url']
+        zip_url = zip_urls[session]
 
         fname, resp = self.urlretrieve(zip_url)
         self.zf = zipfile.ZipFile(open(fname))
@@ -75,7 +83,6 @@ class NHLegacyBillScraper(BillScraper):
             lsr = line[1]
             title = line[2]
             body = line[3]
-            type_num = line[4]
             expanded_bill_id = line[9]
             bill_id = line[10]
 
@@ -85,19 +92,20 @@ class NHLegacyBillScraper(BillScraper):
                 elif expanded_bill_id.startswith('PET'):
                     bill_type = 'petition'
                 elif expanded_bill_id.startswith('AR') and bill_id.startswith('CACR'):
-                    bill_type = 'constitutional amendment'    
+                    bill_type = 'constitutional amendment'
                 else:
                     bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
 
                 if title.startswith('('):
                     title = title.split(')', 1)[1].strip()
 
-                self.bills[lsr] = Bill(session, chamber, bill_id, title,
-                                       type=bill_type)
+                self.bills[lsr] = Bill(legislative_session=session, chamber=chamber,
+                                       identifier=bill_id, title=title,
+                                       classification=bill_type)
                 version_url = VERSION_URL % (session,
                                              expanded_bill_id.replace(' ', ''))
-                self.bills[lsr].add_version('latest version', version_url,
-                                            mimetype='text/html')
+                self.bills[lsr].add_version_link(note='latest version', url=version_url,
+                                                 media_type='text/html')
                 self.bills_by_id[bill_id] = self.bills[lsr]
 
         # load legislators
@@ -114,7 +122,7 @@ class NHLegacyBillScraper(BillScraper):
 
             self.legislators[employee_num] = {'name': name,
                                               'seat': line[5]}
-            #body = line[4]
+            # body = line[4]
 
         # sponsors
         for line in self.zf.open('tbllsrsponsors.txt').readlines():
@@ -123,12 +131,14 @@ class NHLegacyBillScraper(BillScraper):
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
                 try:
-                    self.bills[lsr].add_sponsor(sp_type,
-                                        self.legislators[employee]['name'],
-                                        _code=self.legislators[employee]['seat'])
+                    self.bills[lsr].add_sponsorship(classification=sp_type,
+                                                    name=self.legislators[employee]['name'],
+                                                    entity_type='person',
+                                                    primary=True if sp_type == 'primary'
+                                                    else False)
+                    self.bills[lsr].extras = {'_code': self.legislators[employee]['seat']}
                 except KeyError:
                     self.warning("Error, can't find person %s" % employee)
-
 
         # actions
         for line in self.zf.open('tbldocket.txt').readlines():
@@ -142,24 +152,25 @@ class NHLegacyBillScraper(BillScraper):
             if session_yr == session and lsr in self.bills:
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
-                                                  '%m/%d/%Y %H:%M:%S %p')
+                                            '%m/%d/%Y %H:%M:%S %p')
                 action = action.strip()
                 atype = classify_action(action)
-                self.bills[lsr].add_action(actor, action, time, type=atype)
+                self.bills[lsr].add_action(chamber=actor, description=action,
+                                           date=time.strftime("%Y-%m-%d"),
+                                           classification=atype)
                 amendment_id = extract_amendment_id(action)
                 if amendment_id:
-                    self.bills[lsr].add_document('amendment %s' % amendment_id,
-                                                 AMENDMENT_URL % amendment_id)
+                    self.bills[lsr].add_document_link(note='amendment %s' % amendment_id,
+                                                      url=AMENDMENT_URL % amendment_id)
 
-        self.scrape_votes(session)
+        yield from self.scrape_votes(session, zip_url)
 
         # save all bills
         for bill in self.bills.values():
             bill.add_source(zip_url)
-            self.save_bill(bill)
+            yield bill
 
-
-    def scrape_votes(self, session):
+    def scrape_votes(self, session, zip_url):
         votes = {}
         last_line = []
 
@@ -182,20 +193,26 @@ class NHLegacyBillScraper(BillScraper):
             bill_id = line[4].strip()
             yeas = int(line[5])
             nays = int(line[6])
-            present = int(line[7])
-            absent = int(line[8])
+            # present = int(line[7])
+            # absent = int(line[8])
             motion = line[11].strip() or '[not available]'
 
             if session_yr == session and bill_id in self.bills_by_id:
                 actor = 'lower' if body == 'H' else 'upper'
                 time = dt.datetime.strptime(timestamp,
-                                                  '%m/%d/%Y %I:%M:%S %p')
+                                            '%m/%d/%Y %I:%M:%S %p')
                 # TODO: stop faking passed somehow
                 passed = yeas > nays
-                vote = Vote(actor, time, motion, passed, yeas, nays,
-                            other_count=0)
+                vote = Vote(chamber=actor,
+                            start_date=time.strftime("%Y-%m-%d"),
+                            motion_text=motion,
+                            result='pass' if passed else 'fail',
+                            classification='passage',
+                            bill=self.bills_by_id[bill_id])
+                vote.set_count('yes', yeas)
+                vote.set_count('no', nays)
+                vote.add_source(zip_url)
                 votes[body+vote_num] = vote
-                self.bills_by_id[bill_id].add_vote(vote)
 
         for line in self.zf.open('tblrollcallhistory.txt'):
             # 2012    | H   | 2    | 330795  | HB309  | Yea |1/4/2012 8:27:03 PM
@@ -213,16 +230,19 @@ class NHLegacyBillScraper(BillScraper):
                     continue
 
                 vote = vote.strip()
-                if not body+v_num in votes:
+                if body+v_num not in votes:
                     self.warning("Skipping processing this vote:")
-                    self.warning("Bad ID: %s" % ( body+v_num ) )
+                    self.warning("Bad ID: %s" % (body+v_num))
                     continue
-
-                #code = self.legislators[employee]['seat']
+                other_count = 0
+                # code = self.legislators[employee]['seat']
                 if vote == 'Yea':
                     votes[body+v_num].yes(leg)
                 elif vote == 'Nay':
                     votes[body+v_num].no(leg)
                 else:
                     votes[body+v_num].other(leg)
-                    votes[body+v_num]['other_count'] += 1
+                    other_count += 1
+                votes[body+v_num].set_count('other', other_count)
+        for vid, vote in votes.items():
+            yield vote

@@ -3,6 +3,7 @@ import datetime
 from urllib.parse import urlencode
 from collections import defaultdict
 from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.utils import format_datetime
 from spatula import Page, PDF, Spatula
 
 
@@ -167,10 +168,11 @@ class BillDetail(Page):
                 if vote_date.isalpha():
                     vote_date = tr.xpath("string(td[2])").strip()
                 try:
-                    vote_date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %H:%M %p"
-                                                           ).strftime("%Y-%m-%d %H:%M:00")
+                    vote_date = datetime.datetime.strptime(vote_date, "%m/%d/%Y %H:%M %p")
                 except ValueError:
                     self.scraper.logger.warning('bad vote date: {}'.format(vote_date))
+
+                vote_date = format_datetime(vote_date, 'US/Eastern')
 
                 vote_url = tr.xpath("td[4]/a")[0].attrib['href']
                 if "SenateVote" in vote_url:
@@ -392,6 +394,7 @@ class HousePage(Page):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r'^\w+\s(\d+\w*)$', self.kwargs['bill'].identifier).group(1)
         session_number = {
+            '2017A': '85',
             '2017': '83',
             '2016': '80',
             '2015C': '82',
@@ -425,8 +428,8 @@ class HouseComVote(Page):
 
     def handle_page(self):
         (date, ) = self.doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDate"]/text()')
-        date = datetime.datetime.strptime(date, '%m/%d/%Y %I:%M:%S %p'
-                                          ).isoformat().replace('T', ' ')
+        date = format_datetime(datetime.datetime.strptime(date, '%m/%d/%Y %I:%M:%S %p'),
+                               'US/Eastern')
 
         totals = self.doc.xpath('//table//table')[-1].text_content()
         totals = re.sub(r'(?mu)\s+', " ", totals).strip()
@@ -508,9 +511,8 @@ class SubjectPDF(PDF):
 class FlBillScraper(Scraper, Spatula):
 
     def scrape(self, session=None):
-        # TODO: there should probably be an easy way to do this in pupa
         if not session:
-            session = self.jurisdiction.legislative_sessions[-1]['identifier']
+            session = self.latest_session()
             self.info('no session specified, using %s', session)
 
         subject_url = ('http://www.leg.state.fl.us/data/session/{}/citator/Daily/subindex.pdf'

@@ -1,3 +1,4 @@
+import lxml
 from pupa.scrape import Jurisdiction, Organization
 from .people import NCPersonScraper
 from .committees import NCCommitteeScraper
@@ -87,6 +88,12 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2017-01-11",
             "end_date": "2017-08-01"
         },
+        {
+            "_scraped_name": "2017 Extra Session",
+            "classification": "special",
+            "identifier": "2017E1",
+            "name": "2017 Extra Session",
+        },
     ]
     ignored_scraped_sessions = [
         '2008 Extra Session',
@@ -130,6 +137,8 @@ class NorthCarolina(Jurisdiction):
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
+        executive = Organization(name='Executive Office of the Governor',
+                                 classification="executive")
         upper = Organization(upper_chamber_name, classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
@@ -145,5 +154,17 @@ class NorthCarolina(Jurisdiction):
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
+        yield executive
         yield upper
         yield lower
+
+    def get_session_list(self):
+        from openstates.utils.lxmlize import url_xpath
+        return url_xpath('http://www.ncleg.net',
+                         '//select[@name="sessionToSearch"]/option/text()')
+
+    def extract_text(self, doc, data):
+        doc = lxml.html.fromstring(data)
+        text = ' '.join([x.text_content() for x in
+                         doc.xpath('//p[starts-with(@class, "a")]')])
+        return text

@@ -106,9 +106,16 @@ class Wisconsin(Jurisdiction):
             "name": "2017 Regular Session",
             "start_date": "2017-01-03"
         },
+        {
+            'identifier': 'January 2017 Special Session',
+            'start_date': "2017-04-04",
+            'type': 'special',
+            'display_name': 'January 2017 Special Session',
+            '_scraped_name': 'January 2017 Special Session',
+            'site_id': 'jr7'
+        }
     ]
     ignored_scraped_sessions = [
-        "January 2017 Special Session",
         "February 2015 Extraordinary Session",
         "2007 Regular Session",
         "April 2008 Special Session",

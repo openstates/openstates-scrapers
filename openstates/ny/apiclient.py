@@ -1,8 +1,6 @@
 import string
 import os
 import time
-import requests
-import urlparse
 import functools
 from collections import defaultdict
 from OpenSSL.SSL import SysCallError
@@ -30,7 +28,7 @@ def check_response(method):
 
         if status >= 400:
             if response.status_code == 429:
-                self.handle_429(resp, *args, **kwargs)
+                self.handle_429(response, *args, **kwargs)
                 return method(self, *args, **kwargs).json()
             msg_args = (response, response.text, response.headers)
             msg = 'Bad api response: %r %r %r' % msg_args
@@ -76,8 +74,8 @@ class OpenLegislationAPIClient(object):
         # Insert argument values into endpoint string. This technique
         # defaults values in the endpoint string to blank if they are
         # not specified in the given keyword arguments.
-        endpoint = string.Formatter().vformat(endpoint, (), defaultdict(str,
-            **endpoint_format_args))
+        endpoint = string.Formatter().vformat(
+            endpoint, (), defaultdict(str, **endpoint_format_args))
 
         # Build complete URL.
         url = self.root + endpoint
@@ -89,8 +87,7 @@ class OpenLegislationAPIClient(object):
         self.api_key = os.environ['NEW_YORK_API_KEY']
 
     @check_response
-    def get(self, resource_name, requests_args=None,
-        requests_kwargs=None, **url_format_args):
+    def get(self, resource_name, requests_args=None, requests_kwargs=None, **url_format_args):
         num_bad_packets_allowed = 10
         url = self._build_url(resource_name, **url_format_args)
 
@@ -105,17 +102,16 @@ class OpenLegislationAPIClient(object):
         self.scraper.info('API GET: %r, %r, %r' % args)
         response = None
         tries = 0
-        while response is None and tries <  num_bad_packets_allowed:
+        while response is None and tries < num_bad_packets_allowed:
             try:
-                response = self.scraper.get(url, *requests_args,
-                    **requests_kwargs)
+                response = self.scraper.get(url, *requests_args, **requests_kwargs)
             except SysCallError as e:
                 err, string = e.args
                 if err != 104:
                     raise
                 tries += 1
                 if tries >= num_bad_packets_allowed:
-                    print err, string
+                    print(err, string)
                     raise RuntimeError('Received too many bad packets from API.')
 
         return response

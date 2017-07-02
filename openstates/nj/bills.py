@@ -382,6 +382,7 @@ class NJBillScraper(Scraper, MDBMixin):
                         date = rec["Session_Date"]
                         action = rec["Action"]
                         leg_vote = rec["Legislator_Vote"]
+                        vote_parts = (bill_id, chamber, action)
                     else:
                         bill_id = '%s%s' % (rec['Bill_Type'], rec['Bill_Number'])
                         leg = rec['Name']
@@ -391,10 +392,11 @@ class NJBillScraper(Scraper, MDBMixin):
                         action = self._com_vote_motions[rec['BillAction']]
                         # first char (Y/N) use [0:1] to ignore ''
                         leg_vote = rec['LegislatorVote'][0:1]
+                        committee = rec['Committee_House']
+                        vote_parts = (bill_id, chamber, action, committee)
 
                     date = datetime.strptime(date, "%m/%d/%Y")
-                    vote_id = '_'.join((bill_id, chamber, action))
-                    vote_id = vote_id.replace(" ", "_")
+                    vote_id = '_'.join(vote_parts).replace(' ', '_')
 
                     if bill_id[0] == 'A':
                         b_chamber = "lower"

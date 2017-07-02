@@ -1,100 +1,141 @@
-import re
-import datetime
-from billy.utils.fulltext import pdfdata_to_text
+from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .bills import TNBillScraper
-from .legislators import TNLegislatorScraper
 from .committees import TNCommitteeScraper
 from .events import TNEventScraper
+from .people import TNPersonScraper
 
-settings = dict(SCRAPELIB_TIMEOUT=600)
 
-#start date of each session is the first tuesday in January after new years
-
-metadata = dict(
-    name='Tennessee',
-    abbreviation='tn',
-    capitol_timezone='America/Chicago',
-    legislature_name='Tennessee General Assembly',
-    legislature_url='http://www.legislature.state.tn.us/',
-    chambers={
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms=[
-        {'name': '106', 'sessions': ['106'],
-            'start_year': 2009, 'end_year': 2010},
-        {'name': '107', 'sessions': ['107'],
-            'start_year': 2011, 'end_year': 2012},
-        {'name': '108', 'sessions': ['108'],
-            'start_year': 2013, 'end_year': 2014},
-        {'name': '109', 'sessions': ['109','109s1','109s2'],
-            'start_year': 2015, 'end_year': 2016},
-        {'name': '110', 'sessions': ['110'],
-            'start_year': 2017, 'end_year': 2018},
-    ],
-    session_details={
-        '110': {
-            'type': 'primary',
-            'start_date': datetime.date(2017, 1, 10),
-            'end_date': datetime.date(2017, 5, 29),
-            'display_name': '110th Regular Session (2017-2018)',
-            '_scraped_name': '110th General Assembly'
-        },
-        '109s2': {
-            'type': 'special',
-            'start_date': datetime.date(2016, 9, 12),
-            'end_date': datetime.date(2016, 9, 14),
-            'display_name': '109th Second Extraordinary Session (September 2016)',
-            '_scraped_name': '2nd Extraordinary Session (September 2016)'},
-        '109s1': {
-            'type': 'special',
-            'start_date': datetime.date(2016, 2, 1),
-            'end_date': datetime.date(2016, 2, 29),
-            'display_name': '109th First Extraordinary Session (February 2016)',
-            '_scraped_name': '1st Extraordinary Session (February 2015)'},
-        '109': {
-            'type': 'primary',
-            'display_name': '109th Regular Session (2015-2016)',
-            '_scraped_name': '109th General Assembly'},
-        '108': {
-            'type': 'primary',
-            'display_name': '108th Regular Session (2013-2014)',
-            '_scraped_name': '108th General Assembly'},
-        '107': {
-            'start_date': datetime.date(2011, 1, 11),
-            'end_date': datetime.date(2012, 1, 10),
-            'type': 'primary',
-            'display_name': '107th Regular Session (2011-2012)',
-            '_scraped_name': '107th General Assembly'},
-        '106': {
-            'type': 'primary',
-            'display_name': '106th Regular Session (2009-2010)',
-            '_scraped_name': '106th General Assembly'},
-    },
-    feature_flags=['events', 'influenceexplorer'],
-    _ignored_scraped_sessions=[
-        '107th General Assembly',
-        '105th General Assembly', '104th General Assembly',
-        '103rd General Assembly', '102nd General Assembly',
-        '101st General Assembly', '100th General Assembly',
-        '99th General Assembly'
+class Tennessee(Jurisdiction):
+    division_id = "ocd-division/country:us/state:tn"
+    classification = "government"
+    name = "Tennessee"
+    url = 'http://www.capitol.tn.gov/'
+    scrapers = {
+        'bills': TNBillScraper,
+        'committees': TNCommitteeScraper,
+        'events': TNEventScraper,
+        'people': TNPersonScraper,
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
     ]
-)
+    legislative_sessions = [
+        {
+            "_scraped_name": "106th General Assembly",
+            "classification": "primary",
+            "identifier": "106",
+            "name": "106th Regular Session (2009-2010)"
+        },
+        {
+            "_scraped_name": "107th General Assembly",
+            "classification": "primary",
+            "end_date": "2012-01-10",
+            "identifier": "107",
+            "name": "107th Regular Session (2011-2012)",
+            "start_date": "2011-01-11"
+        },
+        {
+            "_scraped_name": "108th General Assembly",
+            "classification": "primary",
+            "identifier": "108",
+            "name": "108th Regular Session (2013-2014)"
+        },
+        {
+            "_scraped_name": "109th General Assembly",
+            "classification": "primary",
+            "identifier": "109",
+            "name": "109th Regular Session (2015-2016)"
+        },
+        {
+            "_scraped_name": "1st Extraordinary Session (February 2015)",
+            "classification": "special",
+            "end_date": "2016-02-29",
+            "identifier": "109s1",
+            "name": "109th First Extraordinary Session (February 2016)",
+            "start_date": "2016-02-01"
+        },
+        {
+            "_scraped_name": "2nd Extraordinary Session (September 2016)",
+            "classification": "special",
+            "end_date": "2016-09-14",
+            "identifier": "109s2",
+            "name": "109th Second Extraordinary Session (September 2016)",
+            "start_date": "2016-09-12"
+        },
+        {
+            "_scraped_name": "110th General Assembly",
+            "classification": "primary",
+            "identifier": "110",
+            "name": "110th Regular Session (2017-2018)",
+            "start_date": "2017-01-10",
+            "end_date": "2017-05-29",
+        }
+    ]
+    ignored_scraped_sessions = [
+        "107th General Assembly",
+        "105th General Assembly",
+        "104th General Assembly",
+        "103rd General Assembly",
+        "102nd General Assembly",
+        "101st General Assembly",
+        "100th General Assembly",
+        "99th General Assembly"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "Tennessee General Assembly"
+        lower_chamber_name = "House"
+        lower_seats = 99
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_seats = 33
+        upper_title = "Senator"
 
-def session_list():
-    # Special sessions are available in the archive, but not in current session.
-    # Solution is to scrape special session as part of regular session
-    from billy.scrape.utils import url_xpath
-    sessions = [
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
+
+        for n in range(1, upper_seats+1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+        for n in range(1, lower_seats+1):
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        # Special sessions are available in the archive, but not in current session.
+        # Solution is to scrape special session as part of regular session
+        return [
             x for x in
-            url_xpath('http://www.capitol.tn.gov/legislation/archives.html',
-            '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()')
+            url_xpath(
+                'http://www.capitol.tn.gov/legislation/archives.html',
+                '//h2[text()="Bills and Resolutions"]/following-sibling::ul/li/text()'
+            )
             if x.strip()
-            ]
-    return sessions
+        ]
 
+    @property
+    def sessions_by_id(self):
+        """A map of sessions in legislative_sessions indexed by their `identifer`"""
+        if hasattr(self, '_sessions_by_id'):
+            return self._sessions_by_id
 
-def extract_text(doc, data):
-    return ' '.join(line for line in pdfdata_to_text(data).splitlines()
-                    if re.findall('[a-z]', line)).decode('utf8')
+        self._sessions_by_id = {
+            session['identifier']: session
+            for session in self.legislative_sessions
+        }
+
+        return self._sessions_by_id

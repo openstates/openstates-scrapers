@@ -33,7 +33,8 @@ class ARBillScraper(Scraper):
         chambers = [chamber] if chamber else ['upper', 'lower']
         self.bills = {}
 
-        self.slug = session+'R'
+        # 2017R or 2017S1
+        self.slug = session + 'R' if 'S' not in session else session
 
         for Chamber in chambers:
             yield from self.scrape_bill(Chamber, session)

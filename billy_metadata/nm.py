@@ -1,5 +1,4 @@
 import datetime
-from billy.scrape.utils import url_xpath
 
 metadata = {
     'name': 'New Mexico',
@@ -34,7 +33,7 @@ metadata = {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017'],
+            'sessions': ['2017', '2017S'],
         },
     ],
     'session_details': {
@@ -97,6 +96,10 @@ metadata = {
             'slug': '17%20Regular',
             '_scraped_name': '2017 Regular',
         },          
+        '2017S': {
+            'type': 'special',
+            'display_name': '2017 Special Session',
+        },          
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
@@ -116,9 +119,3 @@ metadata = {
         '1996 1st Special', '1996 Regular',
     ]
 }
-
-
-def session_list():
-    return url_xpath('http://www.nmlegis.gov/',
-                     '//select[@name="ctl00$MainContent$ddlSessions"]'
-                     '/option/text()')

@@ -39,9 +39,9 @@ class WICommitteeScraper(Scraper):
 
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
-        for chamber in chambers + ["joint"]:
+        for chamber in chambers + ["legislature"]:
             url = 'http://docs.legis.wisconsin.gov/{}/committees/'.format(term.split('-')[0])
-            if chamber == 'joint':
+            if chamber == 'legislature':
                 url += "joint"
             elif chamber == 'upper':
                 url += 'senate'

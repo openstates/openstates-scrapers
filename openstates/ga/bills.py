@@ -1,7 +1,8 @@
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
 from collections import defaultdict
-from .util import get_client, get_url, backoff
+
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+from .util import get_client, get_url, backoff, SESSION_SITE_IDS
 
 #         Methods (7):
 #            GetLegislationDetail(xs:int LegislationId, )
@@ -26,8 +27,7 @@ member_cache = {}
 SOURCE_URL = 'http://www.legis.ga.gov/Legislation/en-US/display/{session}/{bid}'
 
 
-class GABillScraper(BillScraper):
-    jurisdiction = 'ga'
+class GABillScraper(Scraper):
     lservice = get_client('Legislation').service
     vservice = get_client('Votes').service
     mservice = get_client('Members').service
@@ -43,7 +43,7 @@ class GABillScraper(BillScraper):
         member_cache[member_id] = mem
         return mem
 
-    def scrape(self, session, chambers):
+    def scrape(self, session=None, chamber=None):
         bill_type_map = {
             'B': 'bill',
             'R': 'resolution',
@@ -55,73 +55,77 @@ class GABillScraper(BillScraper):
             'H': 'lower',
             'S': 'upper',
             'J': 'joint',
-            'E': 'other', # Effective date
+            'E': 'legislature',  # Effective date
         }
 
         action_code_map = {
-            'HI': ['other'],
-            'SI': ['other'],
-            'HH': ['other'],
-            'SH': ['other'],
-            'HPF': ['bill:introduced'],
-            'HDSAS': ['other'],
-            'SPF': ['bill:introduced'],
-            'HSR': ['bill:reading:2'],
-            'SSR': ['bill:reading:2'],
-            'HFR': ['bill:reading:1'],
-            'SFR': ['bill:reading:1'],
-            'HRECM': ['bill:withdrawn', 'committee:referred'],
-            'SRECM': ['bill:withdrawn', 'committee:referred'],
-            'SW&C': ['bill:withdrawn', 'committee:referred'],
-            'HW&C': ['bill:withdrawn', 'committee:referred'],
-            'HRA': ['bill:passed'],
-            'SRA': ['bill:passed'],
-            'HPA': ['bill:passed'],
-            'HRECO': ['other'],
-            'SPA': ['bill:passed'],
-            'HTABL': ['other'],  # 'House Tabled' - what is this?
-            'SDHAS': ['other'],
-            'HCFR': ['committee:passed:favorable'],
-            'SCFR': ['committee:passed:favorable'],
-            'HRAR': ['committee:referred'],
-            'SRAR': ['committee:referred'],
-            'STR': ['bill:reading:3'],
-            'SAHAS': ['other'],
-            'SE': ['bill:passed'],
-            'SR': ['committee:referred'],
-            'HTRL': ['bill:reading:3', 'bill:failed'],
-            'HTR': ['bill:reading:3'],
-            'S3RLT': ['bill:reading:3', 'bill:failed'],
-            'HASAS': ['other'],
-            'S3RPP': ['other'],
-            'STAB': ['other'],
-            'SRECO': ['other'],
-            'SAPPT': ['other'],
-            'HCA': ['other'],
-            'HNOM': ['other'],
-            'HTT': ['other'],
-            'STT': ['other'],
-            'SRECP': ['other'],
-            'SCRA': ['other'],
-            'SNOM': ['other'],
-            'S2R': ['bill:reading:2'],
-            'H2R': ['bill:reading:2'],
-            'SENG': ['bill:passed'],
-            'HENG': ['bill:passed'],
-            'HPOST': ['other'],
-            'HCAP': ['other'],
-            'SDSG': ['governor:signed'],
-            'SSG': ['governor:received'],
-            'Signed Gov': ['governor:signed'],
-            'HDSG': ['governor:signed'],
-            'HSG': ['governor:received'],
-            'EFF': ['other'],
-            'HRP': ['other'],
-            'STH': ['other'],
-            'HTS': ['other'],
+            'HI': None,
+            'SI': None,
+            'HH': None,
+            'SH': None,
+            'HPF': ['introduction'],
+            'HDSAS': None,
+            'SPF': ['introduction'],
+            'HSR': ['reading-2'],
+            'SSR': ['reading-2'],
+            'HFR': ['reading-1'],
+            'SFR': ['reading-1'],
+            'HRECM': ['withdrawal', 'referral-committee'],
+            'SRECM': ['withdrawal', 'referral-committee'],
+            'SW&C': ['withdrawal', 'referral-committee'],
+            'HW&C': ['withdrawal', 'referral-committee'],
+            'HRA': ['passage'],
+            'SRA': ['passage'],
+            'HPA': ['passage'],
+            'HRECO': None,
+            'SPA': ['passage'],
+            'HTABL': None,  # 'House Tabled' - what is this?
+            'SDHAS': None,
+            'HCFR': ['committee-passage-favorable'],
+            'SCFR': ['committee-passage-favorable'],
+            'HRAR': ['referral-committee'],
+            'SRAR': ['referral-committee'],
+            'STR': ['reading-3'],
+            'SAHAS': None,
+            'SE': ['passage'],
+            'SR': ['referral-committee'],
+            'HTRL': ['reading-3', 'failure'],
+            'HTR': ['reading-3'],
+            'S3RLT': ['reading-3', 'failure'],
+            'HASAS': None,
+            'S3RPP': None,
+            'STAB': None,
+            'SRECO': None,
+            'SAPPT': None,
+            'HCA': None,
+            'HNOM': None,
+            'HTT': None,
+            'STT': None,
+            'SRECP': None,
+            'SCRA': None,
+            'SNOM': None,
+            'S2R': ['reading-2'],
+            'H2R': ['reading-2'],
+            'SENG': ['passage'],
+            'HENG': ['passage'],
+            'HPOST': None,
+            'HCAP': None,
+            'SDSG': ['executive-signature'],
+            'SSG': ['executive-receipt'],
+            'Signed Gov': ['executive-signature'],
+            'HDSG': ['executive-signature'],
+            'HSG': ['executive-receipt'],
+            'EFF': None,
+            'HRP': None,
+            'STH': None,
+            'HTS': None,
         }
 
-        sid = self.metadata['session_details'][session]['_guid']
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+        sid = SESSION_SITE_IDS[session]
+
         legislation = backoff(
             self.lservice.GetLegislationForSession,
             sid
@@ -159,40 +163,39 @@ class GABillScraper(BillScraper):
             if title is None:
                 continue
 
-            bill = Bill(session, bill_chamber, bill_id, title, type=bill_type,
-                description=description, _guid=guid)
+            bill = Bill(
+                bill_id, legislative_session=session, chamber=bill_chamber, title=title,
+                classification=bill_type)
+            bill.add_abstract(description, note='description')
+            bill.extras = {'guid': guid}
 
             if instrument['Votes']:
                 for vote_ in instrument['Votes']:
                     _, vote_ = vote_
                     vote_ = backoff(self.vservice.GetVote, vote_[0]['VoteId'])
 
-                    vote = Vote(
-                        {'House': 'lower', 'Senate': 'upper'}[vote_['Branch']],
-                        vote_['Date'],
-                        vote_['Caption'] or 'Vote on Bill',
-                        (vote_['Yeas'] > vote_['Nays']),
-                        vote_['Yeas'],
-                        vote_['Nays'],
-                        (vote_['Excused'] + vote_['NotVoting']),
-                        session=session,
-                        bill_id=bill_id,
-                        bill_chamber=bill_chamber)
+                    vote = VoteEvent(
+                        start_date=vote_['Date'].strftime('%Y-%m-%d'),
+                        motion_text=vote_['Caption'] or 'Vote on Bill',
+                        chamber={'House': 'lower', 'Senate': 'upper'}[vote_['Branch']],
+                        result='pass' if vote_['Yeas'] > vote_['Nays'] else 'fail',
+                        classification='passage',
+                        bill=bill,
+                    )
+                    vote.set_count('yes', vote_['Yeas'])
+                    vote.set_count('no', vote_['Nays'])
+                    vote.set_count('other', vote_['Excused'] + vote_['NotVoting'])
 
                     vote.add_source(self.vsource)
 
-                    methods = {'Yea': vote.yes, 'Nay': vote.no,}
+                    methods = {'Yea': 'yes', 'Nay': 'no'}
 
                     for vdetail in vote_['Votes'][0]:
                         whom = vdetail['Member']
                         how = vdetail['MemberVoted']
-                        try:
-                            m = methods[how]
-                        except KeyError:
-                            m = vote.other
-                        m(whom['Name'])
+                        vote.vote(methods.get(how, 'other'), whom['Name'])
 
-                    bill.add_vote(vote)
+                    yield vote
 
             ccommittees = defaultdict(list)
             committees = instrument['Committees']
@@ -209,23 +212,28 @@ class GABillScraper(BillScraper):
                 try:
                     action_types = action_code_map[action['code']]
                 except KeyError:
-                    error_msg = ('Code {code} for action {action} not '
-                        'recognized.'.format(
-                            code=action['code'],
-                            action=action['action']))
+                    error_msg = 'Code {code} for action {action} not recognized.'.format(
+                        code=action['code'], action=action['action'])
 
                     self.logger.warning(error_msg)
 
-                    action_types = ['other']
+                    action_types = None
 
                 committees = []
-                if any(('committee' in x for x in action_types)):
+                if action_types and any(('committee' in x for x in action_types)):
                     committees = [str(x) for x in ccommittees.get(
                         action_chamber, [])]
 
-                bill.add_action(action_chamber, action['action'],
-                    action['date'], action_types, committees=committees,
-                    _code=action['code'], _code_id=action['_guid'])
+                act = bill.add_action(
+                    action['action'], action['date'].strftime('%Y-%m-%d'),
+                    classification=action_types,
+                    chamber=action_chamber)
+                for committee in committees:
+                    act.add_related_entity(committee, 'organization')
+                act.extras = {
+                    'code': action['code'],
+                    'guid': action['_guid'],
+                }
 
             sponsors = []
             if instrument['Authors']:
@@ -239,9 +247,11 @@ class GABillScraper(BillScraper):
 
             for typ, sponsor in sponsors:
                 name = '{First} {Last}'.format(**dict(sponsor['Name']))
-                bill.add_sponsor(
-                    'primary' if 'Author' in typ else 'seconday',
-                     name
+                bill.add_sponsorship(
+                    name,
+                    entity_type='person',
+                    classification='primary' if 'Author' in typ else 'secondary',
+                    primary='Author' in typ,
                 )
 
             for version in instrument['Versions']['DocumentDescription']:
@@ -253,19 +263,12 @@ class GABillScraper(BillScraper):
                         'Version'
                     ]
                 ]
-                bill.add_version(
-                    name,
-                    url,
-                    mimetype='application/pdf',
-                    _internal_document_id=doc_id,
-                    _version_id=version_id
-                )
-
-            versions = sorted(
-                bill['versions'],
-                key=lambda x: x['_internal_document_id']
-            )
-            bill['versions'] = versions
+                # link = bill.add_version_link(
+                #     name, url, media_type='application/pdf')
+                # link['extras'] = {
+                #     '_internal_document_id': doc_id,
+                #     '_version_id': version_id
+                # }
 
             bill.add_source(self.msource)
             bill.add_source(self.lsource)
@@ -273,4 +276,5 @@ class GABillScraper(BillScraper):
                 'session': session,
                 'bid': guid,
             }))
-            self.save_bill(bill)
+
+            yield bill

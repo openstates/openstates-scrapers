@@ -1,4 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
+from openstates.utils import url_xpath
 from .people import NMPersonScraper
 from .committees import NMCommitteeScraper
 from .bills import NMBillScraper
@@ -79,7 +80,13 @@ class NewMexico(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2016-01-17"
-        }
+        },
+        {
+            "_scraped_name": "2017 1st Special",
+            "classification": "special",
+            "identifier": "2017S",
+            "name": "2017 Special Session",
+        },
     ]
     ignored_scraped_sessions = [
         "2010 2nd Special",
@@ -112,6 +119,11 @@ class NewMexico(Jurisdiction):
         "1996 Regular"
     ]
 
+    def get_session_list(self):
+        return url_xpath('http://www.nmlegis.gov/',
+                         '//select[@name="ctl00$MainContent$ddlSessions"]'
+                         '/option/text()')
+
     def get_organizations(self):
         legislature_name = "New Mexico Legislature"
         lower_chamber_name = "House"
@@ -137,6 +149,7 @@ class NewMexico(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower

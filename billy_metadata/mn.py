@@ -39,7 +39,7 @@ metadata = {
         },
         {
             'name': '2017-2018',
-            'sessions': ['2017-2018'],
+            'sessions': ['2017-2018', '2017s1'],
             'start_year': 2017,
             'end_year': 2018,
             'biennium': 90,
@@ -100,6 +100,10 @@ metadata = {
             'type': 'primary',
             'display_name': '2017-2018 Regular Session',
             '_scraped_name': '90th Legislature, 2017-2018',
+        },
+        '2017s1': {
+            'type': 'special',
+            'display_name': '2017, 1st Special Session',
         },
     },
     '_ignored_scraped_sessions': [

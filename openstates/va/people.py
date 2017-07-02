@@ -33,7 +33,7 @@ class MemberDetail(Page):
         self.obj.add_party(PARTY_MAP[party])
 
         self.get_offices(item)
-        yield from self.get_committees(item)
+        self.get_committees(item)
 
         photo_url = self.get_photo_url()
         if photo_url is not None:
@@ -63,16 +63,18 @@ class MemberDetail(Page):
 
     def get_committees(self, item):
         for com in item.xpath('//ul[@class="linkSect"][1]/li/a/text()'):
-            org = Organization(
-                name=com,
-                chamber=self.chamber,
-                classification='committee',
-            )
-            org.add_source(self.url)
-            yield org
+            key = (com, self.chamber)
+            if key not in self.kwargs['committees']:
+                org = Organization(
+                    name=com,
+                    chamber=self.chamber,
+                    classification='committee',
+                )
+                org.add_source(self.url)
+                self.kwargs['committees'][key] = org
 
             self.obj.add_membership(
-                org,
+                self.kwargs['committees'][key],
                 start_date=maybe_date(self.kwargs['session'].get('start_date')),
                 end_date=maybe_date(self.kwargs['session'].get('end_date')),
             )
@@ -126,6 +128,7 @@ class MemberList(Page):
             self.detail_page,
             item.get('href'),
             session=self.kwargs['session'],
+            committees=self.kwargs['committees'],
             obj=leg,
         )
         yield leg
@@ -183,15 +186,19 @@ class VaPersonScraper(Scraper, Spatula):
             session = self.jurisdiction.legislative_sessions[-1]
             self.info('no session specified, using %s', session['identifier'])
         url = 'http://lis.virginia.gov/{}/mbr/MBR.HTM'.format(
-            SESSION_SITE_IDS[session['identifier']]
-        )
-        yield from self.scrape_page_items(SenateList, session=session, url=url)
-        yield from self.scrape_page_items(DelegateList, session=session, url=url)
+            SESSION_SITE_IDS[session['identifier']])
+        committees = {}
+        yield from self.scrape_page_items(
+            SenateList, session=session, url=url, committees=committees)
+        yield from self.scrape_page_items(
+            DelegateList, session=session, url=url, committees=committees)
+        for committee in committees.values():
+            yield committee
 
 
 def maybe_date(text):
     try:
         date = datetime.datetime.strptime(text, '%Y-%d-%m')
-        return TIMEZONE.localize(date)
+        return date.strftime('%Y-%m-%d')
     except ValueError:
         return ''

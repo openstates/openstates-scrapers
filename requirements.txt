@@ -1,31 +1,19 @@
-billy
-Django<1.10
-
-# scraping
-cffi
+# common
 xlrd
 lxml>=2.2
 pytz>=2010l
 feedparser>=4.1
+spatula
+
 # California
-SQLAlchemy>=0.5.3
-MySQL-python
-# GA
-suds
+SQLAlchemy
+mysqlclient
+
+# dev
+ipdb
+
+#CT
 chardet
 
-# Massachussetts votes
-sh
--e git://github.com/twneale/tater.git#egg=tater
-numpy
-# python-opencv
-
-#Indiana error handling
-pyopenssl
-
-#NH Database Connectivity
-#NOTE: on ubuntu you must export PYMSSQL_BUILD_WITH_BUNDLED_FREETDS=1 before installing pymssql
-pymssql
-
-# Dev tools
-# ipdb   ## temporarily removed because of https://hub.docker.com/r/openstates/openstates/builds/bktcyjreg67jfcfvamd9o8x/
+# GA
+suds-py3

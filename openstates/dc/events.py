@@ -41,8 +41,7 @@ class DCEventScraper(Scraper):
 
             e = Event(name=description,
                       description=description,
-                      start_time=self._tz.localize(when),
-                      timezone=self._tz.zone,
+                      start_date=self._tz.localize(when),
                       location_name=location,
                       classification=event_type,
                       )
@@ -61,6 +60,6 @@ class DCEventScraper(Scraper):
             e.add_source(calendar_url)
 
             if committee:
-                e.add_participant(committee, type='orgnization', note='host')
+                e.add_participant(committee, type='organization', note='host')
 
             yield e

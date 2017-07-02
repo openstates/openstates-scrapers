@@ -1,58 +1,68 @@
-from collections import defaultdict
-import datetime
 import re
-
-from billy.scrape.bills import BillScraper, Bill
-from billy.scrape.votes import Vote
-from billy.scrape.utils import convert_pdf
-from openstates.utils import LXMLMixin
+import pytz
+import datetime
+from collections import defaultdict
 
 import scrapelib
+from pupa.utils.generic import convert_pdf
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+from openstates.utils import LXMLMixin
+
+
+TIMEZONE = pytz.timezone('US/Mountain')
 
 
 def split_names(voters):
-    """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""
+    """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""  # noqa
     voters = voters.split(':', 1)[-1]
     voters = re.sub(r'(Senator|Representative)(\(s\))?', "", voters)
     voters = re.sub(r'\s+', " ", voters)
     # Split on a comma or "and" except when there's a following initial
-    voters = [
-            x.strip() for x in
-            re.split(r'(?:,\s(?![A-Z]\.))|(?:\sand\s)', voters)
-            ]
-    return voters
+    return [
+        x.strip() for x in
+        re.split(r'(?:,\s(?![A-Z]\.))|(?:\sand\s)', voters)
+        if len(x.strip()) < 300
+    ]
+
 
 def clean_line(line):
-    return line.\
-            replace('\n', ' ').\
-            decode('utf-8').\
-            strip()
+    line = line.replace('\n', ' ').strip()
+    return re.sub(r'^\d+\s+', '', line)  # Handle line numbers
+
 
 def categorize_action(action):
     categorizers = (
-        ('Introduced and Referred', ('bill:introduced', 'committee:referred')),
-        ('Rerefer to', 'committee:referred'),
-        ('Do Pass Failed', 'committee:failed'),
-        ('2nd Reading:Passed', 'bill:reading:2'),
-        ('3rd Reading:Passed', ('bill:reading:3', 'bill:passed')),
-        ('Failed 3rd Reading', ('bill:reading:3', 'bill:failed')),
-        ('Did Not Adopt', 'amendment:failed'),
-        ('Withdrawn by Sponsor', 'bill:withdrawn'),
-        ('Governor Signed', 'governor:signed'),
-        ('Recommend (Amend and )?Do Pass', 'committee:passed:favorable'),
-        ('Recommend (Amend and )?Do Not Pass', 'committee:passed:unfavorable'),
+        ('Introduced and Referred', ('introduction', 'referral-committee')),
+        ('Rerefer to', 'referral-committee'),
+        ('Do Pass Failed', 'committee-failure'),
+        ('2nd Reading:Passed', 'reading-2'),
+        ('3rd Reading:Passed', ('reading-3', 'passage')),
+        ('Failed 3rd Reading', ('reading-3', 'failure')),
+        ('Did Not Adopt', 'amendment-failure'),
+        ('Withdrawn by Sponsor', 'withdrawal'),
+        ('Governor Signed', 'executive-signature'),
+        ('Recommend (Amend and )?Do Pass', 'committee-passage-favorable'),
+        ('Recommend (Amend and )?Do Not Pass', 'committee-passage-unfavorable'),
     )
 
     for pattern, types in categorizers:
         if re.findall(pattern, action):
             return types
-    return 'other'
+    return None
 
 
-class WYBillScraper(BillScraper, LXMLMixin):
-    jurisdiction = 'wy'
+class WYBillScraper(Scraper, LXMLMixin):
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
-    def scrape(self, chamber, session):
+        chambers = [chamber] if chamber is not None else ['upper', 'lower']
+        for chamber in chambers:
+            yield from self.scrape_chamber(chamber, session)
+
+    def scrape_chamber(self, chamber, session):
         chamber_abbrev = {'upper': 'SF', 'lower': 'HB'}[chamber]
 
         url = ("http://legisweb.state.wy.us/%s/billreference/"
@@ -68,9 +78,10 @@ class WYBillScraper(BillScraper, LXMLMixin):
             else:
                 bill_type = 'bill'
 
-            bill = Bill(session, chamber, bill_id, title, type=bill_type)
+            bill = Bill(bill_id, legislative_session=session, title=title, chamber=chamber,
+                        classification=bill_type)
 
-            self.scrape_digest(bill)
+            yield from self.scrape_digest(bill, chamber)
 
             # versions
             for a in (tr.xpath('td[8]//a') + tr.xpath('td[11]//a') +
@@ -78,35 +89,38 @@ class WYBillScraper(BillScraper, LXMLMixin):
                 # skip references to other bills
                 if a.text.startswith('See'):
                     continue
-                bill.add_version(a.text, a.get('href'),
-                                 mimetype='application/pdf')
+                bill.add_version_link(a.text, a.get('href'),
+                                      media_type='application/pdf')
 
             # documents
             fnote = tr.xpath('td[9]//a')
             if fnote:
-                bill.add_document('Fiscal Note', fnote[0].get('href'))
+                bill.add_document_link('Fiscal Note', fnote[0].get('href'))
             summary = tr.xpath('td[14]//a')
             if summary:
-                bill.add_document('Summary', summary[0].get('href'))
+                bill.add_document_link('Summary', summary[0].get('href'))
 
             bill.add_source(url)
-            self.save_bill(bill)
+            yield bill
 
-    def scrape_digest(self, bill):
-        digest_url = 'http://legisweb.state.wy.us/%(session)s/Digest/%(bill_id)s.pdf' % bill
+    def scrape_digest(self, bill, chamber):
+        digest_url = 'http://legisweb.state.wy.us/{}/Digest/{}.pdf'.format(
+            bill.legislative_session,
+            bill.identifier,
+        )
         bill.add_source(digest_url)
 
         try:
             (filename, response) = self.urlretrieve(digest_url)
-            all_text = convert_pdf(filename, type='text')
+            all_text = convert_pdf(filename, type='text').decode()
         except scrapelib.HTTPError:
-            self.warning('no digest for %s' % bill['bill_id'])
+            self.warning('no digest for %s' % bill.identifier)
             return
         if all_text.strip() == "":
             self.warning(
-                    'Non-functional digest for bill {}'.
-                    format(bill['bill_id'])
-                    )
+                'Non-functional digest for bill {}'.
+                format(bill.identifier)
+            )
             return
 
         # Split the digest's text into sponsors, description, and actions
@@ -118,17 +132,18 @@ class WYBillScraper(BillScraper, LXMLMixin):
         except AttributeError:
             ext_title = ''
         bill_desc = ext_title.replace('\n', ' ')
-        bill_desc = re.sub("  *"," ",bill_desc.decode('utf-8')).encode('utf-8')
-        bill['description'] = bill_desc
+        bill_desc = re.sub("  *", " ", bill_desc)
+        if bill_desc:
+            bill.add_abstract(abstract=bill_desc, note='description')
 
         sponsor_span = re.search(SPONSOR_RE, all_text).group(1)
         sponsors = ''
         sponsors = sponsor_span.replace('\n', ' ')
         if sponsors:
             if 'Committee' in sponsors:
-                bill.add_sponsor('primary', sponsors)
+                bill.add_sponsorship(sponsors, 'primary', primary=True, entity_type='organization')
             else:
-                if bill['chamber'] == 'lower':
+                if chamber == 'lower':
                     sp_lists = sponsors.split('and Senator(s)')
                 else:
                     sp_lists = sponsors.split('and Representative(s)')
@@ -136,15 +151,22 @@ class WYBillScraper(BillScraper, LXMLMixin):
                     for sponsor in split_names(spl):
                         sponsor = sponsor.strip()
                         if sponsor != "":
-                            bill.add_sponsor('primary', sponsor)
+                            bill.add_sponsorship(sponsor, 'primary', primary=True,
+                                                 entity_type='person')
 
         action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
-        vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
+        vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)'
+                                   '(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
 
         # initial actor is bill chamber
-        actor = bill['chamber']
-        action_lines = re.search(action_re, all_text).group(1).split('\n')
-        action_lines = iter(action_lines)
+        actor = chamber
+
+        lines = all_text.splitlines()
+        for idx, line in enumerate(lines):
+            if action_re.search(line):
+                break
+        action_lines = lines[idx:]
+
         for line in action_lines:
             line = clean_line(line)
 
@@ -163,8 +185,8 @@ class WYBillScraper(BillScraper, LXMLMixin):
                     actor = 'upper'
 
                 date = datetime.datetime.strptime(date, '%m/%d/%Y')
-                bill.add_action(actor, action.strip(), date,
-                                type=categorize_action(action))
+                bill.add_action(action.strip(), TIMEZONE.localize(date), chamber=actor,
+                                classification=categorize_action(action))
             elif line == 'ROLL CALL':
                 voters = defaultdict(str)
                 # if we hit a roll call, use an inner loop to consume lines
@@ -178,8 +200,8 @@ class WYBillScraper(BillScraper, LXMLMixin):
                     if not nextline:
                         continue
 
-                    breakers = [ "Ayes:", "Nays:", "Nayes:", "Excused:",
-                                 "Absent:",  "Conflicts:" ]
+                    breakers = ["Ayes:", "Nays:", "Nayes:", "Excused:",
+                                "Absent:", "Conflicts:"]
 
                     for breaker in breakers:
                         if nextline.startswith(breaker):
@@ -187,7 +209,7 @@ class WYBillScraper(BillScraper, LXMLMixin):
                             if voters_type == "Nayes":
                                 voters_type = "Nays"
                                 self.log("Fixed a case of 'Naye-itis'")
-                            nextline = nextline[len(breaker)-1:]
+                            nextline = nextline[len(breaker) - 1:]
 
                     if nextline.startswith(': '):
                         voters[voters_type] = nextline
@@ -195,34 +217,43 @@ class WYBillScraper(BillScraper, LXMLMixin):
                                       'Conflicts'):
                         voters_type = nextline
                     elif vote_total_re.match(nextline):
-                        #_, ayes, _, nays, _, exc, _, abs, _, con, _ = \
-                        tupple = vote_total_re.match(nextline).groups()
-                        ayes = tupple[1]
-                        nays = tupple[4]
-                        exc = tupple[7]
-                        abs = tupple[10]
-                        con = tupple[13]
+                        # _, ayes, _, nays, _, exc, _, abs, _, con, _ = \
+                        tup = vote_total_re.match(nextline).groups()
+                        ayes = tup[1]
+                        nays = tup[4]
+                        exc = tup[7]
+                        abs = tup[10]
+                        con = tup[13]
 
                         passed = (('Passed' in action or
                                    'Do Pass' in action or
                                    'Did Concur' in action or
                                    'Referred to' in action) and
                                   'Failed' not in action)
-                        vote = Vote(actor, date, action, passed, int(ayes),
-                                    int(nays), int(exc) + int(abs) + int(con))
+                        vote = VoteEvent(
+                            chamber=chamber,
+                            start_date=TIMEZONE.localize(date),
+                            motion_text=action,
+                            result='pass' if passed else 'fail',
+                            classification='passage',
+                            bill=bill,
+                        )
+                        vote.set_count('yes', int(ayes))
+                        vote.set_count('no', int(nays))
+                        vote.set_count('other', int(exc) + int(abs) + int(con))
                         vote.add_source(digest_url)
 
-                        for vtype, voters in voters.iteritems():
+                        for vtype, voters in voters.items():
                             for voter in split_names(voters):
                                 if voter:
                                     if vtype == 'Ayes':
-                                        vote.yes(voter)
+                                        vote.vote('yes', voter)
                                     elif vtype == 'Nays':
-                                        vote.no(voter)
+                                        vote.vote('no', voter)
                                     else:
-                                        vote.other(voter)
+                                        vote.vote('other', voter)
                         # done collecting this vote
-                        bill.add_vote(vote)
+                        yield vote
                         break
                     else:
                         # if it is a stray line within the vote, is is a

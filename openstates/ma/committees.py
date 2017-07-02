@@ -1,20 +1,20 @@
-from billy.scrape.committees import CommitteeScraper, Committee
-
 import lxml.html
+from pupa.scrape import Scraper, Organization
 
 
-class MACommitteeScraper(CommitteeScraper):
-    jurisdiction = 'ma'
+class MACommitteeScraper(Scraper):
 
-    def scrape(self, term, chambers):
+    def scrape(self, chamber=None):
         page_types = []
-        if 'upper' in chambers:
+
+        if chamber == 'upper' or chamber is None:
             page_types += ['Senate', 'Joint']
-        if 'lower' in chambers:
+        if chamber == 'lower' or chamber is None:
             page_types += ['House']
+
         chamber_mapping = {'Senate': 'upper',
                            'House': 'lower',
-                           'Joint': 'joint'}
+                           'Joint': 'legislature'}
 
         for page_type in page_types:
             url = 'http://www.malegislature.gov/Committees/' + page_type
@@ -25,14 +25,14 @@ class MACommitteeScraper(CommitteeScraper):
 
             for com_url in doc.xpath('//ul[@class="committeeList"]/li/a/@href'):
                 chamber = chamber_mapping[page_type]
-                self.scrape_committee(chamber, com_url)
+                yield self.scrape_committee(chamber, com_url)
 
     def scrape_committee(self, chamber, url):
         html = self.get(url, verify=False).text
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//title/text()')[0]
-        com = Committee(chamber, name)
+        com = Organization(name, chamber=chamber, classification='committee')
         com.add_source(url)
 
         members = doc.xpath('//a[contains(@href, "/Legislators/Profile")]')
@@ -41,5 +41,5 @@ class MACommitteeScraper(CommitteeScraper):
             role = title[0].text.lower() if title else 'member'
             com.add_member(member.text, role)
 
-        if com['members']:
-            self.save_committee(com)
+        if members:
+            return com

@@ -1,118 +1,132 @@
-import datetime
+from pupa.scrape import Jurisdiction, Organization
 import scrapelib
 import lxml.html
+from .people import SDLegislatorScraper
 from .bills import SDBillScraper
-from .legislators import SDLegislatorScraper
 
-settings = dict(
-    SCRAPELIB_RPM=8,
-    SCRAPELIB_RETRY_WAIT=30,
-)
 
-metadata = dict(
-    name = 'South Dakota',
-    abbreviation = 'sd',
-    legislature_name = 'South Dakota State Legislature',
-    legislature_url = 'http://www.sdlegislature.gov/',
-    capitol_timezone = 'America/Chicago',
-    chambers = {
-        'upper': {'name': 'Senate', 'title': 'Senator'},
-        'lower': {'name': 'House', 'title': 'Representative'},
-    },
-    terms = [
+class SouthDakota(Jurisdiction):
+    division_id = "ocd-division/country:us/state:sd"
+    classification = "government"
+    name = "South Dakota"
+    url = "http://www.sdlegislature.gov/"
+    scrapers = {
+        'people': SDLegislatorScraper,
+        'bills': SDBillScraper
+    }
+    parties = [
+        {'name': 'Republican'},
+        {'name': 'Democratic'}
+    ]
+    legislative_sessions = [
         {
-            'name': '2009-2010',
-            'start_year': 2009,
-            'end_year': 2010,
-            'sessions': ['2009', '2010']
+            "_scraped_name": "2009 (84th) Session",
+            "identifier": "2009",
+            "name": "2009 Regular Session"
         },
         {
-            'name': '2011-2012',
-            'start_year': 2011,
-            'end_year': 2012,
-            'sessions': ['2011', '2011s', '2012']
+            "_scraped_name": "2010 (85th) Session",
+            "identifier": "2010",
+            "name": "2010 Regular Session"
         },
         {
-            'name': '2013-2014',
-            'start_year': 2013,
-            'end_year': 2014,
-            'sessions': ['2013', '2014']
+            "_scraped_name": "2011 (86th) Session",
+            "identifier": "2011",
+            "name": "2011 Regular Session",
+            "start_date": "2011-01-11"
         },
         {
-            'name': '2015-2016',
-            'start_year': 2015,
-            'end_year': 2016,
-            'sessions': ['2015', '2016']
+            "_scraped_name": "2011 (86th) Special Session",
+            "identifier": "2011s",
+            "name": "2011 Special Session"
         },
         {
-            'name': '2017-2018',
-            'start_year': 2017,
-            'end_year': 2018,
-            'sessions': ['2017']
+            "_scraped_name": "2012 (87th) Session",
+            "identifier": "2012",
+            "name": "2012 Regular Session"
         },
-    ],
-    session_details = {
-        '2009': {
-            'display_name': '2009 Regular Session',
-            '_scraped_name': '2009 (84th) Session',
+        {
+            "_scraped_name": "2013 (88th) Session",
+            "identifier": "2013",
+            "name": "2013 Regular Session"
         },
-        '2010': {
-            'display_name': '2010 Regular Session',
-            '_scraped_name': '2010 (85th) Session',
+        {
+            "_scraped_name": "2014 (89th) Session",
+            "identifier": "2014",
+            "name": "2014 Regular Session"
         },
-        '2011': {
-            'start_date': datetime.date(2011, 1, 11),
-            'display_name': '2011 Regular Session',
-            '_scraped_name': '2011 (86th) Session',
+        {
+            "_scraped_name": "2015 (90th) Session",
+            "identifier": "2015",
+            "name": "2015 Regular Session"
         },
-        '2011s': {
-            'display_name': '2011 Special Session',
-            '_scraped_name': '2011 (86th) Special Session',
+        {
+            "_scraped_name": "2016 (91st) Session",
+            "identifier": "2016",
+            "name": "2016 Regular Session"
         },
-        '2012': {
-            'display_name': '2012 Regular Session',
-            '_scraped_name': '2012 (87th) Session',
+        {
+            "_scraped_name": "2017 (92nd) Session",
+            "identifier": "2017",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-10",
+            "end_date": "2017-03-27",
         },
-        '2013': {
-            'display_name': '2013 Regular Session',
-            '_scraped_name': '2013 (88th) Session',
-        },
-        '2014': {
-            'display_name': '2014 Regular Session',
-            '_scraped_name': '2014 (89th) Session',
-        },
-        '2015': {
-            'display_name': '2015 Regular Session',
-            '_scraped_name': '2015 (90th) Session',
-        },
-        '2016': {
-            'display_name': '2016 Regular Session',
-            '_scraped_name': '2016 (91st) Session',
-        },
-        '2017': {
-            'display_name': '2017 Regular Session',
-            '_scraped_name': '2017 (92nd) Session',
-            'start_date': datetime.date(2017, 1, 10),
-            'end_date': datetime.date(2017, 3, 27),
-        },
-    },
-    feature_flags = ['subjects', 'influenceexplorer'],
-    _ignored_scraped_sessions = [
-        'Previous Years',
-    ],
-)
+        {
+            "_scraped_name": "2017 (92nd) Special Session",
+            "identifier": "2017s",
+            "name": "2017 Special Session"
+        }
+    ]
+    ignored_scraped_sessions = [
+        "Previous Years"
+    ]
 
+    def get_organizations(self):
+        legislature_name = "South Dakota State Legislature"
+        lower_chamber_name = "House"
+        lower_title = "Representative"
+        upper_chamber_name = "Senate"
+        upper_title = "Senator"
+        seats = 35
 
-def session_list():
-    html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
-                                   'Legislative_Session/Menu.aspx').text
-    doc = lxml.html.fromstring(html)
-    sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
-        '/a/div/text()')
-    return sessions
+        legislature = Organization(name=legislature_name,
+                                   classification="legislature")
+        upper = Organization(upper_chamber_name, classification='upper',
+                             parent_id=legislature._id)
+        lower = Organization(lower_chamber_name, classification='lower',
+                             parent_id=legislature._id)
 
+        for n in range(1, seats + 1):
+            # 26 and 28 are special
+            if n in (26, 28):
+                continue
+            lower.add_post(
+                label=str(n), role=lower_title,
+                division_id='{}/sldl:{}'.format(self.division_id, n))
 
-def extract_text(doc, data):
-    doc = lxml.html.fromstring(data)
-    return ' '.join(div.text_content() for div in
-        doc.xpath('//div[@align="full"]'))
+        lower.add_post(label='26A', role=lower_title,
+                       division_id='{}/sldl:26a'.format(self.division_id))
+        lower.add_post(label='26B', role=lower_title,
+                       division_id='{}/sldl:26b'.format(self.division_id))
+        lower.add_post(label='28A', role=lower_title,
+                       division_id='{}/sldl:28a'.format(self.division_id))
+        lower.add_post(label='28B', role=lower_title,
+                       division_id='{}/sldl:28b'.format(self.division_id))
+
+        for n in range(1, seats + 1):
+            upper.add_post(
+                label=str(n), role=upper_title,
+                division_id='{}/sldu:{}'.format(self.division_id, n))
+
+        yield legislature
+        yield upper
+        yield lower
+
+    def get_session_list(self):
+        html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
+                                       'Legislative_Session/Menu.aspx').text
+        doc = lxml.html.fromstring(html)
+        sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
+                             '/a/div/text()')
+        return sessions

@@ -1,10 +1,12 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
+
 from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
 from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 from .events import MNEventScraper
-from .common import url_xpath
 
 """
 Minnesota legislative data can be found at the Office of the Revisor
@@ -101,6 +103,12 @@ class Minnesota(Jurisdiction):
             'name': '2017-2018 Regular Session',
             'start_date': '2017-01-03',
             'end_date': '2017-05-22'
+        },
+        {
+            '_scraped_name': '90th Legislature, 2017 1st Special Session',
+            'classification': 'special',
+            'identifier': '2017s1',
+            'name': '2017, 1st Special Session'
         },
     ]
     ignored_scraped_sessions = [

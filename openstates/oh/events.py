@@ -74,9 +74,8 @@ class OHEventScraper(Scraper):
 
                         event = Event(
                                 name=description,
-                                start_time=time,
+                                start_date=time,
                                 location_name=location,
-                                timezone=self._tz.zone,
                                 description=description
                         )
                         event.add_source(PDF_URL)
@@ -149,9 +148,8 @@ class OHEventScraper(Scraper):
 
                         event = Event(
                                 name=description,
-                                start_time=time,
+                                start_date=time,
                                 location_name=location,
-                                timezone=self._tz.zone,
                                 description=description
                         )
 

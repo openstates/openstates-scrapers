@@ -84,9 +84,8 @@ class AZEventScraper(Scraper):
                           location=room, link=link, details=description,
                           related_bills=related_bills)
             """
-            event = Event(timezone=self._tz.zone,
-                          location_name=room,
-                          start_time=self._tz.localize(when),
+            event = Event(location_name=room,
+                          start_date=self._tz.localize(when),
                           name=title,
                           description=description,
                           )

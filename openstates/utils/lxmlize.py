@@ -2,8 +2,8 @@ import requests
 import lxml.html
 
 
-def url_xpath(url, path):
-    doc = lxml.html.fromstring(requests.get(url).text)
+def url_xpath(url, path, verify=True):
+    doc = lxml.html.fromstring(requests.get(url, verify=verify).text)
     return doc.xpath(path)
 
 
@@ -19,7 +19,7 @@ class LXMLMixin(object):
             Element: Document node representing the page.
         """
         try:
-            # This class is always mixed into subclasses of `billy.Scraper`,
+            # This class is always mixed into subclasses of `Scraper`,
             # which have a `get` method defined.
             response = self.get(url)
         except requests.exceptions.SSLError:

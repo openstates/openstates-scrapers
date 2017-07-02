@@ -75,6 +75,7 @@ class PupaBillScraper(BillScraper):
                             type=_action_categories(action['classification']),
                             committees=committees,
                             legislators=legislators,
+                            **action.get('extras', {})
                             )
 
         for source in data['sources']:
@@ -89,13 +90,15 @@ class PupaBillScraper(BillScraper):
             for link in version['links']:
                 bill.add_version(version['note'], link['url'],
                                  mimetype=link['media_type'],
-                                 date=parse_date(version['date']))
+                                 date=parse_date(version['date']),
+                                 **version.get('extras', {}))
 
         for doc in data['documents']:
             for link in doc['links']:
                 bill.add_document(doc['note'], link['url'],
                                   mimetype=link['media_type'],
-                                  date=parse_date(doc['date']))
+                                  date=parse_date(doc['date']),
+                                  **doc.get('extras', {}))
 
         for title in data['other_titles']:
             bill.add_title(title['title'])
@@ -105,4 +108,6 @@ class PupaBillScraper(BillScraper):
                                related['legislative_session'],
                                chamber
                                )
+
+        bill['alternate_bill_ids'] = [oi['identifier'] for oi in data['other_identifiers']]
         self.save_bill(bill)

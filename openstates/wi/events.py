@@ -74,8 +74,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             event = Event(
                 name=name,
                 location_name=where,
-                start_time=self._tz.localize(when),
-                timezone=self._tz.zone,
+                start_date=self._tz.localize(when),
             )
 
             event.add_source(calurl)

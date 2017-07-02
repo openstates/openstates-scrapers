@@ -1,9 +1,4 @@
 import datetime
-# from billy.scrape.utils import url_xpath
-# from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-# from .bills import IDBillScraper
-# from .legislators import IDLegislatorScraper
-# from .committees import IDCommitteeScraper
 
 metadata = {
     'name': 'Idaho',
@@ -228,9 +223,3 @@ metadata = {
         '1998 Session',
     ],
 }
-
-
-def get_session_list():
-    sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
-        '//select[@id="ddlsessions"]/option/text()')
-    return sessions

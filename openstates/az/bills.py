@@ -13,11 +13,6 @@ BASE_URL = 'http://www.azleg.gov/'
 
 
 class AZBillScraper(Scraper):
-
-    """
-    Arizona Bill Scraper.
-    """
-    jurisdiction = 'az'
     chamber_map = {'lower': 'H', 'upper': 'S'}
     chamber_map_rev = {'H': 'upper', 'S': 'lower', 'G': 'executive', 'SS': 'executive'}
     chamber_map_rev_eng = {'H': 'House', 'S': 'Senate', 'G': 'Governor',
@@ -124,6 +119,29 @@ class AZBillScraper(Scraper):
         AZ No longer provides a full list, just a series of keys and dates.
         So map that backwards using action_map
         """
+        for status in page['BillStatusAction']:
+            if status['Action'] in action_utils.status_action_map:
+                category = action_utils.status_action_map[status['Action']]
+                if status['Committee']['TypeName'] == 'Floor':
+                    categories = [category]
+                    if status['Committee']['CommitteeShortName'] == 'THIRD':
+                        categories.append('reading-3')
+                elif status['Committee']['TypeName'] == 'Standing':
+                    categories = ['committee-{}'.format(category)]
+                else:
+                    raise ValueError(
+                        'Unexpected committee type: {}'.format(status['Committee']['TypeName']))
+                action_date = datetime.datetime.strptime(
+                    status['ReportDate'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
+                bill.add_action(
+                    description=status['Action'],
+                    chamber={
+                        'S': 'upper',
+                        'H': 'lower',
+                    }[status['Committee']['LegislativeBody']],
+                    date=action_date,
+                    classification=categories,
+                )
         for action in action_utils.action_map:
             if page[action] and action_utils.action_map[action]['name'] != '':
                 try:
@@ -134,9 +152,9 @@ class AZBillScraper(Scraper):
                         chamber=self.actor_from_action(bill, action, self_chamber),
                         description=action_utils.action_map[action]['name'],
                         date=action_date,
-                        classification=str(action_utils.action_map[action]['action'][0])
+                        classification=action_utils.action_map[action]['action'],
                     )
-                except ValueError:
+                except (ValueError, TypeError):
                     self.info("Invalid Action Time {} for {}".format(page[action], action))
 
         # Governor Signs and Vetos get different treatment

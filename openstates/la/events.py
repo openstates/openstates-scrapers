@@ -2,16 +2,15 @@ import re
 import pytz
 import datetime
 import lxml.html
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
 from openstates.utils import LXMLMixin
 
 
-class LAEventScraper(EventScraper, LXMLMixin):
-    jurisdiction = 'la'
+class LAEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('America/Chicago')
 
-    def scrape(self, session, chambers):
-        self.scrape_house_weekly_schedule(session)
+    def scrape(self, chamber=None):
+        yield from self.scrape_house_weekly_schedule()
 
         url = "http://www.legis.la.gov/legis/ByCmte.aspx"
 
@@ -20,7 +19,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
         page.make_links_absolute(url)
 
         for link in page.xpath("//a[contains(@href, 'Agenda.aspx')]"):
-            self.scrape_meeting(session, link.attrib['href'])
+            yield from self.scrape_meeting(link.attrib['href'])
 
     def scrape_bills(self, line):
         ret = []
@@ -34,14 +33,14 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 ret.append(blob)
         return ret
 
-    def scrape_meeting(self, session, url):
+    def scrape_meeting(self, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
-        title ,= page.xpath("//a[@id='linkTitle']//text()")
-        date ,= page.xpath("//span[@id='lDate']/text()")
-        time ,= page.xpath("//span[@id='lTime']/text()")
-        location ,= page.xpath("//span[@id='lLocation']/text()")
+        title = page.xpath("//a[@id='linkTitle']//text()")[0]
+        date = page.xpath("//span[@id='lDate']/text()")[0]
+        time = page.xpath("//span[@id='lTime']/text()")[0]
+        location = page.xpath("//span[@id='lLocation']/text()")[0]
 
         substs = {
             "AM": ["A.M.", "a.m."],
@@ -70,27 +69,21 @@ class LAEventScraper(EventScraper, LXMLMixin):
         description = "Meeting on %s of the %s" % (date, title)
         chambers = {"house": "lower",
                     "senate": "upper",
-                    "joint": "joint",}
+                    "joint": "legislature"}
 
         for chamber_, normalized in chambers.items():
             if chamber_ in title.lower():
-                chamber = normalized
                 break
         else:
             return
 
-        event = Event(
-            session,
-            when,
-            'committee:meeting',
-            description,
-            location=location,
-            all_day=all_day
-        )
+        event = Event(name=description,
+                      start_date=self._tz.localize(when),
+                      location_name=location,
+                      all_day=all_day)
         event.add_source(url)
 
-        event.add_participant('host', title, 'committee',
-                              chamber=chamber)
+        event.add_participant(title, note='host', type='committee')
 
         trs = iter(page.xpath("//tr[@valign='top']"))
         next(trs)
@@ -103,20 +96,15 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
             bill_title = bill.text_content()
 
-            if "S" in bill_title:
-                bill_chamber = "upper"
-            elif "H" in bill_title:
-                bill_chamber = "lower"
+            if "S" in bill_title or "H" in bill_title:
+                item = event.add_agenda_item(descr.text_content())
+                item.add_bill(bill_title)
             else:
                 continue
 
-            event.add_related_bill(bill_id=bill_title,
-                                   description=descr.text_content(),
-                                   chamber=bill_chamber,
-                                   type='consideration')
-        self.save_event(event)
+        yield event
 
-    def scrape_house_weekly_schedule(self, session):
+    def scrape_house_weekly_schedule(self):
         url = "http://house.louisiana.gov/H_Sched/Hse_MeetingSchedule.aspx"
         page = self.lxmlize(url)
 
@@ -129,9 +117,10 @@ class LAEventScraper(EventScraper, LXMLMixin):
 
         for meeting in valid_meetings:
             try:
-                guid = meeting.xpath('./td/a[descendant::img[contains(@src, '
-                    '"PDF-AGENDA.png")]]/@href')[0]
-                self.logger.debug(guid)
+                guid = meeting.xpath('./td/a[descendant::img[contains(@src,'
+                                     '"PDF-AGENDA.png")]]/@href')[0]
+                # self.logger.debug(guid)
+                self.warning("logger.debug" + guid)
             except KeyError:
                 continue  # Sometimes we have a dead link. This is only on
                 # dead entries.
@@ -143,7 +132,7 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 continue  # Contains no time data.
             date, time, location = ([s.strip() for s in meeting_string.split(
                 ',') if s] + [None]*3)[:3]
-            
+
             # check for time in date because of missing comma
             time_srch = re.search('\d{2}:\d{2} (AM|PM)', date)
             if time_srch:
@@ -151,24 +140,24 @@ class LAEventScraper(EventScraper, LXMLMixin):
                 time = time_srch.group()
                 date = date.replace(time, '')
 
-            self.logger.debug(location)
+            # self.logger.debug(location)
+            self.warning("logger.debug" + location)
 
             year = datetime.datetime.now().year
             datetime_string = ' '.join((date, str(year), time))
-            when = datetime.datetime.strptime(datetime_string,
-                '%b %d %Y %I:%M %p')
+            when = datetime.datetime.strptime(datetime_string, '%b %d %Y %I:%M %p')
             when = self._tz.localize(when)
 
             description = 'Committee Meeting: {}'.format(committee_name)
-            self.logger.debug(description)
+            # self.logger.debug(description)
+            self.warning("logger.debug" + description)
 
-            event = Event(session, when, 'committee:meeting',
-                description, location=location)
+            event = Event(name=description,
+                          start_date=self._tz.localize(when),
+                          location_name=location)
             event.add_source(url)
-            event.add_participant('host', committee_name, 'committee',
-                chamber='lower')
-            event.add_document('Agenda', guid, type='agenda',
-                mimetype='application/pdf')
-            event['link'] = guid
+            event.add_participant(committee_name, type='committee', note='host')
+            event.add_document(note='Agenda', url=guid, text='agenda',
+                               media_type='application/pdf')
 
-            self.save_event(event)
+            yield event

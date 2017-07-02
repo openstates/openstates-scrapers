@@ -1,8 +1,5 @@
-'''
-
-'''
 import re
-from billy.scrape.actions import Rule, BaseCategorizer
+from openstates.utils.actions import Rule, BaseCategorizer
 
 
 committees = [
@@ -57,25 +54,25 @@ rules = (
     Rule('^Senate', actor='upper'),
     Rule('^Introduced in Senate', actor='upper'),
     Rule('^Introduced in House', actor='lower'),
-    Rule('^Governor', actor='governor'),
+    Rule('^Governor', actor='executive'),
 
-    Rule('Governor Action - Partial Veto', 'governor:vetoed:line-item'),
-    Rule('Sent to the Governor', 'governor:received'),
-    Rule('Governor Action - Signed', 'governor:signed'),
-    Rule('Governor Signed', 'governor:signed'),
-    Rule('Governor Action - Vetoed', 'governor:vetoed'),
+    Rule('Governor Action - Partial Veto', 'executive-veto-line-item'),
+    Rule('Sent to the Governor', 'executive-receipt'),
+    Rule('Governor Action - Signed', 'executive-signature'),
+    Rule('Governor Signed', 'executive-signature'),
+    Rule('Governor Action - Vetoed', 'executive-veto'),
 
-    Rule(r'^Introduced', 'bill:introduced'),
+    Rule(r'^Introduced', 'introduction'),
     Rule(r'Assigned to (?P<committees>.+)'),
 
     Rule(u'(?i)refer (un)?amended to (?P<committees>.+)',
-         [u'committee:referred']),
+         [u'referral-committee']),
     Rule(u'(?i)\S+ Committee on (?P<committees>.+?) Refer (un)amended'),
-    Rule(u'Assigned to (<?P<committees>.+?)', 'committee:referred'),
-    Rule(u'Second Reading Passed', [u'bill:reading:2']),
-    Rule(u'Third Reading Passed', ['bill:reading:3', 'bill:passed']),
-    Rule(u'to Senate Committee of the Whole', 'committee:passed', actor='upper'),
-    Rule(u'to House Committee of the Whole', 'committee:passed', actor='lower')
+    Rule(u'Assigned to (<?P<committees>.+?)', 'referral-committee'),
+    Rule(u'Second Reading Passed', [u'reading-2']),
+    Rule(u'Third Reading Passed', ['reading-3', 'passage']),
+    Rule(u'to Senate Committee of the Whole', 'committee-passage', actor='upper'),
+    Rule(u'to House Committee of the Whole', 'committee-passage', actor='lower')
     )
 
 committees_rgx = '(%s)' % '|'.join(

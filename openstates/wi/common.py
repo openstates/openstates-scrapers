@@ -15,6 +15,7 @@ SESSION_TERMS = {
     '2015 Regular Session': '2015-2016',
 
     '2017 Regular Session': '2017-2018',
+    'January 2017 Special Session': '2017-2018',
 }
 
 SESSION_SITE_IDS = {
@@ -25,4 +26,5 @@ SESSION_SITE_IDS = {
     'October 2013 Special Session': 'oc3',
     'December 2013 Special Session': 'de3',
     'January 2014 Special Session': 'jr4',
+    'January 2017 Special Session': 'jr7',
 }

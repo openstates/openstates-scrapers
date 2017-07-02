@@ -1,7 +1,6 @@
 import re
 import lxml.html
 from pupa.scrape import Scraper, Person
-# from billy.scrape.legislators import LegislatorScraper, Legislator
 
 BASE_URL = 'https://legislature.idaho.gov/%s/membership/'
 CHAMBERS = {'upper': 'senate', 'lower': 'house'}
@@ -69,7 +68,7 @@ class IDPersonScraper(Scraper):
         """
         # self.validate_term(term, latest_only=True)
         url = BASE_URL % CHAMBERS[chamber].lower()
-        index = self.get(url).text
+        index = self.get(url, verify=False).text
         html = lxml.html.fromstring(index)
         html.make_links_absolute(url)
 
@@ -86,10 +85,11 @@ class IDPersonScraper(Scraper):
             email = inner.xpath('p/strong/a')[0].text
             district = inner.xpath('p/a')[0].text.replace('District ', '')
             person_url = inner.xpath('p/a/@href')[0]
-            for com in inner.xpath('p/a[contains(@href, "committees")]'):
-                role = com.tail.strip()
-                if not role:
-                    role = 'member'
+            # skip roles for now
+            role = ''
+            # for com in inner.xpath('p/a[contains(@href, "committees")]'):
+            #     role = com.tail.strip()
+
             person = Person(name=name, district=district,
                             party=party, primary_org=chamber,
                             image=img_url, role=role)

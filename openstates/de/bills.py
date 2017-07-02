@@ -2,14 +2,12 @@ import datetime as dt
 import json
 import math
 
-
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import LXMLMixin
 from .actions import Categorizer
 
 
 class DEBillScraper(Scraper, LXMLMixin):
-    jurisdiction = 'de'
     categorizer = Categorizer()
     chamber_codes = {'upper': 1, 'lower': 2}
     chamber_codes_rev = {1: 'upper', 2: 'lower'}
@@ -38,7 +36,7 @@ class DEBillScraper(Scraper, LXMLMixin):
         page = self.post_search(session, chamber, 1, per_page)
 
         for row in page['Data']:
-            yield from self.scrape_bill(row, chamber, session)
+            yield from self.filter_substitutes(self.scrape_bill(row, chamber, session))
 
         max_results = int(page["Total"])
         if max_results > per_page:
@@ -47,17 +45,56 @@ class DEBillScraper(Scraper, LXMLMixin):
             for i in range(2, max_page):
                 page = self.post_search(session, chamber, i, per_page)
                 for row in page['Data']:
-                    yield from self.scrape_bill(row, chamber, session)
+                    yield from self.filter_substitutes(self.scrape_bill(row, chamber, session))
+
+    def filter_substitutes(self, bills):
+        """
+        called as a pass through around scrape_bill
+        if a bill is a substitute, holds it until the end of the stream
+        ensuring that there aren't multiple substitutes for a given bill
+        in the final stream
+        """
+        # bill_id: bill
+        substitutes = {}
+
+        # iterate over all bills in parent generator
+        for bill in bills:
+            if 'substitute' in bill.extras:
+                # if we haven't seen this bill_id or the sub# > stored sub#
+                if (bill.identifier not in substitutes or
+                        bill.extras['substitute'] >
+                        substitutes[bill.identifier].extras['substitute']):
+                    substitutes[bill.identifier] = bill
+            else:
+                # pass through if not sub
+                yield bill
+
+        # yield final subs
+        yield from substitutes.values()
 
     def scrape_bill(self, row, chamber, session):
-        bill_id = row['LegislationNumber']
+        bill_id = row['LegislationDisplayCode']
 
-        # TODO: re-evaluate if these should be separate bills
-        if 'SA' in bill_id or 'HA' in bill_id:
-            self.warning('skipping amendment %s', bill_id)
+        if 'Substituted' in row['StatusName']:
+            # skip substituted bills, the replacement is picked up instead
+            self.warning('skipping %s: %s', bill_id, row['StatusName'])
             return
 
+        substitute = None
+
+        if bill_id.count(' ') > 1:
+            if 'w/' in bill_id or 'SA' in bill_id or 'HA' in bill_id:
+                # TODO: re-evaluate if these should be separate bills
+                self.warning('skipping amendment %s', bill_id)
+                return
+            elif 'for' in bill_id:
+                print(bill_id)
+                substitute, bill_id = bill_id.split(' for ')
+            else:
+                raise ValueError('unknown bill_id format: ' + bill_id)
+
         bill_type = self.classify_bill(bill_id)
+
         bill = Bill(identifier=bill_id,
                     legislative_session=session,
                     chamber=chamber,
@@ -69,6 +106,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             bill.add_title(row['ShortTitle'], 'short title')
         if row['SponsorPersonId']:
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
+        if substitute:
+            bill.extras['substitute'] = substitute
 
         # TODO: Is there a way get additional sponsors and cosponsors, and versions/fns via API?
         html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(
@@ -183,14 +222,14 @@ class DEBillScraper(Scraper, LXMLMixin):
                            int(roll['AbsentVoteCount']) +
                            int(roll['ConflictVoteCount'])
                            )
-            vote = Vote(chamber=vote_chamber,
-                        start_date=vote_date,
-                        motion_text=vote_motion,
-                        result=vote_passed,
-                        classification='other',
-                        bill=bill.identifier,
-                        legislative_session=session
-                        )
+            vote = VoteEvent(chamber=vote_chamber,
+                             start_date=vote_date,
+                             motion_text=vote_motion,
+                             result=vote_passed,
+                             classification='other',
+                             bill=bill,
+                             legislative_session=session
+                             )
             vote.add_source(vote_url)
             vote.set_count('yes', roll['YesVoteCount'])
             vote.set_count('no', roll['NoVoteCount'])

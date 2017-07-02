@@ -61,7 +61,7 @@ class DECommitteeScraper(Scraper, LXMLMixin):
             yield committee
 
     def scrape_joint_committees(self, session):
-        chamber = 'joint'
+        chamber = 'legislature'
         url = 'http://legis.delaware.gov/json/Committees/' + \
               'GetCommitteesByTypeId?assemblyId=%s&committeeTypeId=3' % (session, )
         yield from self.scrape_comm(url, chamber)
@@ -75,7 +75,7 @@ class DECommitteeScraper(Scraper, LXMLMixin):
         return members
 
     def get_comm_url(self, chamber, comm_id, comm_name):
-        if chamber == 'joint':
+        if chamber == 'legislature':
             # only Sunset url is not following pattern.
             if comm_name == 'Joint Legislative Oversight and Sunset Committee':
                 comm_url = 'http://legis.delaware.gov/Sunset'

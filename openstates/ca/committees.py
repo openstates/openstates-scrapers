@@ -4,8 +4,8 @@ from operator import methodcaller
 
 import lxml.html
 import requests.exceptions
+from pupa.scrape import Scraper, Organization
 
-from billy.scrape.committees import CommitteeScraper, Committee
 from openstates.utils import LXMLMixin
 
 
@@ -18,45 +18,37 @@ def clean(s):
     return s.strip()
 
 
-class CACommitteeScraper(CommitteeScraper, LXMLMixin):
-
-    jurisdiction = 'ca'
-
+class CACommitteeScraper(Scraper, LXMLMixin):
     urls = {'upper': 'http://senate.ca.gov/committees',
             'lower': 'http://assembly.ca.gov/committees'}
 
     base_urls = {'upper': 'http://senate.ca.gov/',
                  'lower': 'http://assembly.ca.gov/'}
 
-    def scrape(self, chamber, term):
-        if chamber == 'lower':
-            self.scrape_lower(chamber, term)
-        elif chamber == 'upper':
+    def scrape(self, chamber=None):
+        if chamber in ['lower', None]:
+            yield from self.scrape_lower()
+        elif chamber in ['upper', None]:
             # Also captures joint committees
-            self.scrape_upper(chamber, term)
+            yield from self.scrape_upper()
 
-
-    def scrape_lower(self, chamber, term):
-        url = self.urls[chamber]
+    def scrape_lower(self):
+        url = self.urls['lower']
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
-        doc.make_links_absolute(self.base_urls[chamber])
+        doc.make_links_absolute(self.base_urls['lower'])
 
-        committee_types = {'upper': ['Standing', 'Select', 'Joint'],
-                           'lower': ['Standing', 'Select']}
-
-        for type_ in committee_types[chamber]:
+        for type_ in ['Standing', 'Select']:
 
             if type_ == 'Joint':
                 _chamber = type_.lower()
             else:
-                _chamber = chamber
+                _chamber = 'lower'
 
             for xpath in [
-                '//div[contains(@class, "view-view-%sCommittee")]' % type_,
-                '//div[contains(@id, "block-views-view_StandingCommittee-block_1")]',
-                '//div[contains(@class, "views-field-title")]',
-                ]:
+                    '//div[contains(@class, "view-view-%sCommittee")]' % type_,
+                    '//div[contains(@id, "block-views-view_StandingCommittee-block_1")]',
+                    '//div[contains(@class, "views-field-title")]']:
                 div = doc.xpath(xpath)
                 if div:
                     break
@@ -74,32 +66,34 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                     continue
 
                 c = c.replace("Committee on ", "").replace(" Committee", "")
-                c = Committee(_chamber, c)
-                self.info(u'Saving {} committee.'.format(c['committee']))
-                c.add_source(_url)
-                c.add_source(url)
+                org = Organization(name=c, chamber=_chamber, classification='committee')
+                self.info(u'Saving {} committee.'.format(c))
+                org.add_source(_url)
+                org.add_source(url)
                 for member, role in self.scrape_lower_members(_url):
-                    c.add_member(member, role)
+                    org.add_member(member, role)
 
                 _found = False
-                if not c['members']:
+                if not org._related:
                     try:
                         for member, role in self.scrape_lower_members(
                                 _url + '/membersstaff'):
                             _found = True
-                            c.add_member(member, role)
+                            org.add_member(member, role)
                         if _found:
                             source = _url + '/membersstaff'
-                            c.add_source(source)
+                            org.add_source(source)
                     except requests.exceptions.HTTPError:
-                        self.error(u"Unable to access member list for {} "
-                            "committee.".format(c['committee']))
+                        self.error(
+                            "Unable to access member list for {} "
+                            "committee.".format(c))
 
-                if c['members']:
-                    self.save_committee(c)
+                if org._related:
+                    yield org
                 else:
-                    self.warning(u"No members found for {} committee."
-                        .format(c['committee']))
+                    self.warning(
+                        "No members found for {} committee."
+                        .format(c))
 
         # Subcommittees
         div = doc.xpath('//div[contains(@class, "view-view-SubCommittee")]')[0]
@@ -114,32 +108,41 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
             urls = subcom.xpath('descendant::a/@href')
             for n, _url in zip(names, urls):
                 n = re.search(r'^Subcommittee.*?on (.*)$', n).group(1)
-                c = Committee(chamber, committee, subcommittee=n)
-                c.add_source(_url)
-                c.add_source(url)
+                org = Organization(
+                    name=n,
+                    chamber='lower',
+                    classification='committee',
+                    parent_id={
+                        'name': committee,
+                        'classification': 'lower',
+                    },
+                )
+                org.add_source(_url)
+                org.add_source(url)
 
                 for member, role in self.scrape_lower_members(_url):
-                    c.add_member(member, role)
+                    org.add_member(member, role)
 
                 _found = False
-                if not c['members']:
+                if not org._related:
                     try:
-                        for member, role in self.scrape_lower_members(
-                            _url + '/membersstaff'):
+                        for member, role in self.scrape_lower_members(_url + '/membersstaff'):
                             _found = True
-                            c.add_member(member, role)
+                            org.add_member(member, role)
                         if _found:
                             source = _url + '/membersstaff'
-                            c.add_source(source)
+                            org.add_source(source)
                     except requests.exceptions.HTTPError:
-                        self.error(u"Unable to access member list for {} subcommittee."
-                            .format(c['subcommittee']))
+                        self.error(
+                            "Unable to access member list for {} subcommittee."
+                            .format(org.name))
 
-                if c['members']:
-                    self.save_committee(c)
+                if org._related:
+                    yield org
                 else:
-                    self.warning(u"No members found for {} subcommittee of {} "
-                        "committee".format(c['subcommittee'], c['committee']))
+                    self.warning(
+                        "No members found for {} subcommittee of {} "
+                        "committee".format(org.name))
 
     def scrape_lower_members(self, url):
         ''' Scrape the members from this page. '''
@@ -159,7 +162,7 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                 mem_role = "member"
             yield (mem_name, mem_role)
 
-    def scrape_upper(self, chamber, term):
+    def scrape_upper(self):
         # Retrieve index list of committees.
         url = 'http://senate.ca.gov/committees'
         doc = self.lxmlize(url)
@@ -180,32 +183,29 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
             # the committee.
             (comm_name, ) = committee.xpath('text()')
 
-            comm = Committee(
-                chamber=chamber,
-                committee=comm_name
-            )
+            org = Organization(chamber='upper', name=comm_name, classification='committee')
 
             (comm_url, ) = committee.xpath('@href')
-            comm.add_source(comm_url)
+            org.add_source(comm_url)
             comm_doc = self.lxmlize(comm_url)
 
             if comm_name.startswith("Joint"):
-                comm['chamber'] = 'joint'
-                comm['committee'] = (comm_name.
-                                     replace("Joint ", "").
-                                     replace("Committee on ", "").
-                                     replace(" Committee", ""))
+                org['chamber'] = 'legislature'
+                org['committee'] = (comm_name.
+                                    replace("Joint ", "").
+                                    replace("Committee on ", "").
+                                    replace(" Committee", ""))
 
             if comm_name.startswith("Subcommittee"):
                 (full_comm_name, ) = comm_doc.xpath(
                     '//div[@class="banner-sitename"]/a/text()')
                 full_comm_name = re.search(
                     r'^Senate (.*) Committee$', full_comm_name).group(1)
-                comm['committee'] = full_comm_name
+                org['committee'] = full_comm_name
 
                 comm_name = re.search(
                     r'^Subcommittee.*?on (.*)$', comm_name).group(1)
-                comm['subcommittee'] = comm_name
+                org['subcommittee'] = comm_name
 
             # Special case of members list being presented in text blob.
             member_blob = comm_doc.xpath(
@@ -251,11 +251,12 @@ class CACommitteeScraper(CommitteeScraper, LXMLMixin):
                         (?:\s\([RD]\))?  # There may be a party affiliation
                         \s*$
                         ''', member).groups()
-                comm.add_member(
-                    legislator=mem_name,
-                    role=mem_role if mem_role else 'member'
+                org.add_member(
+                    mem_name,
+                    role=mem_role if mem_role else 'member',
                 )
 
-            if not comm['members']:
+            if not org._related:
                 self.warning("No members found for committee {}".format(comm_name))
-            self.save_committee(comm)
+
+            yield org

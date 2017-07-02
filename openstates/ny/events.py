@@ -1,23 +1,21 @@
 import re
 import datetime as dt
+
 import pytz
-import lxml.html
-from billy.scrape.events import EventScraper, Event
+from pupa.scrape import Scraper, Event
+
 from openstates.utils import LXMLMixin
 
 url = "http://assembly.state.ny.us/leg/?sh=hear"
 
 
-class NYEventScraper(EventScraper, LXMLMixin):
+class NYEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Eastern')
-    jurisdiction = 'ny'
 
-    def lower_parse_page(self, url, session):
+    def lower_parse_page(self, url):
         page = self.lxmlize(url)
         tables = page.xpath("//table[@class='pubhrgtbl']")
         date = None
-        ctty = None
-        chamber = 'other'
         for table in tables:
             metainf = {}
             rows = table.xpath(".//tr")
@@ -35,16 +33,6 @@ class NYEventScraper(EventScraper, LXMLMixin):
                 # Due to the html structure this shouldn't be an elif
                 # It needs to fire twice in the same loop iteration
                 if value.tag == 'th' and value.get("class") == 'commtitle':
-                    ctty = value.text_content()
-
-                    chamber = 'other'
-                    if "senate" in ctty.lower():
-                        chamber = 'upper'
-                    if "house" in ctty.lower():
-                        chamber = 'lower'
-                    if "joint" in ctty.lower():
-                        chamber = 'joint'
-
                     coms = value.xpath('.//div[contains(@class,"comm-txt")]/text()')
 
                 elif key.tag == 'td':
@@ -110,38 +98,38 @@ class NYEventScraper(EventScraper, LXMLMixin):
             title = metainf[title_key]
 
             title = re.sub(
-                    r"\*\*Click here to view public hearing notice\*\*",
-                    "",
-                    title
-                    )
+                r"\*\*Click here to view public hearing notice\*\*",
+                "",
+                title
+            )
 
             # If event was postponed, add a warning to the title.
             if postponed:
                 title = 'POSTPONED: %s' % title
 
-            event = Event(session, datetime, 'committee:meeting',
-                          title,
-                          location=metainf['Place:'],
-                          contact=metainf['Contact:'])
+            event = Event(
+                name=title,
+                start_date=self._tz.localize(datetime),
+                location_name=metainf['Place:'],
+            )
+            event.extras = {'contact': metainf['Contact:']}
             if 'Media Contact:' in metainf:
-                event.update(media_contact=metainf['Media Contact:'])
+                event.extras.update(media_contact=metainf['Media Contact:'])
             event.add_source(url)
 
             for com in coms:
-                event.add_participant('host',
-                                    com.strip(),
-                                    'committee',
-                                    chamber=self.classify_committee(com))
+                event.add_participant(
+                    com.strip(),
+                    type='committee',
+                    note='host',
+                )
+                participant = event.participants[-1]
+                participant['extras'] = {'chamber': self.classify_committee(com)},
 
-            self.save_event(event)
+            yield event
 
-    def scrape(self, chamber, session):
-        self.scrape_lower(chamber, session)
-        #self.scrape_upper(chamber, session)
-
-    def scrape_lower(self, chamber, session):
-        if chamber == 'other':
-            self.lower_parse_page(url, session)
+    def scrape(self):
+        yield from self.lower_parse_page(url)
 
     def classify_committee(self, name):
         chamber = 'other'
@@ -152,49 +140,3 @@ class NYEventScraper(EventScraper, LXMLMixin):
         if "joint" in name.lower():
             chamber = 'joint'
         return chamber
-
-    """
-    def scrape_upper(self, chamber, session):
-        if chamber != 'upper':
-            return
-
-        url = (r'http://open.nysenate.gov/legislation/2.0/search.json?'
-               r'term=otype:meeting&pageSize=1000&pageIdx=%d')
-        page_index = 1
-        while True:
-            resp = self.get(url % page_index)
-            if not resp.json():
-                break
-            if not resp.json()['response']['results']:
-                break
-            for obj in resp.json()['response']['results']:
-                event = self.upper_scrape_event(chamber, session, obj)
-                if event:
-                    self.save_event(event)
-            page_index += 1
-
-    def upper_scrape_event(self, chamber, session, obj):
-        meeting = obj['data']['meeting']
-        date = int(meeting['meetingDateTime'])
-        date = dt.datetime.fromtimestamp(date / 1000)
-        if str(date.year) not in session:
-            return
-        description = 'Committee Meeting: ' + meeting['committeeName']
-        event = Event(session, date, 'committee:meeting',
-                      description=description,
-                      location=meeting['location'] or 'No location given.')
-        event.add_source(obj['url'])
-        event.add_participant('chair', meeting['committeeChair'],
-                              'legislator', chamber='upper')
-        event.add_participant('host', meeting['committeeName'],
-                              'committee', chamber='upper')
-
-        rgx = r'([a-z]+)(\d+)'
-        for bill in meeting['bills']:
-            raw_id = bill['senateBillNo']
-            bill_id = ' '.join(re.search(rgx, raw_id, re.I).groups())
-            event.add_related_bill(
-                bill_id, type='bill',
-                description=bill['summary'] or 'No description given.')
-        return event
-        """

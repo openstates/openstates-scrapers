@@ -1,37 +1,20 @@
-from billy.scrape import ScrapeError, NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-
-import lxml.html
 import re
 
+import lxml.html
+from pupa.scrape import Scraper, Organization
 
-class WYCommitteeScraper(CommitteeScraper):
-    jurisdiction = "wy"
 
+class WYCommitteeScraper(Scraper):
     members = {}
     urls = {
-            "list": "http://legisweb.state.wy.us/LegbyYear/CommitteeList.aspx?Year=%s",
-            "detail": "http://legisweb.state.wy.us/LegbyYear/%s"
+        "list": "http://legisweb.state.wy.us/LegbyYear/CommitteeList.aspx?Year=%s",
+        "detail": "http://legisweb.state.wy.us/LegbyYear/%s",
     }
 
-    def scrape(self, chamber, term):
-        if chamber == 'lower':
-            # Committee members from both houses are listed
-            # together. So, we'll only scrape once.
-            return None
-
-        session = None
-
-        # Even thought each term spans two years, committee
-        # memberships don't appear to change. So we only
-        # need to scrape the first year of the term.
-        for t in self.metadata["terms"]:
-            if term == t["name"]:
-                session = t['sessions'][-1]
-                # session = self.metadata['session_details'][t['sessions'][-1]]
-                break
-        else:
-            raise NoDataForPeriod(term)
+    def scrape(self, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
         list_url = self.urls["list"] % (session, )
         committees = {}
@@ -41,27 +24,27 @@ class WYCommitteeScraper(CommitteeScraper):
             committees[el.text.strip()] = el.get("href")
 
         for c in committees:
-            self.log(c)
+            self.info(c)
             detail_url = self.urls["detail"] % (committees[c],)
             page = self.get(detail_url).text
             page = lxml.html.fromstring(page)
             if re.match('\d{1,2}-', c):
                 c = c.split('-', 1)[1]
-            jcomm = Committee('joint', c.strip())
+            jcomm = Organization(name=c.strip(), chamber='legislature', classification='committee')
             for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
                 rows = table.xpath(".//tr")
                 chamber = rows[0].xpath('.//td')[0].text_content().strip()
                 chamber = 'upper' if chamber == 'Senator' else 'lower'
-                comm = Committee(chamber, c.strip())
+                comm = Organization(name=c.strip(), chamber=chamber, classification='committee')
                 for row in rows[1:]:
                     tds = row.xpath('.//td')
                     name = tds[0].text_content().strip()
                     role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
-                    comm.add_member(name, role, chamber=chamber)
-                    jcomm.add_member(name, role, chamber=chamber)
+                    comm.add_member(name, role)
+                    jcomm.add_member(name, role)
 
                 comm.add_source(detail_url)
-                self.save_committee(comm)
+                yield comm
 
             jcomm.add_source(detail_url)
-            self.save_committee(jcomm)
+            yield jcomm

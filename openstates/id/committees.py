@@ -17,9 +17,9 @@ def clean_name(name):
 class IDCommitteeScraper(Scraper):
 
     def get_joint_committees_data(self, name, url):
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         html = lxml.html.fromstring(page)
-        org = Organization(name=name, chamber='joint', classification="committee")
+        org = Organization(name=name, chamber='legislature', classification="committee")
         table = html.xpath("//section[@class=' row-equal-height no-padding']")
         for td in table:
             senate_members = td.xpath('div[1]/div/div/div[2]/div/p/strong')
@@ -57,7 +57,7 @@ class IDCommitteeScraper(Scraper):
 
     def scrape_committees(self, chamber):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
-        page = self.get(url).text
+        page = self.get(url, verify=False).text
         html = lxml.html.fromstring(page)
         table = html.xpath('body/section[2]/div/div/div/section[2]/div[2]/div/div/div/div')[1:]
         for row in table:
@@ -101,7 +101,7 @@ class IDCommitteeScraper(Scraper):
             yield org
 
     def scrape_joint_committees(self):
-        page = self.get(_JOINT_URL).text
+        page = self.get(_JOINT_URL, verify=False).text
         html = lxml.html.fromstring(page)
         html.make_links_absolute(_JOINT_URL)
         joint_li = html.xpath('//div[contains(h2, "Joint")]/ul/li')

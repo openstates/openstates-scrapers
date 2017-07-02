@@ -1,27 +1,7 @@
 version: "3"
 services:
-  openstates:
-    image: openstates/openstates
-    environment:
-    - BILLY_MONGO_HOST=database
-    - MYSQL_HOST=mysql
-    - NEW_YORK_API_KEY
-    - INDIANA_API_KEY
-    volumes:
-    - .:/srv/openstates-web
-    depends_on:
-    - database
-  openstates.org:
-    image: openstates/openstates.org
-    command: python manage.py runserver 0.0.0.0:8000
-    environment:
-    - MONGO_HOST=database
-    ports:
-    - "8000:8000"
-    depends_on:
-    - database
   scrape:
-    image: openstates/openstates-pupa
+    image: openstates/openstates
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
@@ -33,6 +13,15 @@ services:
     depends_on:
     - database
     entrypoint: /opt/openstates/openstates/pupa-scrape.sh
+  openstates.org:
+    image: openstates/openstates.org
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+    - MONGO_HOST=database
+    ports:
+    - "8000:8000"
+    depends_on:
+    - database
   database:
     image: mongo
     ports:
@@ -44,3 +33,12 @@ services:
     environment:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+  ca-download:
+    image: openstates/openstates
+    entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
+    environment:
+    - MYSQL_HOST=mysql
+    volumes:
+    - .:/opt/openstates/openstates/
+    depends_on:
+    - mysql

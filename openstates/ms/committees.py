@@ -1,28 +1,23 @@
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
-from .utils import clean_committee_name
+from pupa.scrape import Scraper, Organization
 
 import lxml.etree
 
 
-class MSCommitteeScraper(CommitteeScraper):
-    jurisdiction = 'ms'
+class MSCommitteeScraper(Scraper):
 
-    def scrape(self, chamber, term_name):
-        self.save_errors=False
-        if int(term_name[0:4]) < 2008:
-            raise NoDataForPeriod(term_name)
+    def scrape(self, chamber=None):
+        chambers = [chamber] if chamber else ['upper', 'lower']
+        for chamber in chambers:
+            if chamber == 'lower':
+                chamber = 'h'
+            else:
+                chamber = 's'
 
-        if chamber == 'lower':
-            chamber = 'h'
-        else:
-            chamber = 's'
+            yield from self.scrape_comm(chamber)
 
-        self.scrape_comm(chamber, term_name)
-
-    def scrape_comm(self, chamber, term_name):
+    def scrape_comm(self, chamber):
         url = 'http://billstatus.ls.state.ms.us/htms/%s_cmtememb.xml' % chamber
-        comm_page =  self.get(url)
+        comm_page = self.get(url)
         root = lxml.etree.fromstring(comm_page.content)
         if chamber == 'h':
             chamber = "lower"
@@ -30,8 +25,10 @@ class MSCommitteeScraper(CommitteeScraper):
             chamber = "upper"
         for mr in root.xpath('//COMMITTEE'):
             name = mr.xpath('string(NAME)')
-            comm = Committee(chamber, name)
-
+            comm = Organization(name,
+                                chamber=chamber,
+                                classification='committee'
+                                )
             chair = mr.xpath('string(CHAIR)')
             chair = chair.replace(", Chairman", "")
             role = "Chairman"
@@ -51,4 +48,4 @@ class MSCommitteeScraper(CommitteeScraper):
                 comm.add_member(leg)
 
             comm.add_source(url)
-            self.save_committee(comm)
+            yield comm

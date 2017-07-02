@@ -1,6 +1,6 @@
 import lxml.html
 
-from pupa.scrape import Person, Scraper
+from pupa.scrape import Person, Scraper, Organization
 
 
 class SCPersonScraper(Scraper):
@@ -21,6 +21,8 @@ class SCPersonScraper(Scraper):
             url = 'http://www.scstatehouse.gov/member.php?chamber=H'
         else:
             url = 'http://www.scstatehouse.gov/member.php?chamber=S'
+
+        seen_committees = {}
 
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
@@ -48,9 +50,11 @@ class SCPersonScraper(Scraper):
 
             # District # - County - Map
             district = district.split()[1]
-
-            photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
-
+            try:
+                photo_url = leg_doc.xpath('//img[contains(@src,"/members/")]/@src')[0]
+            except IndexError:
+                self.warning("No Photo URL for {}".format(full_name))
+                photo_url = ''
             person = Person(name=full_name, district=district,
                             party=party, primary_org=chamber,
                             image=photo_url)
@@ -117,10 +121,20 @@ class SCPersonScraper(Scraper):
                             '3rd V.C.': 'third vice-chair',
                             'Ex.Officio Member': 'ex-officio member',
                             'Chairman': 'chairman'}[role]
-
-                    person.add_membership(committee, role=role)
                 else:
                     committee = com.text
-                    person.add_membership(committee)
+                    role = 'member'
+
+                # only yield each committee once
+                if committee not in seen_committees:
+                    com = Organization(name=committee, classification='committee',
+                                       chamber=chamber)
+                    com.add_source(url)
+                    seen_committees[committee] = com
+                    yield com
+                else:
+                    com = seen_committees[committee]
+
+                person.add_membership(com, role=role)
 
             yield person

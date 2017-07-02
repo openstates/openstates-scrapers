@@ -15,7 +15,8 @@ class Alabama(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Independent'},
     ]
     legislative_sessions = [
         {
@@ -94,6 +95,7 @@ class Alabama(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
+        'Regular Session 2018',     # temporary
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",

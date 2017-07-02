@@ -1,7 +1,4 @@
 import datetime
-import re
-from billy.scrape.utils import url_xpath
-from billy.utils.fulltext import worddata_to_text
 
 metadata = {
     'name': 'Kentucky',
@@ -121,18 +118,3 @@ metadata = {
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
     '_ignored_scraped_sessions': [],
 }
-
-
-def session_list():
-    sessions = url_xpath('http://www.lrc.ky.gov/legislation.htm',
-        '//a[contains(@href, "record.htm")]/text()[normalize-space()]')
-
-    for index, session in enumerate(sessions):
-        # Remove escaped whitespace characters.
-        sessions[index] = re.sub(r'[\r\n\t]+', '', session)
-
-    return sessions
-
-
-def extract_text(doc, data):
-    return worddata_to_text(data)

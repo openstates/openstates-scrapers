@@ -21,7 +21,7 @@ from . import actions
 actor_map = {
     '(S)': 'upper',
     '(H)': 'lower',
-    '(C)': 'clerk',
+    '(C)': 'legislature',       # TODO: add clerk role?
     }
 
 sponsor_map = {
@@ -59,6 +59,8 @@ class MTBillScraper(Scraper, LXMLMixin):
     def __init__(self, *args, **kwargs):
         super(MTBillScraper, self).__init__(*args, **kwargs)
 
+        self._seen_vote_ids = set()
+
         self.search_url_template = (
             'http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?'
             'P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&'
@@ -90,7 +92,10 @@ class MTBillScraper(Scraper, LXMLMixin):
             bill, votes = self.parse_bill(bill_url, session)
             if bill:
                 yield bill
-                yield from votes
+                for vote in votes:
+                    if vote.pupa_id not in self._seen_vote_ids:
+                        self._seen_vote_ids.add(vote.pupa_id)
+                        yield vote
 
     def parse_bill(self, bill_url, session):
 
@@ -263,14 +268,14 @@ class MTBillScraper(Scraper, LXMLMixin):
                                                                               )[4:].strip()
             except KeyError:
                 action_name = action.xpath("td[1]")[0].text_content().strip()
-                actor = 'clerk' if action_name == 'Chapter Number Assigned' else ''
+                actor = 'legislature' if action_name == 'Chapter Number Assigned' else ''
 
             action_name = action_name.replace("&nbsp", "")
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y').date()
             action_type = actions.categorize(action_name)
 
             if 'by senate' in action_name.lower():
-                actor = 'upper`'
+                actor = 'upper'
             bill.add_action(action_name, action_date,
                             classification=action_type,
                             chamber=actor)
@@ -431,6 +436,7 @@ class MTBillScraper(Scraper, LXMLMixin):
             bill=bill,
             bill_action=vote['action'],
         )
+        vote.pupa_id = vote_url         # URL contains sequence number
         vote.add_source(vote_url)
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
@@ -559,7 +565,7 @@ class PDFCommitteeVote(object):
         raise NotImplemented
 
     def chamber(self):
-        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'joint'}
+        chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'legislature'}
         chamber = re.search(r'(HOUSE|SENATE|JOINT)', self.text)
         if chamber is None:
             raise PDFCommitteeVoteParseError("PDF didn't have chamber on it")
@@ -669,6 +675,7 @@ class PDFCommitteeVote(object):
             classification='passage',
             bill=self.bill,
         )
+        v.pupa_id = self.url         # URL contains sequence number
         v.set_count('yes', self.yes_count())
         v.set_count('no', self.no_count())
         v.set_count('other', self.other_count())

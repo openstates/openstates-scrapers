@@ -62,7 +62,10 @@ class MIEventScraper(Scraper):
 
         datetime = datetime.replace('p.m.', 'pm')
         datetime = datetime.replace('Noon', "pm")
-        datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
+        try:
+            datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I:%M %p")
+        except ValueError:
+            datetime = dt.datetime.strptime(datetime, "%A, %m/%d/%Y %I %p")
         where = metainf['Location']['txt']
         title = metainf['Committee']['txt']  # XXX: Find a better title
 
@@ -71,8 +74,7 @@ class MIEventScraper(Scraper):
 
         event = Event(
             name=title,
-            start_time=self._tz.localize(datetime),
-            timezone=self._tz.zone,
+            start_date=self._tz.localize(datetime),
             location_name=where,
         )
         event.add_source(url)

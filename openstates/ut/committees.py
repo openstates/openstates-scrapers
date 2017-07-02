@@ -1,18 +1,12 @@
 import re
 
-from billy.scrape import NoDataForPeriod
-from billy.scrape.committees import CommitteeScraper, Committee
+from pupa.scrape import Scraper, Organization
 from openstates.utils import LXMLMixin
 
-import lxml.html
 
+class UTCommitteeScraper(Scraper, LXMLMixin):
 
-class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
-    jurisdiction = 'ut'
-
-    def scrape(self, term, chambers):
-        self.validate_term(term, latest_only=True)
-
+    def scrape(self, chamber=None):
         url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
         page = self.lxmlize(url)
 
@@ -24,13 +18,12 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
             elif "Senate" in comm_name:
                 chamber = "upper"
             else:
-                chamber = "joint"
-
+                chamber = "legislature"
 
             # Drop leading "House" or "Senate" from name
             comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
-            comm = Committee(chamber, comm_name)
-
+            comm = Organization(name=comm_name, chamber=chamber,
+                                classification='committee')
             committee_page = self.lxmlize(comm_link.attrib['href'])
 
             for mbr_link in committee_page.xpath(
@@ -42,13 +35,12 @@ class UTCommitteeScraper(CommitteeScraper, LXMLMixin):
                 name = re.sub(r'^Rep. ', "", name)
 
                 role = mbr_link.tail.strip().strip(",").strip()
-                type = "member"
+                typ = "member"
                 if role:
-                    type = role
-
-                comm.add_member(name, type)
+                    typ = role
+                comm.add_member(name, typ)
 
             comm.add_source(url)
             comm.add_source(comm_link.get('href'))
 
-            self.save_committee(comm)
+            yield comm
