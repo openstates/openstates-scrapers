@@ -50,6 +50,8 @@ class Illinois(Jurisdiction):
          '_scraped_name': '99   (2015-2016)',
          },
         {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
+        {'name': '100th Special Session', 'identifier': '100th-special',
+         'classification': 'special'}
     ]
 
     ignored_scraped_sessions = [

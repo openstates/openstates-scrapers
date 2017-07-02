@@ -13,6 +13,10 @@ from ._utils import canonicalize_url
 
 
 session_details = {
+    '100th-special': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '100', 'SessionID': '92', 'SpecSess': '1'}},
     '100th': {
         'speaker': 'Madigan',
         'president': 'Cullerton',
