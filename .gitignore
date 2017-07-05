@@ -28,3 +28,4 @@ venv
 tmp.*
 *.mdb
 billydata
+.idea
