@@ -74,7 +74,11 @@ class NJEventScraper(Scraper, MDBMixin):
 
             date_time = "%s %s" % (record['Date'], record['Time'])
             date_time = dt.datetime.strptime(date_time, "%m/%d/%Y %I:%M %p")
-            hr_name = self._committees[record['CommHouse']]
+
+            try:
+                hr_name = self._committees[record['CommHouse']]
+            except KeyError:
+                self.warning('unknown committee code %s, skipping', record['CommHouse'])
 
             description = 'Meeting of the {}'.format(hr_name)
 

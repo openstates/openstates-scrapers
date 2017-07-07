@@ -352,7 +352,7 @@ class NJBillScraper(Scraper, MDBMixin):
             zippedfile = zipfile.ZipFile(s_vote_zip)
             for vfile in ["%s.txt" % (filename), "%sEnd.txt" % (filename)]:
                 try:
-                    vote_file = io.TextIOWrapper(zippedfile.open(vfile, 'rU'))
+                    vote_file = io.TextIOWrapper(zippedfile.open(vfile, 'r'))
                 except KeyError:
                     #
                     # Right, so, 2011 we have an "End" file with more
@@ -438,9 +438,9 @@ class NJBillScraper(Scraper, MDBMixin):
                     # Per the NJ leg's glossary, a veto override requires
                     # 2/3ds of each chamber. 27 in the senate, 54 in the house.
                     # http://www.njleg.state.nj.us/legislativepub/glossary.asp
-                    if vote.chamber == 'lower':
+                    if 'lower' in vote.bill:
                         vote.result = 'pass' if counts['yes'] >= 54 else 'fail'
-                    elif vote['chamber'] == 'upper':
+                    elif 'upper' in vote.bill:
                         vote.result = 'pass' if counts['yes'] >= 27 else 'fail'
                 else:
                     # Regular vote.
