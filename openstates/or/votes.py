@@ -98,14 +98,17 @@ class ORVoteScraper(Scraper):
                     tally = self.tally_votes(event, 'committee')
                     passed = self.passed_vote(tally)
 
-                    classification = self.determine_vote_classifiers(event['Action'])
+                    # there is at least one event w/o an Action listed
+                    action = event['Action'] or event['Comments']
+
+                    classification = self.determine_vote_classifiers(action)
                     when = datetime.datetime.strptime(event['MeetingDate'], '%Y-%m-%dT%H:%M:%S')
                     when = self.tz.localize(when)
 
                     vote = VoteEvent(
                         start_date=when,
                         bill_chamber=self.chamber_code[bid[0]],
-                        motion_text=event['Action'],
+                        motion_text=action,
                         classification=classification,
                         result='pass' if passed else 'fail',
                         legislative_session=session,
