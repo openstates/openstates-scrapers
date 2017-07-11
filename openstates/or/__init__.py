@@ -87,10 +87,11 @@ class Oregon(Jurisdiction):
             "identifier": "2017 Regular Session",
             "name": "2017 Regular Session",
             "start_date": "2017-02-01"
-        }
+        },
     ]
     ignored_scraped_sessions = [
         "Today",
+        "2017-2018 Interim",
         "2015-2016 Interim",
         "2013 1st Special Session",
         "2012 1st Special Session",
