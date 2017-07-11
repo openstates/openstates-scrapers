@@ -29,6 +29,7 @@ class DCEventScraper(Scraper):
             when = datetime.datetime.strptime(when, "%A, %m/%d/%Y %I:%M%p")
             description_content = event.xpath(".//div[@class='event-description-content-dev']")[0]
             description_lines = description_content.xpath("./*")
+            name = description_lines[0].text_content()
             desc_without_title = " ".join(d.text_content() for d in description_lines[1:])
             description = re.sub(r'\s+', " ", description_content.text_content()).strip()
             potential_bills = description_content.xpath(".//li")
@@ -39,7 +40,7 @@ class DCEventScraper(Scraper):
                 committee = committee.group(1).strip()
                 event_type = 'committee:meeting'
 
-            e = Event(name=description,
+            e = Event(name=name,
                       description=description,
                       start_date=self._tz.localize(when),
                       location_name=location,
