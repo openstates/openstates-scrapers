@@ -104,6 +104,14 @@ class Texas(Jurisdiction):
             "identifier": "85",
             "name": "85th Legislature (2017)",
             "start_date": "2017-01-13"
+        },
+        {
+            "_scraped_name": "85(1) - 2017",
+            "classification": "special",
+            "end_date": "2017-08-19",
+            "identifier": "851",
+            "name": "85nd Legislature, 1st Called Session (2017)",
+            "start_date": "2017-07-10"
         }
     ]
     ignored_scraped_sessions = [
