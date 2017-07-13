@@ -23,7 +23,7 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
         if chamber:
             chambers = [chamber]
         else:
-            chambers = ['upper', 'lower', 'joint']
+            chambers = ['upper', 'lower', 'legislature']
 
         # Xpath query string format for legislative chamber committee urls
         base_xpath = (
@@ -39,8 +39,8 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                       'chamber_xpath': base_xpath.format('House',
                                                          'House',
                                                          'House')},
-            'joint': {'url': '{}Interim'.format(base_url),
-                      'chamber_xpath': base_xpath.format('', '', '')}
+            'legislature': {'url': '{}Interim'.format(base_url),
+                            'chamber_xpath': base_xpath.format('', '', '')}
         }
 
         for chamber in chambers:
@@ -89,7 +89,7 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
 
                         if role in ('Chair', 'Co-Chair', 'Vice Chair',
                                     'Member', 'Advisory', 'Ranking Member'):
-                            if chamber == 'joint':
+                            if chamber == 'legislature':
                                 m_role = 'interim {}'.format(role.lower())
                             else:
                                 m_role = role.lower()
@@ -104,9 +104,9 @@ class NMCommitteeScraper(Scraper, LXMLMixin):
                     # have members from both chambers. However, a small
                     # number of interim committees (right now, just 1) have
                     # only members from one chamber, so the chamber is set
-                    # to their chamber instead of 'joint' for those
+                    # to their chamber instead of 'legislature' for those
                     # committees.
-                    if chamber == 'joint':
+                    if chamber == 'legislature':
                         m_chambers = set(
                             [mem.chamber for mem in members])
                         if len(m_chambers) == 1:
