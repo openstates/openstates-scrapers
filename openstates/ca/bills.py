@@ -555,8 +555,10 @@ class CABillScraper(Scraper):
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
+                    chamber = 'lower'
                     vote_location = ' '.join(full_loc.split(' ')[1:])
                 elif first_part.startswith('sen'):
+                    chamber = 'upper'
                     vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
@@ -594,11 +596,10 @@ class CABillScraper(Scraper):
                     self.warning("Got blank motion on vote for %s" % bill_id)
                     continue
 
-                org = (
-                    {'name': vote_location, 'classification': 'committee'}
-                    if vote_location != 'Floor'
-                    else None
-                )
+                # XXX this is responsible for all the CA 'committee' votes, not
+                # sure if that's a feature or bug, so I'm leaving it as is...
+                vote_classification = chamber if (vote_location == 'Floor') else 'committee'
+                org = {'name': vote_location, 'classification': vote_classification}
 
                 fsvote = VoteEvent(
                     motion_text=motion,
