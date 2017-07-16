@@ -6,7 +6,7 @@
 # resolving these different names to to the same committee.  The keys
 # of COMMITTEE are a tuple of the 'Name' and 'Code' of the committee
 # as they appear on http://ilga.gov/senate/committees/default.asp or
-# http://ilga.gov/house/committees/default.asp. They values should be
+# http://ilga.gov/house/committees/default.asp. The values should be
 # a unique identifier for the actual committee.
 COMMITTEES = {('8th District Education Oversight Su', 'HAPE-HDEO'): '97',
               ('Access to Federal Funding', 'HAFF'): '98',
