@@ -102,5 +102,4 @@ metadata = {
         '2008',
         '2007'
     ],
-    '_partial_vote_bill_id': True,
 }
