@@ -11,12 +11,7 @@ shift
 
 export PYTHONPATH=./openstates
 
-$PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state --scrape "$@"
-
-# only import states in IMPORT_STATES env
-if [[ $IMPORT_STATES == *$state* ]]; then
-    $PUPA_ENV/bin/pupa update $state --import
-fi
+$PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state "$@"
 
 export PUPA_DATA_DIR='../openstates/_data'
 export PYTHONPATH=./billy_metadata/
