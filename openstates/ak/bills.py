@@ -35,7 +35,7 @@ class AKBillScraper(Scraper):
         'AM': 'Amend'}
 
     _comm_mapping = {
-        'AET': 'Arctic Policy, Economic Development, & Tourism',        
+        'AET': 'Arctic Policy, Economic Development, & Tourism',
         'CRA': 'Community & Regional Affairs',
         'EDC': 'Education',
         'FIN': 'Finance',
