@@ -112,7 +112,6 @@ class Wisconsin(Jurisdiction):
             'type': 'special',
             'display_name': 'January 2017 Special Session',
             '_scraped_name': 'January 2017 Special Session',
-            'site_id': 'jr7'
         }
     ]
     ignored_scraped_sessions = [
