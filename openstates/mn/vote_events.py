@@ -26,6 +26,8 @@ VOTES_URLS = {
         'http://www.house.leg.state.mn.us/votes/getVotesls8920151.asp',
     '2017-2018':
         'http://www.house.leg.state.mn.us/votes/getVotesls90.asp',
+    '2017s1':
+        'http://www.house.leg.state.mn.us/votes/getVotesls9020171.asp',
 }
 
 
