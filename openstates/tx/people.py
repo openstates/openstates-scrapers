@@ -54,8 +54,11 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
         parties = {}
 
+        # use only full-session slug for this
+        session = self.latest_session()[:2]
+
         url = ('http://www.lrl.state.tx.us/legeLeaders/members/membersearch.'
-               'cfm?leg={}&chamber={}').format(self.latest_session(), chamber_map[chamber])
+               'cfm?leg={}&chamber={}').format(session, chamber_map[chamber])
         page = self.lxmlize(url)
 
         # table is broken and doesn't have proper <tr> tags
