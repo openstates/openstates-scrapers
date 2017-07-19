@@ -36,8 +36,8 @@ _classifiers = (
     # leave them as they are.
     # i am not checking if they did or not. but it be easy just read the end and
     # if it dosnt have amendments it should say 'sin enmiendas'
-    ('1er Informe', 'committee', 'amendment-amendment'),
-    ('2do Informe', 'committee', 'amendment-amendment'),
+    ('1er Informe', '', 'amendment-amendment'),
+    ('2do Informe', '', 'amendment-amendment'),
     ('Aprobado con enmiendas', '', 'amendment-passage'),
     (u'Remitido a Comisión', '', 'referral-committee'),
     (u'Referido a Comisión', '', 'referral-committee'),
