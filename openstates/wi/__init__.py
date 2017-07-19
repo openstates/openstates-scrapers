@@ -109,7 +109,7 @@ class Wisconsin(Jurisdiction):
         {
             'identifier': 'January 2017 Special Session',
             'start_date': "2017-04-04",
-            'type': 'special',
+            'classification': 'special',
             'display_name': 'January 2017 Special Session',
             '_scraped_name': 'January 2017 Special Session',
         }
