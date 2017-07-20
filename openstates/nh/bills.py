@@ -18,6 +18,7 @@ bill_type_map = {
     'A': 'address',
 }
 action_classifiers = [
+    ('Minority Committee Report', None),        # avoid calling these passage
     ('Ought to Pass', ['passage']),
     ('Passed by Third Reading', ['reading-3', 'passage']),
     ('.*Ought to Pass', ['committee-passage-favorable']),
