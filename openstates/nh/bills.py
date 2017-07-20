@@ -23,7 +23,6 @@ action_classifiers = [
     ('Passed by Third Reading', ['reading-3', 'passage']),
     ('.*Ought to Pass', ['committee-passage-favorable']),
     ('.*Introduced(.*) and (R|r)eferred', ['introduction', 'referral-committee']),
-    ('.*Inexpedient to Legislate', ['committee-passage-unfavorable']),
     ('Proposed(.*) Amendment', 'amendment-introduction'),
     ('Amendment .* Adopted', 'amendment-passage'),
     ('Amendment .* Failed', 'amendment-failure'),
