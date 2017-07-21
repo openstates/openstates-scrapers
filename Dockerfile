@@ -39,7 +39,7 @@ RUN chown mysql /var/run/mysqld/
 
 RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/
 RUN /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy
-RUN /opt/openstates/venv-billy/bin/pip install python-dateutil
+RUN /opt/openstates/venv-billy/bin/pip install -U python-dateutil requests
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata.git#egg=python-opencivicdata

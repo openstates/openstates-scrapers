@@ -1,5 +1,3 @@
-# from billy.utils.fulltext import pdfdata_to_text, text_after_line_numbers
-
 metadata = {
     'name': 'Montana',
     'abbreviation': 'mt',
