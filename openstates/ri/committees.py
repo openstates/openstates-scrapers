@@ -13,7 +13,7 @@ class RICommitteeScraper(Scraper):
     def scrape(self, chamber=None):
         if chamber in ['upper', None]:
             yield from self.scrape_comms('upper', 'ComMemS')
-            yield from self.scrape_comms('joint', 'ComMemJ')
+            yield from self.scrape_comms('legislature', 'ComMemJ')
         if chamber in ['lower', None]:
             yield from self.scrape_comms('lower', 'ComMemr')
 
