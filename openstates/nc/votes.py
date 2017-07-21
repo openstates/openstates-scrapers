@@ -32,7 +32,16 @@ class NCVoteScraper(Scraper):
             vote_data_url = 'ftp://www.ncleg.net/Bill_Status/Votes%s.zip' % ftp_session
             naming_scheme = '{file_label}_{session}.txt'
             delimiter = "\t"
-        fname, resp = self.urlretrieve(vote_data_url)
+        try:
+            fname, resp = self.urlretrieve(vote_data_url)
+        except Exception as e:
+            self.error('Error retrieving {}: {}'.format(vote_data_url, e))
+            lines = self.get('ftp://www.ncleg.net/Bill_Status/').content.splitlines()
+            for line in lines:
+                if 'Votes' in str(line):
+                    self.info('FTP directory includes: {}'.format(line))
+            return
+
         zf = ZipFile(fname)
 
         chamber_code = 'H' if chamber == 'lower' else 'S'
