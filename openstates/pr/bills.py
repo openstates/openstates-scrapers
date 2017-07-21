@@ -29,9 +29,9 @@ _classifiers = (
     (u'Aprobado por el Senado en Votación', 'upper', 'passage'),
     ('Aparece en Primera Lectura del', 'upper', 'reading-1'),
     ('Aparece en Primera Lectura de la', 'lower', 'reading-1'),
-    ('Enviado al Gobernador', 'governor', 'executive-receipt'),
-    ('Veto', 'governor', 'executive-veto'),
-    ('Veto de Bolsillo', 'governor', 'executive-veto'),
+    ('Enviado al Gobernador', 'executive', 'executive-receipt'),
+    ('Veto', 'executive', 'executive-veto'),
+    ('Veto de Bolsillo', 'executive', 'executive-veto'),
     # comissions give a report but sometimes they dont do any amendments and
     # leave them as they are.
     # i am not checking if they did or not. but it be easy just read the end and
@@ -43,7 +43,7 @@ _classifiers = (
     (u'Referido a Comisión', '', 'referral-committee'),
     ('Retirada por su Autor', 'sponsor', 'withdrawal'),
     ('Comisión : * no recomienda aprobación de la medida', '', 'committee-passage-unfavorable'),
-    ('Ley N', 'governor', 'executive-signature')
+    ('Ley N', 'executive', 'executive-signature')
 )
 
 

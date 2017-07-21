@@ -76,6 +76,7 @@ class PuertoRico(Jurisdiction):
 
         # TODO: add at large
 
+        yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
         yield upper
         yield lower
