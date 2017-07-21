@@ -1,5 +1,4 @@
 import re
-import requests
 
 from pupa.scrape import Scraper, Organization
 
@@ -12,8 +11,6 @@ def clean(stream):
 
 class RICommitteeScraper(Scraper):
     def scrape(self, chamber=None):
-        self._session = requests.Session()
-
         if chamber in ['upper', None]:
             yield from self.scrape_comms('upper', 'ComMemS')
             yield from self.scrape_comms('joint', 'ComMemJ')
@@ -22,7 +19,7 @@ class RICommitteeScraper(Scraper):
 
     def scrape_comm_list(self, ctype):
         url = 'http://webserver.rilin.state.ri.us/CommitteeMembers/'
-        page = self._session.get(url).text
+        page = self.get(url).text
         root = lxml.html.fromstring(page)
         root.make_links_absolute(url)
         return root.xpath("//a[contains(@href,'" + ctype + "')]")
@@ -31,7 +28,7 @@ class RICommitteeScraper(Scraper):
         # We do this twice because the first request should create the
         # session cookie we need.
         for x in range(2):
-            page = self._session.get(url).text
+            page = self.get(url).text
         root = lxml.html.fromstring(page)
         # The first <tr> in the table of members
         membertable = root.xpath('//p[@class="style28"]/ancestor::table[1]')[0]
@@ -55,7 +52,7 @@ class RICommitteeScraper(Scraper):
             link = a.attrib['href']
             commName = clean(a.text_content())
             self.info("url " + link)
-            c = Organization(chamber='lower', name=commName, classification='committee')
+            c = Organization(chamber=chamber, name=commName, classification='committee')
             self.add_members(c, link)
             c.add_source(link)
             yield c
