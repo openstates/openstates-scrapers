@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -193,7 +194,8 @@ class GABillScraper(Scraper):
                     for vdetail in vote_['Votes'][0]:
                         whom = vdetail['Member']
                         how = vdetail['MemberVoted']
-                        vote.vote(methods.get(how, 'other'), whom['Name'])
+                        name = re.sub(r'(,\s*\d+.*)$', '', whom['Name'])
+                        vote.vote(methods.get(how, 'other'), name)
 
                     yield vote
 
