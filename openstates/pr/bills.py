@@ -41,7 +41,7 @@ _classifiers = (
     ('Aprobado con enmiendas', '', 'amendment-passage'),
     (u'Remitido a Comisión', '', 'referral-committee'),
     (u'Referido a Comisión', '', 'referral-committee'),
-    ('Retirada por su Autor', 'sponsor', 'withdrawal'),
+    ('Retirada por su Autor', '', 'withdrawal'),
     ('Comisión : * no recomienda aprobación de la medida', '', 'committee-passage-unfavorable'),
     ('Ley N', 'executive', 'executive-signature')
 )
