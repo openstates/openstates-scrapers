@@ -66,7 +66,7 @@ class PuertoRico(Jurisdiction):
         # 8 districts w/ 2 members, + 11 at larg
         for i, d in enumerate(('I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII')):
             upper.add_post(label=d, role=upper_title,
-                           division_id='{}/sldu:{}'.format(self.division_id, i))
+                           division_id='{}/sldu:{}'.format(self.division_id, i + 1))
 
         # lower house is 40 seats, + 11 at large
         for n in range(1, 41):
