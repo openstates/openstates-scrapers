@@ -313,7 +313,7 @@ class MEBillScraper(Scraper):
         member_cell = page.xpath("//td[text() = 'Member']")[0]
         for row in member_cell.xpath("../../tr")[1:]:
             name = row.xpath("string(td[2])")
-            # name = name.split(" of ")[0]
+            name = name.split(" of ")[0]
 
             vtype = row.xpath("string(td[4])")
             if vtype == 'Y':
