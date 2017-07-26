@@ -28,9 +28,14 @@ class SCPersonScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
 
-        for a in doc.xpath('//a[contains(@href, "code=")]'):
+        for a in doc.xpath('//a[@class="membername"]'):
             full_name = a.text
             leg_url = a.get('href')
+            
+            if full_name.startswith('Senator'):
+                full_name = full_name.replace('Senator ', '')
+            if full_name.startswith('Representative'):
+                full_name = full_name.replace('Representative ', '')
 
             leg_html = self.get(leg_url).text
             leg_doc = lxml.html.fromstring(leg_html)
