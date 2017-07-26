@@ -144,7 +144,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
-                rows = doc.xpath('//table[@class="guided"]/tbody/tr')[1:]
+                rows = doc.xpath('//table[@class="guided"]/tbody/tr')
                 total_rows.extend(rows)
 
                 # Out of rows
