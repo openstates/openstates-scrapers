@@ -223,10 +223,14 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        xpath = '//h3[contains(., "Office")]'
-        for table in doc.xpath(xpath)[0].itersiblings():
-            if table.tag == 'table':
-                break
+        try:
+            xpath = '//h3[contains(., "Office")]'
+            for table in doc.xpath(xpath)[0].itersiblings():
+                if table.tag == 'table':
+                    break
+        except IndexError:
+            self.warning('invalid bio page for %s', person)
+            return
         col1, col2 = table.xpath('tr[2]/td')
         lxml.etree.strip_tags(col1, 'sup')
         lxml.etree.strip_tags(col2, 'sup')
