@@ -31,7 +31,7 @@ class SCPersonScraper(Scraper):
         for a in doc.xpath('//a[@class="membername"]'):
             full_name = a.text
             leg_url = a.get('href')
-            
+
             if full_name.startswith('Senator'):
                 full_name = full_name.replace('Senator ', '')
             if full_name.startswith('Representative'):

@@ -439,7 +439,7 @@ class CABillScraper(Scraper):
                         primary=author.primary_author_flg == 'Y',
                         entity_type='person',
                     )
-                    fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
+                    # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
             for action in bill.actions:
