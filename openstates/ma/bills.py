@@ -233,10 +233,8 @@ class MABillScraper(Scraper):
                 cached_vote.set_count('yes', y)
                 cached_vote.set_count('no', n)
 
-                housevote_pdf = 'http://www.mass.gov/legis/journal/combined{}RCs.pdf'.format(
-                    action_year
-                )
-                # note: 2014-2015 different format and no data on website for years prior to 2014
+                housevote_pdf = 'https://malegislature.gov/Journal/House/{}/{}/RollCalls'.format(
+                    bill.legislative_session, action_year)
                 self.scrape_house_vote(cached_vote, housevote_pdf, n_supplement)
                 cached_vote.add_source(housevote_pdf)
 
@@ -272,6 +270,7 @@ class MABillScraper(Scraper):
                 rollcall_pdf = 'http://malegislature.gov' + row.xpath('string(td[3]/a/@href)')
                 self.scrape_senate_vote(cached_vote, rollcall_pdf)
                 cached_vote.add_source(rollcall_pdf)
+                cached_vote.pupa_id = rollcall_pdf
                 yield cached_vote
 
             attrs = self.categorizer.categorize(action_name)
