@@ -111,7 +111,7 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
 
             party = self._parties[party_text]
 
-            legislator_url = 'https://www.okhouse.gov/District.aspx?District=' + district
+            legislator_url = 'https://www.okhouse.gov/Members/District.aspx?District=' + district
             legislator_page = self.curl_lxmlize(legislator_url)
 
             photo_url = self.get_node(
