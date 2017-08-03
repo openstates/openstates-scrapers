@@ -16,8 +16,11 @@ SESSION_TERMS = {
 
     '2017 Regular Session': '2017-2018',
     'January 2017 Special Session': '2017-2018',
+    'August 2017 Special Session': '2017-2018',
 }
 
+
+# from https://docs.legis.wisconsin.gov/search
 SESSION_SITE_IDS = {
     'June 2009 Special Session': 'jn9',
     'December 2009 Special Session': 'de9',
@@ -27,4 +30,5 @@ SESSION_SITE_IDS = {
     'December 2013 Special Session': 'de3',
     'January 2014 Special Session': 'jr4',
     'January 2017 Special Session': 'jr7',
+    'August 2017 Special Session': 'au7',
 }
