@@ -599,7 +599,11 @@ class CABillScraper(Scraper):
                 # XXX this is responsible for all the CA 'committee' votes, not
                 # sure if that's a feature or bug, so I'm leaving it as is...
                 vote_classification = chamber if (vote_location == 'Floor') else 'committee'
-                org = {'name': vote_location, 'classification': vote_classification}
+                org = {
+                    # XXX disabling this for now to see if it fixes CA import
+                    # 'name': vote_location,
+                    'classification': vote_classification
+                }
 
                 fsvote = VoteEvent(
                     motion_text=motion,
