@@ -240,7 +240,9 @@ class MABillScraper(Scraper):
 
                 cached_vote.pupa_id = '{}#{}'.format(housevote_pdf, n_supplement)
 
-                yield cached_vote
+                # XXX: disabled house votes on 8/1 to try to get MA importing again
+                # will leaving this in and commented out once we resolve the ID issue
+                # yield cached_vote
 
             # Senate votes
             if "Roll Call" in action_name:
