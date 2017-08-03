@@ -103,7 +103,7 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
             committee = Organization(comm_name, chamber=chamber, classification='committee')
 
             for member in members:
-                mem_link = member.attrib["href"]
+                mem_link = member.attrib.get("href", '')
                 if "mem" not in mem_link:
                     continue
 
