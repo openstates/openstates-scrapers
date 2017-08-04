@@ -86,192 +86,149 @@ class OHBillScraper(Scraper):
             all_fiscals = self.get_other_data_source(first_page, base_url, "fiscals")
             all_synopsis = self.get_other_data_source(first_page, base_url, "synopsiss")
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
-            doc_types = ["bills", "resolutions"]
-            for doc_type in doc_types:
-                bill_versions = {}
-                for doc in self.pages(base_url, first_page+doc_type):
-                    for v in doc["items"]:
-                        # bills is actually a list of versions
-                        # going to create a dictionary as follows:
-                        # key=bill_id
-                        # value = dict of all versions, where keys are versionids
-                        # and values are the bill data from the api.
-                        # then loop through that to avoid duplicate bills
 
+            for row in self.get_bill_rows(session):
+                number_link, ga, title, primary_sponsor, status = row.xpath('td')
+
+                bill_id = number_link.text_content()
+                title = title.text_content().strip()
+                chamber = 'lower' if 'H' in bill_id else 'upper'
+                classification = 'bill' if 'B' in bill_id else 'resolution'
+
+                bill = Bill(bill_id, legislative_session=session, chamber=chamber,
+                            title=title, classification=classification)
+                bill.add_source(number_link.xpath('a/@href')[0])
+
+                # get bill from API
+                bill_api_url = ('http://search-prod.lis.state.oh.us/solarapi/v1/'
+                                'general_assembly_{}/{}/{}/'.format(
+                                    session,
+                                    'bills' if 'B' in bill_id else 'resolutions',
+                                    bill_id.lower().replace(' ', '')
+                                ))
+                data = self.get(bill_api_url).json()
+
+                # this stuff is version-specific
+                for version in data['items']:
+                    version_name = version["version"]
+                    version_link = base_url+version["pdfDownloadLink"]
+                    bill.add_version_link(version_name, version_link, media_type='application/pdf')
+
+                # we'll use latest bill_version for everything else
+                bill_version = data['items'][0]
+                bill.add_source(bill_api_url)
+
+                # subjects
+                for subj in bill_version["subjectindexes"]:
+                    try:
+                        bill.add_subject(subj["primary"])
+                    except KeyError:
+                        pass
+                    try:
+                        secondary_subj = subj["secondary"]
+                    except KeyError:
+                        secondary_subj = ""
+                    if secondary_subj:
+                        bill.add_subject(secondary_subj)
+
+                # sponsors
+                sponsors = bill_version["sponsors"]
+                for sponsor in sponsors:
+                    sponsor_name = self.get_sponsor_name(sponsor)
+                    bill.add_sponsorship(
+                                        sponsor_name,
+                                        classification='primary',
+                                        entity_type='person',
+                                        primary=True
+                        )
+
+                cosponsors = bill_version["cosponsors"]
+                for sponsor in cosponsors:
+                    sponsor_name = self.get_sponsor_name(sponsor)
+                    bill.add_sponsorship(
+                                         sponsor_name,
+                                         classification='cosponsor',
+                                         entity_type='person',
+                                         primary=False,
+                        )
+
+                try:
+                    action_doc = self.get(base_url+bill_version["action"][0]["link"])
+                except scrapelib.HTTPError:
+                    pass
+                else:
+
+                    actions = action_doc.json()
+                    for action in reversed(actions["items"]):
+                        actor = chamber_dict[action["chamber"]]
+                        action_desc = action["description"]
                         try:
-                            bill_id = v["number"]
+                            action_type = action_dict[action["actioncode"]]
                         except KeyError:
-                            self.warning("Apparent bill has no information:\n{}".format(v))
-                            continue
+                            self.warning("Unknown action {desc} with code {code}."
+                                         " Add it to the action_dict"
+                                         ".".format(desc=action_desc,
+                                                    code=action["actioncode"]))
+                            action_type = None
 
-                        version_id = v["versionid"]
-                        if bill_id in bill_versions:
-                            if version_id in bill_versions[bill_id]:
-                                self.logger.warning("There are two versions of {bill_id}"
-                                                    " called the same thing."
-                                                    " Bad news bears!".format(bill_id=bill_id))
-                            else:
-                                bill_versions[bill_id][version_id] = v
-                        else:
-                            bill_versions[bill_id] = {}
-                            bill_versions[bill_id][version_id] = v
+                        date = self._tz.localize(datetime.datetime.strptime(
+                                                 action["datetime"],
+                                                 "%Y-%m-%dT%H:%M:%S"))
+                        date = "{:%Y-%m-%d}".format(date)
 
-                for b in bill_versions:
-                    bill = None
-                    for bill_version in bill_versions[b].values():
-                        if not bill:
-                            bill_id = bill_version["number"]
-                            title = bill_version["shorttitle"] or bill_version["longtitle"]
-                            title = title.strip()
+                        bill.add_action(action_desc,
+                                        date, chamber=actor,
+                                        classification=action_type)
 
-                            if not len(title):
-                                self.warning("Missing title for {bill_id}".format(bill_id=bill_id))
-                                next
+                # attach documents gathered earlier
+                self.add_document(all_amendments, bill_id, "amendment", bill, base_url)
+                self.add_document(all_fiscals, bill_id, "fiscal", bill, base_url)
+                self.add_document(all_synopsis, bill_id, "synopsis", bill, base_url)
+                self.add_document(all_analysis, bill_id, "analysis", bill, base_url)
 
-                            chamber = "lower" if "h" in bill_id else "upper"
+                # votes
+                vote_url = base_url+bill_version["votes"][0]["link"]
+                vote_doc = self.get(vote_url)
+                votes = vote_doc.json()
+                yield from self.process_vote(votes, vote_url,
+                                             base_url, bill, legislators,
+                                             chamber_dict, vote_results)
 
-                            subjects = []
-                            for subj in bill_version["subjectindexes"]:
-                                try:
-                                    subjects.append(subj["primary"])
-                                except KeyError:
-                                    pass
-                                try:
-                                    secondary_subj = subj["secondary"]
-                                except KeyError:
-                                    secondary_subj = ""
-                                if secondary_subj:
-                                    subjects.append(secondary_subj)
+                vote_url = base_url
+                vote_url += bill_version["cmtevotes"][0]["link"]
+                try:
+                    vote_doc = self.get(vote_url)
+                except scrapelib.HTTPError:
+                    self.warning("Vote page not "
+                                 "loading; skipping: {}".format(vote_url))
+                    continue
+                votes = vote_doc.json()
+                yield from self.process_vote(votes, vote_url,
+                                             base_url, bill, legislators,
+                                             chamber_dict, vote_results)
 
-                            # they use bill id of format HB 1 on the site
-                            # but hb1 in the API.
+                # we have never seen a veto or a disapprove, but they seem important.
+                # so we'll check and throw an error if we find one
+                # life is fragile. so are our scrapers.
+                if "veto" in bill_version:
+                    veto_url = base_url+bill_version["veto"][0]["link"]
+                    veto_json = self.get(veto_url).json()
+                    if len(veto_json["items"]) > 0:
+                        raise AssertionError("Whoa, a veto! We've never"
+                                             " gotten one before."
+                                             " Go write some code to deal"
+                                             " with it: {}".format(veto_url))
 
-                            for idx, char in enumerate(bill_id):
-                                try:
-                                    int(char)
-                                except ValueError:
-                                    continue
+                if "disapprove" in bill_version:
+                    disapprove_url = base_url+bill_version["disapprove"][0]["link"]
+                    disapprove_json = self.get(disapprove_url).json()
+                    if len(disapprove_json["items"]) > 0:
+                        raise AssertionError("Whoa, a disapprove! We've never"
+                                             " gotten one before."
+                                             " Go write some code to deal "
+                                             "with it: {}".format(disapprove_url))
 
-                                display_id = bill_id[:idx]+" "+bill_id[idx:]
-                                break
-                            classification = {'bills': 'bill',
-                                              'resolutions': 'resolution'}[doc_type]
-                            bill = Bill(display_id.upper(),
-                                        legislative_session=session,
-                                        chamber=chamber,
-                                        title=title,
-                                        classification=classification
-                                        )
-
-                            for subject in subjects:
-                                bill.add_subject(subject)
-                            # this stuff is the same for all versions
-
-                            bill.add_source(first_page+doc_type+"/"+bill_id)
-
-                            sponsors = bill_version["sponsors"]
-                            for sponsor in sponsors:
-                                sponsor_name = self.get_sponsor_name(sponsor)
-                                bill.add_sponsorship(
-                                                    sponsor_name,
-                                                    classification='primary',
-                                                    entity_type='person',
-                                                    primary=True
-                                    )
-
-                            cosponsors = bill_version["cosponsors"]
-                            for sponsor in cosponsors:
-                                sponsor_name = self.get_sponsor_name(sponsor)
-                                bill.add_sponsorship(
-                                                     sponsor_name,
-                                                     classification='cosponsor',
-                                                     entity_type='person',
-                                                     primary=False,
-                                    )
-                            try:
-                                action_doc = self.get(base_url+bill_version["action"][0]["link"])
-                            except scrapelib.HTTPError:
-                                pass
-                            else:
-
-                                actions = action_doc.json()
-                                for action in reversed(actions["items"]):
-                                    actor = chamber_dict[action["chamber"]]
-                                    action_desc = action["description"]
-                                    try:
-                                        action_type = action_dict[action["actioncode"]]
-                                    except KeyError:
-                                        self.warning("Unknown action {desc} with code {code}."
-                                                     " Add it to the action_dict"
-                                                     ".".format(desc=action_desc,
-                                                                code=action["actioncode"]))
-                                        action_type = None
-
-                                    date = self._tz.localize(datetime.datetime.strptime(
-                                                             action["datetime"],
-                                                             "%Y-%m-%dT%H:%M:%S"))
-                                    date = "{:%Y-%m-%d}".format(date)
-
-                                    bill.add_action(action_desc,
-                                                    date, chamber=actor,
-                                                    classification=action_type)
-                            self.add_document(all_amendments, bill_id, "amendment", bill, base_url)
-                            self.add_document(all_fiscals, bill_id, "fiscal", bill, base_url)
-                            self.add_document(all_synopsis, bill_id, "synopsis", bill, base_url)
-                            self.add_document(all_analysis, bill_id, "analysis", bill, base_url)
-
-                            vote_url = base_url+bill_version["votes"][0]["link"]
-                            vote_doc = self.get(vote_url)
-                            votes = vote_doc.json()
-                            yield from self.process_vote(votes, vote_url,
-                                                         base_url, bill, legislators,
-                                                         chamber_dict, vote_results)
-
-                            vote_url = base_url
-                            vote_url += bill_version["cmtevotes"][0]["link"]
-                            try:
-                                vote_doc = self.get(vote_url)
-                            except scrapelib.HTTPError:
-                                self.warning("Vote page not "
-                                             "loading; skipping: {}".format(vote_url))
-                                continue
-                            votes = vote_doc.json()
-                            yield from self.process_vote(votes, vote_url,
-                                                         base_url, bill, legislators,
-                                                         chamber_dict, vote_results)
-
-                            # we have never seen a veto or a disapprove, but they seem important.
-                            # so we'll check and throw an error if we find one
-                            # life is fragile. so are our scrapers.
-                            if "veto" in bill_version:
-                                veto_url = base_url+bill_version["veto"][0]["link"]
-                                veto_json = self.get(veto_url).json()
-                                if len(veto_json["items"]) > 0:
-                                    raise AssertionError("Whoa, a veto! We've never"
-                                                         " gotten one before."
-                                                         " Go write some code to deal"
-                                                         " with it: {}".format(veto_url))
-
-                            if "disapprove" in bill_version:
-                                disapprove_url = base_url+bill_version["disapprove"][0]["link"]
-                                disapprove_json = self.get(disapprove_url).json()
-                                if len(disapprove_json["items"]) > 0:
-                                    raise AssertionError("Whoa, a disapprove! We've never"
-                                                         " gotten one before."
-                                                         " Go write some code to deal "
-                                                         "with it: {}".format(disapprove_url))
-
-                        # this stuff is version-specific
-                        version_name = bill_version["version"]
-                        version_link = base_url+bill_version["pdfDownloadLink"]
-                        if version_link.endswith("pdf"):
-                            mimetype = "application/pdf"
-                        else:
-                            mimetype = "application/octet-stream"
-                        bill.add_version_link(version_name, version_link, media_type=mimetype)
-                    # Need to sort bill actions, since they may be jumbled
-
-                    yield bill
+                yield bill
 
     def pages(self, base_url, first_page):
         page = self.get(first_page)
@@ -281,6 +238,24 @@ class OHBillScraper(Scraper):
             page = self.get(base_url+page["nextLink"])
             page = page.json()
             yield page
+
+    def get_bill_rows(self, session, start=1):
+        # bill API endpoint times out so we're now getting this from the normal search
+        start = 1
+        bill_url = ('https://www.legislature.ohio.gov/legislation?5&pageSize=500&start={}&'
+                    'sort=LegislationNumber&dir=asc&statusCode&generalAssemblies={}'.format(
+                        start, session)
+                    )
+        doc = self.get(bill_url)
+        doc = lxml.html.fromstring(doc.text)
+        doc.make_links_absolute(bill_url)
+
+        rows = doc.xpath('//tr')[1:]
+        yield from rows
+        if len(rows) == 500:
+            yield from self.get_bill_rows(session, start+500)
+        # if page is full, get next page - could use pagination info in
+        # //div[id="searchResultsInfo"] to improve this
 
     def get_other_data_source(self, first_page, base_url, source_name):
         # produces a dictionary from bill_id to a list of
