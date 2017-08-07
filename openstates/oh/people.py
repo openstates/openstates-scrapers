@@ -104,7 +104,7 @@ class OHLegislatorScraper(Scraper):
 
             chmbr = "joint" if "joint" in entry.lower() else chamber
             if entry in JOINT_COMMITTEE_OVERRIDE:
-                chmbr = "joint"
+                chmbr = "legislature"
 
             kwargs = {}
 
