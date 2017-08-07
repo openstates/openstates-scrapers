@@ -610,7 +610,8 @@ class CABillScraper(Scraper):
                     start_date=self._tz.localize(vote.vote_date_time),
                     result='pass' if result else 'fail',
                     classification=vtype,
-                    organization=org,
+                    # organization=org,
+                    chamber=chamber,
                     bill=fsbill,
                 )
                 fsvote.extras = {'threshold': vote.threshold}
