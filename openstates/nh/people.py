@@ -51,7 +51,9 @@ class NHPersonScraper(Scraper, LXMLMixin):
         party = self.party_map[row['party'].upper()]
         email = row['WorkEmail']
 
-        print(district)
+        if district == '0':
+            self.warning('Skipping {}, district is set to 0'.format(full_name))
+            return
         person = Person(primary_org=chamber,
                         district=district,
                         name=full_name,
@@ -129,6 +131,11 @@ class NHPersonScraper(Scraper, LXMLMixin):
             for row in self._parse_members_txt():
                 if self.chamber_map[row['LegislativeBody']] == chamber:
                     person = self._parse_person(row, chamber, seat_map)
+
+                    # allow for skipping
+                    if not person:
+                        continue
+
                     person.add_source(self.members_url)
                     person.add_link(self.members_url)
                     yield person
