@@ -151,6 +151,10 @@ class MIPersonScraper(Scraper):
             yield person
 
     def get_photo_url(self, url):
+        # broken URL, special cased
+        if 'winnie-brinks' in url:
+            url = 'https://housedems.com/brinks'
+
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
