@@ -102,7 +102,7 @@ class OHLegislatorScraper(Scraper):
                 committee_positions = self.fetch_committee_positions(a)
                 committee_cache[entry] = committee_positions
 
-            chmbr = "joint" if "joint" in entry.lower() else chamber
+            chmbr = "legislature" if "joint" in entry.lower() else chamber
             if entry in JOINT_COMMITTEE_OVERRIDE:
                 chmbr = "legislature"
 
