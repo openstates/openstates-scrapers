@@ -44,7 +44,7 @@ class MOPersonScraper(Scraper):
             tds = tr.xpath('td')
             full_name = tds[0].xpath('div/a')[0].text_content().strip()
 
-            if full_name.startswith('Vacant'):
+            if full_name.startswith(('Vacant', 'Vacancy')):
                 continue
 
             party_and_district = tds[1].xpath('div')[0].text_content() \
