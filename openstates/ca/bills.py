@@ -543,7 +543,7 @@ class CABillScraper(Scraper):
                     action.add_related_entity(committee, entity_type='organization')
                 seen_actions.add((actor, act_str, date))
 
-            for vote in bill.votes:
+            for vote_num, vote in enumerate(bill.votes):
                 if vote.vote_result == '(PASS)':
                     result = True
                 else:
@@ -621,6 +621,7 @@ class CABillScraper(Scraper):
                     '/billVotesClient.xhtml?bill_id={}'
                 ).format(fsbill.identifier)
                 fsvote.add_source(source_url)
+                fsvote.pupa_id = source_url + '#' + vote_num
 
                 rc = {'yes': [], 'no': [], 'other': []}
                 for record in vote.votes:
