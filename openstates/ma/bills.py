@@ -273,7 +273,8 @@ class MABillScraper(Scraper):
                 self.scrape_senate_vote(cached_vote, rollcall_pdf)
                 cached_vote.add_source(rollcall_pdf)
                 cached_vote.pupa_id = rollcall_pdf
-                yield cached_vote
+                # XXX: also disabled, see above note
+                # yield cached_vote
 
             attrs = self.categorizer.categorize(action_name)
             action = bill.add_action(
