@@ -11,6 +11,10 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 
 from .actions import Categorizer
 
+BLACKLISTED_BILL_IDS = {
+    '128': ('SP 601', 'SP 602'),
+}
+
 
 class MEBillScraper(Scraper):
     categorizer = Categorizer()
@@ -70,6 +74,9 @@ class MEBillScraper(Scraper):
                 bill_id_slug = bill.xpath('./@href')[0]
                 bill_url = 'http://legislature.maine.gov/LawMakerWeb/{}'.format(bill_id_slug)
                 bill_id = bill.text[:2] + " " + bill.text[2:]
+
+                if bill_id in BLACKLISTED_BILL_IDS[session]:
+                    continue
 
                 bill = Bill(
                     identifier=bill_id,
