@@ -9,7 +9,6 @@ from pupa.utils.generic import convert_pdf
 
 
 class OHEventScraper(Scraper):
-    jurisdiction = 'oh'
     _tz = pytz.timezone('US/Eastern')
 
     def scrape(self, chamber=None):

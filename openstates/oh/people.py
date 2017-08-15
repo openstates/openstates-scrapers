@@ -40,14 +40,14 @@ committee_cache = {}
 
 
 class OHLegislatorScraper(Scraper):
-    latest_only = True
-
     def scrape(self, chamber=None):
+        self.committees = {}
         if chamber:
             yield from self.scrape_page(chamber, CHAMBER_URLS[chamber])
         else:
             yield from self.scrape_page('upper', CHAMBER_URLS['upper'])
             yield from self.scrape_page('lower', CHAMBER_URLS['lower'])
+        yield from self.committees.values()
 
     def fetch_committee_positions(self, a):
         page = self.get(a.attrib['href']).text
@@ -115,14 +115,17 @@ class OHLegislatorScraper(Scraper):
                 else:
                     self.warning("No subcommittee known: '%s'" % (entry))
                     raise Exception
-            org = Organization(
-                name=entry,
-                chamber=chmbr,
-                classification='committee',
-            )
+            if (chmbr, entry) not in self.committees:
+                org = Organization(
+                    name=entry,
+                    chamber=chmbr,
+                    classification='committee',
+                )
+                self.committees[(chmbr, entry)] = org
+            else:
+                org = self.committees[(chmbr, entry)]
             org.add_source(homepage)
             leg.add_membership(org)
-            yield org
 
     def scrape_page(self, chamber, url):
         page = self.get(url).text
@@ -175,7 +178,7 @@ class OHLegislatorScraper(Scraper):
             leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
             leg.add_contact_detail(type='email', value=email, note='Capitol Office')
 
-            yield from self.scrape_homepage(leg, chamber, homepage)
+            self.scrape_homepage(leg, chamber, homepage)
 
             leg.add_source(url)
             leg.add_link(homepage)
