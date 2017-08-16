@@ -621,7 +621,7 @@ class CABillScraper(Scraper):
                     '/billVotesClient.xhtml?bill_id={}'
                 ).format(fsbill.identifier)
                 fsvote.add_source(source_url)
-                fsvote.pupa_id = source_url + '#' + vote_num
+                fsvote.pupa_id = source_url + '#' + str(vote_num)
 
                 rc = {'yes': [], 'no': [], 'other': []}
                 for record in vote.votes:
