@@ -156,7 +156,8 @@ class MABillScraper(Scraper):
             bill.add_version_link('Bill Text', version_url, media_type='application/pdf')
 
         # yield back votes and bill
-        yield from self.scrape_actions(bill, bill_url, session)
+        # XXX  yield from
+        self.scrape_actions(bill, bill_url, session)
         yield bill
 
     def scrape_cosponsors(self, bill, bill_url):
@@ -185,14 +186,16 @@ class MABillScraper(Scraper):
         # scrape_action_page adds the actions, and also returns the Page xpath object
         # so that we can check for a paginator
         page = self.get_action_page(bill_url, 1)
-        yield from self.scrape_action_page(bill, page)
+        # XXX: yield from
+        self.scrape_action_page(bill, page)
 
         max_page = page.xpath('//ul[contains(@class,"pagination-sm")]/li[last()]/a/@onclick')
         if max_page:
             max_page = re.sub(r'[^\d]', '', max_page[0]).strip()
             for counter in range(2, int(max_page)+1):
                 page = self.get_action_page(bill_url, counter)
-                yield from self.scrape_action_page(bill, page)
+                # XXX: yield from
+                self.scrape_action_page(bill, page)
                 # https://malegislature.gov/Bills/189/S3/BillHistory?pageNumber=2
 
     def get_action_page(self, bill_url, page_number):
