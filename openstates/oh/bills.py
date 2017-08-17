@@ -399,7 +399,7 @@ class OHBillScraper(Scraper):
                                  classification='passed',
                                  bill=bill
                                  )
-            vote.pupa_id = v['revno']
+            vote.pupa_id = str(v['revno'])
             # the yea and nay counts are not displayed, but vote totals are
             # and passage status is.
             yes_count = 0
