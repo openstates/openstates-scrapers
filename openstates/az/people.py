@@ -67,7 +67,7 @@ class AZPersonScraper(Scraper):
             else:
                 photo_url = photos[0].attrib['src']
 
-            district = district.text_content()
+            district = district.text_content().strip()
             party = party.text_content().strip()
             email = email.text_content().strip()
 
