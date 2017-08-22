@@ -1,6 +1,7 @@
 import re
 
 import lxml.html
+import scrapelib
 from pupa.scrape import Person, Scraper
 
 
@@ -62,9 +63,14 @@ class MIPersonScraper(Scraper):
                 office
             )
 
-            photo_url = self.get_photo_url(leg_url)
+            try:
+                photo_url = self.get_photo_url(leg_url)[0]
+            except (scrapelib.HTTPError, IndexError):
+                photo_url = ''
+                self.warning('no photo url for %s', name)
+
             person = Person(name=name, district=district, party=abbr[party],
-                            primary_org='lower', image=photo_url[0] if photo_url else None)
+                            primary_org='lower', image=photo_url)
 
             person.add_link(leg_url)
             person.add_source(leg_url)
