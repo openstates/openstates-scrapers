@@ -7,6 +7,7 @@ from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
 from .events import NVEventScraper
 
+
 class Nevada(Jurisdiction):
     division_id = "ocd-division/country:us/state:nv"
     classification = "government"

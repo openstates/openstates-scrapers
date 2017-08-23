@@ -4,18 +4,18 @@ import lxml
 
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Event
-from pupa.utils.generic import convert_pdf
 
 
 class NVEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone('PST8PDT')
     URL = 'https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/'
 
-    # Note: The NV Site has three different calendars. 
-    # https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/ 
+    # Note: The NV Site has three different calendars.
+    # https://www.leg.state.nv.us/MeetingDisplay/CalendarOfMeetings/
     # is the primary calendar. The title is 2011-2012 but shows current events.
-    # It appears to have the same information and more compared to https://www.leg.state.nv.us/App/Calendar/A/ 
-    # The the social calendar is at 
+    # It appears to have the same information and more compared to
+    # https://www.leg.state.nv.us/App/Calendar/A/
+    # The the social calendar is at
     # https://www.leg.state.nv.us/socialCalendar/socialCalendarDisplay.cfm?date=05/01/2017
     # and is not being scraped
 
@@ -34,7 +34,8 @@ class NVEventScraper(Scraper, LXMLMixin):
         time = date_td.xpath('b/following-sibling::text()')[0].strip()
 
         date_and_time = "{} {}".format(date, time)
-        start_date = datetime.datetime.strptime(date_and_time, '%m/%d/%y %I:%M %p')
+        start_date = datetime.datetime.strptime(
+            date_and_time, '%m/%d/%y %I:%M %p')
 
         title = info_td.xpath('font[1]/strong')[0].text.strip()
 
