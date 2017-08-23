@@ -77,7 +77,7 @@ class NEPersonScraper(Scraper, LXMLMixin):
 
                 person = Person(
                     name=full_name,
-                    district=district,
+                    district=str(district),
                     party=party,
                     image=photo_url,
                     primary_org='legislature',
