@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import NVPeopleScraper
 from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
-
+from .events import NVEventScraper
 
 class Nevada(Jurisdiction):
     division_id = "ocd-division/country:us/state:nv"
@@ -15,7 +15,8 @@ class Nevada(Jurisdiction):
     scrapers = {
         'people': NVPeopleScraper,
         'committees': NVCommitteeScraper,
-        'bills': NVBillScraper
+        'bills': NVBillScraper,
+        'events': NVEventScraper,
     }
     parties = [
         {'name': 'Republican'},
