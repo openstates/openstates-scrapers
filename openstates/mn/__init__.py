@@ -155,4 +155,4 @@ class Minnesota(Jurisdiction):
     def get_session_list(self):
         return url_xpath('https://www.revisor.mn.gov/revisor/pages/'
                          'search_status/status_search.php?body=House',
-                         '//select[@name="session"]/option/text()')
+                         '//select[@name="session"]/option/text()', verify=False)
