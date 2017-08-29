@@ -32,7 +32,8 @@ RUN apt-get update && apt-get install -y \
     libmysqlclient-dev \
     mongodb-org-tools \
     mdbtools \ 
-    postgresql-client-common
+    postgresql-client-9.5
+    
 
 RUN mkdir -p /opt/openstates/
 RUN mkdir -p /var/run/mysqld/
