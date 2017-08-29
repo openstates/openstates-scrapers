@@ -176,7 +176,7 @@ class VTBillScraper(Scraper, LXMLMixin):
 
                 # Categorize action
                 if "Signed by Governor" in action['FullStatus']:
-                    assert chambers_passed == set("HS")
+                    # assert chambers_passed == set("HS")
                     action_type = 'executive-signature'
                 elif actor == 'lower' and any(x.lower().startswith('aspassed')
                                               for x in action['keywords'].split(';')):
