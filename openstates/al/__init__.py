@@ -92,10 +92,16 @@ class Alabama(Jurisdiction):
             "identifier": "2017rs",
             "name": "2017 Regular Session",
             "start_date": "2017-02-07"
+        },
+        {
+            "_scraped_name": "Regular Session 2018",
+            "classification": "primary",
+            "identifier": "2018rs",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-09"
         }
     ]
     ignored_scraped_sessions = [
-        'Regular Session 2018',     # temporary
         "Regular Session 1998",
         "Organizational Session 1999",
         "Regular Session 1999",
