@@ -93,8 +93,10 @@ class MAPersonScraper(Scraper):
             party = 'Democratic'
         elif party in ('R', 'Republican'):
             party = 'Republican'
+        elif party in ('I', 'Independent'):
+            party = 'Independent'
         else:
-            party = 'Other'
+            raise ValueError('unknown party {}: {}'.format(party, member_url))
 
         if 'Vacant' in full_name:
             self.info('skipping %s %s', full_name, district)
