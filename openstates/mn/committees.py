@@ -9,7 +9,8 @@ def fix_whitespace(s):
 
 
 class MNCommitteeScraper(Scraper):
-    latest_only = True
+    # bad SSL as of August 2017
+    verify = False
 
     def scrape(self, chambers=('upper', 'lower')):
         if 'upper' in chambers:

@@ -11,6 +11,9 @@ url = "http://www.leg.state.mn.us/calendarday.aspx?jday=all"
 
 
 class MNEventScraper(Scraper, LXMLMixin):
+    # bad SSL as of August 2017
+    verify = False
+
     tz = pytz.timezone("US/Central")
     date_formats = (
         '%A, %B %d, %Y %I:%M %p',
