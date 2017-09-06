@@ -39,8 +39,8 @@ class TNPersonScraper(Scraper):
             if set(child.tag for child in row) == set(['th']):
                 continue
 
-            vacancy_check = row.xpath('./td/text()')[1]
-            if 'Vacant' in vacancy_check:
+            vacancy_check = row.xpath('./td/text()')[1].strip()
+            if 'Vacant' in vacancy_check or vacancy_check == '':
                 self.logger.warning("Vacant Seat")
                 continue
 

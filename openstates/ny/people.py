@@ -402,10 +402,13 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             party = district_affiliations[district].strip()
             if not party or party is None:
-                self.warning(
+                self.critical(
                     'Party for {} (Assembly district {}) has not been listed yet'.format(
                         name, district))
-                party = None
+                if name in ('Farrell, Jr., Herman', 'Simanowitz, Michael'):
+                    party = 'Democratic'
+                else:
+                    raise ValueError(name)
                 # If seats become empty, there may need to be a
                 # `continue` added back in here, assuming no name
                 # or other information was found
