@@ -97,7 +97,10 @@ class MOBillScraper(Scraper, LXMLMixin):
 
     def _scrape_subjects(self, session):
         self._scrape_senate_subjects(session)
-        self._scrape_house_subjects(session)
+        if 'S' in session:
+            self.warning('skipping house subjects for special session')
+        else:
+            self._scrape_house_subjects(session)
 
     def session_type(self, session):
         # R or S1
