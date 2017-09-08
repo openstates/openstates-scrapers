@@ -59,7 +59,7 @@ def vote_url(chamber, session, special, type, bill_number):
 
 
 def parse_action_date(date_str):
-    date_str = date_str.replace('sept.', 'september')
+    date_str = date_str.replace('sept', 'september')
     date_str = date_str.replace(',', '').replace('.', '')
     try:
         return datetime.datetime.strptime(date_str, '%B %d %Y')
