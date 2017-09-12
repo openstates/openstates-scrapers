@@ -157,6 +157,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         bill = Bill(
             bill_id,
             title=bill_desc,
+            chamber='upper',
             legislative_session=year,
             classification=bill_type,
         )
