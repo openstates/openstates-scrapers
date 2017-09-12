@@ -57,7 +57,7 @@ class NJPersonScraper(Scraper, MDBMixin):
             # reps have these emails on their personal pages even if
             # they're gone from the DB file
             if not email:
-                email = self._construct_email(chamber, last_name)
+                email = self._construct_email(chamber, rec['Sex'], last_name)
 
             try:
                 photo_url = photos[rec['Roster Key']]
@@ -91,15 +91,17 @@ class NJPersonScraper(Scraper, MDBMixin):
 
             yield person
 
-    def _construct_email(self, chamber, last_name):
+    def _construct_email(self, chamber, sex, last_name):
         # translate accents to non-accented versions for use in an
         # email and drop apostrophes and hyphens
         last_name = ''.join(c for c in
                             unicodedata.normalize('NFD', str(last_name))
                             if unicodedata.category(c) != 'Mn')
         last_name = last_name.replace("'", "").replace("-", "").replace(' ', '')
+        sex_noun = {'M': 'm',
+                    'F': 'w'}[sex]
 
         if chamber == 'lower':
-            return 'Asm' + last_name + '@njleg.org'
+            return 'As{}{}@njleg.org'.format(sex_noun, last_name)
         else:
             return 'Sen' + last_name + '@njleg.org'
