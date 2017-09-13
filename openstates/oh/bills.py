@@ -108,6 +108,11 @@ class OHBillScraper(Scraper):
                                 ))
                 data = self.get(bill_api_url).json()
 
+                # add title if no short title
+                if not bill.title:
+                    bill.title = data['items'][0]['longtitle']
+                bill.add_title(data['items'][0]['longtitle'], 'long title')
+
                 # this stuff is version-specific
                 for version in data['items']:
                     version_name = version["version"]
