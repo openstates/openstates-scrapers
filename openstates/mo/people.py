@@ -47,8 +47,7 @@ class MOPersonScraper(Scraper):
             if full_name.startswith(('Vacant', 'Vacancy')):
                 continue
 
-            party_and_district = tds[1].xpath('div')[0].text_content() \
-                                       .strip().split('-')
+            party_and_district = tds[1].text_content().strip().split('-')
             if party_and_district[0] == 'D':
                 party = 'Democratic'
             elif party_and_district[0] == 'R':
