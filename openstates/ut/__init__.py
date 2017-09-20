@@ -140,7 +140,13 @@ class Utah(Jurisdiction):
             "name": "2017 General Session",
             "start_date": "2017-01-23",
             "end_date": "2017-03-09",
-        }
+        },
+        {
+            "_scraped_name": "2017 1st Special Session",
+            "classification": "special",
+            "identifier": "2017S1",
+            "name": "2017 1st Special Session",
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",
