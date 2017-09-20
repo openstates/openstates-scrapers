@@ -20,7 +20,8 @@ class OKBillScraper(Scraper):
         '2013SS1': '131X',
         '2013-2014': '1400',
         '2015-2016': '1600',
-        '2017-2018': '1700'
+        '2017-2018': '1700',
+        '2017SS1': '171X'
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):

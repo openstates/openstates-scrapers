@@ -25,7 +25,7 @@ metadata = dict(
         {'name': '2017-2018',
          'start_year': 2017,
          'end_year': 2018,
-         'sessions': ['2017-2018']},
+         'sessions': ['2017-2018', '2017SS1']},
         ],
     session_details={
         # On the Oklahoma website they list 2011/2012 as separate sessions, but
@@ -61,6 +61,10 @@ metadata = dict(
             {'display_name': '2017-2018 Regular Session',
              'session_id': '1700',
              '_scraped_name': '2017 Regular Session',
+             },
+        '2017SS1':
+            {'display_name': '2017 Special Session',
+             '_scraped_name': '2017 Special Session',
              },
         },
     feature_flags=['subjects', 'influenceexplorer'],
