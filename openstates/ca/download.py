@@ -322,7 +322,7 @@ def _check_call(*args):
 
 def get_zip(filename):
     dirname = filename.replace('.zip', '')
-    _check_call('wget', BASE_URL + filename)
+    _check_call('wget', '--no-check-certificate', BASE_URL + filename)
     _check_call('rm', '-rf', dirname)
     _check_call('unzip', filename, '-d', dirname)
     _check_call('rm', '-rf', filename)
