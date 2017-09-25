@@ -12,13 +12,13 @@ import glob
 import os.path
 import subprocess
 import logging
-import urllib.request
 import lxml.html
 from datetime import datetime
 from os.path import join, split
 from functools import partial
 from collections import namedtuple
 
+import requests
 import MySQLdb
 import _mysql_exceptions
 
@@ -302,7 +302,7 @@ def get_contents():
     #     resp[filename] = date
     # return resp
 
-    html = urllib.request.urlopen(BASE_URL).read()
+    html = requests.get(BASE_URL, verify=False).text
     doc = lxml.html.fromstring(html)
     # doc.make_links_absolute(BASE_URL)
     rows = doc.xpath('//table/tr')
