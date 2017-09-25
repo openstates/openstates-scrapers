@@ -10,7 +10,9 @@ _party_map = {
     'U': 'Independent',
     'I': 'Independent',
     # Common Sense Independent Party
-    'C': 'Independent'
+    'C': 'Independent',
+    # Chapman (unenrolled)
+    'G': 'Independent', 
 }
 
 
@@ -52,7 +54,7 @@ class MEPersonScraper(Scraper):
                     Representative\s
                     (?P<member_name>.+?)
                     \s\(
-                    (?P<party>[DRCUI])
+                    (?P<party>[DRCUIG])
                     -
                     (?P<district_name>.+?)
                     \)
