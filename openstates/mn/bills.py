@@ -10,7 +10,7 @@ from pupa.utils import _make_pseudo_id
 from openstates.utils import LXMLMixin
 
 # Base URL for the details of a given bill.
-BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/revisor/pages/search_status/'
+BILL_DETAIL_URL_BASE = 'https://www.revisor.mn.gov/bills/'
 BILL_DETAIL_URL = (
     'https://www.revisor.mn.gov/bills/bill.php'
     '?b=%s&f=%s&ssn=0&y=%s'
@@ -25,7 +25,7 @@ VERSION_URL = (
 
 # Search URL
 BILL_SEARCH_URL = (
-    'https://www.revisor.mn.gov/revisor/pages/search_status/'
+    'https://www.revisor.mn.gov/bills/'
     'status_result.php?body=%s&session=%s&bill=%s-%s'
     '&bill_type=%s&submit_bill=GO'
 )
