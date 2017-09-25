@@ -12,7 +12,7 @@ _party_map = {
     # Common Sense Independent Party
     'C': 'Independent',
     # Chapman (unenrolled)
-    'G': 'Independent', 
+    'G': 'Independent',
 }
 
 
