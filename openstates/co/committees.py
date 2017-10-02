@@ -41,6 +41,8 @@ class COCommitteeScraper(Scraper, LXMLMixin):
         # contains as a workaround
         comList = page.xpath('//div[contains(@class,' +
                              '"view-committees-overview")]')
+        seen = set()
+
         for comType in comList:
             try:
                 header = comType.xpath('./div[@class="view-header"]/h3/text()')[0]
@@ -58,4 +60,9 @@ class COCommitteeScraper(Scraper, LXMLMixin):
                 link = comm.xpath('.//a')
                 # ignore empty cells
                 if link:
-                    yield from self.scrape_page(link[0], chamber)
+                    link = link[0]
+                    if link.text in seen:
+                        continue
+                    else:
+                        seen.add(link.text)
+                    yield from self.scrape_page(link, chamber)
