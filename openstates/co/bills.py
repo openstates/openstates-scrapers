@@ -14,7 +14,7 @@ CO_URL_BASE = "http://leg.colorado.gov"
 SESSION_DATA_ID = {
     '2016A': '30',
     '2017A': '10171',
-    '2017S1': '27016',
+    '2017B': '27016',
 }
 
 BAD_URLS = [

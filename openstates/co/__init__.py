@@ -52,19 +52,19 @@ class Colorado(Jurisdiction):
             "name": "2013 Regular Session"
         },
         {
-            "_scraped_name": "2014 Regular/Special Session",
+            "_scraped_name": "2014 Legislative Session",
             "classification": "primary",
             "identifier": "2014A",
             "name": "2014 Regular Session"
         },
         {
-            "_scraped_name": "2015 Regular Session",
+            "_scraped_name": "2015 Legislative Session",
             "classification": "primary",
             "identifier": "2015A",
             "name": "2015 Regular Session"
         },
         {
-            "_scraped_name": "2016 Regular Session",
+            "_scraped_name": "2016 Legislative Session",
             "classification": "primary",
             "identifier": "2016A",
             "name": "2016 Regular Session"
@@ -78,13 +78,13 @@ class Colorado(Jurisdiction):
             "end_date": "2017-05-10",
         },
         {
-            "_scraped_name": "2017 First Extraordinary Session",
+            "_scraped_name": "8017 First Extraordinary Session",
             "classification": "special",
-            "identifier": "2017S1",
+            "identifier": "2017B",
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-10-02",
             "end_date": "2017-10-06",
-        }        
+        }
     ]
     ignored_scraped_sessions = [
         "2013 Legislative Session",
@@ -141,18 +141,13 @@ class Colorado(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        tags = url_xpath('http://www.leg.state.co.us/clics/clics2014a/cslFrontPages.nsf/'
-                         'PrevSessionInfo?OpenForm', "//font/text()")
         sessions = []
         regex = "2[0-9][0-9][0-9]\ .*\ Session"
 
-        for tag in tags:
-            sess = re.findall(regex, tag)
-            for session in sess:
-                sessions.append(session)
-
-        tags = url_xpath('http://www.leg.state.co.us/CLICS/CLICS2016A/csl.nsf/Home?OpenForm'
-                         '&amp;BaseTarget=Bottom', "//font/text()")
+        tags = url_xpath(
+            'http://www.leg.state.co.us/clics/cslFrontPages.nsf/PrevSessionInfo?OpenForm',
+            "//font/text()"
+        )
         for tag in tags:
             sess = re.findall(regex, tag)
             for session in sess:
