@@ -47,6 +47,7 @@ class NEVoteScraper(Scraper):
         vote = None
         question = None
         date = None
+        other_count = 0
 
         for line_num, line in enumerate(lines):
             date_match = DATE_RE.findall(line)
@@ -75,20 +76,24 @@ class NEVoteScraper(Scraper):
                     vote.set_count('no', int(no_match.group(1)))
                     state = 'no'
                 elif other_match:
-                    vote.set_count('other', int(other_match.group(1)))
+                    other_count += int(other_match.group(1))
                     state = 'other'
                 elif 'having voted in the affirmative' in line:
+                    vote.set_count('other', other_count)
                     vote.result = 'pass'
                     state = None
                     vote.validate()
                     yield vote
                     vote = None
+                    other_count = 0
                 elif 'Having failed' in line:
+                    vote.set_count('other', other_count)
                     vote.result = 'fail'
                     state = None
                     vote.validate()
                     yield vote
                     vote = None
+                    other_count = 0
                 elif line:
                     people = re.split('\s{3,}', line)
                     # try:
