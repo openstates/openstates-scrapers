@@ -44,8 +44,12 @@ class INPersonScraper(Scraper):
             address = address.text_content().strip()
             address = "\n".join([l.strip() for l in address.split("\n")])
             phone = phone.text_content().strip()
-            district = doc.xpath("//span[@class='district-heading']"
-                                 )[0].text.lower().replace("district", "").strip()
+            try:
+                district = doc.xpath("//span[@class='district-heading']"
+                                     )[0].text.lower().replace("district", "").strip()
+            except IndexError:
+                self.warning("skipping legislator w/o district")
+                continue
             image_link = base_url+link.replace("legislators/", "portraits/legislator_")
             legislator = Person(primary_org=chamber,
                                 district=district,
