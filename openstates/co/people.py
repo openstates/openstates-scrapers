@@ -94,8 +94,10 @@ def table_row_to_legislator_and_profile_url(table_row_element, chamber):
                         district=district,
                         party=party)
     legislator.add_contact_detail(type='address', value=address, note='Capitol Office')
-    legislator.add_contact_detail(type='voice', value=phone, note='Capitol Office')
-    legislator.add_contact_detail(type='email', value=email, note='Capitol Office')
+    if phone:
+        legislator.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+    if email:
+        legislator.add_contact_detail(type='email', value=email, note='Capitol Office')
 
     return legislator, profile_url
 
