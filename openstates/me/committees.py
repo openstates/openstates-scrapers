@@ -92,7 +92,6 @@ class MECommitteeScraper(Scraper):
         for rownum in range(1, sh.nrows):
 
             comm_name = sh.cell(rownum, 0).value
-            print(comm_name)
             committee = committees[comm_name]
 
             ischair = sh.cell(rownum, 1).value
