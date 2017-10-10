@@ -75,7 +75,7 @@ class MECommitteeScraper(Scraper):
             yield committee
 
     def scrape_joint_comm(self):
-        fileurl = 'http://www.maine.gov/legis/house/commlist.xls'
+        fileurl = 'http://legislature.maine.gov/house/commlist.xlsx'
         fname, resp = self.urlretrieve(fileurl)
 
         wb = xlrd.open_workbook(fname)
