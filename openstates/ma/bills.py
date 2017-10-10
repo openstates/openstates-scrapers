@@ -220,7 +220,7 @@ class MABillScraper(Scraper):
             if "Supplement" in action_name:
                 actor = "lower"
                 vote_action = action_name.split(' -')[0]
-                y = int(action_name.strip().split('-')[1].split('YEAS')[0])
+                y = int(action_name.strip().split(' -')[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
 
                 # get supplement number
