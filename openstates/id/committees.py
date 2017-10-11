@@ -59,8 +59,8 @@ class IDCommitteeScraper(Scraper):
         url = _COMMITTEE_URL % _CHAMBERS[chamber]
         page = self.get(url, verify=False).text
         html = lxml.html.fromstring(page)
-        table = html.xpath('body/section[2]/div/div/div/section[2]/div[2]/div/div/div/div')[1:]
-        for row in table:
+        table = html.xpath('body/section[2]/div/div/section[2]/div[2]/div/div/div/div')
+        for row in table[1:]:
             # committee name, description, hours of operation,
             # secretary and office_phone
             text = list(row[0].xpath('div')[0].itertext())
@@ -85,11 +85,12 @@ class IDCommitteeScraper(Scraper):
                                        note='District Office')
             org.add_source(url)
             # membership
-            for td in row[1].xpath('div'):
-                td_text = list(td.itertext())
-                members = list(value
-                               for value in td_text
-                               if value != ' ' and value != '\n' and value != ',')
+            td_text = list()
+            for td in row[1].xpath('div') + row[2].xpath('div'):
+                td_text += td.itertext()
+            members = list(value
+                           for value in td_text
+                           if value != ' ' and value != '\n' and value != ',')
             role = "member"
             for member in members:
                 if (member in ['Chair', 'Vice Chair']):
