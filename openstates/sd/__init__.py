@@ -20,66 +20,67 @@ class SouthDakota(Jurisdiction):
     ]
     legislative_sessions = [
         {
-            "_scraped_name": "2009 (84th) Session",
+            "_scraped_name": "2009",
             "identifier": "2009",
             "name": "2009 Regular Session"
         },
         {
-            "_scraped_name": "2010 (85th) Session",
+            "_scraped_name": "2010",
             "identifier": "2010",
             "name": "2010 Regular Session"
         },
         {
-            "_scraped_name": "2011 (86th) Session",
+            "_scraped_name": "2011",
             "identifier": "2011",
             "name": "2011 Regular Session",
             "start_date": "2011-01-11"
         },
         {
-            "_scraped_name": "2011 (86th) Special Session",
+            "_scraped_name": "2011s",
             "identifier": "2011s",
             "name": "2011 Special Session"
         },
         {
-            "_scraped_name": "2012 (87th) Session",
+            "_scraped_name": "2012",
             "identifier": "2012",
             "name": "2012 Regular Session"
         },
         {
-            "_scraped_name": "2013 (88th) Session",
+            "_scraped_name": "2013",
             "identifier": "2013",
             "name": "2013 Regular Session"
         },
         {
-            "_scraped_name": "2014 (89th) Session",
+            "_scraped_name": "2014",
             "identifier": "2014",
             "name": "2014 Regular Session"
         },
         {
-            "_scraped_name": "2015 (90th) Session",
+            "_scraped_name": "2015",
             "identifier": "2015",
             "name": "2015 Regular Session"
         },
         {
-            "_scraped_name": "2016 (91st) Session",
+            "_scraped_name": "2016",
             "identifier": "2016",
             "name": "2016 Regular Session"
         },
         {
-            "_scraped_name": "2017 (92nd) Session",
+            "_scraped_name": "2017",
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-10",
             "end_date": "2017-03-27",
         },
         {
-            "_scraped_name": "2017 (92nd) Special Session",
+            "_scraped_name": "2017",
             "identifier": "2017s",
             "name": "2017 Special Session"
         }
     ]
     ignored_scraped_sessions = [
-        "Previous Years"
+        "2008", "2007", "2006", "2005", "2005s", "2004", "2003", "2003s", "2002",
+        "2001", "2001s", "2000", "2000s", "1999", "1998", "1997", "1997s",
     ]
 
     def get_organizations(self):
@@ -125,8 +126,7 @@ class SouthDakota(Jurisdiction):
 
     def get_session_list(self):
         html = scrapelib.Scraper().get('http://www.sdlegislature.gov/'
-                                       'Legislative_Session/Menu.aspx').text
+                                       'Legislative_Session/archive.aspx').text
         doc = lxml.html.fromstring(html)
-        sessions = doc.xpath('//div[@id="ctl00_ContentPlaceHolder1_BlueBoxLeft"]//ul/li'
-                             '/a/div/text()')
+        sessions = [x.strip() for x in doc.xpath('//table//td[@data-title="Year"]/text()')]
         return sessions
