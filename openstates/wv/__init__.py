@@ -75,6 +75,12 @@ class WestVirginia(Jurisdiction):
             "classification": "special",
             "identifier": "20171S",
             "name": "2017 First Special Session",
+        },
+        {
+            "_scraped_name": "2017",
+            "classification": "special",
+            "identifier": "20172S",
+            "name": "2017 Second Special Session",
         }
     ]
     ignored_scraped_sessions = [
