@@ -187,7 +187,7 @@ class KSBillScraper(Scraper):
             for i in opinions:
                 try:
                     count = int(i[i.find("(") + 1:i.find(")")])
-                except:
+                except ValueError:
                     pass
                 if "yea" in i.lower():
                     yes_count = count

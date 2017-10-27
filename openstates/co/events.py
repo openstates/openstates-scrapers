@@ -85,5 +85,5 @@ class COEventScraper(Scraper, LXMLMixin):
                             item.add_bill(bill_id)
 
                         yield event
-                    except:
+                    except Exception:       # TODO: this is awful
                         pass

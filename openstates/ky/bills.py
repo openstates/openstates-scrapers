@@ -200,7 +200,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                         action_date_string, '%b %d %Y')
                     cached_action_date = action_date
                     used_cached_action_date = False
-                except:
+                except ValueError:
                     action_date = cached_action_date
                     used_cached_action_date = True
 

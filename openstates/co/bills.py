@@ -335,7 +335,7 @@ class COBillScraper(Scraper, LXMLMixin):
         try:
             motion = page.xpath(
                 '//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
-        except:
+        except IndexError:
             self.warning("Vote Summary Page Broken ")
             return
 
