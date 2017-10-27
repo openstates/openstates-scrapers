@@ -89,12 +89,8 @@ class IABillScraper(Scraper):
             # where is it?
             return
 
-        try:
-            page = lxml.html.fromstring(self.get(hist_url).text)
-            page.make_links_absolute("https://www.legis.iowa.gov")
-        except:
-            self.warning("URL: %s gives us a 500 error. Aborting." % url)
-            return
+        page = lxml.html.fromstring(self.get(hist_url).text)
+        page.make_links_absolute("https://www.legis.iowa.gov")
 
         title = page.xpath('string(//div[@id="content"]/div[@class='
                            '"divideVert"]/div[not(@class)])').strip()
@@ -217,7 +213,7 @@ class IABillScraper(Scraper):
                         # (needs to be fixed upstream)
                         try:
                             url = anchor.attrib['href']
-                        except:
+                        except KeyError:
                             continue
 
                         if url not in version_urls:
