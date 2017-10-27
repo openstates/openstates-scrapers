@@ -32,8 +32,8 @@ def legislature_to_number(leg):
     session = '49th-1st-regular'
     legislature_to_number(session) --> '49Leg/1s'
     """
-    l = leg.lower().split('-')
-    return '%sLeg/%s%s' % (l[0][0:2], l[1][0], l[2][0])
+    leg = leg.lower().split('-')
+    return '%sLeg/%s%s' % (leg[0][0:2], leg[1][0], leg[2][0])
 
 
 def get_date(elem):

@@ -386,9 +386,9 @@ class RIBillScraper(Scraper):
         dig = []
         for d in digest.split("\n"):
             lis = d.strip().split("-")
-            for l in lis:
-                if l is not None and l != "":
-                    dig.append(l.strip())
+            for li in lis:
+                if li is not None and li != "":
+                    dig.append(li.strip())
         digest = dig
 
         il = iter(digest)

@@ -109,25 +109,25 @@ class INBillScraper(Scraper):
             currently_counting = ""
 
             possible_vote_lines = lines[8:]
-            for l in possible_vote_lines:
-                l = l.replace("NOT\xc2\xa0VOTING", "NOT VOTING")
-                l = l.replace("\xc2\xa0", " -")
-                if "yea-" in l.lower().replace(" ", ""):
+            for line in possible_vote_lines:
+                line = line.replace("NOT\xc2\xa0VOTING", "NOT VOTING")
+                line = line.replace("\xc2\xa0", " -")
+                if "yea-" in line.lower().replace(" ", ""):
                     currently_counting = "yes"
-                elif "nay-" in l.lower().replace(" ", ""):
+                elif "nay-" in line.lower().replace(" ", ""):
                     currently_counting = "no"
-                elif "excused-" in l.lower().replace(" ", ""):
+                elif "excused-" in line.lower().replace(" ", ""):
                     currently_counting = "excused"
-                elif "notvoting-" in l.lower().replace(" ", ""):
+                elif "notvoting-" in line.lower().replace(" ", ""):
                     currently_counting = "not voting"
                 elif currently_counting == "":
                     pass
-                elif re.search(r'v\. \d\.\d', l):
+                elif re.search(r'v\. \d\.\d', line):
                     # this gets rid of the version number
                     # which is often found at the bottom of the doc
                     pass
                 else:
-                    voters = l.split("  ")
+                    voters = line.split("  ")
                     for v in voters:
                         if v.strip():
                             vote.vote(currently_counting, v.strip())
