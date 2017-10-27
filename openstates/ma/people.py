@@ -81,7 +81,7 @@ class MAPersonScraper(Scraper):
         try:
             email = root.xpath('//a[contains(@href, "mailto")]/@href')[0]
             email = email.replace('mailto:', '')
-        except:
+        except IndexError:
             email = ''
             self.info("seat may be vacant")
 
@@ -124,7 +124,7 @@ class MAPersonScraper(Scraper):
                 address = addr.xpath('a')[0].text_content()
                 address = re.sub('\s{2,}', '\n', address)
                 leg.add_contact_detail(type='address', value=address, note=note)
-            except:
+            except IndexError:
                 self.warning("No address info found in `contactGroup`")
             next = None
             for phonerow in addr.xpath('./div/div'):

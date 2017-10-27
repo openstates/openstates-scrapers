@@ -192,7 +192,7 @@ class MEBillScraper(Scraper):
                  'following-sibling::td/b/text())'))
             try:
                 dt = datetime.datetime.strptime(date, "%m/%d/%Y")
-            except:
+            except ValueError:
                 self.warning('Could not parse signed date {0}'.format(date))
             else:
                 bill.add_action(

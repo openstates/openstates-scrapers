@@ -345,7 +345,7 @@ class WABillScraper(Scraper, LXMLMixin):
             classification = temp['classification']
             try:
                 committees = temp['committees']
-            except:
+            except KeyError:
                 committees = []
             related_entities = []
             for committee in committees:

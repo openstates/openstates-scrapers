@@ -329,7 +329,7 @@ class RIBillScraper(Scraper):
 
                     try:
                         bill_id = self._bill_id_by_type[(chamber, vote['meta']['bill'])]
-                    except:
+                    except KeyError:
                         self.warning('no such bill_id %s %s', chamber, vote['meta']['bill'])
                         continue
 

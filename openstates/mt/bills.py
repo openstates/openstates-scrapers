@@ -248,7 +248,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         for tr in status_page.xpath(xp):
             try:
                 subj = tr.xpath('td')[0].text_content()
-            except:
+            except IndexError:
                 continue
             subjects.append(subj)
 
@@ -415,7 +415,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         # Get the motion.
         try:
             motion = doc.xpath('//br')[-1].tail.strip()
-        except:
+        except IndexError:
             # Some of them mysteriously have no motion listed.
             motion = vote['action']
 
@@ -535,7 +535,7 @@ class PDFCommitteeVote(object):
         # Convert it to text.
         try:
             text = convert_pdf(filename, type='text')
-        except:
+        except Exception:
             msg = "couldn't convert pdf."
             raise PDFCommitteeVoteParseError(msg)
 

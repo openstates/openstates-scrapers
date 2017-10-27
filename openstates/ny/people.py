@@ -13,7 +13,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             try:
                 element_class = element.attrib['class']
-            except:
+            except KeyError:
                 pass
 
             if element_class == tag:

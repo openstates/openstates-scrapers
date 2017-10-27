@@ -64,7 +64,7 @@ class IAVoteScraper(Scraper):
                         journal_format = '%m-%d-%Y.pdf'
                         try:
                             date = datetime.strptime(filename, journal_format)
-                        except:
+                        except ValueError:
                             msg = '{} doesn\'t smell like a date. Skipping.'
                             self.logger.info(msg.format(filename))
 
