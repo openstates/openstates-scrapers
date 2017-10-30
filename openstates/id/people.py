@@ -78,12 +78,15 @@ class IDPersonScraper(Scraper):
             img_url = row.xpath('.//img/@src')[0]
 
             inner = row.xpath('.//div[@class="vc-column-innner-wrapper"]')[1]
+            if 'Resigned' in inner.text_content():
+                continue
 
             name = inner.xpath('p/strong')[0].text.replace(u'\xa0', ' ').strip()
             name = re.sub('\s+', ' ', name)
             party = PARTY[inner.xpath('p/strong')[0].tail.strip()]
             email = inner.xpath('p/strong/a')[0].text
             district = inner.xpath('p/a')[0].text.replace('District ', '')
+
             person_url = inner.xpath('p/a/@href')[0]
             # skip roles for now
             role = ''
