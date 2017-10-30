@@ -214,7 +214,7 @@ class ARBillScraper(Scraper):
                 excused_count = int(page.xpath(count_path % "Excused").split()[-1])
                 vote.set_count('excused', excused_count)
                 votevals.append('excused')
-            except ValueError:
+            except (ValueError, IndexError):
                 pass
             vote.set_count('yes', yes_count)
             vote.set_count('no', no_count)
