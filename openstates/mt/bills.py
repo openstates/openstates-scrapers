@@ -177,6 +177,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
     def parse_bill_status_page(self, status_url, bill_url, session, chamber):
         status_page = lxml.html.fromstring(self.get(status_url).text)
+        status_page.make_links_absolute(status_url)
         # see 2007 HB 2... weird.
         bill_re = r'.*?/([A-Z]+)0*(\d+)\.pdf'
         bill_xpath = '//a[contains(@href, ".pdf") and contains(@href, "billpdf")]/@href'
@@ -402,6 +403,7 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
+        doc.make_links_absolute(url)
 
         # Yes, no, excused, absent.
         try:
