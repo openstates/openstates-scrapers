@@ -73,7 +73,7 @@ class SouthDakota(Jurisdiction):
             "end_date": "2017-03-27",
         },
         {
-            "_scraped_name": "2017",
+            "_scraped_name": "2017s",
             "identifier": "2017s",
             "name": "2017 Special Session"
         }
