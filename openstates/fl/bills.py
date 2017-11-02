@@ -155,6 +155,11 @@ class BillDetail(Page):
                     atype.append('passage')
                 elif action.startswith('CS passed'):
                     atype.append('passage')
+                elif action == 'Approved by Governor':
+                	atype.append('executive-signature')
+                elif action == 'Vetoed by Governor':
+                	atype.append('executive-veto')
+                	  
 
                 self.obj.add_action(action, date, organization=actor, chamber=chamber,
                                     classification=atype)
