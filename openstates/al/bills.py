@@ -37,7 +37,7 @@ _action_re = (
     ('Lost in', 'failure'),
     ('Favorable from', 'committee-passage-favorable'),
     # Signature event does not appear to be listed as a specific action
-    ('Assigned Act No.' 'executive-signature'),
+    ('Assigned Act No' 'executive-signature'),
 )
 ()
 
