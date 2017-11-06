@@ -262,6 +262,9 @@ class CTBillScraper(Scraper):
                     act_type.append('committee-passage-%s' %
                                     match.group(1).lower())
 
+                if (re.match(r'^LINE ITEM VETOED', action)):
+                    act_type.append('executive-veto-line-item')
+
                 if not act_type:
                     act_type = None
 
