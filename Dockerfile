@@ -31,7 +31,6 @@ RUN apt-get update && apt-get install -y \
     mysql-server \
     libmysqlclient-dev \
     mongodb-org-tools \
-    mdbtools \
     postgresql-client-9.5
 
 
