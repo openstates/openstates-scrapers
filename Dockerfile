@@ -31,9 +31,8 @@ RUN apt-get update && apt-get install -y \
     mysql-server \
     libmysqlclient-dev \
     mongodb-org-tools \
-    mdbtools \ 
     postgresql-client-9.5
-    
+
 
 RUN mkdir -p /opt/openstates/
 RUN mkdir -p /var/run/mysqld/
@@ -59,4 +58,4 @@ ADD . /opt/openstates/openstates
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
 
 WORKDIR /opt/openstates/openstates/
-ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]
+ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
