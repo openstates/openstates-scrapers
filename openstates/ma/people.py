@@ -64,7 +64,7 @@ class MAPersonScraper(Scraper):
         doc.make_links_absolute("https://malegislature.gov")
 
         for member_url in doc.xpath('//td[@class="pictureCol"]/a/@href'):
-            if 'VAC_' in member_url:
+            if 'VAC_' in member_url or '/District/' in member_url:
                 continue
             member = self.scrape_member(chamber, member_url)
             if member:
