@@ -36,7 +36,7 @@ class NCCommitteeScraper(Scraper):
         return name
 
     def scrape(self, chamber=None):
-        base_url = ('http://www.ncga.state.nc.us/gascripts/Committees/'
+        base_url = ('http://www.ncleg.net/gascripts/Committees/'
                     'Committees.asp?bPrintable=true&sAction=ViewCommitteeType&sActionDetails=')
 
         chamber_slugs = {'upper': ['Senate%20Standing', 'Senate%20Select'],

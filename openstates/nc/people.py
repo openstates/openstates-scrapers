@@ -30,8 +30,7 @@ class NCPersonScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        url = "http://www.ncga.state.nc.us/gascripts/members/"\
-            "memberListNoPic.pl?sChamber="
+        url = "http://www.ncleg.net/gascripts/members/memberListNoPic.pl?sChamber="
 
         if chamber == 'lower':
             url += 'House'
@@ -40,7 +39,7 @@ class NCPersonScraper(Scraper):
 
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
-        doc.make_links_absolute('http://www.ncga.state.nc.us')
+        doc.make_links_absolute('http://www.ncleg.net')
         rows = doc.xpath('//div[@id="mainBody"]/table/tr')
 
         for row in rows[1:]:
@@ -66,7 +65,7 @@ class NCPersonScraper(Scraper):
             # scrape legislator page details
             lhtml = self.get(link).text
             ldoc = lxml.html.fromstring(lhtml)
-            ldoc.make_links_absolute('http://www.ncga.state.nc.us')
+            ldoc.make_links_absolute('http://www.ncleg.net')
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
             phone = get_table_item(ldoc, 'Phone:') or None
             address = get_table_item(ldoc, 'Address:') or None
