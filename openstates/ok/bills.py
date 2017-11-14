@@ -85,6 +85,9 @@ class OKBillScraper(Scraper):
 
         title = page.xpath(
             "string(//span[contains(@id, 'PlaceHolder1_txtST')])").strip()
+        if not title:
+            self.warning('blank bill on %s - skipping', url)
+            return
 
         if 'JR' in bill_id:
             bill_type = ['joint resolution']
