@@ -64,6 +64,7 @@ metadata = dict(
             'name': '53',
             'sessions': [
                 '53rd-1st-regular',
+                '53rd-2nd-regular',
             ],
             'start_year': 2017,
             'end_year': 2018
@@ -230,6 +231,10 @@ metadata = dict(
                 'session_id': 117,
                 'display_name': '53rd Legislature - 1st Regular Session',
                 '_scraped_name': '2017 - Fifty-third Legislature - First Regular Session',
+            },
+            '53rd-2nd-regular': {
+                'type': 'primary',
+                'display_name': '53rd Legislature - 2nd Regular Session',
             },
             # get session id from http://www.azleg.gov/SelectSession.asp select
         },
