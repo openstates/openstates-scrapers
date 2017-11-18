@@ -168,7 +168,7 @@ class WIBillScraper(Scraper):
                     'Redistricting Attachment' in a.text or
                     'Budget Index Report' in a.text or
                     'Veto Message' in a.text):
-                bill.add_document_link(a.text, a.get('href'))
+                bill.add_document_link(a.text, a.get('href'), on_duplicate='ignore')
             elif ('Bill Text' in a.text or
                     'Resolution Text' in a.text or
                     'Enrolled Joint Resolution' in a.text or
