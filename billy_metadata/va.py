@@ -36,6 +36,12 @@ metadata = {
             'start_year': 2016,
             'end_year': 2017,
         },
+        {
+            'name': '2018-2019',
+            'sessions': ['2018'],
+            'start_year': 2018,
+            'end_year': 2019,
+        },
     ],
     'session_details': {
         '2010': {

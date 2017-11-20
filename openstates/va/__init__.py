@@ -104,7 +104,12 @@ class Virginia(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-11",
-        }
+        },
+        {
+            "_scraped_name": "2018 Session",
+            "identifier": "2018",
+            "name": "2018 Regular Session",
+        },
     ]
     ignored_scraped_sessions = [
         '2015 Special Session I',
