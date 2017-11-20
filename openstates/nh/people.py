@@ -134,7 +134,9 @@ class NHPersonScraper(Scraper, LXMLMixin):
         seat_map = self._parse_seat_map()
         for chamber in chambers:
             for row in self._parse_members_txt():
-                if self.chamber_map[row['LegislativeBody']] == chamber:
+                print(row['electedStatus'])
+                if (self.chamber_map[row['LegislativeBody']] == chamber and
+                        row['electedStatus'] != 'Former'):
                     person = self._parse_person(row, chamber, seat_map)
 
                     # allow for skipping
