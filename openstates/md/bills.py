@@ -368,8 +368,15 @@ class MDBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
-        title = doc.xpath('//h3[@class="h3billright"]')[0].text_content()
-        # TODO: grab summary (none present at time of writing)
+        try:
+            title = doc.xpath('//h3[@class="h3billright"]')[0].text_content()
+            # TODO: grab summary (none present at time of writing)
+        except IndexError:
+            if 'Unable to retrieve the requested information. Please try again' in html:
+                self.warning('Soft error page, skipping.')
+                return
+            else:
+                raise
 
         if 'B' in bill_id:
             _type = ['bill']
