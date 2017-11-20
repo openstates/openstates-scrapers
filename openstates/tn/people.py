@@ -32,6 +32,7 @@ class TNPersonScraper(Scraper):
         chamber_url = root_url + url_chamber_name + '/members/'
         page_html = self.get(chamber_url).text
         page = lxml.html.fromstring(page_html)
+        page.make_links_absolute(chamber_url)
 
         for row in page.xpath("//tr"):
 
