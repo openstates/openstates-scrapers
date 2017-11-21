@@ -61,6 +61,10 @@ class MEPersonScraper(Scraper):
                     '''
             info_search = re.search(INFO_RE, leg_info, re.VERBOSE)
 
+            if not info_search:
+                self.warning("skipping " + leg_info)
+                continue
+
             member_name = info_search.group('member_name')
             party = _party_map[info_search.group('party')]
             district_name = info_search.group('district_name')
