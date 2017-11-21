@@ -471,6 +471,7 @@ class TNBillScraper(Scraper):
                     not_voting += not_voting_regex.search(v).groups()[0].split(', ')
 
             motion = motion.strip()
+            motion = motion.replace('&AMP;', '&')  # un-escape ampersands
             if motion in self._seen_votes:
                 motion = '{} ({})'.format(motion, motion_count)
                 motion_count += 1
