@@ -405,7 +405,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
                 self.critical(
                     'Party for {} (Assembly district {}) has not been listed yet'.format(
                         name, district))
-                if name in ('Farrell, Jr., Herman', 'Simanowitz, Michael'):
+                if name in ('Farrell, Jr., Herman', 'Simanowitz, Michael', 'Rosenthal, Daniel'):
                     party = 'Democratic'
                 else:
                     raise ValueError(name)
