@@ -232,10 +232,10 @@ class PABillScraper(Scraper):
             type = 'other'
             motion = link.text_content()
 
-        yeas = int(page.xpath("//div[text() = 'YEAS']")[0].getnext().text)
-        nays = int(page.xpath("//div[text() = 'NAYS']")[0].getnext().text)
-        lve = int(page.xpath("//div[text() = 'LVE']")[0].getnext().text)
-        nv = int(page.xpath("//div[text() = 'N/V']")[0].getnext().text)
+        yeas = int(page.xpath("//div/span[text() = 'YEAS']/..")[0].getnext().text)
+        nays = int(page.xpath("//div/span[text() = 'NAYS']/..")[0].getnext().text)
+        lve = int(page.xpath("//div/span[text() = 'E']/..")[0].getnext().text)
+        nv = int(page.xpath("//div/span[text() = 'N/V']/..")[0].getnext().text)
         other = lve + nv
 
         vote = VoteEvent(

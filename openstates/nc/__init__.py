@@ -161,7 +161,7 @@ class NorthCarolina(Jurisdiction):
     def get_session_list(self):
         from openstates.utils.lxmlize import url_xpath
         return url_xpath('http://www.ncleg.net',
-                         '//select[@name="sBiennium"]/option/text()')
+                         '//select[@name="sSession"]/option/text()')
 
     def extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)
