@@ -99,14 +99,6 @@ class Wisconsin(Jurisdiction):
             "name": "Sep 2011 Special Session"
         },
         {
-            "_scraped_name": "2017 Regular Session",
-            "classification": "primary",
-            "end_date": "2018-05-23",
-            "identifier": "2017 Regular Session",
-            "name": "2017 Regular Session",
-            "start_date": "2017-01-03"
-        },
-        {
             'identifier': 'January 2017 Special Session',
             'start_date': "2017-04-04",
             'classification': 'special',
@@ -119,6 +111,14 @@ class Wisconsin(Jurisdiction):
             'classification': 'special',
             'name': 'August 2017 Special Session',
             '_scraped_name': 'August 2017 Special Session',
+        },
+        {
+            "_scraped_name": "2017 Regular Session",
+            "classification": "primary",
+            "end_date": "2018-05-23",
+            "identifier": "2017 Regular Session",
+            "name": "2017 Regular Session",
+            "start_date": "2017-01-03"
         },
     ]
     ignored_scraped_sessions = [
