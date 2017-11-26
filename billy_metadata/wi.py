@@ -118,13 +118,6 @@ metadata = {
             'display_name': '2015 Regular Session',
             '_scraped_name': '2015 Regular Session',
         },
-        '2017 Regular Session': {
-            'start_date': datetime.date(2017, 1, 3),
-            'end_date': datetime.date(2018, 5, 23),
-            'type': 'primary',
-            'display_name': '2017 Regular Session',
-            '_scraped_name': '2017 Regular Session',
-        },
         'January 2017 Special Session': {
             'start_date': datetime.date(2017, 4, 4),
             'type': 'special',
@@ -137,6 +130,13 @@ metadata = {
             'type': 'special',
             'display_name': 'August 2017 Special Session',
             '_scraped_name': 'August 2017 Special Session',
+        },
+        '2017 Regular Session': {
+            'start_date': datetime.date(2017, 1, 3),
+            'end_date': datetime.date(2018, 5, 23),
+            'type': 'primary',
+            'display_name': '2017 Regular Session',
+            '_scraped_name': '2017 Regular Session',
         },
     },
     'feature_flags': ['subjects',
