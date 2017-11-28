@@ -13,6 +13,10 @@ export PYTHONPATH=./openstates
 
 $PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state "$@"
 
+if [ "$SKIP_BILLY" = true ]; then
+  exit 0
+fi
+
 export PUPA_DATA_DIR='../openstates/_data'
 export PYTHONPATH=./billy_metadata/
 $BILLY_ENV/bin/python -m pupa2billy.run $state
