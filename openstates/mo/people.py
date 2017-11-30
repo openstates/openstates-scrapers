@@ -13,8 +13,8 @@ class MOPersonScraper(Scraper):
     # ^^^^^^^^^^^ pre-2017 URL. Keep if we need to scrape the old pages.
     _senators_url = 'http://www.senate.mo.gov/senators-listing/'
     _senator_details_url = 'http://www.senate.mo.gov/mem{:02d}'
-    _reps_url = 'http://www.house.mo.gov/member.aspx'
-    _rep_details_url = 'http://www.house.mo.gov/member.aspx?district={}'
+    _reps_url = 'http://house.mo.gov/MemberGridCluster.aspx'
+    _rep_details_url = 'http://www.house.mo.gov/MemberDetails.aspx?district={}'
     _vacant_legislators = []
 
     def _save_vacant_legislator(self, leg):
@@ -117,10 +117,9 @@ class MOPersonScraper(Scraper):
         page = self.get(roster_url).text
         page = lxml.html.fromstring(page)
         # This is the ASP.net table container
-        table_xpath = ('id("ContentPlaceHolder1_'
-                       'gridMembers_DXMainTable")')
+        table_xpath = ("//table[@id='gvMembers_DXMainTable']")
         table = page.xpath(table_xpath)[0]
-        for tr in table.xpath('tr')[1:]:
+        for tr in table.xpath('tr')[3:]:
             # If a given term hasn't occurred yet, then ignore it
             # Eg, in 2017, the 2018 term page will have a blank table
             if tr.attrib.get('class') == 'dxgvEmptyDataRow':
@@ -128,19 +127,22 @@ class MOPersonScraper(Scraper):
                 return
 
             tds = tr.xpath('td')
-            last_name = tds[0].text_content().strip()
-            first_name = tds[1].text_content().strip()
+            last_name = tds[1].text_content().strip()
+            first_name = tds[2].text_content().strip()
             full_name = '{} {}'.format(first_name, last_name)
-            district = str(int(tds[2].text_content().strip()))
-            party = tds[3].text_content().strip()
-            if party == 'Democrat':
+            district = str(int(tds[3].text_content().strip()))
+            party = tds[4].text_content().strip()
+            if party == 'D':
                 party = 'Democratic'
+            elif party == 'R':
+                party = 'Republican'
 
             if party.strip() == "":  # Workaround for now.
                 party = "Other"
 
-            phone = tds[4].text_content().strip()
-            room = tds[5].text_content().strip()
+            phone = tds[6].text_content().strip()
+            room = tds[7].text_content().strip()
+            
             address = self._assumed_address_fmt.format(room if room else '')
 
             if last_name == 'Vacant':

@@ -343,11 +343,13 @@ class MOBillScraper(Scraper, LXMLMixin):
         # else:
         session = year
 
-        bills = bill_list_page.xpath('//table[@id="billAssignGroup"]/tr')
+        bills = bill_list_page.xpath('//table[@id="reportgrid"]//tr')
 
         isEven = False
         count = 0
+        bills = bills[2:]
         for bill in bills:
+            
             if not isEven:
                 # the non even rows contain bill links, the other rows contain brief
                 # descriptions of the bill.
@@ -455,7 +457,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         # check for cosponsors
         sponsors_url, = bill_page.xpath(
-            "//a[contains(@href, 'CoSponsorsPrn.aspx')]/@href")
+            "//a[contains(@href, 'CoSponsors.aspx')]/@href")
         self._parse_cosponsors_from_bill(bill, sponsors_url)
 
         # actions_link_tag = bill_page.xpath('//div[@class="Sections"]/a')[0]
@@ -463,11 +465,11 @@ class MOBillScraper(Scraper, LXMLMixin):
         # actions_link = re.sub("content", "print", actions_link)
 
         actions_link, = bill_page.xpath(
-            "//a[contains(@href, 'BillActionsPrn.aspx')]/@href")
+            "//a[contains(@href, 'BillActions.aspx')]/@href")
         yield from self._parse_house_actions(bill, actions_link)
 
         # get bill versions
-        doc_tags = bill_page.xpath('//div[@class="BillDocsSection"][1]/span')
+        doc_tags = bill_page.xpath('//div[@class="BillDocuments"][1]/span')
         for doc_tag in reversed(doc_tags):
             doc = clean_text(doc_tag.text_content())
             text_url = '%s%s' % (
@@ -477,7 +479,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill.add_document_link(doc, text_url, media_type='text/html')
 
         # get bill versions
-        version_tags = bill_page.xpath('//div[@class="BillDocsSection"][2]/span')
+        version_tags = bill_page.xpath('//div[@class="BillDocuments"][2]/span')
         for version_tag in reversed(version_tags):
             version = clean_text(version_tag.text_content())
             for vurl in version_tag.xpath(".//a"):
