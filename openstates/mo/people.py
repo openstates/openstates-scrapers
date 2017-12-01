@@ -142,7 +142,7 @@ class MOPersonScraper(Scraper):
 
             phone = tds[6].text_content().strip()
             room = tds[7].text_content().strip()
-            
+
             address = self._assumed_address_fmt.format(room if room else '')
 
             if last_name == 'Vacant':

@@ -349,7 +349,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         count = 0
         bills = bills[2:]
         for bill in bills:
-            
+
             if not isEven:
                 # the non even rows contain bill links, the other rows contain brief
                 # descriptions of the bill.
