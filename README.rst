@@ -15,12 +15,22 @@ you have Docker installed.  Inside of the directory you cloned this project into
 
   docker-compose run --rm scrape <abbreviated state code>  # Scrapes the state indicated by the code e.g. "ny"
 
-This project runs on top of `billy <https://github.com/openstates/billy>`_, a scraping framework for government data.
-Our Docker container runs the ``billy-update`` command
-(`billy-update docs <http://billy.readthedocs.io/en/latest/scripts.html>`_) with whatever arguments you put at the end
-of ``docker run``. For example, you can limit the scrape to Tennessee's (tn) state senators using::
+For each state, you can also select one or more individual scrapers to run.  The scraper names vary from state to state; look at the ``scrapers`` listed in the state's ``__init__.py``. For example, Tennessee has:: 
 
-  docker-compose run --rm scrape tn --upper --legislators
+    scrapers = {
+        'bills': TNBillScraper,
+        'committees': TNCommitteeScraper,
+        'events': TNEventScraper,
+        'people': TNPersonScraper,
+    }
+
+So you can limit the scrape to Tennessee's (tn) committees and legislators using::
+
+  docker-compose run --rm scrape tn committees people
+
+After retrieving everything from the state, `scrape` imports the data into a Postgresql database (setup doc pending).  If you want to skip this step, include a `--scrape` modifier at the end of the command line, like so::
+
+  docker-compose run --rm scrape tn people --scrape
 
 Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
@@ -31,3 +41,16 @@ To run all tests::
   docker-compose run --rm --entrypoint=nosetests scrape /srv/openstates-web/openstates
 
 Note that Illinois (il) is the only state with tests right now.
+
+API Keys
+========
+
+Currently two states, New York and Indiana, require API keys to access their APIs.
+
+For New York, go to http://legislation.nysenate.gov/ and sign up for an API key.
+Set environment variable ``NEW_YORK_API_KEY`` to the provided key before scraping.
+
+For Indiana, go to http://docs.api.iga.in.gov/introduction.html and follow the directions there,
+under "Security and Authentication", to sign up for an API key.  Then set environment variable
+``INDIANA_API_KEY`` to the provided key before scraping.
+
