@@ -232,10 +232,24 @@ class PABillScraper(Scraper):
             type = 'other'
             motion = link.text_content()
 
-        yeas = int(page.xpath("//div/span[text() = 'YEAS']/..")[0].getnext().text)
-        nays = int(page.xpath("//div/span[text() = 'NAYS']/..")[0].getnext().text)
-        lve = int(page.xpath("//div/span[text() = 'E']/..")[0].getnext().text)
-        nv = int(page.xpath("//div/span[text() = 'N/V']/..")[0].getnext().text)
+        # Looks like for "YEAS" and "NAYS" counts, PA has multiple HTML
+        # formats: one where the "YEAS" text node is nested within a span
+        # element, and another where the text node is a direct child of the div
+        # element
+        yeas_elements = page.xpath("//div/span[text() = 'YEAS']/..")
+        if len(yeas_elements) == 0:
+            yeas_elements = page.xpath("//div[text()[normalize-space() = 'YEAS']]")
+        yeas = int(yeas_elements[0].getnext().text)
+
+        nays_elements = page.xpath("//div/span[text() = 'NAYS']/..")
+        if len(nays_elements) == 0:
+            nays_elements = page.xpath("//div[text()[normalize-space() = 'NAYS']]")
+        nays = int(nays_elements[0].getnext().text)
+
+        # "LVE" and "N/V" have been moved up as direct children of the div
+        # element
+        lve = int(page.xpath("//div[text()[normalize-space() = 'LVE']]")[0].getnext().text)
+        nv = int(page.xpath("//div[text()[normalize-space() = 'N/V']]")[0].getnext().text)
         other = lve + nv
 
         vote = VoteEvent(
