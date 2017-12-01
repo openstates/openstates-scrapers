@@ -37,7 +37,7 @@ metadata = dict(
         },
         {
             'name': '2017-2018',
-            'sessions': ['2017', '2017S1', '2017S2'],
+            'sessions': ['2017', '2017S1', '2017S2', '2018'],
             'start_year': 2017,
             'end_year': 2018,
         },
@@ -93,6 +93,10 @@ metadata = dict(
         '2017S2': {
             'type': 'special',
             'display_name': '2017 Second Extraordinary Session',
+        },
+        '2017': {
+            'type': 'primary',
+            'display_name': '2018 Regular Session',
         },
     },
     feature_flags=['subjects', 'influenceexplorer'],
