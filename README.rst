@@ -32,6 +32,8 @@ After retrieving everything from the state, `scrape` imports the data into a Pos
 
   docker-compose run --rm scrape tn people --scrape
 
+After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory.  These contain the transformed, scraped data, and are very useful for debugging. 
+
 Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
 Testing
