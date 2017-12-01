@@ -154,19 +154,17 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
         url = '{base}CommitteeHierarchy.aspx'.format(base=self._reps_url_base)
         page_string = self.get(url).text
         page = lxml.html.fromstring(page_string)
-        #table = page.xpath('//div[@class="lightened"]/table[1]')[0]
         # Last tr has the date
         committee_links = page.xpath('//li//a')
         for committee_link in committee_links:
-            #committee_parts = [part.strip()
-            #                   for part in tr.text_content().split(',')]
             committee_name = committee_link.text_content().strip()
             committee_url = committee_link.attrib.get('href')
 
-            committee_and_year=re.search(r"(?<=Committees\.aspx\?category=all)(.*)(?=&code=)", committee_url).group()
-
-            committee_url = '{base}{members}{url}'.format(base=self._reps_url_base, members="MemberGridCluster.aspx?filter=compage&category=committee&",
-                                                 url=committee_url)
+            committee_url = '{base}{members}{url}'.format(
+                base=self._reps_url_base,
+                members="MemberGridCluster.aspx?filter=compage&category=committee&",
+                url=committee_url
+            )
             actual_chamber = chamber
             if 'joint' in committee_name.lower():
                 actual_chamber = 'legislature'
@@ -188,18 +186,18 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
             committee_page_string = self.get(committee_url).text
             committee_page = lxml.html.fromstring(committee_page_string)
             # First tr has the title (sigh)
-            mem_trs = committee_page.xpath("//table[@id='gvMembers_DXMainTable']//tr[contains(@class, 'dxgvDataRow')]")
+            mem_trs = committee_page.xpath(
+                "//table[@id='gvMembers_DXMainTable']//tr[contains(@class, 'dxgvDataRow')]")
             for mem_tr in mem_trs:
-
                 mem_code = None
                 mem_links = mem_tr.xpath('td/a[1]')
 
                 mem_role_string = mem_tr.xpath('td[4]')[0].text_content().strip()
-                
+
                 if len(mem_links):
                     mem_code = mem_links[0].attrib.get('href')
                 # Output is "Rubble, Barney, Neighbor"
-                
+
                 mem_parts = mem_tr.xpath('td[2]')[0].text_content().strip().split(',')
                 if self._no_members_text in mem_parts:
                     continue
@@ -208,10 +206,10 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
                 # Sometimes Senator abbreviation is in the name
                 mem_name = mem_name.replace('Sen. ', '')
                 mem_name = mem_name.replace('Rep. ', '')
-                
+
                 mem_role = 'member'
 
-                if len(mem_role_string)>2:
+                if len(mem_role_string) > 2:
                     mem_role = mem_role_string.lower()
 
                 membership = committee.add_member(mem_name, role=mem_role)
