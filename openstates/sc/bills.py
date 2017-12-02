@@ -13,8 +13,10 @@ import lxml.html
 #
 # @see https://stackoverflow.com/a/37818792/1858091
 import http.client
+
 http.client.HTTPConnection._http_vsn = 10
 http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+
 
 def action_type(action):
     """
