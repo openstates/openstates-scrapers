@@ -81,16 +81,16 @@ class WAPersonScraper(Scraper, LXMLMixin):
 
             if capitol_address:
                 leg.add_contact_detail(type='address', value=capitol_address,
-                                        note='Capitol Office')
+                                       note='Capitol Office')
             if email:
                 leg.add_contact_detail(type='email', value=email,
-                                        note='Capitol Office')
+                                       note='Capitol Office')
             if capitol_phone:
                 leg.add_contact_detail(type='voice', value=capitol_phone,
-                                        note='Capitol Office')
+                                       note='Capitol Office')
             if capitol_fax:
                 leg.add_contact_detail(type='fax', value=str(capitol_fax),
-                                        note='Capitol Office')
+                                       note='Capitol Office')
             _has_district_office = member.xpath('.//div[@class="memberColumnTitle" and'
                                                 'text()=" District Office"]')
             if _has_district_office:
@@ -113,11 +113,11 @@ class WAPersonScraper(Scraper, LXMLMixin):
 
                 if district_phone:
                     leg.add_contact_detail(type='voice', value=district_phone,
-                                            note='District Office')
+                                           note='District Office')
 
                 if district_address:
                     leg.add_contact_detail(type='address', value=district_address,
-                                            note='District Office')
+                                           note='District Office')
             leg.add_source(index_url)
             leg.add_link(index_url)
             yield leg
