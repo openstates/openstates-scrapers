@@ -24,6 +24,11 @@ class VTPersonScraper(Scraper, LXMLMixin):
             # Strip whitespace from strings
             info = {k: v.strip() for k, v in info.items()}
 
+            # Skip duplicate record for Christopher Mattos (appointed Rep September 2017)
+            if info['PersonID'] == "29034":
+                self.info("skipping first Christopher Mattos record")
+                continue
+
             # Gather photo URL from the member's page
             member_url = ('http://legislature.vermont.gov/people/single/{}/{}'.
                           format(year_slug, info['PersonID']))
