@@ -266,18 +266,20 @@ class MOBillScraper(Scraper, LXMLMixin):
     def _scrape_house_subjects(self, session):
         self.info('Collecting subject tags from lower house.')
 
-        subject_list_url = 'http://house.mo.gov/subjectindexlist.aspx?year={}'\
+        subject_list_url = 'http://house.mo.gov/LegislationSP.aspx?code=R&category=subjectindex&year={}'\
             .format(session)
         subject_page = self.lxmlize(subject_list_url)
 
         # Create a list of all the possible bill subjects.
         subjects = self.get_nodes(
             subject_page,
-            '//ul[@id="subjectindexitems"]/div/li[1]/a[1]')
+            "//div[@id='ContentPlaceHolder1_panelParentDIV']/div[@id='panelDIV']//div[@id='ExpandedPanel']//a")
 
         # Find the list of bills within each subject.
         for subject in subjects:
-            self.info('Searching for bills in {}.'.format(subject.text))
+
+            subject_text = re.sub(r"\([0-9]+\).*", '', subject.text, re.IGNORECASE).strip()
+            self.info('Searching for bills in {}.'.format(subject_text))
 
             subject_page = self.lxmlize(subject.attrib['href'])
 
@@ -299,7 +301,7 @@ class MOBillScraper(Scraper, LXMLMixin):
                     continue
 
                 self.info('Found {}.'.format(bill_id))
-                self._subjects[bill_id].append(subject.text)
+                self._subjects[bill_id].append(subject_text)
 
     def _parse_house_actions(self, bill, url):
         bill.add_source(url)
