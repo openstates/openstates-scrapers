@@ -9,6 +9,14 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 import lxml.html
 
+# Workaround to prevent chunking error (thanks @showerst)
+#
+# @see https://stackoverflow.com/a/37818792/1858091
+import http.client
+
+http.client.HTTPConnection._http_vsn = 10
+http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+
 
 def action_type(action):
     """
@@ -110,12 +118,6 @@ class SCBillScraper(Scraper):
         for option in doc.xpath('//option')[2:]:
             subject = option.text
             code = option.get('value')
-
-            if code == '1130':
-                # added Nov 2017, this code broke the scrape for a few weeks
-                self.warning('skipping 1130 - broken page')
-                continue
-
             url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
                                                          session_code, code)
             data = self.get(url).text
