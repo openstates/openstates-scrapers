@@ -15,7 +15,7 @@ class Missouri(Jurisdiction):
     url = "http://www.moga.mo.gov/"
     scrapers = {
         'bills': MOBillScraper,
-        'votes': MOVoteScraper,
+        #'votes': MOVoteScraper,
         'people': MOPersonScraper,
         'committees': MOCommitteeScraper,
     }
@@ -86,6 +86,7 @@ class Missouri(Jurisdiction):
             "classification": "primary",
             "identifier": "2018",
             "name": "2018 Regular Session",
+            "start_date": "2017-12-01",
         },
 
     ]
