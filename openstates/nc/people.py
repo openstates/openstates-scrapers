@@ -11,13 +11,16 @@ party_map = {'Dem': 'Democratic',
 
 def get_table_item(doc, name):
     # get span w/ item
-    span = doc.xpath('//span[text()="{0}"]'.format(name))[0]
-    # get neighboring td's span
-    dataspan = span.getparent().getnext().getchildren()[0]
-    if dataspan.text:
-        return (dataspan.text + '\n' +
-                '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
-    else:
+    try:
+        span = doc.xpath('//span[text()="{0}"]'.format(name))[0]
+        # get neighboring td's span
+        dataspan = span.getparent().getnext().getchildren()[0]
+        if dataspan.text:
+            return (dataspan.text + '\n' +
+                    '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
+        else:
+            return None
+    except IndexError:
         return None
 
 
@@ -67,8 +70,10 @@ class NCPersonScraper(Scraper):
             ldoc = lxml.html.fromstring(lhtml)
             ldoc.make_links_absolute('http://www.ncleg.net')
             photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
-            phone = get_table_item(ldoc, 'Phone:') or None
-            address = get_table_item(ldoc, 'Address:') or None
+            phone = (get_table_item(ldoc, 'District Phone:') or
+                     get_table_item(ldoc, 'Phone:') or None)
+            address = (get_table_item(ldoc, 'District Address:') or
+                       get_table_item(ldoc, 'Address:') or None)
             email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0]
             capitol_email = email.text
             capitol_phone = email.xpath('ancestor::tr[1]/preceding-sibling::tr[1]/td/span')[0].text
