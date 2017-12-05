@@ -28,6 +28,7 @@ services:
     - "27017:27017"
   mysql:
     image: mysql
+    command: mysqld --max_allowed_packet=512M
     ports:
     - "3306:3306"
     environment:
