@@ -103,7 +103,10 @@ class MSLegislatorScraper(Scraper):
                 assert not party, ("Remove special-casing for this Democrat without a "
                                    "listed party: {}").format(leg_name)
                 party = 'Democratic'
-            elif leg_name in ('James W. Mathis', 'John Glen Corley', 'Missy McGee'):
+            elif leg_name in ('James W. Mathis',
+                              'John Glen Corley',
+                              'Missy McGee',
+                              'Shane Barnett'):
                 assert not party, ("Remove special-casing for this Republican without"
                                    " a listed party: {}").format(leg_name)
                 party = 'Republican'
