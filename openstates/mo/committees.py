@@ -55,9 +55,9 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
             url = '{base}{year}web/standing-committees'.format(
                 base=self._senate_url_base, year=session[2:])
             comm_container_id = 'primary'
-        elif session==self.latest_session():
+        elif session == self.latest_session():
             url = '{base}standing-committees'.format(
-            base=self._senate_url_base)
+                base=self._senate_url_base)
             comm_container_id = 'primary'
         else:
             url = '{base}{year}info/com-standing.htm'.format(
