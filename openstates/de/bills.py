@@ -76,9 +76,9 @@ class DEBillScraper(Scraper, LXMLMixin):
         bill_id = row['LegislationDisplayCode']
 
         # hack for empty StatusName
-        statusless_bills = [ 'HA 2 to SS 1 for SB 5', 'HA 3 to SS 1 for SB 5' ]
+        statusless_bills = ['HA 2 to SS 1 for SB 5', 'HA 3 to SS 1 for SB 5']
         is_force_substitute = bill_id in statusless_bills \
-                and row['StatusName'] is None
+            and row['StatusName'] is None
 
         is_substituted = is_force_substitute or 'Substituted' in row['StatusName'] \
 
