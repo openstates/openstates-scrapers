@@ -75,7 +75,14 @@ class DEBillScraper(Scraper, LXMLMixin):
     def scrape_bill(self, row, chamber, session):
         bill_id = row['LegislationDisplayCode']
 
-        if 'Substituted' in row['StatusName']:
+        # hack for empty StatusName
+        statusless_bills = [ 'HA 2 to SS 1 for SB 5', 'HA 3 to SS 1 for SB 5' ]
+        is_force_substitute = bill_id in statusless_bills \
+                and row['StatusName'] is None
+
+        is_substituted = is_force_substitute or 'Substituted' in row['StatusName'] \
+
+        if is_substituted:
             # skip substituted bills, the replacement is picked up instead
             self.warning('skipping %s: %s', bill_id, row['StatusName'])
             return
