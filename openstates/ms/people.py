@@ -99,14 +99,15 @@ class MSLegislatorScraper(Scraper):
             email_name = root.xpath('string(//EMAIL_ADDRESS)').strip()
             cap_room = root.xpath('string(//CAP_ROOM)')
 
-            if leg_name in ('Lataisha Jackson', 'John G. Faulkner'):
+            if leg_name in ('Lataisha Jackson', 'John G. Faulkner', 'Cheikh Taylor'):
                 assert not party, ("Remove special-casing for this Democrat without a "
                                    "listed party: {}").format(leg_name)
                 party = 'Democratic'
             elif leg_name in ('James W. Mathis',
                               'John Glen Corley',
                               'Missy McGee',
-                              'Shane Barnett'):
+                              'Shane Barnett',
+                              'Kevin Ford'):
                 assert not party, ("Remove special-casing for this Republican without"
                                    " a listed party: {}").format(leg_name)
                 party = 'Republican'
