@@ -82,16 +82,17 @@ class WestVirginia(Jurisdiction):
             "identifier": "20172S",
             "name": "2017 Second Special Session",
         },
-        {
-            "_scraped_name": "2018",
-            "classification": "primary",
-            "identifier": "2018",
-            "name": "2018 Regular Session",
-            "start_date": "2018-01-10",
-            "end_date": "2018-03-10",
-        }
+        # { ignore till there are bills
+        #     "_scraped_name": "2018",
+        #     "classification": "primary",
+        #     "identifier": "2018",
+        #     "name": "2018 Regular Session",
+        #     "start_date": "2018-01-10",
+        #     "end_date": "2018-03-10",
+        # }
     ]
     ignored_scraped_sessions = [
+        "2018",
         "2010",
         "2009",
         "2008",
