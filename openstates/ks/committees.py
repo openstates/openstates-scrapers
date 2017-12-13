@@ -12,6 +12,9 @@ class KSCommitteeScraper(Scraper):
 
         # some committees, 500, let them go
         self.retry_attempts = 0
+        
+        # KS seems to have a strict rate limit
+        self.requests_per_minute = 30
 
         for chamber in chambers:
             yield from self.scrape_current(chamber)
