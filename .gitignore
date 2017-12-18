@@ -30,4 +30,3 @@ tmp.*
 billydata
 .idea
 .env
-docker-compose-test.yml
