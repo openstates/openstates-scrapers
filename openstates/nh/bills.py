@@ -49,6 +49,7 @@ def extract_amendment_id(action):
 class NHBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
+        self.info('big league scrape')
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
