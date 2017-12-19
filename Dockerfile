@@ -63,4 +63,5 @@ RUN git config --global user.name "Example User"
 RUN git config --global core.mergeoptions --no-edit
 
 WORKDIR /opt/openstates/openstates/
+RUN git remote set-url origin https://github.com/doubleswirve/openstates.git
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
