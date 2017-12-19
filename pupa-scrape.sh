@@ -11,6 +11,7 @@ shift
 
 # The gentleman's delivery/deployment hehe
 ( cd /opt/openstates/openstates && \
+  git stash && \
   git pull origin scratch-pupa-google-pubsub-output )
 
 export PYTHONPATH=./openstates
