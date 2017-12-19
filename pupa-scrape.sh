@@ -9,6 +9,10 @@ set -e
 state=$1
 shift
 
+# The gentleman's delivery/deployment hehe
+( cd /opt/openstates/openstates && \
+  git pull origin scratch-pupa-google-pubsub-output )
+
 export PYTHONPATH=./openstates
 
 $PUPA_ENV/bin/pupa ${PUPA_ARGS:-} update $state "$@"
