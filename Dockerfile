@@ -57,5 +57,10 @@ ENV PUPA_ENV /opt/openstates/venv-pupa/
 ADD . /opt/openstates/openstates
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
 
+# Adding these so we can git pull in pupa-scrape.sh...
+RUN git config --global user.email "user@example.org"
+RUN git config --global user.name "Example User"
+RUN git config --global core.mergeoptions --no-edit
+
 WORKDIR /opt/openstates/openstates/
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
