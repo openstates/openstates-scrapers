@@ -87,6 +87,14 @@ class NewMexico(Jurisdiction):
             "identifier": "2017S",
             "name": "2017 Special Session",
         },
+        {
+            "_scraped_name": "2018 Regular",
+            "classification": "primary",
+            "end_date": "2018-03-18",
+            "identifier": "2018",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-17"
+        },
     ]
     ignored_scraped_sessions = [
         "2010 2nd Special",
