@@ -8,7 +8,7 @@ def get_short_codes(scraper):
     list_html = scraper.get(SHORT_CODES).text
     list_page = lxml.html.fromstring(list_html)
     rows = list_page.xpath(
-        "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
+        "//table[@id='ContentPlaceHolderCol1_GridView1']/tr")
     scraper.short_ids = {
         "CONF": {
             "chamber": "joint",
