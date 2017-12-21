@@ -39,6 +39,7 @@ _COMMITTEES = {'lower': {'Loc Gov': 'Local Government',
 # background on bill to law can be found at:
 # http://legislature.idaho.gov/about/jointrules.htm
 _ACTIONS = (
+    (r'^Introduced', 'introduction'),
     # reading-1
     (r'(\w+) intro - (\d)\w+ rdg - to (\w+/?\s?\w+\s?\w+)',
      lambda mch, ch: ["introduction", "reading-1", "referral-committee"] \
