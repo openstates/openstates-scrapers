@@ -18,6 +18,7 @@ classifiers = {
     r'Floor (Committee )?Amendment.+?Adopted': 'amendment-passage',
     r'Floor Amendment.+? Withdrawn': 'amendment-withdrawal',
     r'Pre\-filed': 'introduction',
+    r'Withdrawn': 'withdrawal',
     r'Re\-(referred|assigned)': 'referral-committee',
     r'Recommit to Committee': 'referral-committee',
     r'Referred': 'referral-committee',
@@ -25,6 +26,8 @@ classifiers = {
     r'Third Reading Failed': 'failure',
     r'Unfavorable': 'committee-passage-unfavorable',
     r'Vetoed': 'executive-veto',
+    r'Gubernatorial Veto Override': 'veto-override-passage',
+    r'Veto overridden': 'veto-override-passage',
     r'Approved by the Governor': 'executive-signature',
 }
 
