@@ -201,7 +201,7 @@ class HIBillScraper(Scraper):
                                legislative_session=prior_session,
                                relation_type="companion")
         prior = bill_page.xpath(
-            "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
+            "//table[@id='ContentPlaceHolderCol1_GridViewStatus']/tr/td/font/text()")[-1]
         if 'carried over' in prior.lower():
             b.add_related_bill(identifier=bill_id,
                                legislative_session=prior_session,

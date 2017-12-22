@@ -24,7 +24,7 @@ class HIPersonScraper(Scraper):
         ret = {"source": url, 'ctty': []}
 
         table = page.xpath(
-            "//table[@id='ctl00_ContentPlaceHolderCol1_GridViewMemberof']")
+            "//table[@id='ContentPlaceHolderCol1_GridViewMemberof']")
         if len(table) > 0:
             table = table[0]
         else:
@@ -49,7 +49,7 @@ class HIPersonScraper(Scraper):
     def scrape_leg_page(self, url):
         page = self.get_page(url)
         people = page.xpath(
-            "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
+            "//table[@id='ContentPlaceHolderCol1_GridView1']")[0]
         people = people.xpath('./tr')[1:]
         display_order = {
             "image": 0,

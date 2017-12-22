@@ -23,11 +23,11 @@ class HICommitteeScraper(Scraper):
     def get_committee_data(self, url, org):
         list_html = self.get(HI_URL_BASE + url).text
         list_page = lxml.html.fromstring(list_html)
-        chair_div = list_page.xpath("//div[@id='ctl00_ContentPlaceHolderCol1_PanelChair']/div")
-        chair = chair_div[0].xpath("//a[@id='ctl00_ContentPlaceHolderCol1_HyperLinkChair']")
-        vchair_div = list_page.xpath("//div[@id='ctl00_ContentPlaceHolderCol1_PanelViceChair']")
-        vice = vchair_div[0].xpath("//div/a[@id='ctl00_ContentPlaceHolderCol1_HyperLinkcvChair']")
-        members = list_page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_DataList1']/tr/td/a")
+        chair_div = list_page.xpath("//div[@id='ContentPlaceHolderCol1_PanelChair']/div")
+        chair = chair_div[0].xpath("//a[@id='ContentPlaceHolderCol1_HyperLinkChair']")
+        vchair_div = list_page.xpath("//div[@id='ContentPlaceHolderCol1_PanelViceChair']")
+        vice = vchair_div[0].xpath("//div/a[@id='ContentPlaceHolderCol1_HyperLinkcvChair']")
+        members = list_page.xpath("//table[@id='ContentPlaceHolderCol1_DataList1']/tr/td/a")
         for i in chair:
             org.add_member(i.text_content().strip(), role='chair')
         for i in vice:
@@ -39,7 +39,7 @@ class HICommitteeScraper(Scraper):
         URL = get_chamber_url(chamber)
         list_html = self.get(URL).text
         list_page = lxml.html.fromstring(list_html)
-        rows = list_page.xpath("//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']/tr")
+        rows = list_page.xpath("//table[@id='ContentPlaceHolderCol1_GridView1']/tr")
         for row in rows:
             tds = row.xpath("./td")
             clong = tds[1]
