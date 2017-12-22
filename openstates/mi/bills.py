@@ -28,6 +28,7 @@ bill_chamber_types = {
 }
 
 _categorizers = {
+    'approved by governor with line item(s) vetoed': 'executive-veto-line-item',
     'read a first time': 'reading-1',
     'read a second time': 'reading-2',
     'read a third time': 'reading-3',
@@ -43,6 +44,7 @@ _categorizers = {
     'adopted': 'passage',
     'amendment(s) adopted': 'amendment-passage',
     'amendment(s) defeated': 'amendment-failure',
+    'vetoed by governor': 'executive-veto',
 }
 
 

@@ -38,7 +38,7 @@ class HIEventScraper(Scraper, LXMLMixin):
         get_short_codes(self)
         page = self.lxmlize(URL)
         table = page.xpath(
-            "//table[@id='ctl00_ContentPlaceHolderCol1_GridView1']")[0]
+            "//table[@id='ContentPlaceHolderCol1_GridView1']")[0]
 
         for event in table.xpath(".//tr")[1:]:
             tds = event.xpath("./td")
