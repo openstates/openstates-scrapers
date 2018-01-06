@@ -86,6 +86,7 @@ _categorizer_rules = (
     # Bill passage
     Rule(r'^Passed H\.', 'passage', chamber='lower'),
     Rule(r'^Passed S\.', 'passage', chamber='upper'),
+    Rule(r'^Passed Senate', 'passage', chamber='upper'),
     Rule(r'^R/S Adopted', 'passage'),
     Rule(r'R/S Intro., adopted', 'passage'),
     Rule(r'R/S Concurred', 'passage'),
