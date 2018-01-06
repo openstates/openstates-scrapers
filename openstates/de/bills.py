@@ -177,7 +177,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.warning("Error returning legislator list!")
 
     def scrape_fiscal_note(self, bill, link):
-        bill.add_document_link('Fiscal Note', link, media_type='application/msword')
+        media_type = self.mime_from_link(link)
+        bill.add_document_link('Fiscal Note', link, media_type=media_type)
 
     def scrape_votes(self, bill, legislation_id, session):
         votes_url = 'https://legis.delaware.gov/json/BillDetail/GetVotingReportsByLegislationId'
