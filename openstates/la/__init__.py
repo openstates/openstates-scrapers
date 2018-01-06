@@ -135,6 +135,14 @@ class Louisiana(Jurisdiction):
             "start_date": "2017-06-17",
             "end_date": "2017-06-29",
         },
+        {
+            "_scraped_name": "2018 Regular Session",
+            "classification": "primary",
+            "identifier": "2018",
+            "name": "2018 Regular Session",
+            "start_date": "2018-03-12",
+            "end_date": "2018-06-04",
+        },
     ]
     ignored_scraped_sessions = [
         "2016 Organizational Session",
