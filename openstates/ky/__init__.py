@@ -103,7 +103,15 @@ class Kentucky(Jurisdiction):
             "identifier": "2017RS",
             "name": "2017 Regular Session",
             "start_date": "2017-01-03"
-        }
+        },
+        {
+            "_scraped_name": "2018 Regular Session",
+            "classification": "primary",
+            "end_date": "2018-04-13",
+            "identifier": "2018RS",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-02"
+        },
     ]
     ignored_scraped_sessions = []
 
