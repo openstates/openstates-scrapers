@@ -58,7 +58,7 @@ class MICommitteeScraper(Scraper):
             yield com
 
     def scrape_senate_committees(self):
-        url = 'http://www.senate.michigan.gov/committee.html'
+        url = 'http://www.senate.michigan.gov'
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
