@@ -177,15 +177,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.warning("Error returning legislator list!")
 
     def scrape_fiscal_note(self, bill, link):
-        # https://legis.delaware.gov/json/BillDetail/GetHtmlDocument?fileAttachmentId=48095
-        # The DE site for some reason POSTS to an endpoint for fiscal notes
-        # then pops the JSON response into a new window.
-        # But the attachment endpoint for bill versions works fine.
-        attachment_id = link.replace('GetFiscalNoteHtmlDocument(event, ', '').replace(')', '')
-        fn_url = 'https://legis.delaware.gov/json/BillDetail/'
-        'GetHtmlDocument?fileAttachmentId={}'.format(attachment_id)
-        # on_duplicate='error'
-        bill.add_document_link('Fiscal Note', fn_url, media_type='text/html')
+        media_type = self.mime_from_link(link)
+        bill.add_document_link('Fiscal Note', link, media_type=media_type)
 
     def scrape_votes(self, bill, legislation_id, session):
         votes_url = 'https://legis.delaware.gov/json/BillDetail/GetVotingReportsByLegislationId'
