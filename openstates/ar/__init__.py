@@ -135,8 +135,8 @@ class Arkansas(Jurisdiction):
             "start_date": "2017-05-01"
         },
         {
-            "_scraped_name": "Regular Session, 2018",
-            "classification": "primary",
+            "_scraped_name": "Fiscal Session, 2018",
+            "classification": "special",
             "end_date": "2018-03-13",
             "identifier": "2018",
             "name": "2018 Regular Session",
