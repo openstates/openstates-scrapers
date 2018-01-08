@@ -46,7 +46,7 @@ metadata = {
             'name': '2017',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017'],
+            'sessions': ['2017', '2018'],
         },
     ],
     'session_details': {
@@ -88,6 +88,11 @@ metadata = {
             'type': 'primary',
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017',
+        },
+        '2018': {
+            'type': 'primary',
+            'display_name': '2018 Regular Session',
+            '_scraped_name': '2018',
         },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],

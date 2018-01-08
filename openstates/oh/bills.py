@@ -333,8 +333,8 @@ class OHBillScraper(Scraper):
             doc = self.get(url.format(chamber=chamber))
             leg_json = doc.json()
             for leg in leg_json["items"]:
-                legislators[leg["med_id"]] = leg["displayname"]
-
+                if leg["med_id"]:
+                    legislators[int(leg["med_id"])] = leg["displayname"]
         return legislators
 
     def get_sponsor_name(self, sponsor):

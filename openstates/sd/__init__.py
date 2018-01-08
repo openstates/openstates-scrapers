@@ -76,7 +76,14 @@ class SouthDakota(Jurisdiction):
             "_scraped_name": "2017s",
             "identifier": "2017s",
             "name": "2017 Special Session"
-        }
+        },
+        {
+            "_scraped_name": "2018",
+            "identifier": "2018",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-09",
+            "end_date": "2018-03-26",
+        },
     ]
     ignored_scraped_sessions = [
         "2008", "2007", "2006", "2005", "2005s", "2004", "2003", "2003s", "2002",
@@ -129,4 +136,13 @@ class SouthDakota(Jurisdiction):
                                        'Legislative_Session/archive.aspx').text
         doc = lxml.html.fromstring(html)
         sessions = [x.strip() for x in doc.xpath('//table//td[@data-title="Year"]/text()')]
+
+        # Archive page lacks the latest session
+        current_session_url = doc.xpath(
+            '//*[@id="ctl00_divHeader_mnuMain"]/li[6]/ul/li[1]/a/@href')[0]
+        current_session = current_session_url.replace(
+            '/Legislative_Session/Bills/Default.aspx?Session=', '')
+        if current_session not in sessions:
+            sessions.append(current_session)
+
         return sessions

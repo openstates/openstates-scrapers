@@ -127,6 +127,14 @@ class Maryland(Jurisdiction):
             "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-11"
+        },
+        {
+            "_scraped_name": "2018 Regular Session",
+            "classification": "primary",
+            "end_date": "2018-04-09",
+            "identifier": "2018",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-10"
         }
     ]
     ignored_scraped_sessions = [
