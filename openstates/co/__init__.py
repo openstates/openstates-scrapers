@@ -84,6 +84,14 @@ class Colorado(Jurisdiction):
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-10-02",
             "end_date": "2017-10-06",
+        },
+        {
+            "_scraped_name": "2018 Regular Session",
+            "classification": "primary",
+            "identifier": "2018A",
+            "name": "2018 Regular Session",
+            "start_date": "2018-01-10",
+            "end_date": "2018-03-11",
         }
     ]
     ignored_scraped_sessions = [
