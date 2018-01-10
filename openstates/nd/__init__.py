@@ -16,10 +16,6 @@ class NorthDakota(Jurisdiction):
         'committees': NDCommitteeScraper,
         'bills': NDBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "62nd Legislative Assembly (2011-12)",

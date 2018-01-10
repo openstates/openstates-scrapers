@@ -19,10 +19,6 @@ class Massachusetts(Jurisdiction):
         'committees': MACommitteeScraper,
         'bills': MABillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "186th",

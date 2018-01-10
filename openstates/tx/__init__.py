@@ -20,10 +20,6 @@ class Texas(Jurisdiction):
         'votes': TXVoteScraper,
         # 'events': TXEventScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "81(R) - 2009",

@@ -19,10 +19,6 @@ class Wisconsin(Jurisdiction):
         'people': WIPersonScraper,
         'committees': WICommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009 Regular Session",

@@ -21,10 +21,6 @@ class NewJersey(Jurisdiction):
         'people': NJPersonScraper,
         'committees': NJCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2008-2009",

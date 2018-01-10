@@ -21,10 +21,6 @@ class Arizona(Jurisdiction):
         # 'events': AZEventScraper,
         'bills': AZBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009 - Forty-ninth Legislature - First Regular Session",

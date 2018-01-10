@@ -19,10 +19,6 @@ class Colorado(Jurisdiction):
         'bills': COBillScraper,
         # 'events': COEventScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 Regular Session",

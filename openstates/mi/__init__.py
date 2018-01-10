@@ -17,10 +17,6 @@ class Michigan(Jurisdiction):
         'people': MIPersonScraper,
         'committees': MICommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011-2012",

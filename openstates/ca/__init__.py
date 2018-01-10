@@ -23,10 +23,6 @@ class California(Jurisdiction):
         'people': CAPersonScraper,
         'committees': CACommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "classification": "primary",

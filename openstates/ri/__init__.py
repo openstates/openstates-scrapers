@@ -19,10 +19,6 @@ class RhodeIsland(Jurisdiction):
         'people': RIPersonScraper,
         'committees': RICommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2012",

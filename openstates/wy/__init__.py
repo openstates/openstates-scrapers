@@ -17,10 +17,6 @@ class Wyoming(Jurisdiction):
         'people': WYPersonScraper,
         'committees': WYCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 General Session",

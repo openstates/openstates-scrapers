@@ -16,10 +16,6 @@ class Oklahoma(Jurisdiction):
         # 'events': OKEventScraper,
         'bills': OKBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2012 Regular Session",

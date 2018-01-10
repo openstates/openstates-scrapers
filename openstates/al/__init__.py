@@ -13,11 +13,6 @@ class Alabama(Jurisdiction):
         'bills': ALBillScraper,
         'people': ALPersonScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Independent'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "Regular Session 2011",

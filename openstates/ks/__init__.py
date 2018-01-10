@@ -20,10 +20,6 @@ class Kansas(Jurisdiction):
         'people': KSPersonScraper,
         'committees': KSCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "b2011_12",

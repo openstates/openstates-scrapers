@@ -21,11 +21,6 @@ class Alaska(Jurisdiction):
         'people': AKPersonScraper,
         'committees': AKCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Independent'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "The 27th Legislature (2011-2012)",

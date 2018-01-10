@@ -17,11 +17,6 @@ class Louisiana(Jurisdiction):
         # 'events': LAEventScraper,
         'bills': LABillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Independent'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009 Regular Session",

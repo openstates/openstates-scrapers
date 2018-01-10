@@ -22,10 +22,6 @@ class NewYork(Jurisdiction):
         'people': NYPersonScraper,
         'committees': NYCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009",

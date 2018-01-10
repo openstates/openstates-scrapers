@@ -18,10 +18,6 @@ class Arkansas(Jurisdiction):
         'bills': ARBillScraper,
         # 'events': AREventScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "Regular Session, 2011",

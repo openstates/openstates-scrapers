@@ -16,10 +16,6 @@ class Ohio(Jurisdiction):
         # 'events': OHEventScraper,
         'bills': OHBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "128",

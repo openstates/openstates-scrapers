@@ -33,8 +33,6 @@ class Minnesota(Jurisdiction):
         "vote_events": MNVoteScraper,
         # "events": MNEventScraper,
     }
-    parties = [{'name': 'Republican'},
-               {'name': 'Democratic-Farmer-Labor'}]
     legislative_sessions = [
         {
             '_scraped_name': '86th Legislature, 2009-2010',

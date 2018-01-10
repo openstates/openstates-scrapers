@@ -16,11 +16,6 @@ class NewHampshire(Jurisdiction):
         'committees': NHCommitteeScraper,
         'bills': NHBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Libertarian'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 Session",
