@@ -3,7 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import AKBillScraper
-#from .events import AKEventScraper
+# from .events import AKEventScraper
 from .people import AKPersonScraper
 from .committees import AKCommitteeScraper
 
