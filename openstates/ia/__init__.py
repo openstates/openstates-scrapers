@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
-from .events import IAEventScraper
+# from .events import IAEventScraper
 
 
 class Iowa(Jurisdiction):
@@ -17,7 +17,7 @@ class Iowa(Jurisdiction):
         'people': IAPersonScraper,
         'bills': IABillScraper,
         'votes': IAVoteScraper,
-        'events': IAEventScraper,
+        # 'events': IAEventScraper,
     }
     parties = [
         {'name': 'Republican'},

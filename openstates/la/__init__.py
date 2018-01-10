@@ -2,7 +2,7 @@ from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .people import LAPersonScraper
 from .committees import LACommitteeScraper
-from .events import LAEventScraper
+# from .events import LAEventScraper
 from .bills import LABillScraper
 
 
@@ -14,7 +14,7 @@ class Louisiana(Jurisdiction):
     scrapers = {
         "people": LAPersonScraper,
         "committees": LACommitteeScraper,
-        'events': LAEventScraper,
+        # 'events': LAEventScraper,
         'bills': LABillScraper,
     }
     parties = [

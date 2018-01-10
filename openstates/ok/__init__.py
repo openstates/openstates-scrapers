@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import OKPersonScraper
 from .committees import OKCommitteeScraper
-from .events import OKEventScraper
+# from .events import OKEventScraper
 from .bills import OKBillScraper
 
 
@@ -13,7 +13,7 @@ class Oklahoma(Jurisdiction):
     scrapers = {
         'people': OKPersonScraper,
         'committees': OKCommitteeScraper,
-        'events': OKEventScraper,
+        # 'events': OKEventScraper,
         'bills': OKBillScraper,
     }
     parties = [
