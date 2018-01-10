@@ -74,6 +74,12 @@ metadata = dict(
             'type': 'special',
             'display_name': '2017 First Extraordinary Session',
          },
+         '2018A': {
+             'type': 'primary',
+             'display_name': '2018 Regular Session',
+             '_scraped_name': "2018 Regular Session",
+             '_data_id': '45771'
+          },
     },
     feature_flags=['influenceexplorer'],
     _ignored_scraped_sessions=[
