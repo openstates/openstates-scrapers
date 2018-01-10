@@ -15,7 +15,9 @@ bill_type_map = {
     'CR': 'concurrent resolution',
     'JR': 'joint resolution',
     'CO': 'concurrent order',
-    'A': 'address',
+    # really "bill of address";
+    # see https://github.com/opencivicdata/python-opencivicdata/issues/115
+    'A': 'bill',
 }
 action_classifiers = [
     ('Minority Committee Report', None),        # avoid calling these passage
