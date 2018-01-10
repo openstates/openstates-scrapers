@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 from .people import ARLegislatorScraper
 from .bills import ARBillScraper
 from .committees import ARCommitteeScraper
-from .events import AREventScraper
+# from .events import AREventScraper
 
 
 class Arkansas(Jurisdiction):
@@ -16,7 +16,7 @@ class Arkansas(Jurisdiction):
         'people': ARLegislatorScraper,
         'committees': ARCommitteeScraper,
         'bills': ARBillScraper,
-        'events': AREventScraper
+        # 'events': AREventScraper
     }
     parties = [
         {'name': 'Republican'},

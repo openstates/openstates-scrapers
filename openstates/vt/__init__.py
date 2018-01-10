@@ -3,7 +3,7 @@ from openstates.utils import url_xpath
 from .people import VTPersonScraper
 from .committees import VTCommitteeScraper
 from .bills import VTBillScraper
-from .events import VTEventScraper
+# from .events import VTEventScraper
 
 
 class Vermont(Jurisdiction):
@@ -15,7 +15,7 @@ class Vermont(Jurisdiction):
         'people': VTPersonScraper,
         'committees': VTCommitteeScraper,
         'bills': VTBillScraper,
-        'events': VTEventScraper
+        # 'events': VTEventScraper
     }
     parties = [
         {'name': 'Republican'},

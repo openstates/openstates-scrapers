@@ -6,7 +6,7 @@ from .bills import MNBillScraper
 from .committees import MNCommitteeScraper
 from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
-from .events import MNEventScraper
+# from .events import MNEventScraper
 
 """
 Minnesota legislative data can be found at the Office of the Revisor
@@ -31,7 +31,7 @@ class Minnesota(Jurisdiction):
         "committees": MNCommitteeScraper,
         "people": MNPersonScraper,
         "vote_events": MNVoteScraper,
-        "events": MNEventScraper,
+        # "events": MNEventScraper,
     }
     parties = [{'name': 'Republican'},
                {'name': 'Democratic-Farmer-Labor'}]
