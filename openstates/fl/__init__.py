@@ -3,7 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
 from .people import FlPersonScraper
 from .committees import FlCommitteeScraper
-from .events import FlEventScraper
+# from .events import FlEventScraper
 from openstates.utils import url_xpath
 
 
@@ -17,7 +17,7 @@ class Florida(Jurisdiction):
         "bills": FlBillScraper,
         "people": FlPersonScraper,
         "committees": FlCommitteeScraper,
-        "events": FlEventScraper,
+        # "events": FlEventScraper,
     }
     parties = [{'name': 'Republican'},
                {'name': 'Democratic'}]

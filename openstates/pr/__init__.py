@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import PRPersonScraper
-from .events import PREventScraper
+# from .events import PREventScraper
 from .committees import PRCommitteeScraper
 from .bills import PRBillScraper
 
@@ -14,7 +14,7 @@ class PuertoRico(Jurisdiction):
     url = "http://www.oslpr.org/"
     scrapers = {
         'people': PRPersonScraper,
-        'events': PREventScraper,
+        # 'events': PREventScraper,
         'committees': PRCommitteeScraper,
         'bills': PRBillScraper,
     }

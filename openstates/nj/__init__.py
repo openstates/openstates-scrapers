@@ -2,7 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from .bills import NJBillScraper
-from .events import NJEventScraper
+# from .events import NJEventScraper
 from .people import NJPersonScraper
 from .committees import NJCommitteeScraper
 
@@ -17,7 +17,7 @@ class NewJersey(Jurisdiction):
     url = "http://www.njleg.state.nj.us/"
     scrapers = {
         'bills': NJBillScraper,
-        'events': NJEventScraper,
+        # 'events': NJEventScraper,
         'people': NJPersonScraper,
         'committees': NJCommitteeScraper,
     }
@@ -56,7 +56,14 @@ class NewJersey(Jurisdiction):
             "name": "2016-2017 Regular Session",
             "start_date": "2016-01-12",
             "end_date": "2018-01-09"
-        }
+        },
+        {
+            "_scraped_name": "2018-2019",
+            "identifier": "218",
+            "name": "2018-2019 Regular Session",
+            "start_date": "2018-01-08",
+            "end_date": "2019-01-09"
+        },
     ]
     ignored_scraped_sessions = [
         "2006-2007",

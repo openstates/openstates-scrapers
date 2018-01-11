@@ -2,7 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .people import OHLegislatorScraper
-from .events import OHEventScraper
+# from .events import OHEventScraper
 from .bills import OHBillScraper
 
 
@@ -13,7 +13,7 @@ class Ohio(Jurisdiction):
     url = "http://www.legislature.state.oh.us/"
     scrapers = {
         'people': OHLegislatorScraper,
-        'events': OHEventScraper,
+        # 'events': OHEventScraper,
         'bills': OHBillScraper,
     }
     parties = [

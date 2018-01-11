@@ -3,8 +3,8 @@ from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .bills import IlBillScraper
 from .people import IlPersonScraper
-from .events import IlEventScraper
-from .committees import IlCommitteeScraper
+# from .events import IlEventScraper
+# from .committees import IlCommitteeScraper
 
 
 class Illinois(Jurisdiction):
@@ -15,8 +15,8 @@ class Illinois(Jurisdiction):
     scrapers = {
         "bills": IlBillScraper,
         "people": IlPersonScraper,
-        "events": IlEventScraper,
-        "committees": IlCommitteeScraper,
+        # "events": IlEventScraper,
+        # "committees": IlCommitteeScraper,
     }
 
     parties = [{'name': 'Republican'},
@@ -49,9 +49,9 @@ class Illinois(Jurisdiction):
         {'name': '99th Regular Session', 'identifier': '99th', 'classification': 'primary',
          '_scraped_name': '99   (2015-2016)',
          },
-        {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
         {'name': '100th Special Session', 'identifier': '100th-special',
-         'classification': 'special'}
+         'classification': 'special'},
+        {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
     ]
 
     ignored_scraped_sessions = [

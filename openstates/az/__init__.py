@@ -6,7 +6,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from .people import AZPersonScraper
 from .committees import AZCommitteeScraper
-from .events import AZEventScraper
+# from .events import AZEventScraper
 from .bills import AZBillScraper
 
 
@@ -18,7 +18,7 @@ class Arizona(Jurisdiction):
     scrapers = {
         'people': AZPersonScraper,
         'committees': AZCommitteeScraper,
-        'events': AZEventScraper,
+        # 'events': AZEventScraper,
         'bills': AZBillScraper,
     }
     parties = [

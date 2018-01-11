@@ -1,6 +1,6 @@
 from .people import DEPersonScraper
 from .bills import DEBillScraper
-from .events import DEEventScraper
+# from .events import DEEventScraper
 from .committees import DECommitteeScraper
 
 from openstates.utils import url_xpath
@@ -16,7 +16,7 @@ class Delaware(Jurisdiction):
     scrapers = {
         'people': DEPersonScraper,
         'bills': DEBillScraper,
-        'events': DEEventScraper,
+        # 'events': DEEventScraper,
         'committees': DECommitteeScraper,
     }
     parties = [
