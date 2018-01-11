@@ -10,9 +10,12 @@ state=$1
 shift
 
 # The gentleman's delivery/deployment hehe
+#
+# NOTE: noop the git pull call in case it fails
+# @see https://stackoverflow.com/a/40650331/1858091
 ( cd /opt/openstates/openstates && \
   git stash && \
-  git pull origin scratch-pupa-google-pubsub-output )
+  ( git pull origin scratch-pupa-google-pubsub-output || : ) )
 
 export PYTHONPATH=./openstates
 
