@@ -7,8 +7,7 @@ class HouseComList(Page):
     list_xpath = "//a[contains(@href, 'committeesdetail.aspx')]"
 
     def handle_page(self):
-        # don't use handle_page_item because we need to look back at prior
-        # element
+        # don't use handle_page_item because we need to look back at prior element
         parent = None
 
         for item in self.doc.xpath(self.list_xpath):
@@ -26,7 +25,7 @@ class HouseComList(Page):
 
             # parent for next time
             if 'parentcommittee' in cssclass:
-                parent = {'name': name, 'classification': 'lower'}
+                parent = comm._id
                 chamber = None
 
 
@@ -76,9 +75,11 @@ class SenComDetail(Page):
     def handle_page(self):
         name = self.doc.xpath('//h2[@class="committeeName"]')[0].text
         if name.startswith('Appropriations Subcommittee'):
-            name = name.replace('Appropriations ', '')
-            parent = {'name': 'Appropriations', 'classification': 'upper'}
-            chamber = None
+            return
+            # TODO: restore scraping of Appropriations Subcommittees
+            # name = name.replace('Appropriations ', '')
+            # parent = {'name': 'Appropriations', 'classification': 'upper'}
+            # chamber = None
         else:
             if name.startswith('Committee on'):
                 name = name.replace('Committee on ', '')
