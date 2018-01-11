@@ -13,12 +13,16 @@ class KYCommitteeScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        urls = [("http://www.lrc.ky.gov/committee/standing_house.htm", 'lower')] \
-            if chamber == 'lower' else [
+        if chamber == 'lower':
+            urls = [("http://www.lrc.ky.gov/committee/standing_house.htm", 'lower')]
+        else:
+            urls = [
                 ("http://www.lrc.ky.gov/committee/standing_senate.htm", 'upper'),
-                ("http://www.lrc.ky.gov/committee/interim.htm", 'upper'),
-                ("http://www.lrc.ky.gov/committee/statutory.htm", 'joint')
+                # ("http://www.lrc.ky.gov/committee/interim.htm", 'upper'),
+                ("http://www.lrc.ky.gov/committee/statutory.htm", 'legislature')
             ]
+
+        self.parents = {}
 
         for url_info in urls:
             url = url_info[0]
@@ -37,8 +41,7 @@ class KYCommitteeScraper(Scraper):
             ]
 
             for exp in cttypages:
-                linkz = page.xpath(exp)
-                links = links + linkz
+                links += page.xpath(exp)
 
             for link in links:
                 yield from self.scrape_committee(chamber, link)
@@ -51,18 +54,16 @@ class KYCommitteeScraper(Scraper):
             name = name.split("Subcommittee")[1]
             name = name.replace(" on ", "").replace(" On ", "")
             name = name.strip()
-            comm = Organization(name,
-                                parent_id={'name': parent_comm,
-                                           'classification': chamber},
+            comm = Organization(name, parent_id=self.parents[parent_comm],
                                 classification='committee')
         else:
             for c in ["Committee", "Comm", "Sub", "Subcommittee"]:
                 if name.endswith(c):
                     name = name[:-1*len(c)].strip()
             comm = Organization(name, chamber=chamber, classification='committee')
+            self.parents[name] = comm._id
         comm.add_source(home_link)
-        comm_url = home_link.replace(
-            'home.htm', 'members.htm')
+        comm_url = home_link.replace('home.htm', 'members.htm')
         self.scrape_members(comm, comm_url)
 
         if comm._related:
