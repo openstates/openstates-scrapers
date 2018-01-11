@@ -109,6 +109,8 @@ class Virginia(Jurisdiction):
             "_scraped_name": "2018 Session",
             "identifier": "2018",
             "name": "2018 Regular Session",
+            "start_date": "2018-01-10",
+            "end_date": "2018-03-10",
         },
     ]
     ignored_scraped_sessions = [
