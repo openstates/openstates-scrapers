@@ -13,15 +13,12 @@ class NDCommitteeScraper(Scraper):
 
         if '/joint/' in href:
             chamber = 'legislature'
-        elif '/interim/' in href:
-            # Better to scrape the interim committees as joint,
-            # rather than miss them altogether
-            chamber = 'legislature'
         elif '/senate/' in href:
             chamber = 'upper'
         elif '/house/' in href:
             chamber = 'lower'
         else:
+            # interim committees and others were causing duplicate committee issues, skipping
             self.warning('Failed to identify chamber for {}; skipping'.format(href))
             return
 

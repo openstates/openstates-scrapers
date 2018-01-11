@@ -5,7 +5,7 @@ from openstates.utils import url_xpath
 from .bills import AKBillScraper
 # from .events import AKEventScraper
 from .people import AKPersonScraper
-from .committees import AKCommitteeScraper
+# from .committees import AKCommitteeScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=600)
 
@@ -19,7 +19,7 @@ class Alaska(Jurisdiction):
         'bills': AKBillScraper,
         # 'events': AKEventScraper,
         'people': AKPersonScraper,
-        'committees': AKCommitteeScraper,
+        # 'committees': AKCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},

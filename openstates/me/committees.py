@@ -84,7 +84,7 @@ class MECommitteeScraper(Scraper):
         # Special default dict.
         class Committees(dict):
             def __missing__(self, key):
-                val = Organization(chamber='joint', name=key, classification='committee')
+                val = Organization(chamber='legislature', name=key, classification='committee')
                 self[key] = val
                 return val
         committees = Committees()

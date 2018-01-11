@@ -35,7 +35,7 @@ class GACommitteeScraper(Scraper):
             comchamber = {
                 "House": "lower",
                 "Senate": "upper",
-                "Joint": "joint"
+                "Joint": "legislature"
             }[typ]
             ctty_key = '{}-{}'.format(typ, code)
             if ctty_key not in self.ctty_cache:
@@ -65,7 +65,7 @@ class GACommitteeScraper(Scraper):
                         # Create subcommittee.
                         subctty = Organization(
                             name=subcommittee, classification='committee',
-                            parent_id={'classification': comchamber, 'name': comname})
+                            parent_id=ctty._id)
                         subctty.extras = {
                             'guid': subguid,
                         }

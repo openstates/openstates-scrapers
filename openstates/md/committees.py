@@ -65,6 +65,7 @@ class MDCommitteeScraper(Scraper):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
+        self.parents = {}
 
         for a in doc.xpath('//a[contains(@href, "cmtepage")]'):
             url = a.get('href')
@@ -95,7 +96,9 @@ class MDCommitteeScraper(Scraper):
                 self.logger.warning("No committee chamber available for committee '%s'" % com_name)
                 continue
 
-            yield from self.scrape_committee(chamber, com_name, url)
+            com = self.scrape_committee(chamber, com_name, url)
+            self.parents[(chamber, com_name)] = com._id
+            yield com
 
         for a in doc.xpath('//a[contains(@href, "AELR")]'):
             url = a.get('href')
@@ -106,7 +109,9 @@ class MDCommitteeScraper(Scraper):
                 continue
             com_name = clean_name(com_name)
 
-            yield from self.scrape_committee(chamber, com_name, url)
+            com = self.scrape_committee(chamber, com_name, url)
+            self.parents[(chamber, com_name)] = com._id
+            yield com
 
     def scrape_committee(self, chamber, com_name, url):
         html = self.get(url).text
@@ -126,7 +131,7 @@ class MDCommitteeScraper(Scraper):
                     sub_name = sub_name.replace("Subcommittee", "").strip()
                     com = Organization(
                         name=sub_name, classification='committee',
-                        parent_id={'name': com_name, 'classification': chamber})
+                        parent_id=self.parents[(chamber, com_name)])
                     com.add_source(url)
 
                 for row in rows[1:]:
@@ -134,7 +139,7 @@ class MDCommitteeScraper(Scraper):
                     name, role = define_role(name)
                     com.add_member(name, role)
 
-                yield com
+                return com
         else:
             table_source = doc.xpath('//table[@class="noncogrid"]')
 
@@ -148,18 +153,18 @@ class MDCommitteeScraper(Scraper):
                         sub_name = sub_name.replace("Subcommittee", "").strip()
                         com = Organization(
                             name=sub_name, classification='committee',
-                            parent_id={'name': com_name, 'classification': chamber})
+                            parent_id=self.parents[(chamber, com_name)])
                         com.add_source(url)
 
                     for name in row:
                         name, role = define_role(name)
                         com.add_member(name, role)
 
-                    yield com
+                    return com
             else:
                 row = doc.xpath('//table[@class="spco"]/tr[1]/td/text()')
                 for name in row:
                     name, role = define_role(name)
                     com.add_member(name, role)
 
-                yield com
+                return com
