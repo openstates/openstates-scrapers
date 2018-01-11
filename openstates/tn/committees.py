@@ -38,6 +38,7 @@ class TNCommitteeScraper(Scraper):
         'lower': 'house',
         'upper': 'senate'
     }
+    parents = {}
 
     def scrape(self, chamber=None):
         if chamber:
@@ -92,11 +93,11 @@ class TNCommitteeScraper(Scraper):
         if is_subcommittee:
             # All TN subcommittees are just the name of the parent committee with " Subcommittee"
             # at the end
-            parent_committee_name = re.sub(r'\s*Subcommittee\s*', '', committee_name)
+            parent_committee_name = re.sub(r'\s*(Study )?Subcommittee\s*', '', committee_name)
             com = Organization(
                     committee_name,
                     classification='committee',
-                    parent_id={'name': parent_committee_name, 'classification': chamber},
+                    parent_id=self.parents[parent_committee_name]
                     )
         else:
             com = Organization(
@@ -104,6 +105,7 @@ class TNCommitteeScraper(Scraper):
                 chamber=chamber,
                 classification='committee',
             )
+            self.parents[committee_name] = com._id
 
         OFFICER_SEARCH = '//h2[contains(text(), "Committee Officers")]/' \
                          'following-sibling::div/ul/li/a'
@@ -148,7 +150,7 @@ class TNCommitteeScraper(Scraper):
         if 'state.tn.us' in url:
             com = Organization(
                 committee_name,
-                chamber='joint',
+                chamber='legislature',
                 classification='committee',
             )
             try:
@@ -183,7 +185,7 @@ class TNCommitteeScraper(Scraper):
         elif 'gov-opps' in url:
             com = Organization(
                 committee_name,
-                chamber='joint',
+                chamber='legislature',
                 classification='committee',
             )
             page = self.get(url).text
@@ -223,4 +225,4 @@ class TNCommitteeScraper(Scraper):
             return com
 
         else:
-            return self._scrape_committee(committee_name, url, 'joint')
+            return self._scrape_committee(committee_name, url, 'legislature')
