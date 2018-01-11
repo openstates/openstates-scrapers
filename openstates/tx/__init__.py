@@ -5,7 +5,7 @@ from .bills import TXBillScraper
 from .committees import TXCommitteeScraper
 # from .events import TXEventScraper
 from .people import TXPersonScraper
-from .votes import TXVoteScraper
+# from .votes import TXVoteScraper
 
 
 class Texas(Jurisdiction):
@@ -17,7 +17,8 @@ class Texas(Jurisdiction):
         'people': TXPersonScraper,
         'committees': TXCommitteeScraper,
         'bills': TXBillScraper,
-        'votes': TXVoteScraper,
+        # Re-enable vote scraper when adding next regular session
+        # 'votes': TXVoteScraper,
         # 'events': TXEventScraper
     }
     parties = [
@@ -113,6 +114,7 @@ class Texas(Jurisdiction):
             "name": "85nd Legislature, 1st Called Session (2017)",
             "start_date": "2017-07-10"
         }
+        # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
         "80(R) - 2007",
