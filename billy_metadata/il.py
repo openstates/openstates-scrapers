@@ -23,7 +23,7 @@ metadata = {
                              'start_year': 2013, 'end_year': 2014},
                     {'name': '99th', 'sessions': ['99th'],
                              'start_year': 2015, 'end_year': 2016},
-                    {'name': '100th', 'sessions': ['100th', '100th-special'],
+                    {'name': '100th', 'sessions': ['100th-special', '100th'],
                              'start_year': 2017, 'end_year': 2018},
                 ],
         'feature_flags': ['events', 'influenceexplorer'],
