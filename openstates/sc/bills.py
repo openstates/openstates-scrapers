@@ -139,9 +139,13 @@ class SCBillScraper(Scraper):
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.downgraded_http_post(subject_search_url,
-                         data=dict((('GETINDEX', 'Y'), ('SESSION', session_code),
-                                    ('INDEXCODE', '0'), ('INDEXTEXT', ''),
-                                    ('AORB', 'B'), ('PAGETYPE', '0')))).text
+                                         data=dict((
+                                            ('GETINDEX', 'Y'),
+                                            ('SESSION', session_code),
+                                            ('INDEXCODE', '0'),
+                                            ('INDEXTEXT', ''),
+                                            ('AORB', 'B'),
+                                            ('PAGETYPE', '0')))).text
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
