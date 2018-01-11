@@ -114,11 +114,11 @@ class SCBillScraper(Scraper):
 
     @toggle_http_version
     def downgraded_http_get(self, url, params=None, **kwargs):
-        return self.get(url, params, **kwargs)
+        return self.get(url, params=params, **kwargs)
 
     @toggle_http_version
     def downgraded_http_post(self, url, data=None, json=None, **kwargs):
-        return self.post(url, data, json, **kwargs)
+        return self.post(url, data=data, json=json, **kwargs)
 
     def scrape_subjects(self, session):
         """
