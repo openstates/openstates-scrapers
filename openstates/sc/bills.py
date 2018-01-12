@@ -4,6 +4,7 @@ import datetime
 import os
 import re
 from collections import defaultdict
+from functools import wraps
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
@@ -14,8 +15,28 @@ import lxml.html
 # @see https://stackoverflow.com/a/37818792/1858091
 import http.client
 
-http.client.HTTPConnection._http_vsn = 10
-http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+_HTTP_VSN = http.client.HTTPConnection._http_vsn
+_HTTP_VSN_STR = http.client.HTTPConnection._http_vsn_str
+
+
+def downgrade_http_version():
+    http.client.HTTPConnection._http_vsn = 10
+    http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+
+
+def undo_downgrade_http_version():
+    http.client.HTTPConnection._http_vsn = _HTTP_VSN
+    http.client.HTTPConnection._http_vsn_str = _HTTP_VSN_STR
+
+
+def toggle_http_version(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        downgrade_http_version
+        response = method(self, *args, **kwargs)
+        undo_downgrade_http_version
+        return response
+    return wrapper
 
 
 def action_type(action):
@@ -91,6 +112,14 @@ class SCBillScraper(Scraper):
 
     _subjects = defaultdict(set)
 
+    @toggle_http_version
+    def downgraded_http_get(self, url, params=None, **kwargs):
+        return self.get(url, params=params, **kwargs)
+
+    @toggle_http_version
+    def downgraded_http_post(self, url, data=None, json=None, **kwargs):
+        return self.post(url, data=data, json=json, **kwargs)
+
     def scrape_subjects(self, session):
         """
         Obtain bill subjects, which will be saved onto _subjects global,
@@ -109,10 +138,14 @@ class SCBillScraper(Scraper):
         }[session]
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
-        data = self.post(subject_search_url,
-                         data=dict((('GETINDEX', 'Y'), ('SESSION', session_code),
-                                    ('INDEXCODE', '0'), ('INDEXTEXT', ''),
-                                    ('AORB', 'B'), ('PAGETYPE', '0')))).text
+        data = self.downgraded_http_post(subject_search_url,
+                                         data=dict((
+                                            ('GETINDEX', 'Y'),
+                                            ('SESSION', session_code),
+                                            ('INDEXCODE', '0'),
+                                            ('INDEXTEXT', ''),
+                                            ('AORB', 'B'),
+                                            ('PAGETYPE', '0')))).text
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
@@ -120,7 +153,7 @@ class SCBillScraper(Scraper):
             code = option.get('value')
             url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
                                                          session_code, code)
-            data = self.get(url).text
+            data = self.downgraded_http_get(url).text
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
                 match = re.match('(?:H|S) \d{4}', bill.text)
@@ -137,7 +170,7 @@ class SCBillScraper(Scraper):
         :param vurl: source for the voteEvent information.
         :return: voteEvent object
         """
-        html = self.get(vurl).text
+        html = self.downgraded_http_get(vurl).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(vurl)
 
@@ -260,7 +293,7 @@ class SCBillScraper(Scraper):
         :param bill_id:
         :return:
         """
-        page = self.get(bill_detail_url).text
+        page = self.downgraded_http_get(bill_detail_url).text
 
         if 'INVALID BILL NUMBER' in page:
             self.warning('INVALID BILL %s' % bill_detail_url)
@@ -320,7 +353,7 @@ class SCBillScraper(Scraper):
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]
-        version_html = self.get(version_url).text
+        version_html = self.downgraded_http_get(version_url).text
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
@@ -388,7 +421,7 @@ class SCBillScraper(Scraper):
             index_url = self.urls[chamber]['daily-bill-index']
             chamber_letter = 'S' if chamber == 'upper' else 'H'
 
-            page = self.get(index_url).text
+            page = self.downgraded_http_get(index_url).text
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(index_url)
 
@@ -396,7 +429,7 @@ class SCBillScraper(Scraper):
             days = doc.xpath('//div/b/a/@href')
             for day_url in days:
                 try:
-                    data = self.get(day_url).text
+                    data = self.downgraded_http_get(day_url).text
                 except scrapelib.HTTPError:
                     continue
 
@@ -411,7 +444,7 @@ class SCBillScraper(Scraper):
 
             prefile_url = self.urls[chamber]['prefile-index']\
                               .format(last_two_digits_of_session_year=session[2:4])
-            page = self.get(prefile_url).text
+            page = self.downgraded_http_get(prefile_url).text
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(prefile_url)
 
@@ -423,7 +456,7 @@ class SCBillScraper(Scraper):
 
             for day_url in days:
                 try:
-                    data = self.get(day_url).text
+                    data = self.downgraded_http_get(day_url).text
                 except scrapelib.HTTPError:
                     continue
 
