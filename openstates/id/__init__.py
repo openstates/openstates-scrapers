@@ -77,6 +77,14 @@ class Idaho(Jurisdiction):
             "identifier": "2017",
             "name": "64th Legislature, 1st Regular Session (2017)",
             "start_date": "2017-01-09"
+        },
+        {
+            "_scraped_name": "2018 Session",
+            "classification": "primary",
+            "end_date": "2018-03-27",
+            "identifier": "2018",
+            "name": "64th Legislature, 2nd Regular Session (2018)",
+            "start_date": "2018-01-08"
         }
     ]
     ignored_scraped_sessions = [
