@@ -24,7 +24,7 @@ metadata = {
          },
         {'name': '2017-2018',
          'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017', '20171S', '20172S'],
+         'sessions': ['2017', '20171S', '20172S', '2018'],
          },
         ],
     'session_details': {
