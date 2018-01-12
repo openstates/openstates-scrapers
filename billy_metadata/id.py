@@ -75,7 +75,7 @@ metadata = {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017'],
+            'sessions': ['2017', '2018'],
         },
     ],
     'session_details': {
@@ -202,6 +202,13 @@ metadata = {
             'end_date': datetime.date(2017, 4, 7),
             'display_name': '64th Legislature, 1st Regular Session (2017)',
             '_scraped_name': '2017 Session',
+        },
+        '2018' : {
+            'type': 'primary',
+            'start_date': datetime.date(2018, 1, 8),
+            'end_date': datetime.date(2018, 3, 27),
+            'display_name': '64th Legislature, 2nd Regular Session (2018)',
+            '_scraped_name': '2018 Session',
         },
     },
     'feature_flags': ['influenceexplorer'],
