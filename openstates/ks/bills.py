@@ -188,15 +188,19 @@ class KSBillScraper(Scraper):
                 try:
                     count = int(i[i.find("(") + 1:i.find(")")])
                 except ValueError:
+                    # This is likely not a vote-count text chunk
+                    # It's probably '`On roll call the vote was:`
                     pass
-                if "yea" in i.lower():
-                    yes_count = count
-                elif "nay" in i.lower():
-                    no_count = count
-                elif "present" in i.lower():
-                    p_count = count
-                elif "absent" in i.lower():
-                    a_count = count
+                else:
+                    if "yea" in i.lower():
+                        yes_count = count
+                    elif "nay" in i.lower():
+                        no_count = count
+                    elif "present" in i.lower():
+                        p_count = count
+                    elif "absent" in i.lower():
+                        a_count = count
+
             vote = VoteEvent(
                 bill=bill,
                 start_date=vote_date.strftime('%Y-%m-%d'),
