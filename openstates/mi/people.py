@@ -45,11 +45,11 @@ class MIPersonScraper(Scraper):
             party = metainf['party'].text_content().strip()
             phone = metainf['phone'].text_content().strip()
             email = metainf['email'].text_content().strip()
-            leg_url = metainf['website'].xpath("./a")[0].attrib['href']
             name = metainf['name'].text_content().strip()
             if name == 'Vacant' or re.match(r'^District \d{1,3}$', name):
                 self.warning('District {} appears vacant, and will be skipped'.format(district))
                 continue
+            leg_url = metainf['website'].xpath("./a")[0].attrib['href']
 
             office = metainf['location'].text_content().strip()
             office = re.sub(
@@ -157,10 +157,6 @@ class MIPersonScraper(Scraper):
             yield person
 
     def get_photo_url(self, url):
-        # broken URL, special cased
-        if 'winnie-brinks' in url:
-            url = 'https://housedems.com/brinks'
-
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
