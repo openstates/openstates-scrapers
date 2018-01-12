@@ -1,46 +1,51 @@
-import re
-
 from pupa.scrape import Scraper, Organization
-from openstates.utils import LXMLMixin
 
 
-class UTCommitteeScraper(Scraper, LXMLMixin):
-
+class UTCommitteeScraper(Scraper):
     def scrape(self, chamber=None):
-        url = "http://le.utah.gov/asp/interim/Main.asp?ComType=All&Year=2015&List=2#Results"
-        page = self.lxmlize(url)
+        committees_url = 'http://le.utah.gov/data/committees.json'
+        committees = self.get(committees_url).json()['committees']
 
-        for comm_link in page.xpath("//a[contains(@href, 'Com=')]"):
-            comm_name = comm_link.text.strip()
+        people_url = 'http://le.utah.gov/data/legislators.json'
+        people = self.get(people_url).json()['legislators']
 
-            if "House" in comm_name:
-                chamber = "lower"
-            elif "Senate" in comm_name:
-                chamber = "upper"
+        # The committee JSON only has legislator IDs, not names
+        ids_to_names = {}
+        for person in people:
+            ids_to_names[person['id']] = person['formatName']
+
+        for committee in committees:
+            name = committee['description']
+            if name.endswith(' Committee'):
+                name = name[:len(name) - len(' Committee')]
+            elif name.endswith(' Subcommittee'):
+                name = name[:len(name) - len(' Subcommittee')]
+            if name.startswith('House '):
+                name = name[len('House '):]
+                chamber = 'lower'
+            elif name.startswith('Senate '):
+                name = name[len('Senate '):]
+                chamber = 'upper'
             else:
-                chamber = "legislature"
+                chamber = 'joint'
 
-            # Drop leading "House" or "Senate" from name
-            comm_name = re.sub(r"^(House|Senate) ", "", comm_name)
-            comm = Organization(name=comm_name, chamber=chamber,
-                                classification='committee')
-            committee_page = self.lxmlize(comm_link.attrib['href'])
+            c = Organization(
+                chamber=chamber,
+                name=name,
+                classification='committee'
+            )
+            c.add_source(committees_url)
+            c.add_source(people_url)
+            c.add_link(committee['link'])
 
-            for mbr_link in committee_page.xpath(
-                    "//table[@class='memberstable']//a"):
+            for member in committee['members']:
+                try:
+                    member_name = ids_to_names[member['id']]
+                except KeyError:
+                    self.warning(
+                        "Found unknown legislator ID in committee JSON: " +
+                        member['id']
+                    )
+                c.add_member(member_name, role=member['position'])
 
-                name = mbr_link.text.strip()
-                name = re.sub(r' \([A-Z]\)$', "", name)
-                name = re.sub(r'^Sen. ', "", name)
-                name = re.sub(r'^Rep. ', "", name)
-
-                role = mbr_link.tail.strip().strip(",").strip()
-                typ = "member"
-                if role:
-                    typ = role
-                comm.add_member(name, typ)
-
-            comm.add_source(url)
-            comm.add_source(comm_link.get('href'))
-
-            yield comm
+            yield c
