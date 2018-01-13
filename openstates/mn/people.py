@@ -50,6 +50,9 @@ class SenList(CSV):
     def handle_list_item(self, row):
         if not row['First Name']:
             return
+        # This Dan Schoen hack very probably can be removed after April 2018.
+        if row['First Name'] == 'Dan' and row['Last Name'] == 'Schoen':
+            return
         name = '{} {}'.format(row['First Name'], row['Last Name'])
         party = PARTIES[row['Party']]
         leg = Person(name=name, district=row['District'].lstrip('0'),
