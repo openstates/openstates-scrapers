@@ -53,7 +53,9 @@ To run all tests::
 
   docker-compose run --rm --entrypoint=nosetests scrape /srv/openstates-web/openstates
 
-Note that Illinois (il) is the only state with tests right now.
+Note that Illinois is the only state with scraper tests right now.
+
+Our scraping framework, Pupa, has a strong test harness, and requires well-structured data when ingesting. Furthermore, Open States scrapers should be written to fail when they encounter unexpected data, rather than guessing at its format and possibly ingesting bad data. Together, this means that there aren't many benefits to writing unit tests for particular Open States scrapers, versus relatively high upkeep costs.
 
 API Keys
 ========
