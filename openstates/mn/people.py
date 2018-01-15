@@ -100,7 +100,6 @@ class SenList(CSV):
         return leg
 
     def handle_page(self):
-        logger = logging.getLogger("pupa")
         yield super(SenList, self).handle_page()
         if not self.danSchoenSeen:
             raise AssertionError('Dan Schoen not seen, remove his kludge')
