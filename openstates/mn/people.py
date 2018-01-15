@@ -106,6 +106,7 @@ class SenList(CSV):
             logger.error('Dan Schoen not seen, remove his kludge')
             # https://github.com/openstates/openstates/pull/2088
 
+
 class RepList(Page):
     url = 'http://www.house.leg.state.mn.us/members/hmem.asp'
     list_xpath = '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr'
