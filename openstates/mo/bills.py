@@ -415,6 +415,9 @@ class MOBillScraper(Scraper, LXMLMixin):
         triplet = bill_id[:3]
         if triplet in bill_types:
             bill_type = bill_types[triplet]
+            bill_number = int(bill_id[4:])
+        else:
+            bill_number = int(bill_id[3:])
 
         subs = []
         bid = bill_id.replace(" ", "")
@@ -426,7 +429,7 @@ class MOBillScraper(Scraper, LXMLMixin):
         self.info(bid)
 
         if bill_desc == "":
-            if int(bid[2:]) <= 20:
+            if bill_number <= 20:
                 # blank bill titles early in session are approp. bills
                 bill_desc = 'Appropriations Bill'
             else:
