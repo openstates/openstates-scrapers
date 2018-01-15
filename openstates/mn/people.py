@@ -103,7 +103,7 @@ class SenList(CSV):
         logger = logging.getLogger("pupa")
         yield super(SenList, self).handle_page()
         if not self.danSchoenSeen:
-            logger.error('Dan Schoen not seen, remove his kludge')
+            raise AssertionError('Dan Schoen not seen, remove his kludge')
             # https://github.com/openstates/openstates/pull/2088
 
 
