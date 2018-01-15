@@ -78,7 +78,8 @@ class IDPersonScraper(Scraper):
             img_url = row.xpath('.//img/@src')[0]
 
             inner = row.xpath('.//div[@class="vc-column-innner-wrapper"]')[1]
-            if 'Resigned' in inner.text_content():
+            inner_text = inner.text_content()
+            if 'Resigned' in inner_text or 'Substitute' in inner_text:
                 continue
 
             name = inner.xpath('p/strong')[0].text.replace(u'\xa0', ' ').strip()
