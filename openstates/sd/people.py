@@ -10,25 +10,27 @@ class SDLegislatorScraper(Scraper):
     def scrape(self, chambers=None):
         self._committees = {}
 
-        url = 'http://www.sdlegislature.gov/Legislators/default.aspx?CurrentSession=True'
+        url = 'http://www.sdlegislature.gov/Legislators/default.aspx'
         if chambers is None:
             chambers = ['upper', 'lower']
         for chamber in chambers:
             if chamber == 'upper':
-                search = 'Senate Members'
+                search = 'Senate Legislators'
             else:
-                search = 'House Members'
+                search = 'House Legislators'
 
             page = self.get(url).text
             page = lxml.html.fromstring(page)
             page.make_links_absolute(url)
 
-            for link in page.xpath("//h4[text()='{}']/../div/a".format(search)):
+            # Legisltor listing has initially-hidden <div>s that
+            # contain the members for just a particular chamber
+            for link in page.xpath(
+                "//h4[text()='{}']".format(search) +
+                "/../span/section/table/tbody/tr/td/a"
+            ):
                 name = link.text.strip()
-
-                yield from self.scrape_legislator(name, chamber,
-                                                  '{}&Cleaned=True'.format(
-                                                    link.attrib['href']))
+                yield from self.scrape_legislator(name, chamber, link.attrib['href'])
         yield from self._committees.values()
 
     def scrape_legislator(self, name, chamber, url):
@@ -100,20 +102,19 @@ class SDLegislatorScraper(Scraper):
                                               note='District Office')
 
         legislator.add_source(url)
+        legislator.add_link(url)
 
-        comm_url = page.xpath("//a[. = 'Committees']")[0].attrib['href']
-        self.scrape_committees(legislator, comm_url, chamber)
+        (comm_table, ) = page.xpath('//div[@id="divCommittees"]/span/section/table')
+        self.scrape_committees(legislator, url, comm_table, chamber)
         yield legislator
 
-    def scrape_committees(self, leg, url, chamber):
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        leg.add_link(url)
-
-        for link in page.xpath("//a[contains(@href, 'CommitteeMem')]"):
+    def scrape_committees(self, leg, url, table, chamber):
+        for link in table.xpath("tbody/tr/td/a"):
             comm = link.text.strip()
+            if comm.startswith('Joint '):
+                chamber = 'legislature'
 
-            role = link.xpath('../following-sibling::td')[0].text_content().lower()
+            role = link.xpath('../following-sibling::td')[0].text_content().lower().strip()
 
             org = self.get_organization(comm, chamber)
             org.add_source(url)
