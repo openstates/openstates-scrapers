@@ -104,21 +104,21 @@ class SDLegislatorScraper(Scraper):
         legislator.add_source(url)
         legislator.add_link(url)
 
-        (comm_table, ) = page.xpath('//div[@id="divCommittees"]/span/section/table')
-        self.scrape_committees(legislator, url, comm_table, chamber)
+        committees = page.xpath('//div[@id="divCommittees"]/span/section/table/tbody/tr/td/a')
+        for committee in committees:
+            self.scrape_committee(legislator, url, committee, chamber)
         yield legislator
 
-    def scrape_committees(self, leg, url, table, chamber):
-        for link in table.xpath("tbody/tr/td/a"):
-            comm = link.text.strip()
-            if comm.startswith('Joint '):
-                chamber = 'legislature'
+    def scrape_committee(self, leg, url, element, chamber):
+        comm = element.text.strip()
+        if comm.startswith('Joint '):
+            chamber = 'legislature'
 
-            role = link.xpath('../following-sibling::td')[0].text_content().lower().strip()
+        role = element.xpath('../following-sibling::td')[0].text_content().lower().strip()
 
-            org = self.get_organization(comm, chamber)
-            org.add_source(url)
-            leg.add_membership(org, role=role)
+        org = self.get_organization(comm, chamber)
+        org.add_source(url)
+        leg.add_membership(org, role=role)
 
     def get_organization(self, name, chamber):
         key = (name, chamber)
