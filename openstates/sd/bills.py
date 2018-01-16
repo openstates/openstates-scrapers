@@ -72,19 +72,38 @@ class SDBillScraper(Scraper, LXMLMixin):
                 )
 
         sponsor_links = page.xpath(
-            "//td[contains(@id, 'tdSponsors')]/a")
+            '//div[@id="ctl00_ContentPlaceHolder1_ctl00_BillDetail"]' +
+            '/label[contains(text(), "Sponsors:")]' +
+            '/following-sibling::div[1]/p/a'
+        )
         for link in sponsor_links:
-            bill.add_sponsorship(
-                    link.text,
-                    classification='primary',
-                    primary=True,
-                    entity_type='person'
+            if link.attrib['href'].startswith('http://www.sdlegislature.gov/Legislators/'):
+                sponsor_type = 'person'
+            elif link.attrib['href'].startswith(
+                'http://www.sdlegislature.gov/Legislative_Session/Committees'
+            ):
+                sponsor_type = 'organization'
+            else:
+                raise ScrapeError(
+                    'Found unexpected sponsor, URL: ' +
+                    link.attrib['href']
                 )
+            bill.add_sponsorship(
+                link.text,
+                classification='primary',
+                primary=True,
+                entity_type=sponsor_type
+            )
 
         actor = chamber
         use_row = False
-        self.debug(bill_id)
-        for row in page.xpath("//table[contains(@id, 'BillActions')]/tr"):
+
+        for row in page.xpath("//table[contains(@id, 'tblBillActions')]//tr"):
+            # Some tables have null rows, that are just `<tr></tr>`
+            # Eg: sdlegislature.gov/Legislative_Session/Bills/Bill.aspx?Bill=1005&Session=2018
+            if row.text_content() == '':
+                self.debug('Skipping action table row that is completely empty')
+                continue
 
             if 'Date' in row.text_content() and 'Action' in row.text_content():
                 use_row = True
@@ -159,7 +178,7 @@ class SDBillScraper(Scraper, LXMLMixin):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
 
-        header = page.xpath("string(//h4[contains(@id, 'hdVote')])")
+        header = page.xpath("string(//h3[contains(@id, 'hdVote')])")
 
         if 'No Bill Action' in header:
             self.warning("bad vote header -- skipping")
@@ -183,13 +202,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         if motion:
             # If we can't detect a motion, skip this vote
             yes_count = int(
-                page.xpath("string(//td[contains(@id, 'tdAyes')])"))
+                page.xpath("string(//span[contains(@id, 'tdAyes')])"))
             no_count = int(
-                page.xpath("string(//td[contains(@id, 'tdNays')])"))
+                page.xpath("string(//span[contains(@id, 'tdNays')])"))
             excused_count = int(
-                page.xpath("string(//td[contains(@id, 'tdExcused')])"))
+                page.xpath("string(//span[contains(@id, 'tdExcused')])"))
             absent_count = int(
-                page.xpath("string(//td[contains(@id, 'tdAbsent')])"))
+                page.xpath("string(//span[contains(@id, 'tdAbsent')])"))
 
             passed = yes_count > no_count
 
@@ -217,14 +236,15 @@ class SDBillScraper(Scraper, LXMLMixin):
             vote.set_count('excused', excused_count)
             vote.set_count('absent', absent_count)
 
-            for td in page.xpath("//table[contains(@id, 'tblVotes')]/tr/td"):
-                if td.text in ('Aye', 'Yea'):
+            for td in page.xpath("//table[@id='tblVoteTotals']/tbody/tr/td"):
+                option_or_person = td.text.strip()
+                if option_or_person in ('Aye', 'Yea'):
                     vote.yes(td.getprevious().text.strip())
-                elif td.text == 'Nay':
+                elif option_or_person == 'Nay':
                     vote.no(td.getprevious().text.strip())
-                elif td.text == 'Excused':
+                elif option_or_person == 'Excused':
                     vote.vote('excused', td.getprevious().text.strip())
-                elif td.text == 'Absent':
+                elif option_or_person == 'Absent':
                     vote.vote('absent', td.getprevious().text.strip())
 
             yield vote
