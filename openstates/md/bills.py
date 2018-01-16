@@ -266,106 +266,6 @@ class MDBillScraper(Scraper):
         # add bill to collection
         self.save_bill(bill)
 
-    def scrape_vote(self, bill, action_text, url):
-        doc = lxml.html.fromstring(self.get(url).text)
-
-        # process action_text - might look like "Vote - Senate Floor -
-        # Third Reading Passed (46-0) - 01/16/12"
-        if action_text.startswith('Vote - Senate Floor - '):
-            action_text = action_text[22:]
-            chamber = 'upper'
-        elif action_text.startswith('Vote - House Floor - '):
-            action_text = action_text[21:]
-            chamber = 'lower'
-
-        motion, unused_date = action_text.rsplit(' - ', 1)
-        try:
-            yes_count, no_count = re.findall('\((\d+)-(\d+)\)', motion)[0]
-            yes_count = int(yes_count)
-            no_count = int(no_count)
-        except IndexError:
-            self.info("Motion text didn't contain vote totals, will get them from elsewhere")
-            yes_count = None
-            no_count = None
-
-        if 'Passed' in motion:
-            motion = motion.split(' Passed')[0]
-            passed = True
-        elif 'Adopted' in motion:
-            motion = motion.split(' Adopted')[0]
-            passed = True
-        elif 'Rejected' in motion:
-            motion = motion.split(' Rejected')[0]
-            passed = False
-        elif 'Failed' in motion:
-            motion = motion.split(' Failed')[0]
-            passed = False
-        elif 'Concur' in motion:
-            passed = True
-        elif 'Floor Amendment' in motion:
-            if yes_count and no_count:
-                passed = yes_count > no_count
-            else:
-                passed = None
-        elif 'overridden' in motion.lower():
-            passed = True
-            motion = 'Veto Override'
-        elif 'Sustained' in motion:
-            passed = False
-            motion = 'Veto Override'
-        else:
-            raise Exception('unknown motion: %s' % motion)
-        vote = VoteEvent(
-            bill=bill,
-            chamber=chamber,
-            start_date=None,
-            motion_text=motion,
-            classification='passage',
-            result='pass' if passed else 'fail',
-        )
-        vote.set_count('yes', yes_count)
-        vote.set_count('no', no_count)
-        vfunc = None
-
-        nobrs = doc.xpath('//nobr/text()')
-        for text in nobrs:
-            text = text.replace(u'\xa0', ' ')
-            if text.startswith('Calendar Date: '):
-                if vote.start_date:
-                    self.warning('two dates!, skipping rest of bill')
-                    break
-                vote.start_date = datetime.datetime.strptime(
-                    text.split(': ', 1)[1], '%b %d, %Y %H:%M %p'
-                ).strftime('%Y-%m-%d')
-            elif 'Yeas' in text and 'Nays' in text and 'Not Voting' in text:
-                yeas, nays, nv, exc, absent = re.match(
-                    (
-                        '(\d+) Yeas\s+(\d+) Nays\s+(\d+) Not Voting\s+(\d+) Excused '
-                        '\(Absent\)\s+(\d+) Absent'
-                    ), text).groups()
-                vote.set_count('yes', int(yeas))
-                vote.set_count('no', int(nays))
-                vote.set_count('other', int(nv) + int(exc) + int(absent))
-            elif 'Voting Yea' in text:
-                vfunc = 'yes'
-            elif 'Voting Nay' in text:
-                vfunc = 'no'
-            elif 'Not Voting' in text or 'Excused' in text:
-                vfunc = 'other'
-            elif vfunc:
-                if ' and ' in text:
-                    legs = text.split(' and ')
-                else:
-                    legs = [text]
-                for leg in legs:
-                    # Strip the occasional asterisk - see #1512
-                    leg = leg.rstrip('*')
-                    vote.vote(vfunc, leg)
-
-        vote.add_source(url)
-        vote.pupa_id = url      # contains vote sequence number
-        yield vote
-
     def scrape_bill(self, chamber, session, bill_id, url):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
@@ -421,7 +321,7 @@ class MDBillScraper(Scraper):
         bill.subject = subject_list
 
         # documents
-        yield from self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
+        self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
         # actions
         self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
 
@@ -471,9 +371,11 @@ class MDBillScraper(Scraper):
                                        a.tail.replace(' - ', ' ').strip(),
                                        a.get('href'), media_type='application/pdf')
             elif a.text == 'Vote - Senate Floor':
-                yield from self.scrape_vote(bill, td.text_content(), a.get('href'))
+                # TO DO: Re-write vote scraping
+                # See details on https://github.com/openstates/openstates/issues/2093
+                pass
             elif a.text == 'Vote - House Floor':
-                yield from self.scrape_vote(bill, td.text_content(), a.get('href'))
+                pass
             else:
                 raise ValueError('unknown document type: %s', a.text)
 
