@@ -5,6 +5,9 @@ from pupa.scrape import Scraper, Organization
 
 
 class MICommitteeScraper(Scraper):
+    # Find senate appropriations committee to use as parent ID
+    _senate_appropriations = None
+
     def scrape(self, chamber=None):
         if chamber == 'lower':
             yield from self.scrape_house_committees()
@@ -64,10 +67,14 @@ class MICommitteeScraper(Scraper):
         doc.make_links_absolute(url)
 
         for link in doc.xpath('//li/a[contains(@href, "/committee/")]/@href'):
-            if link.endswith('appropssubcommittee.html'):
-                yield from self.scrape_approp_subcommittees(link)
-            elif not link.endswith(('statutory.htm', 'pdf', 'taskforce.html')):
+            if not link.endswith((
+                'statutory.htm',
+                'pdf',
+                'taskforce.html',
+                'appropssubcommittee.html'
+            )):
                 yield from self.scrape_senate_committee(link)
+        yield from self.scrape_approp_subcommittees()
 
     def scrape_senate_committee(self, url):
         html = self.get(url).text
@@ -95,22 +102,24 @@ class MICommitteeScraper(Scraper):
             com.add_member(member_name, role=role)
 
         com.add_source(url)
+
+        if com.name == 'Appropriations':
+            self._senate_appropriations = com
+
         yield com
 
-    def scrape_approp_subcommittees(self, url):
-        html = self.get(url).text
+    def scrape_approp_subcommittees(self):
+        URL = 'http://www.senate.michigan.gov/committee/appropssubcommittee.html'
+        html = self.get(URL).text
         doc = lxml.html.fromstring(html)
 
         for strong in doc.xpath('//strong'):
             com = Organization(
                 name=strong.text.strip(),
-                parent_id={
-                    'name': 'Appropriations',
-                    'classification': 'committee',
-                },
+                parent_id=self._senate_appropriations,
                 classification='committee',
             )
-            com.add_source(url)
+            com.add_source(URL)
 
             legislators = strong.getnext().tail.replace('Senators', '').strip()
             for leg in re.split(', | and ', legislators):
