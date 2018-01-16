@@ -36,7 +36,7 @@ class SouthDakota(Jurisdiction):
             "start_date": "2011-01-11"
         },
         {
-            "_scraped_name": "2011s",
+            "_scraped_name": "2011 Special",
             "identifier": "2011s",
             "name": "2011 Special Session"
         },
@@ -73,7 +73,7 @@ class SouthDakota(Jurisdiction):
             "end_date": "2017-03-27",
         },
         {
-            "_scraped_name": "2017s",
+            "_scraped_name": "2017 Special",
             "identifier": "2017s",
             "name": "2017 Special Session"
         },
@@ -86,8 +86,8 @@ class SouthDakota(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
-        "2008", "2007", "2006", "2005", "2005s", "2004", "2003", "2003s", "2002",
-        "2001", "2001s", "2000", "2000s", "1999", "1998", "1997", "1997s",
+        "2008", "2007", "2006", "2005", "2005 Special", "2004", "2003", "2003 Special", "2002",
+        "2001", "2001 Special", "2000", "2000 Special", "1999", "1998", "1997", "1997 Special",
     ]
 
     def get_organizations(self):
