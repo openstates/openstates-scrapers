@@ -16,6 +16,7 @@ PARTIES = {
 class SenList(CSV):
     url = 'http://www.senate.mn/members/member_list_ascii.php?ls='
     _html_url = 'http://www.senate.mn/members/index.php'
+    danSchoenSeen = False
 
     def __init__(self, scraper, url=None, *, obj=None, **kwargs):
         super().__init__(scraper, url=url, obj=obj, **kwargs)
@@ -49,6 +50,10 @@ class SenList(CSV):
 
     def handle_list_item(self, row):
         if not row['First Name']:
+            return
+        # This Dan Schoen hack very probably can be removed after April 2018.
+        if row['First Name'] == 'Dan' and row['Last Name'] == 'Schoen':
+            self.danSchoenSeen = True
             return
         name = '{} {}'.format(row['First Name'], row['Last Name'])
         party = PARTIES[row['Party']]
@@ -93,6 +98,12 @@ class SenList(CSV):
         leg.add_source(self._html_url)
 
         return leg
+
+    def handle_page(self):
+        yield super(SenList, self).handle_page()
+        if not self.danSchoenSeen:
+            raise AssertionError('Dan Schoen not seen, remove his kludge')
+            # https://github.com/openstates/openstates/pull/2088
 
 
 class RepList(Page):

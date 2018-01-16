@@ -63,8 +63,9 @@ class TNPersonScraper(Scraper):
                 if x.strip()
             ][0]
 
-            member_url = (root_url + url_chamber_name + '/members/' + abbr +
-                          district + '.html')
+            # Member URL can't be guessed from the chamber and district alone
+            # It may be `h46_JaneSmith.html` instead of `h46.html`, for example
+            member_url = row.xpath('./td[2]/a/@href')[0]
             member_photo_url = (root_url + url_chamber_name +
                                 '/members/images/' + abbr + district + '.jpg')
 
