@@ -27,7 +27,7 @@ class UTCommitteeScraper(Scraper):
                 name = name[len('Senate '):]
                 chamber = 'upper'
             else:
-                chamber = 'joint'
+                chamber = 'legislature'
 
             c = Organization(
                 chamber=chamber,

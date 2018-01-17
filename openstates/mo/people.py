@@ -54,7 +54,7 @@ class MOPersonScraper(Scraper):
             elif party_and_district[0] == 'R':
                 party = 'Republican'
 
-            district = party_and_district[1]
+            district = party_and_district[1].lstrip('0')
             phone = tds[3].xpath('div')[0].text_content().strip()
             url = self._senator_details_url.format(int(district))
 
