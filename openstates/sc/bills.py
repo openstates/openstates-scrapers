@@ -32,9 +32,9 @@ def undo_downgrade_http_version():
 def toggle_http_version(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        downgrade_http_version
+        downgrade_http_version()
         response = method(self, *args, **kwargs)
-        undo_downgrade_http_version
+        undo_downgrade_http_version()
         return response
     return wrapper
 
