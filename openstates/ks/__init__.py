@@ -7,7 +7,14 @@ from openstates.ks.people import KSPersonScraper
 from openstates.ks.committees import KSCommitteeScraper
 
 
-settings = dict(SCRAPELIB_TIMEOUT=300)
+# Kansas API's 429 error response includes:
+# You have received this notification because this IP address is querying
+# the kslegislature.org website at a high rate. If the queries are generated
+# by an automated tool, please introduce a delay rate of 3-5 seconds between queries.
+settings = dict(
+    SCRAPELIB_TIMEOUT=300,
+    SCRAPELIB_RPM=12
+)
 
 
 class Kansas(Jurisdiction):

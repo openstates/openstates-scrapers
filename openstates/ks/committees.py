@@ -10,9 +10,6 @@ class KSCommitteeScraper(Scraper):
     def scrape(self, chamber=None):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
-        # some committees, 500, let them go
-        self.retry_attempts = 0
-
         for chamber in chambers:
             yield from self.scrape_current(chamber)
 
