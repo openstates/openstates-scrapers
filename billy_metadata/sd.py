@@ -45,7 +45,7 @@ metadata = dict(
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017', '2017s']
+            'sessions': ['2017', '2017s', '2018']
         },
     ],
     session_details = {
@@ -93,6 +93,9 @@ metadata = dict(
         '2017s': {
             'display_name': '2017 Special Session',
         },
+        '2018': {
+            'display_name': '2017 Regular Session',
+        },        
     },
     feature_flags = ['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions = [
