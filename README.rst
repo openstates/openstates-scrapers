@@ -34,17 +34,6 @@ After retrieving everything from the state, `scrape` imports the data into a Pos
 
 After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory.  These contain the transformed, scraped data, and are very useful for debugging. 
 
-Several states will not run the default scrape successfully, and require specific command line options set.  These are usually/always to either skip individual scrapers, or to reduce the request speed to the state website.  These settings are found in ``<statename>.yml`` in
-https://github.com/openstates/task-definitions/tree/master/tasks, on the ``entrypoint``.  If a command-line scrape fails, but is succeeding in http://bobsled.openstates.org/, this is probably the first thing you should check.
-
-Examples:
-
-    Kansas requires ``--rpm 12`` to slow it down:
-      https://github.com/openstates/task-definitions/blob/master/tasks/ks.yml#L2
-
-    The Kentucky ``committees`` scraper is skipped:
-      https://github.com/openstates/task-definitions/blob/master/tasks/ky.yml#L2
-
 Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
 Testing
