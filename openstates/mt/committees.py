@@ -64,32 +64,16 @@ class MTCommitteeScraper(Scraper):
             line = line.replace(" ", " ").replace("‐", "-")
 
             if 'Subcommittees' in line:
-                # These appear in both chambers' lists, so de-dup the scraping
-                if chamber == 'lower':
-                    break
-                elif chamber == 'upper':
-                    self.info("Beginning scrape of joint subcommittees")
-
-                in_senate_subcommittees = True
-                chamber = 'legislature'
-                continue
-
+                self.warning("Currently, we're skipping subcommittees")
+                # https://github.com/openstates/openstates/issues/2099
+                break
             if is_committee_name(line):
                 if comm and comm._related:
                     yield comm
 
-                if in_senate_subcommittees:
-                    committee = 'Joint Appropriations/Finance & Claims'
-                    subcommittee = line.strip()
-                    comm = Organization(name=subcommittee,
-                                        parent_id={'name': committee,
-                                                   'classification': 'joint'},
-                                        classification='committee',
-                                        )
-                else:
-                    committee = line.strip()
-                    comm = Organization(name=committee, chamber=chamber,
-                                        classification='committee')
+                committee = line.strip()
+                comm = Organization(name=committee, chamber=chamber,
+                                    classification='committee')
 
                 comm.add_source(url)
 
