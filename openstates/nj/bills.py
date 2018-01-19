@@ -410,9 +410,7 @@ class NJBillScraper(Scraper, MDBMixin):
                             motion_text=action,
                             classification='passage',
                             result=None,
-                            bill=bill_id,
-                            bill_chamber=b_chamber,
-                            legislative_session=session,
+                            bill=bill_dict[bill_id]
                         )
                     if leg_vote == "Y":
                         votes[vote_id].vote('yes', leg)
