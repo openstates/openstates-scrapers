@@ -58,7 +58,6 @@ class MTCommitteeScraper(Scraper):
         lines = dropwhile(lambda s: 'Agriculture' not in s, lines)
 
         comm = None
-        in_senate_subcommittees = False
         for line in lines:
             # Replace Unicode variants with ASCII equivalents
             line = line.replace(" ", " ").replace("‐", "-")
