@@ -123,10 +123,6 @@ def validate_house_vote(row_headers, sane_row, vote_record):
     # field
     if not sane_matches_captured(sane, vote_record):
         raise ValueError('Votes were not parsed correctly')
-    # Make sure the date is a date
-    if not isinstance(vote_record['date'], datetime):
-        raise ValueError('Date was not parsed correctly')
-    # End Sanity Check
 
 
 def validate_senate_vote(row_headers, sane_row, vote_record):
@@ -158,9 +154,6 @@ def validate_senate_vote(row_headers, sane_row, vote_record):
     # total field
     if not sane_matches_captured(sane, vote_record):
         raise ValueError('Votes were not parsed correctly')
-    # Make sure the date is a date
-    if not isinstance(vote_record['date'], datetime):
-        raise ValueError('Date was not parsed correctly')
 
 
 def sane_matches_captured(sane, vote_record):
@@ -272,7 +265,13 @@ class NMVoteScraper(Scraper):
         vote = build_vote(session, bill_id, url, vote_record, 'lower',
                           'house passage')
 
-        validate_house_vote(row_headers, sane_row, vote_record)
+        try:
+            validate_house_vote(row_headers, sane_row, vote_record)
+        except ValueError:
+            # This _should not be necessary_; fix ticketed out in
+            # https://github.com/openstates/openstates/issues/2102
+            self.warning("Found inconsistencies; throwing out individual votes, keeping totals")
+            vote.votes = []
         return vote
 
     def parse_senate_vote(self, sv_text, url, session, bill_id):
