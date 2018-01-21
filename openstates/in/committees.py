@@ -10,6 +10,8 @@ from scrapelib import HTTPError
 class INCommitteeScraper(Scraper):
     jurisdiction = 'in'
 
+    _parent_committees = {}
+
     def process_special_members(self, comm, comm_json, role_name):
         role_dict = {"chair": "Chair",
                      "viceChair": "Vice Chair",
@@ -90,11 +92,19 @@ class INCommitteeScraper(Scraper):
             except KeyError:
                 name = name.replace("Statutory Committee on", "").strip()
                 comm = Organization(name=name, chamber=chamber, classification='committee')
+                if name in subcomms.values():
+                    # Avoid identification issues, if committee names are re-used
+                    # between upper and lower chambers
+                    assert self._parent_committees.get(name) is None
+                    self._parent_committees[name] = comm
             else:
                 name = name.replace("Statutory Committee on", ""
                                     ).replace("Subcommittee", "").strip()
-                parent = {"name": owning_comm, "classification": chamber}
-                comm = Organization(name=name, parent_id=parent, classification='committee')
+                comm = Organization(
+                    name=name,
+                    parent_id=self._parent_committees[owning_comm],
+                    classification='committee'
+                )
 
             chair = self.process_special_members(comm, comm_json, "chair")
             vicechair = self.process_special_members(comm, comm_json, "viceChair")
