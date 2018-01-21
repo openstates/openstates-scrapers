@@ -2,6 +2,18 @@
 
 set -e
 
+# Set up Google service account credentials if provided via environment var
+#
+# @see https://cloud.google.com/logging/docs/agent/authorization
+# @see http://google-cloud-python.readthedocs.io/en/latest/core/auth.html
+if [ ! -z ${GOOGLE_CLOUD_CREDENTIALS+x} ]; then
+  export GOOGLE_APPLICATION_CREDENTIALS="/etc/google/auth/application_default_credentials.json"
+  mkdir -p /etc/google/auth
+  echo "$GOOGLE_CLOUD_CREDENTIALS" > "$GOOGLE_APPLICATION_CREDENTIALS"
+  chown root:root "$GOOGLE_APPLICATION_CREDENTIALS"
+  chmod 0400 "$GOOGLE_APPLICATION_CREDENTIALS"
+fi
+
 #PUPA_ENV=~/.virtualenvs/pupa
 #BILLY_ENV=~/.virtualenvs/openstates
 
