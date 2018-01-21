@@ -27,6 +27,7 @@ dump/
 venv
 tmp.*
 *.mdb
+*.accdb
 billydata
 .idea
 .env
