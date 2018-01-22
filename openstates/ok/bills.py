@@ -20,10 +20,9 @@ class OKBillScraper(Scraper):
         '2013SS1': '131X',
         '2013-2014': '1400',
         '2015-2016': '1600',
-        '2017-2018': '1700',
         '2017SS1': '171X',
         '2017SS2': '172X',
-        '2018': '1800',
+        '2017-2018': '1800',
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
@@ -47,7 +46,7 @@ class OKBillScraper(Scraper):
             chamber_letter = 'H'
 
         session_id = self.meta_session_id[session]
-        self.warning(session_id)
+        self.debug("Using session slug `{}`".format(session_id))
         values = {'cbxSessionId': session_id,
                   'cbxActiveStatus': 'All',
                   'RadioButtonList1': 'On Any day',
