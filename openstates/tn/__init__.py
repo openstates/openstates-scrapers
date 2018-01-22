@@ -24,12 +24,12 @@ class Tennessee(Jurisdiction):
         {'name': 'Democratic'}
     ]
     legislative_sessions = [
-        {
-            "_scraped_name": "106th General Assembly",
-            "classification": "primary",
-            "identifier": "106",
-            "name": "106th Regular Session (2009-2010)"
-        },
+        # {
+        #     "_scraped_name": "106th General Assembly",
+        #     "classification": "primary",
+        #     "identifier": "106",
+        #     "name": "106th Regular Session (2009-2010)"
+        # },
         {
             "_scraped_name": "107th General Assembly",
             "classification": "primary",
