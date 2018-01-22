@@ -21,7 +21,8 @@ class Iowa(Jurisdiction):
     }
     parties = [
         {'name': 'Republican'},
-        {'name': 'Democratic'}
+        {'name': 'Democratic'},
+        {'name': 'Independent'},
     ]
     legislative_sessions = [
         {
