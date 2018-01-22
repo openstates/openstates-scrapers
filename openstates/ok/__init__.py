@@ -20,6 +20,14 @@ class Oklahoma(Jurisdiction):
         {'name': 'Republican'},
         {'name': 'Democratic'}
     ]
+    # Sessions are named on OK's website as "{odd year} regular session" until the even year,
+    # when all data rolls over. For example, even year sessions include all odd-year-session bills.
+    # We have opted to name sessions {odd-even} Regular Session and treat them as such.
+    # - If adding a new odd-year session, add a new entry and copy the biennium pattern as above
+    # - If adding an even-year session, all you'll need to do is:
+    #   - update the `_scraped_name`
+    #   - update the session slug in the Bill scraper
+    #   - ignore the odd-year session
     legislative_sessions = [
         {
             "_scraped_name": "2012 Regular Session",
