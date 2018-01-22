@@ -63,8 +63,19 @@ metadata = dict(
              '_scraped_name': '2017 Regular Session',
              },
         '2017SS1':
-            {'display_name': '2017 Special Session',
-             '_scraped_name': '2017 Special Session',
+            {'display_name': '2017 First Special Session',
+             'session_id': '171X',
+             '_scraped_name': '2017 First Special Session',
+             },
+        '2017SS2':
+            {'display_name': '2017 Second Special Session',
+             'session_id': '172X',
+             '_scraped_name': '2017 Second Special Session',
+             },
+        '2018':
+            {'display_name': '2018 Regular Session',
+             'session_id': '1800',
+             '_scraped_name': '2017 Regular Session',
              },
         },
     feature_flags=['subjects', 'influenceexplorer'],
