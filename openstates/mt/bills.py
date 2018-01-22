@@ -261,8 +261,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         return bill, list(votes)
 
     def add_actions(self, bill, status_page):
-
-        for action in reversed(status_page.xpath('//div/form[3]/table[1]/tr')[1:]):
+        for idx, action in enumerate(reversed(status_page.xpath('//div/form[3]/table[1]/tr')[1:])):
             try:
                 actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
                 action_name = action.xpath("td[1]")[0].text_content().replace(actor, ""
@@ -277,9 +276,23 @@ class MTBillScraper(Scraper, LXMLMixin):
 
             if 'by senate' in action_name.lower():
                 actor = 'upper'
-            bill.add_action(action_name, action_date,
-                            classification=action_type,
-                            chamber=actor)
+
+            # Add a `pupa_id` to properly identify some actions
+            # There are cases where a bill has two identical rows,
+            # where it's plausible that the actions could both be valid, such as
+            # `(C) Pre-Introduction Letter Sent` or `(C) Printed - New Version Available`
+            # Eg, on http://laws.leg.mt.gov/legprd/LAW0203W$BSRV.ActionQuery?P_SESS=20171&P_BLTP_BILL_TYP_CD=&P_BILL_NO=&P_BILL_DFT_NO=LC0267&P_CHPT_NO=&Z_ACTION=Find&P_SBJT_SBJ_CD=&P_ENTY_ID_SEQ=  # noqa
+            bill.add_action(
+                action_name,
+                action_date,
+                classification=action_type,
+                chamber=actor,
+                extras={'pupa_id': '{}-{}-{}'.format(
+                    bill.legislative_session,
+                    bill.identifier,
+                    idx
+                )}
+            )
 
     def _versions_dict(self, session):
         '''Get a mapping of ('HB', '2') tuples to version urls.'''
