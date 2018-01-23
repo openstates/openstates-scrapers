@@ -3,7 +3,6 @@ import datetime
 
 from pupa.scrape import Scraper, Bill
 from . import utils
-from . import action_utils
 from . import session_metadata
 
 from lxml import html
@@ -120,8 +119,8 @@ class AZBillScraper(Scraper):
         So map that backwards using action_map
         """
         for status in page['BillStatusAction']:
-            if status['Action'] in action_utils.status_action_map:
-                category = action_utils.status_action_map[status['Action']]
+            if status['Action'] in utils.status_action_map:
+                category = utils.status_action_map[status['Action']]
                 if status['Committee']['TypeName'] == 'Floor':
                     categories = [category]
                     if status['Committee']['CommitteeShortName'] == 'THIRD':
@@ -142,17 +141,17 @@ class AZBillScraper(Scraper):
                     date=action_date,
                     classification=categories,
                 )
-        for action in action_utils.action_map:
-            if page[action] and action_utils.action_map[action]['name'] != '':
+        for action in utils.action_map:
+            if page[action] and utils.action_map[action]['name'] != '':
                 try:
                     action_date = datetime.datetime.strptime(
                         page[action], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
 
                     bill.add_action(
                         chamber=self.actor_from_action(bill, action, self_chamber),
-                        description=action_utils.action_map[action]['name'],
+                        description=utils.action_map[action]['name'],
                         date=action_date,
-                        classification=action_utils.action_map[action]['action'],
+                        classification=utils.action_map[action]['action'],
                     )
                 except (ValueError, TypeError):
                     self.info("Invalid Action Time {} for {}".format(page[action], action))
@@ -205,7 +204,7 @@ class AZBillScraper(Scraper):
         Determine the actor from the action key
         If the action_map = 'chamber', return the bill's home chamber
         """
-        action_map = action_utils.action_chamber_map
+        action_map = utils.action_chamber_map
         for key in action_map:
             if key in action:
                 if action_map[key] == 'chamber':

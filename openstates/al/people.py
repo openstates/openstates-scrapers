@@ -157,9 +157,6 @@ class ALPersonScraper(Scraper, LXMLMixin):
             if email_address:
                 person.add_contact_detail(type='email', value=email_address, note='Capitol Office')
 
-            # match rep to sponsor_id if possible
-            ln, fn = name.split(',')
-
             self.add_committees(legislator_page, person, chamber, legislator_url)
 
             person.add_link(legislator_url)

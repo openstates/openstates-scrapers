@@ -303,9 +303,3 @@ class IDBillScraper(Scraper):
             if name and name != 'None':
                 vote.vote('absent', name)
         yield vote
-
-    def flag(self, ayes=False, nays=False, other=False):
-        """ help to keep track of where we are at parsing votes from text"""
-        self.ayes = ayes
-        self.nays = nays
-        self.other = other
