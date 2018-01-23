@@ -62,17 +62,17 @@ class SCEventScraper(Scraper):
         page.make_links_absolute(url)
         return page
 
-    def get_bill_description(self, url):
-        """ Find and obtain bill description from bill page using xpath"""
-        bill_page = self.get_page_from_url(url)
-        bill_text = bill_page.xpath(
-            './/div[@id="resultsbox"]/div[2]')[0]
-        bill_description = bill_text.text_content().encode(
-            'utf-8').split('\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0')[0]
+    # def get_bill_description(self, url):
+    #     """ Find and obtain bill description from bill page using xpath"""
+    #     bill_page = self.get_page_from_url(url)
+    #     bill_text = bill_page.xpath(
+    #         './/div[@id="resultsbox"]/div[2]')[0]
+    #     bill_description = bill_text.text_content().encode(
+    #         'utf-8').split('\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0')[0]
 
-        bill_description = re.search(
-            r'Summary: (.*)', bill_description).group(1).strip()
-        return bill_description
+    #     bill_description = re.search(
+    #         r'Summary: (.*)', bill_description).group(1).strip()
+    #     return bill_description
 
     def scrape(self, chamber=None, session=None):
         """

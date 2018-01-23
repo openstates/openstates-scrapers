@@ -8,7 +8,7 @@ from pupa.scrape import Scraper, Event
 import pytz
 
 # ftp://www.arkleg.state.ar.us/dfadooas/ReadMeScheduledMeetings.txt
-TIMECODES = {
+_TIMECODES = {
     "12:34 PM": "Upon Recess of the House",
     "12:36 PM": "10 Minutes Upon Adjournment of",
     "12:37 PM": "Upon Adjournment of Afternoon Joint Budget Committee",
@@ -82,7 +82,7 @@ class AREventScraper(Scraper):
 
                 event.add_participant(comm, type='committee', note='host')
                 # time = row[3].strip()
-                # if time in TIMECODES:
+                # if time in _TIMECODES:
                 #     event['notes'] = TIMECODES[time]
 
                 yield event

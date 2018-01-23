@@ -71,7 +71,7 @@ class LAEventScraper(Scraper, LXMLMixin):
                     "senate": "upper",
                     "joint": "legislature"}
 
-        for chamber_, normalized in chambers.items():
+        for chamber_ in chambers.keys():
             if chamber_ in title.lower():
                 break
         else:

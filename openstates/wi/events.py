@@ -56,7 +56,7 @@ class WIEventScraper(Scraper, LXMLMixin):
             tds = event.xpath("./*")
             date = tds[0].text_content().strip()
             cttie = tds[1].text_content().strip()
-            cttie_chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
+            _chamber, cttie = [x.strip() for x in cttie.split(" - ", 1)]
             info = tds[2]
             name = info.xpath("./a[contains(@href, 'raw')]")[0]
             notice = name.attrib['href']
