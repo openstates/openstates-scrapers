@@ -24,10 +24,6 @@ import lxml.html
 import requests
 
 
-def fix_whitespace(s):
-    return re.sub(r'\s+', ' ', s)
-
-
 # All links in a section with a given title
 COMMITTEE_LINKS_TEMPLATE = '//h2[text()="{header}"]/parent::*//a'
 

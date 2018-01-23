@@ -35,7 +35,6 @@ class MNVoteScraper(Scraper):
     # bad SSL as of August 2017
     verify = False
 
-    yeanay_re = re.compile(r'(\d+) YEA and (\d+) Nay')
     date_re = re.compile(r'Date: (\d+/\d+/\d+)')
 
     def scrape(self, session=None, chamber=None):

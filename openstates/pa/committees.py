@@ -30,7 +30,7 @@ class PACommitteeScraper(Scraper):
         committees = CommitteeDict()
 
         for div in page.xpath("//div[@class='MemberInfoCteeList-Member']"):
-            thumbnail, bio, committee_list, _ = list(div)
+            _thumbnail, bio, committee_list, _ = list(div)
             name = bio.xpath(".//a")[-1].text_content().strip()
             namey_bits = name.split()
             namey_bits.pop().strip('()')
