@@ -94,7 +94,7 @@ metadata = dict(
             'type': 'special',
             'display_name': '2017 Second Extraordinary Session',
         },
-        '2017': {
+        '2018': {
             'type': 'primary',
             'display_name': '2018 Regular Session',
         },
