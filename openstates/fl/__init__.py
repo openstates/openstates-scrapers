@@ -12,7 +12,7 @@ class Florida(Jurisdiction):
     classification = "government"
     name = "Florida"
     url = "http://myflorida.com"
-    check_sessions = True
+
     scrapers = {
         "bills": FlBillScraper,
         "people": FlPersonScraper,
