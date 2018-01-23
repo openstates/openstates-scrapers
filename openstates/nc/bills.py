@@ -32,9 +32,6 @@ class NCBillScraper(Scraper):
         'Amend Adopted': 'amendment-passage',
     }
 
-    def is_latest_session(self, session):
-        return self.metadata['terms'][-1]['sessions'][-1] == session
-
     def scrape_bill(self, chamber, session, bill_id):
         # there will be a space in bill_id if we're doing a one-off bill scrape
         # convert HB 102 into H102

@@ -49,8 +49,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
         district = None
         capture_district = False
         capture_party = False
-        # Keeps track of place in incumbent listings.
-        entry_counter = 0
 
         affiliation_text = self.get_nodes(
             member_list_page,
@@ -118,7 +116,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
                 district = None
                 capture_party = False
-                entry_counter += 1
             else:
                 message = 'Assembly party parsing found bad text: "{}"'
                 raise AssertionError(message.format(affiliation))

@@ -410,8 +410,7 @@ class WVBillScraper(Scraper):
 
         yield vote
 
-    def _scrape_versions_normally(self, session, chamber, page, bill_id,
-                                  get_name=re.compile(r'\"(.+)"').search):
+    def _scrape_versions_normally(self, session, chamber, page, bill_id):
         '''This first method assumes the bills versions are hyperlinked
         on the bill's status page.
         '''

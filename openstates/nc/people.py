@@ -86,6 +86,7 @@ class NCPersonScraper(Scraper):
             person = Person(name=full_name, district=district,
                             party=party, primary_org=chamber,
                             image=photo_url)
+            person.extras['counties'] = counties
             person.extras['notice'] = notice
             person.add_link(link)
             person.add_source(link)

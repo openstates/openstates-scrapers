@@ -385,7 +385,7 @@ class MDBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         for row in doc.xpath('//table[@class="billgrid"]/tr')[1:]:
-            new_chamber, cal_date, leg_date, action, proceedings = row.xpath('td')
+            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath('td')
 
             if new_chamber.text == 'Senate':
                 chamber = 'upper'
