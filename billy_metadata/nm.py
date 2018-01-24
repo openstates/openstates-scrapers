@@ -33,7 +33,7 @@ metadata = {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017', '2017S'],
+            'sessions': ['2017', '2017S', '2018'],
         },
     ],
     'session_details': {
@@ -87,7 +87,7 @@ metadata = {
             'display_name': '2016 2nd Special Session',
             'slug': '16%20Special',
             '_scraped_name': '2016 2nd Special',
-        },     
+        },
         '2017': {
             'type': 'primary',
             'start_date': datetime.date(2016, 1, 17),
@@ -95,11 +95,15 @@ metadata = {
             'display_name': '2017 Regular Session',
             'slug': '17%20Regular',
             '_scraped_name': '2017 Regular',
-        },          
+        },
         '2017S': {
             'type': 'special',
             'display_name': '2017 Special Session',
-        },          
+        },
+        '2018': {
+            'type': 'primary',
+            'display_name': '2018 Regular Session'
+        },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [

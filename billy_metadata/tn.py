@@ -13,8 +13,8 @@ metadata = dict(
         'lower': {'name': 'House', 'title': 'Representative'},
     },
     terms=[
-        {'name': '106', 'sessions': ['106'],
-            'start_year': 2009, 'end_year': 2010},
+        # {'name': '106', 'sessions': ['106'],
+        #     'start_year': 2009, 'end_year': 2010},
         {'name': '107', 'sessions': ['107'],
             'start_year': 2011, 'end_year': 2012},
         {'name': '108', 'sessions': ['108'],
@@ -56,10 +56,10 @@ metadata = dict(
             'type': 'primary',
             'display_name': '107th Regular Session (2011-2012)',
             '_scraped_name': '107th General Assembly'},
-        '106': {
-            'type': 'primary',
-            'display_name': '106th Regular Session (2009-2010)',
-            '_scraped_name': '106th General Assembly'},
+        # '106': {
+        #     'type': 'primary',
+        #     'display_name': '106th Regular Session (2009-2010)',
+        #     '_scraped_name': '106th General Assembly'},
     },
     feature_flags=['events', 'influenceexplorer'],
     _ignored_scraped_sessions=[

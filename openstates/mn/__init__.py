@@ -25,7 +25,6 @@ class Minnesota(Jurisdiction):
     classification = "government"
     name = "Minnesota"
     url = "http://state.mn.us/"
-    check_sessions = True
     scrapers = {
         "bills": MNBillScraper,
         "committees": MNCommitteeScraper,

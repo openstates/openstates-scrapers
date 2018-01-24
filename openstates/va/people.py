@@ -158,7 +158,6 @@ def get_lis_id(chamber, url):
 
 
 name_elect_pattern = re.compile(r'(- Elect)$')
-name_resigned_pattern = re.compile(r'-(Resigned|Member) (\d{1,2}/\d{1,2})?')
 
 
 def clean_name(name):

@@ -88,7 +88,7 @@ class OHBillScraper(Scraper):
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
 
             for row in self.get_bill_rows(session):
-                number_link, ga, title, primary_sponsor, status = row.xpath('td')
+                number_link, _ga, title, primary_sponsor, status = row.xpath('td')
 
                 bill_id = number_link.text_content()
                 title = title.text_content().strip()

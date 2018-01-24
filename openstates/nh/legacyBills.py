@@ -126,7 +126,7 @@ class NHLegacyBillScraper(Scraper):
 
         # sponsors
         for line in self.zf.open('tbllsrsponsors.txt').readlines():
-            session_yr, lsr, seq, employee, primary = line.strip().split('|')
+            session_yr, lsr, _seq, employee, primary = line.strip().split('|')
 
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
@@ -244,5 +244,5 @@ class NHLegacyBillScraper(Scraper):
                     votes[body+v_num].other(leg)
                     other_count += 1
                 votes[body+v_num].set_count('other', other_count)
-        for vid, vote in votes.items():
+        for vote in votes.values():
             yield vote

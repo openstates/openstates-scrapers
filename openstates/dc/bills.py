@@ -66,14 +66,10 @@ class DCBillScraper(Scraper):
         response = decode_json(response.json()["d"])
         data = response["aaData"]
 
-        global bill_versions
-
         while len(data) > 0:
 
             for bill in data:
                 # sometimes they're in there more than once, so we'll keep track
-                bill_versions = []
-
                 bill_id = bill["Title"]
                 if bill_id.startswith("AG"):
                     # actually an agenda, skip
@@ -457,7 +453,6 @@ class DCBillScraper(Scraper):
         return v
 
     def add_documents(self, attachment_path, bill, is_version=False):
-        global bill_versions
         # nothing is actual links. we'll have to concatenate to get doc paths
         # (documents are hiding in thrice-stringified json. eek.)
         base_url = "http://lims.dccouncil.us/Download/"

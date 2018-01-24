@@ -76,8 +76,6 @@ session_details = {
 }
 
 
-TITLE_REMOVING_PATTERN = re.compile(".*(Rep|Sen). (.+)$")
-
 SPONSOR_REFINE_PATTERN = re.compile(r'^Added (?P<spontype>.+) (?P<title>Rep|Sen)\. (?P<name>.+)')
 SPONSOR_TYPE_REFINEMENTS = {
     'Chief Co-Sponsor': 'cosponsor',
@@ -138,7 +136,7 @@ _action_classifiers = (
     (re.compile(r'Motion To Adopt'), ['passage']),
 )
 
-OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
+_OTHER_FREQUENT_ACTION_PATTERNS_WHICH_ARE_CURRENTLY_UNCLASSIFIED = [
     r'Accept Amendatory Veto - (House|Senate) (Passed|Lost) \d+-\d+\d+.?',
     r'Amendatory Veto Motion - (.+)',
     r'Balanced Budget Note (.+)',

@@ -1,6 +1,9 @@
+import pytz
 import datetime as dt
 import lxml.html
-from pupa.scrape import Scraper, Bill
+from pupa.scrape import Scraper, Bill, VoteEvent
+
+eastern = pytz.timezone('US/Eastern')
 
 
 class NCBillScraper(Scraper):
@@ -32,9 +35,6 @@ class NCBillScraper(Scraper):
         'Amend Adopted': 'amendment-passage',
     }
 
-    def is_latest_session(self, session):
-        return self.metadata['terms'][-1]['sessions'][-1] == session
-
     def scrape_bill(self, chamber, session, bill_id):
         # there will be a space in bill_id if we're doing a one-off bill scrape
         # convert HB 102 into H102
@@ -48,11 +48,13 @@ class NCBillScraper(Scraper):
             chamber = 'lower'
 
         bill_detail_url = ('http://www.ncleg.net/gascripts/'
-                           'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s') % (session, bill_id)
+                           'BillLookUp/BillLookUp.pl?Session=%s&BillID=%s&votesToView=all') % (
+                               session, bill_id)
 
         # parse the bill data page, finding the latest html text
         data = self.get(bill_detail_url).text
         doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(bill_detail_url)
 
         title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; '
                                   'width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
@@ -132,7 +134,69 @@ class NCBillScraper(Scraper):
 
             bill.add_action(action, act_date, chamber=actor, classification=atype)
 
+        yield from self.scrape_votes(bill, doc)
+
         return bill
+
+    def scrape_votes(self, bill, doc):
+        vote_tr_path = '//th/a[starts-with(text(),"Vote History")]/../../../tr'
+
+        # skip first two and last row in vote table
+        for vote_row in doc.xpath(vote_tr_path)[2:-1]:
+            date, subject, rcs, aye, no, nv, abs, exc, total = vote_row.xpath('td/text()')
+            result = vote_row.xpath('td/a')[0]
+            result_text = result.text
+            result_link = result.get('href')
+
+            if 'H' in rcs:
+                chamber = 'lower'
+            elif 'S' in rcs:
+                chamber = 'upper'
+
+            date = eastern.localize(dt.datetime.strptime(date, "%m/%d/%Y %H:%M%p"))
+            date = date.isoformat()
+
+            ve = VoteEvent(chamber=chamber,
+                           start_date=date,
+                           motion_text=subject,
+                           result='pass' if 'PASS' in result_text else 'fail',
+                           bill=bill,
+                           classification='passage',    # TODO: classify votes
+                           )
+            ve.set_count('yes', int(aye))
+            ve.set_count('no', int(no))
+            ve.set_count('not voting', int(nv))
+            ve.set_count('absent', int(abs))
+            ve.set_count('excused', int(exc))
+            ve.add_source(result_link)
+
+            data = self.get(result_link).text
+            vdoc = lxml.html.fromstring(data)
+
+            # only one table that looks like this
+            vote_table, = vdoc.xpath('//table[@cellpadding="5"]')
+
+            # skip party row
+            for row in vote_table.xpath('tr')[1:]:
+                vote_type, dems, reps = row.xpath('td')
+
+                vote_type = vote_type.text_content()
+                if 'Ayes' in vote_type:
+                    vote_type = 'yes'
+                elif 'Noes' in vote_type:
+                    vote_type = 'no'
+                elif 'Not Voting' in vote_type:
+                    vote_type = 'not voting'
+                elif 'Exc. Absence' in vote_type:
+                    vote_type = 'excused'
+                else:
+                    raise ValueError('unknown vote type: ' + vote_type)
+
+                for name in (vote_list_to_names(dems.text_content()) +
+                             vote_list_to_names(reps.text_content())):
+                    ve.vote(vote_type, name)
+
+            yield ve
 
     def scrape(self, session=None, chamber=None):
         if not session:
@@ -153,3 +217,10 @@ class NCBillScraper(Scraper):
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]
             yield self.scrape_bill(chamber, session, bill_id)
+
+
+def vote_list_to_names(names):
+    title, rest = names.split(': ', 1)
+    if 'None' in rest:
+        return []
+    return rest.split('; ')

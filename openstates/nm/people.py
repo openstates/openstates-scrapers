@@ -94,7 +94,7 @@ class NMPersonScraper(Scraper, LXMLMixin):
                              .format(chamber, district))
                 return
 
-            n_head, n_sep, n_party = name_node.text.rpartition(' - ')
+            n_head, _sep, n_party = name_node.text.rpartition(' - ')
 
             full_name = re.sub(r'^{}'.format(title_prefix), '', n_head.strip())
 

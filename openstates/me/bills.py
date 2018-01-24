@@ -372,24 +372,19 @@ class MEBillScraper(Scraper):
                     action, date, chamber=chamber, classification=attrs['classification'])
 
 
-def _get_chunks(el, buff=None, until=None):
+def _get_chunks(el, buff=None):
     tagmap = {'br': '\n'}
     buff = buff or []
 
     # Tag, text, tail, recur...
     yield tagmap.get(el.tag.lower(), '')
     yield el.text or ''
-    # if el.text == until:
-    #     return
+
     for kid in el:
         for text in _get_chunks(kid):
             yield text
-            # if text == until:
-            #     return
     if el.tail:
         yield el.tail
-        # if el.tail == until:
-        #     return
     if el.tag == 'text':
         yield '\n'
 

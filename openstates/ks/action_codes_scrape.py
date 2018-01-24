@@ -4,7 +4,6 @@ import re
 
 data = re.compile(r'^([a-z]+_[a-z]+_[0-9]{3}): (.*) *$')
 comment = re.compile(r'^#')
-variable = re.compile(r'\$([a-z_]+)\$')
 
 voted = re.compile(r'.*\$vote_tally\$.*')
 passed = re.compile(r'.*(?!not )(passed|adopted).*\$vote_tally\$.*', re.IGNORECASE)

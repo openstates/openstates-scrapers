@@ -19,11 +19,6 @@ def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
         yield [cell for cell in row]
 
 
-def utf_8_encoder(unicode_csv_data):
-    for line in unicode_csv_data:
-        yield line.encode('utf-8')
-
-
 class ARBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):

@@ -194,6 +194,13 @@ class SDBillScraper(Scraper, LXMLMixin):
         else:
             raise ScrapeError("Bad chamber: %s" % location)
 
+        bill_id = re.search(r'^[A-Z]{2,3} \d{1,4}', header)
+        if bill_id and bill.identifier != bill_id.group():
+            # Sometimes the legislature has mistaken links in its actions tables
+            self.warning("Skipping vote for a different bill: '{}' not for bill '{}'".format(
+                header, bill.identifier))
+            return
+
         # committee = ' '.join(location.split(' ')[1:]).strip()
         # if not committee or committee.startswith('of Representatives'):
         #     committee = None

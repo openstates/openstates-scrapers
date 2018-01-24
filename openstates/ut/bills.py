@@ -111,9 +111,13 @@ class UTBillScraper(Scraper, LXMLMixin):
 
         primary_info = page.xpath('//div[@id="billsponsordiv"]')
         for info in primary_info:
-            (title, name) = [x.strip() for x
-                             in info.xpath('.//text()')
-                             if x.strip()]
+            try:
+                (title, name) = [x.strip() for x
+                                 in info.xpath('.//text()')
+                                 if x.strip()]
+            except ValueError:
+                self.warning("Could not find sponsor's name for {}".format(bill_id))
+                continue
             assert title == "Bill Sponsor:"
             name = name.replace("Sen. ", "").replace("Rep. ", "")
             bill.add_sponsorship(name,

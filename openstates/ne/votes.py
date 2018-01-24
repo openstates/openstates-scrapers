@@ -49,7 +49,7 @@ class NEVoteScraper(Scraper):
         date = None
         other_count = 0
 
-        for line_num, line in enumerate(lines):
+        for line in lines:
             date_match = DATE_RE.findall(line)
 
             # skip headers

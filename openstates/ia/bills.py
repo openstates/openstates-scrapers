@@ -5,11 +5,6 @@ from collections import defaultdict
 from pupa.scrape import Scraper, Bill
 
 
-def get_popup_url(link):
-    onclick = link.attrib['onclick']
-    return re.match(r'openWin\("(.*)"\)$', onclick).group(1)
-
-
 class IABillScraper(Scraper):
 
     _subjects = defaultdict(list)

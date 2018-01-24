@@ -42,7 +42,7 @@ class NYCommitteeScraper(Scraper, LXMLMixin):
         yield from self.scrape_upper_chamber()
         yield from self.scrape_lower_chamber()
 
-    def scrape_lower_chamber(self, only_names=None):
+    def scrape_lower_chamber(self):
         url = 'http://assembly.state.ny.us/comm/'
 
         page = self.lxmlize(url)

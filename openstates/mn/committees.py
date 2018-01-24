@@ -1,11 +1,5 @@
-import re
-
 from pupa.scrape import Scraper, Organization
 import lxml.html
-
-
-def fix_whitespace(s):
-    return re.sub(r'\s+', ' ', s)
 
 
 class MNCommitteeScraper(Scraper):

@@ -81,6 +81,8 @@ def table_row_to_legislator_and_profile_url(table_row_element, chamber):
     party = party_element.text_content().strip()
     if party == 'Democrat':
         party = 'Democratic'
+    elif party == 'Unaffiliated':
+        party = 'Independent'
 
     role = role_element.text_content().strip()
     address = co_address_from_role(role)

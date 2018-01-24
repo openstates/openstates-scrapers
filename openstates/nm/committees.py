@@ -8,7 +8,7 @@ Member = collections.namedtuple('Member', 'name role chamber')
 
 
 def clean_committee_name(name_to_clean):
-    head, separator, tail = name_to_clean.replace('House ', '') \
+    head, _sep, tail = name_to_clean.replace('House ', '') \
         .replace('Senate ', '') \
         .replace('Subcommittee', 'Committee') \
         .rpartition(' Committee')

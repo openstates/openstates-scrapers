@@ -315,8 +315,11 @@ class MTBillScraper(Scraper, LXMLMixin):
             'Printed - New Version Available',
             'Clerical Corrections Made - New Version Available']
 
-        if bill.identifier == 'HB 2':
-            # Need to special-case this one.
+        if bill.title == 'General Appropriations Act':
+            # Need to special-case this one
+            # According to its versions page,
+            # > Because it contains many tables that are not well rendered with HTML,
+            # > HB2 is available electronically only in Adobe Portable Document Format (PDF).
             return
 
         for i, a in enumerate(bill.actions):

@@ -398,11 +398,6 @@ class NJBillScraper(Scraper, MDBMixin):
                     date = datetime.strptime(date, "%m/%d/%Y")
                     vote_id = '_'.join(vote_parts).replace(' ', '_')
 
-                    if bill_id[0] == 'A':
-                        b_chamber = "lower"
-                    else:
-                        b_chamber = "upper"
-
                     if vote_id not in votes:
                         votes[vote_id] = VoteEvent(
                             start_date=TIMEZONE.localize(date),
@@ -410,9 +405,7 @@ class NJBillScraper(Scraper, MDBMixin):
                             motion_text=action,
                             classification='passage',
                             result=None,
-                            bill=bill_id,
-                            bill_chamber=b_chamber,
-                            legislative_session=session,
+                            bill=bill_dict[bill_id]
                         )
                     if leg_vote == "Y":
                         votes[vote_id].vote('yes', leg)

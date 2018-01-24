@@ -173,7 +173,7 @@ class NHBillScraper(Scraper):
             if len(line) < 1:
                 continue
 
-            session_yr, lsr, seq, employee, primary = line.strip().split('|')
+            session_yr, lsr, _seq, employee, primary = line.strip().split('|')
 
             if session_yr == session and lsr in self.bills:
                 sp_type = 'primary' if primary == '1' else 'cosponsor'
@@ -348,5 +348,5 @@ class NHBillScraper(Scraper):
                     # hack-ish, but will keep the vote count sync'd
                     other_counts[body+v_num] += 1
                     votes[body+v_num].set_count('other', other_counts[body+v_num])
-        for vid, vote in votes.items():
+        for vote in votes.values():
             yield vote
