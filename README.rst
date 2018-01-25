@@ -49,12 +49,10 @@ Our scraping framework, Pupa, has a strong test harness, and requires well-struc
 API Keys
 ========
 
-Currently two states, New York and Indiana, require API keys to access their APIs.
+A few states require credentials to access their APIs. If you want to run code for these states, get credentials for yourself using these steps:
 
-For New York, go to http://legislation.nysenate.gov/ and sign up for an API key.
-Set environment variable ``NEW_YORK_API_KEY`` to the provided key before scraping.
-
-For Indiana, go to http://docs.api.iga.in.gov/introduction.html and follow the directions there,
+* For New York, go to http://legislation.nysenate.gov/ and sign up for an API key. Set environment variable ``NEW_YORK_API_KEY`` to the provided key before scraping.
+* For Indiana, go to http://docs.api.iga.in.gov/introduction.html and follow the directions there,
 under "Security and Authentication", to sign up for an API key.  Then set environment variable
 ``INDIANA_API_KEY`` to the provided key before scraping.
-
+* For Oregon, go to https://www.oregonlegislature.gov/citizen_engagement/Pages/data.aspx, and submit your information to the state to get credentials. Set them as environment variables ``OLODATA_USERNAME`` and ``OLODATA_PASSWORD``.
