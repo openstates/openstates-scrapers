@@ -188,6 +188,8 @@ class NCBillScraper(Scraper):
                 elif 'Not Voting' in vote_type:
                     vote_type = 'not voting'
                 elif 'Exc. Absence' in vote_type:
+                    vote_type = 'absent'
+                elif 'Exc. Vote' in vote_type:
                     vote_type = 'excused'
                 else:
                     raise ValueError('unknown vote type: ' + vote_type)
