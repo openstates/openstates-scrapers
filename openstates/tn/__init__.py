@@ -77,6 +77,7 @@ class Tennessee(Jurisdiction):
     ]
     ignored_scraped_sessions = [
         "107th General Assembly",
+        "106th General Assembly",
         "105th General Assembly",
         "104th General Assembly",
         "103rd General Assembly",

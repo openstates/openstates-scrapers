@@ -21,4 +21,5 @@ def get_timezone():
 
 SESSION_KEYS = {
     "2017 Regular Session": "2017R1",
+    "2018 Regular Session": "2018R1",
 }
