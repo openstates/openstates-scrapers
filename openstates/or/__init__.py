@@ -2,7 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import ORPersonScraper
 from .committees import ORCommitteeScraper
 from .bills import ORBillScraper
-from .votes import ORVoteScraper
+# from .votes import ORVoteScraper
 
 
 class Oregon(Jurisdiction):
@@ -14,7 +14,7 @@ class Oregon(Jurisdiction):
         'people': ORPersonScraper,
         'committees': ORCommitteeScraper,
         'bills': ORBillScraper,
-        'votes': ORVoteScraper
+        # 'votes': ORVoteScraper
     }
     parties = [
         {'name': 'Republican'},
@@ -87,6 +87,13 @@ class Oregon(Jurisdiction):
             "identifier": "2017 Regular Session",
             "name": "2017 Regular Session",
             "start_date": "2017-02-01"
+        },
+        {
+            "_scraped_name": "2018 Regular Session",
+            "identifier": "2018 Regular Session",
+            "name": "2018 Regular Session",
+            "start_date": "2017-02-05",
+            "end_date": "2018-03-09",
         },
     ]
     ignored_scraped_sessions = [
