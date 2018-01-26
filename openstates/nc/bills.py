@@ -136,7 +136,7 @@ class NCBillScraper(Scraper):
 
         yield from self.scrape_votes(bill, doc)
 
-        return bill
+        yield bill
 
     def scrape_votes(self, bill, doc):
         vote_tr_path = '//th/a[starts-with(text(),"Vote History")]/../../../tr'
@@ -218,7 +218,7 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]
-            yield self.scrape_bill(chamber, session, bill_id)
+            yield from self.scrape_bill(chamber, session, bill_id)
 
 
 def vote_list_to_names(names):
