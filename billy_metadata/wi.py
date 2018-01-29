@@ -52,7 +52,8 @@ metadata = {
          {'name': '2017-2018',
          'sessions': ['January 2017 Special Session',
                       'August 2017 Special Session',
-                      '2017 Regular Session'],
+                      '2017 Regular Session',
+                      'January 2018 Special Session'],
          'start_year': 2017, 'end_year': 2018},
     ],
     'session_details': {
