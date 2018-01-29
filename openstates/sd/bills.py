@@ -9,7 +9,6 @@ from openstates.utils import LXMLMixin
 
 
 class SDBillScraper(Scraper, LXMLMixin):
-
     def scrape(self, chambers=None, session=None):
         if not session:
             session = self.latest_session()
@@ -194,17 +193,6 @@ class SDBillScraper(Scraper, LXMLMixin):
         else:
             raise ScrapeError("Bad chamber: %s" % location)
 
-        bill_id = re.search(r'^[A-Z]{2,3} \d{1,4}', header)
-        if bill_id and bill.identifier != bill_id.group():
-            # Sometimes the legislature has mistaken links in its actions tables
-            self.warning("Skipping vote for a different bill: '{}' not for bill '{}'".format(
-                header, bill.identifier))
-            return
-
-        # committee = ' '.join(location.split(' ')[1:]).strip()
-        # if not committee or committee.startswith('of Representatives'):
-        #     committee = None
-
         motion = ', '.join(header.split(', ')[2:]).strip()
         if motion:
             # If we can't detect a motion, skip this vote
@@ -235,7 +223,13 @@ class SDBillScraper(Scraper, LXMLMixin):
                              classification=type,
                              bill=bill
                              )
-            vote.pupa_id = url      # vote id is in URL
+            # The vote page URL has a unique ID
+            # However, some votes are "consent calendar" events,
+            # and relate to the passage of _multiple_ bills
+            # These can't be modeled yet in Pupa, but for now we can
+            # append a bill ID to the URL that forms the `pupa_id`
+            # https://github.com/opencivicdata/pupa/issues/308
+            vote.pupa_id = '{}#{}'.format(url, bill.identifier.replace(' ', ''))
 
             vote.add_source(url)
             vote.set_count('yes', yes_count)

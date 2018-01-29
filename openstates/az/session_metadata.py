@@ -1,5 +1,6 @@
 
 session_id_meta_data = {
+    "53rd-1st-special": 120,
     "53rd-2nd-regular": 119,
     "53rd-1st-regular": 117,
     "52nd-2nd-regular": 115,

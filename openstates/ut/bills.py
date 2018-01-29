@@ -329,7 +329,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         descr = page.xpath("//b")[0].text_content()
         if descr == '':
             # New page method
-            descr = page.xpath("//div[@id='content']/center")[0].text
+            descr = page.xpath("//center")[0].text
 
         if "on voice vote" in descr:
             return

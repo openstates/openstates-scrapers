@@ -8,7 +8,7 @@ from . import session_metadata
 from lxml import html
 
 
-BASE_URL = 'http://www.azleg.gov/'
+BASE_URL = 'https://www.azleg.gov/'
 
 
 class AZBillScraper(Scraper):
@@ -18,14 +18,9 @@ class AZBillScraper(Scraper):
                            'SS': 'Secretary of State'}
 
     def scrape_bill(self, chamber, session, bill_id, session_id):
-        """
-        Scrapes documents, actions, vote counts and votes for
-        a given bill.
-        """
         bill_json_url = 'https://apps.azleg.gov/api/Bill/?billNumber={}&sessionId={}&' \
                         'legislativeBody={}'.format(bill_id, session_id, self.chamber_map[chamber])
         response = self.get(bill_json_url)
-        # print(response.content)
         page = json.loads(response.content.decode('utf-8'))
 
         bill_title = page['ShortTitle']
@@ -40,41 +35,47 @@ class AZBillScraper(Scraper):
             classification=bill_type,
         )
 
-        bill = self.scrape_actions(bill, page, chamber)
-        bill = self.scrape_versions(bill, internal_id)
-        bill = self.scrape_sponsors(bill, internal_id)
-        bill = self.scrape_subjects(bill, internal_id)
+        self.scrape_actions(bill, page, chamber)
+        self.scrape_versions_and_documents(bill, internal_id)
+        self.scrape_sponsors(bill, internal_id)
+        self.scrape_subjects(bill, internal_id)
 
         bill_url = 'https://apps.azleg.gov/BillStatus/BillOverview/{}?SessionId={}'.format(
                     internal_id, session_id)
         bill.add_source(bill_url)
 
-        bill = self.sort_bill_actions(bill)
+        self.sort_bill_actions(bill)
 
         yield bill
 
-    def scrape_versions(self, bill, internal_id):
+    def scrape_versions_and_documents(self, bill, internal_id):
         # Careful, this sends XML to a browser but JSON to machines
         # https://apps.azleg.gov/api/DocType/?billStatusId=68408
         versions_url = 'https://apps.azleg.gov/api/DocType/?billStatusId={}'.format(internal_id)
         page = json.loads(self.get(versions_url).content.decode('utf-8'))
-        if page and 'Documents' in page[0]:
-            for doc in page[0]['Documents']:
-                if doc['HtmlPath']:
+        for document_set in page:
+            type_ = document_set['DocumentGroupName']
+            for doc in document_set['Documents']:
+                media_type = 'text/html' if doc['HtmlPath'] else 'application/pdf'
+                url = doc['HtmlPath'] or doc['PdfPath']
+                if not url:
+                    self.warning("No PDF or HTML version found for %s" % doc['DocumentName'])
+                # Sometimes the URL is just a relative path; make it absolute
+                if not url.startswith('http'):
+                    url = 'https://apps.azleg.gov{}'.format(url)
+
+                if type_ == 'Bill Versions':
                     bill.add_version_link(
                         note=doc['DocumentName'],
-                        url=doc['HtmlPath'],
-                        media_type='text/html'
-                    )
-                elif doc['PdfPath']:
-                    bill.add_version_link(
-                        note=doc['DocumentName'],
-                        url=doc['PdfPath'],
-                        media_type='application/pdf'
+                        url=url,
+                        media_type=media_type
                     )
                 else:
-                    self.warning("No PDF or HTML version found for %s" % doc['DocumentName'])
-        return bill
+                    bill.add_document_link(
+                        note=doc['DocumentName'],
+                        url=url,
+                        media_type=media_type
+                    )
 
     def scrape_sponsors(self, bill, internal_id):
         # Careful, this sends XML to a browser but JSON to machines
@@ -101,7 +102,6 @@ class AZBillScraper(Scraper):
             entity_type='person',
             primary=sponsor_type == 'primary'
         )
-        return bill
 
     def scrape_subjects(self, bill, internal_id):
         # https://apps.azleg.gov/api/Keyword/?billStatusId=68149
@@ -109,7 +109,6 @@ class AZBillScraper(Scraper):
         page = json.loads(self.get(subjects_url).content.decode('utf-8'))
         for subject in page:
             bill.add_subject(subject['Name'])
-        return bill
 
     def scrape_actions(self, bill, page, self_chamber):
         """
@@ -197,8 +196,6 @@ class AZBillScraper(Scraper):
                 classification=action_type
             )
 
-        return bill
-
     def actor_from_action(self, bill, action, self_chamber):
         """
         Determine the actor from the action key
@@ -219,15 +216,15 @@ class AZBillScraper(Scraper):
         session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
-        req = self.get('http://www.azleg.gov/bills/')
+        req = self.get('https://www.azleg.gov/bills/')
 
-        session_form_url = 'http://www.azleg.gov/azlegwp/setsession.php'
+        session_form_url = 'https://www.azleg.gov/azlegwp/setsession.php'
         form = {
             'sessionID': session_id
         }
         req = self.post(url=session_form_url, data=form, cookies=req.cookies, allow_redirects=True)
 
-        bill_list_url = 'http://www.azleg.gov/bills/'
+        bill_list_url = 'https://www.azleg.gov/bills/'
 
         page = self.get(bill_list_url, cookies=req.cookies).content
         # There's an errant close-comment that browsers handle
@@ -286,10 +283,8 @@ class AZBillScraper(Scraper):
 
         if out_of_order != []:
             self.info("Unable to sort " + bill.identifier)
-            return bill
         else:
             bill.actions = new_list
-            return bill
 
     def get_bill_type(self, bill_id):
         for key in utils.bill_types:

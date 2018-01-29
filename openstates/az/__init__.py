@@ -218,6 +218,12 @@ class Arizona(Jurisdiction):
             "start_date": "2018-01-08",
             "end_date": "2018-05-03",
         },
+        {
+            "_scraped_name": "2018 - Fifty-third Legislature - First Special Session",
+            "classification": "special",
+            "identifier": "53rd-1st-special",
+            "name": "53rd Legislature - 1st Special Session",
+        },
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",
@@ -327,7 +333,7 @@ class Arizona(Jurisdiction):
     def get_session_list(self):
         session = requests.Session()
 
-        data = session.get('http://www.azleg.gov/')
+        data = session.get('https://www.azleg.gov/')
 
         # TODO: JSON at https://apps.azleg.gov/api/Session/
 

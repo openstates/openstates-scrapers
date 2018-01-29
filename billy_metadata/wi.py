@@ -52,7 +52,8 @@ metadata = {
          {'name': '2017-2018',
          'sessions': ['January 2017 Special Session',
                       'August 2017 Special Session',
-                      '2017 Regular Session'],
+                      '2017 Regular Session',
+                      'January 2018 Special Session'],
          'start_year': 2017, 'end_year': 2018},
     ],
     'session_details': {
@@ -138,6 +139,12 @@ metadata = {
             'type': 'primary',
             'display_name': '2017 Regular Session',
             '_scraped_name': '2017 Regular Session',
+        },
+        'January 2018 Special Session': {
+            'start_date': datetime.date(2018, 1, 18),
+            'type': 'special',
+            'display_name': 'January 2018 Special Session',
+            '_scraped_name': 'January 2018 Special Session',
         },
     },
     'feature_flags': ['subjects',
