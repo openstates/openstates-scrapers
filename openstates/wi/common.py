@@ -17,6 +17,7 @@ SESSION_TERMS = {
     '2017 Regular Session': '2017-2018',
     'January 2017 Special Session': '2017-2018',
     'August 2017 Special Session': '2017-2018',
+    'January 2018 Special Session': '2017-2018',
 }
 
 
@@ -31,4 +32,5 @@ SESSION_SITE_IDS = {
     'January 2014 Special Session': 'jr4',
     'January 2017 Special Session': 'jr7',
     'August 2017 Special Session': 'au7',
+    'January 2018 Special Session': 'jr8',
 }
