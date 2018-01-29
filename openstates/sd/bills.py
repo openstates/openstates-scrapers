@@ -9,6 +9,10 @@ from openstates.utils import LXMLMixin
 
 
 class SDBillScraper(Scraper, LXMLMixin):
+    # South Dakota has some consent calendar votes,
+    # where they take one vote on the passage of _multiple_ bills.
+    # Until this can be easily modeled in Pupa, only scrape a vote once.
+    _scraped_vote_urls = []
 
     def scrape(self, chambers=None, session=None):
         if not session:
@@ -194,18 +198,14 @@ class SDBillScraper(Scraper, LXMLMixin):
         else:
             raise ScrapeError("Bad chamber: %s" % location)
 
-        bill_id = re.search(r'^[A-Z]{2,3} \d{1,4}', header)
-        if bill_id and bill.identifier != bill_id.group():
-            # Sometimes the legislature has mistaken links in its actions tables
-            self.warning("Skipping vote for a different bill: '{}' not for bill '{}'".format(
-                header, bill.identifier))
+        motion = ', '.join(header.split(', ')[2:]).strip()
+
+        if url not in self._scraped_vote_urls:
+            self._scraped_vote_urls.append(url)
+        else:
+            self.warning("Skipping an already-scraped consent calendar vote: '{}'".format(motion))
             return
 
-        # committee = ' '.join(location.split(' ')[1:]).strip()
-        # if not committee or committee.startswith('of Representatives'):
-        #     committee = None
-
-        motion = ', '.join(header.split(', ')[2:]).strip()
         if motion:
             # If we can't detect a motion, skip this vote
             yes_count = int(
