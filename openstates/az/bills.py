@@ -8,7 +8,7 @@ from . import session_metadata
 from lxml import html
 
 
-BASE_URL = 'http://www.azleg.gov/'
+BASE_URL = 'https://www.azleg.gov/'
 
 
 class AZBillScraper(Scraper):
@@ -18,14 +18,9 @@ class AZBillScraper(Scraper):
                            'SS': 'Secretary of State'}
 
     def scrape_bill(self, chamber, session, bill_id, session_id):
-        """
-        Scrapes documents, actions, vote counts and votes for
-        a given bill.
-        """
         bill_json_url = 'https://apps.azleg.gov/api/Bill/?billNumber={}&sessionId={}&' \
                         'legislativeBody={}'.format(bill_id, session_id, self.chamber_map[chamber])
         response = self.get(bill_json_url)
-        # print(response.content)
         page = json.loads(response.content.decode('utf-8'))
 
         bill_title = page['ShortTitle']
@@ -219,15 +214,15 @@ class AZBillScraper(Scraper):
         session_id = session_metadata.session_id_meta_data[session]
 
         # Get the bills page to start the session
-        req = self.get('http://www.azleg.gov/bills/')
+        req = self.get('https://www.azleg.gov/bills/')
 
-        session_form_url = 'http://www.azleg.gov/azlegwp/setsession.php'
+        session_form_url = 'https://www.azleg.gov/azlegwp/setsession.php'
         form = {
             'sessionID': session_id
         }
         req = self.post(url=session_form_url, data=form, cookies=req.cookies, allow_redirects=True)
 
-        bill_list_url = 'http://www.azleg.gov/bills/'
+        bill_list_url = 'https://www.azleg.gov/bills/'
 
         page = self.get(bill_list_url, cookies=req.cookies).content
         # There's an errant close-comment that browsers handle
