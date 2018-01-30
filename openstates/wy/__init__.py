@@ -15,7 +15,7 @@ class Wyoming(Jurisdiction):
     scrapers = {
         'bills': WYBillScraper,
         'people': WYPersonScraper,
-        'committees': WYCommitteeScraper,
+        # 'committees': WYCommitteeScraper,
     }
     parties = [
         {'name': 'Republican'},
