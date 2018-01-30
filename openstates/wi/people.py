@@ -54,15 +54,6 @@ class WIPersonScraper(Scraper):
                 else:
                     email = ''
 
-                if party is None:
-                    try:
-                        party = {
-                            'Dan Feyen': 'Republican',
-                            'Patrick Testin': 'Republican',
-                        }[full_name]
-                    except KeyError:
-                        pass
-
                 assert party is not None, "{} is missing party".format(full_name)
 
                 person = Person(
