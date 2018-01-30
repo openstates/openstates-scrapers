@@ -277,22 +277,22 @@ class MTBillScraper(Scraper, LXMLMixin):
             if 'by senate' in action_name.lower():
                 actor = 'upper'
 
-            # Add a `pupa_id` to properly identify some actions
-            # There are cases where a bill has two identical rows,
-            # where it's plausible that the actions could both be valid, such as
-            # `(C) Pre-Introduction Letter Sent` or `(C) Printed - New Version Available`
-            # Eg, on http://laws.leg.mt.gov/legprd/LAW0203W$BSRV.ActionQuery?P_SESS=20171&P_BLTP_BILL_TYP_CD=&P_BILL_NO=&P_BILL_DFT_NO=LC0267&P_CHPT_NO=&Z_ACTION=Find&P_SBJT_SBJ_CD=&P_ENTY_ID_SEQ=  # noqa
             bill.add_action(
                 action_name,
                 action_date,
                 classification=action_type,
-                chamber=actor,
-                extras={'pupa_id': '{}-{}-{}'.format(
-                    bill.legislative_session,
-                    bill.identifier,
-                    idx
-                )}
+                chamber=actor
             )
+            # There are cases where a bill has two identical rows,
+            # where it's plausible that the actions could both be valid, such as
+            # `(C) Pre-Introduction Letter Sent` or `(C) Printed - New Version Available`
+            # Eg, on http://laws.leg.mt.gov/legprd/LAW0203W$BSRV.ActionQuery?P_SESS=20171&P_BLTP_BILL_TYP_CD=&P_BILL_NO=&P_BILL_DFT_NO=LC0267&P_CHPT_NO=&Z_ACTION=Find&P_SBJT_SBJ_CD=&P_ENTY_ID_SEQ=  # noqa
+            # Right now, Pupa can't handle duplicate actions,
+            # but when it is improved then this de-duplication can be removed
+            # https://github.com/opencivicdata/pupa/issues/307
+            if len(bill.actions) >= 2 and bill.actions[-1] == bill.actions[-2]:
+                self.warning('Deleting duplicate bill action on {}'.format(bill.identifier))
+                bill.actions.pop()
 
     def _versions_dict(self, session):
         '''Get a mapping of ('HB', '2') tuples to version urls.'''
