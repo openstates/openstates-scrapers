@@ -211,18 +211,18 @@ class Arizona(Jurisdiction):
             "start_date": "2017-01-09"
         },
         {
+            "_scraped_name": "2018 - Fifty-third Legislature - First Special Session",
+            "classification": "special",
+            "identifier": "53rd-1st-special",
+            "name": "53rd Legislature - 1st Special Session",
+        },
+        {
             "_scraped_name": "2018 - Fifty-third Legislature - Second Regular Session",
             "classification": "primary",
             "identifier": "53rd-2nd-regular",
             "name": "53rd Legislature - 2nd Regular Session",
             "start_date": "2018-01-08",
             "end_date": "2018-05-03",
-        },
-        {
-            "_scraped_name": "2018 - Fifty-third Legislature - First Special Session",
-            "classification": "special",
-            "identifier": "53rd-1st-special",
-            "name": "53rd Legislature - 1st Special Session",
         },
     ]
     ignored_scraped_sessions = [

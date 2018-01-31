@@ -64,8 +64,8 @@ metadata = dict(
             'name': '53',
             'sessions': [
                 '53rd-1st-regular',
-                '53rd-2nd-regular',
                 '53rd-1st-special',
+                '53rd-2nd-regular',
             ],
             'start_year': 2017,
             'end_year': 2018
