@@ -5,7 +5,7 @@ import copy
 import tempfile
 from datetime import datetime
 from urllib.parse import urljoin
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
