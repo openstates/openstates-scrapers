@@ -27,7 +27,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2011",
             "classification": "primary",
             "end_date": "2011-04-27",
-            "identifier": "2011",
+            "identifier": "2011R",
             "name": "2011 Regular Session",
             "start_date": "2011-01-10"
         },
@@ -43,7 +43,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2013",
             "classification": "primary",
             "end_date": "2013-05-17",
-            "identifier": "2013",
+            "identifier": "2013R",
             "name": "2013 Regular Session",
             "start_date": "2013-01-14"
         },
@@ -59,7 +59,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2014",
             "classification": "primary",
             "end_date": "2014-03-19",
-            "identifier": "2014",
+            "identifier": "2014R",
             "name": "2014 Regular Session",
             "start_date": "2014-02-10"
         },
@@ -83,7 +83,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2015",
             "classification": "primary",
             "end_date": "2015-04-22",
-            "identifier": "2015",
+            "identifier": "2015R",
             "name": "2015 Regular Session",
             "start_date": "2015-01-12"
         },
@@ -122,7 +122,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2017",
             "classification": "primary",
             "end_date": "2017-04-22",
-            "identifier": "2017",
+            "identifier": "2017R",
             "name": "2017 Regular Session",
             "start_date": "2017-01-12"
         },
@@ -133,6 +133,14 @@ class Arkansas(Jurisdiction):
             "identifier": "2017S1",
             "name": "2017 First Extraordinary Session",
             "start_date": "2017-05-01"
+        },
+        {
+            "_scraped_name": "Fiscal Session, 2018",
+            "classification": "special",
+            "end_date": "2018-03-13",
+            "identifier": "2018F",
+            "name": "2018 Fiscal Session",
+            "start_date": "2018-02-12"
         },
     ]
     ignored_scraped_sessions = [

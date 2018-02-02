@@ -25,11 +25,9 @@ class ARBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+        self.slug = session
         chambers = [chamber] if chamber else ['upper', 'lower']
         self.bills = {}
-
-        # 2017R or 2017S1
-        self.slug = session + 'R' if 'S' not in session else session
 
         for Chamber in chambers:
             yield from self.scrape_bill(Chamber, session)
@@ -73,12 +71,10 @@ class ARBillScraper(Scraper):
                 bill.add_sponsorship(primary, classification='primary',
                                      entity_type='person', primary=True)
             # ftp://www.arkleg.state.ar.us/Bills/
-            # TODO: Keep on eye on this post 2017 to see if they apply R going forward.
-            session_code = '2017R' if session == '2017' else session
 
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
                            "%s/Public/%s.pdf" % (
-                               session_code, bill_id.replace(' ', '')))
+                               session, bill_id.replace(' ', '')))
             bill.add_version_link(bill_id, version_url, media_type='application/pdf')
 
             yield from self.scrape_bill_page(bill)

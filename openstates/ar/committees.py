@@ -20,8 +20,10 @@ class ARCommitteeScraper(Scraper):
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+        session_year = int(session[:4])
+        odd_year = session_year if session_year % 2 else session_year - 1
         base_url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
-                    "Pages/Committees.aspx?committeetype=") % (session[:4], session)
+                    "Pages/Committees.aspx?committeetype=") % (odd_year, session)
 
         for chamber, url_ext in COMM_TYPES.items():
             chamber_url = base_url + url_ext
