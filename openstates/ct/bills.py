@@ -70,7 +70,7 @@ class CTBillScraper(Scraper):
             bill.add_source(info_url)
 
             for introducer in self._introducers[bill_id]:
-                bill.add_sponsorship(name=str(introducer),
+                bill.add_sponsorship(name=introducer.decode('utf-8'),
                                      classification='primary',
                                      primary=True,
                                      entity_type='person')
