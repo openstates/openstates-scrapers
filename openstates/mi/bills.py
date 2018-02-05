@@ -56,17 +56,19 @@ def categorize_action(action):
 
 class MIBillScraper(Scraper):
     def scrape_bill(self, chamber, session, bill_id):
-        # try and get bill for current year
+        # try and get bill for the first year of the session biennium
         url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
             session[:4], bill_id.replace(' ', '-'))
         html = self.get(url).text
-        # if first page isn't found, try second year
+        # Otherwise, try second year of the session biennium
         if ('Page Not Found' in html or
                 'The bill you are looking for is not available yet' in html):
-            html = self.get('http://legislature.mi.gov/doc.aspx?%s-%s'
-                            % (session[-4:], bill_id.replace(' ', '-'))).text
+            url = 'http://legislature.mi.gov/doc.aspx?%s-%s' % (
+                session[-4:], bill_id.replace(' ', '-'))
+            html = self.get(url).text
             if ('Page Not Found' in html or
                     'The bill you are looking for is not available yet' in html):
+                self.warning("Cannot open bill page for {}; skipping".format(bill_id))
                 return
 
         doc = lxml.html.fromstring(html)
