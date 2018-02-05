@@ -1,33 +1,42 @@
+# Pupa and Billy scraped JSON and Scrapelib-cached webpages
 data
 cache
 _cache
 _data
+
+# Setting-overrides that should not be shared
+local_settings.*py
+billy_local.py
+.env
+
+# Local build and testing artifacts
+docs/_build/*
+errors/*
+*.egg-info
+MANIFEST
+dist/
+build
+testdata/html_data
+site/collected_static
+site/openstates
+
+# Python, editor, and operating system artifacts
 *.pyc
 *.DS_Store
 *~
 .ropeproject
-docs/_build/*
-local_settings.*py
-errors/*
 *.pid
 *.swp
-*.egg-info
-dist/
-MANIFEST
 *.class
 *.jar
-build
-testdata/html_data
-billy_local.py
-site/collected_static
-site/openstates
 +*.sublime*
+venv
+
+# Binary data files and dumps, from Open States and state websites
 openstates.sqlite3
 dump/
-venv
 tmp.*
 *.mdb
 *.accdb
 billydata
 .idea
-.env
