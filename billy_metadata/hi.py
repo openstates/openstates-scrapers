@@ -41,6 +41,7 @@ metadata = dict(
             'name': '2017-2018',
             'sessions': [
                 '2017 Regular Session',
+                '2018 Regular Session',
             ],
             'start_year' : 2017,
             'end_year'   : 2018,
@@ -50,6 +51,10 @@ metadata = dict(
         '2017 Regular Session' : {
             'display_name'  : '2017 Regular Session',
             '_scraped_name' : '2017'
+        },
+        '2018 Regular Session' : {
+            'display_name'  : '2018 Regular Session',
+            '_scraped_name' : '2018'
         },
         '2016 Regular Session' : {
             'display_name'  : '2016 Regular Session',
