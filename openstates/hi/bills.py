@@ -98,7 +98,7 @@ class HIBillScraper(Scraper):
             actor = {
                 "S": "upper",
                 "H": "lower",
-                "D": "Data Systems",
+                "D": "legislature",  # "Data Systems",
                 "$": "Appropriation measure",
                 "ConAm": "Constitutional Amendment"
             }[actor]
