@@ -68,7 +68,7 @@ class Connecticut(Jurisdiction):
             "_scraped_name": "2018",
             "identifier": "2018",
             "name": "2018 Regular Session",
-            "start_date": "2018-01-10",
+            "start_date": "2018-02-07",
             "end_date": "2018-05-09",
         },
     ]

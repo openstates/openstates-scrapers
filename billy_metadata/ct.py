@@ -70,8 +70,6 @@ metadata = {
         },
         '2018': {
             'display_name': '2018 Regular Session',
-            'start_date': datetime.date(2018, 1, 10),
-            'end_date': datetime.date(2018, 5, 9),
             '_scraped_name': '2018',
         },
     },
