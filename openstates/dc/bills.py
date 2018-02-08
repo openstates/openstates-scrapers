@@ -310,15 +310,14 @@ class DCBillScraper(Scraper):
         if "VoteResult" not in vote:
             if "postponed" in motion.lower():
                 result = "Postponed"
-                status = True   # because we're talking abtout the motion, not the amendment
+                status = 'pass'   # because we're talking abtout the motion, not the amendment
             elif "tabled" in motion.lower():
                 result = "Tabled"
-                status = True
+                status = 'pass'
             else:
                 self.logger.warning("Could not find result of vote, skipping.")
                 return
         else:
-
             result = vote["VoteResult"].strip().lower()
             statuses = {"approved": 'pass',
                         "disapproved": 'fail',
