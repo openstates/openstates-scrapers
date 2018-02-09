@@ -75,7 +75,7 @@ class ARBillScraper(Scraper):
             # ftp://www.arkleg.state.ar.us/Bills/
 
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
-                           "%s/Public/%s.pdf" % (
+                           "%s/Public/Searchable/%s.pdf" % (
                                self.slug, bill_id.replace(' ', '')))
             bill.add_version_link(bill_id, version_url, media_type='application/pdf')
 
