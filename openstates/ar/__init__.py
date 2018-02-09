@@ -27,7 +27,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2011",
             "classification": "primary",
             "end_date": "2011-04-27",
-            "identifier": "2011R",
+            "identifier": "2011",
             "name": "2011 Regular Session",
             "start_date": "2011-01-10"
         },
@@ -43,7 +43,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2013",
             "classification": "primary",
             "end_date": "2013-05-17",
-            "identifier": "2013R",
+            "identifier": "2013",
             "name": "2013 Regular Session",
             "start_date": "2013-01-14"
         },
@@ -59,7 +59,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2014",
             "classification": "primary",
             "end_date": "2014-03-19",
-            "identifier": "2014R",
+            "identifier": "2014",
             "name": "2014 Regular Session",
             "start_date": "2014-02-10"
         },
@@ -83,7 +83,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2015",
             "classification": "primary",
             "end_date": "2015-04-22",
-            "identifier": "2015R",
+            "identifier": "2015",
             "name": "2015 Regular Session",
             "start_date": "2015-01-12"
         },
@@ -122,7 +122,7 @@ class Arkansas(Jurisdiction):
             "_scraped_name": "Regular Session, 2017",
             "classification": "primary",
             "end_date": "2017-04-22",
-            "identifier": "2017R",
+            "identifier": "2017",
             "name": "2017 Regular Session",
             "start_date": "2017-01-12"
         },

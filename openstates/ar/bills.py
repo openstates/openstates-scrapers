@@ -7,6 +7,8 @@ from pupa.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 
+from .common import get_slug_for_session
+
 TIMEZONE = pytz.timezone('US/Central')
 
 
@@ -25,7 +27,7 @@ class ARBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-        self.slug = session
+        self.slug = get_slug_for_session(session)
         chambers = [chamber] if chamber else ['upper', 'lower']
         self.bills = {}
 
@@ -74,7 +76,7 @@ class ARBillScraper(Scraper):
 
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
                            "%s/Public/%s.pdf" % (
-                               session, bill_id.replace(' ', '')))
+                               self.slug, bill_id.replace(' ', '')))
             bill.add_version_link(bill_id, version_url, media_type='application/pdf')
 
             yield from self.scrape_bill_page(bill)
