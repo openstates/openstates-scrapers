@@ -1,3 +1,4 @@
+import requests
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
@@ -129,7 +130,12 @@ class AKPersonScraper(Scraper, LXMLMixin):
             person.add_link(leg_url)
 
             # scrape offices
-            self._scrape_offices(person, leg_url, email)
+            if district == '40':
+                assert requests.get(leg_url).status_code == 500, \
+                        "Remove special-casing for John Lincoln"
+                # Lincoln is missing a personal page, so don't scrape it
+            else:
+                self._scrape_offices(person, leg_url, email)
 
             yield person
 
