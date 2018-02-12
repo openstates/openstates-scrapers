@@ -45,6 +45,7 @@ metadata = {
                 '2017',
                 '2017 1st Extraordinary Session',
                 '2017 2nd Extraordinary Session',
+                '2018 1st Extraordinary Session',
                 '2018',
             ],
         },
@@ -153,6 +154,10 @@ metadata = {
         '2017 2nd Extraordinary Session': {
             'type': 'special',
             'display_name': '2017, 2nd Extraordinary Session',
+        },
+        '2018 1st Extraordinary Session': {
+            'type': 'special',
+            'display_name': '2018, 1st Extraordinary Session',
         },
         '2018': {
             'type': 'primary',
