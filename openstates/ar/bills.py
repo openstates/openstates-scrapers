@@ -191,7 +191,7 @@ class ARBillScraper(Scraper):
             not_voting_count = int(page.xpath(count_path % "Non Voting").split()[-1])
             other_count = int(page.xpath(count_path % "Present").split()[-1])
             passed = yes_count > no_count + not_voting_count + other_count
-            vote = VoteEvent(start_date='2017-03-04', motion_text=motion,
+            vote = VoteEvent(start_date=date, motion_text=motion,
                              result='pass' if passed else 'fail',
                              classification='passage',
                              chamber=actor,
