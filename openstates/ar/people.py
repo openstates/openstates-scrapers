@@ -3,6 +3,8 @@ import re
 from pupa.scrape import Person, Scraper
 import lxml.html
 
+from .common import get_slug_for_session
+
 
 class ARLegislatorScraper(Scraper):
     _remove_special_case = True
@@ -13,9 +15,12 @@ class ARLegislatorScraper(Scraper):
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+        session_slug = get_slug_for_session(session)
+        session_year = int(session[:4])
+        odd_year = session_year if session_year % 2 else session_year - 1
         url = ('http://www.arkleg.state.ar.us/assembly/%s/%s/Pages/'
-               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (session[:4],
-                                                                                 session)
+               'LegislatorSearchResults.aspx?member=&committee=All&chamber=') % (odd_year,
+                                                                                 session_slug)
         page = self.get(url).text
         root = lxml.html.fromstring(page)
 

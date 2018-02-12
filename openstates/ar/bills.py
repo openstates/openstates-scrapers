@@ -1,22 +1,25 @@
 import re
 import csv
 from io import StringIO
+import urllib
 import datetime
 import pytz
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 import lxml.html
 
+from .common import get_slug_for_session
+
 TIMEZONE = pytz.timezone('US/Central')
 
 
-def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
-    # csv.py doesn't do Unicode; encode temporarily as UTF-8:
-    csv_reader = csv.reader(unicode_csv_data,
-                            dialect=dialect, **kwargs)
-    for row in csv_reader:
-        # decode UTF-8 back to Unicode, cell by cell:
-        yield [cell for cell in row]
+def get_utf_16_ftp_content(url):
+    # Rough to do this within Scrapelib, as it doesn't allow custom decoding
+    raw = urllib.request.urlopen(url).read().decode('utf-16')
+    # Also, legislature may use `NUL` bytes when a cell is empty
+    NULL_BYTE_CODE = '\x00'
+    text = raw.replace(NULL_BYTE_CODE, '')
+    return text
 
 
 class ARBillScraper(Scraper):
@@ -25,11 +28,9 @@ class ARBillScraper(Scraper):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+        self.slug = get_slug_for_session(session)
         chambers = [chamber] if chamber else ['upper', 'lower']
         self.bills = {}
-
-        # 2017R or 2017S1
-        self.slug = session + 'R' if 'S' not in session else session
 
         for Chamber in chambers:
             yield from self.scrape_bill(Chamber, session)
@@ -38,9 +39,8 @@ class ARBillScraper(Scraper):
             yield bill
 
     def scrape_bill(self, chamber, session):
-        url = "ftp://www.arkleg.state.ar.us/dfadooas/LegislativeMeasures.txt"
-        page = self.get(url).text
-        page = unicode_csv_reader(StringIO(page), delimiter='|')
+        url = "ftp://www.arkleg.state.ar.us/SessionInformation/LegislativeMeasures.txt"
+        page = csv.reader(StringIO(get_utf_16_ftp_content(url)), delimiter='|')
 
         for row in page:
             bill_chamber = {'H': 'lower', 'S': 'upper'}[row[0]]
@@ -72,13 +72,10 @@ class ARBillScraper(Scraper):
             if primary:
                 bill.add_sponsorship(primary, classification='primary',
                                      entity_type='person', primary=True)
-            # ftp://www.arkleg.state.ar.us/Bills/
-            # TODO: Keep on eye on this post 2017 to see if they apply R going forward.
-            session_code = '2017R' if session == '2017' else session
 
             version_url = ("ftp://www.arkleg.state.ar.us/Bills/"
-                           "%s/Public/%s.pdf" % (
-                               session_code, bill_id.replace(' ', '')))
+                           "%s/Public/Searchable/%s.pdf" % (
+                               self.slug, bill_id.replace(' ', '')))
             bill.add_version_link(bill_id, version_url, media_type='application/pdf')
 
             yield from self.scrape_bill_page(bill)
@@ -86,9 +83,8 @@ class ARBillScraper(Scraper):
             self.bills[bill_id] = bill
 
     def scrape_actions(self):
-        url = "ftp://www.arkleg.state.ar.us/dfadooas/ChamberActions.txt"
-        page = self.get(url).text
-        page = csv.reader(StringIO(page))
+        url = "ftp://www.arkleg.state.ar.us/SessionInformation/ChamberActions.txt"
+        page = csv.reader(StringIO(get_utf_16_ftp_content(url)), delimiter='|')
 
         for row in page:
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
@@ -96,20 +92,14 @@ class ARBillScraper(Scraper):
             if bill_id not in self.bills:
                 continue
             # different term
-            if row[-2] != self.slug:
+            if row[10] != self.slug:
                 continue
 
-            # Commas aren't escaped, but only one field (the action) can
-            # contain them so we can work around it by using both positive
-            # and negative offsets
-            bill_id = "%s%s %s" % (row[1], row[2], row[3])
-            actor = {'HU': 'lower', 'SU': 'upper'}[row[-5].upper()]
-            # manual fix for crazy time value
-            row[6] = row[6].replace('.520000000', '')
+            actor = {'H': 'lower', 'S': 'upper'}[row[7].upper()]
 
-            date = TIMEZONE.localize(datetime.datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S"))
+            date = TIMEZONE.localize(datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S.%f"))
             date = "{:%Y-%m-%d}".format(date)
-            action = ','.join(row[7:-5])
+            action = row[6]
 
             action_type = []
             if action.startswith('Filed'):
@@ -151,11 +141,12 @@ class ARBillScraper(Scraper):
         # It's still more efficient to get the rest of the data we're
         # interested in from the CSVs, though, because their site splits
         # other info (e.g. actions) across many pages
-        term_year = '2017'
+        session_year = int(self.slug[:4])
+        odd_year = session_year if session_year % 2 else session_year - 1
         measureno = bill.identifier.replace(" ", "")
         url = ("http://www.arkleg.state.ar.us/assembly/%s/%s/"
                "Pages/BillInformation.aspx?measureno=%s" % (
-                   term_year, self.slug, measureno))
+                   odd_year, self.slug, measureno))
         page = self.get(url).text
         bill.add_source(url)
         page = lxml.html.fromstring(page)
