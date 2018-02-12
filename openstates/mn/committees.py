@@ -1,5 +1,6 @@
 from pupa.scrape import Scraper, Organization
 import lxml.html
+from scrapelib import HTTPError
 
 
 class MNCommitteeScraper(Scraper):
@@ -70,8 +71,12 @@ class MNCommitteeScraper(Scraper):
             com = Organization(com.text, chamber='lower', classification='committee')
             com.add_source(members_url)
 
-            member_html = self.get(members_url).text
-            mdoc = lxml.html.fromstring(member_html)
+            try:
+                member_html = self.get(members_url).text
+                mdoc = lxml.html.fromstring(member_html)
+            except HTTPError:
+                self.warning("Member list for {} failed to respond; skipping".format(com.name))
+                continue
 
             # each legislator in their own table
             # first row, second column contains all the info
