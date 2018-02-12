@@ -28,6 +28,7 @@ class LABillScraper(Scraper, LXMLMixin):
         '2017 1st Extraordinary Session': '171ES',
         '2017 2nd Extraordinary Session': '172ES',
         '2017': '17RS',
+        '2018 1st Extraordinary Session': '181ES',
         '2018': '18RS',
     }
 
@@ -71,10 +72,10 @@ class LABillScraper(Scraper, LXMLMixin):
         ret.make_links_absolute(form.action)
         return ret
 
-    def bill_pages(self, session_id, bill_abbreviation):
-        url = 'http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*'\
-            .format(session_id, bill_abbreviation)
-        page = self.lxmlize(url)
+    def bill_pages(self, url):
+        response = self.get(url, allow_redirects=False)
+        page = lxml.html.fromstring(response.text)
+        page.make_links_absolute(url)
         yield page
 
         while True:
@@ -107,11 +108,25 @@ class LABillScraper(Scraper, LXMLMixin):
         self._bill_abbreviations = self._get_bill_abbreviations(session_id)
         for chamber in chambers:
             for bill_abbreviation in self._bill_abbreviations[chamber]:
-                for bill_page in self.bill_pages(session_id, bill_abbreviation):
+                bill_list_url = 'http://www.legis.la.gov/Legis/BillSearchListQ.aspx?s={}&r={}1*'\
+                    .format(session_id, bill_abbreviation)
+                bills_found = False
+                for bill_page in self.bill_pages(bill_list_url):
                     for bill in bill_page.xpath(
                             "//a[contains(@href, 'BillInfo.aspx') and text()='more...']"):
+                        bills_found = True
                         yield from self.scrape_bill_page(chamber, session, bill.attrib['href'],
                                                          bill_abbreviation)
+                if not bills_found:
+                    # If a session only has one legislative item of a given type
+                    # (eg, some special sessions only have one `HB`), the bill list
+                    # will redirect to its single bill's page
+                    yield from self.scrape_bill_page(
+                        chamber,
+                        session,
+                        bill_list_url,
+                        bill_abbreviation
+                    )
 
     def get_one_xpath(self, page, xpath):
         ret = page.xpath(xpath)
