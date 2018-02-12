@@ -231,10 +231,14 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
         except IndexError:
             self.warning('invalid bio page for %s', person)
             return
-        col1, col2 = table.xpath('tr[2]/td')
-        lxml.etree.strip_tags(col1, 'sup')
-        lxml.etree.strip_tags(col2, 'sup')
 
+        col2 = None
+        try:
+            col1, col2 = table.xpath('tr[2]/td')
+        except ValueError:
+            col1, = table.xpath('tr[2]/td')
+
+        lxml.etree.strip_tags(col1, 'sup')
         capitol_office_info = self._clean_office_info(col1)
 
         # Set email on the leg object.
@@ -265,9 +269,20 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
                 person.add_contact_detail(type='address', value=capitol_address,
                                           note='Capitol Office')
 
+        if not col2:
+            self.warning(
+                "{} appears to have no district office address; skipping it".format(person.name)
+            )
+            return
+        if 'use capitol address' in col2.text_content().lower():
+            return
+        lxml.etree.strip_tags(col2, 'sup')
         district_office_info = self._clean_office_info(col2)
         # This probably isn't a valid district office at less than two lines.
         if len(district_office_info) < 2:
+            self.warning(
+                "{} appears to have no district office address; skipping it".format(person.name)
+            )
             return
 
         district_address_lines = []
