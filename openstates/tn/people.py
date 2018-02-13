@@ -49,13 +49,12 @@ class TNPersonScraper(Scraper):
             party = parties[partyInit]
             district = row.xpath('td[5]/a')[0].text.split()[1]
             address = row.xpath('td[6]')[0].text_content()
-            # 301 6th Avenue North Suite
-            address = address.replace('LP',
-                                      'Legislative Plaza\nNashville, TN 37243')
-            address = address.replace('WMB',
-                                      'War Memorial Building\nNashville, TN 37243')
-            address = '301 6th Avenue North\nSuite ' + address
+            # Hardcode the address of the Cordell Hull Building,
+            # where all legislators currently have their offices
             address = address.strip()
+            address = address.replace('CHB',
+                                      'Cordell Hull Bldg.\nNashville, TN 37243')
+            address = '425 5th Avenue North\nSuite ' + address.strip()
 
             phone = [
                 x.strip() for x in
