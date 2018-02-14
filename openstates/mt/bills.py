@@ -206,7 +206,6 @@ class MTBillScraper(Scraper, LXMLMixin):
                     title=title, classification=classification)
 
         self.add_actions(bill, status_page)
-        self.dedup_actions(bill)
         votes = self.add_votes(bill, status_page, status_url)
 
         tabledata = self._get_tabledata(status_page)
@@ -284,33 +283,6 @@ class MTBillScraper(Scraper, LXMLMixin):
                 classification=action_type,
                 chamber=actor
             )
-
-    def dedup_actions(self, bill):
-        # There are cases where a bill page has two identical action rows,
-        # where it's plausible that the actions could both be valid, such as
-        # `(C) Pre-Introduction Letter Sent` or `(C) Printed - New Version Available`
-        # Eg, on http://laws.leg.mt.gov/legprd/LAW0203W$BSRV.ActionQuery?P_SESS=20171&P_BLTP_BILL_TYP_CD=&P_BILL_NO=&P_BILL_DFT_NO=LC0267&P_CHPT_NO=&Z_ACTION=Find&P_SBJT_SBJ_CD=&P_ENTY_ID_SEQ=  # noqa
-        # Right now, Pupa can't handle duplicate actions,
-        # but when it is improved then this de-duplication can be removed
-        # https://github.com/opencivicdata/pupa/issues/307
-        duplicates = []
-        seen = []
-        for action in bill.actions:
-            if action not in seen:
-                seen.append(action)
-            else:
-                duplicates.append(action)
-
-        for duplicate in duplicates:
-            self.warning(
-                'De-duplicating name of repeated action on {}: {}'
-                .format(bill.identifier, duplicate)
-            )
-            index = 1
-            for action in bill.actions:
-                if action == duplicate:
-                    action['description'] = '{} [{}]'.format(action['description'], index)
-                    index += 1
 
     def _versions_dict(self, session):
         '''Get a mapping of ('HB', '2') tuples to version urls.'''
