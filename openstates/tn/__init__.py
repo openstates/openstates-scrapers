@@ -19,10 +19,6 @@ class Tennessee(Jurisdiction):
         # 'events': TNEventScraper,
         'people': TNPersonScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         # {
         #     "_scraped_name": "106th General Assembly",

@@ -16,10 +16,6 @@ class Oregon(Jurisdiction):
         'bills': ORBillScraper,
         'votes': ORVoteScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2007 Regular Session",

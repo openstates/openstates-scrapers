@@ -17,13 +17,6 @@ class Vermont(Jurisdiction):
         'bills': VTBillScraper,
         # 'events': VTEventScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Progressive/Democratic'},
-        {'name': 'Democratic/Progressive'},
-        {'name': 'Progressive'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009-2010 Session",

@@ -11,10 +11,6 @@ class USVirginIslands(Jurisdiction):
     scrapers = {
         # 'bills': VIBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "30",

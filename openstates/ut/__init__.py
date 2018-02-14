@@ -21,10 +21,6 @@ class Utah(Jurisdiction):
         'committees': UTCommitteeScraper,
         'bills': UTBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 General Session",

@@ -17,10 +17,6 @@ class Maryland(Jurisdiction):
         'people': MDPersonScraper,
         'committees': MDCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2007 Regular Session",

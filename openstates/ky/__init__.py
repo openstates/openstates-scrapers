@@ -19,10 +19,6 @@ class Kentucky(Jurisdiction):
         'committees': KYCommitteeScraper,
         'bills': KYBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 Regular Session",

@@ -17,10 +17,6 @@ class NewMexico(Jurisdiction):
         'bills': NMBillScraper,
         'votes': NMVoteScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 Regular",

@@ -14,10 +14,6 @@ class Montana(Jurisdiction):
         'committees': MTCommitteeScraper,
         'bills': MTBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011 Regular Session",

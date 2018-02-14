@@ -16,10 +16,6 @@ class Mississippi(Jurisdiction):
         "committee": MSCommitteeScraper,
         "bills": MSBillScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2008 Regular Session",

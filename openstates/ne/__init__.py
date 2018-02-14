@@ -18,9 +18,6 @@ class Nebraska(Jurisdiction):
         'people': NEPersonScraper,
         'committees': NECommitteeScraper,
     }
-    parties = [
-        {'name': 'Nonpartisan'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "102nd Legislature 1st and 2nd Sessions",

@@ -16,10 +16,6 @@ class Maine(Jurisdiction):
         'people': MEPersonScraper,
         'committees': MECommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "121st Legislature",

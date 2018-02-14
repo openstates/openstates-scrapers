@@ -16,10 +16,6 @@ class Georgia(Jurisdiction):
         'people': GAPersonScraper,
         'committee': GACommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011-2012 Regular Session",

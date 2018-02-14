@@ -18,10 +18,6 @@ class Washington(Jurisdiction):
         'committees': WACommitteeScraper,
         'bills': WABillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009-10",

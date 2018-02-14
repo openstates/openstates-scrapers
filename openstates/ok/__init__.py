@@ -16,10 +16,6 @@ class Oklahoma(Jurisdiction):
         # 'events': OKEventScraper,
         'bills': OKBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     # Sessions are named on OK's website as "{odd year} regular session" until the even year,
     # when all data rolls over. For example, even year sessions include all odd-year-session bills.
     # We have opted to name sessions {odd-even} Regular Session and treat them as such.

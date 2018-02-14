@@ -24,11 +24,6 @@ class Virginia(Jurisdiction):
         "people": VaPersonScraper,
         "bills": VaBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
-
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",

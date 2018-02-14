@@ -19,10 +19,6 @@ class Indiana(Jurisdiction):
         'bills': INBillScraper
 
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "First Regular Session 116th General Assembly (2009)",
