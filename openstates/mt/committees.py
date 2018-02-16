@@ -46,7 +46,7 @@ class MTCommitteeScraper(Scraper):
 
             committee.add_member(member_name, member_role)
 
-    def scrape_committees_html(self, comm_url,session=None, chamber=None):
+    def scrape_committees_html(self, comm_url, session=None, chamber=None):
 
         data = self.get(comm_url).text
         doc = lxml.html.fromstring(data)
