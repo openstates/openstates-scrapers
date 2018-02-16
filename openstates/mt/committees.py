@@ -3,6 +3,7 @@ import re
 from itertools import dropwhile
 from pupa.scrape import Organization, Scraper
 from pupa.utils.generic import convert_pdf
+import lxml.html
 
 
 committee_urls = {
@@ -10,27 +11,29 @@ committee_urls = {
         '2013': ('http://leg.mt.gov/content/Committees/Session/'
                  '2013%20house%20committees%20-%20columns.pdf'),
         '2015': 'http://leg.mt.gov/content/Sessions/64th/2015-house-committees.pdf',
-        '2017': 'http://leg.mt.gov/css/Committees/Session/HouseSessionCommittee.asp?SessionID=111',
+        '2017': ('http://leg.mt.gov/css/Committees/Session/'
+                 'HouseSessionCommittee.asp?SessionID=111'),
         },
 
     'upper': {
         '2013': ('http://leg.mt.gov/content/Committees/Session/'
                  '2013%20senate%20committees%20-%20columns.pdf'),
         '2015': 'http://leg.mt.gov/content/Sessions/64th/2015-senate-committees.pdf',
-        '2017': 'http://leg.mt.gov/css/Committees/Session/SenateSessionCommittee.asp?SessionID=111',
+        '2017': ('http://leg.mt.gov/css/Committees/Session/'
+                 'SenateSessionCommittee.asp?SessionID=111'),
         },
     }
 
 class MTCommitteeScraper(Scraper):
 
-    def scrape_comm(self,committee,url):
+    def scrape_comm(self, committee, url):
         base_url = "http://leg.mt.gov/css/Committees/Session/"
         data = self.get(base_url+url).text
         doc = lxml.html.fromstring(data)
         member_roles = doc.xpath("//td[@id='cont']/a/following-sibling::text()[1]")
         member_names = doc.xpath("//td[@id='cont']/a")
 
-        for member,role in zip(member_names,member_roles):
+        for member, role in zip(member_names, member_roles):
             member_name = member.text
 
             if role == '--Vice Chair':
@@ -40,23 +43,24 @@ class MTCommitteeScraper(Scraper):
             else:
                 member_role = 'member'
 
-            committee.add_member(member_name,member_role)
+            committee.add_member(member_name, member_role)
 
-    def scrape_committees_html(self,chamber=None,session=None):
+    def scrape_committees_html(self, session=None, chamber=None, comm_url):
 
-        comm_url = comm_urls['upper']
         data = self.get(comm_url).text
         doc = lxml.html.fromstring(data)
 
         for comm in doc.xpath('//p/a')[1:]:
             name = comm.text
             url = comm.get('href')
-            committee = Organization(name=name,chamber=chamber,classification="committee")
+            committee = Organization(name=name, chamber=chamber, classification="committee")
             committee.add_source(url)
 
-            self.scrape_comm(committee,url)
+            self.scrape_comm(committee, url)
 
-    def scrape(self,chamber=None,session=None):
+            yield committee
+
+    def scrape(self, chamber=None, session=None):
         if not session:
             session = max(committee_urls['lower'].keys())
         chambers = [chamber] if chamber else ['upper', 'lower']
@@ -64,15 +68,13 @@ class MTCommitteeScraper(Scraper):
         for chamber in chambers:
             url = committee_urls[chamber][session]
             if session == '2017':
-                yield from self.scrape_committees_html(session,chamber,url)
+                yield from self.scrape_committees_html(session, chamber, url)
             else:
+                fn, _ = self.urlretrieve(url)
                 yield from self.scrape_committees_pdf(session, chamber, fn, url)
 
     def scrape_committees_pdf(self, year, chamber, filename, url):
-        if year == '2017':
-            #create a scrpaing for 2017 montana using html
-            scrape_2017(chamber,url)
-
+ 
         if chamber == 'lower' and year == '2015':
             text = self._fix_house_text(filename).decode()
         else:
