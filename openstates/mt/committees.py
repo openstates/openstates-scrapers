@@ -24,6 +24,7 @@ committee_urls = {
         },
     }
 
+
 class MTCommitteeScraper(Scraper):
 
     def scrape_comm(self, committee, url):
@@ -45,7 +46,7 @@ class MTCommitteeScraper(Scraper):
 
             committee.add_member(member_name, member_role)
 
-    def scrape_committees_html(self, session=None, chamber=None, comm_url):
+    def scrape_committees_html(self, comm_url,session=None, chamber=None):
 
         data = self.get(comm_url).text
         doc = lxml.html.fromstring(data)
@@ -68,13 +69,13 @@ class MTCommitteeScraper(Scraper):
         for chamber in chambers:
             url = committee_urls[chamber][session]
             if session == '2017':
-                yield from self.scrape_committees_html(session, chamber, url)
+                yield from self.scrape_committees_html(url, session, chamber)
             else:
                 fn, _ = self.urlretrieve(url)
                 yield from self.scrape_committees_pdf(session, chamber, fn, url)
 
     def scrape_committees_pdf(self, year, chamber, filename, url):
- 
+
         if chamber == 'lower' and year == '2015':
             text = self._fix_house_text(filename).decode()
         else:
