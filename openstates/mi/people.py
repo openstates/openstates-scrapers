@@ -103,8 +103,8 @@ class MIPersonScraper(Scraper):
             district = dist.text_content().strip()
             name = member.text_content().strip()
             name = re.sub(r'\s+', " ", name)
-            firstname = re.split(', | ',name)
-            
+            firstname = re.split(', | ', name)
+
             photo_urls = doc2.xpath('.//div[@class="left"]/img/@src')
             firstname[0] = re.sub('[\']', '', firstname[0])
             photo_png = '_images/' + firstname[0]+'.png'
@@ -118,7 +118,6 @@ class MIPersonScraper(Scraper):
                 elif p_url.lower() == photo_jpg.lower():
                     photo_url = url_to_append + p_url
                     break
-
 
             if name == 'Vacant':
                 self.info('district %s is vacant', district)
@@ -163,7 +162,8 @@ class MIPersonScraper(Scraper):
                 if text_email:
                     email = text_email[0].text
 
-            person = Person(name=name, district=district, party=party, primary_org='upper', image=photo_url)
+            person = Person(name=name, district=district, party=party,
+                            primary_org='upper', image=photo_url)
 
             person.add_link(leg_url)
             person.add_source(leg_url)
