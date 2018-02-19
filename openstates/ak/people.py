@@ -1,4 +1,3 @@
-import requests
 from pupa.scrape import Person, Scraper
 from openstates.utils import LXMLMixin
 
