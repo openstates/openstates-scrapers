@@ -96,7 +96,7 @@ class IDCommitteeScraper(Scraper):
                 if (member in ['Chair', 'Vice Chair']):
                     role = member.lower()
                     continue
-                else:
+                elif member.strip():
                     org.add_member(member.strip(), role=role)
                     role = "member"
             yield org
