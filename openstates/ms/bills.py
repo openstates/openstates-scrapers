@@ -97,7 +97,7 @@ class MSBillScraper(Scraper):
                 main_sponsor = main_sponsor[0]
                 main_sponsor_link = details_root.xpath('string(//P_LINK)').replace(" ", "_")
                 main_sponsor_url = ('http://billstatus.ls.state.ms.us/%s/'
-                                    'pdf/House_authors/%s.xml') % (session, main_sponsor_link)
+                                    'pdf/%s') % (session, main_sponsor_link.strip('../'))
                 type = "primary"
                 bill.add_source(main_sponsor_url)
                 bill.add_sponsorship(main_sponsor,

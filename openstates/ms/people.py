@@ -84,13 +84,27 @@ class MSLegislatorScraper(Scraper):
             home_address2 = root.xpath('string(//H_ADDRESS2)')
             home_city = root.xpath('string(//H_CITY)')
             home_zip = root.xpath('string(//H_ZIP)')
-
-            home_address_total = "%s\n%s\n%s\n%s" % (
-                home_address,
-                home_address2,
-                home_city,
-                home_zip
-            )
+            home_address_total = 'Not Available'
+            if home_address != "" or home_city != "":
+                if home_address == "":
+                    home_address_total = "%s, MS %s" % (
+                        home_city,
+                        home_zip
+                    )
+                else:
+                    if home_address2 == "":
+                        home_address_total = "%s\n%s, MS %s" % (
+                            home_address,
+                            home_city,
+                            home_zip
+                        )
+                    else:
+                        home_address_total = "%s\n%s\n%s, MS %s" % (
+                            home_address,
+                            home_address2,
+                            home_city,
+                            home_zip
+                        )
 
             # bis_phone = root.xpath('string(//B_PHONE)')
             capital_phone = root.xpath('string(//CAP_PHONE)')
