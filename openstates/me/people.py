@@ -62,12 +62,19 @@ class MEPersonScraper(Scraper):
             info_search = re.search(INFO_RE, leg_info, re.VERBOSE)
 
             if not info_search:
-                self.warning("skipping " + leg_info)
-                continue
+                leg_url = district.xpath('a[3]/@href')[0]
+                leg_info_second_dec = district.xpath('a[2]/text()')[0]
+                leg_info_second_active = district.xpath('a[3]/text()')[0]
 
-            member_name = info_search.group('member_name')
-            party = _party_map[info_search.group('party')]
-            district_name = info_search.group('district_name')
+                member_name = leg_info_second_active
+                mem_info = district.xpath('a[3]/following-sibling::text()')
+                party = _party_map[mem_info[0][2]]
+                district = mem_info[0].split('-')[1][:-1]
+                print(member_name + " " + party + " " +district)
+            else:
+                member_name = info_search.group('member_name')
+                party = _party_map[info_search.group('party')]
+                district_name = info_search.group('district_name')
 
             # Get the photo url.
             html = self.get(leg_url).text
