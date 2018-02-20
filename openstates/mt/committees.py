@@ -4,7 +4,6 @@ from itertools import dropwhile
 from pupa.scrape import Organization, Scraper
 from pupa.utils.generic import convert_pdf
 import lxml.html
-from urllib.parse import urljoin
 
 
 committee_urls = {
@@ -30,9 +29,10 @@ class MTCommitteeScraper(Scraper):
 
     def scrape_comm(self, committee, url):
         base_url = "http://leg.mt.gov/css/Committees/Session/"
-        complete_url = urljoin(base_url, url)
+        complete_url = base_url + url
         data = self.get(complete_url).text
         doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(complete_url)
         member_roles = doc.xpath("//td[@id='cont']/a/following-sibling::text()[1]")
         member_names = doc.xpath("//td[@id='cont']/a")
 
