@@ -63,14 +63,12 @@ class MEPersonScraper(Scraper):
 
             if not info_search:
                 leg_url = district.xpath('a[3]/@href')[0]
-                leg_info_second_dec = district.xpath('a[2]/text()')[0]
                 leg_info_second_active = district.xpath('a[3]/text()')[0]
 
                 member_name = leg_info_second_active
                 mem_info = district.xpath('a[3]/following-sibling::text()')
                 party = _party_map[mem_info[0][2]]
                 district = mem_info[0].split('-')[1][:-1]
-                print(member_name + " " + party + " " +district)
             else:
                 member_name = info_search.group('member_name')
                 party = _party_map[info_search.group('party')]
