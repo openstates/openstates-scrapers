@@ -83,8 +83,12 @@ class MIPersonScraper(Scraper):
 
     def scrape_upper(self, chamber):
         url = 'http://www.senate.michigan.gov/senatorinfo_list.html'
+        photo_base_url = 'http://www.senate.michigan.gov/senatorinfo_complete.html'
+        url_to_append = 'http://www.senate.michigan.gov/'
         data = self.get(url).text
+        photo_page = self.get(photo_base_url).text
         doc = lxml.html.fromstring(data)
+        photo_page_doc = lxml.html.fromstring(photo_page)
         for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
             if len(row) != 7:
                 continue
@@ -99,6 +103,20 @@ class MIPersonScraper(Scraper):
             district = dist.text_content().strip()
             name = member.text_content().strip()
             name = re.sub(r'\s+', " ", name)
+            firstname = re.split(', | ', name)
+
+            photo_urls = photo_page_doc.xpath('.//div[@class="left"]/img/@src')
+            firstname[0] = re.sub('[\']', '', firstname[0])
+            photo_png = '_images/' + firstname[0]+'.png'
+            photo_jpg = '_images/' + firstname[0]+'.jpg'
+            photo_url = ''
+            for p_url in photo_urls:
+                if p_url.lower() == photo_png.lower():
+                    photo_url = url_to_append + p_url
+                    break
+                elif p_url.lower() == photo_jpg.lower():
+                    photo_url = url_to_append + p_url
+                    break
 
             if name == 'Vacant':
                 self.info('district %s is vacant', district)
@@ -143,7 +161,8 @@ class MIPersonScraper(Scraper):
                 if text_email:
                     email = text_email[0].text
 
-            person = Person(name=name, district=district, party=party, primary_org='upper')
+            person = Person(name=name, district=district, party=party,
+                            primary_org='upper', image=photo_url)
 
             person.add_link(leg_url)
             person.add_source(leg_url)
