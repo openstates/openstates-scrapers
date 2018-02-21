@@ -89,5 +89,7 @@ class Ohio(Jurisdiction):
                              '//form[@action="bill_search.cfm"]//input[@type="radio"'
                              ' and @name="SESSION"]/@value')
         # Archive does not include current session
-        sessions.append('131')
+        current_session = url_xpath("https://www.legislature.ohio.gov/legislation/search-legislation",
+                            '//div[@class="selectedValues"]/ul/span/li/text()')
+        sessions.append(current_session[0])
         return sessions
