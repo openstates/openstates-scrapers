@@ -18,10 +18,6 @@ class Illinois(Jurisdiction):
         # "events": IlEventScraper,
         # "committees": IlCommitteeScraper,
     }
-
-    parties = [{'name': 'Republican'},
-               {'name': 'Democratic'}]
-
     legislative_sessions = [
         {'name': '93rd Regular Session', 'identifier': '93rd', 'classification': 'primary',
          '_scraped_name': '93   (2003-2004)', },

@@ -15,10 +15,6 @@ class NorthCarolina(Jurisdiction):
         'committees': NCCommitteeScraper,
         'bills': NCBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009-2010 Session",

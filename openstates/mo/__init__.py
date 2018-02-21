@@ -19,10 +19,6 @@ class Missouri(Jurisdiction):
         'people': MOPersonScraper,
         'committees': MOCommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2012 - 96th General Assembly - 2nd Regular Session",

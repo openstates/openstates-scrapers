@@ -22,10 +22,6 @@ class SouthCarolina(Jurisdiction):
         'bills': SCBillScraper,
         # 'events': SCEventScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "119 - (2011-2012)",

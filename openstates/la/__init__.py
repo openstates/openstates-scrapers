@@ -17,11 +17,6 @@ class Louisiana(Jurisdiction):
         # 'events': LAEventScraper,
         'bills': LABillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Independent'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009 Regular Session",
@@ -134,6 +129,14 @@ class Louisiana(Jurisdiction):
             "name": "2017, 2nd Extraordinary Session",
             "start_date": "2017-06-17",
             "end_date": "2017-06-29",
+        },
+        {
+            "_scraped_name": "2018 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "2018 1st Extraordinary Session",
+            "name": "2018, 1st Extraordinary Session",
+            "start_date": "2018-02-19",
+            "end_date": "2018-03-07",
         },
         {
             "_scraped_name": "2018 Regular Session",

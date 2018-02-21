@@ -1,9 +1,13 @@
+import logging
 from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
 from .people import VaPersonScraper
 from .bills import VaBillScraper
+
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
 settings = {
@@ -20,11 +24,6 @@ class Virginia(Jurisdiction):
         "people": VaPersonScraper,
         "bills": VaBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
-
     legislative_sessions = [
         {
             "_scraped_name": "2010 Session",

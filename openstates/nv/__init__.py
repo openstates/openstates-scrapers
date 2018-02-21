@@ -19,12 +19,6 @@ class Nevada(Jurisdiction):
         'bills': NVBillScraper,
         # 'events': NVEventScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'},
-        {'name': 'Nonpartisan'},
-    ]
-
     legislative_sessions = [
         {
             "_scraped_name": "26th (2010) Special Session",

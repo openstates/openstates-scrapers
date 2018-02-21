@@ -19,10 +19,6 @@ class Delaware(Jurisdiction):
         # 'events': DEEventScraper,
         'committees': DECommitteeScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "1998 - 2000 (GA 140)",

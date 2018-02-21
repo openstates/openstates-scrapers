@@ -97,7 +97,7 @@ class MSBillScraper(Scraper):
                 main_sponsor = main_sponsor[0]
                 main_sponsor_link = details_root.xpath('string(//P_LINK)').replace(" ", "_")
                 main_sponsor_url = ('http://billstatus.ls.state.ms.us/%s/'
-                                    'pdf/House_authors/%s.xml') % (session, main_sponsor_link)
+                                    'pdf/%s') % (session, main_sponsor_link.strip('../'))
                 type = "primary"
                 bill.add_source(main_sponsor_url)
                 bill.add_sponsorship(main_sponsor,
@@ -258,14 +258,14 @@ class MSBillScraper(Scraper):
         cur_array = None
 
         precursors = (
-            ('Yeas--', yes_votes),
-            ('Nays--', no_votes),
-            ('Absent or those not voting--', absent_votes),
-            ('Absent and those not voting--', absent_votes),
-            ('Not Voting--', not_voting_votes),
-            ('Voting Present--', other_votes),
-            ('Present--', other_votes),
-            ('DISCLAIMER', None),
+            ('yeas--', yes_votes),
+            ('nays--', no_votes),
+            ('absent or those not voting--', absent_votes),
+            ('absent and those not voting--', absent_votes),
+            ('not voting--', not_voting_votes),
+            ('voting present--', other_votes),
+            ('present--', other_votes),
+            ('disclaimer', None),
         )
 
         # split lines on newline, recombine lines that don't end in punctuation
@@ -275,7 +275,7 @@ class MSBillScraper(Scraper):
 
             # check if the line starts with a precursor, switch to that array
             for pc, arr in precursors:
-                if pc in line:
+                if pc in line.lower():
                     cur_array = arr
                     line = line.replace(pc, '')
 
@@ -290,6 +290,7 @@ class MSBillScraper(Scraper):
                 # None or a Total indicate the end of a section
                 if 'None.' in name:
                     cur_array = None
+
                 match = re.match(r'(.+?)\. Total--.*', name)
                 if match:
                     cur_array.append(match.groups()[0])

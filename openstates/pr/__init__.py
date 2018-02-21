@@ -16,11 +16,6 @@ class PuertoRico(Jurisdiction):
         'committees': PRCommitteeScraper,
         'bills': PRBillScraper,
     }
-    parties = [
-        {'name': 'Partido Nuevo Progresista'},
-        {'name': u'Partido Popular Democr\xe1tico'},
-        {'name': u'Partido Independentista Puertorrique\u00F1o'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009-2012",

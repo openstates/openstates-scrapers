@@ -20,10 +20,6 @@ class Connecticut(Jurisdiction):
         'bills': CTBillScraper,
         # 'events': CTEventScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2011",

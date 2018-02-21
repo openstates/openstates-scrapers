@@ -19,11 +19,6 @@ class DistrictOfColumbia(Jurisdiction):
         # 'events': DCEventScraper,
         'bills': DCBillScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Independent'},
-        {'name': 'Democratic'},
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "19",

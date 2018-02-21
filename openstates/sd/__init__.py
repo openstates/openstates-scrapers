@@ -14,10 +14,6 @@ class SouthDakota(Jurisdiction):
         'people': SDLegislatorScraper,
         'bills': SDBillScraper
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "2009",

@@ -19,10 +19,6 @@ class Iowa(Jurisdiction):
         'votes': IAVoteScraper,
         # 'events': IAEventScraper,
     }
-    parties = [
-        {'name': 'Republican'},
-        {'name': 'Democratic'}
-    ]
     legislative_sessions = [
         {
             "_scraped_name": "General Assembly: 84",

@@ -32,8 +32,6 @@ class Minnesota(Jurisdiction):
         "vote_events": MNVoteScraper,
         # "events": MNEventScraper,
     }
-    parties = [{'name': 'Republican'},
-               {'name': 'Democratic-Farmer-Labor'}]
     legislative_sessions = [
         {
             '_scraped_name': '86th Legislature, 2009-2010',
@@ -96,18 +94,18 @@ class Minnesota(Jurisdiction):
             'name': '2015, 1st Special Session'
         },
         {
+            '_scraped_name': '90th Legislature, 2017 1st Special Session',
+            'classification': 'special',
+            'identifier': '2017s1',
+            'name': '2017, 1st Special Session'
+        },
+        {
             '_scraped_name': '90th Legislature, 2017-2018',
             'classification': 'primary',
             'identifier': '2017-2018',
             'name': '2017-2018 Regular Session',
             'start_date': '2017-01-03',
-            'end_date': '2017-05-22'
-        },
-        {
-            '_scraped_name': '90th Legislature, 2017 1st Special Session',
-            'classification': 'special',
-            'identifier': '2017s1',
-            'name': '2017, 1st Special Session'
+            'end_date': '2018-05-21'
         },
     ]
     ignored_scraped_sessions = [

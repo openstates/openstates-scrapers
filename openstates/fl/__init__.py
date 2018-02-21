@@ -19,8 +19,6 @@ class Florida(Jurisdiction):
         "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }
-    parties = [{'name': 'Republican'},
-               {'name': 'Democratic'}]
     legislative_sessions = [
         {'name': '2011 Regular Session', 'identifier': '2011', 'classification': 'primary'},
         {'name': '2012 Regular Session', 'identifier': '2012', 'classification': 'primary'},
