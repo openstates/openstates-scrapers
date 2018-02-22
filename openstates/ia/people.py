@@ -60,7 +60,7 @@ class IAPersonScraper(Scraper):
 
     def scrape_member_page(self, leg, leg_page):
         office_data = {
-            "Legislative E-mail:": "email",
+            "Legislative Email:": "email",
             "Home Phone:": "home_phone",
             "Home Address:": "home_addr",
             "Capitol Phone:": "office_phone",
