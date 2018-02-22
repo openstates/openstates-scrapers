@@ -38,23 +38,21 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
 
         return phone
 
-    def _extract_email(self, doc):
-        xpath = '//div[@class="districtheadleft"]' \
-                + '/b[contains(text(), "Email:")]' \
-                + '/../following-sibling::div' \
-                + '/script/text()'
-        script = doc.xpath(xpath)
-        if not script:
-            return ''
-        script = script[0]
-        line = filter(
-            lambda line: '+ "@" +' in line,
-            script.split('\r\n'))[0]
-        parts = re.findall(r'"(.+?)"', line)
+    def _get_rep_email(self, district):
+        # Get the email address from an input on the contact page
+        url = "https://www.okhouse.gov/Members/Contact.aspx?District=" + district
+        page = self.curl_lxmlize(url)
 
-        email = ''.join(parts)
+        try:
+            email_node = page.get_element_by_id('txtMemberEmail')
+            email = email_node.value
+        except KeyError:
+            email = None
 
-        return email if validate_email_address(email) else ''
+        if email and not validate_email_address(email):
+            email = None
+
+        return email
 
     def scrape(self, chamber=None):
         term = self.jurisdiction.legislative_sessions[-1]['identifier']
@@ -129,11 +127,16 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
             person.add_source(legislator_url)
 
             # Scrape offices.
-            self.scrape_lower_offices(legislator_page, person)
+            self.scrape_lower_offices(legislator_page, person, district)
 
             yield person
 
-    def scrape_lower_offices(self, doc, person):
+    def scrape_lower_offices(self, doc, person, district):
+        email = self._get_rep_email(district)
+        if email:
+            person.add_contact_detail(type='email', value=email,
+                                      note='Capitol Office')
+            person.extras['email'] = email
 
         # Capitol offices:
         xpath = '//*[contains(text(), "Capitol Address")]'
@@ -158,13 +161,6 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
             if not phone:
                 phone = None
 
-            # Get the email address, extracted from a series of JS
-            # "document.write" lines.
-            email = self._extract_email(doc)
-            if email:
-                person.add_contact_detail(type='email', value=email,
-                                          note='Capitol Office')
-                person.extras['email'] = email
             if phone:
                 person.add_contact_detail(type='voice', value=str(phone),
                                           note='Capitol Office')
