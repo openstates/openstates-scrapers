@@ -367,8 +367,6 @@ class NYPersonScraper(Scraper, LXMLMixin):
             page,
             '//div[@id="maincontainer"]/div[contains(@class, "email")]')
 
-        email = None
-
         for assembly_member_node in self._split_list_on_tag(
                 assembly_member_nodes, 'emailclear'):
             try:
@@ -387,6 +385,7 @@ class NYPersonScraper(Scraper, LXMLMixin):
             if 'Assembly District' in name:
                 continue
 
+            email = None
             if email_node is not None:
                 email_anchor = self.get_node(
                     email_node,
@@ -433,6 +432,10 @@ class NYPersonScraper(Scraper, LXMLMixin):
     def scrape_lower_offices(self, person, url, email):
         person.add_source(url)
 
+        if email:
+            person.add_contact_detail(type='email', value=email,
+                                      note='Capitol Office')
+
         page = self.lxmlize(url)
 
         for data in page.xpath('//div[@class="officehdg"]'):
@@ -464,7 +467,4 @@ class NYPersonScraper(Scraper, LXMLMixin):
                                           note=office_type + ' Office')
             if fax:
                 person.add_contact_detail(type='fax', value=fax,
-                                          note=office_type + ' Office')
-            if email:
-                person.add_contact_detail(type='address', value=address,
                                           note=office_type + ' Office')

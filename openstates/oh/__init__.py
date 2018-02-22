@@ -46,14 +46,7 @@ class Ohio(Jurisdiction):
             "end_date": "2017-12-31"
         }
     ]
-    ignored_scraped_sessions = [
-        "127",
-        "126",
-        "125",
-        "124",
-        "123",
-        "122"
-    ]
+    ignored_scraped_sessions = []
 
     def get_organizations(self):
         legislature_name = "Ohio General Assembly"
@@ -85,9 +78,7 @@ class Ohio(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        sessions = url_xpath('http://archives.legislature.state.oh.us',
-                             '//form[@action="bill_search.cfm"]//input[@type="radio"'
-                             ' and @name="SESSION"]/@value')
+        sessions = url_xpath('https://www.legislature.ohio.gov/legislation/search-legislation',
+                             '//div[@class="selectedValues"]/ul/span/li/text()')
         # Archive does not include current session
-        sessions.append('131')
         return sessions
