@@ -46,14 +46,7 @@ class Ohio(Jurisdiction):
             "end_date": "2017-12-31"
         }
     ]
-    ignored_scraped_sessions = [
-        "127",
-        "126",
-        "125",
-        "124",
-        "123",
-        "122"
-    ]
+    ignored_scraped_sessions = []
 
     def get_organizations(self):
         legislature_name = "Ohio General Assembly"
