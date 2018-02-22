@@ -47,10 +47,10 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
             email_node = page.get_element_by_id('txtMemberEmail')
             email = email_node.value
         except KeyError:
-            email = ''
+            email = None
 
-        if not validate_email_address(email):
-            email = ''
+        if email and not validate_email_address(email):
+            email = None
 
         return email
 
