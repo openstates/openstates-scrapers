@@ -180,7 +180,10 @@ class Pennsylvania(Jurisdiction):
         "2005-2006 Regular Session",
         "2005-2006 Special Session #1 (taxpayer relief act)",
         "2007-2008 Regular Session",
-        "2007-2008 Special Session #1 (Energy Policy)"
+        "2007-2008 Special Session #1 (Energy Policy)",
+        "1963 Regular Session",
+        "1963 Special Session #1",
+        "1963 Special Session #2",
     ]
 
     def get_organizations(self):
