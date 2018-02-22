@@ -190,9 +190,8 @@ class MOPersonScraper(Scraper):
                 person.add_link(details_url)
 
                 email = details_page.xpath(
-                    '//*[@id="ContentPlaceHolder1_lblAddresses"]'
-                    '/table/tr[4]/td/a/@href'
-                )
+                        '//*[@id="ContentPlaceHolder1_lblAddresses"] '
+                        '//a[starts-with(@href,"mailto:")]/@href')
                 if len(email) > 0 and email[0].lower() != 'mailto:':
                     email = email[0].split(':')[1]
                 else:
