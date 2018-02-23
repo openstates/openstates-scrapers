@@ -43,9 +43,18 @@ class GAPersonScraper(Scraper, LXMLMixin):
             sid
         )['MemberListing']
 
+        seen_guids = []
         for member in members:
             guid = member['Id']
             member_info = backoff(self.sservice.GetMember, guid)
+
+            # If a member switches chambers during the session, they may
+            # appear twice. Skip the duplicate record accordingly.
+            if guid in seen_guids:
+                self.warning('Skipping duplicate record of {}'.format(member_info['Name']['Last']))
+                continue
+            else:
+                seen_guids.append(guid)
 
             # Check to see if the member has vacated; skip if so.
             # A member can have multiple services for a given session,
