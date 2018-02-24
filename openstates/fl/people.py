@@ -88,7 +88,8 @@ class SenList(Page):
 
 class RepList(Page):
     url = "http://www.flhouse.gov/Sections/Representatives/representatives.aspx"
-    directory_pdf_url = 'http://www.myfloridahouse.gov/FileStores/Web/HouseContent/Approved/ClerksOffice/HouseDirectory.pdf'
+    directory_pdf_url = 'http://www.myfloridahouse.gov/FileStores/Web/'\
+                        'HouseContent/Approved/ClerksOffice/HouseDirectory.pdf'
     list_xpath = '//div[@id="MemberListing"]/div[@class="rep_listing1"]'
 
     def handle_page(self):
@@ -143,8 +144,8 @@ class RepList(Page):
         # deal with some stuff that ends up in name that won't work in
         # email, spaces, quotes, high latin1
         email_name = rep.name.replace('"', '')\
-                     .replace("La ", "La")\
-                     .replace("ñ", "n")
+                             .replace("La ", "La")\
+                             .replace("ñ", "n")
         (last, *other) = re.split(r'[-\s,]+', email_name)
 
         # deal with a missing nickname used in an email address
@@ -160,7 +161,7 @@ class RepList(Page):
                                        value=email,
                                        note='Capitol Office')
                 break
-            
+
         return rep
 
 
