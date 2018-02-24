@@ -255,7 +255,7 @@ class BillDetailPage(Page, Spatula):
                                 counts['no'] == n and
                                 counts['other'] == o):
                             vote = cached_vote
-                            vote['motion'] = vote_action
+                            vote.motion_text = vote_action
                     else:
                         # Cached vote doesn't match up to the current
                         # one. Save, then cache the current vote to
