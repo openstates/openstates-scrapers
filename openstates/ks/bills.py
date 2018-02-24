@@ -104,7 +104,7 @@ class KSBillScraper(Scraper):
                 else:
                     atype = ksapi.action_codes[event['action_code']]
                 bill.add_action(
-                    action, date.strftime('%Y-%m-%d'), chamber=actor, classification=atype)
+                    action, date, chamber=actor, classification=atype)
 
             # Versions are exposed in `bill_data['versions'],
             # but lack any descriptive text or identifiers;
