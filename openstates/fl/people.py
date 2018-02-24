@@ -152,7 +152,7 @@ class RepList(Page):
             other.append("Pat")
 
         # search through all possible first names and nicknames
-        # present - needed for some of the more
+        # present - needed for some of the more elaborate concoctions
         for first in other:
             email = '%s.%s@myfloridahouse.gov' % (first, last)
             if email in self.member_emails:
