@@ -1,11 +1,13 @@
 import re
 import tempfile
 import lxml
+import logging
 from urllib import parse
 from pupa.scrape import Scraper, Person
 from pupa.utils import convert_pdf
 from spatula import Spatula, Page
 
+log = logging.getLogger('fl')
 
 class SenDetail(Page):
     list_xpath = '//h4[contains(text(), "Office")]'
@@ -94,6 +96,7 @@ class RepList(Page):
 
     def handle_page(self):
         self.member_emails = self._load_emails_from_directory_pdf()
+        self.claimed_member_emails = dict()
         return super(RepList, self).handle_page()
 
     def _load_emails_from_directory_pdf(self):
@@ -154,13 +157,30 @@ class RepList(Page):
 
         # search through all possible first names and nicknames
         # present - needed for some of the more elaborate concoctions
+        found_email = False
         for first in other:
             email = '%s.%s@myfloridahouse.gov' % (first, last)
             if email in self.member_emails:
+                # it's bad if we can't uniquely match emails, so throw an error
+                if email in self.claimed_member_emails:
+                    raise ValueError(
+                        "Email address %s matches multiple reps - %s and %s." %
+                        (email, rep.name, self.claimed_member_emails[email]))
+
+                self.claimed_member_emails[email] = rep.name
+
                 rep.add_contact_detail(type='email',
                                        value=email,
                                        note='Capitol Office')
+                rep.add_source(self.directory_pdf_url)
+
+                found_email = True
+
                 break
+
+        if not found_email:
+            log.warning('Rep %s does not have an email in the directory PDF.' %
+                        (rep.name,))
 
         return rep
 
