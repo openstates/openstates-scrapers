@@ -44,31 +44,23 @@ class NYCommitteeScraper(Scraper, LXMLMixin):
 
     def scrape_lower_chamber(self):
         url = 'http://assembly.state.ny.us/comm/'
-
         page = self.lxmlize(url)
 
         committees = []
-
         link_nodes = self.get_nodes(
             page,
-            '//a[contains(@href, "sec=mem")]')
+            '//ul[@class="commfont"][1]//div[@class = "comm-title"]/a')
 
         for link_node in link_nodes:
-            committee_name_text = self.get_node(
-                link_node,
-                '../strong/text()')
+            committee_name_text = link_node.text
 
             if committee_name_text is not None:
                 committee_name = committee_name_text.strip()
                 assert committee_name
 
-                if 'Caucus' in committee_name:
-                    continue
-
                 committees.append(committee_name)
-
-                url = link_node.attrib['href']
-                committee = self.scrape_lower_committee(committee_name, url)
+                committee_url = link_node.attrib['href']
+                committee = self.scrape_lower_committee(committee_name, committee_url)
 
                 yield committee
 
@@ -85,27 +77,18 @@ class NYCommitteeScraper(Scraper, LXMLMixin):
 
         member_links = self.get_nodes(
             page,
-            '//div[@class="commlinks"]//a[contains(@href, "mem")]')
+            '//div[@class="mod-inner"]//a[contains(@href, "mem")]')
 
         for member_link in member_links:
             member_name = None
             member_role = None
 
-            member_text = member_link.text
-            if member_text is not None:
-                member = member_text.strip()
-                member = re.sub(r'\s+', ' ', member)
-                member_name, member_role = self._parse_name(member)
-
+            member_name = member_link.text
             if member_name is None:
                 continue
 
             # Figure out if this person is the chair.
-            role_type = self.get_node(
-                member_link,
-                '../../preceding-sibling::div[1]/text()')
-
-            if role_type in (['Chair'], ['Co-Chair']):
+            if member_link == member_links[0]:
                 member_role = 'chair'
             else:
                 member_role = 'member'

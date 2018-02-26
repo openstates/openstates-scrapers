@@ -64,23 +64,31 @@ class KSBillScraper(Scraper):
                     bill_data['LONGTITLE'] != bill.title):
                 bill.add_title(bill_data['LONGTITLE'])
 
+            # An "original sponsor" is the API's expression of "primary sponsor"
+            for primary_sponsor in bill_data['ORIGINAL_SPONSOR']:
+                bill.add_sponsorship(
+                    name=primary_sponsor,
+                    entity_type='organization' if "committee" in primary_sponsor.lower()
+                                else 'person',
+                    primary=True,
+                    classification="original sponsor"
+                )
             for sponsor in bill_data['SPONSOR_NAMES']:
-                stype = ('primary' if len(bill_data['SPONSOR_NAMES']) == 1
-                         else 'cosponsor')
-                if sponsor:
-                    bill.add_sponsorship(
-                        name=sponsor,
-                        entity_type='person',
-                        primary=stype == 'primary',
-                        classification=stype,
-                    )
+                if sponsor in bill_data['ORIGINAL_SPONSOR']:
+                    continue
+                bill.add_sponsorship(
+                    name=sponsor,
+                    entity_type='organization' if "committee" in sponsor.lower() else 'person',
+                    primary=False,
+                    classification='cosponsor',
+                )
 
             # history is backwards
             for event in reversed(bill_data['HISTORY']):
                 actor = ('upper' if event['chamber'] == 'Senate'
                          else 'lower')
 
-                date = datetime.datetime.strptime(event['occurred_datetime'], "%Y-%m-%dT%H:%M:%S")
+                date = event['session_date']
                 # append committee names if present
                 if 'committee_names' in event:
                     action = (event['status'] + ' ' +
@@ -96,8 +104,11 @@ class KSBillScraper(Scraper):
                 else:
                     atype = ksapi.action_codes[event['action_code']]
                 bill.add_action(
-                    action, date.strftime('%Y-%m-%d'), chamber=actor, classification=atype)
+                    action, date, chamber=actor, classification=atype)
 
+            # Versions are exposed in `bill_data['versions'],
+            # but lack any descriptive text or identifiers;
+            # continue to scrape these from the HTML
             try:
                 yield from self.scrape_html(bill, session)
             except scrapelib.HTTPError as e:

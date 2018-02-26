@@ -1,14 +1,17 @@
 ksleg = 'http://www.kslegislature.org/li'
-url = '%s/api/v7/rev-1/' % ksleg
+url = '%s/api/v11/rev-1/' % ksleg
 
-# in order from sec 10.1 of KLISS doc
+# These actions are from the KLISS API documentation,
+# and are in the same order as that table
+# The PDF is linked from this webpage, and changes name
+# based on the most recent API version:
+# http://www.kslegislature.org/klois/Pages/RESTianAPI.html
 action_codes = {
     # motion to acede; appointed
     'ccac_om_370': None,
     'efa_fabc_343': 'passage',
     'efa_fabc_342': 'passage',
     'cref_cref_500': 'referral-committee',
-    'cref_cref_318': 'referral-committee',  # withdrawn and re-referred
     'gov_avm_336': 'veto-override-passage',
     # change sequence
     'mot_cgo_200': None, 'mot_cgo_201': None, 'mot_cgo_202': None,
@@ -29,14 +32,9 @@ action_codes = {
     # other COW actions
     'cow_jcow_211': None, 'cow_jcow_210': None, 'cow_jcow_214': None,
     'cow_jcow_695': None, 'cow_jcow_694': None, 'cow_jcow_693': None,
-    'cow_jcow_692': None, 'cow_jcow_690': None, 'cow_jcow_317': None,
-    'cow_jcow_718': None, 'cow_jcow_719': None, 'cow_jcow_720': None,
-    'cow_jcow_681': None, 'cow_jcow_682': None, 'cow_jcow_683': None,
-    'cow_jcow_684': None, 'cow_jcow_685': None, 'cow_jcow_688': None,
-    'cow_jcow_689': None,
+    'cow_jcow_692': None, 'cow_jcow_690': None,
     # withdrawn from consent cal.'
     'ccal_rcc_233': None,
-    'ccal_faccl_900': None,   # consent calendar passed
     'efa_fabc_933': 'passage',  # these 3 are 2/3 emergency clause votes...
     'efa_fabc_936': 'failure',
     'efa_fabc_934': 'passage',
@@ -46,8 +44,6 @@ action_codes = {
     'cr_rsc_801': 'committee-passage-unfavorable',  # these 3 are appointments..
     'cr_rsc_800': 'committee-passage-favorable',
     'cr_rsc_802': 'committee-passage',
-    'ccr_rel_100': None,  # conference committee report available
-    'misc_bs_100': None,  # adopting conf committee report
     'gov_mg_150': 'executive-signature',
     'gov_mg_151': None,  # law w/o signature
     'gov_mg_154': 'executive-veto',
@@ -63,8 +59,6 @@ action_codes = {
     'ccac_ccr_860': None,
     'efa_fabc_115': 'failure',
     'intro_iopbc_158': 'introduction',
-    'intro_iopbc_681': 'introduction',
-    'intro_iopbc_251': 'passage',
     'cr_rsc_291': 'committee-passage',
     'fa_fabc_116': 'failure',
     'cow_jcow_728': 'amendment-withdrawal',
@@ -76,7 +70,6 @@ action_codes = {
     'fa_fabc_910': 'failure',
     # suspend rules
     'mot_susp_216': None, 'mot_susp_214': None, 'mot_susp_215': None,
-    'mot_susp_208': None, 'mot_susp_209': None,
     'cr_rsc_289': 'committee-passage',
     # conference committee
     'ccac_ccr_375': None, 'cur_con_337': None,
@@ -95,7 +88,6 @@ action_codes = {
     # adjourn/recess
     'ar_adj_625': None, 'ar_adj_626': None,
     'intro_ires_251': 'passage',
-    'intro_ires_255': 'passage',
     # engrossed/rengrossed
     'ee_eng_225': None, 'ee_eng_227': None,
     # referred to COW
@@ -116,6 +108,12 @@ action_codes = {
     'cow_jcow_201': None, 'cow_jcow_202': None, 'cow_jcow_203': None,
     'ccac_cc_377': None,  # conf committee changed member
     'ee_enrb_226': None,  # Enrolled
+    # more COW actions
+    'cow_jcow_681': None,
+    'cow_jcow_682': None,
+    'cow_jcow_683': None,
+    'cow_jcow_688': None,
+    'cow_jcow_689': None,
     # veto overrides
     'gov_avm_885': 'veto-override-failure',
     'gov_avm_887': 'veto-override-passage',
@@ -144,7 +142,6 @@ action_codes = {
     'fa_fabc_105': ['failure', 'substitution'],
     'fa_fabc_104': 'failure',
     'intro_ibc_157': 'introduction',
-    'intro_ibc_158': 'introduction',
     'intro_ibc_156': 'filing',
     'fa_fabc_905': 'passage',
     'intro_ires_681': 'introduction',
@@ -191,18 +188,4 @@ action_codes = {
     'mot_susp_206': None,
     'cur_con_101': None,  # concur. failed
     'cur_om_141': 'referral-committee',
-    'misc_he_200': None,  # hearing
-    # Died on Calendar
-    'dead_conf_101': None,  # died in conference
-    'dead_cal_201': None,
-    'dead_cal_202': None,
-    'dead_cal_203': None,
-    'dead_com_301': 'committee-failure',
-    'dead_com_302': 'committee-failure',
-    'dead_com_303': 'committee-failure',
-    'dead_go_302': None,  # died on general order
-    'dead_go_401': None,  # died on general order
-    'dead_go_402': None,  # died on general order
-    'kill_reso_100': 'failure',
-    'kill_reso_200': 'failure',
 }
