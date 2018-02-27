@@ -178,7 +178,8 @@ class VTBillScraper(Scraper, LXMLMixin):
                 if "Signed by Governor" in action['FullStatus']:
                     # assert chambers_passed == set("HS")
                     action_type = 'executive-signature'
-                elif "Read first time" in action['FullStatus'] or "Read 1st time" in action['FullStatus']:
+                elif "Read first time" in action['FullStatus'] \
+                        or "Read 1st time" in action['FullStatus']:
                     action_type = 'introduction'
                 elif "Reported favorably" in action['FullStatus']:
                     action_type = 'committee-passage-favorable'
