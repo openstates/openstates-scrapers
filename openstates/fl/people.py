@@ -1,7 +1,13 @@
 import re
+import tempfile
+import lxml
+import logging
 from urllib import parse
 from pupa.scrape import Scraper, Person
+from pupa.utils import convert_pdf
 from spatula import Spatula, Page
+
+log = logging.getLogger('fl')
 
 
 class SenDetail(Page):
@@ -85,7 +91,29 @@ class SenList(Page):
 
 class RepList(Page):
     url = "http://www.flhouse.gov/Sections/Representatives/representatives.aspx"
+    directory_pdf_url = 'http://www.myfloridahouse.gov/FileStores/Web/'\
+                        'HouseContent/Approved/ClerksOffice/HouseDirectory.pdf'
     list_xpath = '//div[@id="MemberListing"]/div[@class="rep_listing1"]'
+
+    def handle_page(self):
+        self.member_emails = self._load_emails_from_directory_pdf()
+        self.claimed_member_emails = dict()
+        return super(RepList, self).handle_page()
+
+    def _load_emails_from_directory_pdf(self):
+        """
+        Load the house PDF directory and convert to LXML - needed to
+        find email addresses which are gone from the website.
+        """
+        with tempfile.NamedTemporaryFile() as temp:
+            self.scraper.urlretrieve(self.directory_pdf_url, temp.name)
+            directory = lxml.etree.fromstring(convert_pdf(temp.name, 'xml'))
+
+        # pull out member email addresses from the XML salad produced
+        # above - there's no obvious way to match these to names, but
+        # fortunately they have names in them
+        return set(directory.xpath(
+            '//text[contains(text(), "@myfloridahouse.gov")]/text()'))
 
     def handle_list_item(self, item):
         link = item.xpath('.//div[contains(@class, "rep_style")]/a')[0]
@@ -111,6 +139,49 @@ class RepList(Page):
         rep.add_source(self.url)
 
         self.scrape_page(RepDetail, leg_url, obj=rep)
+
+        # look for email in the list from the PDF directory - ideally
+        # we'd find a way to better index the source data which
+        # wouldn't require guessing the email, but this does at least
+        # confirm that it's correct
+
+        # deal with some stuff that ends up in name that won't work in
+        # email, spaces, quotes, high latin1
+        email_name = rep.name.replace('"', '')\
+                             .replace("La ", "La")\
+                             .replace("ñ", "n")
+        (last, *other) = re.split(r'[-\s,]+', email_name)
+
+        # deal with a missing nickname used in an email address
+        if "Patricia" in other:
+            other.append("Pat")
+
+        # search through all possible first names and nicknames
+        # present - needed for some of the more elaborate concoctions
+        found_email = False
+        for first in other:
+            email = '%s.%s@myfloridahouse.gov' % (first, last)
+            if email in self.member_emails:
+                # it's bad if we can't uniquely match emails, so throw an error
+                if email in self.claimed_member_emails:
+                    raise ValueError(
+                        "Email address %s matches multiple reps - %s and %s." %
+                        (email, rep.name, self.claimed_member_emails[email]))
+
+                self.claimed_member_emails[email] = rep.name
+
+                rep.add_contact_detail(type='email',
+                                       value=email,
+                                       note='Capitol Office')
+                rep.add_source(self.directory_pdf_url)
+
+                found_email = True
+
+                break
+
+        if not found_email:
+            log.warning('Rep %s does not have an email in the directory PDF.' %
+                        (rep.name,))
 
         return rep
 

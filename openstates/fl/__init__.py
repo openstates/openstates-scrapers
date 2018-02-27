@@ -1,10 +1,13 @@
 # encoding=utf-8
+import logging
 from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
 from .people import FlPersonScraper
 from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
 from openstates.utils import url_xpath
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
 class Florida(Jurisdiction):
