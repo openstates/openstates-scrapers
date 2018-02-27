@@ -24,6 +24,22 @@ def clean_phone(phone):
     return phone
 
 
+def get_ascii_chunks(name):
+    ascii_chunks = []
+    current_chunk = ''
+
+    for ch in name:
+        if ord(ch) < 128:
+            current_chunk += ch
+        elif len(current_chunk) > 0:
+            ascii_chunks.append(current_chunk)
+            current_chunk = ''
+    if len(current_chunk) > 0:
+        ascii_chunks.append(current_chunk)
+
+    return ascii_chunks
+
+
 class MEPersonScraper(Scraper):
     def scrape(self, chamber=None):
         if chamber in ['upper', None]:
@@ -78,13 +94,6 @@ class MEPersonScraper(Scraper):
                     # str typecasting will raise error for non-ascii characters.
                     d[field] = sh.cell(rownum, col_num).value.encode('utf-8').strip()
 
-            try:
-                # xlrd reads this value as a float. However we save it as a string.
-                district_number = str(int(float(d['district'])))
-            except ValueError:
-                # Will reach here in case district number is blank. We will skip this row.
-                continue
-
             district_name = d['legal_res']
 
             first_name = d['first_name']
@@ -102,20 +111,41 @@ class MEPersonScraper(Scraper):
             member_name = " ".join((first_name, middle_name, last_name))
             member_name = re.sub(r'\s+', ' ', member_name).strip()
 
+            try:
+                # xlrd reads this value as a float. However we save it as a string.
+                district_number = "{:.0f}".format(float(d['district']))
+            except ValueError:
+                # Will reach here in case district number is blank. We will skip this row.
+                self.info("Skipping non voting member {}".format(member_name))
+                continue
+
             party = d['party']
             party = _party_map[party]
 
             # Determine legislator's URL to get their photo.
             # Roster URL list does not include nicknames, have to be removed before we search.
             if '"' in middle_name:
-                # Name contains nickname
-                roster_name = " ".join((first_name, ''.join(middle_name.split('"')[2:]),
-                                        last_name))
-                roster_name = re.sub(r'\s+', ' ', roster_name).strip()
+                # middle name contains nickname
+                roster_middle_name = ''.join(middle_name.split('"')[2:])
+                roster_middle_name = re.sub(r'\s+', ' ', roster_middle_name).strip()
             else:
-                roster_name = member_name
+                roster_middle_name = middle_name
 
-            URL_XPATH = '//a[contains(text(), "{}")]/@href'.format(roster_name)
+            # Searching for different parts of the name with an 'and' operator
+            # Since first_name middle_name last_name order not necessarily
+            # maintained in the roster
+            URL_XPATH = URL_XPATH = '//a[contains(text(), "Representative")'
+
+            # Get chunks of ascii characers in the name. lxml incorrectly decodes
+            # sometimes, hence skipping the non ascii parts of the names
+            for chunk in get_ascii_chunks(first_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            for chunk in get_ascii_chunks(roster_middle_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            for chunk in get_ascii_chunks(last_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            URL_XPATH += ']/@href'
+
             try:
                 (leg_url, ) = roster_doc.xpath(URL_XPATH)
             except ValueError:
