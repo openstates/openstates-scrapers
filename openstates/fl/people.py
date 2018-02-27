@@ -9,6 +9,7 @@ from spatula import Spatula, Page
 
 log = logging.getLogger('fl')
 
+
 class SenDetail(Page):
     list_xpath = '//h4[contains(text(), "Office")]'
 
