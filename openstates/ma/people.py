@@ -45,6 +45,7 @@ def clean_district(district):
 
 class MAPersonScraper(Scraper):
     goldsteinrose_special_case_used = False
+    whipps_special_case_used = False
 
     def scrape(self, chamber=None):
         if not chamber:
@@ -55,6 +56,8 @@ class MAPersonScraper(Scraper):
         # Remove the code for special-casing if it's no longer necessary
         assert self.goldsteinrose_special_case_used, \
             "Special-casing of Solomon Goldstein-Rose's party is no longer necessary; remove it"
+        assert self.whipps_special_case_used, \
+            "Special-casing of Susannah M. Whipps's party is no longer necessary; remove it"
 
     def scrape_chamber(self, chamber):
         if chamber == 'upper':
@@ -108,6 +111,11 @@ class MAPersonScraper(Scraper):
         elif full_name == 'Solomon Goldstein-Rose':
             party = 'Independent'
             self.goldsteinrose_special_case_used = True
+        # Special-case a member who disenrolled from the Republican Party
+        # http://www.masslive.com/politics/index.ssf/2017/08/athol_rep_susannah_whipps_swit.html
+        elif full_name == 'Susannah M. Whipps':
+            party = 'Independent'
+            self.whipps_special_case_used = True
         else:
             raise ValueError('unknown party {}: {}'.format(party, member_url))
 
