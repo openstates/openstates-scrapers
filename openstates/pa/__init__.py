@@ -184,6 +184,7 @@ class Pennsylvania(Jurisdiction):
         "1963 Regular Session",
         "1963 Special Session #1",
         "1963 Special Session #2",
+        "1964 Regular Session",
     ]
 
     def get_organizations(self):
