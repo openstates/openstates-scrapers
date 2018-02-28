@@ -150,6 +150,10 @@ class NVBillScraper(Scraper, LXMLMixin):
                 self.scrape_actions(root, bill, "upper")
                 yield from self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
+                bdr = re.search(r'\(BDR (\d+\-\d+)\)', title)
+                if bdr:
+                    bill.extras['BDR'] = bdr.group(1)
+
                 yield bill
 
     def scrape_assem_bills(self, chamber, insert, session, year):
@@ -212,6 +216,10 @@ class NVBillScraper(Scraper, LXMLMixin):
                 self.scrape_actions(root, bill, "lower")
                 yield from self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
+                bdr = re.search(r'\(BDR (\d+\-\d+)\)', title)
+                if bdr:
+                    bill.extras['BDR'] = bdr.group(1)
+
                 yield bill
 
     def scrape_links(self, url):
