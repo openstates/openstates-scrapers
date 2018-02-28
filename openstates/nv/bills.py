@@ -150,6 +150,10 @@ class NVBillScraper(Scraper, LXMLMixin):
                 self.scrape_actions(root, bill, "upper")
                 yield from self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
+                bdr = self.extract_bdr(title)
+                if bdr:
+                    bill.extras['BDR'] = bdr
+
                 yield bill
 
     def scrape_assem_bills(self, chamber, insert, session, year):
@@ -212,6 +216,10 @@ class NVBillScraper(Scraper, LXMLMixin):
                 self.scrape_actions(root, bill, "lower")
                 yield from self.scrape_votes(page, page_path, bill, insert, year)
                 bill.add_source(page_path)
+                bdr = self.extract_bdr(title)
+                if bdr:
+                    bill.extras['BDR'] = bdr
+
                 yield bill
 
     def scrape_links(self, url):
@@ -393,3 +401,12 @@ class NVBillScraper(Scraper, LXMLMixin):
                 self.warning("failed to fetch vote page, adding vote without details")
 
             yield vote
+
+    # bills in NV start with a 'bill draft request'
+    # the number is in the title but it's useful as a structured extra
+    def extract_bdr(self, title):
+        bdr = False
+        bdr_regex = re.search(r'\(BDR (\w+\-\w+)\)', title)
+        if bdr_regex:
+            bdr = bdr_regex.group(1)
+        return bdr
