@@ -56,6 +56,7 @@ class Michigan(Jurisdiction):
         "1995-1996",
         "1993-1994",
         "1991-1992",
+        "1989-1990",
     ]
 
     def get_organizations(self):
