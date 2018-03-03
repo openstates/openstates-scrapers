@@ -38,15 +38,15 @@ class AssemblyBillPage(LXMLMixin):
             'senate': senate_url})
 
     def _scrub_name(self, name):
-        junk = [
+        junk = (re.compile(rgx) for rgx in [
             r'^Rules\s+',
             '\(2nd Vice Chairperson\)',
             '\(MS\)',
             'Assemblyman',
             'Assemblywoman',
-            'Senator']
+            'Senator'])
         for rgx in junk:
-            name = re.sub(rgx, '', name, re.I)
+            name = rgx.sub('', name, re.I)
 
         # Collapse whitespace.
         name = re.sub('\s+', ' ', name)
