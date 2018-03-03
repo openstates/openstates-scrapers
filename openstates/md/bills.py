@@ -4,6 +4,9 @@ import datetime
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 
+from dateutil.parser import parse as dparse
+from pupa.utils.generic import convert_pdf
+
 CHAMBERS = {
     'upper': ('SB', 'SJ'),
     'lower': ('HB', 'HJ'),
@@ -160,15 +163,110 @@ class MDBillScraper(Scraper):
         for elem in elems:
             href = elem.get('href')
             if (href and "votes" in href and href.endswith('htm') and href not in seen_votes):
+                print(href)
                 seen_votes.add(href)
                 vote = self.parse_vote_page(href, bill)
                 vote.add_source(href)
                 yield vote
+    
+    def parse_bill_votes_new(self, doc, bill):
+        elems = doc.xpath('//a')
+        print("shito")
+        for elem in elems:
+            href = elem.get('href')
+            if href and "votes" in href and href.endswith('pdf') and ("Senate" in href or "House" in href):
+                print(href)
+                vote = self.parse_vote_pdf(href,bill)
+                vote.add_source(href)
+                yield vote 
+
+    def parse_vote_pdf(self, vote_url, bill):
+        filename,response = self.urlretrieve(vote_url)
+        text = convert_pdf(filename, type='text').decode()
+        lines = text.splitlines()
+
+        if 'senate' in vote_url:
+            chamber = 'upper'
+        else:
+            chamber = 'lower'
+        
+        date = dparse(lines[0].split('Date:')[1], fuzzy=True)
+        print(date)
+        countIndex=-1
+        for index,line in enumerate(lines):
+            if 'Yeas' in line and 'Nays' in line:
+                countIndex = index
+                break
+        print("CountIndex = "+str(countIndex))
+        yes_count = -1
+        no_count = -1
+        other_count = 0
+        if countIndex > 0:
+            counts = re.split(r'\s{2,}', lines[countIndex].strip())
+            print(counts)
+            for count in counts:
+                print(count)
+                number,string = count.split(' ',1)
+                print(number)
+                number = int(number)
+                if string == 'Yeas':
+                    yes_count = number
+                elif string == 'Nays':
+                    no_count = number
+                else:
+                    other_count += number
+        print(yes_count,no_count,other_count)
+        passed = yes_count > no_count
+        motion = "No motion given"
+        vote = VoteEvent(
+            bill=bill,
+            chamber=chamber,
+            start_date=date.strftime('%Y-%m-%d'),
+            motion_text=motion,
+            classification='passage',
+            result='pass' if passed else 'fail',
+        )
+        vote.pupa_id = vote_url     # contains sequence number
+        vote.set_count('yes', yes_count)
+        vote.set_count('no', no_count)
+        vote.set_count('other', other_count)
+        pageIndex = countIndex+2
+        while pageIndex < len(lines):
+            if 'Voting Yea' in lines[pageIndex]:
+                pageIndex += 1
+                continue
+            if 'Voting Nay' in lines[pageIndex]:
+                pageIndex += 2
+                break
+            names = lines[pageIndex].strip().split()
+            print(names)
+            for name in names:
+                vote.yes(name)
+            pageIndex += 1
+        while pageIndex < len(lines):
+            if 'Not Voting' in lines[pageIndex]:
+                pageIndex += 2
+                break
+            names = lines[pageIndex].strip().split()
+            print(names)
+            for name in names:
+                vote.no(name)
+            pageIndex += 1
+        while pageIndex < len(lines):
+            if 'Excused from Voting' in lines[pageIndex] or 'Excused (Absent)' in lines[pageIndex]:
+                pageIndex += 1
+                continue
+            names = lines[pageIndex].strip().split()
+            print(names)
+            for name in names:
+                vote.other(name)
+            pageIndex += 1
+        return vote
 
     def parse_vote_page(self, vote_url, bill):
         vote_html = self.get(vote_url).text
         doc = lxml.html.fromstring(vote_html)
-
+        print(vote_url)
         # chamber
         if 'senate' in vote_url:
             chamber = 'upper'
@@ -270,7 +368,7 @@ class MDBillScraper(Scraper):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-
+        print("#####yes###")
         try:
             title = doc.xpath('//h3[@class="h3billright"]')[0].text_content()
             # TODO: grab summary (none present at time of writing)
@@ -319,19 +417,19 @@ class MDBillScraper(Scraper):
             subjects = _get_td(doc, heading).xpath('a/text()')
             subject_list += [s.split(' -see also-')[0] for s in subjects if s]
         bill.subject = subject_list
-
-        # documents
-        self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
-        # actions
-        self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
-
-        yield bill
-
-    def scrape_documents(self, bill, url):
-        html = self.get(url).text
+        
+        html = self.get(url.replace('stab=01', 'stab=02')).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
+        
+        # documents
+        self.scrape_documents(bill, doc)
+        # actions
+        self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
+        yield from self.parse_bill_votes_new(doc, bill)
+        yield bill
 
+    def scrape_documents(self, bill, doc):
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
             description = td.xpath('text()')
