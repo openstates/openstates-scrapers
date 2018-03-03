@@ -274,6 +274,7 @@ class NYBillScraper(Scraper):
         elif bill_chamber == 'lower':
             assembly = AssemblyBillPage(self, session, bill, details)
             assembly.build()
+            bill = assembly.bill
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides
