@@ -4,7 +4,7 @@ import re
 import inspect
 
 from itertools import islice
-  
+
 from billy.scrape.votes import Vote
 from openstates.utils import LXMLMixin
 from .utils import Urls
@@ -69,7 +69,7 @@ class AssemblyBillPage(LXMLMixin):
             pre = doc.xpath('//pre')[0].text_content().strip()
 
             no_votes = 'There are no votes for this bill in this legislative '
-                       'session.'
+            'session.'
 
             if pre == no_votes:
                 raise ValueError('No votes for this bill.')
