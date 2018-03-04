@@ -163,24 +163,28 @@ class MDBillScraper(Scraper):
         for elem in elems:
             href = elem.get('href')
             if (href and "votes" in href and href.endswith('htm') and href not in seen_votes):
-                print(href)
                 seen_votes.add(href)
                 vote = self.parse_vote_page(href, bill)
                 vote.add_source(href)
                 yield vote
-    
+
     def parse_bill_votes_new(self, doc, bill):
         elems = doc.xpath('//a')
+
+        # MD has a habit of listing votes twice
+        seen_votes = set()
+
         for elem in elems:
             href = elem.get('href')
-            if href and "votes" in href and href.endswith('pdf') and ("Senate" in href or "House" in href):
-                print(href)
-                vote = self.parse_vote_pdf(href,bill)
+            if (href and "votes" in href and href.endswith('pdf') and
+               ("Senate" in href or "House" in href) and href not in seen_votes):
+                seen_votes.add(href)
+                vote = self.parse_vote_pdf(href, bill)
                 vote.add_source(href)
-                yield vote 
+                yield vote
 
     def parse_vote_pdf(self, vote_url, bill):
-        filename,response = self.urlretrieve(vote_url)
+        filename, response = self.urlretrieve(vote_url)
         text = convert_pdf(filename, type='text').decode()
         lines = text.splitlines()
 
@@ -188,10 +192,10 @@ class MDBillScraper(Scraper):
             chamber = 'upper'
         else:
             chamber = 'lower'
-        
+
         date = dparse(lines[0].split('Date:')[1], fuzzy=True)
-        countIndex=-1
-        for index,line in enumerate(lines):
+        countIndex = -1
+        for index, line in enumerate(lines):
             if 'Yeas' in line and 'Nays' in line:
                 countIndex = index
                 break
@@ -201,7 +205,7 @@ class MDBillScraper(Scraper):
         if countIndex > 0:
             counts = re.split(r'\s{2,}', lines[countIndex].strip())
             for count in counts:
-                number,string = count.split(' ',1)
+                number, string = count.split(' ', 1)
                 number = int(number)
                 if string == 'Yeas':
                     yes_count = number
@@ -210,7 +214,9 @@ class MDBillScraper(Scraper):
                 else:
                     other_count += number
         passed = yes_count > no_count
-        motion = "No motion given"
+        motion = re.split(r'\s{2,}', lines[countIndex-3].strip())[0]
+        if motion == '':
+            motion = "No motion given"
         vote = VoteEvent(
             bill=bill,
             chamber=chamber,
@@ -224,20 +230,16 @@ class MDBillScraper(Scraper):
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
         pageIndex = countIndex+2
-        test_yes = 0
-        test_no = 0
-        test_other = 0
         while pageIndex < len(lines):
             if 'Voting Yea' in lines[pageIndex] or lines[pageIndex].strip() == '':
                 pageIndex += 1
                 continue
             if 'Voting Nay' in lines[pageIndex]:
-                pageIndex += 2
+                pageIndex += 1
                 break
             names = re.split(r'\s{2,}', lines[pageIndex].strip())
             for name in names:
                 vote.yes(name)
-            test_yes += len(names)
             pageIndex += 1
         while pageIndex < len(lines):
             if 'Not Voting' in lines[pageIndex]:
@@ -247,28 +249,19 @@ class MDBillScraper(Scraper):
                 pageIndex += 1
                 continue
             names = re.split(r'\s{2,}', lines[pageIndex].strip())
-            test_no += len(names)
             for name in names:
                 vote.no(name)
             pageIndex += 1
-        Names = []
         while pageIndex < len(lines):
-            if 'Excused from Voting' in lines[pageIndex] or 'Excused (Absent)' in lines[pageIndex] or '*' in lines[pageIndex] or lines[pageIndex].strip() == '':
+            line = lines[pageIndex]
+            if ('Excused from Voting' in line or 'Excused (Absent)' in line or
+               '*' in line or '(COPY)' in line or line.strip() == ''):
                 pageIndex += 1
                 continue
             names = re.split(r'\s{2,}', lines[pageIndex].strip())
-            test_other += len(names)
-            Names.extend(names)
             for name in names:
                 vote.vote('other', name)
             pageIndex += 1
-        if test_yes != yes_count:
-            print("Yes Failed::::::",test_yes,yes_count)
-        if test_no != no_count:    
-            print("No Failed::::::", test_no, no_count)
-        if test_other != other_count:
-            print("Other Failed::::::", test_other, other_count)
-            print(Names)
         return vote
 
     def parse_vote_page(self, vote_url, bill):
@@ -423,11 +416,11 @@ class MDBillScraper(Scraper):
             subjects = _get_td(doc, heading).xpath('a/text()')
             subject_list += [s.split(' -see also-')[0] for s in subjects if s]
         bill.subject = subject_list
-        
+
         html = self.get(url.replace('stab=01', 'stab=02')).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-        
+
         # documents
         self.scrape_documents(bill, doc)
         # actions
