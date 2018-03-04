@@ -1,4 +1,5 @@
 import re
+import requests
 
 import lxml.html
 import scrapelib
@@ -15,6 +16,7 @@ class MIPersonScraper(Scraper):
         elif chamber == 'lower':
             yield from self.scrape_lower(chamber)
         else:
+            requests.exceptions.TooManyRedirects
             yield from self.scrape_upper(chamber)
             yield from self.scrape_lower(chamber)
 
@@ -136,25 +138,27 @@ class MIPersonScraper(Scraper):
             # are on the page linked off "Contact Me"
 
             # data has a typo in a row
+            email = None
             contact_url = [
                 a for a in row.xpath(".//a")
                 if a.text in ('Contact Me', 'Conact Me')][0].get('href')
-            contact_html = self.get(contact_url).text
-            contact_doc = lxml.html.fromstring(contact_html)
+            try:
+                contact_html = self.get(contact_url).text
+                contact_doc = lxml.html.fromstring(contact_html)
 
-            email = None
-            header_email = contact_doc.xpath("//a[@class='header_email']")
-            if header_email:
-                email = header_email[0].text
-            else:
-                # not using the most common template, but maybe they
-                # dropped their email on the page somewhere
-                links = contact_doc.xpath('//a') or []
-                text_email = [a for a in links
-                              if 'mailto:' in (a.get('href') or '')]
-                if text_email:
-                    email = text_email[0].text
-
+                header_email = contact_doc.xpath("//a[@class='header_email']")
+                if header_email:
+                    email = header_email[0].text
+                else:
+                    # not using the most common template, but maybe they
+                    # dropped their email on the page somewhere
+                    links = contact_doc.xpath('//a') or []
+                    text_email = [a for a in links
+                                  if 'mailto:' in (a.get('href') or '')]
+                    if text_email:
+                        email = text_email[0].text
+            except requests.exceptions.TooManyRedirects:
+                print("Conatct Link Not Working for %s" % name)
             person = Person(name=name, district=district, party=party,
                             primary_org='upper', image=photo_url)
 
