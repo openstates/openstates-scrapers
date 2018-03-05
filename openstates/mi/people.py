@@ -16,7 +16,6 @@ class MIPersonScraper(Scraper):
         elif chamber == 'lower':
             yield from self.scrape_lower(chamber)
         else:
-            requests.exceptions.TooManyRedirects
             yield from self.scrape_upper(chamber)
             yield from self.scrape_lower(chamber)
 
@@ -158,7 +157,7 @@ class MIPersonScraper(Scraper):
                     if text_email:
                         email = text_email[0].text
             except requests.exceptions.TooManyRedirects:
-                print("Conatct Link Not Working for %s" % name)
+                self.warning("Contact Link Not Working for %s" % name)
             person = Person(name=name, district=district, party=party,
                             primary_org='upper', image=photo_url)
 
