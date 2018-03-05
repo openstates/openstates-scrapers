@@ -329,36 +329,23 @@ class WIBillScraper(Scraper):
             return
 
         doc = lxml.html.fromstring(html)
+        trs = doc.xpath('//table[@class="senate"]/tbody/tr')
 
-        yes_count = no_count = other_count = 0
+        voteTypes = ['yes', 'no', 'other']
+        counts = {} # Vote counts for yes, no, other
 
-        # a game of div-div-table
-        for ddt in doc.xpath('//div/div/table'):
-            text = ddt.text_content()
-            if 'Wisconsin Senate' in text or 'SEQUENCE NO' in text:
-                continue
-            elif 'AYES -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and 'AYES' not in name:
-                        vote.vote('yes', name.strip())
-                        yes_count += 1
-            elif 'NAYS -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and 'NAYS' not in name:
-                        vote.vote('no', name.strip())
-                        no_count += 1
-            elif 'NOT VOTING -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and "NOT VOTING" not in name:
-                        vote.vote('other', name.strip())
-                        other_count += 1
-            elif text.strip():
-                raise ValueError('unexpected block in vote')
+        for index in range(0, 5, 2):
 
-        if yes_count or no_count or other_count:
-            vote.set_count('yes', yes_count)
-            vote.set_count('no', no_count)
-            vote.set_count('other', other_count)
+            voteType = voteTypes[int(index/2)]
+            names = trs[index].xpath('.//table//td/text()')
+            voteCount = int(trs[index].xpath('./td/text()')[0].split('-')[1])
+            counts[voteType] = voteCount
+
+            for name in names:
+                vote.vote(voteType, name.strip())
+
+        for voteType in voteTypes:
+            vote.set_count(voteType, counts[voteType])
 
     def add_house_votes(self, vote, url):
         try:
