@@ -7,7 +7,7 @@ from urllib.parse import unquote_plus, parse_qsl, urlparse
 import lxml.html
 
 from pupa.utils import convert_pdf
-from pupa.scrape import Scraper, Bill, VoteEvent as Vote
+from pupa.scrape import Scraper, Bill, VoteEvent
 import scrapelib
 
 from .actions import Categorizer
@@ -291,12 +291,12 @@ class WVBillScraper(Scraper):
                         continue
                     votes[vote_type].append(name)
         if date:
-            vote = Vote(chamber='lower',
-                        start_date=date.strftime("%Y-%m-%d"),
-                        motion_text=motion,
-                        result='pass' if passed else 'fail',
-                        classification='passage',
-                        bill=bill)
+            vote = VoteEvent(chamber='lower',
+                             start_date=date.strftime("%Y-%m-%d"),
+                             motion_text=motion,
+                             result='pass' if passed else 'fail',
+                             classification='passage',
+                             bill=bill)
 
             vote.set_count('yes', yes_count)
             vote.set_count('no', no_count)
@@ -319,7 +319,7 @@ class WVBillScraper(Scraper):
             self.warning("missing vote file %s" % url)
             return
 
-        vote = Vote(
+        vote = VoteEvent(
             chamber='upper',
             start_date=date.strftime("%Y-%m-%d"),
             motion_text='Passage',
@@ -329,6 +329,7 @@ class WVBillScraper(Scraper):
             bill=bill
         )
         vote.add_source(url)
+        vote.pupa_id = url
 
         text = convert_pdf(filename, 'text').decode('utf-8')
         os.remove(filename)
