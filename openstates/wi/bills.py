@@ -332,7 +332,7 @@ class WIBillScraper(Scraper):
         trs = doc.xpath('//table[@class="senate"]/tbody/tr')
 
         voteTypes = ['yes', 'no', 'other']
-        counts = {} # Vote counts for yes, no, other
+        counts = {}  # Vote counts for yes, no, other
 
         for index in range(0, 5, 2):
 
@@ -362,12 +362,22 @@ class WIBillScraper(Scraper):
         vote.set_count('yes', int(ayes_nays[0][0]))
         vote.set_count('no', int(ayes_nays[0][1]))
 
+        yes_names_count = 0
+        no_names_count = 0
+
         for td in doc.xpath('//tbody/tr/td[4]'):
             name = td.text_content()
             for vote_td in td.xpath('./preceding-sibling::td'):
                 if vote_td.text_content() == 'Y':
                     vote.vote('yes', name)
+                    yes_names_count += 1
                 elif vote_td.text_content() == 'N':
                     vote.vote('no', name)
+                    no_names_count += 1
                 elif vote_td.text_content() == 'NV':
                     vote.vote('other', name)
+
+        if yes_names_count != int(ayes_nays[0][0]):
+            self.warning("Yes votes and number of Names doesn't match")
+        if no_names_count != int(ayes_nays[0][1]):
+            self.warning("No votes and number of Names doesn't match")
