@@ -4,7 +4,6 @@ import datetime
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 
-from dateutil.parser import parse as dparse
 from pupa.utils.generic import convert_pdf
 
 CHAMBERS = {
@@ -86,7 +85,8 @@ class MDBillScraper(Scraper):
                 )
         else:
             # single bill sponsor
-            sponsor = doc.xpath('//a[@name="Sponsors"]/../../dd')[0].text_content()
+            sponsor = doc.xpath(
+                '//a[@name="Sponsors"]/../../dd')[0].text_content()
             bill.add_sponsorship(
                 _clean_sponsor(sponsor),
                 entity_type='person',
@@ -137,7 +137,8 @@ class MDBillScraper(Scraper):
 
                             if atype:
                                 bill.add_action(
-                                    chamber, act, action_date.strftime('%Y-%m-%d'),
+                                    chamber, act, action_date.strftime(
+                                        '%Y-%m-%d'),
                                     related_entities=related)
                             else:
                                 self.log('unknown action: %s' % act)
@@ -152,7 +153,8 @@ class MDBillScraper(Scraper):
         note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
         for sib in note_b.itersiblings():
             if sib.tag == 'a' and sib.text == 'Available':
-                bill.add_document_link('Fiscal and Policy Note', sib.get('href'))
+                bill.add_document_link(
+                    'Fiscal and Policy Note', sib.get('href'))
 
     def parse_bill_votes(self, doc, bill):
         elems = doc.xpath('//a')
@@ -177,14 +179,16 @@ class MDBillScraper(Scraper):
         for elem in elems:
             href = elem.get('href')
             if (href and "votes" in href and href.endswith('pdf') and
-               ("Senate" in href or "House" in href) and href not in seen_votes):
+                    ("Senate" in href or "House" in href) and href not in seen_votes):
                 seen_votes.add(href)
                 vote = self.parse_vote_pdf(href, bill)
                 vote.add_source(href)
                 yield vote
 
     def parse_vote_pdf(self, vote_url, bill):
+
         filename, response = self.urlretrieve(vote_url)
+
         text = convert_pdf(filename, type='text').decode()
         lines = text.splitlines()
 
@@ -193,30 +197,40 @@ class MDBillScraper(Scraper):
         else:
             chamber = 'lower'
 
-        date = dparse(lines[0].split('Date:')[1], fuzzy=True)
-        countIndex = -1
+        date_string = lines[0].split('Date:')[1].strip()
+        date = datetime.datetime.strptime(date_string, "%b %d, %Y %I:%M (%p)")
+
+        pageIndex = -1
         for index, line in enumerate(lines):
             if 'Yeas' in line and 'Nays' in line:
-                countIndex = index
+                pageIndex = index
                 break
+
         yes_count = -1
         no_count = -1
         other_count = 0
-        if countIndex > 0:
-            counts = re.split(r'\s{2,}', lines[countIndex].strip())
+
+        if pageIndex > 0:
+
+            counts = re.split(r'\s{2,}', lines[pageIndex].strip())
+
             for count in counts:
                 number, string = count.split(' ', 1)
                 number = int(number)
+
                 if string == 'Yeas':
                     yes_count = number
                 elif string == 'Nays':
                     no_count = number
                 else:
                     other_count += number
+
         passed = yes_count > no_count
-        motion = re.split(r'\s{2,}', lines[countIndex-3].strip())[0]
+
+        motion = re.split(r'\s{2,}', lines[pageIndex-3].strip())[0]
         if motion == '':
             motion = "No motion given"
+
         vote = VoteEvent(
             bill=bill,
             chamber=chamber,
@@ -225,43 +239,58 @@ class MDBillScraper(Scraper):
             classification='passage',
             result='pass' if passed else 'fail',
         )
-        vote.pupa_id = vote_url     # contains sequence number
+
+        vote.pupa_id = vote_url  # contains sequence number
+
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
-        pageIndex = countIndex+2
+        pageIndex = pageIndex + 2
+
+        # Keywords for identifying where names are located in the pdf
+        showStoppers = ['Voting Nay', 'Not Voting',
+                        'COPY', 'Excused', 'indicates vote change']
+        voteTypes = ['yes', 'no', 'other']
+        voteIndex = 0
+
+        # For matching number of names extracted with vote counts(extracted independently)
+        totalvotes = 0
+        yes_names_count = 0
+        no_names_count = 0
+
         while pageIndex < len(lines):
-            if 'Voting Yea' in lines[pageIndex] or lines[pageIndex].strip() == '':
+
+            currentLine = lines[pageIndex].strip()
+
+            if not currentLine or 'Voting Yea' in currentLine:
                 pageIndex += 1
                 continue
-            if 'Voting Nay' in lines[pageIndex]:
+
+            if any(showStopper in currentLine for showStopper in showStoppers):
                 pageIndex += 1
-                break
-            names = re.split(r'\s{2,}', lines[pageIndex].strip())
-            for name in names:
-                vote.yes(name)
-            pageIndex += 1
-        while pageIndex < len(lines):
-            if 'Not Voting' in lines[pageIndex]:
-                pageIndex += 1
-                break
-            elif lines[pageIndex].strip() == '':
-                pageIndex += 1
+                voteIndex = (voteIndex + 1) if (voteIndex < 2) else 2
                 continue
-            names = re.split(r'\s{2,}', lines[pageIndex].strip())
+
+            names = re.split(r'\s{2,}', currentLine)
+
+            if voteIndex == 0:
+                yes_names_count += len(names)
+            elif voteIndex == 1:
+                no_names_count += len(names)
+
+            totalvotes += len(names)
             for name in names:
-                vote.no(name)
+                vote.vote(voteTypes[voteIndex], name)
             pageIndex += 1
-        while pageIndex < len(lines):
-            line = lines[pageIndex]
-            if ('Excused from Voting' in line or 'Excused (Absent)' in line or
-               '*' in line or '(COPY)' in line or line.strip() == ''):
-                pageIndex += 1
-                continue
-            names = re.split(r'\s{2,}', lines[pageIndex].strip())
-            for name in names:
-                vote.vote('other', name)
-            pageIndex += 1
+
+        if yes_count != yes_names_count:
+            self.warning("Yes Votes Count and Number of Names don't match")
+        if no_count != no_names_count:
+            self.warning("No Votes Count and Number of Names don't match")
+        if totalvotes != yes_count+no_count+other_count:
+            self.warning(
+                "Total Votes Count and Total Number of Names don't match")
+
         return vote
 
     def parse_vote_page(self, vote_url, bill):
@@ -331,7 +360,8 @@ class MDBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         # find <a name="Title">, get parent dt, get parent dl, then dd n dl
-        title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
+        title = doc.xpath(
+            '//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
         summary = doc.xpath('//font[@size="3"]/p/text()')[0].strip()
 
@@ -482,7 +512,8 @@ class MDBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         for row in doc.xpath('//table[@class="billgrid"]/tr')[1:]:
-            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath('td')
+            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath(
+                'td')
 
             if new_chamber.text == 'Senate':
                 chamber = 'upper'
@@ -495,7 +526,8 @@ class MDBillScraper(Scraper):
 
             action = action.text
             if cal_date.text:
-                action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
+                action_date = datetime.datetime.strptime(
+                    cal_date.text, '%m/%d/%Y')
 
             atype, committee = _classify_action(action)
             related = (
