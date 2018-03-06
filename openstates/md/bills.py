@@ -85,8 +85,7 @@ class MDBillScraper(Scraper):
                 )
         else:
             # single bill sponsor
-            sponsor = doc.xpath(
-                '//a[@name="Sponsors"]/../../dd')[0].text_content()
+            sponsor = doc.xpath('//a[@name="Sponsors"]/../../dd')[0].text_content()
             bill.add_sponsorship(
                 _clean_sponsor(sponsor),
                 entity_type='person',
@@ -137,8 +136,7 @@ class MDBillScraper(Scraper):
 
                             if atype:
                                 bill.add_action(
-                                    chamber, act, action_date.strftime(
-                                        '%Y-%m-%d'),
+                                    chamber, act, action_date.strftime('%Y-%m-%d'),
                                     related_entities=related)
                             else:
                                 self.log('unknown action: %s' % act)
@@ -153,8 +151,7 @@ class MDBillScraper(Scraper):
         note_b = doc.xpath('//b[contains(text(), "Fiscal and Policy")]')[0]
         for sib in note_b.itersiblings():
             if sib.tag == 'a' and sib.text == 'Available':
-                bill.add_document_link(
-                    'Fiscal and Policy Note', sib.get('href'))
+                bill.add_document_link('Fiscal and Policy Note', sib.get('href'))
 
     def parse_bill_votes(self, doc, bill):
         elems = doc.xpath('//a')
@@ -360,8 +357,7 @@ class MDBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
         # find <a name="Title">, get parent dt, get parent dl, then dd n dl
-        title = doc.xpath(
-            '//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
+        title = doc.xpath('//a[@name="Title"][1]/../../dd[1]/text()')[0].strip()
 
         summary = doc.xpath('//font[@size="3"]/p/text()')[0].strip()
 
@@ -512,8 +508,7 @@ class MDBillScraper(Scraper):
         doc.make_links_absolute(url)
 
         for row in doc.xpath('//table[@class="billgrid"]/tr')[1:]:
-            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath(
-                'td')
+            new_chamber, cal_date, _leg_date, action, _proceedings = row.xpath('td')
 
             if new_chamber.text == 'Senate':
                 chamber = 'upper'
@@ -526,8 +521,7 @@ class MDBillScraper(Scraper):
 
             action = action.text
             if cal_date.text:
-                action_date = datetime.datetime.strptime(
-                    cal_date.text, '%m/%d/%Y')
+                action_date = datetime.datetime.strptime(cal_date.text, '%m/%d/%Y')
 
             atype, committee = _classify_action(action)
             related = (
