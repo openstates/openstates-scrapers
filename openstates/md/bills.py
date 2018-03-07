@@ -168,8 +168,7 @@ class MDBillScraper(Scraper):
                 yield vote
 
     def parse_bill_votes_new(self, doc, bill):
-        elems = doc.xpath('//a')
-
+        elems = doc.xpath("//table[@class='billdocs']//a")
         # MD has a habit of listing votes twice
         seen_votes = set()
 
@@ -189,44 +188,43 @@ class MDBillScraper(Scraper):
         text = convert_pdf(filename, type='text').decode()
         lines = text.splitlines()
 
-        if 'senate' in vote_url:
+        if 'Senate' in vote_url:
             chamber = 'upper'
         else:
             chamber = 'lower'
 
-        date_string = lines[0].split('Date:')[1].strip()
+        date_string = lines[0].split('Calendar Date:')[1].strip()
         date = datetime.datetime.strptime(date_string, "%b %d, %Y %I:%M (%p)")
 
-        pageIndex = -1
+        page_index = None
         for index, line in enumerate(lines):
             if 'Yeas' in line and 'Nays' in line:
-                pageIndex = index
+                page_index = index
                 break
 
-        yes_count = -1
-        no_count = -1
-        other_count = 0
+        vote_counts = 5*[None]
+        voteTypes = ['yes', 'no', 'not voting', 'excused', 'absent']
 
-        if pageIndex > 0:
+        if page_index:
 
-            counts = re.split(r'\s{2,}', lines[pageIndex].strip())
+            counts = re.split(r'\s{2,}', lines[page_index].strip())
 
-            for count in counts:
+            for index, count in enumerate(counts):
                 number, string = count.split(' ', 1)
                 number = int(number)
+                vote_counts[index] = number
+        else:
+            raise ValueError("Vote Counts Not found at %s" % vote_url)
 
-                if string == 'Yeas':
-                    yes_count = number
-                elif string == 'Nays':
-                    no_count = number
-                else:
-                    other_count += number
+        passed = vote_counts[0] > vote_counts[1]
+        motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
+        motion_keywords = ['favorable', 'reading', 'amendment', 'motion']
 
-        passed = yes_count > no_count
-
-        motion = re.split(r'\s{2,}', lines[pageIndex-3].strip())[0]
-        if motion == '':
-            motion = "No motion given"
+        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+            motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
+        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+            self.error("Motion Extracted: %s" % motion)
+            raise ValueError("No Motion or In correct Motion scraped.")
 
         vote = VoteEvent(
             bill=bill,
@@ -239,54 +237,41 @@ class MDBillScraper(Scraper):
 
         vote.pupa_id = vote_url  # contains sequence number
 
-        vote.set_count('yes', yes_count)
-        vote.set_count('no', no_count)
-        vote.set_count('other', other_count)
-        pageIndex = pageIndex + 2
+        for index, voteType in enumerate(voteTypes):
+            vote.set_count(voteType, vote_counts[index])
+        page_index = page_index + 2
 
         # Keywords for identifying where names are located in the pdf
         showStoppers = ['Voting Nay', 'Not Voting',
                         'COPY', 'Excused', 'indicates vote change']
-        voteTypes = ['yes', 'no', 'other']
         voteIndex = 0
 
         # For matching number of names extracted with vote counts(extracted independently)
-        totalvotes = 0
-        yes_names_count = 0
-        no_names_count = 0
+        vote_name_counts = 5*[0]
 
-        while pageIndex < len(lines):
+        while page_index < len(lines):
 
-            currentLine = lines[pageIndex].strip()
+            currentLine = lines[page_index].strip()
 
             if not currentLine or 'Voting Yea' in currentLine:
-                pageIndex += 1
+                page_index += 1
                 continue
 
             if any(showStopper in currentLine for showStopper in showStoppers):
-                pageIndex += 1
-                voteIndex = (voteIndex + 1) if (voteIndex < 2) else 2
+                page_index += 1
+                voteIndex = (voteIndex + 1)  # if (voteIndex < 4) else 4
                 continue
 
             names = re.split(r'\s{2,}', currentLine)
 
-            if voteIndex == 0:
-                yes_names_count += len(names)
-            elif voteIndex == 1:
-                no_names_count += len(names)
+            vote_name_counts[voteIndex] += len(names)
 
-            totalvotes += len(names)
             for name in names:
                 vote.vote(voteTypes[voteIndex], name)
-            pageIndex += 1
+            page_index += 1
 
-        if yes_count != yes_names_count:
-            self.warning("Yes Votes Count and Number of Names don't match")
-        if no_count != no_names_count:
-            self.warning("No Votes Count and Number of Names don't match")
-        if totalvotes != yes_count+no_count+other_count:
-            self.warning(
-                "Total Votes Count and Total Number of Names don't match")
+        if vote_counts != vote_name_counts:
+            raise ValueError("Votes Count and Number of Names don't match")
 
         return vote
 
