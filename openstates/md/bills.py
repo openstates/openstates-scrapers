@@ -4,6 +4,8 @@ import datetime
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 
+from pupa.utils.generic import convert_pdf
+
 CHAMBERS = {
     'upper': ('SB', 'SJ'),
     'lower': ('HB', 'HJ'),
@@ -165,10 +167,117 @@ class MDBillScraper(Scraper):
                 vote.add_source(href)
                 yield vote
 
+    def parse_bill_votes_new(self, doc, bill):
+        elems = doc.xpath("//table[@class='billdocs']//a")
+        # MD has a habit of listing votes twice
+        seen_votes = set()
+
+        for elem in elems:
+            href = elem.get('href')
+            if (href and "votes" in href and href.endswith('pdf') and
+                    ("Senate" in href or "House" in href) and href not in seen_votes):
+                seen_votes.add(href)
+                vote = self.parse_vote_pdf(href, bill)
+                vote.add_source(href)
+                yield vote
+
+    def parse_vote_pdf(self, vote_url, bill):
+
+        filename, response = self.urlretrieve(vote_url)
+
+        text = convert_pdf(filename, type='text').decode()
+        lines = text.splitlines()
+
+        if 'Senate' in vote_url:
+            chamber = 'upper'
+        else:
+            chamber = 'lower'
+
+        date_string = lines[0].split('Calendar Date:')[1].strip()
+        date = datetime.datetime.strptime(date_string, "%b %d, %Y %I:%M (%p)")
+
+        page_index = None
+        for index, line in enumerate(lines):
+            if 'Yeas' in line and 'Nays' in line:
+                page_index = index
+                break
+
+        vote_counts = 5*[0]
+        vote_types = ['yes', 'no', 'not voting', 'excused', 'absent']
+
+        if page_index:
+
+            counts = re.split(r'\s{2,}', lines[page_index].strip())
+
+            for index, count in enumerate(counts):
+                number, string = count.split(' ', 1)
+                number = int(number)
+                vote_counts[index] = number
+        else:
+            raise ValueError("Vote Counts Not found at %s" % vote_url)
+
+        passed = vote_counts[0] > vote_counts[1]
+        motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
+        motion_keywords = ['favorable', 'reading', 'amendment', 'motion']
+
+        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+            motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
+        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+            self.error("Motion Extracted: %s" % motion)
+            raise ValueError("No Motion or faulty Motion scraped.")
+
+        vote = VoteEvent(
+            bill=bill,
+            chamber=chamber,
+            start_date=date.strftime('%Y-%m-%d'),
+            motion_text=motion,
+            classification='passage',
+            result='pass' if passed else 'fail',
+        )
+
+        vote.pupa_id = vote_url  # contains sequence number
+
+        for index, vote_type in enumerate(vote_types):
+            vote.set_count(vote_type, vote_counts[index])
+        page_index = page_index + 2
+
+        # Keywords for identifying where names are located in the pdf
+        show_stoppers = ['Voting Nay', 'Not Voting',
+                         'COPY', 'Excused', 'indicates vote change']
+        vote_index = 0
+
+        # For matching number of names extracted with vote counts(extracted independently)
+        vote_name_counts = 5*[0]
+
+        while page_index < len(lines):
+
+            current_line = lines[page_index].strip()
+
+            if not current_line or 'Voting Yea' in current_line:
+                page_index += 1
+                continue
+
+            if any(show_stopper in current_line for show_stopper in show_stoppers):
+                page_index += 1
+                vote_index = (vote_index + 1)
+                continue
+
+            names = re.split(r'\s{2,}', current_line)
+
+            vote_name_counts[vote_index] += len(names)
+
+            for name in names:
+                vote.vote(vote_types[vote_index], name)
+            page_index += 1
+
+        if vote_counts != vote_name_counts:
+            raise ValueError("Votes Count and Number of Names don't match")
+
+        return vote
+
     def parse_vote_page(self, vote_url, bill):
         vote_html = self.get(vote_url).text
         doc = lxml.html.fromstring(vote_html)
-
         # chamber
         if 'senate' in vote_url:
             chamber = 'upper'
@@ -270,7 +379,6 @@ class MDBillScraper(Scraper):
         html = self.get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-
         try:
             title = doc.xpath('//h3[@class="h3billright"]')[0].text_content()
             # TODO: grab summary (none present at time of writing)
@@ -320,18 +428,18 @@ class MDBillScraper(Scraper):
             subject_list += [s.split(' -see also-')[0] for s in subjects if s]
         bill.subject = subject_list
 
-        # documents
-        self.scrape_documents(bill, url.replace('stab=01', 'stab=02'))
-        # actions
-        self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
-
-        yield bill
-
-    def scrape_documents(self, bill, url):
-        html = self.get(url).text
+        html = self.get(url.replace('stab=01', 'stab=02')).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
 
+        # documents
+        self.scrape_documents(bill, doc)
+        # actions
+        self.scrape_actions(bill, url.replace('stab=01', 'stab=03'))
+        yield from self.parse_bill_votes_new(doc, bill)
+        yield bill
+
+    def scrape_documents(self, bill, doc):
         for td in doc.xpath('//table[@class="billdocs"]//td'):
             a = td.xpath('a')[0]
             description = td.xpath('text()')

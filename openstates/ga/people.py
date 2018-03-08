@@ -118,16 +118,18 @@ class GAPersonScraper(Scraper, LXMLMixin):
                 'guid': guid,
             }
 
-            capitol_address = self.clean_list([
-                member_info['Address'][x] for x in [
-                    'Street', 'City', 'State', 'Zip'
-                ]
-            ])
-
-            capitol_address = " ".join(
-                addr_component for addr_component
-                in capitol_address if addr_component
-            ).strip()
+            if member_info['Address']['Street'] is not None and \
+                    member_info['Address']['Street'].strip():
+                capitol_address_info = {
+                    k: v.strip() for k, v
+                    in dict(member_info['Address']).items()
+                    if k in ['Street', 'City', 'State', 'Zip']
+                }
+                capitol_address = '{Street}\n{City}, {State} {Zip}'.format(**capitol_address_info)
+                legislator.add_contact_detail(
+                    type='address', value=capitol_address, note='Capitol Address')
+            else:
+                self.warning('Could not find full capitol address for {}'.format(full_name))
 
             capitol_contact_info = self.clean_list([
                 member_info['Address'][x] for x in [
@@ -140,35 +142,36 @@ class GAPersonScraper(Scraper, LXMLMixin):
             # examples:
             # 01X5dvct3G1lV6RQ7I9o926Q==&c=xT8jBs5X4S7ZX2TOajTx2W7CBprTaVlpcvUvHEv78GI=
             # 01X5dvct3G1lV6RQ7I9o926Q==&c=eSH9vpfdy3XJ989Gpw4MOdUa3n55NTA8ev58RPJuzA8=
-
             if capitol_contact_info[0] and '@' not in capitol_contact_info[0]:
                 capitol_contact_info[0] = None
 
-            # if we have more than 2 chars (eg state)
-            # or a phone/fax/email address record the info
-            if len(capitol_address) > 2 or not capitol_contact_info.count(None) == 3:
-                if capitol_contact_info[0] and 'quickrxdrugs@yahoo.com' in capitol_contact_info[0]:
-                    self.warning("XXX: GA SITE WAS HACKED.")
-                    capitol_contact_info[1] = None
+            if capitol_contact_info[0]:
+                # Site was hacked in the past
+                assert 'quickrxdrugs@yahoo.com' not in capitol_contact_info[0]
 
-                if capitol_address.strip():
-                    legislator.add_contact_detail(
-                        type='address', value=capitol_address, note='Capitol Address')
-                if capitol_contact_info[1]:
-                    legislator.add_contact_detail(
-                        type='voice', value=capitol_contact_info[1], note='Capitol Address')
-                if capitol_contact_info[2]:
-                    legislator.add_contact_detail(
-                        type='fax', value=capitol_contact_info[2], note='Capitol Address')
-                if capitol_contact_info[0]:
-                    legislator.add_contact_detail(
-                        type='email', value=capitol_contact_info[0], note='Capitol Address')
+            if capitol_contact_info[1]:
+                legislator.add_contact_detail(
+                    type='voice', value=capitol_contact_info[1], note='Capitol Address')
+            if capitol_contact_info[2]:
+                legislator.add_contact_detail(
+                    type='fax', value=capitol_contact_info[2], note='Capitol Address')
+            if capitol_contact_info[0]:
+                legislator.add_contact_detail(
+                    type='email', value=capitol_contact_info[0], note='Capitol Address')
 
-            district_address = self.clean_list([
-                member_info['DistrictAddress'][x] for x in [
-                    'Street', 'City', 'State', 'Zip'
-                ]
-            ])
+            if member_info['DistrictAddress']['Street'] is not None and \
+                    member_info['DistrictAddress']['Street'].strip():
+                district_address_info = {
+                    k: v.strip() for k, v
+                    in dict(member_info['DistrictAddress']).items()
+                    if k in ['Street', 'City', 'State', 'Zip']
+                }
+                district_address = '{Street}\n{City}, {State} {Zip}'.format(
+                        **district_address_info)
+                legislator.add_contact_detail(
+                    type='address', value=district_address, note='District Address')
+            else:
+                self.warning('Could not find full district address for {}'.format(full_name))
 
             district_contact_info = self.clean_list([
                 member_info['DistrictAddress'][x] for x in [
@@ -180,29 +183,19 @@ class GAPersonScraper(Scraper, LXMLMixin):
             if district_contact_info[0] and '@' not in district_contact_info[0]:
                 district_contact_info[0] = None
 
-            district_address = " ".join(
-                addr_component for addr_component
-                in district_address if addr_component
-            ).strip()
+            if district_contact_info[0]:
+                # Site was hacked in the past
+                assert 'quickrxdrugs@yahoo.com' not in district_contact_info[0]
 
-            if len(capitol_address) > 2 or not capitol_contact_info.count(None) == 3:
-                if (district_contact_info[1] and
-                        'quickrxdrugs@yahoo.com' in district_contact_info[1]):
-                    self.warning("XXX: GA SITE WAS HACKED.")
-                    district_contact_info[1] = None
-
-                if district_address.strip():
-                    legislator.add_contact_detail(
-                        type='address', value=district_address, note='District Address')
-                if district_contact_info[1]:
-                    legislator.add_contact_detail(
-                        type='voice', value=district_contact_info[1], note='District Address')
-                if district_contact_info[2]:
-                    legislator.add_contact_detail(
-                        type='fax', value=district_contact_info[2], note='District Address')
-                if district_contact_info[0]:
-                    legislator.add_contact_detail(
-                        type='email', value=district_contact_info[0], note='District Address')
+            if district_contact_info[1]:
+                legislator.add_contact_detail(
+                    type='voice', value=district_contact_info[1], note='District Address')
+            if district_contact_info[2]:
+                legislator.add_contact_detail(
+                    type='fax', value=district_contact_info[2], note='District Address')
+            if district_contact_info[0]:
+                legislator.add_contact_detail(
+                    type='email', value=district_contact_info[0], note='District Address')
 
             legislator.add_link(url)
             legislator.add_source(self.ssource)
