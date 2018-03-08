@@ -202,8 +202,8 @@ class MDBillScraper(Scraper):
                 page_index = index
                 break
 
-        vote_counts = 5*[None]
-        voteTypes = ['yes', 'no', 'not voting', 'excused', 'absent']
+        vote_counts = 5*[0]
+        vote_types = ['yes', 'no', 'not voting', 'excused', 'absent']
 
         if page_index:
 
@@ -224,7 +224,7 @@ class MDBillScraper(Scraper):
             motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
         if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
             self.error("Motion Extracted: %s" % motion)
-            raise ValueError("No Motion or In correct Motion scraped.")
+            raise ValueError("No Motion or faulty Motion scraped.")
 
         vote = VoteEvent(
             bill=bill,
@@ -237,37 +237,37 @@ class MDBillScraper(Scraper):
 
         vote.pupa_id = vote_url  # contains sequence number
 
-        for index, voteType in enumerate(voteTypes):
-            vote.set_count(voteType, vote_counts[index])
+        for index, vote_type in enumerate(vote_types):
+            vote.set_count(vote_type, vote_counts[index])
         page_index = page_index + 2
 
         # Keywords for identifying where names are located in the pdf
-        showStoppers = ['Voting Nay', 'Not Voting',
-                        'COPY', 'Excused', 'indicates vote change']
-        voteIndex = 0
+        show_stoppers = ['Voting Nay', 'Not Voting',
+                         'COPY', 'Excused', 'indicates vote change']
+        vote_index = 0
 
         # For matching number of names extracted with vote counts(extracted independently)
         vote_name_counts = 5*[0]
 
         while page_index < len(lines):
 
-            currentLine = lines[page_index].strip()
+            current_line = lines[page_index].strip()
 
-            if not currentLine or 'Voting Yea' in currentLine:
+            if not current_line or 'Voting Yea' in current_line:
                 page_index += 1
                 continue
 
-            if any(showStopper in currentLine for showStopper in showStoppers):
+            if any(show_stopper in current_line for show_stopper in show_stoppers):
                 page_index += 1
-                voteIndex = (voteIndex + 1)  # if (voteIndex < 4) else 4
+                vote_index = (vote_index + 1)
                 continue
 
-            names = re.split(r'\s{2,}', currentLine)
+            names = re.split(r'\s{2,}', current_line)
 
-            vote_name_counts[voteIndex] += len(names)
+            vote_name_counts[vote_index] += len(names)
 
             for name in names:
-                vote.vote(voteTypes[voteIndex], name)
+                vote.vote(vote_types[vote_index], name)
             page_index += 1
 
         if vote_counts != vote_name_counts:
