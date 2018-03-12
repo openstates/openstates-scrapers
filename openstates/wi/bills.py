@@ -331,21 +331,27 @@ class WIBillScraper(Scraper):
         doc = lxml.html.fromstring(html)
         trs = doc.xpath('//table[@class="senate"]/tbody/tr')
 
-        voteTypes = ['yes', 'no', 'other']
-        counts = {}  # Vote counts for yes, no, other
+        vote_types = ['yes', 'no', 'other']
+        vote_counts = {}  # Vote counts for yes, no, other
+        name_counts = {}
 
         for index in range(0, 5, 2):
 
-            voteType = voteTypes[int(index/2)]
+            vote_type = vote_types[int(index/2)]
             names = trs[index].xpath('.//table//td/text()')
-            voteCount = int(trs[index].xpath('./td/text()')[0].split('-')[1])
-            counts[voteType] = voteCount
+            vote_count = int(trs[index].xpath('./td/text()')[0].split('-')[1])
+            vote_counts[vote_type] = vote_count
+            name_counts[vote_type] = len(names)
 
             for name in names:
-                vote.vote(voteType, name.strip())
+                vote.vote(vote_type, name.strip())
 
-        for voteType in voteTypes:
-            vote.set_count(voteType, counts[voteType])
+        for vote_type in vote_types:
+            vote.set_count(vote_type, vote_counts[vote_type])
+
+        if name_counts != vote_counts:
+            self.error("Yes votes and number of Names doesn't match")
+            raise ValueError("Vote Count and number of Names don't match")
 
     def add_house_votes(self, vote, url):
         try:
@@ -378,6 +384,8 @@ class WIBillScraper(Scraper):
                     vote.vote('other', name)
 
         if yes_names_count != int(ayes_nays[0][0]):
-            self.warning("Yes votes and number of Names doesn't match")
+            self.error("Yes votes and number of Names doesn't match")
+            raise ValueError("Vote Count and number of Names don't match")
         if no_names_count != int(ayes_nays[0][1]):
-            self.warning("No votes and number of Names doesn't match")
+            self.error("No votes and number of Names doesn't match")
+            raise ValueError("Vote Count and number of Names don't match")
