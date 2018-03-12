@@ -6,6 +6,18 @@ from .bills import VTBillScraper
 # from .events import VTEventScraper
 
 
+# This is not an exact setting for VT, but rather a limit
+# that we're experimenting with, to deal with arbitrary
+# scrapelib failures for this state
+# (Reminder: Pupa default is 60 RPM)
+# This limit might also be possible to remove once we switch to
+# the official API for bills:
+# https://github.com/openstates/openstates/issues/2196
+settings = dict(
+    SCRAPELIB_RPM=20
+)
+
+
 class Vermont(Jurisdiction):
     division_id = "ocd-division/country:us/state:vt"
     classification = "government"
