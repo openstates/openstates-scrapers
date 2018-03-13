@@ -228,6 +228,8 @@ class WIBillScraper(Scraper):
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
                 vote_url = action_td.xpath('a/@href')
+                if 'committee' in action.lower():
+                    vote_url = journal.xpath('a/@href')
                 if vote_url:
                     yield self.add_vote(bill, actor, date, action, vote_url[0])
 
