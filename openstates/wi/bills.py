@@ -355,7 +355,6 @@ class WIBillScraper(Scraper):
             vote.set_count(vote_type, vote_counts[vote_type])
 
         if name_counts != vote_counts:
-            self.error("Names not extracted correctly")
             raise ValueError("Vote Count and number of Names don't match")
 
     def add_house_votes(self, vote, url):
@@ -392,8 +391,6 @@ class WIBillScraper(Scraper):
                     vote.vote('not voting', name)
 
         if yes_names_count != int(vote_counts[0][0]):
-            self.error("Yes votes and number of Names doesn't match")
-            raise ValueError("Vote Count and number of Names don't match")
+            raise ValueError("Yes votes and number of Names doesn't match")
         if no_names_count != int(vote_counts[0][1]):
-            self.error("No votes and number of Names doesn't match")
-            raise ValueError("Vote Count and number of Names don't match")
+            raise ValueError("No votes and number of Names doesn't match")
