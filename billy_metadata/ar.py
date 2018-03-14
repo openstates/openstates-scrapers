@@ -34,7 +34,7 @@ metadata = {
             'name': '2017-2018',
             'start_year': 2017,
             'end_year': 2018,
-            'sessions': ['2017', '2017S1', '2018F'],
+            'sessions': ['2017', '2017S1', '2018F', '2018S2'],
         },
     ],
     'session_details': {
@@ -153,11 +153,11 @@ metadata = {
             '_scraped_name': 'Fiscal Session, 2018',
             'slug': '2018F',
         },
-        # '2018S2': {
-        #     'type': 'special',
-        #     'display_name': '2018 Second Extraordinary Session',
-        #     'slug': '2018S2',
-        # },
+        '2018S2': {
+            'type': 'special',
+            'display_name': '2018 Second Extraordinary Session',
+            'slug': '2018S2',
+        },
     },
     'feature_flags': ['influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [

@@ -138,17 +138,15 @@ class Arkansas(Jurisdiction):
             "name": "2018 Fiscal Session",
             "start_date": "2018-02-12"
         },
-        # {
-        #     "_scraped_name": "Second Extraordinary Session, 2018",
-        #     "classification": "special",
-        #     "identifier": "2018S2",
-        #     "name": "2018 Second Extraordinary Session",
-        #     "start_date": "2018-03-13"
-        # },
+        {
+            "_scraped_name": "Second Extraordinary Session, 2018",
+            "classification": "special",
+            "identifier": "2018S2",
+            "name": "2018 Second Extraordinary Session",
+            "start_date": "2018-03-13"
+        },
     ]
     ignored_scraped_sessions = [
-        # To be made active on-start, on Tuesday, March 14
-        "Second Extraordinary Session, 2018",
         "Regular Session, 2009",
         "Fiscal Session, 2010",
         "Regular Session, 2007",
