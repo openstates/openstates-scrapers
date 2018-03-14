@@ -228,6 +228,8 @@ class WIBillScraper(Scraper):
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
                 vote_url = action_td.xpath('a/@href')
+                if 'committee' in action.lower():
+                    vote_url = journal.xpath('a/@href')
                 if vote_url:
                     yield self.add_vote(bill, actor, date, action, vote_url[0])
 
@@ -329,36 +331,31 @@ class WIBillScraper(Scraper):
             return
 
         doc = lxml.html.fromstring(html)
+        trs = doc.xpath('//table[@class="senate"]/tbody/tr[./td[@class="vote-count"]]')
 
-        yes_count = no_count = other_count = 0
+        motion = doc.xpath('//div/p/b/text()')[1]
+        vote.motion_text = motion
 
-        # a game of div-div-table
-        for ddt in doc.xpath('//div/div/table'):
-            text = ddt.text_content()
-            if 'Wisconsin Senate' in text or 'SEQUENCE NO' in text:
-                continue
-            elif 'AYES -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and 'AYES' not in name:
-                        vote.vote('yes', name.strip())
-                        yes_count += 1
-            elif 'NAYS -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and 'NAYS' not in name:
-                        vote.vote('no', name.strip())
-                        no_count += 1
-            elif 'NOT VOTING -' in text:
-                for name in text.split('\n\n\n\n\n')[1:]:
-                    if name.strip() and "NOT VOTING" not in name:
-                        vote.vote('other', name.strip())
-                        other_count += 1
-            elif text.strip():
-                raise ValueError('unexpected block in vote')
+        vote_types = ['yes', 'no', 'not voting']
+        vote_counts = {}  # Vote counts for yes, no, other
+        name_counts = {}
 
-        if yes_count or no_count or other_count:
-            vote.set_count('yes', yes_count)
-            vote.set_count('no', no_count)
-            vote.set_count('other', other_count)
+        for index, tr in enumerate(trs):
+
+            vote_type = vote_types[index]
+            names = tr.xpath('.//table//td/text()')
+            vote_count = int(tr.xpath('./td/text()')[0].split('-')[1])
+            vote_counts[vote_type] = vote_count
+            name_counts[vote_type] = len(names)
+
+            for name in names:
+                vote.vote(vote_type, name.strip())
+
+        for vote_type in vote_types:
+            vote.set_count(vote_type, vote_counts[vote_type])
+
+        if name_counts != vote_counts:
+            raise ValueError("Vote Count and number of Names don't match")
 
     def add_house_votes(self, vote, url):
         try:
@@ -368,19 +365,32 @@ class WIBillScraper(Scraper):
             return
 
         doc = lxml.html.fromstring(html)
+        motion = doc.xpath('//div/p/b/text()')[1]
+        vote.motion_text = motion
 
         header_td = doc.xpath('//div/p[text()[contains(., "AYES")]]')[0].text_content()
-        ayes_nays = re.findall(r'AYES - (\d+).*NAYS - (\d+).*', header_td)
+        vote_counts = re.findall(r'AYES - (\d+).*NAYS - (\d+).*NOT VOTING - (\d+).*', header_td)
 
-        vote.set_count('yes', int(ayes_nays[0][0]))
-        vote.set_count('no', int(ayes_nays[0][1]))
+        vote.set_count('yes', int(vote_counts[0][0]))
+        vote.set_count('no', int(vote_counts[0][1]))
+        vote.set_count('not voting', int(vote_counts[0][2]))
+
+        yes_names_count = 0
+        no_names_count = 0
 
         for td in doc.xpath('//tbody/tr/td[4]'):
             name = td.text_content()
             for vote_td in td.xpath('./preceding-sibling::td'):
                 if vote_td.text_content() == 'Y':
                     vote.vote('yes', name)
+                    yes_names_count += 1
                 elif vote_td.text_content() == 'N':
                     vote.vote('no', name)
+                    no_names_count += 1
                 elif vote_td.text_content() == 'NV':
-                    vote.vote('other', name)
+                    vote.vote('not voting', name)
+
+        if yes_names_count != int(vote_counts[0][0]):
+            raise ValueError("Yes votes and number of Names doesn't match")
+        if no_names_count != int(vote_counts[0][1]):
+            raise ValueError("No votes and number of Names doesn't match")
