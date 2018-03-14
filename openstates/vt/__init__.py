@@ -6,6 +6,18 @@ from .bills import VTBillScraper
 # from .events import VTEventScraper
 
 
+# As of March 2018, Vermont appears to be throttling hits
+# to its website. After a week of production failures, we
+# tried rate-limiting our requests, and the errors went away
+# (Reminder: Pupa default is 60 RPM)
+# This limit might also be possible to remove once we switch to
+# the official API for bills:
+# https://github.com/openstates/openstates/issues/2196
+settings = dict(
+    SCRAPELIB_RPM=20
+)
+
+
 class Vermont(Jurisdiction):
     division_id = "ocd-division/country:us/state:vt"
     classification = "government"

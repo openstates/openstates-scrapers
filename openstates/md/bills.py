@@ -218,7 +218,8 @@ class MDBillScraper(Scraper):
 
         passed = vote_counts[0] > vote_counts[1]
         motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
-        motion_keywords = ['favorable', 'reading', 'amendment', 'motion']
+        motion_keywords = ['favorable', 'reading', 'amendment', 'motion',
+                           'bill be introduced']
 
         if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
             motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
