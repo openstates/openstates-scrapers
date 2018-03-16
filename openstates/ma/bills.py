@@ -227,7 +227,7 @@ class MABillScraper(Scraper):
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
-                action_name_content = re.split(r'\s*-\s*', action_name.strip())
+                action_name_content = re.split(r'\s+-\s+', action_name.strip())
                 vote_action = action_name_content[0]
                 y = int(action_name_content[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
@@ -262,12 +262,12 @@ class MABillScraper(Scraper):
                 # placeholder
                 vote_action = action_name.split(' -')[0]
                 try:
-                    y, n = re.search('(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
+                    y, n = re.search(r'(\d+) yeas .*? (\d+) nays', action_name.lower()).groups()
                     y = int(y)
                     n = int(n)
                 except AttributeError:
-                    y = int(re.search(r"yeas\s*(\d*)", action_name.lower()).group(1))
-                    n = int(re.search(r"nays\s*(\d*)", action_name.lower()).group(1))
+                    y = int(re.search(r"yeas\s+(\d+)", action_name.lower()).group(1))
+                    n = int(re.search(r"nays\s+(\d+)", action_name.lower()).group(1))
 
                 # TODO: other count isn't included, set later
                 cached_vote = VoteEvent(
