@@ -83,11 +83,11 @@ class MTPersonScraper(Scraper):
                 detail_url = district_leg_urls[hd_or_sd][district]
                 self._scrape_details(detail_url)
             except KeyError:
-                # It's okay if the district doesn't exist, this is usually a retired legislator
                 self.warning(
-                    "Couldn't find legislator URL for district {} {}"
+                    "Couldn't find legislator URL for district {} {}, likely retired; skipping"
                     .format(hd_or_sd, district)
                 )
+                continue
             except NoDetails:
                 self.logger.warning("No details found at %r" % detail_url)
                 continue
