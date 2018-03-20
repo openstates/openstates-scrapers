@@ -217,9 +217,19 @@ class MDBillScraper(Scraper):
             raise ValueError("Vote Counts Not found at %s" % vote_url)
 
         passed = vote_counts[0] > vote_counts[1]
-        motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
-        motion_keywords = ['favorable', 'reading', 'amendment', 'motion',
-                           'bill be introduced']
+
+        # Consent calendar votes address multiple bills in one VoteEvent
+        # eg, http://mgaleg.maryland.gov/2018RS/votes/Senate/0478.pdf
+        is_consent_calendar = any(['Consent Calendar' in line for line in lines[:page_index]])
+        consent_calendar_bills = None
+        if is_consent_calendar:
+            motion = re.split(r'\s{2,}', lines[page_index - 4].strip())[0]
+            consent_calendar_bills = re.split(r'\s{2,}', lines[page_index-1].strip())
+            assert consent_calendar_bills, "Could not find bills for consent calendar vote"
+        else:
+            motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
+
+        motion_keywords = ['favorable', 'reading', 'amendment', 'motion', 'introduced']
 
         if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
             motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
@@ -236,7 +246,8 @@ class MDBillScraper(Scraper):
             result='pass' if passed else 'fail',
         )
 
-        vote.pupa_id = vote_url  # contains sequence number
+        # Include bill ID to avoid duplication for consent calendars
+        vote.pupa_id = '{}#{}'.format(vote_url, bill.identifier)
 
         for index, vote_type in enumerate(vote_types):
             vote.set_count(vote_type, vote_counts[index])

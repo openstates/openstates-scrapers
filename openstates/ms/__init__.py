@@ -13,7 +13,7 @@ class Mississippi(Jurisdiction):
     url = "http://www.legislature.ms.gov/"
     scrapers = {
         "people": MSLegislatorScraper,
-        "committee": MSCommitteeScraper,
+        "committees": MSCommitteeScraper,
         "bills": MSBillScraper
     }
     legislative_sessions = [

@@ -71,7 +71,7 @@ class NewHampshire(Jurisdiction):
         legislature_name = "New Hampshire General Court"
         lower_chamber_name = "House"
         # lower_seats = None
-        lower_title = "Senator"
+        lower_title = "Representative"
         upper_chamber_name = "Senate"
         # upper_seats = 0
         upper_title = "Senator"

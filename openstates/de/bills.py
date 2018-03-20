@@ -94,8 +94,8 @@ class DEBillScraper(Scraper, LXMLMixin):
                 # TODO: re-evaluate if these should be separate bills
                 self.warning('skipping amendment %s', bill_id)
                 return
-            elif 'for' in bill_id:
-                print(bill_id)
+            elif ' for ' in bill_id:
+                self.info("Found substitute to use instead: `{}`".format(bill_id))
                 substitute, bill_id = bill_id.split(' for ')
             else:
                 raise ValueError('unknown bill_id format: ' + bill_id)

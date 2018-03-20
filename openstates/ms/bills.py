@@ -5,6 +5,7 @@ import lxml.etree
 import os
 import re
 import pytz
+import scrapelib
 
 
 def _combine_lines(lines):
@@ -74,7 +75,11 @@ class MSBillScraper(Scraper):
             main_doc = mr.xpath('string(MEASURELINK)').replace("../../../", "")
             main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
             bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
-            details_page = self.get(bill_details_url)
+            try:
+                details_page = self.get(bill_details_url)
+            except scrapelib.HTTPError:
+                self.warning('Bill page not loading for {}; skipping'.format(bill_id))
+                continue
 
             page = details_page.content
             # Some pages have the (invalid) byte 11 sitting around. Just drop
@@ -182,7 +187,7 @@ class MSBillScraper(Scraper):
                     actor = "executive"
                     action = action_desc
 
-                if action.find("Veto") != -1:
+                if "Veto" in action and actor == 'executive':
                     version_path = details_root.xpath("string(//VETO_OTHER)")
                     version_path = version_path.replace("../../../../", "")
                     version_url = "http://billstatus.ls.state.ms.us/" + version_path
@@ -202,8 +207,9 @@ class MSBillScraper(Scraper):
                 subjects = details_root.xpath('//H_NAME/text()')
                 subjects += details_root.xpath('//S_NAME/text()')
 
-                for subject in set(subjects):
-                    bill.add_subject(subject)
+                for subject in subjects:
+                    if subject not in bill.subject:
+                        bill.add_subject(subject)
 
                 if act_vote:
                     vote_url = 'http://billstatus.ls.state.ms.us%s' % act_vote

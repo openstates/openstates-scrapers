@@ -70,29 +70,36 @@ class MTPersonScraper(Scraper):
             party = {'D': 'Democratic', 'R': 'Republican'}[party_letter]
 
             # Get full name properly capped.
-            fullname = '%s %s' % (entry['first_name'].capitalize(),
-                                  entry['last_name'].capitalize())
+            fullname = '%s %s' % (entry['first_name'].title(),
+                                  entry['last_name'].title())
+
+            legislator = Person(name=fullname, primary_org=chamber, district=district,
+                                party=party, image=entry.get('photo_url', ''))
+            legislator.add_source(url)
 
             # Get any info at the legislator's detail_url.
-            detail_url = district_leg_urls[hd_or_sd][district]
+            deets = {}
+            try:
+                detail_url = district_leg_urls[hd_or_sd][district]
+                self._scrape_details(detail_url)
+            except KeyError:
+                self.warning(
+                    "Couldn't find legislator URL for district {} {}, likely retired; skipping"
+                    .format(hd_or_sd, district)
+                )
+                continue
+            except NoDetails:
+                self.logger.warning("No details found at %r" % detail_url)
+                continue
+            else:
+                legislator.add_source(detail_url)
+                legislator.add_link(detail_url)
 
             # Get the office.
             address = '\n'.join([
                 entry['address'],
                 '%s, %s %s' % (entry['city'].title(), entry['state'], entry['zip'])
                 ])
-
-            try:
-                deets = self._scrape_details(detail_url)
-            except NoDetails:
-                self.logger.warning("No details found at %r" % detail_url)
-                continue
-
-            legislator = Person(name=fullname, primary_org=chamber, district=district,
-                                party=party, image=entry.get('photo_url', ''))
-            legislator.add_source(detail_url)
-            legislator.add_source(url)
-            legislator.add_link(detail_url)
             legislator.add_contact_detail(type='address', value=address, note='District Office')
 
             phone = deets.get('phone')
@@ -148,7 +155,7 @@ class MTPersonScraper(Scraper):
             td1, td2 = tr.xpath('td')
 
             # Skip header rows and retired legislators
-            if not td2.text_content().strip() or 'Resigned' in tr.text_content():
+            if not td2.text_content().strip() or ' resigned ' in tr.text_content().lower():
                 continue
 
             # Get link to the member's page.

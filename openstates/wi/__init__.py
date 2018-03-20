@@ -123,6 +123,12 @@ class Wisconsin(Jurisdiction):
             'name': 'January 2018 Special Session',
             '_scraped_name': 'January 2018 Special Session',
         },
+        {
+            'identifier': 'March 2018 Special Session',
+            'classification': 'special',
+            'name': 'March 2018 Special Session',
+            '_scraped_name': 'March 2018 Special Session',
+        },
     ]
     ignored_scraped_sessions = [
         "February 2015 Extraordinary Session",

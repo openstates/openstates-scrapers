@@ -45,31 +45,31 @@ class NorthCarolina(Jurisdiction):
             "start_date": "2015-01-30"
         },
         {
-            "_scraped_name": "2016 Extra Session 1",
+            "_scraped_name": "2016 Extra Session",
             "classification": "special",
             "identifier": "2015E1",
             "name": "2016 Extra Session 1",
         },
         {
-            "_scraped_name": "2016 Extra Session 2",
+            "_scraped_name": "2016 Second Extra Session",
             "classification": "special",
             "identifier": "2015E2",
             "name": "2016 Extra Session 2",
         },
         {
-            "_scraped_name": "2016 Extra Session 3",
+            "_scraped_name": "2016 Third Extra Session",
             "classification": "special",
             "identifier": "2015E3",
             "name": "2016 Extra Session 3",
         },
         {
-            "_scraped_name": "2016 Extra Session 4",
+            "_scraped_name": "2016 Fourth Extra Session",
             "classification": "special",
             "identifier": "2015E4",
             "name": "2016 Extra Session 4",
         },
         {
-            "_scraped_name": "2016 Extra Session 5",
+            "_scraped_name": "2016 Fifth Extra Session",
             "classification": "special",
             "identifier": "2015E5",
             "name": "2016 Extra Session 5",
@@ -96,8 +96,7 @@ class NorthCarolina(Jurisdiction):
         '2005-2006 Session',
         '2004 Extra Session',
         '2003-2004 Session',
-        '2003 Extra Session 1',
-        '2003 Extra Session 2',
+        '2003 Extra Session',
         '2002 Extra Session',
         '2001-2002 Session',
         '2000 Special Session',
@@ -154,8 +153,10 @@ class NorthCarolina(Jurisdiction):
 
     def get_session_list(self):
         from openstates.utils.lxmlize import url_xpath
-        return url_xpath('http://www.ncleg.net',
-                         '//select[@name="sSession"]/option/text()')
+        # This is the URL that populates the session `<select>` in the
+        # state homepage header navigation
+        return url_xpath('https://www.ncleg.net/webservices/api/sessionselectlist/false',
+                         '//option/text()')
 
     def extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)

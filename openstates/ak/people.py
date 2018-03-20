@@ -15,15 +15,13 @@ class AKPersonScraper(Scraper, LXMLMixin):
         capitol_office = [line.strip() for line in capitol_office]
 
         assert capitol_office[0] == 'Session Contact'
-        assert capitol_office[3].startswith('Phone:')
-        assert capitol_office[4].startswith('Fax:')
-
         leg.add_contact_detail(
             type='address',
             value=capitol_office[1] + '\n' + capitol_office[2],
             note='Capitol Office',
         )
 
+        assert capitol_office[3].startswith('Phone:')
         if len(capitol_office[3]) > len('Phone:'):
             leg.add_contact_detail(
                 type='voice',
@@ -31,12 +29,15 @@ class AKPersonScraper(Scraper, LXMLMixin):
                 note='Capitol Office Phone',
             )
 
-        if len(capitol_office[4]) > len('Fax:'):
-            leg.add_contact_detail(
-                type='fax',
-                value=capitol_office[4][len('Fax: '):],
-                note='Capitol Office Fax',
-            )
+        # Some legislators lack a `Fax` line
+        if len(capitol_office) >= 5:
+            assert capitol_office[4].startswith('Fax:')
+            if len(capitol_office[4]) > len('Fax:'):
+                leg.add_contact_detail(
+                    type='fax',
+                    value=capitol_office[4][len('Fax: '):],
+                    note='Capitol Office Fax',
+                )
 
         leg.add_contact_detail(
             type='email',
@@ -48,10 +49,8 @@ class AKPersonScraper(Scraper, LXMLMixin):
         if interim_office:
             interim_office = interim_office[0].getparent().text_content().strip().splitlines()
             interim_office = [line.strip() for line in interim_office]
-            assert interim_office[0] == 'Interim Contact'
-            assert interim_office[3].startswith('Phone:')
-            assert interim_office[4].startswith('Fax:')
 
+            assert interim_office[0] == 'Interim Contact'
             leg.add_contact_detail(
                 type='address',
                 note='District Office',
@@ -59,6 +58,7 @@ class AKPersonScraper(Scraper, LXMLMixin):
 
             )
 
+            assert interim_office[3].startswith('Phone:')
             if len(interim_office[3]) > len('Phone:'):
                 leg.add_contact_detail(
                     type='voice',
@@ -66,12 +66,14 @@ class AKPersonScraper(Scraper, LXMLMixin):
                     note='District Office Phone',
                 )
 
-            if len(interim_office[4]) > len('Fax:'):
-                leg.add_contact_detail(
-                    type='fax',
-                    value=interim_office[4][len('Fax: '):],
-                    note='District Office Fax',
-                )
+            if len(interim_office) >= 5:
+                assert interim_office[4].startswith('Fax:')
+                if len(interim_office[4]) > len('Fax:'):
+                    leg.add_contact_detail(
+                        type='fax',
+                        value=interim_office[4][len('Fax: '):],
+                        note='District Office Fax',
+                    )
 
     def scrape_chamber(self, chamber):
         self._party_map = {
