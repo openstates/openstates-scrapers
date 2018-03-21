@@ -8,6 +8,7 @@ from .actions import Categorizer
 
 class DEBillScraper(Scraper, LXMLMixin):
     categorizer = Categorizer()
+    chamber_codes = {'upper': 1, 'lower': 2}
     chamber_codes_rev = {1: 'upper', 2: 'lower'}
     chamber_map = {'House': 'lower', 'Senate': 'upper'}
     legislators = {}
@@ -225,7 +226,13 @@ class DEBillScraper(Scraper, LXMLMixin):
                              bill=bill,
                              legislative_session=session
                              )
-            vote.add_source(vote_url)
+            vote_pdf_url = 'https://legis.delaware.gov' \
+                '/json/RollCallController/GenerateRollCallPdf' \
+                '?rollCallId={}&chamberId={}'.format(vote_id, self.chamber_codes[vote_chamber])
+            # Vote URL is just a generic search URL with POSTed data,
+            # so provide a different link
+            vote.add_source(vote_pdf_url)
+            vote.pupa_id = vote_pdf_url
             vote.set_count('yes', roll['YesVoteCount'])
             vote.set_count('no', roll['NoVoteCount'])
             vote.set_count('other', other_count)
