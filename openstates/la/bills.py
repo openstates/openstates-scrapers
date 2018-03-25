@@ -232,6 +232,14 @@ class LABillScraper(Scraper, LXMLMixin):
         def sbp(x): return self.scrape_bare_page(page.xpath(
             "//a[contains(text(), '%s')]" % (x))[0].attrib['href'])
 
+        def assertAnchor(anchors):
+            try:
+                for anchor in anchors:
+                    anchor.attrib['href']
+                return True
+            except KeyError:
+                return False
+
         authors = [x.text for x in sbp("Authors")]
 
         try:
@@ -246,6 +254,8 @@ class LABillScraper(Scraper, LXMLMixin):
 
         try:
             amendments = sbp("Amendments")
+            if not assertAnchor(amendments):
+                amendments = page.xpath("//a[contains(text(), 'Amendments')]")
         except IndexError:
             amendments = []
 
