@@ -1,6 +1,7 @@
 import re
 import pytz
 import datetime
+import json
 from collections import defaultdict
 
 import scrapelib
@@ -63,200 +64,154 @@ class WYBillScraper(Scraper, LXMLMixin):
             yield from self.scrape_chamber(chamber, session)
 
     def scrape_chamber(self, chamber, session):
-        chamber_abbrev = {'upper': 'SF', 'lower': 'HB'}[chamber]
+        chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        url = ("http://legisweb.state.wy.us/%s/billreference/"
-               "BillReference.aspx?type=%s" % (session, chamber_abbrev))
-        page = self.lxmlize(url)
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation?$filter=Year%20eq%20{}&$orderby=BillNum'.format(session)
 
-        for tr in page.xpath("//table[contains(@id,'cphContent_gvBills')]//tr")[1:]:
-            bill_id = tr.xpath("string(td[1])").strip()
-            title = tr.xpath("string(td[2])").strip()
+        response = self.get(bill_json_url)
+        bill_list = json.loads(response.content.decode('utf-8'))
 
-            if bill_id[0:2] in ['SJ', 'HJ']:
-                bill_type = 'joint resolution'
-            else:
-                bill_type = 'bill'
+        for bill_json in bill_list:
+            if bill_json['billType'][0] == chamber_abbrev:
+                yield from self.scrape_bill(bill_json['billNum'])
 
-            bill = Bill(bill_id, legislative_session=session, title=title, chamber=chamber,
-                        classification=bill_type)
+    def scrape_bill(self, bill_num):
+        chamber_abbrev_map = {'H': 'lower', 'S' :'upper'}
+        chamber_map  = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
+        # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(bill_num)
+        response = self.get(bill_json_url)
+        bill_json = json.loads(response.content.decode('utf-8'))
 
-            yield from self.scrape_digest(bill, chamber)
+        chamber = 'lower' if bill_json['bill'][0] else 'upper'
 
-            # versions
-            for a in (tr.xpath('td[8]//a') + tr.xpath('td[11]//a') +
-                      tr.xpath('td[12]//a')):
-                # skip references to other bills
-                if a.text.startswith('See'):
-                    continue
-                bill.add_version_link(a.text, a.get('href'),
-                                      media_type='application/pdf')
+        bill = Bill(identifier=bill_json['bill'],
+                legislative_session=str(bill_json["year"]),
+                title=bill_json['catchTitle'],
+                chamber=chamber,
+                classification="bill")
 
-            # documents
-            fnote = tr.xpath('td[9]//a')
-            if fnote:
-                bill.add_document_link('Fiscal Note', fnote[0].get('href'))
-            summary = tr.xpath('td[14]//a')
-            if summary:
-                bill.add_document_link('Summary', summary[0].get('href'))
+        bill.add_title(bill_json['billTitle'])
 
-            bill.add_source(url)
-            yield bill
+        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(bill_json['bill'])
+        bill.add_source(source_url)
 
-    def scrape_digest(self, bill, chamber):
-        digest_url = 'http://legisweb.state.wy.us/{}/Digest/{}.pdf'.format(
-            bill.legislative_session,
-            bill.identifier,
-        )
-        bill.add_source(digest_url)
+        for action_json in bill_json['billActions']:
+            # provided dates are ISO 8601, but in mountain time
+            action_date = datetime.datetime.strptime(action_json['statusDate'], '%Y-%m-%dT%H:%M:%S')
+            local_action_date = TIMEZONE.localize(action_date)
+            utc_action_date = local_action_date.astimezone(pytz.utc)
 
-        try:
-            (filename, response) = self.urlretrieve(digest_url)
-            all_text = convert_pdf(filename, type='text').decode()
-        except scrapelib.HTTPError:
-            self.warning('no digest for %s' % bill.identifier)
-            return
-        if all_text.strip() == "":
-            self.warning(
-                'Non-functional digest for bill {}'.
-                format(bill.identifier)
+            actor = None
+            if action_json['location'] and action_json['location'] in chamber_map:
+                actor = chamber_map[action_json['location']]
+
+            action = bill.add_action(
+                chamber=actor,
+                description=action_json['statusMessage'],
+                date=utc_action_date,
+                classification=categorize_action(action_json['statusMessage']),
             )
-            return
 
-        # Split the digest's text into sponsors, description, and actions
-        SPONSOR_RE = r'(?sm)Sponsored By:\s+(.*?)\n\n'
-        DESCRIPTION_RE = r'(?sm)\n\n((?:AN\s*?ACT|A JOINT RESOLUTION) .*?)\n\n'
+            action.extras = {'billInformationID': action_json['billInformationID']}
 
-        try:
-            ext_title = re.search(DESCRIPTION_RE, all_text).group(1)
-        except AttributeError:
-            ext_title = ''
-        bill_desc = ext_title.replace('\n', ' ')
-        bill_desc = re.sub("  *", " ", bill_desc)
-        if bill_desc:
-            bill.add_abstract(abstract=bill_desc, note='description')
+        if bill_json['introduced']:
+            url = 'http://wyoleg.gov/{}'.format(bill_json['introduced'])
 
-        sponsor_span = re.search(SPONSOR_RE, all_text).group(1)
-        sponsors = ''
-        sponsors = sponsor_span.replace('\n', ' ')
-        if sponsors:
-            if 'Committee' in sponsors:
-                bill.add_sponsorship(sponsors, 'primary', primary=True, entity_type='organization')
+            bill.add_version_link(note="Introduced",
+                                url=url,
+                                media_type="application/pdf" #optional but useful!
+                                )
+
+        if bill_json['enrolledAct']:
+            url = 'http://wyoleg.gov/{}'.format(bill_json['enrolledAct'])
+
+            bill.add_version_link(note="Enacted",
+                                url=url,
+                                media_type="application/pdf" #optional but useful!
+                                )
+
+        if bill_json['fiscalNote']:
+            url = 'http://wyoleg.gov/{}'.format(bill_json['fiscalNote'])
+
+            bill.add_document_link(note="Fiscal Note",
+                                url=url,
+                                media_type="application/pdf" #optional but useful!
+                                )
+
+        if bill_json['digest']:
+            url = 'http://wyoleg.gov/{}'.format(bill_json['digest'])
+
+            bill.add_document_link(note="Bill Digest",
+                                url=url,
+                                media_type="application/pdf" #optional but useful!
+                                )
+
+        for amendment in bill_json['amendments']:
+            # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
+            url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(amendment['amendmentNumber'])
+
+            if amendment['sponsor'] and amendment['status']:
+                title = 'Amendment {} ({}) - {} ({})'.format(
+                    amendment['amendmentNumber'],
+                    amendment['order'],
+                    amendment['sponsor'],
+                    amendment['status'],
+                )
             else:
-                if chamber == 'lower':
-                    sp_lists = sponsors.split('and Senator(s)')
-                else:
-                    sp_lists = sponsors.split('and Representative(s)')
-                for spl in sp_lists:
-                    for sponsor in split_names(spl):
-                        sponsor = sponsor.strip()
-                        if sponsor != "":
-                            bill.add_sponsorship(sponsor, 'primary', primary=True,
-                                                 entity_type='person')
+                title = 'Amendment {} ({})'.format(
+                    amendment['amendmentNumber'],
+                    amendment['order'],
+                )
+            #add versions of the bill text
+            version = bill.add_version_link(note=title,
+                                url=url,
+                                media_type="application/pdf",
+                                )
+            # version['extras']['amendmentNumber'] = amendment['amendmentNumber']
+            # version['extras']['sponsor'] = amendment['sponsor']
 
-        action_re = re.compile('(\d{1,2}/\d{1,2}/\d{4})\s+(H |S )?(.+)')
-        vote_total_re = re.compile('(Ayes )?(\d*)(\s*)Nays(\s*)(\d+)(\s*)Excused(\s*)(\d+)'
-                                   '(\s*)Absent(\s*)(\d+)(\s*)Conflicts(\s*)(\d+)')
+        for sponsor in bill_json['sponsors']:
+            status = 'primary' if sponsor['primarySponsor'] else 'cosponsor'
+            sponsor_type = 'Person' if sponsor['sponsorTitle'] else 'organization'
+            sponsorship = bill.add_sponsorship(
+                name=sponsor['name'],
+                classification=status,
+                entity_type=sponsor_type,
+                primary=sponsor['primarySponsor']
+            )
 
-        # initial actor is bill chamber
-        actor = chamber
+            if sponsor['house']:
+                sponsorship.extras['chamber'] = chamber_abbrev_map[sponsor['house']]
 
-        lines = all_text.splitlines()
-        for idx, line in enumerate(lines):
-            if action_re.search(line):
-                break
-        action_lines = lines[idx:]
+        if bill_json['summary']:
+            bill.add_abstract(
+                note="summary",
+                abstract=bill_json['summary'],
+            )
 
-        for line in action_lines:
-            line = clean_line(line)
+        bill.extras['enrolledNumber'] = bill_json['enrolledNumber']
+        bill.extras['chapter'] = bill_json['chapter']
 
-            # skip blank lines
-            if not line:
-                continue
+        yield bill
 
-            amatch = action_re.match(line)
-            if amatch:
-                date, achamber, action = amatch.groups()
 
-                # change actor if one is on this action
-                if achamber == 'H ':
-                    actor = 'lower'
-                elif achamber == 'S ':
-                    actor = 'upper'
-
-                date = datetime.datetime.strptime(date, '%m/%d/%Y')
-                bill.add_action(action.strip(), TIMEZONE.localize(date), chamber=actor,
-                                classification=categorize_action(action))
-            elif line == 'ROLL CALL':
-                voters = defaultdict(str)
-                # if we hit a roll call, use an inner loop to consume lines
-                # in a psuedo-state machine manner, 3 types
-                # Ayes|Nays|Excused|... - indicates next line is voters
-                # : (Senators|Representatives): ... - voters
-                # \d+ Nays \d+ Excused ... - totals
-                voters_type = None
-                for ainext in action_lines:
-                    nextline = clean_line(ainext)
-                    if not nextline:
-                        continue
-
-                    breakers = ["Ayes:", "Nays:", "Nayes:", "Excused:",
-                                "Absent:", "Conflicts:"]
-
-                    for breaker in breakers:
-                        if nextline.startswith(breaker):
-                            voters_type = breaker[:-1]
-                            if voters_type == "Nayes":
-                                voters_type = "Nays"
-                                self.log("Fixed a case of 'Naye-itis'")
-                            nextline = nextline[len(breaker) - 1:]
-
-                    if nextline.startswith(': '):
-                        voters[voters_type] = nextline
-                    elif nextline in ('Ayes', 'Nays', 'Excused', 'Absent',
-                                      'Conflicts'):
-                        voters_type = nextline
-                    elif vote_total_re.match(nextline):
-                        # _, ayes, _, nays, _, exc, _, abs, _, con, _ = \
-                        tup = vote_total_re.match(nextline).groups()
-                        ayes = tup[1]
-                        nays = tup[4]
-                        exc = tup[7]
-                        abs = tup[10]
-                        con = tup[13]
-
-                        passed = (('Passed' in action or
-                                   'Do Pass' in action or
-                                   'Did Concur' in action or
-                                   'Referred to' in action) and
-                                  'Failed' not in action)
-                        vote = VoteEvent(
-                            chamber=chamber,
-                            start_date=TIMEZONE.localize(date),
-                            motion_text=action,
-                            result='pass' if passed else 'fail',
-                            classification='passage',
-                            bill=bill,
-                        )
-                        vote.set_count('yes', int(ayes))
-                        vote.set_count('no', int(nays))
-                        vote.set_count('other', int(exc) + int(abs) + int(con))
-                        vote.add_source(digest_url)
-
-                        for vtype, voters in voters.items():
-                            for voter in split_names(voters):
-                                if voter:
-                                    if vtype == 'Ayes':
-                                        vote.vote('yes', voter)
-                                    elif vtype == 'Nays':
-                                        vote.vote('no', voter)
-                                    else:
-                                        vote.vote('other', voter)
-                        # done collecting this vote
-                        yield vote
-                        break
-                    else:
-                        # if it is a stray line within the vote, is is a
-                        # continuation of the voter list
-                        # (sometimes has a newline)
-                        voters[voters_type] += ' ' + nextline
+#  "sponsors": [
+#     {
+#       "name": "Northrup",
+#       "primarySponsor": false,
+#       "house": "H",
+#       "sponsorTitle": "Representative"
+#     },
+#     {
+#       "name": "Paxton",
+#       "primarySponsor": true,
+#       "house": "H",
+#       "sponsorTitle": "Representative"
+#     },
+#     {
+#       "name": "Moniz",
+#       "primarySponsor": false,
+#       "house": "S",
+#       "sponsorTitle": "Senator"
+#     }
