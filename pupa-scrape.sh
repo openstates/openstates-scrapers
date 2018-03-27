@@ -27,7 +27,7 @@ shift
 # @see https://stackoverflow.com/a/40650331/1858091
 ( cd /opt/openstates/openstates && \
   git stash && \
-  ( git pull origin scratch-pupa-google-pubsub-output || : ) )
+  ( git pull origin govhawk-deploy || : ) )
 
 export PYTHONPATH=./openstates
 
