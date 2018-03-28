@@ -45,6 +45,7 @@ def categorize_action(action):
         ('Governor Signed', 'executive-signature'),
         ('Recommend (Amend and )?Do Pass', 'committee-passage-favorable'),
         ('Recommend (Amend and )?Do Not Pass', 'committee-passage-unfavorable'),
+        ('Received for Introduction', 'filed'),
     )
 
     for pattern, types in categorizers:
@@ -54,6 +55,9 @@ def categorize_action(action):
 
 
 class WYBillScraper(Scraper, LXMLMixin):
+    chamber_abbrev_map = {'H': 'lower', 'S' :'upper'}
+
+
     def scrape(self, chamber=None, session=None):
         if session is None:
             session = self.latest_session()
@@ -76,7 +80,6 @@ class WYBillScraper(Scraper, LXMLMixin):
                 yield from self.scrape_bill(bill_json['billNum'])
 
     def scrape_bill(self, bill_num):
-        chamber_abbrev_map = {'H': 'lower', 'S' :'upper'}
         chamber_map  = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
         bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(bill_num)
@@ -126,7 +129,7 @@ class WYBillScraper(Scraper, LXMLMixin):
         if bill_json['enrolledAct']:
             url = 'http://wyoleg.gov/{}'.format(bill_json['enrolledAct'])
 
-            bill.add_version_link(note="Enacted",
+            bill.add_version_link(note="Enrolled",
                                 url=url,
                                 media_type="application/pdf" #optional but useful!
                                 )
@@ -168,12 +171,14 @@ class WYBillScraper(Scraper, LXMLMixin):
                                 url=url,
                                 media_type="application/pdf",
                                 )
-            # version['extras']['amendmentNumber'] = amendment['amendmentNumber']
-            # version['extras']['sponsor'] = amendment['sponsor']
+            version['extras'] = {
+                'amendmentNumber': amendment['amendmentNumber'],
+                'sponsor': amendment['sponsor'],
+            }
 
         for sponsor in bill_json['sponsors']:
             status = 'primary' if sponsor['primarySponsor'] else 'cosponsor'
-            sponsor_type = 'Person' if sponsor['sponsorTitle'] else 'organization'
+            sponsor_type = 'person' if sponsor['sponsorTitle'] else 'organization'
             sponsorship = bill.add_sponsorship(
                 name=sponsor['name'],
                 classification=status,
@@ -181,8 +186,8 @@ class WYBillScraper(Scraper, LXMLMixin):
                 primary=sponsor['primarySponsor']
             )
 
-            if sponsor['house']:
-                sponsorship.extras['chamber'] = chamber_abbrev_map[sponsor['house']]
+            # if sponsor['house']:
+            #     sponsorship['extras'] = {'chamber': self.chamber_abbrev_map[sponsor['house']]}
 
         if bill_json['summary']:
             bill.add_abstract(
@@ -194,6 +199,41 @@ class WYBillScraper(Scraper, LXMLMixin):
         bill.extras['chapter'] = bill_json['chapter']
 
         yield bill
+
+
+    def scrape_vote(self, bill, vote_json):
+
+        if vote_json['amendmentNumber']:
+            motion = '{}: {}'.format(vote_json['amendmentNumber'], vote_json['action'])
+        else:
+            motion = vote_json['action']
+
+        result = 'pass' if vote_json['yesVotesCount'] > (vote_json['noVotesCount'])
+
+        v = VoteEvent(
+            chamber=self.chamber_abbrev_map[vote_json['chamber']],
+            start_date=self.parse_local_date(vote_json['voteDate'],
+            motion_text=motion,
+            result='pass' if mv.passed else 'fail',
+            classification='passage' if mv.passed else 'other',
+            legislative_session=session[0:2],
+            bill=mv.bill_id,
+            bill_chamber=mv.chamber
+        )
+
+        v.set_count('yes', vote_json['yesVotesCount'])
+        v.set_count('no', vote_json['noVotesCount'])
+        v.set_count('not voting', vote_json['absentVotesCount'])
+        v.set_count('excused', vote_json['excusedVotesCount'])
+        v.set_sounce('conflictVotesCount', vote_json['conflictVotesCount'])
+
+
+    def parse_local_date(self, date_str):
+        # provided dates are ISO 8601, but in mountain time
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+        local_date = TIMEZONE.localize(date_obj)
+        utc_action_date = local_date.astimezone(pytz.utc)
+        return utc_action_date
 
 
 #  "sponsors": [
