@@ -39,7 +39,8 @@ class LABillScraper(Scraper, LXMLMixin):
     def _get_bill_abbreviations(self, session_id):
         page = self.lxmlize('http://www.legis.la.gov/legis/BillSearch.aspx?'
                             'sid={}'.format(session_id))
-        select_options = page.xpath('//select[contains(@id, "InstTypes")]/option')
+        select_options = page.xpath(
+            '//select[contains(@id, "InstTypes")]/option')
 
         bill_abbreviations = {
             'upper': [],
@@ -290,8 +291,8 @@ class LABillScraper(Scraper, LXMLMixin):
         for amendment in amendments:
             if 'href' in amendment.attrib:
                 bill.add_version_link(note=amendment.text,
-                                    url=amendment.attrib['href'],
-                                    media_type="application/pdf")
+                                      url=amendment.attrib['href'],
+                                      media_type="application/pdf")
 
         flags = {
             "prefiled": ["filing"],
