@@ -45,7 +45,7 @@ def categorize_action(action):
         ('Governor Signed', 'executive-signature'),
         ('Recommend (Amend and )?Do Pass', 'committee-passage-favorable'),
         ('Recommend (Amend and )?Do Not Pass', 'committee-passage-unfavorable'),
-        ('Received for Introduction', 'filed'),
+        ('Received for Introduction', 'filing'),
     )
 
     for pattern, types in categorizers:
@@ -77,9 +77,9 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         for bill_json in bill_list:
             if bill_json['billType'][0] == chamber_abbrev:
-                yield from self.scrape_bill(bill_json['billNum'])
+                yield from self.scrape_bill(bill_json['billNum'], session)
 
-    def scrape_bill(self, bill_num):
+    def scrape_bill(self, bill_num, session):
         chamber_map  = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
         bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(bill_num)
@@ -89,10 +89,11 @@ class WYBillScraper(Scraper, LXMLMixin):
         chamber = 'lower' if bill_json['bill'][0] else 'upper'
 
         bill = Bill(identifier=bill_json['bill'],
-                legislative_session=str(bill_json["year"]),
+                legislative_session=session,
                 title=bill_json['catchTitle'],
                 chamber=chamber,
-                classification="bill")
+                classification="bill",
+        )
 
         bill.add_title(bill_json['billTitle'])
 
@@ -113,7 +114,7 @@ class WYBillScraper(Scraper, LXMLMixin):
                 chamber=actor,
                 description=action_json['statusMessage'],
                 date=utc_action_date,
-                classification=categorize_action(action_json['statusMessage']),
+                classification=categorize_action(action_json['statusMessage']) ,
             )
 
             action.extras = {'billInformationID': action_json['billInformationID']}
@@ -198,35 +199,68 @@ class WYBillScraper(Scraper, LXMLMixin):
         bill.extras['enrolledNumber'] = bill_json['enrolledNumber']
         bill.extras['chapter'] = bill_json['chapter']
 
+        for vote_json in bill_json['rollCalls']:
+            yield from self.scrape_vote(bill, vote_json, session)
+
         yield bill
 
 
-    def scrape_vote(self, bill, vote_json):
+    def scrape_vote(self, bill, vote_json, session):
 
         if vote_json['amendmentNumber']:
             motion = '{}: {}'.format(vote_json['amendmentNumber'], vote_json['action'])
         else:
             motion = vote_json['action']
 
-        result = 'pass' if vote_json['yesVotesCount'] > (vote_json['noVotesCount'])
+        result = 'pass' if vote_json['yesVotesCount'] > vote_json['noVotesCount'] else 'fail'
 
         v = VoteEvent(
             chamber=self.chamber_abbrev_map[vote_json['chamber']],
-            start_date=self.parse_local_date(vote_json['voteDate'],
+            start_date=self.parse_local_date(vote_json['voteDate']),
             motion_text=motion,
-            result='pass' if mv.passed else 'fail',
-            classification='passage' if mv.passed else 'other',
-            legislative_session=session[0:2],
-            bill=mv.bill_id,
-            bill_chamber=mv.chamber
+            result=result,
+            legislative_session=session,
+            bill=bill,
+            classification='other',
         )
 
-        v.set_count('yes', vote_json['yesVotesCount'])
-        v.set_count('no', vote_json['noVotesCount'])
-        v.set_count('not voting', vote_json['absentVotesCount'])
-        v.set_count('excused', vote_json['excusedVotesCount'])
-        v.set_sounce('conflictVotesCount', vote_json['conflictVotesCount'])
 
+        v.set_count(option='yes', value=vote_json['yesVotesCount'])
+        v.set_count('no', vote_json['noVotesCount'])
+        v.set_count('absent', vote_json['absentVotesCount'])
+        v.set_count('excused', vote_json['excusedVotesCount'])
+        v.set_count('other', vote_json['conflictVotesCount'])
+
+        for name in vote_json['yesVotes'].split(','):
+            if name.strip():
+                v.yes(name.strip())
+
+        for name in vote_json['noVotes'].split(','):
+            if name.strip():
+                v.no(name.strip())
+
+        #add votes with other classifications
+        #option can be 'yes', 'no', 'absent',
+        #'abstain', 'not voting', 'paired', 'excused'
+        for name in vote_json['absentVotes'].split(','):
+            if name.strip():
+                v.vote(option="absent",
+                        voter=name)
+
+        for name in vote_json['excusedVotes'].split(','):
+            if name.strip():
+                v.vote(option="excused",
+                        voter=name)
+
+        for name in vote_json['conflictVotes'].split(','):
+            if name.strip():
+                v.vote(option="other",
+                        voter=name)
+
+        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(vote_json['billNumber'])
+        v.add_source(source_url)
+
+        yield v
 
     def parse_local_date(self, date_str):
         # provided dates are ISO 8601, but in mountain time
