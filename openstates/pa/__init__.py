@@ -62,15 +62,6 @@ class Pennsylvania(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
-        "1966 Special Session #1",
-        "1966 Regular Session",
-        "1966 Special Session #3",
-        "1965 Special Session #3",
-        "1965 Special Session #1",
-        "1964 Regular Session",
-        "1963 Special Session #1",
-        "1963 Special Session #2",
-        "1963 Regular Session",
         "1965-1966 Special Session #1",
         "1965-1966 Special Session #2",
         "1965-1966 Special Session #3",
@@ -199,6 +190,7 @@ class Pennsylvania(Jurisdiction):
         "1965 Special Session #1",
         "1965 Special Session #3",
         "1966 Special Session #1",
+        "1966 Regular Session",
         "1966 Special Session #3",
     ]
 
