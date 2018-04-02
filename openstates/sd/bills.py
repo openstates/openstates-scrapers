@@ -116,7 +116,7 @@ class SDBillScraper(Scraper, LXMLMixin):
             if action.startswith('First read'):
                 atypes.append('introduction')
                 atypes.append('reading-1')
-            elif action.startswith('Signed by Governor'):
+            elif action.startswith('Signed by Governor') or action.startswith('Signed by the Governor'):
                 atypes.append('executive-signature')
                 actor = 'executive'
 
