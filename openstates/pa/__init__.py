@@ -191,6 +191,7 @@ class Pennsylvania(Jurisdiction):
         "1965 Special Session #1",
         "1965 Special Session #3",
         "1966 Special Session #1",
+        "1966 Regular Session",
         "1966 Special Session #3",
     ]
 
