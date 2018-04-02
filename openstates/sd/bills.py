@@ -64,11 +64,11 @@ class SDBillScraper(Scraper, LXMLMixin):
             namespaces={'re': regex_ns})
         for link in version_links:
             bill.add_version_link(
-                                link.xpath('string()').strip(),
-                                link.attrib['href'],
-                                media_type='text/html',
-                                on_duplicate='ignore'
-                )
+                link.xpath('string()').strip(),
+                link.attrib['href'],
+                media_type='text/html',
+                on_duplicate='ignore'
+            )
 
         sponsor_links = page.xpath(
             '//div[@id="ctl00_ContentPlaceHolder1_ctl00_BillDetail"]' +
@@ -116,7 +116,8 @@ class SDBillScraper(Scraper, LXMLMixin):
             if action.startswith('First read'):
                 atypes.append('introduction')
                 atypes.append('reading-1')
-            elif action.startswith('Signed by Governor'):
+
+            if re.match(r'Signed by (?:the\s)*Governor', action, re.IGNORECASE):
                 atypes.append('executive-signature')
                 actor = 'executive'
 
