@@ -81,7 +81,7 @@ class MTPersonScraper(Scraper):
             deets = {}
             try:
                 detail_url = district_leg_urls[hd_or_sd][district]
-                self._scrape_details(detail_url)
+                deets = self._scrape_details(detail_url)
             except KeyError:
                 self.warning(
                     "Couldn't find legislator URL for district {} {}, likely retired; skipping"
