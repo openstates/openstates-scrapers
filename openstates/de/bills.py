@@ -1,6 +1,5 @@
 import datetime as dt
 import json
-import math
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 from openstates.utils import LXMLMixin
@@ -14,9 +13,8 @@ class DEBillScraper(Scraper, LXMLMixin):
     chamber_map = {'House': 'lower', 'Senate': 'upper'}
     legislators = {}
     legislators_by_short = {}
-    chamber_name = ''
 
-    def scrape(self, session=None, chamber=None):
+    def scrape(self, session=None):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
@@ -24,83 +22,83 @@ class DEBillScraper(Scraper, LXMLMixin):
         # Cache the legislators, we'll need them for sponsors and votes
         self.scrape_legislators(session)
 
-        chambers = [chamber] if chamber else ['upper', 'lower']
+        # Cannot scrape a particular chamber, since the search-by-chamber
+        # returns bills that are currently _active_ in a chamber,
+        # and is not a search by chamber-of-origin
+        per_page = 200
+        page = self.post_search(session, 1, per_page)
 
-        for chamber in chambers:
-            # cache the camber name.
-            self.chamber_name = chamber
-            yield from self.scrape_chamber(chamber, session)
+        bills_and_votes = []
+        page_number = 1
+        while True:
+            page = self.post_search(session, page_number, per_page)
+            if not page['Data']:
+                self.info("Found no more bills in pagination")
+                break
+            for bill in page['Data']:
+                bills_and_votes.extend(list(self.scrape_bill(bill, session)))
+            page_number += 1
+        yield from self.filter_bills(bills_and_votes)
 
-    def scrape_chamber(self, chamber, session):
-        per_page = 50
-        page = self.post_search(session, chamber, 1, per_page)
-
-        for row in page['Data']:
-            yield from self.filter_substitutes(self.scrape_bill(row, chamber, session))
-
-        max_results = int(page["Total"])
-        if max_results > per_page:
-            max_page = int(math.ceil(max_results / per_page))
-
-            for i in range(2, max_page):
-                page = self.post_search(session, chamber, i, per_page)
-                for row in page['Data']:
-                    yield from self.filter_substitutes(self.scrape_bill(row, chamber, session))
-
-    def filter_substitutes(self, bills):
+    def filter_bills(self, items):
         """
-        called as a pass through around scrape_bill
-        if a bill is a substitute, holds it until the end of the stream
-        ensuring that there aren't multiple substitutes for a given bill
-        in the final stream
+        Read through all bills on a page. If a bill has no subsitutes,
+        yield it. If a bill does have substitutes, keep the highest-
+        numbered substitute and only yield that Bill object.
+        Bills may be amended (`BILL_ID w/ AMENDMENT ID` on the website),
+        but if that is the case then the original (unamended) version
+        should not exist any more.
         """
-        # bill_id: bill
-        substitutes = {}
+        # Map of {bill_id: bill}
+        bills = {}
 
-        # iterate over all bills in parent generator
-        for bill in bills:
-            if 'substitute' in bill.extras:
-                # if we haven't seen this bill_id or the sub# > stored sub#
-                if (bill.identifier not in substitutes or
-                        bill.extras['substitute'] >
-                        substitutes[bill.identifier].extras['substitute']):
-                    substitutes[bill.identifier] = bill
-            else:
-                # pass through if not sub
+        for bill in items:
+            # The generator also yields VoteEvent objects
+            if isinstance(bill, VoteEvent):
                 yield bill
+                continue
 
-        # yield final subs
-        yield from substitutes.values()
+            if bill.identifier in bills and (
+                'amendment' in bill.extras or
+                'amendment' in bills[bill.identifier].extras
+            ) and bill.extras.get('substitute') == bills[bill.identifier].extras.get('substitute'):
+                raise ValueError(
+                    "Bill `{}` showed up _both_ amended and unamended"
+                    .format(bill.identifier)
+                )
 
-    def scrape_bill(self, row, chamber, session):
+            if bill.identifier not in bills:
+                # This includes bills that were never substituted
+                bills[bill.identifier] = bill
+            elif 'substitute' in bill.extras and (
+                'substitute' not in bills[bill.identifier].extras or
+                bill.extras['substitute'] > bills[bill.identifier].extras['substitute']
+            ):
+                bills[bill.identifier] = bill
+            else:
+                self.warning("Ignoring substituted bill `{}`".format(bill.identifier))
+
+        yield from bills.values()
+
+    def scrape_bill(self, row, session):
         bill_id = row['LegislationDisplayCode']
 
-        # hack for empty StatusName
-        statusless_bills = ['HA 2 to SS 1 for SB 5', 'HA 3 to SS 1 for SB 5']
-        is_force_substitute = bill_id in statusless_bills \
-            and row['StatusName'] is None
-
-        is_substituted = is_force_substitute or 'Substituted' in row['StatusName'] \
-
-        if is_substituted:
-            # skip substituted bills, the replacement is picked up instead
-            self.warning('skipping %s: %s', bill_id, row['StatusName'])
-            return
-
+        amendment = None
         substitute = None
 
         if bill_id.count(' ') > 1:
-            if 'w/' in bill_id or 'SA' in bill_id or 'HA' in bill_id:
-                # TODO: re-evaluate if these should be separate bills
-                self.warning('skipping amendment %s', bill_id)
-                return
-            elif ' for ' in bill_id:
+            if ' w/ ' in bill_id:
+                self.info('Found amended bill `{}`'.format(bill_id))
+                bill_id, amendment = bill_id.split(' w/ ')
+            # A bill can _both_ be amended and be substituted
+            if ' for ' in bill_id:
                 self.info("Found substitute to use instead: `{}`".format(bill_id))
                 substitute, bill_id = bill_id.split(' for ')
-            else:
+            if amendment is None and substitute is None:
                 raise ValueError('unknown bill_id format: ' + bill_id)
 
         bill_type = self.classify_bill(bill_id)
+        chamber = 'upper' if bill_id.startswith('S') else 'lower'
 
         bill = Bill(identifier=bill_id,
                     legislative_session=session,
@@ -115,6 +113,8 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.add_sponsor_by_legislator_id(bill, row['SponsorPersonId'], 'primary')
         if substitute:
             bill.extras['substitute'] = substitute
+        if amendment:
+            bill.extras['amendment'] = amendment
 
         # TODO: Is there a way get additional sponsors and cosponsors, and versions/fns via API?
         html_url = 'https://legis.delaware.gov/BillDetail?LegislationId={}'.format(
@@ -124,7 +124,6 @@ class DEBillScraper(Scraper, LXMLMixin):
 
         html = self.lxmlize(html_url)
 
-        # Additional Sponsors: '//label[text()="Additional Sponsor(s):"]/following-sibling::div/a'
         additional_sponsors = html.xpath('//label[text()="Additional Sponsor(s):"]'
                                          '/following-sibling::div/a/@href')
         for sponsor_url in additional_sponsors:
@@ -132,8 +131,7 @@ class DEBillScraper(Scraper, LXMLMixin):
                                              'personId=', '')
             self.add_sponsor_by_legislator_id(bill, sponsor_id, 'primary')
 
-        # CoSponsors: '//label[text()="Co-Sponsor(s):"]/following-sibling::div/a'
-        cosponsors = html.xpath('//label[text()="Additional Sponsor(s):"]/'
+        cosponsors = html.xpath('//label[text()="Co-Sponsor(s):"]/'
                                 'following-sibling::div/a/@href')
         for sponsor_url in cosponsors:
             sponsor_id = sponsor_url.replace('https://legis.delaware.gov/LegislatorDetail?'
@@ -144,7 +142,6 @@ class DEBillScraper(Scraper, LXMLMixin):
         for version_url in versions:
             media_type = self.mime_from_link(version_url)
             version_name = 'Bill Text'
-            # on_duplicate='error'
             bill.add_version_link(version_name, version_url, media_type=media_type)
 
         fiscals = html.xpath('//div[contains(@class,"fiscalNote")]/a/@href')
@@ -167,14 +164,12 @@ class DEBillScraper(Scraper, LXMLMixin):
             'filter': '',
         }
 
-        # response = self.post(url=search_form_url, data=form, allow_redirects=True)
+        self.info('Fetching legislators')
         page = self.post(url=search_form_url, data=form, allow_redirects=True).json()
-        if int(page['Total']) > 0:
-            for row in page['Data']:
-                self.legislators[str(row['PersonId'])] = row
-                self.legislators_by_short[str(row['ShortName'])] = row
-        else:
-            self.warning("Error returning legislator list!")
+        assert page['Data'], "Cound not fetch legislators!"
+        for row in page['Data']:
+            self.legislators[str(row['PersonId'])] = row
+            self.legislators_by_short[str(row['ShortName'])] = row
 
     def scrape_fiscal_note(self, bill, link):
         media_type = self.mime_from_link(link)
@@ -188,10 +183,10 @@ class DEBillScraper(Scraper, LXMLMixin):
             'group': '',
             'filter': '',
         }
+        self.info('Searching for votes for {}'.format(bill.identifier))
         response = self.post(url=votes_url, data=form, allow_redirects=True)
         if response.content:
             page = json.loads(response.content.decode('utf-8'))
-            # page = self.post(url=votes_url, data=form, allow_redirects=True).json()
             if page['Total'] > 0:
                 for row in page['Data']:
                     yield from self.scrape_vote(bill, row['RollCallId'], session)
@@ -205,6 +200,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             'filter': '',
         }
 
+        self.info('Fetching vote {} for {}'.format(vote_id, bill.identifier))
         page = self.post(url=vote_url, data=form, allow_redirects=True).json()
         if page:
             roll = page['Model']
@@ -230,7 +226,13 @@ class DEBillScraper(Scraper, LXMLMixin):
                              bill=bill,
                              legislative_session=session
                              )
-            vote.add_source(vote_url)
+            vote_pdf_url = 'https://legis.delaware.gov' \
+                '/json/RollCallController/GenerateRollCallPdf' \
+                '?rollCallId={}&chamberId={}'.format(vote_id, self.chamber_codes[vote_chamber])
+            # Vote URL is just a generic search URL with POSTed data,
+            # so provide a different link
+            vote.add_source(vote_pdf_url)
+            vote.pupa_id = vote_pdf_url
             vote.set_count('yes', roll['YesVoteCount'])
             vote.set_count('no', roll['NoVoteCount'])
             vote.set_count('other', other_count)
@@ -252,19 +254,28 @@ class DEBillScraper(Scraper, LXMLMixin):
                 else:
                     vote.vote('other', name)
 
-            # bill.add_vote_event(vote)
             yield vote
 
     def add_sponsor_by_legislator_id(self, bill, legislator_id, sponsor_type):
         sponsor = self.legislators[str(legislator_id)]
         sponsor_name = sponsor['DisplayName']
         chamber = self.chamber_codes_rev[sponsor['ChamberId']]
-        bill.add_sponsorship(name=sponsor_name,
-                             classification=sponsor_type,
-                             entity_type='person',
-                             chamber=chamber,
-                             primary=sponsor_type == 'primary',
-                             )
+        primary = sponsor_type == 'primary'
+        # The multiple ways in which sponsors are collected sometimes
+        # results in duplicates; prevent these
+        existing_sponsor_names = [sponsor['name'] for sponsor in bill.sponsorships]
+        if sponsor_name not in existing_sponsor_names:
+            bill.add_sponsorship(name=sponsor_name,
+                                 classification=sponsor_type,
+                                 entity_type='person',
+                                 chamber=chamber,
+                                 primary=primary,
+                                 )
+        else:
+            self.warning(
+                "Ignoring already-known sponsor: {} for {}"
+                .format(sponsor_name, bill.identifier)
+            )
 
     def scrape_actions(self, bill, legislation_id):
         actions_url = 'https://legis.delaware.gov/json/BillDetail/GetRecentReportsByLegislationId'
@@ -274,6 +285,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             'group': '',
             'filter': '',
         }
+        self.info('Fetching actions for {}'.format(bill.identifier))
         page = self.post(url=actions_url, data=form, allow_redirects=True).json()
         for row in page['Data']:
             action_name = row['ActionDescription']
@@ -291,10 +303,7 @@ class DEBillScraper(Scraper, LXMLMixin):
             else:
                 # Actions like 'Stricken' and 'Defeated Amendemnt'
                 # don't have a chamber in the data, so assume the bill's home chamber
-                if self.chamber_name == 'lower':
-                    action_chamber = 'lower'
-                else:
-                    action_chamber = 'upper'
+                action_chamber = 'upper' if bill.identifier.startswith('S') else 'lower'
 
             categorization = self.categorizer.categorize(action_name)
 
@@ -323,17 +332,22 @@ class DEBillScraper(Scraper, LXMLMixin):
         for name, abbr in legislation_types:
             if abbr in bill_id:
                 return name
+        else:
+            raise AssertionError("Could not categorize bill ID")
 
-        return ''
-
-    def post_search(self, session, chamber, page_number, per_page):
+    def post_search(self, session, page_number, per_page):
         search_form_url = 'https://legis.delaware.gov/json/AllLegislation/GetAllLegislation'
         form = {
             'page': page_number,
             'pageSize': per_page,
             'selectedGA[0]': session,
-            'selectedChamberId': self.chamber_codes[chamber],
             'coSponsorCheck': 'True',
+            'selectedLegislationTypeId[0]': '1',
+            'selectedLegislationTypeId[1]': '2',
+            'selectedLegislationTypeId[2]': '3',
+            'selectedLegislationTypeId[3]': '4',
+            # Ignore the `Amendment` legislation type, `5`
+            'selectedLegislationTypeId[4]': '6',
             'sort': '',
             'group': '',
             'filter': '',
