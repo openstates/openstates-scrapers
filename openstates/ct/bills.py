@@ -296,7 +296,6 @@ class CTBillScraper(Scraper):
             bill_id = match.group(1).replace('-', '')
 
             try:
-                print(self.bills[bill_id])
                 bill = self.bills[bill_id][0]
             except IndexError:
                 continue

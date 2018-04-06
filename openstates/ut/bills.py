@@ -298,7 +298,6 @@ class UTBillScraper(Scraper, LXMLMixin):
         yes_count = vote_dict['yes']['count']
         no_count = vote_dict['no']['count'] or 0
         other_count = vote_dict['other']['count'] or 0
-        print(motion)
         vote = Vote(chamber=actor,
                     start_date=date,
                     motion_text=motion,
