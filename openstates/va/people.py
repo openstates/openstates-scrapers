@@ -76,7 +76,7 @@ class MemberDetail(Page):
             self.obj.add_membership(
                 self.kwargs['committees'][key],
                 start_date=maybe_date(self.kwargs['session'].get('start_date')),
-                end_date=maybe_date(self.kwargs['session'].get('end_date')),
+                end_date=maybe_date(self.kwargs['session'].get('end_date', '')),
             )
 
     def get_photo_url(self):
