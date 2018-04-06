@@ -44,7 +44,7 @@ RUN /opt/openstates/venv-billy/bin/pip install -U python-dateutil requests
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata.git#egg=python-opencivicdata
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/doubleswirve/pupa.git@custom-export#egg=pupa
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
@@ -57,5 +57,11 @@ ENV PUPA_ENV /opt/openstates/venv-pupa/
 ADD . /opt/openstates/openstates
 RUN /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt
 
+# Adding these so we can git pull in pupa-scrape.sh...
+RUN git config --global user.email "user@example.org"
+RUN git config --global user.name "Example User"
+RUN git config --global core.mergeoptions --no-edit
+
 WORKDIR /opt/openstates/openstates/
+RUN git remote set-url origin https://github.com/GovHawkDC/openstates.git
 ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]

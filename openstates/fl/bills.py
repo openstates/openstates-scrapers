@@ -59,7 +59,7 @@ class BillList(Page):
 
         # normalize id from HB 0004 to H4
         subj_bill_id = re.sub('(H|S)\w+ 0*(\d+)', r'\1\2', bill_id)
-        bill.subject = list(self.kwargs['subjects'][subj_bill_id])
+        bill.subject = sorted(list(self.kwargs['subjects'][subj_bill_id]))
 
         sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
         for sp in sponsor.split(', '):
