@@ -222,20 +222,23 @@ class MDBillScraper(Scraper):
         # eg, http://mgaleg.maryland.gov/2018RS/votes/Senate/0478.pdf
         is_consent_calendar = any(['Consent Calendar' in line for line in lines[:page_index]])
         consent_calendar_bills = None
+        motion = ""
         if is_consent_calendar:
             motion = re.split(r'\s{2,}', lines[page_index - 4].strip())[0]
             consent_calendar_bills = re.split(r'\s{2,}', lines[page_index-1].strip())
             assert consent_calendar_bills, "Could not find bills for consent calendar vote"
-        else:
-            motion = re.split(r'\s{2,}', lines[page_index-3].strip())[0]
 
         motion_keywords = ['favorable', 'reading', 'amendment', 'motion', 'introduced']
+        motion_lines = [3, 2, 4, 5]  # Relative LineNumbers to be checked for existence of motion
 
-        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
-            motion = re.split(r'\s{2,}', lines[page_index-2].strip())[0]
-        if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
-            self.error("Motion Extracted: %s" % motion)
-            raise ValueError("No Motion or faulty Motion scraped.")
+        for i in motion_lines:
+            if any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+                break
+            motion = re.split(r'\s{2,}', lines[page_index-i].strip())[0]
+        else:
+            if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+                self.error("Motion Extracted: %s" % motion)
+                raise ValueError("No Motion or faulty Motion scraped.")
 
         vote = VoteEvent(
             bill=bill,

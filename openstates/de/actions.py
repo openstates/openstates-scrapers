@@ -14,7 +14,7 @@ rules = (
     Rule([u'(?i)Amendment (?P<bills>[\w\s]+?) Introduced'],
          ['amendment-introduction']),
     Rule([u'Amendment (?P<bills>.+?) -  Passed'], ['amendment-passage']),
-    Rule([u'^Passed by'], ['passage']),
+    Rule([u'(?i)^Passed by'], ['passage']),
     Rule([u'^Defeated'], ['failure']),
     Rule([u'(?i)unfavorable'], ['committee-passage-unfavorable']),
     Rule([u'Reported Out of Committee \((?P<committees>.+?)\)'],
