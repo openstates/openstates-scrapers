@@ -93,14 +93,14 @@ class HIBillScraper(Scraper):
         for action in action_table.xpath('*')[1:]:
             date = action[0].text_content()
             date = dt.datetime.strptime(date, "%m/%d/%Y").strftime('%Y-%m-%d')
-            actor = action[1].text_content()
+            actor = action[1].text_content().upper()
             string = action[2].text_content()
             actor = {
                 "S": "upper",
                 "H": "lower",
                 "D": "legislature",  # "Data Systems",
                 "$": "Appropriation measure",
-                "ConAm": "Constitutional Amendment"
+                "CONAM": "Constitutional Amendment"
             }[actor]
             act_type, committees = categorize_action(string)
             # XXX: Translate short-code to full committee name for the
