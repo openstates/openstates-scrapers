@@ -228,7 +228,8 @@ class MDBillScraper(Scraper):
             consent_calendar_bills = re.split(r'\s{2,}', lines[page_index-1].strip())
             assert consent_calendar_bills, "Could not find bills for consent calendar vote"
 
-        motion_keywords = ['favorable', 'reading', 'amendment', 'motion', 'introduced']
+        motion_keywords = ['favorable', 'reading', 'amendment', 'motion', 'introduced',
+                           'bill pass']
         motion_lines = [3, 2, 4, 5]  # Relative LineNumbers to be checked for existence of motion
 
         for i in motion_lines:
