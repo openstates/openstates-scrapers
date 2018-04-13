@@ -192,8 +192,6 @@ class KSBillScraper(Scraper):
         vote_date = datetime.datetime.strptime(chamber_date_line_words[-1], '%m/%d/%Y')
         vote_status = " ".join(chamber_date_line_words[2:-2])
 
-        self.warning('chamberDateLine= "' + chamber_date_line + '"')
-
         opinions = member_doc.xpath("//div[@id='main_content']/h3[position() > 1]/text()")
         if len(opinions) > 0:
             vote_status = vote_status if vote_status.strip() else motion[0]
