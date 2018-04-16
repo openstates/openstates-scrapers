@@ -269,6 +269,7 @@ class AKBillScraper(Scraper):
             vote.set_count('yes', yes)
             vote.set_count('no', no)
             vote.set_count('other', other)
+            vote.pupa_id = url
 
             # In lengthy documents, the "header" can be repeated in the middle
             # of content. This regex gets rid of it.
