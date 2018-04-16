@@ -100,6 +100,7 @@ class SouthDakota(Jurisdiction):
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
+        executive = Organization(name='Office of the Governor', classification='executive')
 
         for n in range(1, seats + 1):
             # 26 and 28 are special
@@ -124,6 +125,7 @@ class SouthDakota(Jurisdiction):
                 division_id='{}/sldu:{}'.format(self.division_id, n))
 
         yield legislature
+        yield executive
         yield upper
         yield lower
 
