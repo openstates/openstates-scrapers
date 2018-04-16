@@ -23,6 +23,10 @@ class AZBillScraper(Scraper):
         response = self.get(bill_json_url)
         page = json.loads(response.content.decode('utf-8'))
 
+        if not page:
+            self.warning('null page for %s', bill_id)
+            return
+
         bill_title = page['ShortTitle']
         bill_id = page['Number']
         internal_id = page['BillId']
