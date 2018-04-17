@@ -198,7 +198,10 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
                 continue
             else:
                 match = re.match(r'(.+) \(([A-Z])\)', a.text.strip())
-                name, party = match.group(1), self._parties[match.group(2)]
+                if match:
+                    name, party = match.group(1), self._parties[match.group(2)]
+                else:
+                    continue
 
             url = a.get('href')
 
