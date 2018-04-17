@@ -201,6 +201,8 @@ class OKPersonScraper(Scraper, LXMLMixin, LXMLMixinOK):
                 if match:
                     name, party = match.group(1), self._parties[match.group(2)]
                 else:
+                    self.warning("District {} appears to have empty Representative name,party"
+                                 .format(district))
                     continue
 
             url = a.get('href')
