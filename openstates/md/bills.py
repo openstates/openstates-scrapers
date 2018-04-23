@@ -229,7 +229,7 @@ class MDBillScraper(Scraper):
             assert consent_calendar_bills, "Could not find bills for consent calendar vote"
 
         motion_keywords = ['favorable', 'reading', 'amendment', 'motion', 'introduced',
-                           'bill pass']
+                           'bill pass', 'committee']
         motion_lines = [3, 2, 4, 5]  # Relative LineNumbers to be checked for existence of motion
 
         for i in motion_lines:
@@ -238,8 +238,12 @@ class MDBillScraper(Scraper):
             motion = re.split(r'\s{2,}', lines[page_index-i].strip())[0]
         else:
             if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
-                self.error("Motion Extracted: %s" % motion)
-                raise ValueError("No Motion or faulty Motion scraped.")
+                # This condition covers for the bad formating in SB 1260
+                motion = lines[page_index-3]
+            if not any(motion_keyword in motion.lower() for motion_keyword in motion_keywords):
+                # Check this one for SB 747
+                motion = "No motion given"
+                self.warning("No motion given")
 
         vote = VoteEvent(
             bill=bill,
