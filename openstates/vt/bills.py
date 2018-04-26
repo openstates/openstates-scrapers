@@ -234,7 +234,8 @@ class VTBillScraper(Scraper, LXMLMixin):
                     else:
                         roll_call_not_voting.append(member_name)
 
-                if "Passed -- " in vote['FullStatus']:
+                if ("Passed -- " in vote['FullStatus'] or
+                        "Veto of Governor overridden" in vote['FullStatus']):
                     did_pass = True
                 elif ("Failed -- " in vote['FullStatus'] or
                       'Veto of the Governor sustained' in vote['FullStatus']):
