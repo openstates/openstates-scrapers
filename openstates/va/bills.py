@@ -21,6 +21,8 @@ URL_PATTERNS = {
 SKIP = '~~~SKIP~~~'
 ACTION_CLASSIFIERS = (
     ('Approved by Governor', 'executive-signature'),
+    ('Vetoed by Governor', 'executive-veto'),
+    ('(House|Senate) sustained Governor\'s veto', 'veto-override-failure'),
     ('\s*Amendment(s)? .+ agreed', 'amendment-passage'),
     ('\s*Amendment(s)? .+ withdrawn', 'amendment-withdrawal'),
     ('\s*Amendment(s)? .+ rejected', 'amendment-failure'),

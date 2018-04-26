@@ -184,7 +184,11 @@ class KSBillScraper(Scraper):
                                        on_duplicate='ignore')
 
     def parse_vote(self, bill, link):
-        member_doc = lxml.html.fromstring(self.get(link).text)
+        text = self.get(link).text
+        if 'Page Not Found' in text:
+            self.warning("missing vote, skipping")
+            return
+        member_doc = lxml.html.fromstring(text)
         motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
         chamber_date_line = ''.join(member_doc.xpath("//div[@id='main_content']/h3[1]//text()"))
         chamber_date_line_words = chamber_date_line.split()
