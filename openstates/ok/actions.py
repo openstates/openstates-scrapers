@@ -47,6 +47,7 @@ _categorizer_rules = (
     Rule([u'HAs rejected'], [u'amendment-failure']),
     Rule(u'(?i)Measure.+?passed', 'passage'),
     Rule(u'(?i)Measure.+?passed', 'passage'),
+    Rule(u'Engrossed', 'passage'),
     Rule(u'Third Reading, Measure passed',
          ['passage', 'reading-3']),
 
