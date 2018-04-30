@@ -67,6 +67,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         ('Comm(ittee)? report: (T|t)o pass( as amended)? and re-refer(red)? to',
          ['committee-passage', 'referral-committee']),
         ('Comm(ittee)? report: (T|t)o pass( as amended)?', 'committee-passage'),
+        ('Comm(ittee)? report, to adopt', 'committee-passage'),
         ('Third reading Passed', 'passage'),
         ('Bill was passed', 'passage'),
         ('Third reading', 'reading-3'),
