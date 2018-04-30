@@ -9,7 +9,7 @@ BILLS_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/'
 BILL_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/%s/'
 
 _CHAMBERS = {'upper': 'Senate', 'lower': 'House'}
-_OTHER_CHAMBERS = {'upper':'lower','lower': 'upper'}
+_OTHER_CHAMBERS = {'upper': 'lower', 'lower': 'upper'}
 
 _BILL_TYPES = {'CR': 'concurrent resolution',
                'JM': 'joint memorial', 'JR': 'joint resolution',
