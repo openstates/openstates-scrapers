@@ -106,6 +106,7 @@ _categorizer_rules = (
     Rule('Reported back amended, do pass', 'committee-passage-favorable'),
     Rule('Rec. For Pass.', 'committee-passage-favorable'),
     Rule('Rec. For pass.', 'committee-passage-favorable'),
+    Rule('Rec. for pass.', 'committee-passage-favorable'),
     Rule('Reported back amended, without recommendation', 'committee-passage'),
     Rule('Reported back, do not pass', 'committee-passage-unfavorable'),
     Rule('w/ recommend', 'committee-passage-favorable'),
