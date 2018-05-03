@@ -45,6 +45,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             # make sure passage is checked before reading-3
             ('Third Read and Passed', 'passage'),
             ('Reported Do Pass', 'committee-passage'),
+            ('Voted Do Pass', 'committee-passage'),
             ('Third Read', 'reading-3'),
             ('Referred', 'referral-committee'),
             ('Withdrawn', 'withdrawal'),
