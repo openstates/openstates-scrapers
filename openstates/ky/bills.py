@@ -267,6 +267,9 @@ class KYBillScraper(Scraper, LXMLMixin):
                 if '2nd reading' in action:
                     atype.append('reading-2')
 
+                if 'veto overridden' in action.lower():
+                    atype.append('veto-override-passage')
+
                 if 'R' in bill_id and 'adopted by voice vote' in action:
                     atype.append('passage')
 
