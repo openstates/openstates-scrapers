@@ -69,6 +69,7 @@ class Oklahoma(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "2019 Regular Session",
         "2017 Regular Session",
         "2015 Regular Session",
         "2013 Regular Session",
