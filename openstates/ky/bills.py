@@ -266,6 +266,8 @@ class KYBillScraper(Scraper, LXMLMixin):
                         atype.append('passage')
                 if '2nd reading' in action:
                     atype.append('reading-2')
+                if 'delivered to secretary of state' in action.lower():
+                    atype.append('became-law')
 
                 if 'veto overridden' in action.lower():
                     atype.append('veto-override-passage')
