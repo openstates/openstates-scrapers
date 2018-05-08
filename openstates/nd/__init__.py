@@ -146,4 +146,6 @@ class NorthDakota(Jurisdiction):
         html = scrapelib.Scraper().get(url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(url)
-        return doc.xpath("//div[@class='view-content']//a/text()")
+        sessions = doc.xpath("//div[@class='view-content']//a/text()")
+        sessions = [session for session in sessions if 'Territorial Assembly' not in session]
+        return sessions
