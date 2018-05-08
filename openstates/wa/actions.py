@@ -89,6 +89,8 @@ _categorizer_rules = (
     Rule(r"(?i)Governor signed", 'executive-signature'),
     Rule(r"(?i)Passed final passage;", 'passage'),
     Rule(r"(?i)Failed final passage;", 'failure'),
+    Rule(r"Effective date", 'became-law'),
+    Rule(r"Chapter .* Laws", 'became-law'),
     )
 
 
