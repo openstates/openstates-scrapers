@@ -220,7 +220,8 @@ class RIBillScraper(Scraper):
             # XXX: What's "recommended measure be held for further study"?
             "withdrawn": "withdrawal",
             "signed by governor": "executive-signature",
-            "transmitted to governor": "executive-receipt"
+            "transmitted to governor": "executive-receipt",
+            "Effective without Governor's signature", "became-law",
         }
         ret = []
         name = name.lower()
