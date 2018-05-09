@@ -75,6 +75,7 @@ class Indiana(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "Special Session 120th General Assembly (2018)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",
