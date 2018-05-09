@@ -58,7 +58,7 @@ _ACTIONS = (
     (r'Reported out of Committee without Recommendation', 'committee-passage'),
     (r'^Reported Signed by Governor', "executive-signature"),
     (r'^Signed by Governor', "executive-signature"),
-
+    (r'Became law without Governor.s signature', "became-law"),
     # I dont recall seeing a 2nd rdg by itself
     (r'^1st rdg - to 2nd rdg', "reading-2"),
     # second to third will count as a third read if there is no
