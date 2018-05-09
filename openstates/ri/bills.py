@@ -221,7 +221,7 @@ class RIBillScraper(Scraper):
             "withdrawn": "withdrawal",
             "signed by governor": "executive-signature",
             "transmitted to governor": "executive-receipt",
-            "Effective without Governor's signature", "became-law",
+            "Effective without Governor's signature": "became-law",
         }
         ret = []
         name = name.lower()
