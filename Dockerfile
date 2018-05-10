@@ -1,4 +1,4 @@
-FROM        ubuntu:latest
+FROM        ubuntu:artful
 MAINTAINER  James Turk <james@openstates.org>
 
 ARG DEBIAN_FRONTEND=noninteractive
