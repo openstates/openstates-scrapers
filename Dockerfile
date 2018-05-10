@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     mysql-server \
     libmysqlclient-dev \
-    postgresql-client-9.5 \ 
+    postgresql-client-9.6 \ 
     gnupg
 
 # add mongo 3.4 packages
