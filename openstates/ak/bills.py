@@ -243,9 +243,12 @@ class AKBillScraper(Scraper):
         votes_text = re_vote_text.split(votes_text)
         votes_data = zip(votes_text[1::2], votes_text[2::2])
 
+        iVoteOnPage = 0
+
         # Process each.
         for motion, text in votes_data:
 
+            iVoteOnPage += 1
             yes = no = other = 0
 
             tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
@@ -262,7 +265,7 @@ class AKBillScraper(Scraper):
                 bill=bill,
                 start_date=act_date.strftime('%Y-%m-%d'),
                 chamber=act_chamber,
-                motion_text=motion,
+                motion_text=motion + ' ' + str(iVoteOnPage),
                 result='pass' if yes > no else 'fail',
                 classification='passage',
             )
