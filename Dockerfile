@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y \
     mysql-server \
     libmysqlclient-dev \
     postgresql-client-9.6 \ 
-    gnupg
+    gnupg \ 
+    dirmngr
 
 # add mongo 3.4 packages
 RUN echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" > /etc/apt/sources.list.d/mongodb-org-3.4.list
