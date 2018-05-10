@@ -73,6 +73,12 @@ class Indiana(Jurisdiction):
             "identifier": "2018",
             "name": "2018 Regular Session"
         },
+        # {
+        #     "_scraped_name": "Special Session 120th General Assembly (2018)",
+        #     "identifier": "2018",
+        #     "name": "2018 Special Session",
+        #     "start_date": "2018-05-14"
+        # },
     ]
     ignored_scraped_sessions = [
         "Special Session 120th General Assembly (2018)",
