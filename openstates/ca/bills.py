@@ -398,7 +398,7 @@ class CABillScraper(Scraper):
                     version_name,
                     version_url_pdf,
                     media_type='application/pdf',
-                    date=version_date)
+                    date=version_date.date())
 
                 # CA is inconsistent in that some bills have a short title
                 # that is longer, more descriptive than title.
