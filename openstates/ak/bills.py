@@ -265,14 +265,15 @@ class AKBillScraper(Scraper):
                 bill=bill,
                 start_date=act_date.strftime('%Y-%m-%d'),
                 chamber=act_chamber,
-                motion_text=motion + ' ' + str(iVoteOnPage),
+                motion_text=motion,
                 result='pass' if yes > no else 'fail',
                 classification='passage',
             )
             vote.set_count('yes', yes)
             vote.set_count('no', no)
             vote.set_count('other', other)
-            vote.pupa_id = url
+
+            vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
 
             # In lengthy documents, the "header" can be repeated in the middle
             # of content. This regex gets rid of it.
