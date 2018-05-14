@@ -6,6 +6,8 @@ from .bills import WYBillScraper
 from .people import WYPersonScraper
 # from .committees import WYCommitteeScraper
 
+import requests
+import re
 
 class Wyoming(Jurisdiction):
     division_id = "ocd-division/country:us/state:wy"
@@ -19,69 +21,69 @@ class Wyoming(Jurisdiction):
     }
     legislative_sessions = [
         {
-            "_scraped_name": "2011 General Session",
+            "_scraped_name": "2011",
             "classification": "primary",
             "identifier": "2011",
-            "name": "2011 General Session"
+            "name": "2011"
         },
         {
-            "_scraped_name": "2012 Budget Session",
+            "_scraped_name": "2012",
             "classification": "special",
             "identifier": "2012",
-            "name": "2012 Budget Session"
+            "name": "2012"
         },
         {
-            "_scraped_name": "2013 General Session",
+            "_scraped_name": "2013",
             "classification": "primary",
             "identifier": "2013",
-            "name": "2013 General Session"
+            "name": "2013"
         },
         {
-            "_scraped_name": "2014 General Session",
+            "_scraped_name": "2014",
             "classification": "primary",
             "identifier": "2014",
-            "name": "2014 General Session"
+            "name": "2014"
         },
         {
-            "_scraped_name": "2015 General Session",
+            "_scraped_name": "2015",
             "classification": "primary",
             "identifier": "2015",
-            "name": "2015 General Session"
+            "name": "2015"
         },
         {
-            "_scraped_name": "2016 General Session",
+            "_scraped_name": "2016",
             "classification": "primary",
             "identifier": "2016",
-            "name": "2016 General Session"
+            "name": "2016"
         },
         {
-            "_scraped_name": "2017 General Session",
+            "_scraped_name": "2017",
             "classification": "primary",
             "identifier": "2017",
-            "name": "2017 General Session",
+            "name": "2017",
             "start_date": "2017-01-10",
             "end_date": "2017-03-03",
         },
         {
-            "_scraped_name": "2018 General Session",
+            "_scraped_name": "2018",
             "classification": "primary",
             "identifier": "2018",
-            "name": "2018 General Session"
+            "name": "2018"
         },
     ]
     ignored_scraped_sessions = [
-        "2016 Budget Session",
-        "2014 Budget Session",
-        "2010 Budget Session",
-        "2009 General Session",
-        "2008 Budget Session",
-        "2007 General Session",
-        "2006 Budget Session",
-        "2005 General Session",
-        "2004 Budget Session",
-        "2003 General Session",
-        "2002 Budget Session",
-        "2001 General Session"
+        "2016",
+        "2014",
+        "2010",
+        "2009",
+        "2008",
+        "2007",
+        "2006",
+        "2005",
+        "2004",
+        "2003",
+        "2002",
+        "2001"
     ]
 
     def get_organizations(self):
@@ -114,7 +116,15 @@ class Wyoming(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        return url_xpath(
-            'http://legisweb.state.wy.us/LSOWeb/SessionArchives.aspx',
-            '//div[@id="divLegContent"]/a/p/text()',
-        )
+        # the sessions list is a JS object buried in a massive file
+        # it looks like:
+        # .constant("YEAR_VALUES",[{year:2001,title:"General Session",isActive:!0}, ...
+        session = requests.Session()
+        js = session.get('http://wyoleg.gov/js/site.min.js').content.decode('utf-8')
+        # seriously, there must be a better way to do this
+        sessions_regex = r'constant\(\"YEAR_VALUES\",\[(.*)\)}\(\),function\(w'
+        sessions_string = re.search(sessions_regex, js)
+        # once we have the big string, pull out year:2001, etc
+        year_regex = r'year\:(\d+)'
+        years = re.findall(year_regex, sessions_string.groups(0)[0])
+        return years
