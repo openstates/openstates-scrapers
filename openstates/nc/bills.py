@@ -33,6 +33,9 @@ class NCBillScraper(Scraper):
         'Amendment Offered': 'amendment-introduction',
         'Amend Failed': 'amendment-failure',
         'Amend Adopted': 'amendment-passage',
+        'Became Law W/o Signature': 'became-law',
+        'Ch.': 'became-law',
+        'Veto Overridden': 'veto-override-passage',
     }
 
     def scrape_bill(self, chamber, session, bill_id):
