@@ -1,90 +1,56 @@
 import re
+import json
 
 import lxml.html
 from pupa.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):
-    def scrape(self, chamber=None):
+    party_map = {'R':'republican', 'D':'democrat', 'I':'independent'}
+
+    def scrape(self, chamber=None, session=None):
+        session = self.latest_session()
+        self.info('no session specified, using %s', session)
+
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
+    def scrape_chamber(self, chamber, session):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        url = ("http://legisweb.state.wy.us/LegislatorSummary/LegislatorList"
-               ".aspx?strHouse=%s&strStatus=N" % chamber_abbrev)
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
+        url = "https://wyoleg.gov/LsoService/api/legislator/2018/{}".format(chamber_abbrev)
 
-        for link in page.xpath("//a[contains(@href, 'LegDetail')]"):
-            name = link.text.strip()
-            # Remove district number from member names
-            name = re.sub(r'\s\([HS]D\d{2}\)$', "", name)
-            leg_url = link.get('href')
+        response = self.get(url)
+        people_json = json.loads(response.content.decode('utf-8'))
 
-            email_address = link.xpath("../../../td[1]//a")[0].attrib['href']
-            email_address = link.xpath("../../../td[2]//a")[0].attrib['href']
-            email_address = email_address.split('Mailto:')[1]
-
-            party = link.xpath("string(../../../td[3])").strip()
-            if party == 'D':
-                party = 'Democratic'
-            elif party == 'R':
-                party = 'Republican'
-
-            district = link.xpath(
-                "string(../../../td[4])").strip().lstrip('HS0')
-
-            leg_page = lxml.html.fromstring(self.get(leg_url).text)
-            leg_page.make_links_absolute(leg_url)
-            img = leg_page.xpath(
-                "//img[contains(@src, 'LegislatorSummary/photos')]")[0]
-            photo_url = img.attrib['src']
-
-            table = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]')[0]
-            office_tds = table.xpath('./tr/td/text()')
-            address = []
-            phone = None
-            fax = None
-
-            for td in office_tds:
-                if td.startswith('Home - '):
-                    phone = td.strip('Home - ')
-                elif td.startswith('Cell -'):
-                    phone = td.strip('Cell - ')
-                elif td.startswith('Work -'):
-                    phone = td.strip('Work - ')
-
-                if td.startswith('Fax -'):
-                    fax = td.strip('Fax - ')
-
-                elif ' - ' not in td:
-                    address.append(td)
-
-            emails = table.xpath('.//a[contains(@href, "mailto:")]/@href')
-            email = emails[0].replace('mailto:', '') if emails else None
+        for row in people_json:
+            party = self.party_map[row['party']]
 
             person = Person(
-                name=name,
-                district=district,
+                name=row['name'],
+                district=row['district'],
                 party=party,
                 primary_org=chamber,
-                image=photo_url,
+                # given_name='first',
+                # family_name='last',
             )
 
-            adr = " ".join([part.strip() for part in address]) or None
+            if row['eMail']:
+                person.add_contact_detail(type='email', value=row['eMail'])
 
-            person.add_contact_detail(type='address', value=adr, note='District Office')
-            if phone:
-                person.add_contact_detail(type='voice', value=phone, note='District Office')
-            if fax:
-                person.add_contact_detail(type='fax', value=fax, note='District Office')
-            if email:
-                person.add_contact_detail(type='email', value=email, note='District Office')
+            if row['phone']:
+                person.add_contact_detail(type='voice', value=row['phone'])
 
-            person.add_source(url)
+            person.extras['wy_leg_id'] = row['legID']
+            person.extras['county'] = row['county']
+
+            # http://wyoleg.gov/Legislators/2018/S/2032
+            leg_url = 'http://wyoleg.gov/Legislators/{}/{}/{}'.format(
+                        session,
+                        row['party'],
+                        row['legID'])
+
             person.add_source(leg_url)
             person.add_link(leg_url)
 
