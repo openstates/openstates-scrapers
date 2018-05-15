@@ -185,9 +185,11 @@ class INBillScraper(Scraper):
         votes = version["rollcalls"]
         yield from self._process_votes(votes, bill_id, chamber, session, proxy)
 
-    def scrape(self):
-        session_name = self.latest_session()
-        session = session_name[0:5]
+    def scrape(self, session=None):
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
         self._bill_prefix_map = {
             'HB':  {
                 'type': 'bill',
