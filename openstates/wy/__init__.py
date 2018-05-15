@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import WYBillScraper
 from .people import WYPersonScraper
-# from .committees import WYCommitteeScraper
+from .committees import WYCommitteeScraper
 
 import requests
 import re
@@ -17,7 +17,7 @@ class Wyoming(Jurisdiction):
     scrapers = {
         'bills': WYBillScraper,
         'people': WYPersonScraper,
-        # 'committees': WYCommitteeScraper,
+        'committees': WYCommitteeScraper,
     }
     legislative_sessions = [
         {

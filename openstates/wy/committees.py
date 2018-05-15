@@ -1,50 +1,62 @@
 import re
+import json
 
 import lxml.html
 from pupa.scrape import Scraper, Organization
 
 
 class WYCommitteeScraper(Scraper):
-    members = {}
-    urls = {
-        "list": "http://legisweb.state.wy.us/LegbyYear/CommitteeList.aspx?Year=%s",
-        "detail": "http://legisweb.state.wy.us/LegbyYear/%s",
-    }
 
     def scrape(self, session=None):
         if session is None:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
-        list_url = self.urls["list"] % (session, )
-        committees = {}
-        page = self.get(list_url).text
-        page = lxml.html.fromstring(page)
-        for el in page.xpath(".//a[contains(@href, 'CommitteeMembers')]"):
-            committees[el.text.strip()] = el.get("href")
+        # com_types = ['J', 'SE', 'O']
+        # base_url = 'https://wyoleg.gov/LsoService/api/committeeList/2018/J'
+        url = 'https://wyoleg.gov/LsoService/api/committees/{}'.format(session)
 
-        for c in committees:
-            self.info(c)
-            detail_url = self.urls["detail"] % (committees[c],)
-            page = self.get(detail_url).text
-            page = lxml.html.fromstring(page)
-            if re.match('\d{1,2}-', c):
-                c = c.split('-', 1)[1]
-            jcomm = Organization(name=c.strip(), chamber='legislature', classification='committee')
-            for table in page.xpath(".//table[contains(@id, 'CommitteeMembers')]"):
-                rows = table.xpath(".//tr")
-                chamber = rows[0].xpath('.//td')[0].text_content().strip()
-                chamber = 'upper' if chamber == 'Senator' else 'lower'
-                comm = Organization(name=c.strip(), chamber=chamber, classification='committee')
-                for row in rows[1:]:
-                    tds = row.xpath('.//td')
-                    name = tds[0].text_content().strip()
-                    role = 'chairman' if tds[3].text_content().strip() == 'Chairman' else 'member'
-                    comm.add_member(name, role)
-                    jcomm.add_member(name, role)
+        response = self.get(url)
+        coms_json = json.loads(response.content.decode('utf-8'))
 
-                comm.add_source(detail_url)
-                yield comm
+        for row in coms_json:
+            com_url = 'https://wyoleg.gov/LsoService/api/committeeDetail/{}/{}'.format(session, row['ownerID'])
+            com_response = self.get(com_url)
+            com = json.loads(com_response.content.decode('utf-8'))
 
-            jcomm.add_source(detail_url)
-            yield jcomm
+            # WY doesn't seem to have any house/senate only committees that I can find
+            chamber = 'legislature'
+
+            committee = Organization(name=com['commName'], chamber='legislature', classification='committee')
+
+            for member in com['commMembers']:
+                role = 'chairman' if member['chairman'] == 'Chairman' else 'member'
+                committee.add_member(member['name'], role)
+
+            # some WY committees have non-legislators appointed to the member by the Governor
+            if com['otherMembers']:
+                for name in com['otherMembers'].split(','):
+                    name = name.strip()
+                    committee.add_member(name, 'appointee')
+
+            committee.extras['wy_id'] = com['commID']
+            committee.extras['wy_code'] = com['ownerID']
+            committee.extras['wy_type_code'] = com['type']
+            committee.extras['budget'] = com['budget']
+
+            if com['statAuthority']:
+                committee.extras['statutory_authority'] = com['statAuthority']
+
+            if com['number']:
+                committee.extras['seat_distribution'] = com['number']
+
+            committee.add_identifier(scheme='WY Committee ID', identifier=str(com['commID']))
+            committee.add_identifier(scheme='WY Committee Code', identifier=str(com['ownerID']))
+
+            if com['description']:
+                committee.add_identifier(scheme='Common Name', identifier=com['description'])
+
+            source_url = 'http://wyoleg.gov/Committees/{}/{}'.format(session, com['ownerID'])
+            committee.add_source(source_url)
+
+            yield committee
