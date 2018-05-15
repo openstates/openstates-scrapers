@@ -407,6 +407,7 @@ class NJBillScraper(Scraper, MDBMixin):
                             result=None,
                             bill=bill_dict[bill_id]
                         )
+                        votes[vote_id].pupa_id = vote_id
                     if leg_vote == "Y":
                         votes[vote_id].vote('yes', leg)
                     elif leg_vote == "N":

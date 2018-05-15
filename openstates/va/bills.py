@@ -20,7 +20,10 @@ URL_PATTERNS = {
 }
 SKIP = '~~~SKIP~~~'
 ACTION_CLASSIFIERS = (
+    ('Enacted, Chapter', 'became-law'),
     ('Approved by Governor', 'executive-signature'),
+    ('Vetoed by Governor', 'executive-veto'),
+    ('(House|Senate) sustained Governor\'s veto', 'veto-override-failure'),
     ('\s*Amendment(s)? .+ agreed', 'amendment-passage'),
     ('\s*Amendment(s)? .+ withdrawn', 'amendment-withdrawal'),
     ('\s*Amendment(s)? .+ rejected', 'amendment-failure'),
@@ -32,6 +35,7 @@ ACTION_CLASSIFIERS = (
     ('Read third time and passed', ['passage', 'reading-3']),
     ('Read third time and agreed', ['passage', 'reading-3']),
     ('Passed (Senate|House)', 'passage'),
+    ('passed (Senate|House)', 'passage'),
     ('Read third time and defeated', 'failure'),
     ('Presented', 'introduction'),
     ('Prefiled and ordered printed', 'introduction'),

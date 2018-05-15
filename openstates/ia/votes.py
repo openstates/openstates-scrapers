@@ -109,7 +109,7 @@ class IAVoteScraper(Scraper):
                 end_of_motion_re = r'.* the vote was:\s*'
             # The House may or may not end motion text with a bill name
             elif chamber == "lower":
-                end_of_motion_re = r'.*Shall.*\?"?(\s{})?\s*'.format(bill_re)
+                end_of_motion_re = r'.*Shall.*(?:\?"?|")(\s{})?\s*'.format(bill_re)
 
             while not re.match(end_of_motion_re, line, re.IGNORECASE):
                 line += " " + next(lines)
@@ -126,7 +126,7 @@ class IAVoteScraper(Scraper):
                     ^On\sthe\squestion\s  # Precedes any motion
                     "+  # Motion is preceded by a quote mark (or two)
                     (Shall\s.+?\??)  # The motion text begins with "Shall"
-                    \s*"\s+  # Motion is followed by a quote mark
+                    \s*(?:\?"?|")\s+  # Motion is followed by a question mark and/or a quote mark
                     (?:{})?  # If the vote regards a bill, its number is listed
                     {}  # Senate has trailing text
                     \s*$

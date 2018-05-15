@@ -26,6 +26,7 @@ rules = (
     Rule('(?i)passed to be enacted', 'passage'),
     Rule('COMMITTED to the (?P<committees>Committee on .+?)\.',
          'referral-committee'),
+    Rule(r'Sent to the Engrossing Department', 'became-law'),
     Rule(r'VETO was NOT SUSTAINED', 'veto-override-passage'),
     Rule(r'VETO was OVERRIDDEN', 'veto-override-passage'),
     Rule(r'VETO was SUSTAINED', 'veto-override-failure'),

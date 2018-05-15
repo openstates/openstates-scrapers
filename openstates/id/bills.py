@@ -9,6 +9,7 @@ BILLS_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/minidata/'
 BILL_URL = 'http://legislature.idaho.gov/sessioninfo/%s/legislation/%s/'
 
 _CHAMBERS = {'upper': 'Senate', 'lower': 'House'}
+_OTHER_CHAMBERS = {'upper': 'lower', 'lower': 'upper'}
 
 _BILL_TYPES = {'CR': 'concurrent resolution',
                'JM': 'joint memorial', 'JR': 'joint resolution',
@@ -52,11 +53,12 @@ _ACTIONS = (
     # but i guess we at least know that only committees report out
     (r'rpt out - rec d/p', "committee-passage-favorable"),
     (r'^rpt out', 'committee-passage'),
-
-
+    (r'^rpt out', 'committee-passage'),
+    (r'Reported out of Committee with Do Pass Recommendation', 'committee-passage-favorable'),
+    (r'Reported out of Committee without Recommendation', 'committee-passage'),
     (r'^Reported Signed by Governor', "executive-signature"),
     (r'^Signed by Governor', "executive-signature"),
-
+    (r'Became law without Governor.s signature', "became-law"),
     # I dont recall seeing a 2nd rdg by itself
     (r'^1st rdg - to 2nd rdg', "reading-2"),
     # second to third will count as a third read if there is no
@@ -216,6 +218,9 @@ class IDBillScraper(Scraper):
 
         actor = chamber
         last_date = None
+        # if a bill has passed a chamber or been 'received from'
+        # then the next committee passage is in the opposite chamber
+        has_moved_chambers = False
         for row in bill_tables[2]:
             # lots of empty rows
             if len(row) == 1:
@@ -242,6 +247,12 @@ class IDBillScraper(Scraper):
                 action = "".join(row[2].itertext())
             action = action.replace(u'\xa0', ' ').strip()
             atype = get_action(actor, action)
+            if atype and 'passage' in atype:
+                has_moved_chambers = True
+
+            if atype and 'committee-passage' in atype and has_moved_chambers:
+                actor = _OTHER_CHAMBERS[actor]
+
             bill.add_action(action, date, chamber=actor, classification=atype)
             # after voice vote/roll call and some actions the bill is sent
             # 'to House' or 'to Senate'

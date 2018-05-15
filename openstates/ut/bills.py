@@ -210,6 +210,9 @@ class UTBillScraper(Scraper, LXMLMixin):
             elif action == 'Governor Vetoed':
                 actor = 'executive'
                 typ = 'executive-veto'
+            elif action == 'Governor Line Item Veto':
+                actor = 'executive'
+                typ = 'executive-veto-line-item'
             elif action.startswith('1st reading'):
                 typ = ['introduction', 'reading-1']
             elif action == 'to Governor':
@@ -298,7 +301,6 @@ class UTBillScraper(Scraper, LXMLMixin):
         yes_count = vote_dict['yes']['count']
         no_count = vote_dict['no']['count'] or 0
         other_count = vote_dict['other']['count'] or 0
-        print(motion)
         vote = Vote(chamber=actor,
                     start_date=date,
                     motion_text=motion,

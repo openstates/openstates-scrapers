@@ -13,6 +13,7 @@ ACTION_MAPPING = {
     'veto-override-failure': 'bill:veto_override:failed',
     'executive-receipt': 'governor:received',
     'executive-signature': 'governor:signed',
+    'became-law': 'governor:signed',
     'executive-veto': 'governor:vetoed',
     'executive-veto-line-item': 'governor:vetoed:line-item',
     'amendment-introduction': 'amendment:introduced',

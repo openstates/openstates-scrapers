@@ -48,6 +48,7 @@ class OHBillScraper(Scraper):
 
             action_dict = {"ref_ctte_100": "referral-committee",
                            "intro_100": "introduction",
+                           "intro_101": "introduction",
                            "pass_300": "passage",
                            "intro_110": "reading-1",
                            "refer_210": "referral-committee",
@@ -67,6 +68,7 @@ class OHBillScraper(Scraper):
                            "imm_consid_360": "passage",
                            "refer_213": None,
                            "adopt_reso_100": "passage",
+                           "adopt_reso_110": "passage",
                            "msg_507": "amendment-passage",
                            "confer_713": None,
                            "concur_603": None,
@@ -75,7 +77,10 @@ class OHBillScraper(Scraper):
                            "receive_message_100": "passage",
                            "motion_920": None,
                            "concur_611": None,
-                           "confer_735": None
+                           "confer_735": None,
+                           "third_429": None,
+                           "final_501": None,
+                           "concur_608": None,
                            }
 
             base_url = "http://search-prod.lis.state.oh.us"
@@ -211,6 +216,20 @@ class OHBillScraper(Scraper):
                 yield from self.process_vote(votes, vote_url,
                                              base_url, bill, legislators,
                                              chamber_dict, vote_results)
+
+                if data["items"][0]["effective_date"]:
+                    effective_date = datetime.datetime.strptime(data["items"][0]["effective_date"],
+                                                                "%Y-%m-%d")
+                    effective_date = self._tz.localize(effective_date)
+                    # the OH website adds an action that isn't in the action list JSON.
+                    # It looks like:
+                    # Effective 7/6/18
+                    effective_date_oh = "{:%-m/%-d/%y}".format(effective_date)
+                    effective_action = "Effective {}".format(effective_date_oh)
+                    bill.add_action(effective_action,
+                                    effective_date,
+                                    chamber="executive",
+                                    classification=["became-law"])
 
                 # we have never seen a veto or a disapprove, but they seem important.
                 # so we'll check and throw an error if we find one

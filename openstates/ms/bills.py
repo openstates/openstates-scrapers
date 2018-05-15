@@ -331,6 +331,7 @@ class MSBillScraper(Scraper):
                          result='pass' if passed else 'fail',
                          classification='passage',
                          bill=bill)
+        vote.pupa_id = url + '#' + bill.identifier
 
         vote.set_count('yes', yes_count)
         vote.set_count('no', no_count)

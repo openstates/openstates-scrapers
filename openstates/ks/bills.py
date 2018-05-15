@@ -184,14 +184,20 @@ class KSBillScraper(Scraper):
                                        on_duplicate='ignore')
 
     def parse_vote(self, bill, link):
-        member_doc = lxml.html.fromstring(self.get(link).text)
+        text = self.get(link).text
+        if 'Page Not Found' in text:
+            self.warning("missing vote, skipping")
+            return
+        member_doc = lxml.html.fromstring(text)
         motion = member_doc.xpath("//div[@id='main_content']/h4/text()")
-        opinions = member_doc.xpath("//div[@id='main_content']/h3/text()")
+        chamber_date_line = ''.join(member_doc.xpath("//div[@id='main_content']/h3[1]//text()"))
+        chamber_date_line_words = chamber_date_line.split()
+        vote_chamber = chamber_date_line_words[0]
+        vote_date = datetime.datetime.strptime(chamber_date_line_words[-1], '%m/%d/%Y')
+        vote_status = " ".join(chamber_date_line_words[2:-2])
+
+        opinions = member_doc.xpath("//div[@id='main_content']/h3[position() > 1]/text()")
         if len(opinions) > 0:
-            temp = opinions[0].split()
-            vote_chamber = temp[0]
-            vote_date = datetime.datetime.strptime(temp[-1], '%m/%d/%Y')
-            vote_status = " ".join(temp[2:-2])
             vote_status = vote_status if vote_status.strip() else motion[0]
             vote_chamber = 'upper' if vote_chamber == 'Senate' else 'lower'
 

@@ -138,7 +138,7 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
 
                 mem_role = 'member'
                 if len(mem_parts) > 2:
-                    mem_role = mem_parts[2].lower()
+                    mem_role = mem_parts[2].lower().split('    ')[0].strip()
 
                 if mem_name == "":
                     continue

@@ -72,6 +72,8 @@ class MEBillScraper(Scraper):
         if bills:
             for bill in bills:
                 bill_id_slug = bill.xpath('./@href')[0]
+                if bill_id_slug == 'summary.asp?ID=280068396':
+                    continue
                 bill_url = 'http://legislature.maine.gov/LawMakerWeb/{}'.format(bill_id_slug)
                 bill_id = bill.text[:2] + " " + bill.text[2:]
 

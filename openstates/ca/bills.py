@@ -250,7 +250,8 @@ def get_committee_name_regex():
         '%s' % '[\s,]*'.join(abbr.replace(',', '').split(' '))
         for abbr in _committee_abbrs
     ]
-    _committee_abbr_regex = re.compile('(%s)' % '|'.join(_committee_abbr_regex))
+    _committee_abbr_regex = re.compile(
+        '(%s)' % '|'.join(_committee_abbr_regex))
 
     return _committee_abbr_regex
 
@@ -378,6 +379,26 @@ class CABillScraper(Scraper):
             for version in bill.versions:
                 if not version.bill_xml:
                     continue
+
+                version_date = self._tz.localize(version.bill_version_action_date)
+
+                # create a version name to match the state's format
+                # 02/06/17 - Enrolled
+                version_date_human = version_date.strftime(
+                    '%m/%d/%y')
+                version_name = "{} - {}".format(
+                    version_date_human, version.bill_version_action)
+
+                version_base = "https://leginfo.legislature.ca.gov/faces"
+
+                version_url_pdf = "{}/billPdf.xhtml?bill_id={}&version={}".format(
+                    version_base, version.bill_id, version.bill_version_id)
+
+                fsbill.add_version_link(
+                    version_name,
+                    version_url_pdf,
+                    media_type='application/pdf',
+                    date=version_date.date())
 
                 # CA is inconsistent in that some bills have a short title
                 # that is longer, more descriptive than title.
@@ -540,7 +561,8 @@ class CABillScraper(Scraper):
                 action = fsbill.add_action(act_str, date.strftime('%Y-%m-%d'), chamber=actor,
                                            classification=kwargs['classification'])
                 for committee in kwargs.get('committees', []):
-                    action.add_related_entity(committee, entity_type='organization')
+                    action.add_related_entity(
+                        committee, entity_type='organization')
                 seen_actions.add((actor, act_str, date))
 
             for vote_num, vote in enumerate(bill.votes):

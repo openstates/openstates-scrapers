@@ -50,7 +50,7 @@ _categorizer_rules = (
          ['amendment-passage']),
     Rule(['Amendment #\\S+ \\((?P<legislator>.+?)\\) Rejected'],
          ['amendment-failure']),
-    Rule(['referred to (?P<committees>.+)'], []),
+    Rule(['referred to (?P<committees>.+)'], ['referral-committee']),
     Rule(['Amended by'], ['amendment-passage']),
     Rule(['Committee recommended ought to pass'], ['committee-passage-favorable']),
     Rule(['Amendment #\\S+ \\((?P<legislator>.+?)\\) bundle NO rejected'],

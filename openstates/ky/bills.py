@@ -217,6 +217,21 @@ class KYBillScraper(Scraper, LXMLMixin):
                 else:
                     actor = chamber
 
+                # For chamber passage,
+                # the only way to determine chamber correctly is
+                # how many total people voted on it
+                if action.startswith('3rd reading'):
+                    votes = re.search(r'(\d+)\-(\d+)', action)
+                    if votes:
+                        yeas = int(votes.groups(1)[0])
+                        nays = int(votes.groups(1)[1])
+                        # 50 is the quorum for the house,
+                        # and more than the number of senators
+                        if yeas + nays > 50:
+                            actor = 'lower'
+                        elif (yeas + nays > 20) and (yeas + nays < 50):
+                            actor = 'upper'
+
                 atype = []
                 if 'introduced in' in action:
                     atype.append('introduction')
@@ -251,6 +266,11 @@ class KYBillScraper(Scraper, LXMLMixin):
                         atype.append('passage')
                 if '2nd reading' in action:
                     atype.append('reading-2')
+                if 'delivered to secretary of state' in action.lower():
+                    atype.append('became-law')
+
+                if 'veto overridden' in action.lower():
+                    atype.append('veto-override-passage')
 
                 if 'R' in bill_id and 'adopted by voice vote' in action:
                     atype.append('passage')

@@ -117,10 +117,12 @@ class LAPersonScraper(Scraper, LXMLMixin):
             '//span[@id="body_FormView5_PARTYAFFILIATIONLabel"]/text()'
             )[0].strip()
         party = party_flags[party_info]
-        email = page.xpath(
-            '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
-            )[0].strip()
-
+        try:
+            email = page.xpath(
+                '//span[@id="body_FormView6_EMAILADDRESSPUBLICLabel"]/text()'
+                )[0].strip()
+        except IndexError:
+            email = None
         district = leg_info['dist'].replace('Dist', '').strip()
 
         person = Person(name=name,
