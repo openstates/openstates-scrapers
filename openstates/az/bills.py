@@ -92,20 +92,20 @@ class AZBillScraper(Scraper):
             else:
                 sponsor_type = 'cosponsor'
 
-        # Some older bills don't have the FullName key
-        if 'FullName' in sponsor['Legislator']:
-            sponsor_name = sponsor['Legislator']['FullName']
-        else:
-            sponsor_name = "{} {}".format(
-                sponsor['Legislator']['FirstName'],
-                sponsor['Legislator']['LastName'],
+            # Some older bills don't have the FullName key
+            if 'FullName' in sponsor['Legislator']:
+                sponsor_name = sponsor['Legislator']['FullName']
+            else:
+                sponsor_name = "{} {}".format(
+                    sponsor['Legislator']['FirstName'],
+                    sponsor['Legislator']['LastName'],
+                )
+            bill.add_sponsorship(
+                classification=str(sponsor_type),
+                name=sponsor_name,
+                entity_type='person',
+                primary=sponsor_type == 'primary'
             )
-        bill.add_sponsorship(
-            classification=str(sponsor_type),
-            name=sponsor_name,
-            entity_type='person',
-            primary=sponsor_type == 'primary'
-        )
 
     def scrape_subjects(self, bill, internal_id):
         # https://apps.azleg.gov/api/Keyword/?billStatusId=68149
