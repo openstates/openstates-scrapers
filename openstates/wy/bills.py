@@ -10,25 +10,6 @@ from openstates.utils import LXMLMixin
 
 TIMEZONE = pytz.timezone('US/Mountain')
 
-
-def split_names(voters):
-    """Representative(s) Barbuto, Berger, Blake, Blikre, Bonner, Botten, Buchanan, Burkhart, Byrd, Campbell, Cannady, Childers, Connolly, Craft, Eklund, Esquibel, K., Freeman, Gingery, Greear, Greene, Harshman, Illoway, Jaggi, Kasperik, Krone, Lockhart, Loucks, Lubnau, Madden, McOmie, Moniz, Nicholas, B., Patton, Pederson, Petersen, Petroff, Roscoe, Semlek, Steward, Stubson, Teeters, Throne, Vranish, Wallis, Zwonitzer, Dn. and Zwonitzer, Dv."""  # noqa
-    voters = voters.split(':', 1)[-1]
-    voters = re.sub(r'(Senator|Representative)(\(s\))?', "", voters)
-    voters = re.sub(r'\s+', " ", voters)
-    # Split on a comma or "and" except when there's a following initial
-    return [
-        x.strip() for x in
-        re.split(r'(?:,\s(?![A-Z]\.))|(?:\sand\s)', voters)
-        if len(x.strip()) < 300
-    ]
-
-
-def clean_line(line):
-    line = line.replace('\n', ' ').strip()
-    return re.sub(r'^\d+\s+', '', line)  # Handle line numbers
-
-
 def categorize_action(action):
     categorizers = (
         ('Introduced and Referred', ('introduction', 'referral-committee')),
@@ -39,6 +20,7 @@ def categorize_action(action):
         ('Failed 3rd Reading', ('reading-3', 'failure')),
         ('Did Not Adopt', 'amendment-failure'),
         ('Withdrawn by Sponsor', 'withdrawal'),
+        ('Line Item Veto', 'executive-veto-line-item'),
         ('Governor Signed', 'executive-signature'),
         ('Recommend (Amend and )?Do Pass', 'committee-passage-favorable'),
         ('Recommend (Amend and )?Do Not Pass', 'committee-passage-unfavorable'),
@@ -154,6 +136,14 @@ class WYBillScraper(Scraper, LXMLMixin):
                                    media_type="application/pdf"  # optional but useful!
                                    )
 
+        if bill_json['vetoes']:
+            for veto in bill_json['vetoes']:
+                url = 'http://wyoleg.gov/{}'.format(veto['vetoLinkPath'])
+                bill.add_version_link(note=veto['vetoLinkText'],
+                                  url=url,
+                                  media_type="application/pdf"  # optional but useful!
+                                  )
+
         for amendment in bill_json['amendments']:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
             url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(
@@ -202,6 +192,13 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         if bill_json['chapter']:
             bill.extras['chapter'] = bill_json['chapter']
+
+        if bill_json['effectiveDate']:
+            eff = datetime.datetime.strptime(bill_json['effectiveDate'], '%m/%d/%Y')
+            bill.extras['effective_date'] = eff.strftime('%Y-%m-%d')
+
+        bill.extras['wy_bill_id'] = bill_json['id']
+
 
         for vote_json in bill_json['rollCalls']:
             yield from self.scrape_vote(bill, vote_json, session)
