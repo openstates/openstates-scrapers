@@ -32,10 +32,9 @@ class WYCommitteeScraper(Scraper):
                 committee.add_member(member['name'], role)
 
             # some WY committees have non-legislators appointed to the member by the Governor
+            # but the formatting is super inconsistent
             if com['otherMembers']:
-                for name in com['otherMembers'].split(','):
-                    name = name.strip()
-                    committee.add_member(name, 'appointee')
+                committee.extras['other_members'] = com['otherMembers']
 
             committee.extras['wy_id'] = com['commID']
             committee.extras['wy_code'] = com['ownerID']
