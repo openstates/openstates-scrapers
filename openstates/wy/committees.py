@@ -1,7 +1,5 @@
-import re
 import json
 
-import lxml.html
 from pupa.scrape import Scraper, Organization
 
 
@@ -20,14 +18,14 @@ class WYCommitteeScraper(Scraper):
         coms_json = json.loads(response.content.decode('utf-8'))
 
         for row in coms_json:
-            com_url = 'https://wyoleg.gov/LsoService/api/committeeDetail/{}/{}'.format(session, row['ownerID'])
+            com_url = 'https://wyoleg.gov/LsoService/api/committeeDetail/{}/{}'.format(
+                session, row['ownerID'])
             com_response = self.get(com_url)
             com = json.loads(com_response.content.decode('utf-8'))
 
             # WY doesn't seem to have any house/senate only committees that I can find
-            chamber = 'legislature'
-
-            committee = Organization(name=com['commName'], chamber='legislature', classification='committee')
+            committee = Organization(
+                name=com['commName'], chamber='legislature', classification='committee')
 
             for member in com['commMembers']:
                 role = 'chairman' if member['chairman'] == 'Chairman' else 'member'
@@ -50,13 +48,17 @@ class WYCommitteeScraper(Scraper):
             if com['number']:
                 committee.extras['seat_distribution'] = com['number']
 
-            committee.add_identifier(scheme='WY Committee ID', identifier=str(com['commID']))
-            committee.add_identifier(scheme='WY Committee Code', identifier=str(com['ownerID']))
+            committee.add_identifier(
+                scheme='WY Committee ID', identifier=str(com['commID']))
+            committee.add_identifier(
+                scheme='WY Committee Code', identifier=str(com['ownerID']))
 
             if com['description']:
-                committee.add_identifier(scheme='Common Name', identifier=com['description'])
+                committee.add_identifier(
+                    scheme='Common Name', identifier=com['description'])
 
-            source_url = 'http://wyoleg.gov/Committees/{}/{}'.format(session, com['ownerID'])
+            source_url = 'http://wyoleg.gov/Committees/{}/{}'.format(
+                session, com['ownerID'])
             committee.add_source(source_url)
 
             yield committee

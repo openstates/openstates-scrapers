@@ -66,8 +66,9 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber, session):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation?$filter=Year%20eq%20{}&$orderby=BillNum'.format(
-            session)
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation?' \
+                        '$filter=Year%20eq%20{}&$orderby=BillNum'.format(
+                            session)
 
         response = self.get(bill_json_url)
         bill_list = json.loads(response.content.decode('utf-8'))
@@ -79,8 +80,9 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_bill(self, bill_num, session):
         chamber_map = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(
-            bill_num)
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/' \
+                        '{}?calendarDate='.format(
+                            bill_num)
         response = self.get(bill_json_url)
         bill_json = json.loads(response.content.decode('utf-8'))
 

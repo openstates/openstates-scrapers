@@ -1,7 +1,6 @@
 import json
 import datetime
 
-import lxml.html
 from pupa.scrape import Scraper, Person
 
 
@@ -9,8 +8,9 @@ class WYPersonScraper(Scraper):
     party_map = {'R': 'republican', 'D': 'democrat', 'I': 'independent'}
 
     def scrape(self, chamber=None, session=None):
-        session = self.latest_session()
-        self.info('no session specified, using %s', session)
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
@@ -34,7 +34,6 @@ class WYPersonScraper(Scraper):
             details = json.loads(details_response.content.decode('utf-8'))
 
             party = self.party_map[row['party']]
-
 
             dob = datetime.datetime.strptime(
                 details['dob'], '%m/%d/%Y %I:%M:%S %p')
