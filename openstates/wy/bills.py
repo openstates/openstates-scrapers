@@ -196,8 +196,11 @@ class WYBillScraper(Scraper, LXMLMixin):
                 abstract=bill_json['summary'],
             )
 
-        bill.extras['enrolledNumber'] = bill_json['enrolledNumber']
-        bill.extras['chapter'] = bill_json['chapter']
+        if bill_json['enrolledNumber']:
+            bill.extras['wy_enrolled_number'] = bill_json['enrolledNumber']
+
+        if bill_json['chapter']:
+            bill.extras['chapter'] = bill_json['chapter']
 
         for vote_json in bill_json['rollCalls']:
             yield from self.scrape_vote(bill, vote_json, session)
