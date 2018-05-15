@@ -2,10 +2,7 @@ import re
 import pytz
 import datetime
 import json
-from collections import defaultdict
 
-import scrapelib
-from pupa.utils.generic import convert_pdf
 from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
@@ -55,8 +52,7 @@ def categorize_action(action):
 
 
 class WYBillScraper(Scraper, LXMLMixin):
-    chamber_abbrev_map = {'H': 'lower', 'S' :'upper'}
-
+    chamber_abbrev_map = {'H': 'lower', 'S': 'upper'}
 
     def scrape(self, chamber=None, session=None):
         if session is None:
@@ -70,7 +66,8 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_chamber(self, chamber, session):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation?$filter=Year%20eq%20{}&$orderby=BillNum'.format(session)
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation?$filter=Year%20eq%20{}&$orderby=BillNum'.format(
+            session)
 
         response = self.get(bill_json_url)
         bill_list = json.loads(response.content.decode('utf-8'))
@@ -80,29 +77,32 @@ class WYBillScraper(Scraper, LXMLMixin):
                 yield from self.scrape_bill(bill_json['billNum'], session)
 
     def scrape_bill(self, bill_num, session):
-        chamber_map  = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
+        chamber_map = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(bill_num)
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/{}?calendarDate='.format(
+            bill_num)
         response = self.get(bill_json_url)
         bill_json = json.loads(response.content.decode('utf-8'))
 
         chamber = 'lower' if bill_json['bill'][0] else 'upper'
 
         bill = Bill(identifier=bill_json['bill'],
-                legislative_session=session,
-                title=bill_json['catchTitle'],
-                chamber=chamber,
-                classification="bill",
-        )
+                    legislative_session=session,
+                    title=bill_json['catchTitle'],
+                    chamber=chamber,
+                    classification="bill",
+                    )
 
         bill.add_title(bill_json['billTitle'])
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(bill_json['bill'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
+            bill_json['bill'])
         bill.add_source(source_url)
 
         for action_json in bill_json['billActions']:
             # provided dates are ISO 8601, but in mountain time
-            action_date = datetime.datetime.strptime(action_json['statusDate'], '%Y-%m-%dT%H:%M:%S')
+            action_date = datetime.datetime.strptime(
+                action_json['statusDate'], '%Y-%m-%dT%H:%M:%S')
             local_action_date = TIMEZONE.localize(action_date)
             utc_action_date = local_action_date.astimezone(pytz.utc)
 
@@ -114,46 +114,48 @@ class WYBillScraper(Scraper, LXMLMixin):
                 chamber=actor,
                 description=action_json['statusMessage'],
                 date=utc_action_date,
-                classification=categorize_action(action_json['statusMessage']) ,
+                classification=categorize_action(action_json['statusMessage']),
             )
 
-            action.extras = {'billInformationID': action_json['billInformationID']}
+            action.extras = {
+                'billInformationID': action_json['billInformationID']}
 
         if bill_json['introduced']:
             url = 'http://wyoleg.gov/{}'.format(bill_json['introduced'])
 
             bill.add_version_link(note="Introduced",
-                                url=url,
-                                media_type="application/pdf" #optional but useful!
-                                )
+                                  url=url,
+                                  media_type="application/pdf"  # optional but useful!
+                                  )
 
         if bill_json['enrolledAct']:
             url = 'http://wyoleg.gov/{}'.format(bill_json['enrolledAct'])
 
             bill.add_version_link(note="Enrolled",
-                                url=url,
-                                media_type="application/pdf" #optional but useful!
-                                )
+                                  url=url,
+                                  media_type="application/pdf"  # optional but useful!
+                                  )
 
         if bill_json['fiscalNote']:
             url = 'http://wyoleg.gov/{}'.format(bill_json['fiscalNote'])
 
             bill.add_document_link(note="Fiscal Note",
-                                url=url,
-                                media_type="application/pdf" #optional but useful!
-                                )
+                                   url=url,
+                                   media_type="application/pdf"  # optional but useful!
+                                   )
 
         if bill_json['digest']:
             url = 'http://wyoleg.gov/{}'.format(bill_json['digest'])
 
             bill.add_document_link(note="Bill Digest",
-                                url=url,
-                                media_type="application/pdf" #optional but useful!
-                                )
+                                   url=url,
+                                   media_type="application/pdf"  # optional but useful!
+                                   )
 
         for amendment in bill_json['amendments']:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
-            url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(amendment['amendmentNumber'])
+            url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(
+                amendment['amendmentNumber'])
 
             if amendment['sponsor'] and amendment['status']:
                 title = 'Amendment {} ({}) - {} ({})'.format(
@@ -167,11 +169,11 @@ class WYBillScraper(Scraper, LXMLMixin):
                     amendment['amendmentNumber'],
                     amendment['order'],
                 )
-            #add versions of the bill text
+            # add versions of the bill text
             version = bill.add_version_link(note=title,
-                                url=url,
-                                media_type="application/pdf",
-                                )
+                                            url=url,
+                                            media_type="application/pdf",
+                                            )
             version['extras'] = {
                 'amendmentNumber': amendment['amendmentNumber'],
                 'sponsor': amendment['sponsor'],
@@ -180,15 +182,12 @@ class WYBillScraper(Scraper, LXMLMixin):
         for sponsor in bill_json['sponsors']:
             status = 'primary' if sponsor['primarySponsor'] else 'cosponsor'
             sponsor_type = 'person' if sponsor['sponsorTitle'] else 'organization'
-            sponsorship = bill.add_sponsorship(
+            bill.add_sponsorship(
                 name=sponsor['name'],
                 classification=status,
                 entity_type=sponsor_type,
                 primary=sponsor['primarySponsor']
             )
-
-            # if sponsor['house']:
-            #     sponsorship['extras'] = {'chamber': self.chamber_abbrev_map[sponsor['house']]}
 
         if bill_json['summary']:
             bill.add_abstract(
@@ -207,11 +206,11 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         yield bill
 
-
     def scrape_vote(self, bill, vote_json, session):
 
         if vote_json['amendmentNumber']:
-            motion = '{}: {}'.format(vote_json['amendmentNumber'], vote_json['action'])
+            motion = '{}: {}'.format(
+                vote_json['amendmentNumber'], vote_json['action'])
         else:
             motion = vote_json['action']
 
@@ -227,7 +226,6 @@ class WYBillScraper(Scraper, LXMLMixin):
             classification='other',
         )
 
-
         v.set_count(option='yes', value=vote_json['yesVotesCount'])
         v.set_count('no', vote_json['noVotesCount'])
         v.set_count('absent', vote_json['absentVotesCount'])
@@ -242,25 +240,26 @@ class WYBillScraper(Scraper, LXMLMixin):
             if name.strip():
                 v.no(name.strip())
 
-        #add votes with other classifications
-        #option can be 'yes', 'no', 'absent',
-        #'abstain', 'not voting', 'paired', 'excused'
+        # add votes with other classifications
+        # option can be 'yes', 'no', 'absent',
+        # 'abstain', 'not voting', 'paired', 'excused'
         for name in vote_json['absentVotes'].split(','):
             if name.strip():
                 v.vote(option="absent",
-                        voter=name)
+                       voter=name)
 
         for name in vote_json['excusedVotes'].split(','):
             if name.strip():
                 v.vote(option="excused",
-                        voter=name)
+                       voter=name)
 
         for name in vote_json['conflictVotes'].split(','):
             if name.strip():
                 v.vote(option="other",
-                        voter=name)
+                       voter=name)
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(vote_json['billNumber'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
+            vote_json['billNumber'])
         v.add_source(source_url)
 
         yield v
@@ -271,24 +270,3 @@ class WYBillScraper(Scraper, LXMLMixin):
         local_date = TIMEZONE.localize(date_obj)
         utc_action_date = local_date.astimezone(pytz.utc)
         return utc_action_date
-
-
-#  "sponsors": [
-#     {
-#       "name": "Northrup",
-#       "primarySponsor": false,
-#       "house": "H",
-#       "sponsorTitle": "Representative"
-#     },
-#     {
-#       "name": "Paxton",
-#       "primarySponsor": true,
-#       "house": "H",
-#       "sponsorTitle": "Representative"
-#     },
-#     {
-#       "name": "Moniz",
-#       "primarySponsor": false,
-#       "house": "S",
-#       "sponsorTitle": "Senator"
-#     }
