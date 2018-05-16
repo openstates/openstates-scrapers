@@ -10,6 +10,7 @@ from openstates.utils import LXMLMixin
 
 TIMEZONE = pytz.timezone('US/Mountain')
 
+
 def categorize_action(action):
     categorizers = (
         ('Introduced and Referred', ('introduction', 'referral-committee')),
@@ -140,9 +141,9 @@ class WYBillScraper(Scraper, LXMLMixin):
             for veto in bill_json['vetoes']:
                 url = 'http://wyoleg.gov/{}'.format(veto['vetoLinkPath'])
                 bill.add_version_link(note=veto['vetoLinkText'],
-                                  url=url,
-                                  media_type="application/pdf"  # optional but useful!
-                                  )
+                                      url=url,
+                                      media_type="application/pdf"  # optional but useful!
+                                      )
 
         for amendment in bill_json['amendments']:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
@@ -194,11 +195,11 @@ class WYBillScraper(Scraper, LXMLMixin):
             bill.extras['chapter'] = bill_json['chapter']
 
         if bill_json['effectiveDate']:
-            eff = datetime.datetime.strptime(bill_json['effectiveDate'], '%m/%d/%Y')
+            eff = datetime.datetime.strptime(
+                bill_json['effectiveDate'], '%m/%d/%Y')
             bill.extras['effective_date'] = eff.strftime('%Y-%m-%d')
 
         bill.extras['wy_bill_id'] = bill_json['id']
-
 
         for vote_json in bill_json['rollCalls']:
             yield from self.scrape_vote(bill, vote_json, session)
