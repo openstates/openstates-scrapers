@@ -32,7 +32,7 @@ SUBCOMMITTEES = {
 }
 
 CHAMBER_URLS = {
-    'upper': "http://www.ohiosenate.gov/members/senate-directory",
+    'upper': "http://www.ohiosenate.gov/senators",
     'lower':  "http://www.ohiohouse.gov/members/member-directory"
 }
 
@@ -45,8 +45,8 @@ class OHLegislatorScraper(Scraper):
         if chamber:
             yield from self.scrape_page(chamber, CHAMBER_URLS[chamber])
         else:
-            yield from self.scrape_page('upper', CHAMBER_URLS['upper'])
-            yield from self.scrape_page('lower', CHAMBER_URLS['lower'])
+            yield from self.scrape_senator_page('upper', CHAMBER_URLS['upper'])
+            yield from self.scrape_member_page('lower', CHAMBER_URLS['lower'])
         yield from self.committees.values()
 
     def fetch_committee_positions(self, a):
@@ -127,7 +127,7 @@ class OHLegislatorScraper(Scraper):
             org.add_source(homepage)
             leg.add_membership(org)
 
-    def scrape_page(self, chamber, url):
+    def scrape_member_page(self, chamber, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -182,4 +182,43 @@ class OHLegislatorScraper(Scraper):
 
             leg.add_source(url)
             leg.add_link(homepage)
+            yield leg
+    def scrape_senator_page(self, chamber, url):
+        page = self.get(url).text
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        for legislator in page.xpath("//div[contains(concat(' ', normalize-space(@class), ' '), "
+                "' portraitContainer ')]"):
+            img = legislator.xpath(".//div[@class='profileThumbnailBoundingBox']/@style")[0]#, "background-image: url('"), "')")
+            img = img[img.find('(')+1:img.find(')')]
+            full_name = legislator.xpath(".//div[@class='profileName']/a/text()")[0]
+            homepage_url = legislator.xpath(".//a[@class='profileImageLink']")[0].attrib['href']
+            district = legislator.xpath(".//div[@class='profileDistrict']/a/text()")[0].split("#")[1]
+            
+            if "Vacant" in full_name:
+                continue
+            
+            homepage = self.get(homepage_url).text
+            page = lxml.html.fromstring(homepage)
+            phone = page.xpath("//div[@class='phone']/span/text()")[0]
+
+            address_lines = page.xpath("//div[@class='address']/span/text()")
+            address = "\n".join(address_lines)
+
+            email = (
+                'rep{0:0{width}}@ohiohouse.gov'
+                if chamber == 'lower' else
+                'sd{0:0{width}}@ohiosenate.gov'
+            ).format(int(district), width=2)
+
+            leg = Person(name=full_name, district=district,
+                         primary_org=chamber, image=img)
+
+            leg.add_contact_detail(type='address', value=address, note='Capitol Office')
+            leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
+            leg.add_contact_detail(type='email', value=email, note='Capitol Office')
+
+            leg.add_source(url)
+            leg.add_link(homepage_url)
             yield leg
