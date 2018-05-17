@@ -183,22 +183,24 @@ class OHLegislatorScraper(Scraper):
             leg.add_source(url)
             leg.add_link(homepage)
             yield leg
+
     def scrape_senator_page(self, chamber, url):
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
         for legislator in page.xpath("//div[contains(concat(' ', normalize-space(@class), ' '), "
-                "' portraitContainer ')]"):
-            img = legislator.xpath(".//div[@class='profileThumbnailBoundingBox']/@style")[0]#, "background-image: url('"), "')")
+                                     "' portraitContainer ')]"):
+            img = legislator.xpath(".//div[@class='profileThumbnailBoundingBox']/@style")[0]
             img = img[img.find('(')+1:img.find(')')]
             full_name = legislator.xpath(".//div[@class='profileName']/a/text()")[0]
             homepage_url = legislator.xpath(".//a[@class='profileImageLink']")[0].attrib['href']
-            district = legislator.xpath(".//div[@class='profileDistrict']/a/text()")[0].split("#")[1]
-            
+            district = legislator.xpath(".//div[@class='profileDistrict']"
+                                        "/a/text()")[0].split("#")[1]
+
             if "Vacant" in full_name:
                 continue
-            
+
             homepage = self.get(homepage_url).text
             page = lxml.html.fromstring(homepage)
             phone = page.xpath("//div[@class='phone']/span/text()")[0]
