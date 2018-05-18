@@ -77,6 +77,8 @@ class MNBillScraper(Scraper, LXMLMixin):
         ("Amended", 'amendment-passage'),
         ("Amendments offered", 'amendment-introduction'),
         (" repassed ", 'passage'),
+        ('Resolution was adopted', 'passage'),
+        ('(?i)^Adopted', 'passage'),
         (" re-referred ", 'referral-committee'),
         ("Received from", "introduction"),
     )

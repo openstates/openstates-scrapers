@@ -43,7 +43,7 @@ class NCPersonScraper(Scraper):
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute('http://www.ncleg.net')
-        rows = doc.xpath('//div[@id="mainBody"]/table/tr')
+        rows = doc.xpath('/html/body/div/table/tr/td[1]/table/tr')
 
         for row in rows[1:]:
             party, district, full_name, counties = row.getchildren()
