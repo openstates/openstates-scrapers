@@ -113,6 +113,11 @@ metadata = dict(
             '_scraped_name': '2018 Regular Session',
             'slug': '2018 Regular Session',
         },
+        '2018 Special Session': {
+            'display_name': '2018 Special Session',
+            '_scraped_name': '018 1st Special Session',
+            'slug': '2018 Special Session',
+        },
     },
     _ignored_scraped_sessions=['Today',
                                '2015-2016 Interim',
