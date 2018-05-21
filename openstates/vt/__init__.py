@@ -64,7 +64,8 @@ class Vermont(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
-        "2009 Special Session"
+        "2009 Special Session",
+        "2018 Special Session",
     ]
 
     def get_organizations(self):
