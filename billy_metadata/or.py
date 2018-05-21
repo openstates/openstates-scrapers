@@ -115,7 +115,7 @@ metadata = dict(
         },
         '2018 Special Session': {
             'display_name': '2018 Special Session',
-            '_scraped_name': '018 1st Special Session',
+            '_scraped_name': '2018 1st Special Session',
             'slug': '2018 Special Session',
         },
     },
