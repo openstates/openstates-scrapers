@@ -92,7 +92,7 @@ class Oregon(Jurisdiction):
             "end_date": "2018-03-09",
         },
         {
-            "_scraped_name": "2018 Special Session",
+            "_scraped_name": "2018 1st Special Session",
             "identifier": "2018 Special Session",
             "name": "2018 Special Session",
             "start_date": "2018-05-21",
