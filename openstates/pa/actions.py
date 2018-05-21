@@ -18,7 +18,8 @@ _categorizer_rules = (
     # Governor.
     (r'^Approved by the Governor', 'executive-signature'),
     (r'^Presented to the Governor', 'executive-receipt'),
-
+    (r'^Became Law without Governor.s signature', 'became-law'),
+    (r'^Vetoed by the Governor', 'executive-veto'),
     # Passage.
     (r'^Final passage', 'passage'),
     (r'^Third consideration and final passage', 'passage'),
