@@ -243,9 +243,12 @@ class AKBillScraper(Scraper):
         votes_text = re_vote_text.split(votes_text)
         votes_data = zip(votes_text[1::2], votes_text[2::2])
 
+        iVoteOnPage = 0
+
         # Process each.
         for motion, text in votes_data:
 
+            iVoteOnPage += 1
             yes = no = other = 0
 
             tally = re.findall(r'\b([YNEA])[A-Z]+:\s{,3}(\d{,3})', text)
@@ -269,7 +272,8 @@ class AKBillScraper(Scraper):
             vote.set_count('yes', yes)
             vote.set_count('no', no)
             vote.set_count('other', other)
-            vote.pupa_id = url
+
+            vote.pupa_id = (url + ' ' + str(iVoteOnPage)) if iVoteOnPage > 1 else url
 
             # In lengthy documents, the "header" can be repeated in the middle
             # of content. This regex gets rid of it.
