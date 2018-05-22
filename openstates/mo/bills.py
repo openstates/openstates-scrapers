@@ -29,6 +29,7 @@ class MOBillScraper(Scraper, LXMLMixin):
     # probably should work):
     _bad_urls = []
     _subjects = defaultdict(list)
+    _session_id = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -160,7 +161,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_id,
             title=bill_desc,
             chamber='upper',
-            legislative_session=year,
+            legislative_session=self._session_id,
             classification=bill_type,
         )
         bill.subject = subs
@@ -444,7 +445,7 @@ class MOBillScraper(Scraper, LXMLMixin):
             bill_id,
             chamber='lower',
             title=bill_desc,
-            legislative_session=session,
+            legislative_session=self._session_id,
             classification=bill_type,
         )
         bill.subject = subs
@@ -616,6 +617,10 @@ class MOBillScraper(Scraper, LXMLMixin):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+
+        # special sessions and other year manipulation messes up the session variable
+        # but we need it for correct output
+        self._session_id = session
 
         if chamber in ['upper', None]:
             yield from self._scrape_upper_chamber(session)
