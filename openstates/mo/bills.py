@@ -611,7 +611,7 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill_page_url = '{}/BillList.aspx?year={}&code={}'.format(
             self._house_base_url, year, code)
-        yield from self._parse_house_billpage(bill_page_url, year,)
+        yield from self._parse_house_billpage(bill_page_url, year)
 
     def scrape(self, chamber=None, session=None):
         if not session:
