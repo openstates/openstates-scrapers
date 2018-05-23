@@ -332,7 +332,7 @@ class COBillScraper(Scraper, LXMLMixin):
             return
 
         # eg. http://leg.colorado.gov/content/sb18-033vote563ce6
-        if 'AM' in motion or 'PM' in motion:
+        if ('AM' in motion or 'PM' in motion) and '/' in motion:
             motion = "Motion not given."
 
         if 'withdrawn' not in motion:
