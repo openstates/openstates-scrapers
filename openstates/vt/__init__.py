@@ -61,11 +61,18 @@ class Vermont(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-04",
             "end_date": "2017-05-08",
+        },
+        {
+            "_scraped_name": "2018 Special Session",
+            "classification": "special",
+            "identifier": "2018ss1",
+            "site_id": "2018.1",
+            "name": "2018 Special Session",
+            "start_date": "2018-05-22",
         }
     ]
     ignored_scraped_sessions = [
         "2009 Special Session",
-        "2018 Special Session",
     ]
 
     def get_organizations(self):

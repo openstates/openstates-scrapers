@@ -14,7 +14,14 @@ class VTBillScraper(Scraper, LXMLMixin):
 
         if session is None:
             session = self.latest_session()
-        year_slug = session[5:]
+
+        details = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == session
+        )
+
+        # specials can have a non-standard slug, otherwise use the latter year
+        year_slug = details['site_id'] if 'site_id' in details else session[5:]
 
         # Load all bills and resolutions via the private API
         bills_url = \
