@@ -167,6 +167,10 @@ metadata = {
             '_id': '18RS',
             '_scraped_name': '2018 Regular Session',
         },
+        "2018 Second Extraordinary Session": {
+            'type': 'special',
+            'display_name': '2018, 2nd Extraordinary Session',
+        },
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
     '_ignored_scraped_sessions': [
