@@ -324,7 +324,7 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
-        
+
         try:
             motion = page.xpath("//font/text()")[2]
         except IndexError:
@@ -344,9 +344,9 @@ class COBillScraper(Scraper, LXMLMixin):
             no_count = int(yes_no_counts[2])
             exc_count = int(other_counts[0])
             absent_count = int(other_counts[2])
-            
+
             passed = yes_count > no_count
-            
+
             vote = VoteEvent(chamber=chamber,
                              start_date=self._tz.localize(date),
                              motion_text=motion,
@@ -360,11 +360,13 @@ class COBillScraper(Scraper, LXMLMixin):
             vote.set_count('excused', int(exc_count))
             vote.set_count('absent', int(absent_count))
             vote.add_source(vote_url)
-            
-            rolls = page.xpath("//tr[preceding-sibling::tr/descendant::td/div/b/font[contains(text(),'Vote')]]")
 
-            # 
-            vote_abrv = {'Y':'yes', 'N':'no', 'E':'excused', 'A':'absent', '-': 'absent', '17C': 'absent'}
+            rolls = page.xpath("//tr[preceding-sibling::tr/descendant::"
+                               "td/div/b/font[contains(text(),'Vote')]]")
+
+            # 17C is advised to be investigated for absentism
+            vote_abrv = {'Y': 'yes', 'N': 'no', 'E': 'excused', 'A': 'absent',
+                         '-': 'absent', '17C': 'absent'}
 
             for roll in rolls:
                 voted = roll.xpath(".//td/div/font/text()")[0].strip()
