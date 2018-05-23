@@ -189,8 +189,9 @@ class OHLegislatorScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
-        for legislator in page.xpath("//div[contains(concat(' ', normalize-space(@class), ' '), "
-                                     "' portraitContainer ')]"):
+        for legislator in page.xpath(
+                "//div[@id='senators']//div[contains(concat(' ', normalize-space(@class), ' '), "
+                "' portraitContainer ')]"):
             img = legislator.xpath(".//div[@class='profileThumbnailBoundingBox']/@style")[0]
             img = img[img.find('(')+1:img.find(')')]
             full_name = legislator.xpath(".//div[@class='profileName']/a/text()")[0]
