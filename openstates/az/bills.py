@@ -296,7 +296,7 @@ class AZBillScraper(Scraper):
             if key in bill_id.lower():
                 return utils.bill_types[key]
         return None
-    
+
     def scrape_votes(self, bill, page):
         base_url = 'https://apps.azleg.gov/api/BillStatusFloorAction'
         for header in page['FloorHeaders']:
