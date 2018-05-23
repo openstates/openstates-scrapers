@@ -291,40 +291,32 @@ class COBillScraper(Scraper, LXMLMixin):
                                      amendment_letter)
 
     def scrape_votes(self, bill, page):
-        votes = page.xpath('//div[@id="bill-documents-tabs3"]//table//tbody//tr')
-
+        votes = page.xpath('//div[@id="bill-documents-tabs4"]//table//tbody//tr')
         for vote in votes:
-            if vote.xpath('td[3]/a/@href'):
-                vote_url = vote.xpath('td[3]/a/@href')[0]
+            if vote.xpath('.//a/@href'):
+                vote_url = vote.xpath('.//a/@href')[0]
 
                 parent_committee_row = vote.xpath(
                     'ancestor::ul[@class="accordion"]/li/'
                     'a[@class="accordion-title"]/h5/text()')[0]
                 parent_committee_row = parent_committee_row.strip()
 
-                # The vote day and chamber aren't on the roll call page,
-                # But they're in a header row above this one...
-
-                # e.g. 05/05/2016                  | Senate State, Veterans, & Military Affairs
-                header = re.search(r'(?P<date>\d{2}/\d{2}/\d{4})\s+\| (?P<committee>.*)',
-                                   parent_committee_row)
-
                 # Some vote headers have missing information,
                 # so we cannot save the vote information
+                header = parent_committee_row
                 if not header:
                     self.warning("No date and committee information available in the vote header.")
                     return
 
-                if 'Senate' in header.group('committee'):
+                if 'Senate' in header:
                     chamber = 'upper'
-                elif 'House' in header.group('committee'):
+                elif 'House' in header:
                     chamber = 'lower'
                 else:
-                    self.warning("No chamber for %s" % header.group('committee'))
+                    self.warning("No chamber for %s" % header)
                     chamber = None
-
-                date = dt.datetime.strptime(header.group('date'), '%m/%d/%Y')
-
+                date = vote.xpath("//span[@class='date-display-single']/text()")[0]
+                date = dt.datetime.strptime(date, '%m/%d/%Y')
                 if vote_url in BAD_URLS:
                     continue
 
@@ -332,40 +324,29 @@ class COBillScraper(Scraper, LXMLMixin):
 
     def scrape_vote(self, bill, vote_url, chamber, date):
         page = self.lxmlize(vote_url)
-
+        
         try:
-            motion = page.xpath(
-                '//td/b/font[text()="MOTION:"]/../../following-sibling::td/font/text()')[0]
+            motion = page.xpath("//font/text()")[2]
         except IndexError:
             self.warning("Vote Summary Page Broken ")
             return
 
+        # eg. http://leg.colorado.gov/content/sb18-033vote563ce6
+        if 'AM' in motion or 'PM' in motion:
+            motion = "Motion not given."
+
         if 'withdrawn' not in motion:
-            # Every table row after the one with VOTE in a td/div/b/font
-            rolls = page.xpath('//tr[preceding-sibling::tr/td/div/b/font/text()="VOTE"]')
-
-            count_row = rolls[-1]
-            yes_count = count_row.xpath('.//b/font[normalize-space(text())="YES:"]'
-                                        '/../following-sibling::font[1]/text()')[0]
-            no_count = count_row.xpath('.//b/font[normalize-space(text())="NO:"]'
-                                       '/../following-sibling::font[1]/text()')[0]
-            exc_count = count_row.xpath('.//b/font[normalize-space(text())="EXC:"]'
-                                        '/../following-sibling::font[1]/text()')[0]
-            nv_count = count_row.xpath('.//b/font[normalize-space(text())="ABS:"]'
-                                       '/../following-sibling::font[1]/text()')[0]
-
-            if count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]'
-                               '/../following-sibling::b[1]/font/text()'):
-                final = count_row.xpath('.//b/font[normalize-space(text())="FINAL ACTION:"]'
-                                        '/../following-sibling::b[1]/font/text()')[0]
-                passed = ('pass' in final.lower() or int(yes_count) > int(no_count))
-            elif 'passed without objection' in motion.lower():
-                passed = True
-                yes_count = int(len(rolls[:-2]))
-            else:
-                self.warning("No vote breakdown found for %s" % vote_url)
-                return
-
+            yes_no_counts = page.xpath("//tr/td[preceding-sibling::td/descendant::"
+                                       "font[contains(text(),'Aye')]]/font/text()")
+            other_counts = page.xpath("//tr/td[preceding-sibling::td/descendant::"
+                                      "font[contains(text(),'Absent')]]/font/text()")
+            yes_count = int(yes_no_counts[0])
+            no_count = int(yes_no_counts[2])
+            exc_count = int(other_counts[0])
+            absent_count = int(other_counts[2])
+            
+            passed = yes_count > no_count
+            
             vote = VoteEvent(chamber=chamber,
                              start_date=self._tz.localize(date),
                              motion_text=motion,
@@ -377,23 +358,18 @@ class COBillScraper(Scraper, LXMLMixin):
             vote.set_count('yes', int(yes_count))
             vote.set_count('no', int(no_count))
             vote.set_count('excused', int(exc_count))
-            vote.set_count('not voting', int(nv_count))
+            vote.set_count('absent', int(absent_count))
             vote.add_source(vote_url)
+            
+            rolls = page.xpath("//tr[preceding-sibling::tr/descendant::td/div/b/font[contains(text(),'Vote')]]")
 
-            for roll in rolls[:-2]:
-                voter = roll.xpath('td[2]/div/font')[0].text_content()
-                voted = roll.xpath('td[3]/div/font')[0].text_content().strip()
+            # 
+            vote_abrv = {'Y':'yes', 'N':'no', 'E':'excused', 'A':'absent', '-': 'absent', '17C': 'absent'}
 
-                if voted:
-                    if 'Yes' in voted:
-                        vote.yes(voter)
-                    elif 'No' in voted:
-                        vote.no(voter)
-                    elif 'Excused' in voted:
-                        vote.vote('excused', voter)
-                    else:
-                        vote.vote("other", voter)
-
-                elif 'passed without objection' in motion.lower() and voter:
-                    vote.yes(voter)
+            for roll in rolls:
+                voted = roll.xpath(".//td/div/font/text()")[0].strip()
+                voter = roll.xpath(".//td/font/text()")[0].strip()
+                if voted == 'V':
+                    continue
+                vote.vote(vote_abrv[voted], voter)
             yield vote
