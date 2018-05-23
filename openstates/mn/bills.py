@@ -352,14 +352,18 @@ class MNBillScraper(Scraper, LXMLMixin):
                 bill_action['action_text'] = action_text
                 if isinstance(action_type, list):
                     for atype in action_type:
-                        if atype is not None and (atype.startswith('governor') or atype.startswith('executive') or atype.startswith('became')):
+                        if atype is not None and (atype.startswith('governor')
+                                                  or atype.startswith('executive')
+                                                  or atype.startswith('became')):
                             bill_action['action_chamber'] = 'executive'
                             break
                     else:
                         bill_action['action_chamber'] = current_chamber
                 else:
                     if (action_type is not None and
-                            (action_type.startswith('governor') or action_type.startswith('executive') or action_type.startswith('became'))):
+                            (action_type.startswith('governor')
+                             or action_type.startswith('executive')
+                             or action_type.startswith('became'))):
                         bill_action['action_chamber'] = 'executive'
                     else:
                         bill_action['action_chamber'] = current_chamber
