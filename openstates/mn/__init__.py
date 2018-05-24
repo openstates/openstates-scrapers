@@ -145,6 +145,7 @@ class Minnesota(Jurisdiction):
             lower.add_post(label=str(n) + 'B', role='Representative',
                            division_id='ocd-division/country:us/state:mn/sldl:{}b'.format(n))
 
+        yield Organization('Governor of Minnesota', classification='executive')
         yield legis
         yield upper
         yield lower
