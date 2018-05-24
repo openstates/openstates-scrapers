@@ -1,11 +1,10 @@
 import json
 import datetime
+from lxml import html
+from pupa.scrape import Scraper, Bill, VoteEvent
 
-from pupa.scrape import Scraper, Bill
 from . import utils
 from . import session_metadata
-
-from lxml import html
 
 
 BASE_URL = 'https://www.azleg.gov/'
@@ -43,6 +42,8 @@ class AZBillScraper(Scraper):
         self.scrape_versions_and_documents(bill, internal_id)
         self.scrape_sponsors(bill, internal_id)
         self.scrape_subjects(bill, internal_id)
+
+        yield from self.scrape_votes(bill, page)
 
         bill_url = 'https://apps.azleg.gov/BillStatus/BillOverview/{}?SessionId={}'.format(
                     internal_id, session_id)
@@ -295,3 +296,49 @@ class AZBillScraper(Scraper):
             if key in bill_id.lower():
                 return utils.bill_types[key]
         return None
+
+    def scrape_votes(self, bill, page):
+        base_url = 'https://apps.azleg.gov/api/BillStatusFloorAction'
+        for header in page['FloorHeaders']:
+            params = {
+                'billStatusId': page['BillId'],
+                'billStatusActionId': header['BillStatusActionId'],
+                'includeVotes': 'true',
+            }
+            resp = self.get(base_url, params=params)
+            actions = resp.json
+            for action in actions:
+                if action['Action'] == 'No Action':
+                    continue
+                action_date = datetime.datetime.strptime(action['ReportDate'], '%Y-%m-%dT%H:%M:%S')
+                vote = VoteEvent(
+                    chamber={
+                        'S': 'upper',
+                        'H': 'lower',
+                    }[header['LegislativeBody']],
+                    motion_text=action['Action'],
+                    classification='passage',
+                    result=(
+                        'pass'
+                        if action['UnanimouslyAdopted'] or action['Ayes'] > action['Nays']
+
+                        else 'fail'
+                    ),
+                    start_date=action_date.strftime('%Y-%m-%d'),
+                    bill=bill,
+                )
+                vote.add_source(resp.url)
+                vote.set_count('yes', action['Ayes'] or 0)
+                vote.set_count('no', action['Nays'] or 0)
+                vote.set_count('absent', (action['Absent'] or 0))
+                vote.set_count('excused', (action['Excused'] or 0))
+                vote.set_count('not voting' (action['NotVoting'] or 0))
+
+                for v in action['Votes']:
+                    vote_type = {
+                        'Y': 'yes',
+                        'N': 'no',
+                    }.get(v['Vote'], 'other')
+                    vote.vote(vote_type, v['Legislator']['FullName'])
+
+                yield vote
