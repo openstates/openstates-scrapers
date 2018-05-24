@@ -1,5 +1,4 @@
 import json
-import urllib
 import datetime
 
 from lxml import html
@@ -223,8 +222,8 @@ class AZBillScraper(Scraper):
                 'billStatusActionId': header['BillStatusActionId'],
                 'includeVotes': 'true',
             }
-            resp = self.get('{}?{}'.format(base_url, urllib.parse.urlencode(params)))
-            actions = json.loads(resp.content.decode('utf-8'))
+            resp = self.get(base_url, params=params)
+            actions = resp.json
             for action in actions:
                 if action['Action'] == 'No Action':
                     continue
@@ -247,9 +246,10 @@ class AZBillScraper(Scraper):
                 vote.add_source(resp.url)
                 vote.set_count('yes', action['Ayes'] or 0)
                 vote.set_count('no', action['Nays'] or 0)
-                vote.set_count('other', (
-                    (action['Present'] or 0) + (action['Absent'] or 0) +
-                    (action['Excused'] or 0) + (action['NotVoting'] or 0)))
+                vote.set_count('other', (action['Present'] or 0))
+                vote.set_count('absent', (action['Absent'] or 0))
+                vote.set_count('excused', (action['Excused'] or 0))
+                vote.set_count('not voting' (action['NotVoting'] or 0))
 
                 for v in action['Votes']:
                     vote_type = {
