@@ -340,13 +340,17 @@ class COBillScraper(Scraper, LXMLMixin):
                                        "font[contains(text(),'Aye')]]/font/text()")
             other_counts = page.xpath("//tr/td[preceding-sibling::td/descendant::"
                                       "font[contains(text(),'Absent')]]/font/text()")
+            abstain_counts = page.xpath("//tr/td[preceding-sibling::td/descendant::"
+                                        "font[contains(text(),'17C')]]/font/text()")
             yes_count = int(yes_no_counts[0])
             no_count = int(yes_no_counts[2])
-            exc_count = int(other_counts[0])
-            absent_count = int(other_counts[2])
+            exc_count = int(other_counts[2])
+            absent_count = int(other_counts[0])
+            abstain_count = 0
+            if abstain_counts:
+                abstain_count = int(abstain_counts[0])
 
             passed = yes_count > no_count
-
             vote = VoteEvent(chamber=chamber,
                              start_date=self._tz.localize(date),
                              motion_text=motion,
@@ -355,19 +359,18 @@ class COBillScraper(Scraper, LXMLMixin):
                              classification='passage',
                              )
             vote.pupa_id = vote_url
-            vote.set_count('yes', int(yes_count))
-            vote.set_count('no', int(no_count))
-            vote.set_count('excused', int(exc_count))
-            vote.set_count('absent', int(absent_count))
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('excused', exc_count)
+            vote.set_count('absent', absent_count)
+            vote.set_count('abstain', abstain_count)
             vote.add_source(vote_url)
 
             rolls = page.xpath("//tr[preceding-sibling::tr/descendant::"
                                "td/div/b/font[contains(text(),'Vote')]]")
 
-            # 17C is advised to be investigated for absentism
             vote_abrv = {'Y': 'yes', 'N': 'no', 'E': 'excused', 'A': 'absent',
-                         '-': 'absent', '17C': 'absent'}
-
+                         '-': 'absent', '17C': 'abstain'}
             for roll in rolls:
                 voted = roll.xpath(".//td/div/font/text()")[0].strip()
                 voter = roll.xpath(".//td/font/text()")[0].strip()
