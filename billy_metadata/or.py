@@ -37,7 +37,8 @@ metadata = dict(
          'start_year': 2015, 'end_year': 2016},
         {'name': '2017-2018',
          'sessions': ['2017 Regular Session',
-                      '2018 Regular Session'],
+                      '2018 Regular Session',
+                      '2018 Special Session',],
          'start_year': 2017, 'end_year': 2018},
     ],
     session_details={
