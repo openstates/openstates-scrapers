@@ -87,6 +87,7 @@ class MIPersonScraper(Scraper):
         url_to_append = 'http://www.senate.michigan.gov/_images/'
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
+        doc.make_links_absolute(url)
         for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
             if len(row) != 7:
                 continue
