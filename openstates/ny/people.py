@@ -406,6 +406,8 @@ class NYPersonScraper(Scraper, LXMLMixin):
                             'Rosenthal, Daniel',
                             'Taylor, Al'):
                     party = 'Democratic'
+                elif name == 'Tague, Chris':
+                    party = 'Republican'
                 else:
                     raise ValueError(name)
                 # If seats become empty, there may need to be a

@@ -59,8 +59,7 @@ class NCBillScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(bill_detail_url)
 
-        title_div_txt = doc.xpath('//td[@style="text-align: center; white-space: nowrap; '
-                                  'width: 60%; font-weight: bold; font-size: x-large;"]/text()')[0]
+        title_div_txt = doc.xpath('//div[contains(@class, "h2")]/text()')[0]
         if 'Joint Resolution' in title_div_txt:
             bill_type = 'joint resolution'
             bill_id = bill_id[0] + 'JR ' + bill_id[1:]
@@ -71,7 +70,7 @@ class NCBillScraper(Scraper):
             bill_type = 'bill'
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-        bill_title = doc.xpath('//div[@id="title"]')[0].text_content()
+        bill_title = doc.xpath('//div[contains(@class, "h5")]')[0].text_content().strip()
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
                     classification=bill_type)
@@ -85,17 +84,15 @@ class NCBillScraper(Scraper):
         for vlink in doc.xpath(link_xpath)[1:]:
             # get the name from the PDF link...
             version_name = vlink.text.replace(u'\xa0', ' ')
-            # but neighboring span with anchor inside has the HTML version
-            version_url = vlink.xpath('./following-sibling::span/a/@href')
-            version_url = 'http://www.ncleg.net' + version_url[0]
+            version_url = vlink.attrib['href']
             bill.add_version_link(version_name, version_url, media_type='text/html',
                                   on_duplicate='ignore')
 
         # sponsors
-        spon_td = doc.xpath('//th[text()="Sponsors:"]/following-sibling::td')[0]
+        spon_row = doc.xpath('//div[contains(text(), "Sponsors")]/following-sibling::div')[0]
         # first sponsors are primary, until we see (Primary)
         spon_type = 'primary'
-        for leg in spon_td.text_content().split(';'):
+        for leg in spon_row.text_content().split(';'):
             name = leg.replace(u'\xa0', ' ').strip()
             if name.startswith('(Primary)'):
                 name = name.replace('(Primary)', '').strip()
@@ -106,19 +103,24 @@ class NCBillScraper(Scraper):
                                  primary=(spon_type == 'primary'))
 
         # keywords
-        kw_td = doc.xpath('//th[text()="Keywords:"]/following-sibling::td')[0]
-        for subject in kw_td.text_content().split(', '):
+        kw_row = doc.xpath('//div[contains(text(), "Keywords:")]/following-sibling::div')[0]
+        for subject in kw_row.text_content().split(', '):
             bill.add_subject(subject)
 
         # actions
-        action_tr_xpath = '//td[starts-with(text(),"History")]/../../tr'
+        action_tr_xpath = (
+            '//h6[contains(text(), "History")]'
+            '/ancestor::div[contains(@class, "gray-card")]'
+            '//div[contains(@class, "card-body")]'
+            '/div[@class="row"]'
+        )
         # skip two header rows
-        for row in doc.xpath(action_tr_xpath)[2:]:
-            tds = row.xpath('td')
-            act_date = tds[0].text
-            actor = tds[1].text or ''
+        for row in doc.xpath(action_tr_xpath):
+            cols = row.xpath('div')
+            act_date = cols[1].text
+            actor = cols[3].text or ''
             # if text is blank, try diving in
-            action = tds[2].text.strip() or tds[2].text_content().strip()
+            action = cols[5].text.strip() or cols[5].text_content().strip()
 
             act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
@@ -142,12 +144,17 @@ class NCBillScraper(Scraper):
         yield bill
 
     def scrape_votes(self, bill, doc):
-        vote_tr_path = '//th/a[starts-with(text(),"Vote History")]/../../../tr'
+        vote_tr_path = (
+            '//h6[@id="vote-header"]'
+            '/ancestor::div[contains(@class, "gray-card")]'
+            '//div[contains(@class, "card-body")]'
+            '//div[@class="row"]'
+        )
 
-        # skip first two and last row in vote table
-        for vote_row in doc.xpath(vote_tr_path)[2:-1]:
-            date, subject, rcs, aye, no, nv, abs, exc, total = vote_row.xpath('td/text()')
-            result = vote_row.xpath('td/a')[0]
+        for vote_row in doc.xpath(vote_tr_path):
+            entries = [each.text_content() for each in vote_row.xpath('div')[1:-1:2]]
+            date, subject, rcs, aye, no, nv, abs, exc, total = entries
+            result = vote_row.xpath('div/a')[0]
             result_text = result.text
             result_link = result.get('href')
 
@@ -156,7 +163,8 @@ class NCBillScraper(Scraper):
             elif 'S' in rcs:
                 chamber = 'upper'
 
-            date = eastern.localize(dt.datetime.strptime(date, "%m/%d/%Y %H:%M%p"))
+            date = eastern.localize(
+                dt.datetime.strptime(date.replace('.', ''), "%m/%d/%Y %H:%M %p"))
             date = date.isoformat()
 
             ve = VoteEvent(chamber=chamber,
