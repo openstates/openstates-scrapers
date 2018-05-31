@@ -1,7 +1,9 @@
 import json
 
 from pupa.scrape import Person, Scraper
+
 from openstates.utils import LXMLMixin
+from openstates.vt.utils import get_year_slug
 
 
 class VTPersonScraper(Scraper, LXMLMixin):
@@ -10,7 +12,8 @@ class VTPersonScraper(Scraper, LXMLMixin):
     def scrape(self, session=None):
         if session is None:
             session = self.latest_session()
-        year_slug = session[5:]
+
+        year_slug = get_year_slug(self.jurisdiction, session)
 
         # Load all members via the private API
         legislator_dump_url = (

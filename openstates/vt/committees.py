@@ -3,12 +3,14 @@ import re
 
 from pupa.scrape import Organization, Scraper
 
+from openstates.vt.utils import get_year_slug
+
 
 class VTCommitteeScraper(Scraper):
     def scrape(self, session=None):
         if session is None:
             session = self.latest_session()
-        year_slug = session[5:]
+        year_slug = get_year_slug(self.jurisdiction, session)
 
         # Load all committees via the private API
         committee_dump_url = 'http://legislature.vermont.gov/committee/loadList/{}/'.format(
