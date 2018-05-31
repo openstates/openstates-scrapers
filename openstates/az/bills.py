@@ -223,7 +223,8 @@ class AZBillScraper(Scraper):
                 'includeVotes': 'true',
             }
             resp = self.get(base_url, params=params)
-            actions = resp.json
+            actions = json.loads(resp.content.decode('utf-8'))
+
             for action in actions:
                 if action['Action'] == 'No Action':
                     continue
@@ -249,7 +250,7 @@ class AZBillScraper(Scraper):
                 vote.set_count('other', (action['Present'] or 0))
                 vote.set_count('absent', (action['Absent'] or 0))
                 vote.set_count('excused', (action['Excused'] or 0))
-                vote.set_count('not voting' (action['NotVoting'] or 0))
+                vote.set_count('not voting', (action['NotVoting'] or 0))
 
                 for v in action['Votes']:
                     vote_type = {
