@@ -8,6 +8,7 @@ from .utils import Urls
 import datetime
 from pytz import timezone
 
+
 class AssemblyBillPage(LXMLMixin):
     '''
     Adapted from an very weirdly overengineered solution that existed
@@ -72,7 +73,6 @@ class AssemblyBillPage(LXMLMixin):
 
             no_votes = 'There are no votes for this bill in this legislative '
 
-
             if pre == no_votes:
                 raise ValueError('No votes for this bill.')
         # Skip bill if votes can't be found.
@@ -103,15 +103,16 @@ class AssemblyBillPage(LXMLMixin):
             absent_count = 0
             excused_count = 0
             tds = table.xpath('tr/td/text()')
-            votes = [tds[i:i+2] for i in range(0,len(tds),2)]
+            votes = [tds[i:i+2] for i in range(0, len(tds), 2)]
 
-            vote_dictionary  = {
-                'Y':'yes',
-                'NO':'no',
+            vote_dictionary = {
+                'Y': 'yes',
+                'NO': 'no',
                 'ER': 'excused',
                 'AB': 'absent',
                 'NV': 'not voting'
             }
+
             for vote_pair in votes:
                 name, vote_val = vote_pair
                 vote.vote(vote_dictionary[vote_val], name)
@@ -123,4 +124,4 @@ class AssemblyBillPage(LXMLMixin):
             vote.set_count('absent', absent_count)
             vote.set_count('excused', excused_count)
             vote.add_source(url)
-            yield vote    
+            yield vote
