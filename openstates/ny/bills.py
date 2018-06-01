@@ -273,8 +273,7 @@ class NYBillScraper(Scraper):
                 yield self._parse_senate_votes(vote_data, bill, api_url)
         elif bill_chamber == 'lower':
             assembly = AssemblyBillPage(self, session, bill, details)
-            assembly.build()
-            bill = assembly.bill
+            yield from assembly.build()
 
         # A little strange the way it works out, but the Assembly
         # provides the HTML version documents and the Senate provides

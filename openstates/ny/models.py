@@ -104,7 +104,6 @@ class AssemblyBillPage(LXMLMixin):
             excused_count = 0
             tds = table.xpath('tr/td/text()')
             votes = [tds[i:i+2] for i in range(0,len(tds),2)]
-            print(len(votes))
 
             vote_dictionary  = {
                 'Y':'yes',
