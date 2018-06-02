@@ -5,6 +5,7 @@ services:
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
+    - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
     - OLODATA_USERNAME
@@ -28,6 +29,20 @@ services:
     image: mongo
     ports:
     - "27017:27017"
+  postgres:
+    image: mdillon/postgis:10-alpine
+    ports:
+    - "5432:5432"
+    environment:
+    - POSTGRES_PASSWORD=secret
+    - POSTGRES_DB=openstates
+  dbinit:
+    image: openstates/openstates
+    environment:
+    - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
+    entrypoint: /opt/openstates/venv-pupa/bin/pupa dbinit --country us
+    depends_on:
+    - postgres
   mysql:
     image: mysql
     command: mysqld --max_allowed_packet=512M
