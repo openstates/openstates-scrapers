@@ -510,7 +510,8 @@ class IlBillScraper(Scraper):
             if not line.strip():
                 continue
             elif line.strip() in PASS_FAIL_WORDS:
-                if passed is not None:
+                # Crash on duplicate pass/fail status that differs from previous status
+                if passed is not None and passed != PASS_FAIL_WORDS[line.strip()]:
                     raise Exception("Duplicate pass/fail matches in [%s]" % href)
                 passed = PASS_FAIL_WORDS[line.strip()]
             elif COUNT_RE.match(line):
