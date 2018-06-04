@@ -126,7 +126,7 @@ class CTBillScraper(Scraper):
                                             link.attrib['href'])
 
     def scrape_vote(self, bill, name, url):
-        if "VOTE/H" in url:
+        if "VOTE/h" in url:
             vote_chamber = 'lower'
             cols = (1, 5, 9, 13)
             name_offset = 3
@@ -183,7 +183,6 @@ class CTBillScraper(Scraper):
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
         vote.add_source(url)
-
         table = page.xpath("//table")[0]
         for row in table.xpath("tr"):
             for i in cols:
