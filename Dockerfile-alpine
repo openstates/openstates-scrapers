@@ -1,4 +1,4 @@
-FROM        alpine:3.4
+FROM        alpine:3.7
 MAINTAINER  James Turk <james@openstates.org>
 
 ENV PYTHONIOENCODING 'utf-8'
@@ -20,7 +20,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     git \
     curl \
     unzip \
-    openssl-dev \
+    libressl-dev \
     libffi-dev \
     freetds-dev \
     python \
@@ -31,7 +31,15 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libxml2-dev \
     libxslt-dev \
     poppler-utils \
-    postgresql-dev && \
+    postgresql-dev \
+    mariadb-dev && \
+  apk add --no-cache \
+    --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    libressl2.7-libcrypto && \
+  apk add --no-cache \
+    --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
+    gdal-dev \
+    geos-dev && \
   cd /tmp && \
     wget "https://github.com/brianb/mdbtools/archive/0.7.1.zip" && \
     unzip 0.7.1.zip && rm 0.7.1.zip && \
@@ -39,7 +47,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     autoreconf -i -f && \
     ./configure --disable-man && make && make install && \
     cd /tmp && \
-    rm -rf mdbtools-0.6.1 && \
+    rm -rf mdbtools-0.7.1 && \
   virtualenv -p $(which python2) /opt/openstates/venv-billy/ && \
     /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy && \
     /opt/openstates/venv-billy/bin/pip install python-dateutil && \
