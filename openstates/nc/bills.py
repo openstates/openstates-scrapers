@@ -120,7 +120,7 @@ class NCBillScraper(Scraper):
             act_date = cols[1].text
             actor = cols[3].text or ''
             # if text is blank, try diving in
-            action = cols[5].text.strip() or cols[5].text_content().strip()
+            action = (cols[5].text or '').strip() or cols[5].text_content().strip()
 
             act_date = dt.datetime.strptime(act_date, '%m/%d/%Y').strftime('%Y-%m-%d')
 
