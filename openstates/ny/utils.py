@@ -45,7 +45,7 @@ class UrlData(object):
     @CachedAttr
     def text(self):
         text = self.scraper.get(self.url).text
-        self.urls_object.validate(self.name, self.url, text)
+        # self.urls_object.validate(self.name, self.url, text)
         return text
 
     @CachedAttr
