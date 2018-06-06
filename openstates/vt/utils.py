@@ -3,4 +3,9 @@ def get_year_slug(jurisdiction, session):
         each for each in jurisdiction.legislative_sessions
         if each['identifier'] == session
     )
-    return details['site_id'] if 'site_id' in details else session[5:]
+    try:
+        session_id = details['extras']['site_id']
+    except KeyError:
+        session_id = session[5:]
+
+    return session_id

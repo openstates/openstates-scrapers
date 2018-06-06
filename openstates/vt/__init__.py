@@ -66,9 +66,9 @@ class Vermont(Jurisdiction):
             "_scraped_name": "2018 Special Session",
             "classification": "special",
             "identifier": "2018ss1",
-            "site_id": "2018.1",
             "name": "2018 Special Session",
             "start_date": "2018-05-22",
+            "extras": {"site_id": "2018.1"},
         }
     ]
     ignored_scraped_sessions = [
