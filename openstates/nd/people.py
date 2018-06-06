@@ -54,9 +54,13 @@ class NDPersonScraper(Scraper):
             "office telephone": "office-telephone",
             "political party": "party",
             "chamber": "chamber",
-            "fax": "fax"
+            "fax": "fax",
         }
         metainf = {}
+        headings = page.xpath('//div[contains(@class, "pane-content")]//strong')
+        metainf['district'] = headings[0].xpath('following-sibling::a/text()')[0].strip()
+        metainf['political party'] = headings[1].xpath('following-sibling::text()')[0].strip()
+        metainf['chamber'] = headings[2].xpath('following-sibling::text()')[0].strip()
         for block in page.xpath("//div[contains(@class, 'field-label-inline')]"):
             label, items = block.xpath("./*")
             key = label.text_content().strip().lower()
