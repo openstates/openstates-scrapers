@@ -86,13 +86,16 @@ class AssemblyBillPage(LXMLMixin):
             date = datetime.datetime.strptime(date, '%m/%d/%Y')
             date = date.replace(tzinfo=timezone('UTC'))
 
+            spanText = table.xpath('caption/span/text()')
+            motion = spanText[2].strip()+spanText[3].strip()
+
             votes = table.xpath('caption/span/span')[0].text.split(':')[1].split('/')
             yes_count, no_count = map(int, votes)
             passed = yes_count > no_count
             vote = VoteEvent(
                 chamber='lower',
                 start_date=date,
-                motion_text='Floor Vote',
+                motion_text=motion,
                 bill=self.bill,
                 result='pass' if passed else 'fail',
                 classification='passage'
@@ -124,4 +127,6 @@ class AssemblyBillPage(LXMLMixin):
             vote.set_count('absent', absent_count)
             vote.set_count('excused', excused_count)
             vote.add_source(url)
+            vote.pupa_id = url + motion + spanText[1]
+
             yield vote
