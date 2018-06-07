@@ -97,8 +97,11 @@ class LABillScraper(Scraper, LXMLMixin):
                 yield page
 
     def scrape_bare_page(self, url):
-        page = self.lxmlize(url)
-        return page.xpath("//a")
+        try:
+            page = self.lxmlize(url)
+            return page.xpath("//a")
+        except lxml.etree.ParserError:
+            return []
 
     def scrape(self, chamber=None, session=None):
         if not session:
