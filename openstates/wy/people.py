@@ -45,7 +45,7 @@ class WYPersonScraper(Scraper):
 
             person = Person(
                 name=row['name'],
-                district=row['district'],
+                district=row['district'].lstrip('SH0'),
                 party=party,
                 primary_org=chamber,
                 birth_date=dob_str,
