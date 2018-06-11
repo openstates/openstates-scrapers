@@ -40,7 +40,9 @@ services:
     image: openstates/openstates
     environment:
     - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
-    entrypoint: /opt/openstates/venv-pupa/bin/pupa dbinit --country us
+    entrypoint: /opt/openstates/openstates/dbinit.sh
+    volumes:
+    - .:/opt/openstates/openstates/
     depends_on:
     - postgres
   mysql:

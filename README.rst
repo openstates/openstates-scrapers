@@ -28,11 +28,23 @@ So you can limit the scrape to Tennessee's (tn) committees and legislators using
 
   docker-compose run --rm scrape tn committees people
 
-After retrieving everything from the state, `scrape` imports the data into a Postgresql database (setup doc pending).  If you want to skip this step, include a `--scrape` modifier at the end of the command line, like so::
+After retrieving everything from the state, `scrape` imports the data into a Postgresql database. If you want to skip this step, include a `--scrape` modifier at the end of the command line, like so::
 
   docker-compose run --rm scrape tn people --scrape
 
-After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory.  These contain the transformed, scraped data, and are very useful for debugging. 
+To import data into a postgres database, start the postgres service using docker compose::
+
+    docker-compose up postgres
+
+Then run database migrations and import jurisdictions::
+
+    docker-compose run --rm dbinit
+
+Now you can run the scrape service without the `--scrape` flag, and data will be imported into postgres. You can connect to the database and inspect data using `psql` (credentials are set in `docker-compose.yml`)::
+
+    psql postgres://postgres:secret@localhost:5432/openstates
+
+After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging. 
 
 Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
