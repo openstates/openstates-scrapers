@@ -6,7 +6,7 @@ Links
 * `Open States Project API <http://docs.openstates.org/api/>`_
 * `Code on GitHub <https://github.com/openstates/openstates/>`_
 * `Issue Tracker <https://github.com/openstates/openstates/issues>`_
-* `Open States Slack <http://openstates-slack.herokuapp.com>`_
+* `Open States Discourse <http://discourse.openstates.org>`_
 
 Getting Started
 ===============

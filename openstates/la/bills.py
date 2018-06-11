@@ -30,6 +30,7 @@ class LABillScraper(Scraper, LXMLMixin):
         '2017': '17RS',
         '2018 1st Extraordinary Session': '181ES',
         '2018': '18RS',
+        '2018 2nd Extraordinary Session': '182ES',
     }
 
     def pdf_to_lxml(self, filename, type='html'):
@@ -96,8 +97,11 @@ class LABillScraper(Scraper, LXMLMixin):
                 yield page
 
     def scrape_bare_page(self, url):
-        page = self.lxmlize(url)
-        return page.xpath("//a")
+        try:
+            page = self.lxmlize(url)
+            return page.xpath("//a")
+        except lxml.etree.ParserError:
+            return []
 
     def scrape(self, chamber=None, session=None):
         if not session:

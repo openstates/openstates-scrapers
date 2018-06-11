@@ -1,90 +1,94 @@
-import re
+import json
+import datetime
 
-import lxml.html
 from pupa.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):
-    def scrape(self, chamber=None):
+    party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
+
+    def scrape(self, chamber=None, session=None):
+        if session is None:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
+
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session)
 
-    def scrape_chamber(self, chamber):
+    def scrape_chamber(self, chamber, session):
         chamber_abbrev = {'upper': 'S', 'lower': 'H'}[chamber]
 
-        url = ("http://legisweb.state.wy.us/LegislatorSummary/LegislatorList"
-               ".aspx?strHouse=%s&strStatus=N" % chamber_abbrev)
-        page = lxml.html.fromstring(self.get(url).text)
-        page.make_links_absolute(url)
+        url = "https://wyoleg.gov/LsoService/api/legislator/2018/{}".format(
+            chamber_abbrev)
 
-        for link in page.xpath("//a[contains(@href, 'LegDetail')]"):
-            name = link.text.strip()
-            # Remove district number from member names
-            name = re.sub(r'\s\([HS]D\d{2}\)$', "", name)
-            leg_url = link.get('href')
+        response = self.get(url)
+        people_json = json.loads(response.content.decode('utf-8'))
 
-            email_address = link.xpath("../../../td[1]//a")[0].attrib['href']
-            email_address = link.xpath("../../../td[2]//a")[0].attrib['href']
-            email_address = email_address.split('Mailto:')[1]
+        for row in people_json:
 
-            party = link.xpath("string(../../../td[3])").strip()
-            if party == 'D':
-                party = 'Democratic'
-            elif party == 'R':
-                party = 'Republican'
+            # some fields are only available in the list json, some only in the details call
+            details_url = 'https://wyoleg.gov/LsoService/api/legislator/{}'.format(
+                row['legID'])
+            details_response = self.get(details_url)
+            details = json.loads(details_response.content.decode('utf-8'))
 
-            district = link.xpath(
-                "string(../../../td[4])").strip().lstrip('HS0')
+            party = self.party_map[row['party']]
 
-            leg_page = lxml.html.fromstring(self.get(leg_url).text)
-            leg_page.make_links_absolute(leg_url)
-            img = leg_page.xpath(
-                "//img[contains(@src, 'LegislatorSummary/photos')]")[0]
-            photo_url = img.attrib['src']
+            dob = datetime.datetime.strptime(
+                details['dob'], '%m/%d/%Y %I:%M:%S %p')
 
-            table = leg_page.xpath('//table[@id="ctl00_cphContent_tblContact"]')[0]
-            office_tds = table.xpath('./tr/td/text()')
-            address = []
-            phone = None
-            fax = None
+            dob_str = datetime.datetime.strftime(dob, "%Y-%m-%d")
 
-            for td in office_tds:
-                if td.startswith('Home - '):
-                    phone = td.strip('Home - ')
-                elif td.startswith('Cell -'):
-                    phone = td.strip('Cell - ')
-                elif td.startswith('Work -'):
-                    phone = td.strip('Work - ')
-
-                if td.startswith('Fax -'):
-                    fax = td.strip('Fax - ')
-
-                elif ' - ' not in td:
-                    address.append(td)
-
-            emails = table.xpath('.//a[contains(@href, "mailto:")]/@href')
-            email = emails[0].replace('mailto:', '') if emails else None
+            photo_url = 'http://wyoleg.gov/LegislatorSummary/Photos/{}'.format(
+                details['legPhoto'])
 
             person = Person(
-                name=name,
-                district=district,
+                name=row['name'],
+                district=row['district'].lstrip('SH0'),
                 party=party,
                 primary_org=chamber,
+                birth_date=dob_str,
                 image=photo_url,
             )
 
-            adr = " ".join([part.strip() for part in address]) or None
+            if details['address']:
+                address = '{}, {} {} {}'.format(
+                    details['address'],
+                    details['city'],
+                    details['state'],
+                    details['zip']
+                )
+                person.add_contact_detail(type='address', value=address)
 
-            person.add_contact_detail(type='address', value=adr, note='District Office')
-            if phone:
-                person.add_contact_detail(type='voice', value=phone, note='District Office')
-            if fax:
-                person.add_contact_detail(type='fax', value=fax, note='District Office')
-            if email:
-                person.add_contact_detail(type='email', value=email, note='District Office')
+            if row['eMail']:
+                person.add_contact_detail(type='email', value=row['eMail'])
 
-            person.add_source(url)
+            if row['phone']:
+                person.add_contact_detail(type='voice', value=row['phone'])
+
+            person.extras['wy_leg_id'] = row['legID']
+            person.extras['county'] = row['county']
+            person.extras['given_name'] = row['firstName']
+            person.extras['family_name'] = row['lastName']
+            person.extras['religion'] = details['religion']
+            person.extras['number_children'] = details['noChildren']
+            person.extras['spouse_given_name'] = details['spouseName']
+            person.extras['place_of_birth'] = details['birthPlace']
+            person.extras['occupation'] = details['occupationDesc']
+
+            if details['legEducation']:
+                person.extras['education'] = details['legEducation']
+
+            if details['civicOrgs']:
+                person.extras['civic_organizations'] = details['civicOrgs']
+
+            # http://wyoleg.gov/Legislators/2018/S/2032
+            leg_url = 'http://wyoleg.gov/Legislators/{}/{}/{}'.format(
+                session,
+                row['party'],
+                row['legID'])
+
             person.add_source(leg_url)
             person.add_link(leg_url)
 
