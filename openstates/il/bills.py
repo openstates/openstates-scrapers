@@ -117,7 +117,9 @@ _action_classifiers = (
     (re.compile(r'Governor Approved'), ['executive-signature']),
     (re.compile(r'Governor Vetoed'), ['executive-veto']),
     (re.compile(r'Governor Item'), ['executive-veto-line-item']),
+    (re.compile(r'Both Houses Override Total Veto'), ['veto-override-passage']),
     (re.compile(r'Governor Amendatory Veto'), ['executive-veto']),
+    (re.compile(r'Public Act'), ['became-law']),
     (re.compile(
         r'^(?:Recommends )?Do Pass(?: as Amended)?(?: / Short Debate)?(?: / Standard Debate)?'),
         ['committee-passage']
@@ -508,7 +510,8 @@ class IlBillScraper(Scraper):
             if not line.strip():
                 continue
             elif line.strip() in PASS_FAIL_WORDS:
-                if passed is not None:
+                # Crash on duplicate pass/fail status that differs from previous status
+                if passed is not None and passed != PASS_FAIL_WORDS[line.strip()]:
                     raise Exception("Duplicate pass/fail matches in [%s]" % href)
                 passed = PASS_FAIL_WORDS[line.strip()]
             elif COUNT_RE.match(line):

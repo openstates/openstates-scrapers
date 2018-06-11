@@ -146,6 +146,13 @@ class Louisiana(Jurisdiction):
             "start_date": "2018-03-12",
             "end_date": "2018-06-04",
         },
+        {
+            "_scraped_name": "2018 Second Extraordinary Session",
+            "classification": "special",
+            "identifier": "2018 2nd Extraordinary Session",
+            "name": "2018, 2nd Extraordinary Session",
+            "start_date": "2018-05-22",
+        },
     ]
     ignored_scraped_sessions = [
         "2016 Organizational Session",

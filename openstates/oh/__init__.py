@@ -63,6 +63,7 @@ class Ohio(Jurisdiction):
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
+        yield Organization('Governor of Ohio', classification='executive')
 
         for n in range(1, upper_seats+1):
             upper.add_post(

@@ -3,9 +3,10 @@ import json
 import re
 
 import lxml.etree
-
 from pupa.scrape import Scraper, Bill, VoteEvent
+
 from openstates.utils import LXMLMixin
+from openstates.vt.utils import get_year_slug
 
 
 class VTBillScraper(Scraper, LXMLMixin):
@@ -14,7 +15,8 @@ class VTBillScraper(Scraper, LXMLMixin):
 
         if session is None:
             session = self.latest_session()
-        year_slug = session[5:]
+
+        year_slug = get_year_slug(self.jurisdiction, session)
 
         # Load all bills and resolutions via the private API
         bills_url = \

@@ -9,7 +9,7 @@ from .people import IlPersonScraper
 
 class Illinois(Jurisdiction):
     division_id = "ocd-division/country:us/state:il"
-    classification = "legislature"
+    classification = "government"
     name = "Illinois"
     url = "http://www.ilga.gov/"
     scrapers = {
