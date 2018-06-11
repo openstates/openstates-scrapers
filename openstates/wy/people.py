@@ -5,7 +5,7 @@ from pupa.scrape import Scraper, Person
 
 
 class WYPersonScraper(Scraper):
-    party_map = {'R': 'republican', 'D': 'democrat', 'I': 'independent'}
+    party_map = {'R': 'Republican', 'D': 'Democratic', 'I': 'Independent'}
 
     def scrape(self, chamber=None, session=None):
         if session is None:
