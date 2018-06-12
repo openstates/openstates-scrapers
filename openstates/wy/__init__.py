@@ -110,6 +110,7 @@ class Wyoming(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
 
+        yield Organization(name='Governor of Wyoming', classification='executive')
         yield legislature
         yield upper
         yield lower
