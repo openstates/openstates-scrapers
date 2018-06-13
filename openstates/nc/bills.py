@@ -85,7 +85,12 @@ class NCBillScraper(Scraper):
             # get the name from the PDF link...
             version_name = vlink.text.replace(u'\xa0', ' ')
             version_url = vlink.attrib['href']
-            bill.add_version_link(version_name, version_url, media_type='text/html',
+
+            media_type = 'text/html'
+            if version_url.lower().endswith(".pdf"):
+                media_type = 'application/pdf'
+
+            bill.add_version_link(version_name, version_url, media_type=media_type,
                                   on_duplicate='ignore')
 
         # sponsors
