@@ -184,7 +184,7 @@ class IABillScraper(Scraper):
                     entity_type='person',
                     primary=True)
 
-        for tr in page.xpath("//table[contains(@class, 'billActionTable')]/tbody/tr"):
+        for tr in page.xpath("//table[contains(@class, 'billActionTable')][1]/tbody/tr"):
             date = tr.xpath("string(td[contains(text(), ', 20')])").strip()
             if date.startswith("***"):
                 continue
@@ -195,7 +195,7 @@ class IABillScraper(Scraper):
 
             date = datetime.datetime.strptime(date, "%B %d, %Y").date()
 
-            action = tr.xpath("string(td[2])").strip()
+            action = tr.xpath("string(td[3])").strip()
             action = re.sub(r'\s+', ' ', action)
 
             # Capture any amendment links.
