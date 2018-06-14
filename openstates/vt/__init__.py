@@ -68,12 +68,18 @@ class Vermont(Jurisdiction):
             "identifier": "2018ss1",
             "name": "2018 Special Session",
             "start_date": "2018-05-22",
-            "extras": {"site_id": "2018.1"},
         }
     ]
     ignored_scraped_sessions = [
         "2009 Special Session",
     ]
+
+    site_ids = {
+        '2018ss1': '2018.1',
+    }
+
+    def get_year_slug(self, session):
+        return self.site_ids.get(session, session[5:])
 
     def get_organizations(self):
         legislature_name = "Vermont General Assembly"
