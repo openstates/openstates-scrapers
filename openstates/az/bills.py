@@ -258,7 +258,7 @@ class AZBillScraper(Scraper):
                         'N': 'no',
                     }.get(v['Vote'], 'other')
                     vote.vote(vote_type, v['Legislator']['FullName'])
-
+                vote.pupa_id = resp.url+action['ReferralNumber']
                 yield vote
 
     def scrape(self, chamber=None, session=None):
