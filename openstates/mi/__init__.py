@@ -42,7 +42,7 @@ class Michigan(Jurisdiction):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-11",
-            "end_date": "2017-12-31"
+            "end_date": "2018-12-31"
         }
     ]
     ignored_scraped_sessions = [

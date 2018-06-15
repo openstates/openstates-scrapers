@@ -97,7 +97,9 @@ class Minnesota(Jurisdiction):
             '_scraped_name': '90th Legislature, 2017 1st Special Session',
             'classification': 'special',
             'identifier': '2017s1',
-            'name': '2017, 1st Special Session'
+            'name': '2017, 1st Special Session',
+            'start_date': '2017-05-23',
+            'end_date': '2017-05-25'
         },
         {
             '_scraped_name': '90th Legislature, 2017-2018',

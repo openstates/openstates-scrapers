@@ -46,8 +46,9 @@ class Illinois(Jurisdiction):
          '_scraped_name': '99   (2015-2016)',
          },
         {'name': '100th Special Session', 'identifier': '100th-special',
-         'classification': 'special'},
-        {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
+         'classification': 'special', 'start_date': '2017-06-21', 'end_date': '2017-07-31'},
+        {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary',
+         'start_date': '2017-01-11', 'end_date': '2018-05-31'},
     ]
 
     ignored_scraped_sessions = [

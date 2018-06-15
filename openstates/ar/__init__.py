@@ -141,6 +141,7 @@ class Arkansas(Jurisdiction):
         {
             "_scraped_name": "Second Extraordinary Session, 2018",
             "classification": "special",
+            "end_date": "2018-03-15",
             "identifier": "2018S2",
             "name": "2018 Second Extraordinary Session",
             "start_date": "2018-03-13"

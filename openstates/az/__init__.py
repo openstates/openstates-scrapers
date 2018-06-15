@@ -211,6 +211,8 @@ class Arizona(Jurisdiction):
             "classification": "special",
             "identifier": "53rd-1st-special",
             "name": "53rd Legislature - 1st Special Session",
+            "start_date": "2018-01-22",
+            "end_date": "2018-01-26",
         },
         {
             "_scraped_name": "2018 - Fifty-third Legislature - Second Regular Session",

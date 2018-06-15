@@ -38,7 +38,8 @@ class Florida(Jurisdiction):
         {'name': '2016 Regular Session', 'identifier': '2016', 'classification': 'primary'},
         {'name': '2017 Regular Session', 'identifier': '2017', 'classification': 'primary',
          'start_date': '2017-03-07', 'end_date': '2017-05-05'},
-        {'name': '2017 Special Session A', 'identifier': '2017A', 'classification': 'special'},
+        {'name': '2017 Special Session A', 'identifier': '2017A', 'classification': 'special',
+         'start_date': '2017-06-07', 'end_date': '2017-06-14'},
         {'name': '2018 Regular Session', 'identifier': '2018', 'classification': 'primary',
          'start_date': '2018-01-08', 'end_date': '2018-03-09'},
     ]

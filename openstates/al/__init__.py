@@ -91,6 +91,7 @@ class Alabama(Jurisdiction):
         {
             "_scraped_name": "Regular Session 2018",
             "classification": "primary",
+            "end_date": "2018-04-23",
             "identifier": "2018rs",
             "name": "2018 Regular Session",
             "start_date": "2018-01-09"
