@@ -83,14 +83,12 @@ class Missouri(Jurisdiction):
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2017-12-01",
-            "end_date": "2018-05-18"
         },
         {
             "classification": "special",
             "identifier": "2018S1",
             "name": "2018 First Extraordinary Session",
             "start_date": "2018-05-21",
-            "end_date": "2018-06-11"
         },
     ]
     ignored_scraped_sessions = [
