@@ -83,5 +83,5 @@ class Montana(Jurisdiction):
 
     def get_session_list(self):
         from openstates.utils.lxmlize import url_xpath
-        return url_xpath('http://leg.mt.gov/css/bills/Default.asp',
+        return url_xpath('http://leg.mt.gov/css/bills/Default.html',
                          "//td[@id='cont']/ul/li/a/text()")

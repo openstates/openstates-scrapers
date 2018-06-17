@@ -122,7 +122,7 @@ class MTPersonScraper(Scraper):
         '''
         res = {'HD': {}, 'SD': {}}
 
-        url = 'http://leg.mt.gov/css/find%20a%20legislator.asp'
+        url = 'http://leg.mt.gov/css/find%20a%20legislator.html'
 
         # Get base url.
         parts = parse.urlparse(url)
@@ -134,7 +134,7 @@ class MTPersonScraper(Scraper):
         doc.make_links_absolute(baseurl)
 
         # Get the link to the current member roster.
-        url = doc.xpath('//a[contains(@href, "roster.asp")]/@href')[0]
+        url = doc.xpath('//a[contains(@href, "roster")]/@href')[0]
 
         # Fetch it.
         self.raise_errors = False
