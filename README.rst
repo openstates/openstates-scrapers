@@ -1,3 +1,4 @@
+|ocbackers| |ocsponsors| 
 The Open States Project collects and makes available data about state legislative activities, including bill summaries, votes, sponsorships and state legislator information. This data is gathered directly from the states and made available in a common format for interested developers, through a JSON API and data dumps.
 
 Links
@@ -77,3 +78,47 @@ A few states require credentials to access their APIs. If you want to run code f
 
   * Get credentials at: https://www.oregonlegislature.gov/citizen_engagement/Pages/data.aspx
   * Set in environment prior to running scrape: ``OLODATA_USERNAME`` and ``OLODATA_PASSWORD``
+  
+Credits
+=======
+Contributors
++-----------------
+Thank you to all the people who have already contributed. 
+|occontributorimage|
+
+Backers
+-----------------
+Thank you to all our backers! 
+|ocbackerimage|
+
+Sponsors
+-----------------
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. `become_sponsor`_
+
+|ocsponsor0| |ocsponsor1| |ocsponsor2|
+
+.. |ocbackers| image:: https://opencollective.com/openstates/backers/badge.svg
+    :target: https://opencollective.com/openstates
+    :alt: Backers on Open Collective
+.. |ocsponsors| image:: https://opencollective.com/openstates/sponsors/badge.svg
+    :target: https://opencollective.com/openstates
+    :alt: Sponsors on Open Collective
+    
+.. |ocbackerimage| image:: https://opencollective.com/openstates/backers.svg?width=890
+    :target: https://opencollective.com/openstates
+    :alt: Backers on Open Collective
+.. |occontributorimage| image:: https://opencollective.com/openstates/contributors.svg?width=890&button=false
+    :target: https://opencollective.com/openstates
+    :alt: Repo Contributors
+
+.. _become_sponsor: https://opencollective.com/openstates#sponsor
+
+.. |ocsponsor0| image:: https://opencollective.com/openstates/sponsor/0/avatar.svg
+    :target: https://opencollective.com/openstates/sponsor/0/website
+    :alt: Sponsor
+.. |ocsponsor1| image:: https://opencollective.com/openstates/sponsor/1/avatar.svg
+    :target: https://opencollective.com/openstates/sponsor/1/website
+    :alt: Sponsor
+.. |ocsponsor2| image:: https://opencollective.com/openstates/sponsor/2/avatar.svg
+    :target: https://opencollective.com/openstates/sponsor/2/website
+    :alt: Sponsor
