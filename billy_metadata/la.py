@@ -48,6 +48,7 @@ metadata = {
                 '2018 1st Extraordinary Session',
                 '2018',
                 '2018 2nd Extraordinary Session',
+                '2018 3rd Extraordinary Session',
             ],
         },
     ],
@@ -171,6 +172,10 @@ metadata = {
         "2018 2nd Extraordinary Session": {
             'type': 'special',
             'display_name': '2018, 2nd Extraordinary Session',
+        },
+        "2018 3rd Extraordinary Session": {
+            'type': 'special',
+            'display_name': '2018, 3rd Extraordinary Session',
         },
     },
     'feature_flags': ['subjects', 'influenceexplorer', 'events'],
