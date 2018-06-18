@@ -4,8 +4,6 @@ import pytz
 
 from pupa.scrape import Scraper, Event
 
-from openstates.vt.utils import get_year_slug
-
 
 class VTEventScraper(Scraper):
     TIMEZONE = pytz.timezone('America/New_York')
@@ -13,7 +11,7 @@ class VTEventScraper(Scraper):
     def scrape(self, session=None):
         if session is None:
             session = self.latest_session()
-        year_slug = get_year_slug(self.jurisdiction, session)
+        year_slug = self.jurisdiction.get_year_slug(session)
 
         url = 'http://legislature.vermont.gov/committee/loadAllMeetings/{}'.format(year_slug)
 

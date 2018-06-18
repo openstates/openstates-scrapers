@@ -79,7 +79,8 @@ class NHPersonScraper(Scraper, LXMLMixin):
 
         person.extras = extras
         if email:
-            person.add_contact_detail(type='email', value=email, note='District Office')
+            office = 'Capitol' if email.endswith('@leg.state.nh.us') else 'District'
+            person.add_contact_detail(type='email', value=email, note=office + ' Office')
 
         # Capture legislator office contact information.
         district_address = '{}\n{}\n{}, {} {}'.format(row['Address'],
@@ -92,9 +93,12 @@ class NHPersonScraper(Scraper, LXMLMixin):
             phone = None
 
         if district_address:
-            person.add_contact_detail(type='address', value=district_address, note='Home Office')
+            office = 'Capitol' if chamber == 'upper' else 'District'
+            person.add_contact_detail(type='address', value=district_address,
+                                      note=office + ' Office')
         if phone:
-            person.add_contact_detail(type='voice', value=phone, note='Home Office')
+            office = 'Capitol' if '271-' in phone else 'District'
+            person.add_contact_detail(type='voice', value=phone, note=office + ' Office')
 
         # Retrieve legislator portrait.
         profile_url = None
