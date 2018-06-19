@@ -227,7 +227,7 @@ class MABillScraper(Scraper):
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
-                action_name_content = re.split(r'[A-z]\s?-\s+', action_name.strip())
+                action_name_content = re.split(r'[A-z0-9]\s?-\s+', action_name.strip())
                 vote_action = action_name_content[0]
                 y = int(action_name_content[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
