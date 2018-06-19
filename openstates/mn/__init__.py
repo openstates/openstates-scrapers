@@ -127,6 +127,7 @@ class Minnesota(Jurisdiction):
         '79th Legislature, 1995-1996',
         '79th Legislature, 1995 1st Special Session',
         '89th Legislature, 2015-2016',
+        '91st Legislature, 2019-2020',
     ]
 
     def get_organizations(self):
