@@ -182,6 +182,7 @@ class Pennsylvania(Jurisdiction):
         "2007-2008 Regular Session",
         "2007-2008 Special Session #1 (Energy Policy)",
         # Different nomenclature, for sessions already in this list
+        "1962 Regular Session",
         "1963 Regular Session",
         "1963 Special Session #1",
         "1963 Special Session #2",
