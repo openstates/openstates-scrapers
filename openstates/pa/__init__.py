@@ -225,5 +225,10 @@ class Pennsylvania(Jurisdiction):
         yield lower
 
     def get_session_list(self):
+        # PA keeps slowly adding backdata, so just ignore it en masse
+        for i in range(1800, 2000):
+            self.ignored_scraped_sessions.append('{} Regular Session'.format(i))
+            self.ignored_scraped_sessions.append('{} Special Session #1'.format(i))
+
         return url_xpath('http://www.legis.state.pa.us/cfdocs/legis/home/bills/',
                          '//select[@id="billSessions"]/option/text()')
