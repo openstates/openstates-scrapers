@@ -114,6 +114,9 @@ class TXPersonScraper(Scraper, LXMLMixin):
             # Scrape legislator information from roster URL
             leg_a = tbl.xpath('.//a')[0]
             name = leg_a.text
+            # Skip vacant districts
+            if re.search(r'district \d+ constituent services', name, re.IGNORECASE):
+                continue
             leg_url = leg_a.get('href')
             district = tbl.xpath('.//span[contains(text(), "District:")]')[0].tail.lstrip('0')
             party = tbl.xpath('.//span[contains(text(), "Party:")]')[0].tail
