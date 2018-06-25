@@ -83,10 +83,10 @@ class Nevada(Jurisdiction):
         {
             "_scraped_name": "79th (2017) Session",
             "classification": "primary",
-            "end_date": "2017-06-01",
+            "end_date": "2017-06-06",
             "identifier": "79",
             "name": "2017 Regular Session",
-            "start_date": "2017-02-15"
+            "start_date": "2017-02-06"
         }
     ]
     ignored_scraped_sessions = [
