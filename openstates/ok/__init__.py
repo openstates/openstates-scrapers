@@ -53,12 +53,17 @@ class Oklahoma(Jurisdiction):
         {
             "_scraped_name": "2017 First Special Session",
             "identifier": "2017SS1",
-            "name": "2017 First Special Session"
+            "name": "2017 First Special Session",
+            "start_date": "2017-09-25",
+            "end_date": "2017-11-17",
+
         },
         {
             "_scraped_name": "2017 Second Special Session",
             "identifier": "2017SS2",
-            "name": "2017 Second Special Session"
+            "name": "2017 Second Special Session",
+            "start_date": "2017-12-18",
+            "end_date": "2018-04-19",
         },
         {
             "_scraped_name": "2018 Regular Session",

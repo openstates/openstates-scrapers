@@ -47,7 +47,7 @@ class SouthCarolina(Jurisdiction):
         {
             "_scraped_name": "122 - (2017-2018)",
             "classification": "primary",
-            "end_date": "2017-06-01",
+            "end_date": "2018-05-09",
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-10"

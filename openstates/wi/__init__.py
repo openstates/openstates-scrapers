@@ -119,12 +119,15 @@ class Wisconsin(Jurisdiction):
         {
             'identifier': 'January 2018 Special Session',
             'start_date': "2018-01-18",
+            "end_date": "2018-02-27",
             'classification': 'special',
             'name': 'January 2018 Special Session',
             '_scraped_name': 'January 2018 Special Session',
         },
         {
             'identifier': 'March 2018 Special Session',
+            'start_date': "2018-03-16",
+            "end_date": "2018-03-29",
             'classification': 'special',
             'name': 'March 2018 Special Session',
             '_scraped_name': 'March 2018 Special Session',

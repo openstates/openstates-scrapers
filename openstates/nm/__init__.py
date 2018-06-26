@@ -82,6 +82,8 @@ class NewMexico(Jurisdiction):
             "classification": "special",
             "identifier": "2017S",
             "name": "2017 Special Session",
+            'start_date': "2017-05-24",
+            'end_date': "2017-05-30",
         },
         {
             "_scraped_name": "2018 Regular",

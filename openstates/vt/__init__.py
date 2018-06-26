@@ -60,7 +60,7 @@ class Vermont(Jurisdiction):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-04",
-            "end_date": "2017-05-08",
+            "end_date": "2018-05-12",
         },
         {
             "_scraped_name": "2018 Special Session",
