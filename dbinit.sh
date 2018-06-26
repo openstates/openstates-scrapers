@@ -10,6 +10,7 @@ Progressive
 Progressive/Democratic
 Democratic/Progressive
 Democratic-Farmer-Labor
+Nonpartisan
 "
 
 for party in ${parties}; do
