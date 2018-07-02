@@ -90,6 +90,7 @@ class Nevada(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
+        "80th (2019) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",
@@ -148,7 +149,7 @@ class Nevada(Jurisdiction):
         import re
         return [re.sub(r'(\xa0|\(click to close\)|\(click to open\))', '', x.text_content())
                 for x in url_xpath('http://www.leg.state.nv.us/Session/',
-                                   '//*[@class="MainHeading"]')]
+                                   '//*[contains(@class, "list-group-item-heading")]')]
 
     def get_extract_text(self, doc, data):
         return text_after_line_numbers(pdfdata_to_text(data))
