@@ -87,7 +87,14 @@ class Nevada(Jurisdiction):
             "identifier": "79",
             "name": "2017 Regular Session",
             "start_date": "2017-02-06"
-        }
+        },
+        {
+            "_scraped_name": "80th (2019) Session",
+            "classification": "primary",
+            "identifier": "80",
+            "name": "2019 Regular Session",
+            "start_date": "2019-02-04"
+        },
     ]
     ignored_scraped_sessions = [
         "25th (2008) Special Session",
@@ -145,10 +152,9 @@ class Nevada(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        import re
-        return [re.sub(r'(\xa0|\(click to close\)|\(click to open\))', '', x.text_content())
-                for x in url_xpath('http://www.leg.state.nv.us/Session/',
-                                   '//*[@class="MainHeading"]')]
+        return url_xpath(
+            'https://www.leg.state.nv.us/Session/',
+            '//div[contains(@class, "list-group-item-heading")]/text()')
 
     def get_extract_text(self, doc, data):
         return text_after_line_numbers(pdfdata_to_text(data))
@@ -164,4 +170,5 @@ class Nevada(Jurisdiction):
         "77": "77th2013",
         "78": "78th2015",
         "79": "79th2017",
+        "80": "80th2019",
     }
