@@ -163,16 +163,15 @@ class WYBillScraper(Scraper, LXMLMixin):
                     amendment['order'],
                 )
             # add versions of the bill text
-            bill.add_version_link(
+            version = bill.add_version_link(
                 note=title,
                 url=url,
                 media_type="application/pdf",
             )
-            # TODO: Restore after adding bill version extras upstream
-            # version['extras'] = {
-            #     'amendmentNumber': amendment['amendmentNumber'],
-            #     'sponsor': amendment['sponsor'],
-            # }
+            version['extras'] = {
+                'amendmentNumber': amendment['amendmentNumber'],
+                'sponsor': amendment['sponsor'],
+            }
 
         for sponsor in bill_json['sponsors']:
             status = 'primary' if sponsor['primarySponsor'] else 'cosponsor'
