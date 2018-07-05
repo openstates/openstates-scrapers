@@ -142,6 +142,8 @@ class Utah(Jurisdiction):
             "classification": "special",
             "identifier": "2017S1",
             "name": "2017 1st Special Session",
+            "start_date": "2017-09-20",
+            "end_date": "2017-09-20",
         },
         {
             "_scraped_name": "2018 General Session",

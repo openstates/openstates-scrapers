@@ -73,6 +73,7 @@ class RhodeIsland(Jurisdiction):
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2018-01-02",
+            "end_date": "2018-06-30",
         },
     ]
     ignored_scraped_sessions = [

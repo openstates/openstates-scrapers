@@ -96,6 +96,7 @@ class Oregon(Jurisdiction):
             "identifier": "2018 Special Session",
             "name": "2018 Special Session",
             "start_date": "2018-05-21",
+            "end_date": "2018-05-21",
         },
     ]
     ignored_scraped_sessions = [

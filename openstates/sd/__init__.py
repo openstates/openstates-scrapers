@@ -71,7 +71,9 @@ class SouthDakota(Jurisdiction):
         {
             "_scraped_name": "2017 Special",
             "identifier": "2017s",
-            "name": "2017 Special Session"
+            "name": "2017 Special Session",
+            "start_date": "2017-06-12",
+            "end_date": "2017-06-12",
         },
         {
             "_scraped_name": "2018",

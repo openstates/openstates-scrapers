@@ -14,8 +14,9 @@ class NECommitteeScraper(Scraper, LXMLMixin):
 
         committee_nodes = self.get_nodes(
             page,
-            '//div[@class="main-content"]/div[@class="panel panel-leg"][1]/'
-            'div[@class="list-group"]/a[@class="list-group-item"]')
+            '//a[@class="accordion-switch"][contains(text(), "Standing Committees")]'
+            '/ancestor::div[@class="panel panel-leg"]//div[@class="list-group"]'
+            '/a[@class="list-group-item"]')
 
         for committee_node in committee_nodes:
             committee_page_url = committee_node.attrib['href']
@@ -63,7 +64,8 @@ class NECommitteeScraper(Scraper, LXMLMixin):
 
         committee_nodes = self.get_nodes(
             page,
-            '//div[@class="main-content"]/div[@class="panel panel-leg"]')
+            '//a[contains(@class, "accordion-switch")]'
+            '/ancestor::div[@class="panel panel-leg"]')
 
         for committee_node in committee_nodes:
             committee_name = self.get_node(
@@ -81,8 +83,8 @@ class NECommitteeScraper(Scraper, LXMLMixin):
 
             members = self.get_nodes(
                 committee_node,
-                './div[@class="list-group"]/a[@class="list-group-item"]/'
-                'text()[normalize-space()]')
+                './/a[@class="list-group-item"]'
+                '/text()[normalize-space()]')
 
             for member in members:
                 member_name = re.sub(r'\Sen\.\s+', '', member)

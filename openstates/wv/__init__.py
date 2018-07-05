@@ -71,12 +71,16 @@ class WestVirginia(Jurisdiction):
             "classification": "special",
             "identifier": "20171S",
             "name": "2017 First Special Session",
+            "start_date": "2017-05-04",
+            "end_date": "2017-06-26",
         },
         {
             "_scraped_name": "2017",
             "classification": "special",
             "identifier": "20172S",
             "name": "2017 Second Special Session",
+            "start_date": "2017-10-16",
+            "end_date": "2017-10-17",
         },
         {
             "_scraped_name": "2018",
