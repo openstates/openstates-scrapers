@@ -13,7 +13,7 @@ class SDLegislatorScraper(Scraper):
         # emails are on the contact page, fetch once and the
         # legislator scrapers can find their emails there
         contact_page_url = \
-                         'http://www.sdlegislature.gov/Legislators/ContactLegislator.aspx'
+            'http://www.sdlegislature.gov/Legislators/ContactLegislator.aspx'
         contact_page = self.get(contact_page_url).text
         contact_page = lxml.html.fromstring(contact_page)
 
