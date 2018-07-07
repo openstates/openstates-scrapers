@@ -130,7 +130,7 @@ class NYBillScraper(Scraper):
 
         return vote
 
-    def _generate_bills(self, session):
+    def _generate_bills(self, session, window=None):
         self.logger.info('Generating bills.')
         bills = defaultdict(list)
 
@@ -149,9 +149,27 @@ class NYBillScraper(Scraper):
 
             # Response should be a dict of the JSON data returned from
             # the Open Legislation API.
-            response = self.api_client.get(
-                'bills', session_year=start_year,
-                limit=limit, offset=offset, full=full)
+            if window:
+                to_datetime = datetime.datetime.now()
+                from_datetime = datetime.datetime.now() - self.parse_relative_time(window)
+
+                # note for debugging:
+                # set detail=True to see what changed on the bill
+                response = self.api_client.get(
+                    'updated_bills',
+                    from_datetime=from_datetime.replace(microsecond=0).isoformat(),
+                    to_datetime=to_datetime.replace(microsecond=0).isoformat(),
+                    detail=False,
+                    summary=True,
+                    limit=limit,
+                    offset=offset,
+                    type='updated')
+
+                self.info("{} bills updated since {}".format(response['total'], from_datetime.replace(microsecond=0).isoformat()))
+            else:
+                response = self.api_client.get(
+                    'bills', session_year=start_year,
+                    limit=limit, offset=offset, full=full)
 
             if (response['responseType'] == 'empty list' or
                     response['offsetStart'] > response['offsetEnd']):
@@ -160,6 +178,17 @@ class NYBillScraper(Scraper):
                 bills = response['result']['items']
 
             for bill in bills:
+                if window:
+                    # https://legislation.nysenate.gov/api/3/bills/2017/S8570
+                    # unfortunately the updated bills since N api doesn't offer
+                    # the full bill info, so get them individually
+                    resp = self.api_client.get('bill',
+                        session_year=bill['item']['session'],
+                        bill_id=bill['item']['printNo'],
+                        summary=False,
+                        detail=True,
+                    )
+                    bill = resp['result']
                 yield bill
 
     def _scrape_bill(self, session, bill_data):
@@ -304,7 +333,25 @@ class NYBillScraper(Scraper):
 
         yield bill
 
-    def scrape(self, session=None):
+    def parse_relative_time(self, time_str):
+        regex = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+        parts = regex.match(time_str)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        time_params = {}
+        for (name, param) in parts.items():
+            if param:
+                time_params[name] = int(param)
+        return datetime.timedelta(**time_params)
+
+
+    # This scrape supports both windowed scraping for
+    # bills updated since a datetime, and individual bill scraping
+    # NEW_YORK_API_KEY=key pupa update ny bills --scrape bill_no=S155
+    # or
+    # EW_YORK_API_KEY=key pupa update ny bills --scrape window=5d1h
+    def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
 
         if session is None:
@@ -313,5 +360,9 @@ class NYBillScraper(Scraper):
 
         self.term_start_year = session.split('-')[0]
 
-        for bill in self._generate_bills(session):
-            yield from self._scrape_bill(session, bill)
+        for bill in self._generate_bills(session, window):
+            if bill_no:
+                if bill['printNo'] == bill_no:
+                    yield from self._scrape_bill(session, bill)
+            else:
+                yield from self._scrape_bill(session, bill)

@@ -53,7 +53,7 @@ class OpenLegislationAPIClient(object):
             'bills/{session_year}/{bill_id}?summary={summary}&detail='
             '{detail}'),
         bill_updates='bills/{session_year}/{bill_id}/updates?',
-        updated_bills='bills/updates/{from_datetime}/{to_datetime}?',
+        updated_bills='bills/updates/{from_datetime}/{to_datetime}?summary={summary}&detail={detail}&limit={limit}&offset={offset}',
         committees=(
             'committees/{session_year}/{chamber}?full={full}'),
         committee='committees/{session_year}/{chamber}/{committee_name}?',
