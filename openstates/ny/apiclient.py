@@ -11,6 +11,7 @@ class BadAPIResponse(Exception):
     Raised if the service returns a service code higher than 400,
     other than 429. Makes the response object avaible as exc.resp.
     """
+
     def __init__(self, resp, *args):
         super(BadAPIResponse, self).__init__(self, *args)
         self.resp = resp
@@ -104,7 +105,8 @@ class OpenLegislationAPIClient(object):
         tries = 0
         while response is None and tries < num_bad_packets_allowed:
             try:
-                response = self.scraper.get(url, *requests_args, **requests_kwargs)
+                response = self.scraper.get(
+                    url, *requests_args, **requests_kwargs)
             except SysCallError as e:
                 err, string = e.args
                 if err != 104:
@@ -112,7 +114,8 @@ class OpenLegislationAPIClient(object):
                 tries += 1
                 if tries >= num_bad_packets_allowed:
                     print(err, string)
-                    raise RuntimeError('Received too many bad packets from API.')
+                    raise RuntimeError(
+                        'Received too many bad packets from API.')
 
         return response
 
@@ -143,5 +146,6 @@ class OpenLegislationAPIClient(object):
         experience.'
         """
         seconds = int(resp.headers['retry-after'])
-        self.scraper.info('Got a 429: Sleeping %s seconds per retry-after header.' % seconds)
+        self.scraper.info(
+            'Got a 429: Sleeping %s seconds per retry-after header.' % seconds)
         time.sleep(seconds)

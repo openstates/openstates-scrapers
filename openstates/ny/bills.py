@@ -74,7 +74,8 @@ class NYBillScraper(Scraper):
                 title, (prefix, number, active_version))
 
     def _parse_senate_votes(self, vote_data, bill, url):
-        vote_datetime = datetime.datetime.strptime(vote_data['voteDate'], '%Y-%m-%d')
+        vote_datetime = datetime.datetime.strptime(
+            vote_data['voteDate'], '%Y-%m-%d')
 
         if vote_data['voteType'] == 'FLOOR':
             motion = 'Floor Vote'
@@ -157,7 +158,8 @@ class NYBillScraper(Scraper):
                 # set detail=True to see what changed on the bill
                 response = self.api_client.get(
                     'updated_bills',
-                    from_datetime=from_datetime.replace(microsecond=0).isoformat(),
+                    from_datetime=from_datetime.replace(
+                        microsecond=0).isoformat(),
                     to_datetime=to_datetime.replace(microsecond=0).isoformat(),
                     detail=False,
                     summary=True,
@@ -165,7 +167,8 @@ class NYBillScraper(Scraper):
                     offset=offset,
                     type='updated')
 
-                self.info("{} bills updated since {}".format(response['total'], from_datetime.replace(microsecond=0).isoformat()))
+                self.info("{} bills updated since {}".format(
+                    response['total'], from_datetime.replace(microsecond=0).isoformat()))
             else:
                 response = self.api_client.get(
                     'bills', session_year=start_year,
@@ -183,11 +186,11 @@ class NYBillScraper(Scraper):
                     # unfortunately the updated bills since N api doesn't offer
                     # the full bill info, so get them individually
                     resp = self.api_client.get('bill',
-                        session_year=bill['item']['session'],
-                        bill_id=bill['item']['printNo'],
-                        summary=False,
-                        detail=True,
-                    )
+                                               session_year=bill['item']['session'],
+                                               bill_id=bill['item']['printNo'],
+                                               summary=False,
+                                               detail=True,
+                                               )
                     bill = resp['result']
                 yield bill
 
@@ -265,7 +268,8 @@ class NYBillScraper(Scraper):
 
         for action in bill_data['actions']['items']:
             chamber = chamber_map[action['chamber'].lower()]
-            action_datetime = datetime.datetime.strptime(action['date'], '%Y-%m-%d')
+            action_datetime = datetime.datetime.strptime(
+                action['date'], '%Y-%m-%d')
             action_date = action_datetime.date()
             types, _ = NYBillScraper.categorizer.categorize(action['text'])
 
@@ -334,7 +338,8 @@ class NYBillScraper(Scraper):
         yield bill
 
     def parse_relative_time(self, time_str):
-        regex = re.compile(r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+        regex = re.compile(
+            r'((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
         parts = regex.match(time_str)
         if not parts:
             return
@@ -345,12 +350,11 @@ class NYBillScraper(Scraper):
                 time_params[name] = int(param)
         return datetime.timedelta(**time_params)
 
-
     # This scrape supports both windowed scraping for
     # bills updated since a datetime, and individual bill scraping
     # NEW_YORK_API_KEY=key pupa update ny bills --scrape bill_no=S155
     # or
-    # EW_YORK_API_KEY=key pupa update ny bills --scrape window=5d1h
+    # NEW_YORK_API_KEY=key pupa update ny bills --scrape window=5d1h
     def scrape(self, session=None, bill_no=None, window=None):
         self.api_client = OpenLegislationAPIClient(self)
 
