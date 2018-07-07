@@ -368,5 +368,6 @@ class NYBillScraper(Scraper):
             if bill_no:
                 if bill['printNo'] == bill_no:
                     yield from self._scrape_bill(session, bill)
+                    return
             else:
                 yield from self._scrape_bill(session, bill)
