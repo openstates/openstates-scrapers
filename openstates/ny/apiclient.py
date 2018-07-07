@@ -45,7 +45,7 @@ class OpenLegislationAPIClient(object):
     Client for interfacing with the NY Senate's Open Legislation API.
     http://legislation.nysenate.gov/static/docs/html/index.html
     """
-    root = 'http://legislation.nysenate.gov/api/3/'
+    root = 'https://legislation.nysenate.gov/api/3/'
     resources = dict(
         bills=(
             'bills/{session_year}?limit={limit}&offset={offset}&full={full}'
