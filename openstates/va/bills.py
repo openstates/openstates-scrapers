@@ -238,6 +238,7 @@ class BillDetailPage(Page, Spatula):
                     cached_vote.set_count('no', n)
                     cached_vote.set_count('other', o)
                     if vote_url:
+                        list(self.scrape_page_items(VotePage, url=vote_url[0], obj=cached_vote))
                         cached_vote.add_source(vote_url[0])
                     else:
                         cached_vote.add_source(self.url)
@@ -250,7 +251,6 @@ class BillDetailPage(Page, Spatula):
                                 counts['no'] == n and
                                 counts['other'] == o):
                             vote = cached_vote
-                            list(self.scrape_page_items(VotePage, url=vote_url[0], obj=vote))
                             vote.add_source(vote_url[0])
                             action = cached_action
                     elif cached_vote.motion_text.startswith('VOTE:'):
@@ -278,6 +278,8 @@ class BillDetailPage(Page, Spatula):
                         cached_vote.set_count('other', o)
                         if vote_url:
                             cached_vote.add_source(vote_url[0])
+                            list(self.scrape_page_items(
+                                VotePage, url=vote_url[0], obj=cached_vote))
                         else:
                             cached_vote.add_source(self.url)
                         cached_action = action
