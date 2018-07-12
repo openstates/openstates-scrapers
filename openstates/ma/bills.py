@@ -40,9 +40,20 @@ class MABillScraper(Scraper):
             refiner_list[label] = refiner
         return refiner_list
 
-    def scrape(self, chamber=None, session=None):
+    def scrape(self, chamber=None, session=None, bill_no=None):
         if not session:
             session = self.latest_session()
+
+        if bill_no:
+            single_bill_chamber = False
+            if 'H' in bill_no:
+                single_bill_chamber = 'lower'
+            else:
+                single_bill_chamber = 'upper'
+
+            yield from self.scrape_bill(session, bill_no, single_bill_chamber)
+            return
+
         if not chamber:
             yield from self.scrape_chamber('lower', session)
             yield from self.scrape_chamber('upper', session)
@@ -227,7 +238,7 @@ class MABillScraper(Scraper):
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
-                action_name_content = re.split(r'[A-z0-9]\s?-\s+', action_name.strip())
+                action_name_content = re.split(r'[A-z0-9]\s?-\s*', action_name.strip())
                 vote_action = action_name_content[0]
                 y = int(action_name_content[1].split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
