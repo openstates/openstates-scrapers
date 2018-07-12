@@ -12,6 +12,9 @@ from .utils import extract_phone, extract_fax
 class TXPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'tx'
 
+    # bad SSL as of July 2018
+    verify = False
+
     def __init__(self, *args, **kwargs):
         super(TXPersonScraper, self).__init__(*args, **kwargs)
 
@@ -88,12 +91,12 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
     def scrape_chamber(self, chamber):
         rosters = {
-            'lower': 'http://www.house.state.tx.us/members/',
+            'lower': 'https://www.house.state.tx.us/members/',
             'upper': 'http://www.senate.texas.gov/directory.php'
         }
 
         roster_url = rosters[chamber]
-        response = self.get(roster_url)
+        response = self.get(roster_url, verify=False)
         # auto detect encoding
         response.encoding = response.apparent_encoding
         roster_page = lxml.html.fromstring(response.text)
