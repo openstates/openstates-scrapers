@@ -240,7 +240,14 @@ class MABillScraper(Scraper):
                 actor = "lower"
                 action_name_content = re.split(r'[A-z0-9]\s?-\s*', action_name.strip())
                 vote_action = action_name_content[0]
-                y = int(action_name_content[1].split('YEAS')[0])
+
+                breakdown_str = action_name_content[1]
+                # Certain bills contain "Item <int>-<int>" that break the regex
+                # ex https://malegislature.gov/Bills/190/H3800
+                if action_name.strip().startswith('Item'):
+                    breakdown_str = action_name_content[2]
+
+                y = int(breakdown_str.split('YEAS')[0])
                 n = int(action_name.strip().split('YEAS to')[1].split('NAYS')[0])
 
                 # get supplement number
