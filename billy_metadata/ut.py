@@ -146,6 +146,11 @@ metadata = {
             'display_name': '2018 General Session',
             '_scraped_name': '2018 General Session',
         },
+        '2018S2': {
+            'type':'special',
+            'display_name': '2018 2nd Special Session',
+            '_scraped_name': '2018 2nd Special Session',
+        }
     },
     'feature_flags': ['events', 'subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
