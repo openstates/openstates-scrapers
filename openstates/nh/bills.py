@@ -18,6 +18,9 @@ bill_type_map = {
     # really "bill of address";
     # see https://github.com/opencivicdata/python-opencivicdata/issues/115
     'A': 'bill',
+    # special session senate/house bill
+    'SSSB': 'bill',
+    'SSHB': 'bill',
 }
 action_classifiers = [
     ('Minority Committee Report', None),        # avoid calling these passage
@@ -110,6 +113,9 @@ class NHBillScraper(Scraper):
                     bill_type = 'petition'
                 elif expanded_bill_id.startswith('AR') and bill_id.startswith('CACR'):
                     bill_type = 'constitutional amendment'
+                elif expanded_bill_id.startswith('SSSB') or expanded_bill_id.startswith('SSHB'):
+                    # special session house/senate bills
+                    bill_type = 'bill'
                 else:
                     bill_type = bill_type_map[expanded_bill_id.split(' ')[0][1:]]
 
