@@ -36,9 +36,11 @@ class Montana(Jurisdiction):
             "name": "2017 Regular Session",
             "start_date": "2017-01-02",
             "end_date": "2017-04-28"
-        }
+        },
     ]
     ignored_scraped_sessions = [
+        "2019 Regular Session",
+        "2017 Special Session",
         "2009 Regular Session",
         "2007 Special     Session",
         "2007 Regular Session",
