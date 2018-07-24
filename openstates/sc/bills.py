@@ -67,8 +67,10 @@ def action_type(action):
                     ['introduction', 'passage']),
                    ('Introduced, adopted',
                     ['introduction', 'passage']),
-                   ('Introduced and read first time', ['introduction', 'reading-1']),
-                   ('Introduced, read first time', ['introduction', 'reading-1']),
+                   ('Introduced and read first time',
+                    ['introduction', 'reading-1']),
+                   ('Introduced, read first time',
+                    ['introduction', 'reading-1']),
                    ('Introduced', 'introduction'),
                    ('Prefiled', 'filing'),
                    ('Read second time', 'reading-2'),
@@ -139,13 +141,13 @@ class SCBillScraper(Scraper):
 
         subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
         data = self.post(subject_search_url,
-                                         data=dict((
-                                            ('GETINDEX', 'Y'),
-                                            ('SESSION', session_code),
-                                            ('INDEXCODE', '0'),
-                                            ('INDEXTEXT', ''),
-                                            ('AORB', 'B'),
-                                            ('PAGETYPE', '0')))).text
+                         data=dict((
+                             ('GETINDEX', 'Y'),
+                             ('SESSION', session_code),
+                             ('INDEXCODE', '0'),
+                             ('INDEXTEXT', ''),
+                             ('AORB', 'B'),
+                             ('PAGETYPE', '0')))).text
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
@@ -188,7 +190,8 @@ class SCBillScraper(Scraper):
 
             yeas = int(yeas.text)
             nays = int(nays.text)
-            others = int(nv.text) + int(exc.text) + int(abst.text) + int(pres.text)
+            others = int(nv.text) + int(exc.text) + \
+                int(abst.text) + int(pres.text)
             assert yeas + nays + others == int(total.text)
 
             if result.text == 'Passed':
@@ -204,7 +207,8 @@ class SCBillScraper(Scraper):
 
             vote = VoteEvent(
                 chamber=chamber,  # 'upper' or 'lower'
-                start_date=timestamp.strftime('%Y-%m-%d'),  # 'YYYY-MM-DD' format
+                start_date=timestamp.strftime(
+                    '%Y-%m-%d'),  # 'YYYY-MM-DD' format
                 motion_text=motion.text,
                 result=passed,
                 classification='passage',  # Can also be 'other'
