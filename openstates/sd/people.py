@@ -7,17 +7,24 @@ import lxml.html
 
 class SDLegislatorScraper(Scraper):
 
-    def scrape(self, chambers=None):
+    def scrape(self, session=None, chambers=None):
         self._committees = {}
+
+        if not session:
+            session = self.latest_session()
+            self.info('no session specified, using %s', session)
 
         # emails are on the contact page, fetch once and the
         # legislator scrapers can find their emails there
         contact_page_url = \
-            'http://www.sdlegislature.gov/Legislators/ContactLegislator.aspx'
+            'https://sdlegislature.gov/Legislators/ContactLegislator.aspx?Session={}'.format(
+                session)
         contact_page = self.get(contact_page_url).text
         contact_page = lxml.html.fromstring(contact_page)
 
-        url = 'http://www.sdlegislature.gov/Legislators/default.aspx'
+        # https://sdlegislature.gov/Legislators/default.aspx?Session=2018
+        url = 'https://sdlegislature.gov/Legislators/default.aspx?Session={}'.format(
+            session)
         if chambers is None:
             chambers = ['upper', 'lower']
         for chamber in chambers:
@@ -71,7 +78,8 @@ class SDLegislatorScraper(Scraper):
                             )
         legislator.extras['occupation'] = occupation
         if office_phone.strip() != "":
-            legislator.add_contact_detail(type='voice', value=office_phone, note='Capitol Office')
+            legislator.add_contact_detail(
+                type='voice', value=office_phone, note='Capitol Office')
 
         # SD removed email from the detail pages but it's still in the
         # contact page, shared for all congress people
@@ -85,7 +93,8 @@ class SDLegislatorScraper(Scraper):
             # look for the adjacent email mailto link
             profile_link = profile_link[0]
             profile_block = profile_link.getparent().getparent().getparent()
-            email_link = profile_block.xpath('./span/span/a[@class="mail-break"]')
+            email_link = profile_block.xpath(
+                './span/span/a[@class="mail-break"]')
             if email_link:
                 email = email_link[0].text
                 email = email.lstrip()
@@ -95,10 +104,10 @@ class SDLegislatorScraper(Scraper):
                                                   value=email,
                                                   note='Capitol Office')
         home_address = [
-                x.strip() for x in
-                page.xpath('//td/span[contains(@id, "HomeAddress")]/text()')
-                if x.strip()
-                ]
+            x.strip() for x in
+            page.xpath('//td/span[contains(@id, "HomeAddress")]/text()')
+            if x.strip()
+        ]
         if home_address:
             home_address = "\n".join(home_address)
             home_phone = page.xpath(
@@ -114,7 +123,8 @@ class SDLegislatorScraper(Scraper):
         legislator.add_source(url)
         legislator.add_link(url)
 
-        committees = page.xpath('//div[@id="divCommittees"]/span/section/table/tbody/tr/td/a')
+        committees = page.xpath(
+            '//div[@id="divCommittees"]/span/section/table/tbody/tr/td/a')
         for committee in committees:
             self.scrape_committee(legislator, url, committee, chamber)
         yield legislator
@@ -124,7 +134,8 @@ class SDLegislatorScraper(Scraper):
         if comm.startswith('Joint '):
             chamber = 'legislature'
 
-        role = element.xpath('../following-sibling::td')[0].text_content().lower().strip()
+        role = element.xpath(
+            '../following-sibling::td')[0].text_content().lower().strip()
 
         org = self.get_organization(comm, chamber)
         org.add_source(url)

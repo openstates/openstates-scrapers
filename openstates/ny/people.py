@@ -440,17 +440,17 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
         page = self.lxmlize(url)
 
-        for data in page.xpath('//div[@class="officehdg"]'):
-            data = (data.xpath('text()'),
-                    data.xpath('following-sibling::div[1]/text()'))
-            ((office_name,), address) = data
+        for data in page.xpath('//div[@class="addrcola"]'):
+            office_name = data.xpath('./div[@class="officehdg"]/text()')[0]
+            address = data.xpath('./div[@class="officeaddr"]//text()')
 
             if 'district' in office_name.lower():
-                office_type = 'district'
+                office_type = 'District'
             else:
-                office_type = 'capitol'
+                office_type = 'Capitol'
 
             address = [x.strip() for x in address if x.strip()]
+            address.pop()
 
             fax = None
             if address[-1].startswith("Fax: "):
