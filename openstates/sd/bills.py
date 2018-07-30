@@ -14,9 +14,8 @@ class SDBillScraper(Scraper, LXMLMixin):
             session = self.latest_session()
             self.info('no session specified, using %s', session)
 
-        url = 'http://www.sdlegislature.gov/Legislative_Session' \
-              '/Bills/default.aspx?Session={}'.format(session)
-
+        url = 'https://sdlegislature.gov/Legislative_Session' \
+              '/Bills/Default.aspx?Session={}'.format(session)
         chambers = [chambers] if chambers else ['upper', 'lower']
 
         for chamber in chambers:
@@ -76,10 +75,10 @@ class SDBillScraper(Scraper, LXMLMixin):
             '/following-sibling::div[1]/p/a'
         )
         for link in sponsor_links:
-            if link.attrib['href'].startswith('http://www.sdlegislature.gov/Legislators/'):
+            if link.attrib['href'].startswith('https://sdlegislature.gov/Legislators/'):
                 sponsor_type = 'person'
             elif link.attrib['href'].startswith(
-                'http://www.sdlegislature.gov/Legislative_Session/Committees'
+                'https://sdlegislature.gov/Legislative_Session/Committees'
             ):
                 sponsor_type = 'organization'
             else:
