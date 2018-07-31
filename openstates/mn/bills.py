@@ -1,6 +1,7 @@
 import re
 import datetime
 import urllib.parse
+import scrapelib
 from collections import defaultdict
 import lxml.html
 
@@ -417,7 +418,12 @@ class MNBillScraper(Scraper, LXMLMixin):
         Versions of a bill are on a separate page, linked to from the column
         labeled, "Bill Text", on the search results page.
         """
-        version_resp = self.get(version_list_url, verify=False)
+        try:
+            version_resp = self.get(version_list_url, verify=False)
+        except scrapelib.HTTPError:
+            self.warning("Bad version URL detected: {}".format(version_list_url))
+            return bill
+
         version_html = version_resp.text
         if 'resolution' in version_resp.url:
             bill.add_version_link('resolution text', version_resp.url,
