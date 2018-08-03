@@ -65,7 +65,7 @@ class DEPersonScraper(Scraper, LXMLMixin):
                                 )[0].text_content().strip()
             if label.text == 'Email Address:':
                 email = value
-            elif label.text == 'Legislative Address:':
+            elif label.text == 'Legislative Office:':
                 address = re.sub('\s+', ' ', value).strip()
             elif label.text == 'Legislative Phone:':
                 phone = value
