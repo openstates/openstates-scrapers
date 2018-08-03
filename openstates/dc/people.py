@@ -79,12 +79,12 @@ class DCPersonScraper(Scraper):
 
             if office_address:
                 person.add_contact_detail(type='address', value=office_address,
-                                          note='District Office')
+                                          note='Capitol Office')
             if phone:
                 person.add_contact_detail(type='voice', value=phone,
-                                          note='District Office')
-            if phone:
-                person.add_contact_detail(type='voice', value=phone,
+                                          note='Capitol Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax,
                                           note='Capitol Office')
             if email:
                 person.add_contact_detail(type='email', value=email,
