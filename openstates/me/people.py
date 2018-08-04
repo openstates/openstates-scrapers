@@ -3,6 +3,7 @@ from pupa.scrape import Person, Scraper
 
 import lxml.html
 import xlrd
+import scrapelib
 
 _party_map = {
     'D': 'Democratic',
@@ -23,6 +24,22 @@ def clean_phone(phone):
     return phone
 
 
+def get_ascii_chunks(name):
+    ascii_chunks = []
+    current_chunk = ''
+
+    for ch in name:
+        if ord(ch) < 128:
+            current_chunk += ch
+        elif len(current_chunk) > 0:
+            ascii_chunks.append(current_chunk)
+            current_chunk = ''
+    if len(current_chunk) > 0:
+        ascii_chunks.append(current_chunk)
+
+    return ascii_chunks
+
+
 class MEPersonScraper(Scraper):
     def scrape(self, chamber=None):
         if chamber in ['upper', None]:
@@ -31,67 +48,126 @@ class MEPersonScraper(Scraper):
             yield from self.scrape_reps()
 
     def scrape_reps(self):
-        url = 'http://www.maine.gov/legis/house/dist_mem.htm'
-        page = self.get(url).text
-        page = lxml.html.fromstring(page)
-        page.make_links_absolute(url)
+        mapping = {
+            'district': 0,
+            'last_name': 1,
+            'first_name': 2,
+            'mid_name': 3,
+            'jr_sr': 4,
+            'party': 5,
+            'legal_res': 6,
+            'address1': 7,
+            'address2': 8,
+            'town': 9,
+            'state': 10,
+            'zip_code': 11,
+            'zip_plus4': 12,
+            'home_phone': 13,
+            'cell_phone': 14,
+            'business_phone': 15,
+            'other_phone': 16,
+            'fax': 17,
+            'email': 18,
+            'seat_no': 19,
+            'house_leadership': 20,
+            'committees': 21
+        }
 
-        # These do not include the non-voting tribal representatives
-        # They do not have numbered districts, and lack a good deal of
-        # the standard profile information about representatives
-        for district in page.xpath('//a[contains(@href, "dist_twn")]/..'):
-            if "- Vacant" in district.text_content():
-                self.warning("District is vacant: '{}'".
-                             format(district.text_content()))
+        url = 'http://legislature.maine.gov/house/' + str(self.latest_session()) + 'house.xlsx'
+        fn, result = self.urlretrieve(url)
+
+        wb = xlrd.open_workbook(fn)
+        sh = wb.sheet_by_index(0)
+
+        LEGISLATOR_ROSTER_URL = \
+            'http://legislature.maine.gov/house/dist_mem.htm'
+        roster_doc = lxml.html.fromstring(self.get(LEGISLATOR_ROSTER_URL).text)
+        roster_doc.make_links_absolute(LEGISLATOR_ROSTER_URL)
+
+        for rownum in range(1, sh.nrows):
+            # get fields out of mapping
+            d = {}
+            for field, col_num in mapping.items():
+                try:
+                    d[field] = str(sh.cell(rownum, col_num).value).strip()
+                except UnicodeEncodeError:
+                    # str typecasting will raise error for non-ascii characters.
+                    d[field] = sh.cell(rownum, col_num).value.encode('utf-8').strip()
+
+            district_name = d['legal_res']
+
+            first_name = d['first_name']
+            middle_name = d['mid_name']
+            last_name = d['last_name']
+            jr_sr = d['jr_sr']
+
+            # Little tricky. Column header says jr_sr, but this can be any suffix.
+            # If comma incorrectly placed, string matching for extracting URL from roster breaks.
+            if jr_sr in ['Jr.', 'Sr.']:
+                last_name += ', ' + jr_sr
+            elif jr_sr:
+                last_name += ' ' + jr_sr
+
+            member_name = " ".join((first_name, middle_name, last_name))
+            member_name = re.sub(r'\s+', ' ', member_name).strip()
+
+            try:
+                # xlrd reads this value as a float. However we save it as a string.
+                district_number = "{:.0f}".format(float(d['district']))
+            except ValueError:
+                # Will reach here in case district number is blank. We will skip this row.
+                self.info("Skipping non voting member {}".format(member_name))
                 continue
 
-            _, district_number = district.xpath('a[1]/@href')[0].split('#')
+            party = d['party']
+            party = _party_map[party]
 
-            leg_url = district.xpath('a[2]/@href')[0]
-            leg_info = district.xpath('a[2]/text()')[0]
-
-            INFO_RE = r'''
-                    Representative\s
-                    (?P<member_name>.+?)
-                    \s\(
-                    (?P<party>[DRCUIG])
-                    -
-                    (?P<district_name>.+?)
-                    \)
-                    '''
-            info_search = re.search(INFO_RE, leg_info, re.VERBOSE)
-
-            if not info_search:
-                leg_url = district.xpath('a[3]/@href')[0]
-                leg_info_second_active = district.xpath('a[3]/text()')[0]
-
-                member_name = leg_info_second_active
-                mem_info = district.xpath('a[3]/following-sibling::text()')
-                party = _party_map[mem_info[0][2]]
-                district = mem_info[0].split('-')[1][:-1]
+            # Determine legislator's URL to get their photo.
+            # Roster URL list does not include nicknames, have to be removed before we search.
+            if '"' in middle_name:
+                # middle name contains nickname
+                roster_middle_name = ''.join(middle_name.split('"')[2:])
+                roster_middle_name = re.sub(r'\s+', ' ', roster_middle_name).strip()
             else:
-                member_name = info_search.group('member_name')
-                party = _party_map[info_search.group('party')]
-                district_name = info_search.group('district_name')
+                roster_middle_name = middle_name
 
-            # Get the photo url.
-            html = self.get(leg_url).text
-            doc = lxml.html.fromstring(html)
-            doc.make_links_absolute(leg_url)
-            (photo_url,) = doc.xpath('//img[contains(@src, ".jpg")]/@src')
+            # Searching for different parts of the name with an 'and' operator
+            # Since first_name middle_name last_name order not necessarily
+            # maintained in the roster
+            URL_XPATH = URL_XPATH = '//a[contains(text(), "Representative")'
 
-            # Add contact information from personal page
-            office_address = re.search(
-                r'<B>Address:  </B>(.+?)\n?</?P>', html, re.IGNORECASE).group(1)
+            # Get chunks of ascii characers in the name. lxml incorrectly decodes
+            # sometimes, hence skipping the non ascii parts of the names
+            for chunk in get_ascii_chunks(first_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            for chunk in get_ascii_chunks(roster_middle_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            for chunk in get_ascii_chunks(last_name):
+                URL_XPATH += ' and contains(text(), "{}")'.format(chunk)
+            URL_XPATH += ']/@href'
 
-            office_email = doc.xpath(
-                '//a[starts-with(@href, "mailto:")]/text()')
-            business_phone = re.search(
-                r'<B>Business Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
-            home_phone = re.search(
-                r'<B>Home Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
-            cell_phone = re.search(
-                r'<B>Cell Telephone:  </B>(.+?)</?P>', html, re.IGNORECASE)
+            try:
+                (leg_url, ) = roster_doc.xpath(URL_XPATH)
+            except ValueError:
+                self.warning("Could not find legislator URL for {}".format(member_name))
+
+            # Determine legislator's URL to get their photo
+            photo_url = leg_url[:-4] + '.jpg'
+            photo_url = photo_url.split('/')
+            photo_url[4] = 'photo' + str(self.latest_session())
+            photo_url = '/'.join(photo_url)
+
+            try:
+                self.head(leg_url)
+            except scrapelib.HTTPError:
+                self.warning("Could not correctly guess photo URL for {}".format(member_name))
+
+            # Contact Information
+            office_address = "{address2}\n{town}, ME {zip_code}".format(**d)
+            office_email = d['email']
+            business_phone = d['business_phone']
+            home_phone = d['home_phone']
+            cell_phone = d['cell_phone']
 
             person = Person(
                 name=member_name,
@@ -100,49 +176,33 @@ class MEPersonScraper(Scraper):
                 party=party,
                 image=photo_url,
             )
+
             person.extras['district_name'] = district_name
 
             person.add_link(leg_url)
-            person.add_source(leg_url)
+            person.add_source(url)
 
             if office_address:
                 leg_address = office_address
                 person.add_contact_detail(
                     type='address', value=leg_address, note='District Office')
-            else:
-                # If no address for legislator
-                if party == 'Democratic':
-                    leg_address = (
-                        'House Democratic Office, Room 333 State House, 2 State House Station, '
-                        'Augusta, Maine 04333-0002'
-                    )
-
-                    person.add_contact_detail(
-                        type='address', value=leg_address, note='Party Office')
-
-                elif party == 'Republican':
-                    leg_address = (
-                        'House GOP Office, Room 332 State House, 2 State House Station, '
-                        'Augusta, Maine 04333-0002'
-                    )
-
-                    person.add_contact_detail(
-                        type='address', value=leg_address, note='Party Office')
 
             if office_email:
-                office_email = office_email[0]
-                person.add_contact_detail(type='email', value=office_email, note='District Office')
+                person.add_contact_detail(type='email', value=office_email, note='Capitol Office')
+
             if business_phone:
                 person.add_contact_detail(
-                    type='voice', value=clean_phone(business_phone.group(1)),
+                    type='voice', value=clean_phone(business_phone),
                     note='Business Phone')
+
             if home_phone:
                 person.add_contact_detail(
-                    type='voice', value=clean_phone(home_phone.group(1)),
+                    type='voice', value=clean_phone(home_phone),
                     note='Home Phone')
+
             if cell_phone:
                 person.add_contact_detail(
-                    type='voice', value=clean_phone(cell_phone.group(1)),
+                    type='voice', value=clean_phone(cell_phone),
                     note='Cell Phone')
 
             yield person
@@ -165,8 +225,9 @@ class MEPersonScraper(Scraper):
         }
 
         url = (
-            'https://mainelegislature.org/uploads/visual_edit/'
-            '128th-senate-members-for-distribution-1.xlsx'
+            'https://mainelegislature.org/uploads/visual_edit/' +
+            str(self.latest_session()) +
+            'th-senate-members-for-distribution-1.xlsx'
         )
         fn, result = self.urlretrieve(url)
 
