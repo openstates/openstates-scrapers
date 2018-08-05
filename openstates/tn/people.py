@@ -91,6 +91,13 @@ class TNPersonScraper(Scraper):
             name = name.replace('Representative ', '')
             name = name.replace('Senator ', '')
 
+            capitol_office_node = member_page.xpath('//div[@data-mobilehide="contact"]/p')[0]
+            capitol_office_details = capitol_office_node.text_content()
+            fax_text = [part for part in capitol_office_details.splitlines() if "Fax" in part]
+            fax = None
+            if fax_text:
+                fax = fax_text[0].replace("Fax", "").replace(":", "").strip()
+
             person = Person(
                 name=name.strip(),
                 image=member_photo_url,
@@ -112,6 +119,9 @@ class TNPersonScraper(Scraper):
             if email_href:
                 email = html.parser.HTMLParser().unescape(email_href[0][len('mailto:'):])
                 person.add_contact_detail(type='email', value=email,
+                                          note='Capitol Office')
+            if fax:
+                person.add_contact_detail(type='fax', value=fax,
                                           note='Capitol Office')
 
             yield person
