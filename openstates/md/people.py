@@ -49,7 +49,7 @@ class MDPersonScraper(Scraper):
             for line in addr_lines:
                 if 'Phone:' in line:
                     phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', line)[0]
-                if 'Fax:' in line:
+                elif 'Fax:' in line:
                     # Number oddities: one has two dashes, one has a dash and then a space.
                     line = line.replace('--', '-').replace('- ', '-')
                     fax = re.findall('Fax: (\d{3}-\d{3}-\d{4})', line)[0]
