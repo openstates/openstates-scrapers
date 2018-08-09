@@ -1,5 +1,6 @@
 import datetime
 import json
+import requests
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
@@ -61,7 +62,7 @@ class DCBillScraper(Scraper):
             }
         }
         param_json = json.dumps(params)
-        response = self.post(url, headers=headers, data=param_json)
+        response = requests.post(url, headers=headers, data=param_json)
         # the response is a terrible string-of-nested-json-strings. Yuck.
         response = decode_json(response.json()["d"])
         data = response["aaData"]
@@ -75,8 +76,8 @@ class DCBillScraper(Scraper):
                     # actually an agenda, skip
                     continue
                 bill_params = {"legislationId": bill_id}
-                bill_info = self.post(bill_url, headers=headers,
-                                      data=json.dumps(bill_params))
+                bill_info = requests.post(bill_url, headers=headers,
+                                          data=json.dumps(bill_params))
                 bill_info = decode_json(bill_info.json()["d"])["data"]
                 bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
 
@@ -94,13 +95,16 @@ class DCBillScraper(Scraper):
                 # sponsors and cosponsors
                 if "Introducer" in legislation_info:
                     introducers = legislation_info["Introducer"]
-                    intro_date = self.date_format(legislation_info["IntroductionDate"])
-                    bill.add_action("Introduced", intro_date, classification="introduction")
+                    intro_date = self.date_format(
+                        legislation_info["IntroductionDate"])
+                    bill.add_action("Introduced", intro_date,
+                                    classification="introduction")
                 else:
                     # sometimes there are introducers, sometimes not.
                     # Set Introducers to empty array to avoid downstream breakage,
                     # but log bills without introducers
-                    self.logger.warning("No Introducer: {0}".format(bill.identifier))
+                    self.logger.warning(
+                        "No Introducer: {0}".format(bill.identifier))
                     introducers = []
 
                 try:
@@ -147,8 +151,10 @@ class DCBillScraper(Scraper):
                         bill.extras["additional_information"] = add_info
 
                 if "WithDrawnDate" in legislation_info:
-                    withdrawn_date = self.date_format(legislation_info["WithDrawnDate"])
-                    withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip()
+                    withdrawn_date = self.date_format(
+                        legislation_info["WithDrawnDate"])
+                    withdrawn_by = legislation_info["WithdrawnBy"][0]["Name"].strip(
+                    )
                     if withdrawn_by == "the Mayor":
 
                         bill.add_action("withdrawn", withdrawn_date,
@@ -157,11 +163,13 @@ class DCBillScraper(Scraper):
                     elif "committee" in withdrawn_by.lower():
                         a = bill.add_action("withdrawn", withdrawn_date,
                                             classification="withdrawal")
-                        a.add_related_entity(withdrawn_by, entity_type='organization')
+                        a.add_related_entity(
+                            withdrawn_by, entity_type='organization')
                     else:
                         a = bill.add_action("withdrawn", withdrawn_date,
                                             classification="withdrawal")
-                        a.add_related_entity(withdrawn_by, entity_type='person')
+                        a.add_related_entity(
+                            withdrawn_by, entity_type='person')
 
                 # deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
@@ -169,7 +177,8 @@ class DCBillScraper(Scraper):
                     mayor = mayor[0]
 
                     if "TransmittedDate" in mayor:
-                        transmitted_date = self.date_format(mayor["TransmittedDate"])
+                        transmitted_date = self.date_format(
+                            mayor["TransmittedDate"])
 
                         bill.add_action("transmitted to mayor", transmitted_date,
                                         chamber="executive",
@@ -192,7 +201,8 @@ class DCBillScraper(Scraper):
 
                         # if it was returned and enacted but not signed, there was a veto override
                         if 'EnactedDate' in mayor:
-                            override_date = self.date_format(mayor["EnactedDate"])
+                            override_date = self.date_format(
+                                mayor["EnactedDate"])
 
                             bill.add_action("veto override", override_date,
                                             classification="veto-override-passage")
@@ -205,7 +215,8 @@ class DCBillScraper(Scraper):
                 if len(congress) > 0:
                     congress = congress[0]
                     if "TransmittedDate" in congress:
-                        transmitted_date = self.date_format(congress["TransmittedDate"])
+                        transmitted_date = self.date_format(
+                            congress["TransmittedDate"])
 
                         bill.add_action("Transmitted to Congress for review",
                                         transmitted_date)
@@ -232,12 +243,14 @@ class DCBillScraper(Scraper):
                         a = bill.add_action("referred to committee", date,
                                             classification="referral-committee")
                         for com in committees:
-                            a.add_related_entity(com, entity_type='organization')
+                            a.add_related_entity(
+                                com, entity_type='organization')
 
                 if "CommitteeReferralComments" in legislation_info:
                     a = bill.add_action("comments from committee", date)
                     for committee in legislation_info["CommitteeReferralComments"]:
-                        a.add_related_entity(committee["Name"], entity_type='organization')
+                        a.add_related_entity(
+                            committee["Name"], entity_type='organization')
 
                 # deal with random docs floating around
                 docs = bill_info["OtherDocuments"]
@@ -245,13 +258,15 @@ class DCBillScraper(Scraper):
                     if "AttachmentPath" in d:
                         self.add_documents(d["AttachmentPath"], bill)
                     else:
-                        self.logger.warning("Document path missing from 'Other Documents'")
+                        self.logger.warning(
+                            "Document path missing from 'Other Documents'")
 
                 if "MemoLink" in legislation_info:
                     self.add_documents(legislation_info["MemoLink"], bill)
 
                 if "AttachmentPath" in legislation_info:
-                    self.add_documents(legislation_info["AttachmentPath"], bill)
+                    self.add_documents(
+                        legislation_info["AttachmentPath"], bill)
 
                 # full council votes
                 votes = bill_info["VotingSummary"]
@@ -266,7 +281,8 @@ class DCBillScraper(Scraper):
                     committee_info = bill_info["CommitteeMarkup"]
                     if len(committee_info) > 0:
                         for committee_action in committee_info:
-                            v = self.process_committee_vote(committee_action, bill)
+                            v = self.process_committee_vote(
+                                committee_action, bill)
                             if v:
                                 v.add_source(bill_source_url)
                                 yield v
@@ -289,7 +305,9 @@ class DCBillScraper(Scraper):
         member_dict = {}
         search_data_url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
                            "GetPublicSearchData")
-        response = self.post(search_data_url, headers={"Content-Type": "application/json"})
+        response = requests.post(search_data_url, headers={
+                                 "Content-Type": "application/json"})
+
         member_data = decode_json(response.json()['d'])["Members"]
         for session_id, members in member_data.items():
             member_dict[session_id] = {}
@@ -304,7 +322,8 @@ class DCBillScraper(Scraper):
         try:
             motion = vote["ReadingDescription"]
         except KeyError:
-            self.logger.warning("Can't even figure out what we're voting on. Skipping.")
+            self.logger.warning(
+                "Can't even figure out what we're voting on. Skipping.")
             return
 
         if "VoteResult" not in vote:
@@ -462,13 +481,15 @@ class DCBillScraper(Scraper):
             if doc_type and doc_name and rel_path:
                 doc_url = base_url+rel_path+"/"+doc_name
             else:
-                self.logger.warning("Bad link for document {}".format(doc_name))
+                self.logger.warning(
+                    "Bad link for document {}".format(doc_name))
                 return
 
             mimetype = "application/pdf" if doc_name.endswith("pdf") else None
 
             # figure out if it's a version from type/name
-            possible_version_types = ["SignedAct", "Introduction", "Enrollment", "Engrossment"]
+            possible_version_types = [
+                "SignedAct", "Introduction", "Enrollment", "Engrossment"]
             for vt in possible_version_types:
                 if vt.lower() in doc_name.lower():
                     is_version = True
