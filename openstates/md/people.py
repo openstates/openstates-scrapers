@@ -44,17 +44,18 @@ class MDPersonScraper(Scraper):
                 party = 'Democratic'
             addr_lines = _get_table_item(ldoc, 'Annapolis Address:').xpath('text()')
             address = []
+            phone = None
+            fax = None
             for line in addr_lines:
-                if 'Phone:' not in line:
-                    address.append(line)
+                if 'Phone:' in line:
+                    phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', line)[0]
+                elif 'Fax:' in line:
+                    # Number oddities: one has two dashes, one has a dash and then a space.
+                    line = line.replace('--', '-').replace('- ', '-')
+                    fax = re.findall('Fax: (\d{3}-\d{3}-\d{4})', line)[0]
                 else:
-                    phone = line
+                    address.append(line)
             address = '\n'.join(address)
-            try:
-                phone = re.findall('Phone: (\d{3}-\d{3}-\d{4})', phone)[0]
-            except IndexError:
-                self.warning("Missing phone!")
-                phone = None
 
             email = ldoc.xpath('//a[contains(@href, "mailto:")]/text()')
             if not email:
@@ -88,6 +89,12 @@ class MDPersonScraper(Scraper):
                 leg.add_contact_detail(
                     type='voice',
                     value=phone,
+                    note='Capitol Office'
+                )
+            if fax:
+                leg.add_contact_detail(
+                    type='fax',
+                    value=fax,
                     note='Capitol Office'
                 )
             if email:
