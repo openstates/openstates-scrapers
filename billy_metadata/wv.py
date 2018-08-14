@@ -24,7 +24,7 @@ metadata = {
          },
         {'name': '2017-2018',
          'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017', '20171S', '20172S', '2018'],
+         'sessions': ['2017', '20171S', '20172S', '2018', '2018S1', '2018S2'],
          },
         ],
     'session_details': {
@@ -70,6 +70,12 @@ metadata = {
         '2018': {'display_name': '2018 Regular Session',
                  'type': 'primary',
                  '_scraped_name': '2018'
+                 },
+        '2018S1': {'display_name': '2018 First Special Session',
+                 'type': 'primary',
+                 },
+        '2018S2': {'display_name': '2018 Second Special Session',
+                 'type': 'primary',
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
