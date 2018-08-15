@@ -296,7 +296,7 @@ class DCBillScraper(Scraper):
             start_record += per_page
             params["request"]["iDisplayStart"] = start_record
             param_json = json.dumps(params)
-            response = self.post(url, headers=headers, data=param_json)
+            response = requests.post(url, headers=headers, data=param_json)
             response = decode_json(response.json()["d"])
             data = response["aaData"]
 
