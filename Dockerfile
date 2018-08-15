@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     mysql-server \
     libmysqlclient-dev \
-    postgresql-client-9.6 \ 
-    gnupg \ 
+    postgresql-client-9.6 \
+    gnupg \
     dirmngr
 
 # add mongo 3.4 packages
@@ -46,7 +46,7 @@ RUN /opt/openstates/venv-billy/bin/pip install -U python-dateutil requests
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata.git#egg=python-opencivicdata
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/doubleswirve/pupa.git@custom-export#egg=pupa
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/GovHawkDC/pupa.git@feature/custom-outputs#egg=pupa
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
