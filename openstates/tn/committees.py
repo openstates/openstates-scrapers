@@ -119,6 +119,8 @@ class TNCommitteeScraper(Scraper):
                 role = role[0].xpath('text()')[0].strip()
             else:
                 role = 'member'
+            if '(Vacant)' in role:
+                continue
 
             com.add_member(member_name, role)
 
