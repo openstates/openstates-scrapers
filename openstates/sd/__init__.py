@@ -82,6 +82,13 @@ class SouthDakota(Jurisdiction):
             "start_date": "2018-01-09",
             "end_date": "2018-03-26",
         },
+        {
+            "_scraped_name": "2018 Special",
+            "identifier": "2018s",
+            "name": "2018 Special Session",
+            "start_date": "2018-09-12",
+            "end_date": "2018-09-12",
+        },
     ]
     ignored_scraped_sessions = [
         "2008", "2007", "2006", "2005", "2005 Special", "2004", "2003", "2003 Special", "2002",
