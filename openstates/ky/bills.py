@@ -99,11 +99,11 @@ class KYBillScraper(Scraper, LXMLMixin):
         bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_bills.htm'.format(
             abbr)
         if 'upper' == chamber:
-            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_senate.htm'.format(
-                abbr)
+            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_senate.htm' \
+                .format(abbr)
         elif 'lower' == chamber:
-            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_house.htm'.format(
-                abbr)
+            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_house.htm' \
+                .format(abbr)
 
         yield from self.scrape_bill_list(chamber, session, bill_url, prefile=True)
 
