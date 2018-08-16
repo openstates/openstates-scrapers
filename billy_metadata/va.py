@@ -38,7 +38,7 @@ metadata = {
         },
         {
             'name': '2018-2019',
-            'sessions': ['2018','2018specialI'],
+            'sessions': ['2018','2018specialI', '2019'],
             'start_year': 2018,
             'end_year': 2019,
         },
@@ -133,6 +133,11 @@ metadata = {
             'start_date': datetime.date(2018, 4, 11),
             'site_id': '182',
             'display_name': '2018, 1st Special Session',
+        },
+        '2019': {
+            'start_date': datetime.date(2019, 1, 9),
+            'site_id': '191',
+            'display_name': '2019 Regular Session',
         },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
