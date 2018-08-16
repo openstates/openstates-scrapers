@@ -46,7 +46,7 @@ RUN /opt/openstates/venv-billy/bin/pip install -U python-dateutil requests
 
 RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/
 RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata.git#egg=python-opencivicdata
-RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/GovHawkDC/pupa.git@feature/custom-outputs#egg=pupa
+RUN /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/GovHawkDC/pupa.git@feature/always-s3#egg=pupa
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
