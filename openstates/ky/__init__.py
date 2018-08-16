@@ -101,6 +101,13 @@ class Kentucky(Jurisdiction):
             "start_date": "2017-01-03"
         },
         {
+            "_scraped_name": "2019 Regular Session",
+            "classification": "primary",
+            "identifier": "2019RS",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-08"
+        },
+        {
             "_scraped_name": "2018 Regular Session",
             "classification": "primary",
             "end_date": "2018-04-13",
