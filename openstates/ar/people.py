@@ -97,8 +97,10 @@ class ARLegislatorScraper(Scraper):
         address = root.xpath('//nobr/text()')[0].replace(u'\xa0', ' ')
 
         person.add_contact_detail(type='address', value=address, note='District Office')
-        person.add_contact_detail(type='voice', value=phone, note='District Office')
-        person.add_contact_detail(type='email', value=email, note='District Office')
+        if phone is not None:
+            person.add_contact_detail(type='voice', value=phone, note='District Office')
+        if email is not None:
+            person.add_contact_detail(type='email', value=email, note='District Office')
 
         try:
             person.extras['occupation'] = re.search(
