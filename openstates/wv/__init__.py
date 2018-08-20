@@ -101,7 +101,7 @@ class WestVirginia(Jurisdiction):
         {
             "_scraped_name": "2018",
             "classification": "special",
-            "identifier": "2018S2",
+            "identifier": "20182S",
             "name": "2018 Second Special Session",
             "start_date": "2018-08-12",
         },
