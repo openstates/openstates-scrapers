@@ -88,6 +88,13 @@ class NorthCarolina(Jurisdiction):
             "identifier": "2017E1",
             "name": "2018 Extra Session 1",
         },
+        {
+            "_scraped_name": "2018 Second Extra Session",
+            "classification": "special",
+            "identifier": "2017E2",
+            "name": "2018 Extra Session 2",
+            "start_date": "2018-08-24"
+        },
         # {
         #     "_scraped_name": "2017 Extra Session",
         #     "classification": "special",
