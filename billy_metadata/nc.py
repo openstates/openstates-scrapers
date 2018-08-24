@@ -108,6 +108,9 @@ metadata = dict(
         '2017E1': {'type': 'special',
                    'display_name': '2017 Extra Session 1',
                    },
+        '2017E2': {'type': 'special',
+                    'display_name': '2018 Extra Session 2',
+                  },
     },
     _ignored_scraped_sessions=[
         '2008 Extra Session', '2007-2008 Session',
