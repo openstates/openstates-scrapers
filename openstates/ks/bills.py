@@ -2,7 +2,6 @@ import re
 import json
 import datetime
 
-import scrapelib
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
 
@@ -109,11 +108,7 @@ class KSBillScraper(Scraper):
             # Versions are exposed in `bill_data['versions'],
             # but lack any descriptive text or identifiers;
             # continue to scrape these from the HTML
-            try:
-                yield from self.scrape_html(bill, session)
-            except scrapelib.HTTPError as e:
-                self.warning('unable to fetch HTML for bill {0}'.format(
-                    bill['bill_id']))
+            yield from self.scrape_html(bill, session)
 
             yield bill
 
