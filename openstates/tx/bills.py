@@ -21,7 +21,7 @@ class TXBillScraper(Scraper, LXMLMixin):
         'F': 'Enrolled'
     }
     companion_url = (
-        'http://www.legis.state.tx.us/BillLookup/Companions.aspx'
+        'https://capitol.texas.gov/BillLookup/Companions.aspx'
         '?LegSess={}&Bill={}'
     )
 

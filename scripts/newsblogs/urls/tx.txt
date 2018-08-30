@@ -11,9 +11,9 @@ http://www.texastribune.org/feeds/main/
 http://blog.mysanantonio.com/politics/feed/
 http://www.star-telegram.com/legislature/index.atom
 http://www.txdemocrats.org/feed/
-http://www.house.state.tx.us/rss/rss.php
+http://house.texas.gov/rss/rss.php
 http://www.txhousedems.com/feed/
-http://governor.state.tx.us/rss/
+http://gov.texas.gov/rss/
 
 http://www.therepublic.com/feed/cat/2620
 http://www.pewstates.org/feeds/all.rss?states=328049

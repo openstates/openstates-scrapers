@@ -118,7 +118,7 @@ class TXEventScraper(Scraper, LXMLMixin):
                 'lower': 'H',
                 'other': 'J'}[chamber]
 
-        url = "http://www.capitol.state.tx.us/Committees/Committees.aspx" + \
+        url = "https://capitol.texas.gov/Committees/Committees.aspx" + \
               "?Chamber=" + chid
 
         page = self.lxmlize(url)
@@ -126,7 +126,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         for ref in refs:
             yield from self.scrape_page(session, chamber, ref.attrib['href'])
 
-        url = "http://www.capitol.state.tx.us/Committees/MeetingsUpcoming.aspx" + \
+        url = "http://capitol.texas.gov/Committees/MeetingsUpcoming.aspx" + \
               "?Chamber=" + chid
 
         yield from self.scrape_upcoming_page(session, chamber, url)

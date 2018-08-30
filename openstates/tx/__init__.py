@@ -12,7 +12,7 @@ class Texas(Jurisdiction):
     division_id = "ocd-division/country:us/state:tx"
     classification = "government"
     name = "Texas"
-    url = "http://www.capitol.state.tx.us/"
+    url = "https://capitol.texas.gov/"
     scrapers = {
         'people': TXPersonScraper,
         'committees': TXCommitteeScraper,
@@ -143,7 +143,7 @@ class Texas(Jurisdiction):
     ]
 
     def get_session_list(self):
-        return url_xpath('http://www.legis.state.tx.us/',
+        return url_xpath('https://capitol.texas.gov/',
                          '//select[@name="cboLegSess"]/option/text()')
 
     def get_organizations(self):
