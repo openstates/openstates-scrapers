@@ -147,8 +147,8 @@ class BaseVote(object):
 
 
 # Note: Vote count patterns are inconsistent across journals and may follow the pattern
-# "145 Yeas, 0 Nays" (http://www.journals.house.state.tx.us/HJRNL/85R/HTML/85RDAY02FINAL.HTM) or
-# "Yeas 20, Nays 10" (http://www.journals.senate.state.tx.us/SJRNL/85R/HTML/85RSJ02-08-F.HTM)
+# "145 Yeas, 0 Nays" (https://journals.house.texas.gov/HJRNL/85R/HTML/85RDAY02FINAL.HTM) or
+# "Yeas 20, Nays 10" (https://journals.senate.texas.gov/SJRNL/85R/HTML/85RSJ02-08-F.HTM)
 class MaybeVote(BaseVote):
     yeas_pattern = re.compile(r'yeas[\s\xa0]+(\d+)|(\d+)[\s\xa0]+yeas', re.IGNORECASE)
     nays_pattern = re.compile(r'nays[\s\xa0]+(\d+)|(\d+)[\s\xa0]+nays', re.IGNORECASE)
@@ -334,7 +334,7 @@ class TXVoteScraper(Scraper):
         day_num = 1
         while journal_day <= today:
             if 'lower' in chambers:
-                journal_root = "http://www.journals.house.state.tx.us/HJRNL/%s/HTML/" % session
+                journal_root = "https://journals.house.texas.gov/HJRNL/%s/HTML/" % session
                 journal_url = journal_root + session + "DAY" + str(day_num).zfill(2) + "FINAL.HTM"
                 try:
                     self.get(journal_url)
@@ -344,7 +344,7 @@ class TXVoteScraper(Scraper):
                     yield from self.scrape_journal(journal_url, 'lower', session)
 
             if 'upper' in chambers:
-                journal_root = "http://www.journals.senate.state.tx.us/SJRNL/%s/HTML/" % session
+                journal_root = "https://journals.senate.texas.gov/SJRNL/%s/HTML/" % session
                 journal_url = journal_root + "%sSJ%s-%s-F.HTM" % (
                     session, str(journal_day.month).zfill(2), str(journal_day.day).zfill(2))
                 try:

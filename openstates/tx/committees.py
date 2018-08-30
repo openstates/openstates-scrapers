@@ -15,9 +15,9 @@ class TXCommitteeScraper(Scraper, LXMLMixin):
 
     def scrape_chamber(self, chamber):
         committee_list_urls = {
-            'lower': 'http://www.capitol.state.tx.us/Committees/'
+            'lower': 'https://capitol.texas.gov/Committees/'
                      'CommitteesMbrs.aspx?Chamber=H',
-            'upper': 'http://www.capitol.state.tx.us/Committees/'
+            'upper': 'https://capitol.texas.gov/Committees/'
                      'CommitteesMbrs.aspx?Chamber=S'
         }
 
