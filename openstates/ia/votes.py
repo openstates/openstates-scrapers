@@ -8,6 +8,14 @@ from pupa.utils.generic import convert_pdf
 from pupa.scrape import Scraper, VoteEvent
 
 
+SITE_IDS = {
+    '2017-2018': '87',
+    '2015-2016': '86',
+    '2013-2014': '85',
+    '2011-2012': '84',
+}
+
+
 class IAVoteScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
@@ -23,50 +31,45 @@ class IAVoteScraper(Scraper):
     def scrape_chamber(self, chamber, session):
         # Each PDF index page contains just one year, not a whole session
         # Therefore, we need to iterate over both years in the session
-        session_years = [int(year) for year in session.split("-")]
-        for year in session_years:
+        session_id = SITE_IDS[session]
+        for sub_session in [1, 2]:
+            url = 'https://www.legis.iowa.gov/chambers/journals/{}'.format(
+                'house' if chamber == 'lower' else 'senate'
+            )
+            params = {'ga': session_id, 'session': sub_session}
+            html = self.get(url, params=params).content
 
-            if year <= datetime.today().year:
-                url = 'https://www.legis.iowa.gov/chambers/journals/index/'
-                if chamber == "lower":
-                    url += "house"
-                else:
-                    url += "senate"
+            doc = lxml.html.fromstring(html)
+            doc.make_links_absolute(url)
+            urls = [x for x in doc.xpath('//a[@href]/@href') if
+                    x.endswith(".pdf")][::-1]
 
-                params = {"year": year}
-                html = self.get(url, params=params).content
+            for url in urls:
+                _, filename = url.rsplit('/', 1)
+                journal_template = '%Y%m%d_{}.pdf'
+                try:
+                    if chamber == 'upper':
+                        journal_format = journal_template.format('SJNL')
+                    elif chamber == 'lower':
+                        journal_format = journal_template.format('HJNL')
+                    else:
+                        raise ValueError('Unknown chamber: {}'.format(
+                            chamber))
 
-                doc = lxml.html.fromstring(html)
-                doc.make_links_absolute(url)
-                urls = [x for x in doc.xpath('//a[@href]/@href') if
-                        x.endswith(".pdf")][::-1]
-
-                for url in urls:
-                    _, filename = url.rsplit('/', 1)
-                    journal_template = '%Y%m%d_{}.pdf'
+                    date = datetime.strptime(filename, journal_format)
+                    date = datetime.combine(
+                            date,
+                            time(
+                                tzinfo=timezone(
+                                    timedelta(hours=-5))))
+                    yield self.scrape_journal(url, chamber, session, date)
+                except ValueError:
+                    journal_format = '%m-%d-%Y.pdf'
                     try:
-                        if chamber == 'upper':
-                            journal_format = journal_template.format('SJNL')
-                        elif chamber == 'lower':
-                            journal_format = journal_template.format('HJNL')
-                        else:
-                            raise ValueError('Unknown chamber: {}'.format(
-                                chamber))
-
                         date = datetime.strptime(filename, journal_format)
-                        date = datetime.combine(
-                                date,
-                                time(
-                                    tzinfo=timezone(
-                                        timedelta(hours=-5))))
-                        yield self.scrape_journal(url, chamber, session, date)
                     except ValueError:
-                        journal_format = '%m-%d-%Y.pdf'
-                        try:
-                            date = datetime.strptime(filename, journal_format)
-                        except ValueError:
-                            msg = '{} doesn\'t smell like a date. Skipping.'
-                            self.logger.info(msg.format(filename))
+                        msg = '{} doesn\'t smell like a date. Skipping.'
+                        self.logger.info(msg.format(filename))
 
     def scrape_journal(self, url, chamber, session, date):
 

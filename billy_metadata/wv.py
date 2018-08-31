@@ -24,7 +24,7 @@ metadata = {
          },
         {'name': '2017-2018',
          'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017', '20171S', '20172S', '2018', '2018S1', '2018S2'],
+         'sessions': ['2017', '20171S', '20172S', '2018', '20181S', '20182S'],
          },
     ],
     'session_details': {
@@ -71,10 +71,10 @@ metadata = {
                  'type': 'primary',
                  '_scraped_name': '2018'
                  },
-        '2018S1': {'display_name': '2018 First Special Session',
+        '20181S': {'display_name': '2018 First Special Session',
                    'type': 'primary',
                    },
-        '2018S2': {'display_name': '2018 Second Special Session',
+        '20182S': {'display_name': '2018 Second Special Session',
                    'type': 'primary',
                    },
     },

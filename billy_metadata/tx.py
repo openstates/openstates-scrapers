@@ -5,7 +5,7 @@ metadata = {
     'abbreviation': 'tx',
     'capitol_timezone': 'America/Chicago',
     'legislature_name': 'Texas Legislature',
-    'legislature_url': 'http://www.capitol.state.tx.us/',
+    'legislature_url': 'https://capitol.texas.gov/',
     'chambers': {
         'upper': {'name': 'Senate', 'title': 'Senator'},
         'lower': {'name': 'House', 'title': 'Representative'},

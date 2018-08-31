@@ -12,9 +12,6 @@ from .utils import extract_phone, extract_fax
 class TXPersonScraper(Scraper, LXMLMixin):
     jurisdiction = 'tx'
 
-    # bad SSL as of July 2018
-    verify = False
-
     def __init__(self, *args, **kwargs):
         super(TXPersonScraper, self).__init__(*args, **kwargs)
 
@@ -60,7 +57,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
         # use only full-session slug for this
         session = self.latest_session()[:2]
 
-        url = ('http://www.lrl.state.tx.us/legeLeaders/members/membersearch.'
+        url = ('https://lrl.texas.gov/legeLeaders/members/membersearch.'
                'cfm?leg={}&chamber={}').format(session, chamber_map[chamber])
         page = self.lxmlize(url)
 
@@ -91,12 +88,12 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
     def scrape_chamber(self, chamber):
         rosters = {
-            'lower': 'https://www.house.state.tx.us/members/',
-            'upper': 'http://www.senate.texas.gov/directory.php'
+            'lower': 'https://house.texas.gov/members/',
+            'upper': 'https://senate.texas.gov/directory.php'
         }
 
         roster_url = rosters[chamber]
-        response = self.get(roster_url, verify=False)
+        response = self.get(roster_url)
         # auto detect encoding
         response.encoding = response.apparent_encoding
         roster_page = lxml.html.fromstring(response.text)
@@ -108,7 +105,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
         """
         Retrieves a list of members of the upper legislative chamber.
         """
-        # TODO: photo_urls http://www.senate.texas.gov/members.php
+        # TODO: photo_urls https://senate.texas.gov/members.php
         #       also available on individual member screens
         # TODO: email addresses could be scraped from secondary sources
         #       https://github.com/openstates/openstates/issues/1292

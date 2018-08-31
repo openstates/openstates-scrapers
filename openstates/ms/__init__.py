@@ -146,6 +146,13 @@ class Mississippi(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-02"
         },
+        {
+            "_scraped_name": "2018 First Extraordinary Session",
+            "classification": "special",
+            "identifier": "20181E",
+            "name": "2018 First Extraordinary Session",
+            "start_date": "2018-08-23",
+        },
     ]
     ignored_scraped_sessions = [
         "2008 First Extraordinary Session",
