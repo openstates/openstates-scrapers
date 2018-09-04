@@ -38,7 +38,7 @@ metadata = {
         },
         {
             'name': '2018-2019',
-            'sessions': ['2018','2018specialI', '2019'],
+            'sessions': ['2018','2018specialI', '2018specialII', '2019'],
             'start_year': 2018,
             'end_year': 2019,
         },
@@ -133,6 +133,11 @@ metadata = {
             'start_date': datetime.date(2018, 4, 11),
             'site_id': '182',
             'display_name': '2018, 1st Special Session',
+        },
+        '2018specialII': {
+            'start_date': datetime.date(2018, 8, 30),
+            'site_id': '183',
+            'display_name': '2018, 2nd Special Session',
         },
         '2019': {
             'start_date': datetime.date(2019, 1, 9),

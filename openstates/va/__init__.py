@@ -118,6 +118,12 @@ class Virginia(Jurisdiction):
             "start_date": "2018-04-11",
         },
         {
+            "_scraped_name": "2018 Special Session II",
+            "identifier": "2018specialI",
+            "name": "2018, 2nd Special Session",
+            "start_date": "2018-08-30",
+        },
+        {
             "_scraped_name": "2019 Session",
             "identifier": "2019",
             "name": "2019 Regular Session",
