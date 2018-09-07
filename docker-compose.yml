@@ -1,7 +1,7 @@
 version: "3"
 services:
   scrape:
-    image: openstates/openstates
+    image: govhawk/openstates:1.4.0-beta
     environment:
     - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
@@ -11,6 +11,7 @@ services:
     - OLODATA_USERNAME
     - OLODATA_PASSWORD
     - PUPA_ARGS
+    - SKIP_BILLY=true
     volumes:
     - .:/opt/openstates/openstates/
     depends_on:
@@ -54,7 +55,7 @@ services:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
   ca-download:
-    image: openstates/openstates
+    image: govhawk/openstates:1.4.0-beta
     entrypoint: /opt/openstates/openstates/openstates/ca/download.sh
     environment:
     - MYSQL_HOST=mysql

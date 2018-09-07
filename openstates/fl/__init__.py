@@ -52,9 +52,11 @@ class Florida(Jurisdiction):
             'identifier': '2017A', 'classification': 'special'},
         {'name': '2018 Regular Session', 'identifier': '2018', 'classification': 'primary',
          'start_date': '2018-01-08', 'end_date': '2018-03-09'},
+        {'name': '2019 Regular Session', 'identifier': '2019', 'classification': 'primary',
+         'start_date': '2019-03-05'},
     ]
     ignored_scraped_sessions = ['2010',
-                                '2010A', '2010O', '2012O', '2016O', '2014O', '2018', '2019']
+                                '2010A', '2010O', '2012O', '2016O', '2014O', '2018']
 
     def get_organizations(self):
         legis = Organization(name="Florida Legislature",
