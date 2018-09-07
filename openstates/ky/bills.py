@@ -114,7 +114,7 @@ class KYBillScraper(Scraper, LXMLMixin):
         version_link_node = self.get_node(
             page,
             '//a[contains(@href, "{bill_id}/bill.doc") or contains(@href,'
-            '"{bill_id}/bill.pdf")]'.format(bill_id=short_bill_id))
+            '"{bill_id}/bill.pdf")]'.format(bill_id=short_bill_id.replace('*', '')))
 
         if version_link_node is None:
             # Bill withdrawn
