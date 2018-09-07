@@ -40,7 +40,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 for bill in sdoc.xpath('//div[@id="bul"]/a/text()'):
                     self._subjects[bill.replace(' ', '')].append(subject)
 
-    def scrape(self, session=None, chamber=None, prefile=None):
+    def scrape(self, session=None, chamber=None, prefile=False):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
@@ -63,7 +63,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             for chamber in chambers:
                 yield from self.scrape_session(chamber, session, prefile)
 
-    def scrape_session(self, chamber, session, prefile=None):
+    def scrape_session(self, chamber, session, prefile=False):
         if prefile:
             yield from self.scrape_prefile_list(chamber, session)
         else:
@@ -75,7 +75,7 @@ class KYBillScraper(Scraper, LXMLMixin):
                 chamber_abbr(chamber))
             yield from self.scrape_bill_list(chamber, session, resolution_url)
 
-    def scrape_bill_list(self, chamber, session, url, prefile=None):
+    def scrape_bill_list(self, chamber, session, url, prefile=False):
         bill_abbr = None
         page = self.lxmlize(url)
 
@@ -99,22 +99,22 @@ class KYBillScraper(Scraper, LXMLMixin):
         bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_bills.htm'.format(
             abbr)
         if 'upper' == chamber:
-            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_senate.htm'.format(
-                abbr)
+            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_senate.htm' \
+                .format(abbr)
         elif 'lower' == chamber:
-            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_house.htm'.format(
-                abbr)
+            bill_url = 'http://www.lrc.ky.gov/record/{}/prefiled/prefiled_sponsor_house.htm' \
+                .format(abbr)
 
         yield from self.scrape_bill_list(chamber, session, bill_url, prefile=True)
 
-    def parse_bill(self, chamber, session, bill_id, url, prefile=None):
+    def parse_bill(self, chamber, session, bill_id, url, prefile=False):
         page = self.lxmlize(url)
 
         short_bill_id = re.sub(r'(H|S)([JC])R', r'\1\2', bill_id)
         version_link_node = self.get_node(
             page,
             '//a[contains(@href, "{bill_id}/bill.doc") or contains(@href,'
-            '"{bill_id}/bill.pdf")]'.format(bill_id=short_bill_id))
+            '"{bill_id}/bill.pdf")]'.format(bill_id=short_bill_id.replace('*', '')))
 
         if version_link_node is None:
             # Bill withdrawn
