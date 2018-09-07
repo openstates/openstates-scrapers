@@ -139,9 +139,11 @@ class PRBillScraper(Scraper):
                 action_actor = 'lower'
             else:
                 action_actor = chamber
-        # if action.startswith('Referido'):
-            # for comme in committees:
-            # print comme
+
+        # manual fix for data error on 2017-2020 P S0623
+        if date == '8/1/1826':
+            date = '8/1/2018'
+
         bill.add_action(description=action.replace('.', ''),
                         date=date.strftime('%Y-%m-%d'),
                         chamber=action_actor,
