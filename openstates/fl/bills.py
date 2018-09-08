@@ -59,11 +59,11 @@ class BillList(Page):
 
         # normalize id from HB 0004 to H4
         subj_bill_id = re.sub('(H|S)\w+ 0*(\d+)', r'\1\2', bill_id)
-        bill.subject = sorted(list(self.kwargs['subjects'][subj_bill_id]))
+        bill.subject = list(self.kwargs['subjects'][subj_bill_id])
 
         sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
         for sp in sponsor.split(', '):
-            bill.add_sponsorship(sp.strip(), 'primary', 'person', True)
+            bill.add_sponsorship(sp, 'primary', 'person', True)
 
         yield from self.scrape_page_items(BillDetail, url=bill_url, obj=bill)
 
@@ -398,7 +398,6 @@ class HousePage(Page):
         # Keep the digits and all following characters in the bill's ID
         bill_number = re.search(r'^\w+\s(\d+\w*)$', self.kwargs['bill'].identifier).group(1)
         session_number = {
-            '2019': '87',
             '2018': '86',
             '2017A': '85',
             '2017': '83',

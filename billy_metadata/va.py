@@ -144,11 +144,6 @@ metadata = {
             'site_id': '191',
             'display_name': '2019 Regular Session',
         },
-        '2018specialII': {
-            'start_date': datetime.date(2018, 8, 30),
-            'site_id': '183',
-            'display_name': '2018, 2nd Special Session',
-        },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [
