@@ -261,15 +261,11 @@ class IlBillScraper(Scraper):
         for chamber in ('lower', 'upper'):
             for doc_type in [chamber_slug(chamber) + doc_type for doc_type in DOC_TYPES]:
                 for bill_url in self.get_bill_urls(chamber, session_id, doc_type):
-                    bill, votes = self.scrape_bill(chamber, session_id, doc_type, bill_url)
-                    yield bill
-                    yield from votes
+                    yield from self.scrape_bill(chamber, session_id, doc_type, bill_url)
 
         # special non-chamber cases
         for bill_url in self.get_bill_urls(chamber, session_id, 'AM'):
-            bill, votes = self.scrape_bill(chamber, session_id, 'AM', bill_url, 'appointment')
-            yield bill
-            yield from votes
+            yield from self.scrape_bill(chamber, session_id, 'AM', bill_url, 'appointment')
 
         # TODO: get joint session resolution added to python-opencivicdata
         # for bill_url in self.get_bill_urls(chamber, session_id, 'JSR'):
@@ -362,11 +358,10 @@ class IlBillScraper(Scraper):
         # versions
         version_url = doc.xpath('//a[text()="Full Text"]/@href')[0]
         self.scrape_documents(bill, version_url)
+        yield bill
 
         votes_url = doc.xpath('//a[text()="Votes"]/@href')[0]
-        votes = self.scrape_votes(session, bill, votes_url, committee_actors)
-
-        return bill, votes
+        yield from self.scrape_votes(session, bill, votes_url, committee_actors)
 
     def scrape_documents(self, bill, version_url):
         html = self.get(version_url).text
