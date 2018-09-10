@@ -116,7 +116,8 @@ class MemberList(Page):
     def handle_list_item(self, item):
         name = item.text
 
-        if 'resigned' in name.lower() or 'vacated' in name.lower():
+        lname = name.lower()
+        if 'resigned' in lname or 'vacated' in lname or 'retired' in lname:
             return
         if (name in CHAMBER_MOVES and(self.chamber != CHAMBER_MOVES[name])):
             return
