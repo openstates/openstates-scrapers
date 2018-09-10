@@ -60,14 +60,16 @@ class PuertoRico(Jurisdiction):
         for i, d in enumerate(('I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII')):
             upper.add_post(label=d, role=upper_title,
                            division_id='{}/sldu:{}'.format(self.division_id, i + 1))
+        upper.add_post(label='At-Large', role=upper_title,
+                       division_id='{}/sldu'.format(self.division_id))
 
         # lower house is 40 seats, + 11 at large
         for n in range(1, 41):
             lower.add_post(
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
-
-        # TODO: add at large
+        lower.add_post(label='At-Large', role=lower_title,
+                       division_id='{}/sldl'.format(self.division_id))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
