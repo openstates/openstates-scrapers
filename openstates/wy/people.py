@@ -35,10 +35,12 @@ class WYPersonScraper(Scraper):
 
             party = self.party_map[row['party']]
 
-            dob = datetime.datetime.strptime(
-                details['dob'], '%m/%d/%Y %I:%M:%S %p')
-
-            dob_str = datetime.datetime.strftime(dob, "%Y-%m-%d")
+            if details['dob'] is not None:
+                dob = datetime.datetime.strptime(
+                    details['dob'], '%m/%d/%Y %I:%M:%S %p')
+                dob_str = datetime.datetime.strftime(dob, "%Y-%m-%d")
+            else:
+                dob_str = ''
 
             photo_url = 'http://wyoleg.gov/LegislatorSummary/Photos/{}'.format(
                 details['legPhoto'])
