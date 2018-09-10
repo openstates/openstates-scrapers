@@ -416,9 +416,10 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         bill_type = "bill"
         triplet = bill_id[:3]
+
         if triplet in bill_types:
             bill_type = bill_types[triplet]
-            bill_number = int(bill_id[4:])
+            bill_number =  int(bill_id[3:].strip())
         else:
             bill_number = int(bill_id[3:])
 
