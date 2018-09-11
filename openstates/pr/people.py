@@ -24,6 +24,10 @@ class PRPersonScraper(Scraper, LXMLMixin):
             name_text = self.get_node(senator_page, '//span[@class="name"]').text_content().strip()
             name = re.sub(r'^Hon\.', '', name_text, flags=re.IGNORECASE).strip()
             party = profile_links[0].text_content().strip()
+            # Translate to English since being an Independent is a universal construct
+            if party == "Independiente":
+                party = "Independent"
+
             photo_url = self.get_node(senator_page, '//div[@class="avatar"]//img/@src')
 
             if profile_links[1].text_content().strip() == "Senador por Distrito":
