@@ -61,7 +61,7 @@ class PuertoRico(Jurisdiction):
             upper.add_post(label=d, role=upper_title,
                            division_id='{}/sldu:{}'.format(self.division_id, i + 1))
         upper.add_post(label='At-Large', role=upper_title,
-                       division_id='{}/sldu'.format(self.division_id))
+                       division_id='{}/sldu:at-large'.format(self.division_id))
 
         # lower house is 40 seats, + 11 at large
         for n in range(1, 41):
@@ -69,7 +69,7 @@ class PuertoRico(Jurisdiction):
                 label=str(n), role=lower_title,
                 division_id='{}/sldl:{}'.format(self.division_id, n))
         lower.add_post(label='At-Large', role=lower_title,
-                       division_id='{}/sldl'.format(self.division_id))
+                       division_id='{}/sldl:at-large'.format(self.division_id))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
