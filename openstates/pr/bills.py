@@ -141,8 +141,8 @@ class PRBillScraper(Scraper):
                 action_actor = chamber
 
         # manual fix for data error on 2017-2020 P S0623
-        if date == '8/1/1826':
-            date = '8/1/2018'
+        if date == datetime.datetime(1826, 8, 1):
+            date = date.replace(year=2018)
 
         bill.add_action(description=action.replace('.', ''),
                         date=date.strftime('%Y-%m-%d'),
