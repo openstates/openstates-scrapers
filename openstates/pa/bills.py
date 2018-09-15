@@ -248,9 +248,13 @@ class PABillScraper(Scraper):
 
         # "LVE" and "N/V" have been moved up as direct children of the div
         # element
-        lve = int(page.xpath("//div[text()[normalize-space() = 'LVE']]")[0].getnext().text)
-        nv = int(page.xpath("//div[text()[normalize-space() = 'N/V']]")[0].getnext().text)
-        other = lve + nv
+        other = 0
+        lve_elements = page.xpath('//div[text()[normalize-space() = "LVE"]]')
+        if lve_elements:
+            other += int(lve_elements[0].getnext().text)
+        nv_elements = page.xpath('//div[text()[normalize-space() = "N/V"]]')
+        if nv_elements:
+            other += int(nv_elements[0].getnext().text)
 
         vote = VoteEvent(
             chamber=chamber,
