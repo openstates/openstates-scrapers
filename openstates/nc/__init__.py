@@ -95,8 +95,17 @@ class NorthCarolina(Jurisdiction):
             "name": "2018 Extra Session 2",
             "start_date": "2018-08-24"
         },
+        # TODO: uncomment 10/9
+        # {
+        #     "_scraped_name": "2018 Third Extra Session",
+        #     "classification": "special",
+        #     "identifier": "2017E3",
+        #     "name": "2018 Extra Session 3",
+        #     "start_date": "2018-10-09"
+        # },
     ]
     ignored_scraped_sessions = [
+        '2018 Third Extra Session',  # TODO: remove 10/9
         '2008 Extra Session',
         '2007-2008 Session',
         '2007 Extra Session',
