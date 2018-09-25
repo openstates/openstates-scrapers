@@ -47,8 +47,6 @@ class VTPersonScraper(Scraper, LXMLMixin):
                 state_email = None
 
             district = info['District'].replace(" District", "")
-            if district == 'Grand Isle':
-                district = 'Chittenden-Grand Isle'
 
             leg = Person(
                 primary_org=self.CHAMBERS[info['Title']],
