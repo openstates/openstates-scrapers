@@ -22,7 +22,8 @@ class PRPersonScraper(Scraper, LXMLMixin):
             profile_links = self.get_nodes(senator_page, '//ul[@class="profiles-links"]/li')
 
             name_text = self.get_node(senator_page, '//span[@class="name"]').text_content().strip()
-            name = re.sub(r'^Hon\.', '', name_text, flags=re.IGNORECASE).strip()
+            # Convert to title case as some names are in all-caps
+            name = re.sub(r'^Hon\.', '', name_text, flags=re.IGNORECASE).strip().title()
             party = profile_links[0].text_content().strip()
             # Translate to English since being an Independent is a universal construct
             if party == "Independiente":
