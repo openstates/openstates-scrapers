@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 /opt/openstates/venv-pupa/bin/pupa dbinit --country us
 
