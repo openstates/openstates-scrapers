@@ -40,7 +40,7 @@ HEADERS = [
 ]
 
 
-class CTPersomScraper(Scraper):
+class CTPersonScraper(Scraper):
     def scrape(self):
         # chambers = [chamber] if chamber is not None else ['upper', 'lower']
         leg_url = "ftp://ftp.cga.ct.gov/pub/data/LegislatorDatabase.csv"

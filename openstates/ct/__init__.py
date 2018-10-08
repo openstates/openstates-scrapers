@@ -1,7 +1,7 @@
 import lxml.html
 
 from pupa.scrape import Jurisdiction, Organization
-from .people import CTPersomScraper
+from .people import CTPersonScraper
 from .bills import CTBillScraper
 # from .events import CTEventScraper
 
@@ -16,7 +16,7 @@ class Connecticut(Jurisdiction):
     name = "Connecticut"
     url = "http://www.cga.ct.gov/"
     scrapers = {
-        'people': CTPersomScraper,
+        'people': CTPersonScraper,
         'bills': CTBillScraper,
         # 'events': CTEventScraper,
     }

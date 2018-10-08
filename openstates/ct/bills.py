@@ -121,7 +121,7 @@ class CTBillScraper(Scraper):
 
         for link in page.xpath("//a[contains(@href, 'VOTE')]"):
             # 2011 HJ 31 has a blank vote, others might too
-            if link.text:
+            if link.attrib['href'].endswith('.htm') and link.text:
                 yield from self.scrape_vote(bill, link.text.strip(),
                                             link.attrib['href'])
 
