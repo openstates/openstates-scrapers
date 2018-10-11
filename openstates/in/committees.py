@@ -51,8 +51,7 @@ class INCommitteeScraper(Scraper):
         return sc_dict
 
     def scrape(self):
-        session_name = self.latest_session()
-        session = session_name[0:5]
+        session = self.latest_session()
 
         subcomms = self.get_subcommittee_info(session)
 

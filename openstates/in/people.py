@@ -18,11 +18,10 @@ class INPersonScraper(Scraper):
 
     def scrape_chamber(self, chamber):
         client = ApiClient(self)
-        session_name = self.latest_session()
-        session = session_name[0:5]
+        session = self.latest_session()
         base_url = "http://iga.in.gov/legislative"
         api_base_url = "https://api.iga.in.gov"
-        chamber_name = "Senate" if chamber == "upper" else "House"
+        chamber_name = "senate" if chamber == "upper" else "house"
         r = client.get("chamber_legislators", session=session, chamber=chamber_name)
         all_pages = client.unpaginate(r)
         for leg in all_pages:
