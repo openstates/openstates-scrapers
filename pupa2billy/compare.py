@@ -115,7 +115,7 @@ class VoteComparator(Comparator):
 
 
 def compare(dir1, dir2):
-    for objtype in ('bills', 'legislators', 'committees', 'events'):
+    for objtype in ('bills', 'legislators', 'committees'):
         c = Comparator(objtype)
         c.compare(dir1, dir2)
 

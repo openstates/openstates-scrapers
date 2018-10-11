@@ -7,7 +7,6 @@ from .legislators import PupaLegislatorScraper
 from .committees import PupaCommitteeScraper
 from .bills import PupaBillScraper
 from .votes import PupaVoteScraper
-from .events import PupaEventScraper
 from .settings import BILLY_DATA_DIR
 
 
@@ -27,7 +26,6 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(juris_dir, 'committees'))
     os.makedirs(os.path.join(juris_dir, 'bills'))
     os.makedirs(os.path.join(juris_dir, 'votes'))
-    os.makedirs(os.path.join(juris_dir, 'events'))
 
     ls = PupaLegislatorScraper(metadata, juris_dir, jurisdiction=jurisdiction)
     ls.scrape()
@@ -40,6 +38,3 @@ if __name__ == '__main__':
 
     vs = PupaVoteScraper(metadata, juris_dir, jurisdiction=jurisdiction)
     vs.scrape()
-
-    es = PupaEventScraper(metadata, juris_dir, jurisdiction=jurisdiction)
-    es.scrape()
