@@ -87,8 +87,13 @@ class PRPersonScraper(Scraper, LXMLMixin):
             rep_page = self.lxmlize(rep_link)
 
             party_node = self.get_node(rep_page, '//span[@class="partyBio"]')
-            party_text = party_node.text_content().strip()
-            party = party_map[party_text]
+            # Albelo doesn't seem to have a "partyBio" as an independent, but we
+            # expect this to exist for all other members.
+            if not party_node and name == "Manuel A. Natal Albelo":
+                party = "Independent"
+            else:
+                party_text = party_node.text_content().strip()
+                party = party_map[party_text]
 
             address = self.get_node(rep_page, '//h6').text.strip().split("\n")[0].strip()
 
