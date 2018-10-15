@@ -21,7 +21,8 @@ class DCPersonScraper(Scraper):
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(council_url)
         # page should have 13 unique council URLs
-        urls = set(doc.xpath('//a[contains(@href, "dccouncil.us/council/")]/@href'))
+        urls = set(
+            doc.xpath('//a[contains(@href, "dccouncil.us/council/")]/@href'))
         # print '\n'.join(urls)
         assert len(urls) <= 13, "should have 13 unique councilmember URLs"
 
@@ -30,8 +31,11 @@ class DCPersonScraper(Scraper):
             doc = lxml.html.fromstring(data)
             doc.make_links_absolute(url)
 
-            descriptor = doc.xpath('//div[contains(@class,"media-object-section")]/p[contains(@class,"h4")]/text()')[0]
-            title_name = doc.xpath('//div[contains(@class,"media-object-section")]/h1/text()')[0]
+            descriptor = doc.xpath(
+                '//div[contains(@class,"media-object-section")]/'
+                'p[contains(@class,"h4")]/text()')[0]
+            title_name = doc.xpath(
+                '//div[contains(@class,"media-object-section")]/h1/text()')[0]
 
             # removes the title that is prepended to the name
             name = re.sub(r'^Councilmember ', '', title_name)
@@ -63,12 +67,16 @@ class DCPersonScraper(Scraper):
             faxes = doc.xpath('//p[@class="byline"]/text()')
             fax = faxes[-1].strip()
 
-            email = doc.xpath('//p[@class="byline"]/a[@class="contact-link"]')[0].text_content().strip()
-            phone = doc.xpath('//p[@class="byline"]/a[@class="contact-link"]')[1].text_content().strip()
+            email = doc.xpath(
+                '//p[@class="byline"]/a[@class="contact-link"]')[0].text_content().strip()
+            phone = doc.xpath(
+                '//p[@class="byline"]/a[@class="contact-link"]')[1].text_content().strip()
 
-            bio = "\n".join(doc.xpath('//div[contains(@class,"js-hide")]/p/text()')).strip()
+            bio = "\n".join(
+                doc.xpath('//div[contains(@class,"js-hide")]/p/text()')).strip()
             if doc.xpath('//p[contains(@class,"page-summary")]'):
-                short_bio = doc.xpath('//p[contains(@class,"page-summary")]')[0].text_content().strip()
+                short_bio = doc.xpath(
+                    '//p[contains(@class,"page-summary")]')[0].text_content().strip()
 
             person = Person(
                 name=name,
