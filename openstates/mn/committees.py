@@ -54,7 +54,7 @@ class MNCommitteeScraper(Scraper):
                     raise ValueError('unknown position: %s' % position[0])
 
                 name = name.split(' (')[0]
-                com.add_member(name, position)
+                com.add_member(name.strip(), position)
 
         com.add_source(url)
         yield com
@@ -97,7 +97,7 @@ class MNCommitteeScraper(Scraper):
                 else:
                     role = 'member'
                 name = name.split(' (')[0]
-                com.add_member(name, role)
+                com.add_member(name.strip(), role)
 
             # save
             yield com
