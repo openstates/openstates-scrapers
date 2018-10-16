@@ -88,7 +88,7 @@ class MIPersonScraper(Scraper):
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute(url)
-        for row in doc.xpath('//table[not(@class="calendar")]//tr')[3:]:
+        for row in doc.xpath('//table[not(@class="calendar")]//tr')[1:]:
             if len(row) != 7:
                 continue
 
@@ -103,6 +103,7 @@ class MIPersonScraper(Scraper):
             name = member.text_content().strip()
             name = re.sub(r'\s+', " ", name)
             surname = re.split(', | ', name)
+            name = ' '.join(name.split(', ')[::-1])
             surname[0] = re.sub('[\']', '', surname[0])
             try:
                 self.head(url_to_append + surname[0] + '.png')
