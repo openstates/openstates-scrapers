@@ -6,7 +6,7 @@ import lxml.html
 class DCCommitteeScraper(Scraper):
 
     def remove_title(self, name):
-        return re.sub(r'(Ward \d+\s+)*Councilmember\s*', '', name).strip()
+        return re.sub(r'(Ward \d+\s+)*Councilmember\s*', '', name).replace('At-Large', '').strip()
 
     def scrape(self):
         com_url = 'http://dccouncil.us/committees'
