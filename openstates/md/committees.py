@@ -56,6 +56,8 @@ def define_role(name):
         name = name.replace("Delegate", "", 1).strip()
     if name.startswith("Senator "):
         name = name.replace("Senator", "", 1).strip()
+    if name.count(', ') == 1:
+        name = ' '.join(name.split(', ')[::-1])
     return (name, role)
 
 
