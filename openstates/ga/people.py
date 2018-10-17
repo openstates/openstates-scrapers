@@ -113,8 +113,8 @@ class GAPersonScraper(Scraper, LXMLMixin):
                 image=photo,
             )
             legislator.extras = {
-                'last_name': last_name,
-                'first_name': first_name,
+                'family_name': last_name,
+                'given_name': first_name,
                 'guid': guid,
             }
 
