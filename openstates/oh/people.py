@@ -209,6 +209,12 @@ class OHLegislatorScraper(Scraper):
             address_lines = page.xpath("//div[@class='address']/span/text()")
             address = "\n".join(address_lines)
 
+            party_image = page.xpath('//div[@class="senatorParty"]/img/@src')[0]
+            if 'Republican' in party_image:
+                party = 'Republican'
+            elif 'Democrat' in party_image:
+                party = 'Democratic'
+
             email = (
                 'rep{0:0{width}}@ohiohouse.gov'
                 if chamber == 'lower' else
@@ -216,7 +222,7 @@ class OHLegislatorScraper(Scraper):
             ).format(int(district), width=2)
 
             leg = Person(name=full_name, district=district,
-                         primary_org=chamber, image=img)
+                         primary_org=chamber, image=img, party=party)
 
             leg.add_contact_detail(type='address', value=address, note='Capitol Office')
             leg.add_contact_detail(type='voice', value=phone, note='Capitol Office')
