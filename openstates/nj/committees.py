@@ -49,6 +49,7 @@ class NJCommitteeScraper(Scraper, MDBMixin):
 
                 leg = member_rec["Member"]
                 role = POSITIONS[member_rec["Position_on_Committee"]]
+                leg = ' '.join(leg.split(', ')[::-1])
                 org.add_member(leg, role=role)
 
         for org in org_dictionary.values():

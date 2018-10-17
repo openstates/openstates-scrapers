@@ -63,6 +63,8 @@ class OKCommitteeScraper(Scraper, LXMLMixinOK):
             member = match.group(4).strip()
             role = match.group(1) or 'member'
 
+            member = member.replace('Representative ', '')
+
             comm.add_member(member, role.lower())
 
         if not comm._related:
@@ -107,6 +109,7 @@ class OKCommitteeScraper(Scraper, LXMLMixinOK):
                 role = 'vice chair'
             elif 'Chair' in role:
                 role = 'chair'
+            member = member.replace('Senator ', '')
             comm.add_member(member, role=role)
 
         if not comm._related:
