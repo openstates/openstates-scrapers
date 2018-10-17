@@ -124,6 +124,8 @@ class ApiClient(object):
         while True:
             if 'nextLink' in result:
                 url = result['nextLink']
+                # pagination is broken somehow
+                url = url.replace('per_page=50', '')
                 self.scraper.info('Api GET next page: %r' % url)
                 result = self.get_relurl(url)
                 if not result['items']:
