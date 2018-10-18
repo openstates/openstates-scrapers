@@ -2,8 +2,8 @@ import re
 import lxml.html
 import requests
 from pupa.scrape import Jurisdiction, Organization
-from .people import IAPersonScraper
-# from .bills import IABillScraper
+# from .people import IAPersonScraper
+from .bills import IABillScraper
 from .votes import IAVoteScraper
 # from .events import IAEventScraper
 
