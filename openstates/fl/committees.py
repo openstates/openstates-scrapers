@@ -1,5 +1,6 @@
 from pupa.scrape import Scraper, Organization
 from spatula import Spatula, Page
+from .utils import fix_name
 
 
 class HouseComList(Page):
@@ -36,6 +37,7 @@ class HouseComDetail(Page):
         name = name.replace(' [R]', '')
         name = name.replace(' [I]', '')
         name = name.strip()
+        name = fix_name(name)
         return name
 
     def handle_page(self):
@@ -70,6 +72,7 @@ class SenComDetail(Page):
         member = member.replace(' (D)', '')
         member = member.replace(' (R)', '')
         member = member.replace(' (I)', '')
+        member = fix_name(member)
         return member
 
     def handle_page(self):

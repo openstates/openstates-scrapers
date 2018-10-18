@@ -40,11 +40,14 @@ class MSLegislatorScraper(Scraper):
 
         # TODO: come back and do roles correctly at some point
 
-        # if chamber == 'lower':
-            # chair_name = root.xpath('string(//CHAIR_NAME)')
-            # chair_link = root.xpath('string(//CHAIR_LINK)')
+        if chamber == 'lower':
+            chair_name = root.xpath('string(//CHAIR_NAME)')
+            chair_link = root.xpath('string(//CHAIR_LINK)')
+            yield from self.scrape_details(chamber, chair_name, chair_link, role)
+            chair_name = root.xpath('string(//PROTEMP_NAME)')
+            chair_link = root.xpath('string(//PROTEMP_LINK)')
+            yield from self.scrape_details(chamber, chair_name, chair_link, role)
             # role = root.xpath('string(//CHAIR_TITLE)')
-            # yield from self.scrape_details(chamber, chair_name, chair_link, role)
         # else:
             # Senate Chair is the Governor. Info has to be hard coded
             # chair_name = root.xpath('string(//CHAIR_NAME)')

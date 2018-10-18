@@ -33,6 +33,8 @@ class NDCommitteeScraper(Scraper):
             if member is None or member.startswith("District"):
                 continue
 
+            member = member.replace('Senator ', '').replace('Representative ', '')
+
             cttie.add_member(member, role=role)
 
         cttie.add_source(href)

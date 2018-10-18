@@ -197,7 +197,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
         scraped_name = scraped_name.text_content().strip().replace('Rep. ', '')
         scraped_name = ' '.join(scraped_name.split())
 
-        name = scraped_name
+        name = ' '.join(scraped_name.split(', ')[::-1])
 
         district_text = district_text.text_content().strip()
         district = str(self.district_re.search(district_text).group(1))

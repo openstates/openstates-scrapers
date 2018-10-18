@@ -419,6 +419,8 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
             legislator_url = name_anchor.get('href')
 
+            name = ' '.join(name.split(', ')[::-1])
+
             person = Person(name=name,
                             district=district,
                             party=party,

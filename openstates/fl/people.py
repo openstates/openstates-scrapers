@@ -6,6 +6,7 @@ from urllib import parse
 from pupa.scrape import Scraper, Person
 from pupa.utils import convert_pdf
 from spatula import Spatula, Page
+from .utils import fix_name
 
 log = logging.getLogger('fl')
 
@@ -78,6 +79,7 @@ class SenList(Page):
 
         leg_url = item.get('href')
 
+        name = fix_name(name)
         leg = Person(name=name, district=district, party=party,
                      primary_org='upper', role='Senator')
         leg.add_link(leg_url)
@@ -132,6 +134,7 @@ class RepList(Page):
         member_id = parse.parse_qs(split_url.query)['MemberId'][0]
         image = "http://www.flhouse.gov/FileStores/Web/Imaging/Member/{}.jpg".format(member_id)
 
+        name = fix_name(name)
         rep = Person(name=name, district=district, party=party, primary_org='lower',
                      role='Representative', image=image)
         rep.add_link(leg_url)

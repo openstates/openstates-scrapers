@@ -44,6 +44,7 @@ class SDLegislatorScraper(Scraper):
                 "/../span/section/table/tbody/tr/td/a"
             ):
                 name = link.text.strip()
+                name = ' '.join(name.split(', ')[::-1])
                 yield from self.scrape_legislator(name, chamber, link.attrib['href'], contact_page)
         yield from self._committees.values()
 

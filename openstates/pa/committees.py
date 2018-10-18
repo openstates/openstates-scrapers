@@ -35,6 +35,7 @@ class PACommitteeScraper(Scraper):
             namey_bits = name.split()
             namey_bits.pop().strip('()')
             name = ' '.join(namey_bits).replace(' ,', ',')
+            name = ' '.join(name.split(', ')[::-1])
 
             for li in committee_list.xpath('div/ul/li'):
 
@@ -51,7 +52,7 @@ class PACommitteeScraper(Scraper):
                 committee_name = li.xpath('a/text()').pop()
                 role = 'member'
                 for _role in li.xpath('i/text()') or []:
-                    role = re.sub(r'[\s,]+', ' ', _role).lower()
+                    role = re.sub(r'[\s,]+', ' ', _role).lower().strip()
 
                 # Add the committee member.
                 key = (chamber, committee_name)
