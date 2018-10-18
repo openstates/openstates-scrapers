@@ -3,8 +3,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import MNBillScraper
-from .committees import MNCommitteeScraper
-from .people import MNPersonScraper
+# from .committees import MNCommitteeScraper
+# from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 # from .events import MNEventScraper
 
@@ -27,9 +27,9 @@ class Minnesota(Jurisdiction):
     url = "http://state.mn.us/"
     scrapers = {
         "bills": MNBillScraper,
-        "committees": MNCommitteeScraper,
-        "people": MNPersonScraper,
-        "vote_events": MNVoteScraper,
+        # "committees": MNCommitteeScraper,
+        # "people": MNPersonScraper,
+        "votes": MNVoteScraper,
         # "events": MNEventScraper,
     }
     legislative_sessions = [

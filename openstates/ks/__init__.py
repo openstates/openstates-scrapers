@@ -3,8 +3,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from openstates.ks.bills import KSBillScraper
-from openstates.ks.people import KSPersonScraper
-from openstates.ks.committees import KSCommitteeScraper
+# from openstates.ks.people import KSPersonScraper
+# from openstates.ks.committees import KSCommitteeScraper
 
 
 # Kansas API's 429 error response includes:
@@ -24,8 +24,8 @@ class Kansas(Jurisdiction):
     url = "http://www.kslegislature.org/"
     scrapers = {
         'bills': KSBillScraper,
-        'people': KSPersonScraper,
-        'committees': KSCommitteeScraper,
+        # 'people': KSPersonScraper,
+        # 'committees': KSCommitteeScraper,
     }
     legislative_sessions = [
         {

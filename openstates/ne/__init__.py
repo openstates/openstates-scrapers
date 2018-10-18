@@ -3,8 +3,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from openstates.ne.bills import NEBillScraper
 from openstates.ne.votes import NEVoteScraper
-from openstates.ne.people import NEPersonScraper
-from openstates.ne.committees import NECommitteeScraper
+# from openstates.ne.people import NEPersonScraper
+# from openstates.ne.committees import NECommitteeScraper
 
 
 class Nebraska(Jurisdiction):
@@ -15,8 +15,8 @@ class Nebraska(Jurisdiction):
     scrapers = {
         'bills': NEBillScraper,
         'votes': NEVoteScraper,
-        'people': NEPersonScraper,
-        'committees': NECommitteeScraper,
+        # 'people': NEPersonScraper,
+        # 'committees': NECommitteeScraper,
     }
     legislative_sessions = [
         {

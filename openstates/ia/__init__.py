@@ -2,7 +2,7 @@ import re
 import lxml.html
 import requests
 from pupa.scrape import Jurisdiction, Organization
-from .people import IAPersonScraper
+# from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
 # from .events import IAEventScraper
@@ -14,7 +14,7 @@ class Iowa(Jurisdiction):
     name = "Iowa"
     url = "https://www.legis.iowa.gov/"
     scrapers = {
-        'people': IAPersonScraper,
+        # 'people': IAPersonScraper,
         'bills': IABillScraper,
         'votes': IAVoteScraper,
         # 'events': IAEventScraper,

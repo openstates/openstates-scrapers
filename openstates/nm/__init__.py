@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
-from .people import NMPersonScraper
-from .committees import NMCommitteeScraper
+# from .people import NMPersonScraper
+# from .committees import NMCommitteeScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
 
@@ -12,8 +12,8 @@ class NewMexico(Jurisdiction):
     name = "New Mexico"
     url = "https://www.nmlegis.gov"
     scrapers = {
-        'people': NMPersonScraper,
-        'committees': NMCommitteeScraper,
+        # 'people': NMPersonScraper,
+        # 'committees': NMCommitteeScraper,
         'bills': NMBillScraper,
         'votes': NMVoteScraper
     }

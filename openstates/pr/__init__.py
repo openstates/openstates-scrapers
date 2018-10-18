@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
-from .people import PRPersonScraper
-from .committees import PRCommitteeScraper
+# from .people import PRPersonScraper
+# from .committees import PRCommitteeScraper
 from .bills import PRBillScraper
 
 settings = dict(SCRAPELIB_TIMEOUT=300)
@@ -12,8 +12,8 @@ class PuertoRico(Jurisdiction):
     name = "Puerto Rico"
     url = "http://www.oslpr.org/"
     scrapers = {
-        'people': PRPersonScraper,
-        'committees': PRCommitteeScraper,
+        # 'people': PRPersonScraper,
+        # 'committees': PRCommitteeScraper,
         'bills': PRBillScraper,
     }
     legislative_sessions = [

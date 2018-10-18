@@ -2,8 +2,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import MIBillScraper
 # from .events import MIEventScraper
-from .people import MIPersonScraper
-from .committees import MICommitteeScraper
+# from .people import MIPersonScraper
+# from .committees import MICommitteeScraper
 
 
 class Michigan(Jurisdiction):
@@ -14,8 +14,8 @@ class Michigan(Jurisdiction):
     scrapers = {
         'bills': MIBillScraper,
         # 'events': MIEventScraper,
-        'people': MIPersonScraper,
-        'committees': MICommitteeScraper,
+        # 'people': MIPersonScraper,
+        # 'committees': MICommitteeScraper,
     }
     legislative_sessions = [
         {

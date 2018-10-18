@@ -2,9 +2,9 @@
 from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .bills import IlBillScraper
-from .people import IlPersonScraper
+# from .people import IlPersonScraper
 # from .events import IlEventScraper
-from .committees import IlCommitteeScraper
+# from .committees import IlCommitteeScraper
 
 
 class Illinois(Jurisdiction):
@@ -14,9 +14,9 @@ class Illinois(Jurisdiction):
     url = "http://www.ilga.gov/"
     scrapers = {
         "bills": IlBillScraper,
-        "people": IlPersonScraper,
+        # "people": IlPersonScraper,
         # "events": IlEventScraper,
-        "committees": IlCommitteeScraper,
+        # "committees": IlCommitteeScraper,
     }
     legislative_sessions = [
         {'name': '93rd Regular Session', 'identifier': '93rd', 'classification': 'primary',

@@ -3,9 +3,9 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import TNBillScraper
-from .committees import TNCommitteeScraper
+# from .committees import TNCommitteeScraper
 # from .events import TNEventScraper
-from .people import TNPersonScraper
+# from .people import TNPersonScraper
 
 
 class Tennessee(Jurisdiction):
@@ -15,9 +15,9 @@ class Tennessee(Jurisdiction):
     url = 'http://www.capitol.tn.gov/'
     scrapers = {
         'bills': TNBillScraper,
-        'committees': TNCommitteeScraper,
+        # 'committees': TNCommitteeScraper,
         # 'events': TNEventScraper,
-        'people': TNPersonScraper,
+        # 'people': TNPersonScraper,
     }
     legislative_sessions = [
         # {

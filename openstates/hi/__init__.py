@@ -1,9 +1,10 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils.lxmlize import url_xpath
-from .people import HIPersonScraper
+# from .people import HIPersonScraper
 # from .events import HIEventScraper
 from .bills import HIBillScraper
-from .committees import HICommitteeScraper
+# from .committees import HICommitteeScraper
+
 settings = dict(SCRAPELIB_TIMEOUT=300)
 
 
@@ -14,9 +15,9 @@ class Hawaii(Jurisdiction):
     name = "Hawaii"
     url = "http://capitol.hawaii.gov"
     scrapers = {
-        'people': HIPersonScraper,
+        # 'people': HIPersonScraper,
         'bills': HIBillScraper,
-        'committees': HICommitteeScraper,
+        # 'committees': HICommitteeScraper,
         # 'events': HIEventScraper
     }
     legislative_sessions = [

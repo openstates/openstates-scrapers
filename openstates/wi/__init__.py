@@ -4,8 +4,8 @@ from openstates.utils import url_xpath
 
 from .bills import WIBillScraper
 # from .events import WIEventScraper
-from .people import WIPersonScraper
-from .committees import WICommitteeScraper
+# from .people import WIPersonScraper
+# from .committees import WICommitteeScraper
 
 
 class Wisconsin(Jurisdiction):
@@ -16,8 +16,8 @@ class Wisconsin(Jurisdiction):
     scrapers = {
         'bills': WIBillScraper,
         # 'events': WIEventScraper,
-        'people': WIPersonScraper,
-        'committees': WICommitteeScraper,
+        # 'people': WIPersonScraper,
+        # 'committees': WICommitteeScraper,
     }
     legislative_sessions = [
         {

@@ -1,8 +1,8 @@
 import requests
 from pupa.scrape import Jurisdiction, Organization
 
-from .people import DCPersonScraper
-from .committees import DCCommitteeScraper
+# from .people import DCPersonScraper
+# from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
 # from .events import DCEventScraper
 from .utils import decode_json
@@ -14,8 +14,8 @@ class DistrictOfColumbia(Jurisdiction):
     name = "District of Columbia"
     url = "https://dc.gov"
     scrapers = {
-        'people': DCPersonScraper,
-        'committees': DCCommitteeScraper,
+        # 'people': DCPersonScraper,
+        # 'committees': DCCommitteeScraper,
         # 'events': DCEventScraper,
         'bills': DCBillScraper,
     }

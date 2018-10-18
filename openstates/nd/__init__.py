@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
-from .committees import NDCommitteeScraper
+# from .committees import NDCommitteeScraper
 from .votes import NDVoteScraper
-from .people import NDPersonScraper
+# from .people import NDPersonScraper
 from .bills import NDBillScraper
 
 
@@ -11,9 +11,9 @@ class NorthDakota(Jurisdiction):
     name = "North Dakota"
     url = "http://www.legis.nd.gov/"
     scrapers = {
-        'people': NDPersonScraper,
+        # 'people': NDPersonScraper,
         'votes': NDVoteScraper,
-        'committees': NDCommitteeScraper,
+        # 'committees': NDCommitteeScraper,
         'bills': NDBillScraper,
     }
     legislative_sessions = [
