@@ -1,9 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
-from .people import ARLegislatorScraper
+# from .people import ARLegislatorScraper
 from .bills import ARBillScraper
-from .committees import ARCommitteeScraper
+# from .committees import ARCommitteeScraper
 # from .events import AREventScraper
 
 
@@ -13,8 +13,8 @@ class Arkansas(Jurisdiction):
     name = "Arkansas"
     url = "http://www.arkleg.state.ar.us"
     scrapers = {
-        'people': ARLegislatorScraper,
-        'committees': ARCommitteeScraper,
+        # 'people': ARLegislatorScraper,
+        # 'committees': ARCommitteeScraper,
         'bills': ARBillScraper,
         # 'events': AREventScraper
     }

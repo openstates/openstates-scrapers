@@ -4,8 +4,8 @@ import requests
 
 from pupa.scrape import Jurisdiction, Organization
 
-from .people import AZPersonScraper
-from .committees import AZCommitteeScraper
+# from .people import AZPersonScraper
+# from .committees import AZCommitteeScraper
 # from .events import AZEventScraper
 from .bills import AZBillScraper
 
@@ -16,8 +16,8 @@ class Arizona(Jurisdiction):
     name = "Arizona"
     url = "http://www.azleg.gov/"
     scrapers = {
-        'people': AZPersonScraper,
-        'committees': AZCommitteeScraper,
+        # 'people': AZPersonScraper,
+        # 'committees': AZCommitteeScraper,
         # 'events': AZEventScraper,
         'bills': AZBillScraper,
     }

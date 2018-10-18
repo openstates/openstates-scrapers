@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
-from .people import VTPersonScraper
-from .committees import VTCommitteeScraper
+# from .people import VTPersonScraper
+# from .committees import VTCommitteeScraper
 from .bills import VTBillScraper
 # from .events import VTEventScraper
 
@@ -24,8 +24,8 @@ class Vermont(Jurisdiction):
     name = "Vermont"
     url = "http://legislature.vermont.gov/"
     scrapers = {
-        'people': VTPersonScraper,
-        'committees': VTCommitteeScraper,
+        # 'people': VTPersonScraper,
+        # 'committees': VTCommitteeScraper,
         'bills': VTBillScraper,
         # 'events': VTEventScraper
     }

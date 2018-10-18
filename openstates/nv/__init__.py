@@ -2,8 +2,8 @@ from utils.lxmlize import url_xpath
 from .utils import text_after_line_numbers, pdfdata_to_text
 
 from pupa.scrape import Jurisdiction, Organization
-from .people import NVPeopleScraper
-from .committees import NVCommitteeScraper
+# from .people import NVPeopleScraper
+# from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
 # from .events import NVEventScraper
 
@@ -14,8 +14,8 @@ class Nevada(Jurisdiction):
     name = "Nevada"
     url = "http://www.leg.state.nv.us/"
     scrapers = {
-        'people': NVPeopleScraper,
-        'committees': NVCommitteeScraper,
+        # 'people': NVPeopleScraper,
+        # 'committees': NVCommitteeScraper,
         'bills': NVBillScraper,
         # 'events': NVEventScraper,
     }

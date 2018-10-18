@@ -5,8 +5,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import CABillScraper
 # from .events import CAEventScraper
-from .people import CAPersonScraper
-from .committees import CACommitteeScraper
+# from .people import CAPersonScraper
+# from .committees import CACommitteeScraper
 
 
 settings = dict(SCRAPELIB_RPM=30)
@@ -20,8 +20,8 @@ class California(Jurisdiction):
     scrapers = {
         'bills': CABillScraper,
         # 'events': CAEventScraper,
-        'people': CAPersonScraper,
-        'committees': CACommitteeScraper,
+        # 'people': CAPersonScraper,
+        # 'committees': CACommitteeScraper,
     }
     legislative_sessions = [
         {

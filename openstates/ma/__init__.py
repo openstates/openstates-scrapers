@@ -4,8 +4,8 @@ import requests
 import lxml.html
 from pupa.scrape import Jurisdiction, Organization
 
-from .people import MAPersonScraper
-from .committees import MACommitteeScraper
+# from .people import MAPersonScraper
+# from .committees import MACommitteeScraper
 from .bills import MABillScraper
 
 
@@ -15,8 +15,8 @@ class Massachusetts(Jurisdiction):
     name = "Massachusetts"
     url = "http://mass.gov"
     scrapers = {
-        'people': MAPersonScraper,
-        'committees': MACommitteeScraper,
+        # 'people': MAPersonScraper,
+        # 'committees': MACommitteeScraper,
         'bills': MABillScraper,
     }
     legislative_sessions = [
