@@ -5,4 +5,3 @@ def fix_name(name):
         return name
     last, first = name.rsplit(', ', 1)
     return first + ' ' + last
-
