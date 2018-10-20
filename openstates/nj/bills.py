@@ -352,7 +352,9 @@ class NJBillScraper(Scraper, MDBMixin):
             zippedfile = zipfile.ZipFile(s_vote_zip)
             for vfile in ["%s.txt" % (filename), "%sEnd.txt" % (filename)]:
                 try:
-                    vote_file = io.TextIOWrapper(zippedfile.open(vfile, 'r'))
+                    vote_file = io.TextIOWrapper(
+                        zippedfile.open(vfile, 'r'),
+                        encoding='latin-1')
                 except KeyError:
                     #
                     # Right, so, 2011 we have an "End" file with more
