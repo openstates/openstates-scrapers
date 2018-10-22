@@ -11,8 +11,6 @@ ADD . /opt/openstates/openstates
 RUN apk add --no-cache --virtual .build-dependencies \
     wget \
     build-base \
-    glib \
-    glib-dev \
     autoconf \
     automake \
     libtool && \
@@ -20,6 +18,8 @@ RUN apk add --no-cache --virtual .build-dependencies \
     git \
     curl \
     unzip \
+    glib \
+    glib-dev \
     libressl-dev \
     libffi-dev \
     freetds-dev \
