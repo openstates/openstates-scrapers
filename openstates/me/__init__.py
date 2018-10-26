@@ -60,7 +60,9 @@ class Maine(Jurisdiction):
             "end_date": "2017-06-14",
         }
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        '2001-2002'
+    ]
 
     def get_organizations(self):
         legislature_name = "Maine Legislature"
@@ -95,6 +97,4 @@ class Maine(Jurisdiction):
     def get_session_list(self):
         sessions = url_xpath('http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp',
                              '//select[@name="LegSession"]/option/text()')
-        sessions.remove('jb-Test')
-        sessions.remove('2001-2002')
         return sessions
