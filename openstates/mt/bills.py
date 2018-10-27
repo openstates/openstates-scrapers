@@ -456,14 +456,14 @@ class MTBillScraper(Scraper, LXMLMixin):
                 continue
             v, name = filter(None, text.split(u'\xa0'))
             # Considering Name is brackets as short name
-            regex = re.compile(".*?\((.*?)\)")
+            regex = re.compile(r".*?\((.*?)\)")
             short_name = re.findall(regex, name)
             if len(short_name) > 0:
                 note = 'Short Name: ' + short_name[0]
             else:
                 note = ''
             # Name without brackets like 'Kary, Douglas'
-            name = re.sub("[\(\[].*?[\)\]]", "", name)
+            name = re.sub(r"[\(\[].*?[\)\]]", "", name)
             if v == 'Y':
                 vote.yes(name, note=note)
             elif v == 'N':

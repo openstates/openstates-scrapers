@@ -162,12 +162,12 @@ class WVBillScraper(Scraper):
         # Add cosponsors.
         if values.get('SPONSORS:'):
             sponsors = strip_sponsors('', values['SPONSORS:'])
-            sponsors = re.split(', (?![A-Z]\.)', sponsors)
+            sponsors = re.split(r', (?![A-Z]\.)', sponsors)
             for name in sponsors:
                 name = name.strip(', \n\r')
                 if name:
                     # Fix name splitting bug where "Neale, D. Hall"
-                    match = re.search('(.+?), ([DM]\. Hall)', name)
+                    match = re.search(r'(.+?), ([DM]\. Hall)', name)
                     if match:
                         for name in match.groups():
                             bill.add_sponsorship(
@@ -336,7 +336,7 @@ class WVBillScraper(Scraper):
         text = convert_pdf(filename, 'text').decode('utf-8')
         os.remove(filename)
 
-        if re.search('Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
+        if re.search(r'Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
             yield from self.scrape_senate_vote_3col(bill, vote, text, url, date)
             return
 

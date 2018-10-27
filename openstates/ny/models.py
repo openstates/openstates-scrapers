@@ -39,8 +39,8 @@ class AssemblyBillPage(LXMLMixin):
     def _scrub_name(self, name):
         junk = [
             r'^Rules\s+',
-            '\(2nd Vice Chairperson\)',
-            '\(MS\)',
+            r'\(2nd Vice Chairperson\)',
+            r'\(MS\)',
             'Assemblyman',
             'Assemblywoman',
             'Senator']
@@ -48,7 +48,7 @@ class AssemblyBillPage(LXMLMixin):
             name = re.sub(rgx, '', name, re.I)
 
         # Collapse whitespace.
-        name = re.sub('\s+', ' ', name)
+        name = re.sub(r'\s+', ' ', name)
         return name.strip('(), ')
 
     def build(self):

@@ -55,7 +55,7 @@ class LACommitteeScraper(Scraper, LXMLMixin):
 
             name = link.xpath('string()')
             name = name.replace('Senator ', '')
-            name = re.sub('[\s]{2,}', ' ', name).strip()
+            name = re.sub(r'[\s]{2,}', ' ', name).strip()
 
             committee.add_member(name, role)
 

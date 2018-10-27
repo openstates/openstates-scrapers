@@ -59,7 +59,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
         regex_ns = "http://exslt.org/regular-expressions"
         version_links = page.xpath(
-            "//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
+            r"//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
             namespaces={'re': regex_ns})
         for link in version_links:
             bill.add_version_link(
@@ -157,7 +157,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                     actor = 'lower'
 
             date = row.xpath("string(td[1])").strip()
-            match = re.match('\d{2}/\d{2}/\d{4}', date)
+            match = re.match(r'\d{2}/\d{2}/\d{4}', date)
             if not match:
                 self.warning("Bad date: %s" % date)
                 continue

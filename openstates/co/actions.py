@@ -65,14 +65,14 @@ rules = (
     Rule(r'^Introduced', 'introduction'),
     Rule(r'Assigned to (?P<committees>.+)'),
 
-    Rule(u'(?i)refer (un)?amended to (?P<committees>.+)',
-         [u'referral-committee']),
-    Rule(u'(?i)\S+ Committee on (?P<committees>.+?) Refer (un)amended'),
-    Rule(u'Assigned to (<?P<committees>.+?)', 'referral-committee'),
-    Rule(u'Second Reading Passed', [u'reading-2']),
-    Rule(u'Third Reading Passed', ['reading-3', 'passage']),
-    Rule(u'to Senate Committee of the Whole', 'committee-passage', actor='upper'),
-    Rule(u'to House Committee of the Whole', 'committee-passage', actor='lower')
+    Rule('(?i)refer (un)?amended to (?P<committees>.+)',
+         ['referral-committee']),
+    Rule(r'(?i)\S+ Committee on (?P<committees>.+?) Refer (un)amended'),
+    Rule('Assigned to (<?P<committees>.+?)', 'referral-committee'),
+    Rule('Second Reading Passed', [u'reading-2']),
+    Rule('Third Reading Passed', ['reading-3', 'passage']),
+    Rule('to Senate Committee of the Whole', 'committee-passage', actor='upper'),
+    Rule('to House Committee of the Whole', 'committee-passage', actor='lower')
     )
 
 committees_rgx = '(%s)' % '|'.join(

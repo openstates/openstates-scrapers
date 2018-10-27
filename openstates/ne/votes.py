@@ -4,17 +4,17 @@ import datetime
 from pupa.scrape import Scraper, VoteEvent
 from pupa.utils.generic import convert_pdf
 
-BILL_RE = re.compile('^LEGISLATIVE (BILL|RESOLUTION) (\d+C?A?).')
-VETO_BILL_RE = re.compile('- Override (?:Line-Item )?Veto on (\w+)')
+BILL_RE = re.compile(r'^LEGISLATIVE (BILL|RESOLUTION) (\d+C?A?).')
+VETO_BILL_RE = re.compile(r'- Override (?:Line-Item )?Veto on (\w+)')
 DATE_RE = re.compile(
-    '(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER) '
-    '(\d+), (\d{4})'
+    r'(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER) '
+    r'(\d+), (\d{4})'
 )
 QUESTION_RE = re.compile("(?:the question is, '|The question shall be, ')(.+)")
-QUESTION_MATCH_END = "' \""
-YES_RE = re.compile('Voting in the affirmative, (\d+)')
-NO_RE = re.compile('Voting in the negative, (\d+)')
-NOT_VOTING_RE = re.compile('(?:Present|Absent|Excused)?(?: and )?[Nn]ot voting, (\d+)')
+QUESTION_MATCH_END = r"' \""
+YES_RE = re.compile(r'Voting in the affirmative, (\d+)')
+NO_RE = re.compile(r'Voting in the negative, (\d+)')
+NOT_VOTING_RE = re.compile(r'(?:Present|Absent|Excused)?(?: and )?[Nn]ot voting, (\d+)')
 
 
 class NEVoteScraper(Scraper):
@@ -95,7 +95,7 @@ class NEVoteScraper(Scraper):
                     vote = None
                     other_count = 0
                 elif line:
-                    people = re.split('\s{3,}', line)
+                    people = re.split(r'\s{3,}', line)
                     # try:
                     # except KeyError:
                     #     self.warning('line showed up in pre-yes state: %s',
@@ -129,7 +129,7 @@ class NEVoteScraper(Scraper):
 
             # line just finished a question
             if state == 'question_quote' and QUESTION_MATCH_END in question:
-                question = re.sub('\s+', ' ',
+                question = re.sub(r'\s+', ' ',
                                   question.replace(QUESTION_MATCH_END, '').strip())
 
                 if not bill_id:

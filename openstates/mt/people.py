@@ -210,7 +210,7 @@ class MTPersonScraper(Scraper):
                 if key in line.lower():
                     key = {'ph': 'phone'}.get(key)
                     break
-            number = re.search('\(\d{3}\) \d{3}\-\d{4}', line)
+            number = re.search(r'\(\d{3}\) \d{3}\-\d{4}', line)
             if number:
                 number = number.group()
                 if key:

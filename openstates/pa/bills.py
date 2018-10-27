@@ -21,7 +21,7 @@ class PABillScraper(Scraper):
             self.info('no session specified, using %s', session)
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
-        match = re.search("#(\d+)", session)
+        match = re.search(r"#(\d+)", session)
         for chamber in chambers:
             if match:
                 yield from self.scrape_session(chamber, session, int(match.group(1)))

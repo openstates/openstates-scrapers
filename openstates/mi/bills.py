@@ -117,7 +117,7 @@ class MIBillScraper(Scraper):
             bill.add_action(action, date, chamber=actor, classification=classification)
 
             # check if action mentions a vote
-            rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)
+            rcmatch = re.search(r'Roll Call # (\d+)', action, re.IGNORECASE)
             if rcmatch:
                 rc_num = rcmatch.groups()[0]
                 # in format mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
@@ -138,12 +138,12 @@ class MIBillScraper(Scraper):
                     )
 
                     # check the expected counts vs actual
-                    count = re.search('YEAS (\d+)', action, re.IGNORECASE)
+                    count = re.search(r'YEAS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(results['yes']):
                         self.warning('vote count mismatch for %s %s, %d != %d' %
                                      (bill_id, action, count, len(results['yes'])))
-                    count = re.search('NAYS (\d+)', action, re.IGNORECASE)
+                    count = re.search(r'NAYS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(results['no']):
                         self.warning('vote count mismatch for %s %s, %d != %d' %
@@ -259,7 +259,7 @@ class MIBillScraper(Scraper):
                 break
             elif vtype:
                 # split on spaces not preceeded by commas
-                for l in re.split('(?<!,)\s+', p):
+                for l in re.split(r'(?<!,)\s+', p):
                     if l:
                         results[vtype].append(l)
             else:

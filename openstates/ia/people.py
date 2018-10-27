@@ -40,7 +40,7 @@ class IAPersonScraper(Scraper):
         elif party == 'No Party Specified':
             party = 'Independent'
 
-        pid = re.search("personID=(\d+)", link.attrib['href']).group(1)
+        pid = re.search(r"personID=(\d+)", link.attrib['href']).group(1)
         photo_url = ("https://www.legis.iowa.gov/photo"
                      "?action=getPhoto&ga=%s&pid=%s" % (self.latest_session(), pid))
 

@@ -146,7 +146,7 @@ class Colorado(Jurisdiction):
 
     def get_session_list(self):
         sessions = []
-        regex = "2[0-9][0-9][0-9]\ .*\ Session"
+        regex = r"2[0-9][0-9][0-9]\ .*\ Session"
 
         tags = url_xpath(
             'http://www.leg.state.co.us/clics/cslFrontPages.nsf/PrevSessionInfo?OpenForm',

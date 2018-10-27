@@ -37,7 +37,7 @@ class ORVoteScraper(Scraper):
         ('.*Speaker signed.*', ['passage']),
         ('.*Final reading.* Adopted', ['passage']),
         ('.*Read third time .* Passed', ['passage', 'reading-3']),
-        ('.*Read\. .* Adopted.*', ['passage']),
+        (r'.*Read\. .* Adopted.*', ['passage']),
     )
 
     def scrape(self, session=None):

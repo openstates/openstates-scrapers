@@ -33,7 +33,7 @@ class KYBillScraper(Scraper, LXMLMixin):
 
         for subj_link in page.xpath('//a[contains(@href, ".htm")]/@href'):
             # subject links are 4 numbers
-            if re.match('\d{4}', subj_link):
+            if re.match(r'\d{4}', subj_link):
                 subj_html = self.get(session_url(session) + subj_link).text
                 sdoc = lxml.html.fromstring(subj_html)
                 subject = sdoc.xpath('//p[@class="PageHeader"]/text()')[0]

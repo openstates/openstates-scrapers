@@ -62,7 +62,7 @@ class AZEventScraper(Scraper):
                 link = row[7].xpath('string(a/@href)')
             if 'NOT MEETING' in time or 'CANCELLED' in time:
                 continue
-            time = re.match('(\d+:\d+ (A|P))', time)
+            time = re.match(r'(\d+:\d+ (A|P))', time)
             if time:
                 when = "%s %sM" % (text[0], time.group(0))
                 when = datetime.datetime.strptime(when, '%m/%d/%Y %I:%M %p')

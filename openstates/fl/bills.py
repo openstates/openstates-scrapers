@@ -58,7 +58,7 @@ class BillList(Page):
         bill.add_source(bill_url)
 
         # normalize id from HB 0004 to H4
-        subj_bill_id = re.sub('(H|S)\w+ 0*(\d+)', r'\1\2', bill_id)
+        subj_bill_id = re.sub(r'(H|S)\w+ 0*(\d+)', r'\1\2', bill_id)
         bill.subject = list(self.kwargs['subjects'][subj_bill_id])
 
         sponsor = re.sub(r'^(?:Rep|Sen)\.\s', "", sponsor)
@@ -197,19 +197,19 @@ class BillDetail(Page):
 class BillVersionHTML(Page):
     def handle_page(self):
         text = self.doc.xpath('//pre')[0].text_content()
-        text = re.sub('\n\s*\d+\s*', ' ', text)
-        text = re.sub('\s+', ' ', text)
+        text = re.sub(r'\n\s*\d+\s*', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
         return text
 
 
 class BillVersionPDF(PDF):
     def handle_page(self):
         # newlines followed by numbers and lots of spaces
-        text = re.sub('\n\s*\d+\s*', ' ', self.text)
-        flhor_re = '\s+'.join('FLORIDA HOUSE OF REPRESENTATIVES')
+        text = re.sub(r'\n\s*\d+\s*', ' ', self.text)
+        flhor_re = r'\s+'.join('FLORIDA HOUSE OF REPRESENTATIVES')
         text = re.sub(flhor_re, ' ', text)
         # collapse spaces
-        text = re.sub('\s+', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
         return text
 
 
@@ -335,7 +335,7 @@ class UpperComVote(PDF):
                         ''', line).group(1)
                 # sometimes members have trailing X's from other motions in the
                 # vote sheet we aren't collecting
-                member = re.sub('(\s+X)+', '', member)
+                member = re.sub(r'(\s+X)+', '', member)
                 # Usually non-voting members won't even have a code listed
                 # Only a couple of codes indicate an actual vote:
                 # "VA" (vote after roll call) and "VC" (vote change)
@@ -440,7 +440,7 @@ class HouseComVote(Page):
         totals = re.sub(r'(?mu)\s+', " ", totals).strip()
         (yes_count, no_count, other_count) = [int(x) for x in re.search(
             r'(?m)Total Yeas:\s+(\d+)\s+Total Nays:\s+(\d+)\s+'
-            'Total Missed:\s+(\d+)', totals).groups()]
+            r'Total Missed:\s+(\d+)', totals).groups()]
         result = 'pass' if yes_count > no_count else 'fail'
 
         (committee, ) = self.doc.xpath(
@@ -492,12 +492,12 @@ class SubjectPDF(PDF):
 
             after a blank line if there's an all caps phrase that's the new subject
 
-            if a line contains (H|S)(\d+) that bill gets current subject
+            if a line contains (H|S)(\\d+) that bill gets current subject
         """
         subjects = defaultdict(set)
 
         SUBJ_RE = re.compile('^[A-Z ,()]+$')
-        BILL_RE = re.compile('[HS]\d+(?:-[A-Z])?')
+        BILL_RE = re.compile(r'[HS]\d+(?:-[A-Z])?')
 
         subject = None
 

@@ -247,7 +247,7 @@ def get_committee_name_regex():
     _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
 
     _committee_abbr_regex = [
-        '%s' % '[\s,]*'.join(abbr.replace(',', '').split(' '))
+        '%s' % r'[\s,]*'.join(abbr.replace(',', '').split(' '))
         for abbr in _committee_abbrs
     ]
     _committee_abbr_regex = re.compile(
@@ -545,7 +545,7 @@ class CABillScraper(Scraper):
                     kwargs['actor_info'] = actor_info
 
                 # Add strings for related legislators, if any.
-                rgx = '(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
+                rgx = r'(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
                 legislators = re.findall(rgx, action.action, re.I)
                 if legislators:
                     kwargs['legislators'] = legislators

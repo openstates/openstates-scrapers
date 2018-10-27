@@ -238,13 +238,13 @@ class MABillScraper(Scraper):
             # House votes
             if "Supplement" in action_name:
                 actor = "lower"
-                vote_action = re.findall('(.+)-\s*\d+\s*YEAS', action_name)[0].strip()
+                vote_action = re.findall(r'(.+)-\s*\d+\s*YEAS', action_name)[0].strip()
 
                 y = int(re.findall(r'(\d+)\s*YEAS', action_name)[0])
                 n = int(re.findall(r'(\d+)\s*NAYS', action_name)[0])
 
                 # get supplement number
-                n_supplement = int(re.findall('No\.\s*(\d+)', action_name)[0])
+                n_supplement = int(re.findall(r'No\.\s*(\d+)', action_name)[0])
                 cached_vote = VoteEvent(
                     chamber=actor,
                     start_date=action_date,

@@ -74,12 +74,12 @@ class WIPersonScraper(Scraper):
 
                 phone = rep_doc.xpath('.//span[@class="info telephone"]/text()')
                 if phone:
-                    phone = re.sub('\s+', ' ', phone[1]).strip()
+                    phone = re.sub(r'\s+', ' ', phone[1]).strip()
                     person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
 
                 fax = rep_doc.xpath('.//span[@class="info fax"]/text()')
                 if fax:
-                    fax = re.sub('\s+', ' ', fax[1]).strip()
+                    fax = re.sub(r'\s+', ' ', fax[1]).strip()
                     person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
 
                 if email:

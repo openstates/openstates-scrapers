@@ -66,7 +66,7 @@ class NJEventScraper(Scraper, MDBMixin):
             description = record['Comments']
             related_bills = []
 
-            for bill in re.findall("(A|S)(-)?(\d{4})", description):
+            for bill in re.findall(r"(A|S)(-)?(\d{4})", description):
                 related_bills.append({
                     "bill_id": "%s %s" % (bill[0], bill[2]),
                     "descr": description

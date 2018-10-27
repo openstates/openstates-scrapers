@@ -9,7 +9,7 @@ from . import ksapi
 
 
 def _clean_spaces(title):
-    return re.sub('\s+', ' ', title)
+    return re.sub(r'\s+', ' ', title)
 
 
 class KSBillScraper(Scraper):

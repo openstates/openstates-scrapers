@@ -100,7 +100,7 @@ class UTBillScraper(Scraper, LXMLMixin):
         for flag in SUB_BLACKLIST:
             if flag in bill_id:
                 bill_id = bill_id.replace(flag, " ")
-        bill_id = re.sub("\s+", " ", bill_id).strip()
+        bill_id = re.sub(r"\s+", " ", bill_id).strip()
 
         bill = Bill(bill_id,
                     legislative_session=session,
@@ -399,9 +399,9 @@ class UTBillScraper(Scraper, LXMLMixin):
     def parse_vote(self, bill, actor, date, motion, url, uniqid):
         page = self.get(url).text
         bill.add_source(url)
-        vote_re = re.compile('YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
-                             '(.*)ABSENT( OR NOT VOTING)? -?\s?'
-                             '(\d+)(.*)',
+        vote_re = re.compile(r'YEAS -?\s?(\d+)(.*)NAYS -?\s?(\d+)'
+                             r'(.*)ABSENT( OR NOT VOTING)? -?\s?'
+                             r'(\d+)(.*)',
                              re.MULTILINE | re.DOTALL)
         match = vote_re.search(page)
         yes_count = int(match.group(1))
@@ -430,9 +430,9 @@ class UTBillScraper(Scraper, LXMLMixin):
         vote.set_count('no', no_count)
         vote.set_count('other', other_count)
 
-        yes_votes = re.split('\s{2,}', match.group(2).strip())
-        no_votes = re.split('\s{2,}', match.group(4).strip())
-        other_votes = re.split('\s{2,}', match.group(7).strip())
+        yes_votes = re.split(r'\s{2,}', match.group(2).strip())
+        no_votes = re.split(r'\s{2,}', match.group(4).strip())
+        other_votes = re.split(r'\s{2,}', match.group(7).strip())
 
         for yes in yes_votes:
             if yes:

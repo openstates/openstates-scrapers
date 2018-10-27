@@ -31,7 +31,7 @@ def text_after_line_numbers(lines):
     for line in lines.splitlines():
         # real bill text starts with an optional space, line number
         # more spaces, then real text
-        match = re.match('\s*\d+\s+(.*)', line)
+        match = re.match(r'\s*\d+\s+(.*)', line)
         if match:
             text.append(match.group(1))
 

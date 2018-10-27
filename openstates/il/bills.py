@@ -285,7 +285,7 @@ class IlBillScraper(Scraper):
             return
 
         # bill id, title, summary
-        bill_num = re.findall('DocNum=(\d+)', url)[0]
+        bill_num = re.findall(r'DocNum=(\d+)', url)[0]
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 

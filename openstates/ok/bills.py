@@ -67,7 +67,7 @@ class OKBillScraper(Scraper):
         bill_nums = []
         for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
             bill_id = link.text.strip()
-            bill_num = int(re.findall('\d+', bill_id)[0])
+            bill_num = int(re.findall(r'\d+', bill_id)[0])
             if bill_num >= 9900:
                 self.warning('skipping likely bad bill %s' % bill_id)
                 continue
@@ -193,7 +193,7 @@ class OKBillScraper(Scraper):
         seen_rcs = set()
 
         re_ns = "http://exslt.org/regular-expressions"
-        path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
+        path = r"//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
@@ -242,7 +242,7 @@ class OKBillScraper(Scraper):
                 if "*****" in line:
                     break
                 regex = (r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL '
-                         'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)')
+                         r'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)')
                 match = re.match(regex, line)
                 if match:
                     if match.group(1) == 'YEAS' and 'RCS#' not in line:
