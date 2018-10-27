@@ -120,7 +120,7 @@ class MABillScraper(Scraper):
         try:
             response = requests.get(bill_url)
             self.info("GET (with `requests`) - {}".format(bill_url))
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             self.warning(u'Server Error on {}'.format(bill_url))
             return False
 

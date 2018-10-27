@@ -76,7 +76,7 @@ class AssemblyBillPage(LXMLMixin):
             if pre == no_votes:
                 raise ValueError('No votes for this bill.')
         # Skip bill if votes can't be found.
-        except (IndexError, ValueError) as e:
+        except (IndexError, ValueError):
             return
 
         for table in doc.xpath('//table'):

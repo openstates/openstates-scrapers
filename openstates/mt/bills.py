@@ -570,7 +570,7 @@ class PDFCommitteeVote(object):
             committee vote. I'm stubbing this out since the site is currently
             offline
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'legislature'}
