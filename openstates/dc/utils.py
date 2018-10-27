@@ -1,4 +1,21 @@
 import json
+import requests
+
+
+API_BASE_URL = 'http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx'
+API_HEADERS = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'openstates',
+}
+
+
+def api_request(path, **kwargs):
+    url = '{}{}'.format(API_BASE_URL, path)
+    headers = dict(API_HEADERS)
+    headers.update(kwargs.pop('headers', {}))
+    response = requests.post(url, headers=headers, **kwargs)
+    response.raise_for_status()
+    return decode_json(response.json())
 
 
 def decode_json(stringy_json):
