@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 # from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
 # from .events import DCEventScraper
-from .utils import decode_json
+from .utils import api_request
 
 
 class DistrictOfColumbia(Jurisdiction):
@@ -73,8 +73,5 @@ class DistrictOfColumbia(Jurisdiction):
         yield council
 
     def get_session_list(self):
-        r = requests.post(
-            'http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/LIMSLookups',
-            headers={'content-type': 'application/json'})
-        data = decode_json(r.json())
+        data = api_request('/LIMSLookups')
         return [c['Prefix'] for c in data['d']['CouncilPeriods']]

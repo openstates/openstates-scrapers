@@ -4,7 +4,7 @@ import requests
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
-from .utils import decode_json
+from .utils import api_request
 
 
 class DCBillScraper(Scraper):
@@ -19,10 +19,6 @@ class DCBillScraper(Scraper):
         per_page = 10       # seems like it gives 10 no matter what.
         start_record = 0
 
-        headers = {"Content-Type": "application/json"}
-        url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
-               "GetPublicAdvancedSearch")
-        bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
         params = {
             "request": {
                 "sEcho": 2,
@@ -62,9 +58,9 @@ class DCBillScraper(Scraper):
             }
         }
         param_json = json.dumps(params)
-        response = requests.post(url, headers=headers, data=param_json)
+        response = api_request('/GetPublicAdvancedSearch', data=param_json)
         # the response is a terrible string-of-nested-json-strings. Yuck.
-        response = decode_json(response.json()["d"])
+        response = response["d"]
         data = response["aaData"]
 
         while len(data) > 0:
@@ -76,10 +72,11 @@ class DCBillScraper(Scraper):
                     # actually an agenda, skip
                     continue
                 bill_params = {"legislationId": bill_id}
-                bill_info = requests.post(bill_url, headers=headers,
-                                          data=json.dumps(bill_params))
-                bill_info = decode_json(bill_info.json()["d"])["data"]
-                bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
+                bill_info = api_request('/GetPublicData',
+                                        data=json.dumps(bill_params))
+                bill_info = bill_info["d"]["data"]
+                bill_source_url = "http://lims.dccouncil.us/Legislation/" + bill_id
+
 
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
@@ -296,19 +293,17 @@ class DCBillScraper(Scraper):
             start_record += per_page
             params["request"]["iDisplayStart"] = start_record
             param_json = json.dumps(params)
-            response = requests.post(url, headers=headers, data=param_json)
-            response = decode_json(response.json()["d"])
+            response = api_request('/GetPublicAdvancedSearch', data=param_json)
+            response = response["d"]
             data = response["aaData"]
 
     def get_member_ids(self):
         # three levels: from session to member_id to name
         member_dict = {}
-        search_data_url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
-                           "GetPublicSearchData")
-        response = requests.post(search_data_url, headers={
-                                 "Content-Type": "application/json"})
+        search_data_url = '/GetPublicSearchData'
+        response = api_request(search_data_url)
 
-        member_data = decode_json(response.json()['d'])["Members"]
+        member_data = response['d']["Members"]
         for session_id, members in member_data.items():
             member_dict[session_id] = {}
             for member in members:
