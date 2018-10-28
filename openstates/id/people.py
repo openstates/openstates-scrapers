@@ -83,7 +83,7 @@ class IDPersonScraper(Scraper):
                 continue
 
             name = inner.xpath('p/strong')[0].text.replace(u'\xa0', ' ').strip()
-            name = re.sub('\s+', ' ', name)
+            name = re.sub(r'\s+', ' ', name)
             party = PARTY[inner.xpath('p/strong')[0].tail.strip()]
             email = inner.xpath('p/strong/a')[0].text
             district = inner.xpath('p/a')[0].text.replace('District ', '')

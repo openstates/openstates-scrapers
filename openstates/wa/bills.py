@@ -45,7 +45,7 @@ class WABillScraper(Scraper, LXMLMixin):
             rss = re.sub(r'^[^<]+', '', self.get(link).text)
             rss = feedparser.parse(rss)
             for e in rss['entries']:
-                match = re.match('\w\w \d{4}', e['title'])
+                match = re.match(r'\w\w \d{4}', e['title'])
                 if match:
                     self._subjects[match.group()].append(subject)
 
@@ -220,7 +220,7 @@ class WABillScraper(Scraper, LXMLMixin):
                     continue
 
                 # normalize bill_id
-                bill_id_norm = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
+                bill_id_norm = re.findall(r'(?:S|H)(?:B|CR|JM|JR|R) \d+',
                                           bill_id)
                 if not bill_id_norm:
                     self.warning("illegal bill_id %s" % bill_id)

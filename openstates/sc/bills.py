@@ -158,7 +158,7 @@ class SCBillScraper(Scraper):
             data = self.get(url).text
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
-                match = re.match('(?:H|S) \d{4}', bill.text)
+                match = re.match(r'(?:H|S) \d{4}', bill.text)
                 if match:
                     # remove * and leading zeroes
                     bill_id = match.group().replace('*', ' ')
@@ -278,7 +278,7 @@ class SCBillScraper(Scraper):
             # if a vfunc is active
             elif current_vfunc:
                 # split names apart by 3 or more spaces
-                names = re.split('\s{3,}', line)
+                names = re.split(r'\s{3,}', line)
                 for name in names:
                     if name:
                         if not option:

@@ -234,7 +234,7 @@ class MaybeViva(BaseVote):
 
 
 def get_bill(el):
-    b = re.findall('[HS][BR] \d+', el.text_content())
+    b = re.findall(r'[HS][BR] \d+', el.text_content())
     if b:
         return b[0]
 

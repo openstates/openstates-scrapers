@@ -157,7 +157,7 @@ class IABillScraper(Scraper):
             sponsors = re.split(',| and ', sponsors_str.split('By ')[1])
         # for some bills sponsors listed in different format
         else:
-            sponsors = re.findall('[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)', sponsors_str)
+            sponsors = re.findall(r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)', sponsors_str)
 
         for sponsor in sponsors:
             sponsor = sponsor.replace(' and', '').strip(' .,')
@@ -254,7 +254,7 @@ class IABillScraper(Scraper):
             elif re.match(r'Amendment (S|H)-\d+( as amended,)? adopted',
                           action):
                 atype = 'amendment-passage'
-            elif re.match('Amendment (S|N)-\d+ lost', action):
+            elif re.match(r'Amendment (S|N)-\d+ lost', action):
                 atype = 'amendment-failure'
             elif action.startswith('Resolution filed'):
                 atype = 'introduction'
@@ -271,7 +271,7 @@ class IABillScraper(Scraper):
             if action.strip() == "":
                 continue
 
-            if re.search('END OF \d+ ACTIONS', action):
+            if re.search(r'END OF \d+ ACTIONS', action):
                 continue
 
             if '$history' not in action:

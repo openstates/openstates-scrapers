@@ -259,7 +259,7 @@ class NVBillScraper(Scraper, LXMLMixin):
         for node in nb_nodes:
             if node == ' name indicates primary sponsorship)':
                 continue
-            names = re.sub('([\(\r\t\n\s])', '', node).split(',')
+            names = re.sub(r'([\(\r\t\n\s])', '', node).split(',')
 
             for name in names:
                 if name:
@@ -297,7 +297,7 @@ class NVBillScraper(Scraper, LXMLMixin):
                         break
 
                 if "Committee on" in action:
-                    committees = re.findall("Committee on ([a-zA-Z, ]*)\.", action)
+                    committees = re.findall(r"Committee on ([a-zA-Z, ]*)\.", action)
                     if len(committees) > 0:
                         related_entities = []
                         for committee in committees:

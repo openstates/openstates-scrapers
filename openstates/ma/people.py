@@ -26,7 +26,7 @@ def clean_district(district):
         19: 'Nineteenth',
         20: 'Twentieth',
     }
-    pieces = re.match('(\d+)\w\w\s(.+)', district)
+    pieces = re.match(r'(\d+)\w\w\s(.+)', district)
     if pieces:
         ordinal, rest = pieces.groups()
         ordinal = int(ordinal)
@@ -139,7 +139,7 @@ class MAPersonScraper(Scraper):
                 note = 'Capitol office'
             try:
                 address = addr.xpath('a')[0].text_content()
-                address = re.sub('\s{2,}', '\n', address)
+                address = re.sub(r'\s{2,}', '\n', address)
                 leg.add_contact_detail(type='address', value=address, note=note)
             except IndexError:
                 self.warning("No address info found in `contactGroup`")

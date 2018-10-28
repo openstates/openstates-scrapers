@@ -21,7 +21,7 @@ class NMBillScraper(Scraper):
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
         fname = 'LegInfo{}'.format(session[2:])
-        fname_re = '(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
+        fname_re = r'(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
             '({fname}.*zip)'.format(fname=fname)
 
         # use listing to get latest modified LegInfo zip
@@ -170,7 +170,7 @@ class NMBillScraper(Scraper):
 
             for fname in doc.xpath('//a/text()'):
                 # split filename into bill_id format
-                match = re.match('([A-Z]+)0*(\d{1,4})', fname)
+                match = re.match(r'([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
                     mimetype = 'application/pdf' if fname.lower()\
@@ -386,7 +386,7 @@ class NMBillScraper(Scraper):
             if fname.endswith('pdf') and 'VOTE' not in fname:
                 continue
 
-            match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            match = re.match(r'([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
             if match is None:
                 self.warning('No match, skipping')
                 continue
@@ -410,8 +410,8 @@ class NMBillScraper(Scraper):
                                       media_type=media_type)
 
             # floor amendments
-            elif re.match('F(S|H)\d', suffix):
-                a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
+            elif re.match(r'F(S|H)\d', suffix):
+                a_chamber, num = re.match(r'F(S|H)(\d)', suffix).groups()
                 a_chamber = 'House' if a_chamber == 'H' else 'Senate'
                 bill.add_document_link(
                     '{} Floor Amendment {}'.format(a_chamber, num),

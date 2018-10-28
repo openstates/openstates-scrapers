@@ -170,6 +170,6 @@ class California(Jurisdiction):
             'http://www.leginfo.ca.gov/bilinfo.html',
             "//select[@name='sess']/option/text()")
         return [
-            re.findall('\(.*\)', session)[0][1:-1]
+            re.findall(r'\(.*\)', session)[0][1:-1]
             for session in sessions
         ]

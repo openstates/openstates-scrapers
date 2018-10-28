@@ -46,7 +46,7 @@ class MemberDetail(Page):
             email = None
             for li in ul.getchildren():
                 text = li.text_content()
-                if re.match('\(\d{3}\)', text):
+                if re.match(r'\(\d{3}\)', text):
                     phone = text.strip()
                 elif text.startswith('email:'):
                     email = text.strip('email: ').strip()

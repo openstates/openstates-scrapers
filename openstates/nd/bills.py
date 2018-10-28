@@ -30,7 +30,7 @@ class NDBillScraper(Scraper, LXMLMixin):
         ttrows = page.xpath("//div[@id='application']/p")
         descr = ttrows[-2]
 
-        title = re.sub("\s+", " ", descr.text_content()).strip()
+        title = re.sub(r"\s+", " ", descr.text_content()).strip()
         ttrows = ttrows[:-1]
 
         chamber = {
@@ -62,7 +62,7 @@ class NDBillScraper(Scraper, LXMLMixin):
                 continue  # ignore HTML comments, no text_content()
             sponsors = row.text_content().strip()
             sinf = re.match(
-                "(?i)introduced by( (rep\.|sen\.))? (?P<sponsors>.*)",
+                r"(?i)introduced by( (rep\.|sen\.))? (?P<sponsors>.*)",
                 sponsors
             )
             if sinf:

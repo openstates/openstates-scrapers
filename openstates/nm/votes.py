@@ -201,7 +201,7 @@ class NMVoteScraper(Scraper):
             # Delete any errant words found following the file name
             fname = fname.split(' ')[0]
 
-            match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            match = re.match(r'([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
             if match is None:
                 self.warning('No match, skipping')
                 continue

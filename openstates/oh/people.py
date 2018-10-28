@@ -56,7 +56,7 @@ class OHLegislatorScraper(Scraper):
         ret = {}
         for entry in page.xpath("//div[@class='committeeMembers']//td//a"):
             person = re.sub(
-                "\s+", " ", re.sub("\(.*\)", "", entry.text or "")).strip()
+                r"\s+", " ", re.sub(r"\(.*\)", "", entry.text or "")).strip()
 
             if person == "":
                 continue
@@ -159,11 +159,11 @@ class OHLegislatorScraper(Scraper):
                                                             ).strip()
             else:
                 district = re.findall(
-                    "\d+\.png",
+                    r"\d+\.png",
                     legislator.attrib['style']
                 )[-1].split(".", 1)[0]
 
-            full_name = re.sub("\s+", " ", full_name).strip()
+            full_name = re.sub(r"\s+", " ", full_name).strip()
             email = (
                 'rep{0:0{width}}@ohiohouse.gov'
                 if chamber == 'lower' else

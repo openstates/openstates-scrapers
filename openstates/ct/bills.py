@@ -231,7 +231,7 @@ class CTBillScraper(Scraper):
                 action = row['act_desc'].strip()
                 act_type = []
 
-                match = re.search('COMM(ITTEE|\.) ON$', action)
+                match = re.search(r'COMM(ITTEE|\.) ON$', action)
                 if match:
                     comm_code = row['qual1']
                     comm_name = self._committee_names.get(comm_code,

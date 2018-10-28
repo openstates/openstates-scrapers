@@ -77,14 +77,14 @@ class ARCommitteeScraper(Scraper):
 
         if subcommittee:
             junk += [
-                'AGING\s+&\s+LEGISLATIVE\s+AFFAIRS\s*-',
-                'AGRICULTURE\s*-',
-                'CITY, COUNTY & LOCAL AFFAIRS\s*-',
-                'EDUCATION\s*-',
-                'JUDICIARY\s*-',
-                'PUBLIC HEALTH\s*-',
-                'STATE AGENCIES & GOV. AFFAIRS\s*-',
-                'TRANSPORTATION\s*-',
+                r'AGING\s+&\s+LEGISLATIVE\s+AFFAIRS\s*-',
+                r'AGRICULTURE\s*-',
+                r'CITY, COUNTY & LOCAL AFFAIRS\s*-',
+                r'EDUCATION\s*-',
+                r'JUDICIARY\s*-',
+                r'PUBLIC HEALTH\s*-',
+                r'STATE AGENCIES & GOV. AFFAIRS\s*-',
+                r'TRANSPORTATION\s*-',
                 ]
 
         if parent:
@@ -98,9 +98,9 @@ class ARCommitteeScraper(Scraper):
                 break
 
         # Kill "(ALC)" in "Blah Blah (ALC)"
-        rgx = '\(?(%s)\)?' % '|'.join(sorted(junk, key=len, reverse=True))
+        rgx = r'\(?(%s)\)?' % '|'.join(sorted(junk, key=len, reverse=True))
         committee = re.sub(rgx, '', committee, flags=re.I)
-        committee = committee.strip(' \/-\n\r\t')
+        committee = committee.strip(r' \/-\n\r\t')
 
         # Fix commas with no space.
         def replacer(matchobj):

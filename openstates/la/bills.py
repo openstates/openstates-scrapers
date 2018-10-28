@@ -87,7 +87,7 @@ class LABillScraper(Scraper, LXMLMixin):
                 return
 
             href = hrefs[0].attrib['href']
-            tokens = re.match(".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
+            tokens = re.match(r".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
 
             page = self.do_post_back(
                 page,
@@ -176,7 +176,7 @@ class LABillScraper(Scraper, LXMLMixin):
         vote_type = None
         body = html.xpath('string(/html/body)')
 
-        date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
+        date_match = re.search(r'Date: (\d{1,2}/\d{1,2}/\d{4})', body)
         try:
             date = date_match.group(1)
         except AttributeError:

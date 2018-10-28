@@ -264,9 +264,9 @@ class VIBillScraper(Scraper, LXMLMixin):
     def split_action(self, action_str):
         # Turns 01/01/2015 ACTION1 02/02/2016 ACTION2
         # Into (('01/01/2015', 'ACTION NAME'),('02/02/2016', 'ACTION2'))
-        actions = re.split('(\d{1,2}/\d{1,2}/\d{1,2})', action_str)
+        actions = re.split(r'(\d{1,2}/\d{1,2}/\d{1,2})', action_str)
         # Trim out whitespace and leading/trailing dashes
-        actions = [re.sub('^-\s+|^-|-$', '', action.strip()) for action in actions]
+        actions = [re.sub(r'^-\s+|^-|-$', '', action.strip()) for action in actions]
         # Trim out empty list items from re.split
         actions = list(filter(None, actions))
         return self.grouped(actions, 2)

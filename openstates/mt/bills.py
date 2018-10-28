@@ -456,14 +456,14 @@ class MTBillScraper(Scraper, LXMLMixin):
                 continue
             v, name = filter(None, text.split(u'\xa0'))
             # Considering Name is brackets as short name
-            regex = re.compile(".*?\((.*?)\)")
+            regex = re.compile(r".*?\((.*?)\)")
             short_name = re.findall(regex, name)
             if len(short_name) > 0:
                 note = 'Short Name: ' + short_name[0]
             else:
                 note = ''
             # Name without brackets like 'Kary, Douglas'
-            name = re.sub("[\(\[].*?[\)\]]", "", name)
+            name = re.sub(r"[\(\[].*?[\)\]]", "", name)
             if v == 'Y':
                 vote.yes(name, note=note)
             elif v == 'N':
@@ -570,7 +570,7 @@ class PDFCommitteeVote(object):
             committee vote. I'm stubbing this out since the site is currently
             offline
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def chamber(self):
         chamber_dict = {'HOUSE': 'lower', 'SENATE': 'upper', 'JOINT': 'legislature'}

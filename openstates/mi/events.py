@@ -51,7 +51,7 @@ class MIEventScraper(Scraper):
             if t in datetime:
                 datetime = datetime.replace(t, translate[t])
 
-        datetime = re.sub("\s+", " ", datetime)
+        datetime = re.sub(r"\s+", " ", datetime)
 
         for text_to_remove in [
                 "or after committees are given leave",

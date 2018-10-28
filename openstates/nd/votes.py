@@ -8,7 +8,7 @@ from pupa.scrape import Scraper, VoteEvent as Vote
 
 
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|" + \
-              "THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
+              r"THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
 chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 page_re = r"Page\s\d+"
 

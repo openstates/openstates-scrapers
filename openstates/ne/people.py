@@ -59,7 +59,7 @@ class NEPersonScraper(Scraper, LXMLMixin):
                     phone_match = re.search(r'Phone:', text)
 
                     if phone_match:
-                        phone = re.sub('^Phone:[\s]+', '', text)
+                        phone = re.sub(r'^Phone:[\s]+', '', text)
                         continue
 
                     # If neither a phone number nor e-mail address.
