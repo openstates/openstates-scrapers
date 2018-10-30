@@ -3,10 +3,10 @@ The Open States Project collects and makes available data about state legislativ
 Links
 =====
 
-* `Open States Project API <http://docs.openstates.org/api/>`_
+* `Open States Project API <https://docs.openstates.org/api/>`_
 * `Code on GitHub <https://github.com/openstates/openstates/>`_
 * `Issue Tracker <https://github.com/openstates/openstates/issues>`_
-* `Open States Discourse <http://discourse.openstates.org>`_
+* `Open States Discourse <https://discourse.openstates.org>`_
 
 Getting Started
 ===============
@@ -46,7 +46,7 @@ Now you can run the scrape service without the `--scrape` flag, and data will be
 
 After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging. 
 
-Check out the `writing scrapers guide <http://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
+Check out the `writing scrapers guide <https://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
 Testing
 =======
