@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 /opt/openstates/venv-pupa/bin/pupa dbinit --country us
 
@@ -16,7 +16,8 @@ Partido Popular Democrático
 Partido Independentista Puertorriqueño
 "
 
-IFS=$(echo -en "\n\b")
-for party in ${parties}; do
-  /opt/openstates/venv-pupa/bin/pupa party --action add "${party}"
+echo "${parties}" | while read -r party; do
+  if [ -n "${party}" ]; then
+    /opt/openstates/venv-pupa/bin/pupa party --action add "${party}"
+  fi
 done
