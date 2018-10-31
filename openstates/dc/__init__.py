@@ -1,4 +1,3 @@
-import requests
 from pupa.scrape import Jurisdiction, Organization
 
 # from .people import DCPersonScraper
