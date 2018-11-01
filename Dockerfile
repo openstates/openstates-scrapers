@@ -32,6 +32,8 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libxslt-dev \
     poppler-utils \
     postgresql-dev \
+    mongodb-tools \
+    postgresql-client \
     mariadb-dev && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
