@@ -38,6 +38,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libressl2.7-libcrypto && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
+    s3cmd \
     gdal-dev \
     geos-dev && \
   cd /tmp && \
