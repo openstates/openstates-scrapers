@@ -120,19 +120,19 @@ metadata = {
     'capitol_maps': [
         {
             "name": "Floor 1",
-            "url": 'http://static.openstates.org/capmaps/nv/Leg1.gif'
+            "url": 'https://data.openstates.org/legacy/capmaps/nv/Leg1.gif'
         },
         {
             "name": "Floor 2",
-            "url": 'http://static.openstates.org/capmaps/nv/Leg2.gif'
+            "url": 'https://data.openstates.org/legacy/capmaps/nv/Leg2.gif'
         },
         {
             "name": "Floor 3",
-            "url": 'http://static.openstates.org/capmaps/nv/Leg3.gif'
+            "url": 'https://data.openstates.org/legacy/capmaps/nv/Leg3.gif'
         },
         {
             "name": "Floor 4",
-            "url": 'http://static.openstates.org/capmaps/nv/Leg4.gif'
+            "url": 'https://data.openstates.org/legacy/capmaps/nv/Leg4.gif'
         },
     ],
     '_ignored_scraped_sessions': [
