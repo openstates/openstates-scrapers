@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Purpose:
 # Create a USB drive containing the latest documentation and

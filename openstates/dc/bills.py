@@ -1,6 +1,5 @@
 import datetime
 import json
-import requests
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
@@ -76,7 +75,6 @@ class DCBillScraper(Scraper):
                                         data=json.dumps(bill_params))
                 bill_info = bill_info["d"]["data"]
                 bill_source_url = "http://lims.dccouncil.us/Legislation/" + bill_id
-
 
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
