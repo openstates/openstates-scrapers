@@ -53,16 +53,16 @@ metadata = dict(
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
         {"name": "Floor 1",
-         "url": 'http://static.openstates.org/capmaps/in/floor1.gif'
+         "url": 'https://data.openstates.org/legacy/capmaps/in/floor1.gif'
          },
         {"name": "Floor 2",
-         "url": 'http://static.openstates.org/capmaps/in/floor2.gif'
+         "url": 'https://data.openstates.org/legacy/capmaps/in/floor2.gif'
          },
         {"name": "Floor 3",
-         "url": 'http://static.openstates.org/capmaps/in/floor3.gif'
+         "url": 'https://data.openstates.org/legacy/capmaps/in/floor3.gif'
          },
         {"name": "Floor 4",
-         "url": 'http://static.openstates.org/capmaps/in/floor4.gif'
+         "url": 'https://data.openstates.org/legacy/capmaps/in/floor4.gif'
          },
     ],
     _ignored_scraped_sessions=[

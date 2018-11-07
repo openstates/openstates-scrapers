@@ -81,19 +81,19 @@ metadata = dict(
     feature_flags=['subjects', 'events', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
         {"name": "Chamber Floor",
-         "url": 'http://static.openstates.org/capmaps/hi/floorchamber.pdf'
+         "url": 'https://data.openstates.org/legacy/capmaps/hi/floorchamber.pdf'
         },
         {"name": "Floor 2",
-         "url": 'http://static.openstates.org/capmaps/hi/floor2.pdf'
+         "url": 'https://data.openstates.org/legacy/capmaps/hi/floor2.pdf'
         },
         {"name": "Floor 3",
-         "url": 'http://static.openstates.org/capmaps/hi/floor3.pdf'
+         "url": 'https://data.openstates.org/legacy/capmaps/hi/floor3.pdf'
         },
         {"name": "Floor 4",
-         "url": 'http://static.openstates.org/capmaps/hi/floor4.pdf'
+         "url": 'https://data.openstates.org/legacy/capmaps/hi/floor4.pdf'
         },
         {"name": "Floor 5",
-         "url": 'http://static.openstates.org/capmaps/hi/floor5.pdf'
+         "url": 'https://data.openstates.org/legacy/capmaps/hi/floor5.pdf'
         },
     ],
     _ignored_scraped_sessions = [
