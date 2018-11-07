@@ -147,7 +147,7 @@ class SCBillScraper(Scraper):
                              ('INDEXCODE', '0'),
                              ('INDEXTEXT', ''),
                              ('AORB', 'B'),
-                             ('PAGETYPE', '0')))).text
+                             ('PAGETYPE', '0'))), verify=False).text
         doc = lxml.html.fromstring(data)
         # skip first two subjects, filler options
         for option in doc.xpath('//option')[2:]:
@@ -155,7 +155,7 @@ class SCBillScraper(Scraper):
             code = option.get('value')
             url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
                                                          session_code, code)
-            data = self.get(url).text
+            data = self.get(url, verify=False).text
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
                 match = re.match(r'(?:H|S) \d{4}', bill.text)
@@ -172,7 +172,7 @@ class SCBillScraper(Scraper):
         :param vurl: source for the voteEvent information.
         :return: voteEvent object
         """
-        html = self.get(vurl).text
+        html = self.get(vurl, verify=False).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(vurl)
 
@@ -297,7 +297,7 @@ class SCBillScraper(Scraper):
         :param bill_id:
         :return:
         """
-        page = self.get(bill_detail_url).text
+        page = self.get(bill_detail_url, verify=False).text
 
         if 'INVALID BILL NUMBER' in page:
             self.warning('INVALID BILL %s' % bill_detail_url)
@@ -357,7 +357,7 @@ class SCBillScraper(Scraper):
 
         # find versions
         version_url = doc.xpath('//a[text()="View full text"]/@href')[0]
-        version_html = self.get(version_url).text
+        version_html = self.get(version_url, verify=False).text
         version_doc = lxml.html.fromstring(version_html)
         version_doc.make_links_absolute(version_url)
         for version in version_doc.xpath('//a[contains(@href, "/prever/")]'):
@@ -425,7 +425,7 @@ class SCBillScraper(Scraper):
             index_url = self.urls[chamber]['daily-bill-index']
             chamber_letter = 'S' if chamber == 'upper' else 'H'
 
-            page = self.get(index_url).text
+            page = self.get(index_url, verify=False).text
             doc = lxml.html.fromstring(page)
             doc.make_links_absolute(index_url)
 
