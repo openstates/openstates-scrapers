@@ -2,8 +2,5 @@
 set -e
 
 env
-pg_dump -Fc openstates > openstates.pgdump
 pg_dump -Fc openstatesorg > openstatesorg.pgdump
-
-s3cmd put openstates.pgdump s3://${S3_BUCKET}/ocd/`date +%Y-%m-%d`-openstates.pgdump
 s3cmd put openstatesorg.pgdump s3://${S3_BUCKET}/ocd/`date +%Y-%m-%d`-openstatesorg.pgdump
