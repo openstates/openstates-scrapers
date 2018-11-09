@@ -123,8 +123,11 @@ class IDBillScraper(Scraper):
     def scrape_subjects(self, session):
         self._subjects = defaultdict(list)
 
-        url = 'http://legislature.idaho.gov/legislation/%s/topicind.htm' % session
-        html = self.get(url, verify=False).text
+        url = (
+            'https://legislature.idaho.gov/sessioninfo'
+            '/2018/legislation/topicind/'
+        ).format(session)
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # loop through anchors
