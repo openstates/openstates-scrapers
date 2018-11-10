@@ -1,4 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils.lxmlize import url_xpath
 # from .people import MTPersonScraper
 # from .committees import MTCommitteeScraper
 from .bills import MTBillScraper
@@ -16,42 +18,39 @@ class Montana(Jurisdiction):
     }
     legislative_sessions = [
         {
-            "_scraped_name": "2011 Regular Session",
-            "identifier": "2011",
+            "_scraped_name": "20111",
+            "identifier": "20111",
             "name": "2011 Regular Session"
         },
         {
-            "_scraped_name": "2013 Regular Session",
-            "identifier": "2013",
+            "_scraped_name": "20131",
+            "identifier": "20131",
             "name": "2013 Regular Session"
         },
         {
-            "_scraped_name": "2015 Regular Session",
-            "identifier": "2015",
+            "_scraped_name": "20151",
+            "identifier": "20151",
             "name": "2015 Regular Session"
         },
         {
-            "_scraped_name": "2017 Regular Session",
-            "identifier": "2017",
+            "_scraped_name": "20171",
+            "identifier": "20171",
             "name": "2017 Regular Session",
             "start_date": "2017-01-02",
             "end_date": "2017-04-28"
         },
     ]
     ignored_scraped_sessions = [
-        "2019 Regular Session",
-        "2017 Special Session",
-        "2009 Regular Session",
-        "2007 Special     Session",
-        "2007 Regular Session",
-        "2005 Special     Session",
-        "2005 Regular Session",
-        "2003 Regular Session",
-        "2002 Special     Session",
-        "2001 Regular Session",
-        "2000 Special     Session",
-        "1999 Regular Session",
-        "1999 Special     Session"
+        '20191',
+        '20172',
+        '20091',
+        '20072',
+        '20071',
+        '20052',
+        '20051',
+        '20031',
+        '20011',
+        '19991',
     ]
 
     def get_organizations(self):
@@ -84,6 +83,5 @@ class Montana(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        from openstates.utils.lxmlize import url_xpath
-        return url_xpath('http://leg.mt.gov/css/bills/Default.html',
-                         "//td[@id='cont']/ul/li/a/text()")
+        return url_xpath('http://laws.leg.mt.gov/legprd/LAW0200W$.Startup',
+                         '//select[@name="P_SESS"]/option/@value')
