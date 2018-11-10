@@ -1,4 +1,4 @@
-FROM        alpine:3.7
+FROM        alpine:3.8
 MAINTAINER  James Turk <james@openstates.org>
 
 ENV PYTHONIOENCODING 'utf-8'
@@ -37,7 +37,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     mariadb-dev && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
-    libressl2.7-libcrypto && \
+    libcrypto1.1 && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
     s3cmd \
