@@ -131,8 +131,5 @@ class Idaho(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
-                             '//select[@id="ddlsessions"]/option/text()',
-                             verify=False)
-        print('GOT IT')
-        return sessions
+        return url_xpath('https://legislature.idaho.gov/sessioninfo/',
+                         '//select[@id="ddlsessions"]/option/text()')

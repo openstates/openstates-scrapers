@@ -1,6 +1,5 @@
 import re
 import datetime
-import requests
 from operator import itemgetter
 from collections import defaultdict
 
@@ -90,12 +89,10 @@ class CTBillScraper(Scraper):
         # Removes leading zeroes in the bill number.
         bill_number = ''.join(re.split('0+', bill.identifier, 1))
 
-        url = ("http://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
+        url = ("https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill"
                "&bill_num=%s&which_year=%s" % (bill_number, bill.legislative_session))
 
-        # Connecticut's SSL is causing problems with Scrapelib, so use Requests
-        page = requests.get(url, verify=False).text
-
+        page = self.get(url).text
         if 'not found in Database' in page:
             raise SkipBill()
         page = lxml.html.fromstring(page)
@@ -140,8 +137,7 @@ class CTBillScraper(Scraper):
             yes_offset = 1
             no_offset = 2
 
-        # Connecticut's SSL is causing problems with Scrapelib, so use Requests
-        page = requests.get(url, verify=False).text
+        page = self.get(url).text
 
         if 'BUDGET ADDRESS' in page:
             return

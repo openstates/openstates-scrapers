@@ -17,9 +17,9 @@ class MACommitteeScraper(Scraper):
                            'Joint': 'legislature'}
 
         for page_type in page_types:
-            url = 'http://www.malegislature.gov/Committees/' + page_type
+            url = 'https://www.malegislature.gov/Committees/' + page_type
 
-            html = self.get(url, verify=False).text
+            html = self.get(url).text
             doc = lxml.html.fromstring(html)
             doc.make_links_absolute('http://www.malegislature.gov')
 
@@ -28,7 +28,7 @@ class MACommitteeScraper(Scraper):
                 yield self.scrape_committee(chamber, com_url)
 
     def scrape_committee(self, chamber, url):
-        html = self.get(url, verify=False).text
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         name = doc.xpath('//title/text()')[0]

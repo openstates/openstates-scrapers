@@ -95,7 +95,6 @@ class OpenLegislationAPIClient(object):
 
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
-        requests_kwargs.update(verify=False)
         headers = requests_kwargs.get('headers', {})
         headers['Accept'] = "application/json"
         requests_kwargs['headers'] = headers
