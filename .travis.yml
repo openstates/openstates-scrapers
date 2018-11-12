@@ -1,6 +1,6 @@
 language: python
 sudo: false
-python: 3.5
+python: 3.6
 install: pip install flake8
 script: flake8 openstates
 notifications:

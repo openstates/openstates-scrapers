@@ -78,11 +78,10 @@ class IABillScraper(Scraper):
         sidebar = lxml.html.fromstring(self.get(url).text)
         sidebar.make_links_absolute("https://www.legis.iowa.gov")
 
-        try:
-            hist_url = sidebar.xpath('//a[contains(., "Bill History")]')[0].attrib['href']
-        except IndexError:
-            # where is it?
-            return
+        hist_url = (
+            f'https://www.legis.iowa.gov/legislation/billTracking/'
+            f'billHistory?billName={bill_id}&ga={session_id}'
+        )
 
         page = lxml.html.fromstring(self.get(hist_url).text)
         page.make_links_absolute("https://www.legis.iowa.gov")
