@@ -68,7 +68,7 @@ class IDPersonScraper(Scraper):
         """
         # self.validate_term(term, latest_only=True)
         url = BASE_URL % CHAMBERS[chamber].lower()
-        index = self.get(url, verify=False).text
+        index = self.get(url).text
         html = lxml.html.fromstring(index)
         html.make_links_absolute(url)
 

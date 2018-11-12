@@ -75,7 +75,7 @@ class ApiClient(object):
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
         self.scraper.info('Api GET next page: %r, %r' % (url, headers))
-        return self.scraper.get(url, headers=headers, verify=False)
+        return self.scraper.get(url, headers=headers)
 
     @check_response
     def get_relurl(self, url):
@@ -84,7 +84,7 @@ class ApiClient(object):
         headers['Accept'] = "application/json"
         url = urljoin(self.root, url)
         self.scraper.info('Api GET: %r, %r' % (url, headers))
-        return self.scraper.get(url, headers=headers, verify=False)
+        return self.scraper.get(url, headers=headers)
 
     def make_url(self, resource_name, **url_format_args):
         # Build up the url.
@@ -104,7 +104,6 @@ class ApiClient(object):
         # Add in the api key.
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
-        requests_kwargs.update(verify=False)
         headers = requests_kwargs.get('headers', {})
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
