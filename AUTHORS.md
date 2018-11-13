@@ -5,11 +5,12 @@ Current core developers:
 * James Turk
 * Miles Watkins
 * Tim Showers
-* Rachel Shorey
-* Paul Tagliamonte
+* Josh Carp
 
 Emeritus core developers:
 * Michael Stephens
 * Dan Schneiderman
 * Thom Neale
 * Andy Lo
+* Rachel Shorey
+* Paul Tagliamonte
