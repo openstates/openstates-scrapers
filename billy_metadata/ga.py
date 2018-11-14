@@ -16,7 +16,7 @@ metadata = {
         {'name': '2015-2016', 'start_year': 2015, 'end_year': 2016,
          'sessions': ['2015_16']},
         {'name': '2017-2018', 'start_year': 2017, 'end_year': 2018,
-         'sessions': ['2017_18']}
+         'sessions': ['2017_18', '2018_ss']}
      ],
     'session_details': {
         '2018_ss': {
