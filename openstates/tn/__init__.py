@@ -69,6 +69,13 @@ class Tennessee(Jurisdiction):
             "name": "110th Regular Session (2017-2018)",
             "start_date": "2017-01-10",
             "end_date": "2017-05-29",
+        },
+        {
+            "_scraped_name": "111th General Assembly",
+            "classification": "primary",
+            "identifier": "111",
+            "name": "111th Regular Session (2019-2020)",
+            "start_date": "2019-01-09",
         }
     ]
     ignored_scraped_sessions = [
