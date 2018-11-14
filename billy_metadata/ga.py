@@ -19,6 +19,11 @@ metadata = {
          'sessions': ['2017_18']}
      ],
     'session_details': {
+        '2018_ss': {
+            "_scraped_name": "2018 Special Session",
+            'display_name': "2018 Special Session",
+            '_guid': 26,
+        },
         '2017_18': {
             'display_name': '2017-2018 Regular Session',
             '_scraped_name': '2017-2018 Regular Session',
