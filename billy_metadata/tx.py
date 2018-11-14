@@ -117,6 +117,12 @@ metadata = {
             'type': 'special',
             'display_name': '85th Legislature, 1st Called Session (2017)',
         },
+        '86': {
+            "_scraped_name": "86(R) - 2019",
+            "type": "primary",
+            "display_name": "86th Legislature (2019)",
+            "start_date": datetime.date(2019, 1, 8),
+        },
     },
     'feature_flags': ['events', 'subjects', 'influenceexplorer'],
     '_ignored_scraped_sessions': [

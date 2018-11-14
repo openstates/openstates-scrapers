@@ -109,7 +109,15 @@ class Texas(Jurisdiction):
             "identifier": "851",
             "name": "85nd Legislature, 1st Called Session (2017)",
             "start_date": "2017-07-10"
-        }
+        },
+        {
+            "_scraped_name": "86(R) - 2019",
+            "classification": "primary",
+            "end_date": "2019-05-27",
+            "identifier": "86",
+            "name": "86th Legislature (2019)",
+            "start_date": "2019-01-08"
+        },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
