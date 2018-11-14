@@ -287,7 +287,7 @@ class TNBillScraper(Scraper):
 
             for bill_link in bill_list_page.xpath(
                 '//h1[text()="Legislation"]/following-sibling::div/'
-                'div/div/div/label//a/@href'
+                'div/div/div//a/@href'
             ):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
