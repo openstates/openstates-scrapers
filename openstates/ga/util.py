@@ -51,6 +51,7 @@ def backoff(function, *args, **kwargs):
 
 
 SESSION_SITE_IDS = {
+    '2018_ss': 26,
     '2017_18': 25,
     '2015_16': 24,
     '2013_14': 23,
