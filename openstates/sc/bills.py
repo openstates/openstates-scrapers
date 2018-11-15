@@ -137,6 +137,7 @@ class SCBillScraper(Scraper):
             '2013-2014': '120',
             '2015-2016': '121',
             '2017-2018': '122',
+            '2019-2020': '123',
         }[session]
 
         subject_search_url = 'https://www.scstatehouse.gov/subjectsearch.php'

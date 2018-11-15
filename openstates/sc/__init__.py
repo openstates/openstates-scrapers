@@ -51,9 +51,19 @@ class SouthCarolina(Jurisdiction):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-10"
-        }
+        },
+        # TODO: Uncomment this when they start posting
+        # {
+        #     "_scraped_name": "123 - (2019-2020)",
+        #     "classification": "primary",
+        #     "end_date": "2019-05-09",
+        #     "identifier": "2019-2020",
+        #     "name": "2019-2020 Regular Session",
+        #     "start_date": "2019-01-09"
+        # }
     ]
     ignored_scraped_sessions = [
+        "123 - (2019-2020)",
         "118 - (2009-2010)",
         "117 - (2007-2008)",
         "116 - (2005-2006)",
