@@ -1,4 +1,5 @@
 import pytz
+import urllib
 from datetime import datetime
 
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -167,8 +168,9 @@ class NEBillScraper(Scraper, LXMLMixin):
             '//div[contains(@class, "col-sm-8")]//a[contains(@href, "view_votes")]')
         for vote_link in vote_links:
             vote_url = vote_link.attrib['href']
-            date_text, motion_text, *_ = vote_link.xpath('ancestor::tr/td/text()')
-            date = datetime.strptime(date_text, '%b %d, %Y')
+            date_td, motion_td, *_ = vote_link.xpath('ancestor::tr/td')
+            date = datetime.strptime(date_td.text, '%b %d, %Y')
+            motion_text = motion_td.text_content()
             vote_page = self.lxmlize(vote_url)
             passed = (
                 'Passed' in motion_text or
@@ -183,6 +185,8 @@ class NEBillScraper(Scraper, LXMLMixin):
                 classification='passage',
                 result='pass' if passed else 'fail',
             )
+            query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
+            vote.pupa_id = query_params['KeyID'][0]
             vote.add_source(vote_url)
             for chunk in range(0, len(cells), 2):
                 name = cells[chunk].text
