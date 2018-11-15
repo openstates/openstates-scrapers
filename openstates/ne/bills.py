@@ -1,8 +1,17 @@
+import pytz
+import urllib
 from datetime import datetime
 
-from pupa.scrape import Scraper, Bill
+from pupa.scrape import Scraper, Bill, VoteEvent
 
 from openstates.utils import LXMLMixin
+
+
+TIMEZONE = pytz.timezone('US/Central')
+VOTE_TYPE_MAP = {
+    'yes': 'yes',
+    'no': 'no',
+}
 
 
 class NEBillScraper(Scraper, LXMLMixin):
@@ -39,7 +48,7 @@ class NEBillScraper(Scraper, LXMLMixin):
             # bill_link = bill_resp.url
             # bill_page = bill_resp.text
 
-            yield self.bill_info(bill_link, session, main_url)
+            yield from self.bill_info(bill_link, session, main_url)
 
     def bill_info(self, bill_link, session, main_url):
         bill_page = self.lxmlize(bill_link)
@@ -150,7 +159,41 @@ class NEBillScraper(Scraper, LXMLMixin):
             transcript_url = transcript_link.attrib['href']
             bill.add_document_link(transcript_name, transcript_url)
 
-        return bill
+        yield bill
+
+        yield from self.scrape_votes(bill, bill_page, actor)
+
+    def scrape_votes(self, bill, bill_page, chamber):
+        vote_links = bill_page.xpath(
+            '//div[contains(@class, "col-sm-8")]//a[contains(@href, "view_votes")]')
+        for vote_link in vote_links:
+            vote_url = vote_link.attrib['href']
+            date_td, motion_td, *_ = vote_link.xpath('ancestor::tr/td')
+            date = datetime.strptime(date_td.text, '%b %d, %Y')
+            motion_text = motion_td.text_content()
+            vote_page = self.lxmlize(vote_url)
+            passed = (
+                'Passed' in motion_text or
+                'Advanced' in motion_text
+            )
+            cells = vote_page.xpath('//table[contains(@class, "calendar-table")]//td')
+            vote = VoteEvent(
+                bill=bill,
+                chamber=chamber,
+                start_date=TIMEZONE.localize(date),
+                motion_text=motion_text,
+                classification='passage',
+                result='pass' if passed else 'fail',
+            )
+            query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
+            vote.pupa_id = query_params['KeyID'][0]
+            vote.add_source(vote_url)
+            for chunk in range(0, len(cells), 2):
+                name = cells[chunk].text
+                vote_type = cells[chunk + 1].text
+                if name and vote_type:
+                    vote.vote(VOTE_TYPE_MAP.get(vote_type.lower(), 'other'), name)
+            yield vote
 
     def action_types(self, action):
         if 'Date of introduction' in action:
