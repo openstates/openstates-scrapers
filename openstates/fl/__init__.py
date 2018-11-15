@@ -59,7 +59,7 @@ class Florida(Jurisdiction):
         '2012O',
         '2014O',
         '2016O',
-        '2018',
+        '2018O',
         '2019',
     ]
 
