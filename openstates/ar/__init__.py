@@ -147,6 +147,7 @@ class Arkansas(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "Regular Session, 2019",
         "Regular Session, 2009",
         "Fiscal Session, 2010",
         "Regular Session, 2007",
