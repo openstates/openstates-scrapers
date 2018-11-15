@@ -24,7 +24,7 @@ class SenList(CSV):
     def _scrape_extra_info(self):
         self.extra_info = collections.defaultdict(dict)
 
-        resp = self.scraper.get(self._html_url, verify=False)
+        resp = self.scraper.get(self._html_url)
         doc = lxml.html.fromstring(resp.text)
         doc.make_links_absolute(self._html_url)
         xpath = ('//div[@id="hide_show_alpha_all"]'

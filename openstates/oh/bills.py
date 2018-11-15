@@ -463,14 +463,14 @@ class OHBillScraper(Scraper):
             yield vote
 
     def old_scrape(self, session=None):
-        status_report_url = "http://www.legislature.ohio.gov/legislation/status-reports"
+        status_report_url = "https://www.legislature.ohio.gov/legislation/status-reports"
 
         # ssl verification off due Ohio not correctly implementing SSL
         if not session:
             session = self.latest_session()
             self.info('no session, using %s', session)
 
-        doc = self.get(status_report_url, verify=False).text
+        doc = self.get(status_report_url).text
         doc = lxml.html.fromstring(doc)
         doc.make_links_absolute(status_report_url)
         xpath = "//div[contains(text(),'{}')]/following-sibling::table"

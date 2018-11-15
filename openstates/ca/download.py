@@ -27,7 +27,7 @@ MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
 MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
-BASE_URL = 'http://downloads.leginfo.legislature.ca.gov/'
+BASE_URL = 'https://downloads.leginfo.legislature.ca.gov/'
 
 
 # ----------------------------------------------------------------------------
@@ -302,7 +302,7 @@ def get_contents():
     #     resp[filename] = date
     # return resp
 
-    html = requests.get(BASE_URL, verify=False).text
+    html = requests.get(BASE_URL).text
     doc = lxml.html.fromstring(html)
     # doc.make_links_absolute(BASE_URL)
     rows = doc.xpath('//table/tr')

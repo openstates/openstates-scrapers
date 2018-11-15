@@ -1,7 +1,7 @@
 import re
-import lxml.html
-import requests
 from pupa.scrape import Jurisdiction, Organization
+
+from openstates.utils import url_xpath
 # from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
@@ -90,18 +90,12 @@ class Iowa(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        def url_xpath(url, path):
-            doc = lxml.html.fromstring(requests.get(url, verify=False).text)
-            return doc.xpath(path)
-
         sessions = url_xpath(
             'https://www.legis.iowa.gov/legislation/findLegislation',
             "//section[@class='grid_6']//li/a/text()[normalize-space()]"
         )
 
-        sessions = [x[0] for x in filter(lambda x: x != [], [
+        return [x[0] for x in filter(lambda x: x != [], [
             re.findall(r'^.*Assembly: [0-9]+', session)
             for session in sessions
         ])]
-
-        return sessions

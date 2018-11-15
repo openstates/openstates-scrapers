@@ -48,9 +48,6 @@ SITE_IDS = {
 
 
 class MNBillScraper(Scraper, LXMLMixin):
-    # bad SSL as of August 2017
-    verify = False
-
     # For testing purposes, this will do a lite version of things.  If
     # testing_bills is set, only these bills will be scraped.  Use SF0077
     testing = False
@@ -146,7 +143,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 url = BILL_SEARCH_URL % (search_chamber, search_session, start,
                                          start + stride, bill_type)
                 # Parse HTML
-                html = self.get(url, verify=False).text
+                html = self.get(url).text
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
@@ -265,7 +262,7 @@ class MNBillScraper(Scraper, LXMLMixin):
 
         url = '%sstatus_search.php?body=%s&search=topic&session=%s' % (
             BILL_DETAIL_URL_BASE, search_chamber, search_session)
-        html = self.get(url, verify=False).text
+        html = self.get(url).text
         doc = lxml.html.fromstring(html)
 
         # For testing purposes, we don't really care about getting
@@ -284,7 +281,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 '&topic[]=%s&submit_topic=GO' %
                 (BILL_DETAIL_URL_BASE, search_chamber, search_session, value)
             )
-            opt_html = self.get(opt_url, verify=False).text
+            opt_html = self.get(opt_url).text
             opt_doc = lxml.html.fromstring(opt_html)
             for bill in opt_doc.xpath('//table/tbody/tr/td[2]/a/text()'):
                 bill = self.make_bill_id(bill)
@@ -419,7 +416,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         labeled, "Bill Text", on the search results page.
         """
         try:
-            version_resp = self.get(version_list_url, verify=False)
+            version_resp = self.get(version_list_url)
         except scrapelib.HTTPError:
             self.warning("Bad version URL detected: {}".format(version_list_url))
             return bill
