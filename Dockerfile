@@ -6,8 +6,6 @@ ENV LANG 'en_US.UTF-8'
 ENV BILLY_ENV /opt/openstates/venv-billy/
 ENV PUPA_ENV /opt/openstates/venv-pupa/
 
-ADD . /opt/openstates/openstates
-
 RUN apk add --no-cache --virtual .build-dependencies \
     wget \
     build-base \
@@ -50,8 +48,11 @@ RUN apk add --no-cache --virtual .build-dependencies \
     autoreconf -i -f && \
     ./configure --disable-man && make && make install && \
     cd /tmp && \
-    rm -rf mdbtools-0.7.1 && \
-  virtualenv -p $(which python2) /opt/openstates/venv-billy/ && \
+    rm -rf mdbtools-0.7.1
+
+ADD . /opt/openstates/openstates
+
+RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/ && \
     /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy && \
     /opt/openstates/venv-billy/bin/pip install python-dateutil && \
   virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
@@ -61,4 +62,4 @@ RUN apk add --no-cache --virtual .build-dependencies \
   apk del .build-dependencies
 
 WORKDIR /opt/openstates/openstates/
-ENTRYPOINT [/opt/openstates/openstates/pupa-scrape.sh]
+ENTRYPOINT ["/opt/openstates/openstates/pupa-scrape.sh"]
