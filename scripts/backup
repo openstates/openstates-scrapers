@@ -2,18 +2,16 @@
 set -e
 
 env
-mongodump --host ${BILLY_MONGO_HOST} --db fiftystates --excludeCollection popularity_counts
-tar cvzf dump.tar.gz dump/
-s3cmd put dump.tar.gz s3://${S3_BUCKET}/mongo/`date +%Y-%m-%d`-mongo.tar.gz
 
-# mongodump --host ${BILLY_MONGO_HOST} --db ${USERDATA_TABLE}
+pg_dump -Fc openstatesorg > openstatesorg.pgdump
+aws s3 cp openstatesorg.pgdump s3://${S3_BUCKET}/ocd/`date +%Y-%m-%d`-openstatesorg.pgdump
+
+
+pg_dump -Fc --exclude-table-data 'auth*' --exclude-table-data 'boundaries*' --exclude-table-data 'django_admin*' --exclude-table-data "geo*" --exclude-table-data "simplekeys*" > public.pgdump
+aws s3 cp public.pgdump s3://${S3_BUCKET}/public/`date +%Y-%m-%d`-openstatesorg.pgdump
+
+
+# mongodump --host ${BILLY_MONGO_HOST} --db fiftystates --excludeCollection popularity_counts
 # tar cvzf dump.tar.gz dump/
-# s3cmd put dump.tar.gz s3://${S3_BUCKET}/mongo-private/`date +%Y-%m-%d`-billy-userdata.tar.gz
-# rm -rf dump
-# rm dump.tar.gz
-# 
-# mongodump --host ${BILLY_MONGO_HOST} --db 
-# tar cvzf dump.tar.gz dump/
-# s3cmd put dump.tar.gz s3://${S3_BUCKET}/mongo-private/`date +%Y-%m`-newsblogs.tar.gz
-# rm -rf dump
-# rm dump.tar.gz
+# aws s3 cp dump.tar.gz s3://${S3_BUCKET}/mongo/`date +%Y-%m-%d`-mongo.tar.gz
+

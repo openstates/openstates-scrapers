@@ -38,7 +38,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libcrypto1.1 && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing \
-    s3cmd \
+    aws-cli \
     gdal-dev \
     geos-dev && \
   cd /tmp && \
@@ -56,7 +56,7 @@ RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/ && \
     /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy && \
     /opt/openstates/venv-billy/bin/pip install python-dateutil && \
   virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
-    /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=python-opencivicdata && \
+    /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
     /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
     /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt && \
   apk del .build-dependencies
