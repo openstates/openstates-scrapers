@@ -1,8 +1,0 @@
-http://www.pewstates.org/projects/stateline/headlines.rss?states=328040
-http://www.inforum.com/event/rss.regionalnews/
-http://bismarcktribune.com/search/?f=rss&t=article&c=news/state-and-regional&l=25&s=start_time&sd=desc
-http://feeds.feedburner.com/SayAnything
-http://www.northdecoder.com/component/option,com_ninjarsssyndicator/feed_id,1/format,raw/
-
-http://www.therepublic.com/feed/cat/2470
-http://www.pewstates.org/feeds/all.rss?states=328040
