@@ -3,8 +3,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import MDBillScraper
-from .people import MDPersonScraper
-from .committees import MDCommitteeScraper
+# from .people import MDPersonScraper
+# from .committees import MDCommitteeScraper
 
 
 class Maryland(Jurisdiction):
@@ -14,8 +14,8 @@ class Maryland(Jurisdiction):
     url = "http://mgaleg.maryland.gov/webmga/frm1st.aspx?tab=home"
     scrapers = {
         'bills': MDBillScraper,
-        'people': MDPersonScraper,
-        'committees': MDCommitteeScraper,
+        # 'people': MDPersonScraper,
+        # 'committees': MDCommitteeScraper,
     }
     legislative_sessions = [
         {
@@ -131,9 +131,18 @@ class Maryland(Jurisdiction):
             "identifier": "2018",
             "name": "2018 Regular Session",
             "start_date": "2018-01-10"
-        }
+        },
+        # {
+        #     "_scraped_name": "2019 Regular Session",
+        #     "classification": "primary",
+        #     "end_date": "2019-04-11",
+        #     "identifier": "2019",
+        #     "name": "2019 Regular Session",
+        #     "start_date": "2019-01-09"
+        # },
     ]
     ignored_scraped_sessions = [
+        "2019 Regular Session",
         "1996 Regular Session",
         "1997 Regular Session",
         "1998 Regular Session",
