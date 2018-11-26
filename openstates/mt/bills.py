@@ -73,10 +73,15 @@ class MTBillScraper(Scraper, LXMLMixin):
         chambers = [chamber] if chamber else ['upper', 'lower']
 
         # self.versions_dict = self._versions_dict(session)
+        details = next(
+            each for each in self.jurisdiction.legislative_sessions
+            if each['identifier'] == session
+        )
+        session_name = details['_scraped_name']
 
         bills_url = (
             'http://laws.leg.mt.gov/legprd/LAW0217W$BAIV.return_all_bills?P_SESS={}'
-        ).format(session)
+        ).format(session_name)
         bills_page = self.lxmlize(bills_url)
 
         bill_urls = []
