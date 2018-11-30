@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import TNBillScraper
 # from .committees import TNCommitteeScraper
-# from .events import TNEventScraper
+from .events import TNEventScraper
 # from .people import TNPersonScraper
 
 
@@ -16,7 +16,7 @@ class Tennessee(Jurisdiction):
     scrapers = {
         'bills': TNBillScraper,
         # 'committees': TNCommitteeScraper,
-        # 'events': TNEventScraper,
+        'events': TNEventScraper,
         # 'people': TNPersonScraper,
     }
     legislative_sessions = [
