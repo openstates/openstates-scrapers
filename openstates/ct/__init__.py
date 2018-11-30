@@ -3,7 +3,7 @@ import lxml.html
 from pupa.scrape import Jurisdiction, Organization
 # from .people import CTPersonScraper
 from .bills import CTBillScraper
-# from .events import CTEventScraper
+from .events import CTEventScraper
 
 settings = {
     'SCRAPELIB_RPM': 20
@@ -18,7 +18,7 @@ class Connecticut(Jurisdiction):
     scrapers = {
         # 'people': CTPersonScraper,
         'bills': CTBillScraper,
-        # 'events': CTEventScraper,
+        'events': CTEventScraper,
     }
     legislative_sessions = [
         {
