@@ -20,7 +20,7 @@ class VTEventScraper(Scraper):
 
         for info in events:
             # Determine when the committee meets
-            if info['TimeSlot'] == '1':
+            if info['TimeSlot'] == '' or info['TimeSlot'] == '1':
                 start_time = datetime.datetime.strptime(info['MeetingDate'], '%A, %B %d, %Y')
                 all_day = True
             else:
