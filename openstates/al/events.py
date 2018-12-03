@@ -12,7 +12,8 @@ class ALEventScraper(Scraper, LXMLMixin):
     def scrape(self):
 
         EVENTS_URL = 'http://www.legislature.state.al.us/aliswww/ISD/InterimMeetings.aspx'
-        rows = self.lxmlize(EVENTS_URL).xpath('//table[@id="ContentPlaceHolder1_gvInterimMeeting"]/tr')
+        rows = self.lxmlize(EVENTS_URL).xpath(
+            '//table[@id="ContentPlaceHolder1_gvInterimMeeting"]/tr')
         for row in rows[1:]:
             date = row.xpath('td')[0].text_content().strip()
             time = row.xpath('td')[1].text_content().strip()
@@ -40,7 +41,7 @@ class ALEventScraper(Scraper, LXMLMixin):
                 ),
                 name=name,
                 location_name=location,
-                description = details
+                description=details
             )
 
             event.add_source(EVENTS_URL)
