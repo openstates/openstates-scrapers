@@ -1,6 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .bills import ALBillScraper
+from .events import ALEventScraper
 # from .people import ALPersonScraper
 
 
@@ -11,6 +12,7 @@ class Alabama(Jurisdiction):
     url = "http://www.legislature.state.al.us/"
     scrapers = {
         'bills': ALBillScraper,
+        'events': ALEventScraper
         # 'people': ALPersonScraper,
     }
     legislative_sessions = [
