@@ -41,6 +41,12 @@ metadata = dict(
             'start_year': 2017,
             'end_year': 2018,
         },
+        {
+            'name': '2019-2020',
+            'sessions': ['2019'],
+            'start_year': 2019,
+            'end_year': 2020,
+        }
     ],
     # General Assembly sessions convene the Wed. following the first Mon.
     # of January and adjourn May 30.
@@ -105,6 +111,10 @@ metadata = dict(
         '2018S2': {
             'type': 'special',
             'display_name': '2018 Second Extraordinary Session',
+        },
+        '2019': {
+            'type': 'primary',
+            'display_name': '2019 Regular Session'
         },
     },
     feature_flags=['subjects', 'influenceexplorer'],
