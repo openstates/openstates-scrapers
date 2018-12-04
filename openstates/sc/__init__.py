@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 # from .people import SCPersonScraper
 from .bills import SCBillScraper
-# from .events import SCEventScraper
+from .events import SCEventScraper
 
 import requests
 import lxml.html
@@ -20,7 +20,7 @@ class SouthCarolina(Jurisdiction):
     scrapers = {
         # 'people': SCPersonScraper,
         'bills': SCBillScraper,
-        # 'events': SCEventScraper
+        'events': SCEventScraper
     }
     legislative_sessions = [
         {

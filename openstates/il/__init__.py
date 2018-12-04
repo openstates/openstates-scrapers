@@ -3,7 +3,7 @@ from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .bills import IlBillScraper
 # from .people import IlPersonScraper
-# from .events import IlEventScraper
+from .events import IlEventScraper
 # from .committees import IlCommitteeScraper
 
 
@@ -15,7 +15,7 @@ class Illinois(Jurisdiction):
     scrapers = {
         "bills": IlBillScraper,
         # "people": IlPersonScraper,
-        # "events": IlEventScraper,
+        "events": IlEventScraper,
         # "committees": IlCommitteeScraper,
     }
     legislative_sessions = [

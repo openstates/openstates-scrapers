@@ -45,6 +45,12 @@ class Washington(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
             "end_date": "2018-03-09",
+        },
+        {
+            "_scraped_name": "2019-20",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-04",
         }
     ]
     ignored_scraped_sessions = [
@@ -94,5 +100,4 @@ class Washington(Jurisdiction):
     def get_session_list(self):
         from utils.lxmlize import url_xpath
         return url_xpath('http://apps.leg.wa.gov/billinfo/',
-                         '//select[starts-with(@id, "ctl00_ContentPlaceHolder'
-                         '1_biennia")]/option/@value')
+                         '//select[@id="biennia"]/option/@value')

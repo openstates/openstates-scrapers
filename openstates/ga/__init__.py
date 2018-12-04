@@ -49,6 +49,14 @@ class Georgia(Jurisdiction):
             "identifier": "2018_ss",
             "name": "2018 Special Session",
             'start_date': '2018-11-13',
+            'end_date': '2018-11-17',
+        },
+        {
+            "_scraped_name": "2019-2020 Regular Session",
+            "identifier": "2019_20",
+            "name": "2019-2020 Regular Session",
+            'start_date': '2019-01-14',
+            'end_date': '2020-03-31'
         },
     ]
     ignored_scraped_sessions = [

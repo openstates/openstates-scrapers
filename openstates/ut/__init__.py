@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 # from .people import UTPersonScraper
-# from .events import UTEventScraper
+from .events import UTEventScraper
 # from .committees import UTCommitteeScraper
 from .bills import UTBillScraper
 
@@ -17,7 +17,7 @@ class Utah(Jurisdiction):
     url = "http://le.utah.gov/"
     scrapers = {
         # 'people': UTPersonScraper,
-        # 'events': UTEventScraper,
+        'events': UTEventScraper,
         # 'committees': UTCommitteeScraper,
         'bills': UTBillScraper,
     }
@@ -159,6 +159,13 @@ class Utah(Jurisdiction):
             "identifier": "2018S2",
             "name": "2017 2nd Special Session",
             "start_date": "2018-07-18",
+        },
+        {
+            "_scraped_name": "2018 3rd Special Session",
+            "classification": "special",
+            "identifier": "2018S3",
+            "name": "2017 3rd Special Session",
+            "start_date": "2018-12-03",
         },
     ]
     ignored_scraped_sessions = [

@@ -72,9 +72,15 @@ class Oklahoma(Jurisdiction):
             "start_date": "2017-02-06",
             "end_date": "2018-05-25",
         },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-22",
+            "end_date": "2019-05-31",
+        },
     ]
     ignored_scraped_sessions = [
-        "2019 Regular Session",
         "2017 Regular Session",
         "2015 Regular Session",
         "2013 Regular Session",

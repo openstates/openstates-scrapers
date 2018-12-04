@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 # from .people import NVPeopleScraper
 # from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
-# from .events import NVEventScraper
+from .events import NVEventScraper
 
 
 class Nevada(Jurisdiction):
@@ -17,7 +17,7 @@ class Nevada(Jurisdiction):
         # 'people': NVPeopleScraper,
         # 'committees': NVCommitteeScraper,
         'bills': NVBillScraper,
-        # 'events': NVEventScraper,
+        'events': NVEventScraper,
     }
     legislative_sessions = [
         {

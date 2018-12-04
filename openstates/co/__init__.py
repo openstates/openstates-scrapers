@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 # from .people import COLegislatorScraper
 # from .committees import COCommitteeScraper
 from .bills import COBillScraper
-# from .events import COEventScraper
+from .events import COEventScraper
 
 
 class Colorado(Jurisdiction):
@@ -17,7 +17,7 @@ class Colorado(Jurisdiction):
         # 'people': COLegislatorScraper,
         # 'committees': COCommitteeScraper,
         'bills': COBillScraper,
-        # 'events': COEventScraper,
+        'events': COEventScraper,
     }
     legislative_sessions = [
         {
