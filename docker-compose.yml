@@ -40,7 +40,7 @@ services:
     image: openstates/openstates
     environment:
     - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
-    entrypoint: /opt/openstates/openstates/dbinit.sh
+    entrypoint: /opt/openstates/openstates/scripts/dbinit.sh
     volumes:
     - .:/opt/openstates/openstates/
     depends_on:
