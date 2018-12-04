@@ -20,6 +20,8 @@ metadata = dict(
          'sessions': ['2015-2016']},
         {'name': '2017-2018', 'start_year': 2017, 'end_year': 2018,
          'sessions': ['2017-2018']},
+        {'name': '2019-2020', 'start_year': 2019, 'end_year': 2020,
+         'sessions': ['2019-2020']},
         ],
     session_details={
         '2009-2010': {'display_name': '2009-2010 Regular Session',
@@ -37,6 +39,10 @@ metadata = dict(
         '2017-2018': {'display_name': '2017-2018 Regular Session',
                       '_scraped_name': '2017-18',
                       },
+        '2019-2020' {'display_name': '2019-2020 Regular Session',
+                      '_scraped_name': '2019-20',
+                      },
+        }
     },
     feature_flags=['events', 'subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
