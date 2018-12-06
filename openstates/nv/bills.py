@@ -8,8 +8,6 @@ from openstates.utils.lxmlize import LXMLMixin
 from pupa.scrape import Scraper, Bill
 from urllib.parse import unquote
 
-# https://www.leg.state.nv.us/Session/80th2019/Reports/history.cfm?ID=4
-
 
 class NVBillScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('PST8PDT')
@@ -57,11 +55,6 @@ class NVBillScraper(Scraper, LXMLMixin):
 
         yield from self.scrape_bills(chamber, session_slug, session, year)
 
-        # if chamber == 'upper':
-        #     yield from self.scrape_senate_bills(chamber, session_slug, session, year)
-        # else:
-        #     yield from self.scrape_assem_bills(chamber, session_slug, session, year)
-
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
               'TablesAndIndex/%s_%s-index.html' % (insert, year, session)
@@ -87,13 +80,7 @@ class NVBillScraper(Scraper, LXMLMixin):
                                    else None)
                         self.subject_mapping[bill_id].append(subject)
 
-    # def get_listing_page(self, slug):
-    #     url = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/Bills/List'.format(
-    #         slug)
-    #     return lxml.html.fromstring(self.get(url).text)
-
     def scrape_bills(self, chamber, session_slug, session, year):
-        # //ul[contains(@id, "A")]//div[contains(@class, "listing") and contains(@class, "row")]
 
         doc_types = {
             'lower': ['AB', 'IP', 'AJR', 'ACR', 'AR'],
@@ -157,6 +144,8 @@ class NVBillScraper(Scraper, LXMLMixin):
         bdr = self.extract_bdr(short_title)
         if bdr:
             bill.extras['BDR'] = bdr
+
+        bill.extras['NV_ID'] = internal_id
 
         bill.add_source(url)
         yield bill
