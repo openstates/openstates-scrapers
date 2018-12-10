@@ -13,6 +13,7 @@ from .actions import Categorizer
 
 BLACKLISTED_BILL_IDS = {
     '128': ('SP 601', 'SP 602'),
+    '129': (),
 }
 
 
