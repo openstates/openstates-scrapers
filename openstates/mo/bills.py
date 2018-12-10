@@ -157,6 +157,10 @@ class MOBillScraper(Scraper, LXMLMixin):
 
         self.info(bid)
 
+        if bid == 'XXXXXX':
+            self.info("Skipping Junk Bill")
+            return
+
         bill = Bill(
             bill_id,
             title=bill_desc,
