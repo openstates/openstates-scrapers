@@ -43,6 +43,8 @@ metadata = dict(
                 '_scraped_name': '127th Legislature'},
         '128': {'display_name':  '128th Legislature (2017-2018)',
                 '_scraped_name': '128th Legislature'},
+        '129': {'display_name':  '129th Legislature (2019-2020)',
+                '_scraped_name': '129th Legislature'},
     },
     feature_flags=['subjects', 'influenceexplorer'],
     _ignored_scraped_sessions=[]
