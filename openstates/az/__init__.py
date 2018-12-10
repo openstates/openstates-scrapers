@@ -220,8 +220,17 @@ class Arizona(Jurisdiction):
             "start_date": "2018-01-08",
             "end_date": "2018-05-03",
         },
+        # {
+        #     "_scraped_name": "2019 - Fifty-fourth Legislature - First Regular Session",
+        #     "classification": "primary",
+        #     "identifier": "54th-1st-regular",
+        #     "name": "54th Legislature - 1st Regular Session",
+        #     "start_date": "2019-01-14",
+        #     "end_date": "2018-03-29",
+        # },
     ]
     ignored_scraped_sessions = [
+        '2019 - Fifty-fourth Legislature - First Regular Session',
         "2008 - Forty-eighth Legislature - Second Regular Session",
         "2007 - Forty-eighth Legislature - First Regular Session",
         "2006 - Forty-seventh Legislature - First Special Session",
