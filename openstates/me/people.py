@@ -25,13 +25,45 @@ def clean_phone(phone):
 
 class MEPersonScraper(Scraper):
     def scrape(self, chamber=None):
-        if chamber in ['upper', None]:
-            yield from self.scrape_senators()
+        # if chamber in ['upper', None]:
+        #     yield from self.scrape_senators()
         if chamber in ['lower', None]:
             yield from self.scrape_reps()
 
+    def scrape_rep(self, url):
+
+        page = self.get(url).text
+        page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
+
+        name = page.xpath('//div[@class="member-name"]/text()')[0].strip()
+        district_number = page.xpath('//span[contains(text(), "House District:")]/following-sibling::span/text()')[0].strip()
+        email = page.xpath('//a[./i[contains(@class,"fa-envelope")]]/text()')[0].strip()
+
+        photo_url = page.xpath('//header[@id="home"]/img/@src')[0]
+
+        party = self.get_rep_table_by_header(page, 'Party Affiliation')
+        address = self.get_rep_table_by_header(page, 'Office Address')
+
+        person = Person(
+            name=name,
+            district=district_number,
+            primary_org='lower',
+            party=party,
+            image=photo_url,
+        )
+
+        person.add_source(url)
+
+        yield person
+
+    def get_rep_table_by_header(self, page, header):
+        if page.xpath('//td[contains(text(), "{}")]/following-sibling::td'.format(header)):
+            return page.xpath('//td[contains(text(), "{}")]/following-sibling::td/text()'.format(header))[0].strip()
+        return None
+
     def scrape_reps(self):
-        url = 'http://www.maine.gov/legis/house/dist_mem.htm'
+        url = 'https://legislature.maine.gov/house/house/MemberProfiles/ListAlpha'
         page = self.get(url).text
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
@@ -39,7 +71,11 @@ class MEPersonScraper(Scraper):
         # These do not include the non-voting tribal representatives
         # They do not have numbered districts, and lack a good deal of
         # the standard profile information about representatives
-        for district in page.xpath('//a[contains(@href, "dist_twn")]/..'):
+        for link in page.xpath('//a[contains(@href, "house/MemberProfiles/Details")]/@href'):
+            print(link)
+            yield from self.scrape_rep(link)
+            continue
+
             if "- Vacant" in district.text_content():
                 self.warning("District is vacant: '{}'".
                              format(district.text_content()))
