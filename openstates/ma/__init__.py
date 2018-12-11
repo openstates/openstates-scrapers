@@ -57,7 +57,6 @@ class Massachusetts(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Massachusetts General Court"
-        lower_chamber_name = "House"
         lower_title = "Senator"
         upper_title = "Senator"
 
@@ -65,7 +64,7 @@ class Massachusetts(Jurisdiction):
                                    classification="legislature")
         upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
 
         lower_divs = [

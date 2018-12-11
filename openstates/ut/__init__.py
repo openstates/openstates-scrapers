@@ -211,13 +211,12 @@ class Utah(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Utah State Legislature"
-        lower_chamber_name = "House"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
 
         # fiscal analyst

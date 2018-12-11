@@ -67,14 +67,13 @@ class NewHampshire(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "New Hampshire General Court"
-        lower_chamber_name = "House"
         lower_title = "Representative"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
 
         for label, num, division_id in LOWER_DISTRICTS:

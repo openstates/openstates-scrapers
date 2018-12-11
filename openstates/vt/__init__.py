@@ -83,7 +83,6 @@ class Vermont(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Vermont General Assembly"
-        lower_chamber_name = "House"
         lower_title = "Representative"
         upper_title = "Senator"
 
@@ -92,7 +91,7 @@ class Vermont(Jurisdiction):
         governor = Organization(name='Office of the Governor', classification='executive')
         upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
 
         lower.add_post(label='Addison-1',    # maximum=2,
