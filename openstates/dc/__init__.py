@@ -57,19 +57,9 @@ class DistrictOfColumbia(Jurisdiction):
     ]
 
     def get_organizations(self):
-        council = Organization(name="Council of the District of Columbia",
-                               classification="legislature")
-        mayor = Organization(name="Executive Office of the Mayor",
-                             classification="executive")
-
-        council.add_post('Chairman', role="Chairman", division_id=self.division_id)
-        council.add_post('At-Large', role="Councilmember", division_id=self.division_id)
-
-        for n in range(1, 8+1):
-            council.add_post('Ward {}'.format(n), role="member",
-                             division_id='{}/ward:{}'.format(self.division_id, n))
-        yield mayor
-        yield council
+        yield Organization(name="Council of the District of Columbia",
+                           classification="legislature")
+        yield Organization(name="Executive Office of the Mayor", classification="executive")
 
     def get_session_list(self):
         data = api_request('/LIMSLookups')
