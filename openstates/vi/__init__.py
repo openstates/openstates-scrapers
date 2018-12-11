@@ -47,11 +47,10 @@ class USVirginIslands(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Senate of the Virgin Islands"
-        upper_chamber_name = "Senate"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
 
         yield legislature

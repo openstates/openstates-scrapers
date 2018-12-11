@@ -98,11 +98,10 @@ class SouthDakota(Jurisdiction):
     def get_organizations(self):
         legislature_name = "South Dakota State Legislature"
         lower_chamber_name = "House"
-        upper_chamber_name = "Senate"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)

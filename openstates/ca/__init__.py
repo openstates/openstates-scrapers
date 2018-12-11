@@ -138,11 +138,10 @@ class California(Jurisdiction):
     def get_organizations(self):
         legislature_name = "California State Legislature"
         lower_chamber_name = "Assembly"
-        upper_chamber_name = "Senate"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)

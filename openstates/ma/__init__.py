@@ -59,12 +59,11 @@ class Massachusetts(Jurisdiction):
         legislature_name = "Massachusetts General Court"
         lower_chamber_name = "House"
         lower_title = "Senator"
-        upper_chamber_name = "Senate"
         upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)

@@ -136,13 +136,12 @@ class NorthCarolina(Jurisdiction):
     def get_organizations(self):
         legislature_name = "North Carolina General Assembly"
         lower_chamber_name = "House"
-        upper_chamber_name = "Senate"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         executive = Organization(name='Executive Office of the Governor',
                                  classification="executive")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
