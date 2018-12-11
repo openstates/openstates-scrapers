@@ -138,14 +138,6 @@ class Minnesota(Jurisdiction):
         lower = Organization('Minnesota House of Representatives',
                              classification='lower', parent_id=legis._id)
 
-        for n in range(1, 68):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:mn/sldu:{}'.format(n))
-            lower.add_post(label=str(n) + 'A', role='Representative',
-                           division_id='ocd-division/country:us/state:mn/sldl:{}a'.format(n))
-            lower.add_post(label=str(n) + 'B', role='Representative',
-                           division_id='ocd-division/country:us/state:mn/sldl:{}b'.format(n))
-
         yield Organization('Governor of Minnesota', classification='executive')
         yield legis
         yield upper

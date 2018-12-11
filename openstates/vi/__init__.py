@@ -48,18 +48,11 @@ class USVirginIslands(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Senate of the Virgin Islands"
         upper_chamber_name = "Senate"
-        upper_seats = 0
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         upper = Organization(upper_chamber_name, classification='upper',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper

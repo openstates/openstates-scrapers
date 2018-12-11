@@ -82,11 +82,6 @@ class NewHampshire(Jurisdiction):
         for label, num, division_id in LOWER_DISTRICTS:
             lower.add_post(label=label, role=lower_title, division_id=division_id)
 
-        for n in range(1, 25):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-
         yield legislature
         yield upper
         yield lower

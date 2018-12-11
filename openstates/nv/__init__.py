@@ -137,15 +137,6 @@ class Nevada(Jurisdiction):
         lower = Organization(lower_chamber_name, classification='lower',
                              parent_id=legislature._id)
 
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
-
         yield Organization('Office of the Governor', classification='executive')
         yield legislature
         yield upper
