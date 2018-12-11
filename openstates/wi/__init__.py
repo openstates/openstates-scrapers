@@ -162,14 +162,10 @@ class Wisconsin(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Wisconsin State Legislature"
-        lower_chamber_name = "Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
+        lower = Organization('Assembly', classification='lower', parent_id=legislature._id)
 
         yield legislature
         yield upper

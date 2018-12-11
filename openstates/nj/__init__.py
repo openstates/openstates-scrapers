@@ -72,16 +72,11 @@ class NewJersey(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "New Jersey Legislature"
-        lower_chamber_name = "Assembly"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        executive = Organization(name='Governor of New Jersey',
-                                 classification="executive")
-        upper = Organization('Senate', classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
+        legislature = Organization(name=legislature_name, classification="legislature")
+        executive = Organization(name='Governor of New Jersey', classification="executive")
+        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
+        lower = Organization('Assembly', classification='lower', parent_id=legislature._id)
 
         yield legislature
         yield executive
