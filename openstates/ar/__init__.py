@@ -191,11 +191,7 @@ class Arkansas(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Arkansas General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 100
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 35
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

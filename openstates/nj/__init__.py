@@ -73,11 +73,7 @@ class NewJersey(Jurisdiction):
     def get_organizations(self):
         legislature_name = "New Jersey Legislature"
         lower_chamber_name = "Assembly"
-        lower_seats = 40
-        lower_title = "Assembly Member"
         upper_chamber_name = "Senate"
-        upper_seats = 40
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

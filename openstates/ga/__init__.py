@@ -74,11 +74,7 @@ class Georgia(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Georgia General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 180
-        lower_title = "Senator"
         upper_chamber_name = "Senate"
-        upper_seats = 56
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

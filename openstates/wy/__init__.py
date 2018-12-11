@@ -91,11 +91,7 @@ class Wyoming(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Wyoming State Legislature"
         lower_chamber_name = "House"
-        lower_seats = 60
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 30
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

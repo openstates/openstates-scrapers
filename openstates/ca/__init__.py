@@ -138,11 +138,7 @@ class California(Jurisdiction):
     def get_organizations(self):
         legislature_name = "California State Legislature"
         lower_chamber_name = "Assembly"
-        lower_seats = 80
-        lower_title = "Assemblymember"
         upper_chamber_name = "Senate"
-        upper_seats = 40
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

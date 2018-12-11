@@ -63,11 +63,7 @@ class Kansas(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Kansas State Legislature"
         upper_chamber_name = "Senate"
-        lower_seats = 125
-        lower_title = "Representative"
         lower_chamber_name = "House"
-        upper_seats = 40
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

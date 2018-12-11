@@ -130,11 +130,7 @@ class WestVirginia(Jurisdiction):
     def get_organizations(self):
         legislature_name = "West Virginia Legislature"
         lower_chamber_name = "House"
-        lower_seats = 67
-        lower_title = "Delegate"
         upper_chamber_name = "Senate"
-        upper_seats = 17
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

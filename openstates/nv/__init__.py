@@ -124,11 +124,7 @@ class Nevada(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Nevada Legislature"
         lower_chamber_name = "Assembly"
-        lower_seats = 42
-        lower_title = "Assembly Member"
         upper_chamber_name = "Senate"
-        upper_seats = 21
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

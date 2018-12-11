@@ -93,11 +93,7 @@ class Tennessee(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Tennessee General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 99
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 33
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

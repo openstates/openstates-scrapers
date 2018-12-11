@@ -157,11 +157,7 @@ class Texas(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Texas Legislature"
         lower_chamber_name = "House"
-        lower_seats = 150
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 31
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

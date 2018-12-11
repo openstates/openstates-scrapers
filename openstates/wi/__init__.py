@@ -163,11 +163,7 @@ class Wisconsin(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Wisconsin State Legislature"
         lower_chamber_name = "Assembly"
-        lower_seats = 99
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 33
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

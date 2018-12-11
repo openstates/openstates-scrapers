@@ -58,11 +58,7 @@ class NewYork(Jurisdiction):
     def get_organizations(self):
         legislature_name = "New York Legislature"
         lower_chamber_name = "Assembly"
-        lower_seats = 150
-        lower_title = "Assembly Member"
         upper_chamber_name = "Senate"
-        upper_seats = 63
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

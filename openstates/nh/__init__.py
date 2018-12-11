@@ -70,7 +70,6 @@ class NewHampshire(Jurisdiction):
         lower_chamber_name = "House"
         lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

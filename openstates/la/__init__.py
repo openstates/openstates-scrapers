@@ -209,11 +209,7 @@ class Louisiana(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Louisiana Legislature"
         lower_chamber_name = "House"
-        lower_seats = 105
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 39
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

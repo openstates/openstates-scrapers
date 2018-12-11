@@ -80,11 +80,7 @@ class Connecticut(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Connecticut General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 151
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_seats = 36
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

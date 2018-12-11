@@ -98,10 +98,7 @@ class SouthDakota(Jurisdiction):
     def get_organizations(self):
         legislature_name = "South Dakota State Legislature"
         lower_chamber_name = "House"
-        lower_title = "Representative"
         upper_chamber_name = "Senate"
-        upper_title = "Senator"
-        seats = 35
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

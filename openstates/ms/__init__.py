@@ -191,11 +191,7 @@ class Mississippi(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Mississippi Legislature"
         upper_chamber_name = "Senate"
-        upper_seats = 52
-        upper_title = "Senator"
         lower_chamber_name = "House"
-        lower_title = "Representative"
-        lower_seats = 122
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")

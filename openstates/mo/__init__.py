@@ -130,11 +130,7 @@ class Missouri(Jurisdiction):
     def get_organizations(self):
         legislature_name = "Missouri General Assembly"
         lower_chamber_name = "House"
-        lower_seats = 163
-        lower_title = "Senator"
         upper_chamber_name = "Senate"
-        upper_seats = 34
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
