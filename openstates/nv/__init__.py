@@ -88,16 +88,15 @@ class Nevada(Jurisdiction):
             "name": "2017 Regular Session",
             "start_date": "2017-02-06"
         },
-        # {
-        #     "_scraped_name": "80th (2019) Session",
-        #     "classification": "primary",
-        #     "identifier": "80",
-        #     "name": "2019 Regular Session",
-        #     "start_date": "2019-02-04"
-        # },
+        {
+            "_scraped_name": "80th (2019) Session",
+            "classification": "primary",
+            "identifier": "80",
+            "name": "2019 Regular Session",
+            "start_date": "2019-02-04"
+        },
     ]
     ignored_scraped_sessions = [
-        "80th (2019) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",
