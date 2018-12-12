@@ -64,18 +64,10 @@ class Nebraska(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Nebraska Legislature"
-        seats = 49
-        title = "Senator"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
+        legislature = Organization(name=legislature_name, classification="legislature")
         executive = Organization(name='Office of the Governor',
                                  classification="executive")
-        for n in range(1, seats + 1):
-            legislature.add_post(
-                label=str(n), role=title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-
         yield legislature
         yield executive
 
