@@ -129,28 +129,13 @@ class Missouri(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Missouri General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 163
-        lower_title = "Senator"
-        upper_chamber_name = "Senate"
-        upper_seats = 34
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature

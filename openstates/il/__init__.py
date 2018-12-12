@@ -76,13 +76,6 @@ class Illinois(Jurisdiction):
         lower = Organization('Illinois House of Representatives', classification='lower',
                              parent_id=legis._id)
 
-        for n in range(1, 60):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:il/sldu:{}'.format(n))
-        for n in range(1, 119):
-            lower.add_post(label=str(n), role='Representative',
-                           division_id='ocd-division/country:us/state:il/sldl:{}'.format(n))
-
         yield legis
         yield upper
         yield lower

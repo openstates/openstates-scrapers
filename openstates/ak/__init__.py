@@ -59,27 +59,10 @@ class Alaska(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Alaska State Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 40
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_title = "Senator"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
-
-        for letter in 'ABCDEFGHIJKLMNOPQRST':
-            upper.add_post(
-                label=letter, role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, letter.lower()))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization("Senate", classification='upper', parent_id=legislature._id)
+        lower = Organization("House", classification='lower', parent_id=legislature._id)
 
         yield legislature
         yield upper

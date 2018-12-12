@@ -73,13 +73,6 @@ class Florida(Jurisdiction):
         lower = Organization('Florida House of Representatives', classification='lower',
                              parent_id=legis._id)
 
-        for n in range(1, 41):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:fl/sldu:{}'.format(n))
-        for n in range(1, 121):
-            lower.add_post(label=str(n), role='Representative',
-                           division_id='ocd-division/country:us/state:fl/sldl:{}'.format(n))
-
         yield legis
         yield upper
         yield lower
