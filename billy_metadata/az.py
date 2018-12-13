@@ -70,6 +70,14 @@ metadata = dict(
             'start_year': 2017,
             'end_year': 2018
         },
+        {
+            'name': '54',
+            'sessions': [
+                '54th-1st-regular',
+            ],
+            'start_year': 2019,
+            'end_year': 2020
+        },
         ],
         session_details={
             '49th-1st-regular':
@@ -240,6 +248,10 @@ metadata = dict(
             '53rd-1st-special': {
                 'type': 'special',
                 'display_name': '53rd Legislature - 1st Special Session',
+            },
+            '54th-1st-regular': {
+                'type': 'primary',
+                'display_name': '54th Legislature - 1st Regular Session',
             },
             # get session id from http://www.azleg.gov/SelectSession.asp select
         },
