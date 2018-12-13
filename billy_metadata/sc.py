@@ -53,7 +53,7 @@ metadata = dict(
             'display_name': '2017-2018 Regular Session',
             '_code': '122',
         },
-        '2017-2018': {
+        '2018-2019': {
             'type': 'primary',
             '_scraped_name': '123 - (2019-2020)',
             'display_name': '2019-2020 Regular Session',
