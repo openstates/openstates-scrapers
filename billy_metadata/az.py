@@ -249,7 +249,7 @@ metadata = dict(
                 'type': 'special',
                 'display_name': '53rd Legislature - 1st Special Session',
             },
-            '53rd-1st-regular': {
+            '54th-1st-regular': {
                 'type': 'primary',
                 'display_name': '54th Legislature - 1st Regular Session',
             },
