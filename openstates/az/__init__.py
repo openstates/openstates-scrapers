@@ -226,7 +226,7 @@ class Arizona(Jurisdiction):
             "identifier": "54th-1st-regular",
             "name": "54th Legislature - 1st Regular Session",
             "start_date": "2019-01-14",
-            "end_date": "2018-03-29",
+            "end_date": "2019-03-29",
         },
     ]
     ignored_scraped_sessions = [
