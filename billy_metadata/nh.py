@@ -18,6 +18,8 @@ metadata = {
          'start_year': 2015, 'end_year': 2016},
         {'name': '2017-2018', 'sessions': ['2017', '2018'],
          'start_year': 2017, 'end_year': 2018}
+        {'name': '2019-2020', 'sessions': ['2019', '2020'],
+         'start_year': 2019, 'end_year': 2020}
     ],
     'session_details': {
         '2011': {'display_name': '2011 Regular Session',
@@ -57,6 +59,9 @@ metadata = {
                  },
         '2018': {'display_name': '2018 Regular Session',
                  '_scraped_name': '2018 Session',
+                 },
+        '2019': {'display_name': '2019 Regular Session',
+                 '_scraped_name': '2019 Session',
                  },
     },
     'feature_flags': ['subjects', 'influenceexplorer'],
