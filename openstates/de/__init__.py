@@ -72,16 +72,15 @@ class Delaware(Jurisdiction):
             "start_date": "2017-01-10",
             "end_date": "2017-06-30"
         },
-        # TODO: uncomment when they start posting
-        # {
-        #     "_scraped_name": "2018 - 2020 (GA 150)",
-        #     "identifier": "150",
-        #     "name": "150th General Assembly (2019-2020)",
-        #     "start_date": "2019-01-08",
-        #     "end_date": "2019-06-27"
-        # }
+        {
+            "_scraped_name": "2018 - 2020 (GA 150)",
+            "identifier": "150",
+            "name": "150th General Assembly (2019-2020)",
+            "start_date": "2019-01-08",
+            "end_date": "2019-06-27"
+        }
     ]
-    ignored_scraped_sessions = ['2018 - 2020 (GA 150)']
+    ignored_scraped_sessions = []
 
     def get_organizations(self):
         legislature_name = "Delaware General Assembly"

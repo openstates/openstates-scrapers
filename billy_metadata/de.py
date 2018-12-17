@@ -70,6 +70,12 @@ metadata = {
             'end_year': 2018,
             'sessions': ['149'],
             },
+        {
+            'name': '2019-2020',
+            'start_year': 2019,
+            'end_year': 2020,
+            'sessions': ['150'],
+            },
     ],
     'session_details': {
          '140': {
@@ -111,6 +117,10 @@ metadata = {
         '149': {
             'display_name': '149th General Assembly (2017-2018)',
             '_scraped_name': '2016 - 2018 (GA 149)',
+        },
+        '150': {
+            'display_name': '150th General Assembly (2019-2020)',
+            '_scraped_name': '2016 - 2018 (GA 150)',
         },
     },
     'feature_flags': ['events', 'influenceexplorer'],
