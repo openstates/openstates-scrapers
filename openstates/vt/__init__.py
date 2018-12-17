@@ -71,6 +71,7 @@ class Vermont(Jurisdiction):
         }
     ]
     ignored_scraped_sessions = [
+        "2020 Training Session",
         "2009 Special Session",
     ]
 
