@@ -93,8 +93,18 @@ class NewMexico(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-17"
         },
+        # TODO: Uncomment when filing starts
+        # {
+        #     "_scraped_name": "2019 Regular",
+        #     "classification": "primary",
+        #     "end_date": "2019-03-16",
+        #     "identifier": "2019",
+        #     "name": "2019 Regular Session",
+        #     "start_date": "2019-01-15"
+        # },
     ]
     ignored_scraped_sessions = [
+        "2019 Regular",
         "2010 2nd Special",
         "2010 Regular",
         "2009 1st Special",
