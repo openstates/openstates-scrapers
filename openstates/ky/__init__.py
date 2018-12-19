@@ -118,10 +118,10 @@ class Kentucky(Jurisdiction):
         {
             "_scraped_name": "2018 Special Session",
             "classification": "special",
-            "end_date": "2018-04-13",
+            "end_date": "2018-12-18",
             "identifier": "2018SS",
             "name": "2018 Special Session",
-            "start_date": "2018-01-02"
+            "start_date": "2018-12-19"
         },
     ]
     ignored_scraped_sessions = []
