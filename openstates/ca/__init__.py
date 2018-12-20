@@ -125,7 +125,7 @@ class California(Jurisdiction):
             "classification": "primary",
             "identifier": "20192020",
             "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-02"
+            "start_date": "2019-01-02",
             "end_date": "2020-12-31",
         }
     ]
