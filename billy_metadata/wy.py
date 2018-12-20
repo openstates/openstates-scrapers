@@ -33,8 +33,12 @@ metadata = {
             'end_year': 2018,
             'sessions': ['2017','2018'],
         },
-
-
+        {
+            'name': '2019-2020',
+            'start_year': 2019,
+            'end_year': 2020,
+            'sessions': ['2019'],
+        },
     ],
     'session_details': {
         '2011': {
@@ -76,6 +80,11 @@ metadata = {
             'type': 'primary',
             'display_name': '2018 General Session',
             '_scraped_name': '2018 General Session',
+        },
+        '2019': {
+            'type': 'primary',
+            'display_name': '2019 General Session',
+            '_scraped_name': '2019 General Session',
         },
     },
     'feature_flags': ['influenceexplorer', 'events'],
