@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-# from .people import SCPersonScraper
+from .people import SCPersonScraper
 from .bills import SCBillScraper
 from .events import SCEventScraper
 
@@ -18,7 +18,7 @@ class SouthCarolina(Jurisdiction):
     name = "South Carolina"
     url = "http://www.scstatehouse.gov/"
     scrapers = {
-        # 'people': SCPersonScraper,
+        'people': SCPersonScraper,
         'bills': SCBillScraper,
         'events': SCEventScraper
     }
