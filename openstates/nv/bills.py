@@ -102,7 +102,7 @@ class NVBillScraper(Scraper, LXMLMixin):
 
     def scrape_bill(self, session, session_slug, chamber, url):
         page = lxml.html.fromstring(self.get(url).text)
-        bill_no = page.xpath('//div[@id="item-header"]/text()')[0].strip()
+        bill_no = page.xpath('//*[@id="item-header"]/text()')[0].strip()
         # state bill id
         internal_id = re.search(r'\/Bill\/(\d+)\/Overview', url).group(1)
 
