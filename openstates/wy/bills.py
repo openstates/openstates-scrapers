@@ -63,9 +63,9 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_bill(self, bill_num, session):
         chamber_map = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/' \
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/{}/' \
                         '{}?calendarDate='.format(
-                            bill_num)
+                            session, bill_num)
         response = self.get(bill_json_url)
         bill_json = json.loads(response.content.decode('utf-8'))
 
@@ -80,8 +80,8 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         bill.add_title(bill_json['billTitle'])
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
-            bill_json['bill'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/{}/{}'.format(session,
+                                                                      bill_json['bill'])
         bill.add_source(source_url)
 
         for action_json in bill_json['billActions']:
@@ -147,8 +147,8 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         for amendment in bill_json['amendments']:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
-            url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(
-                amendment['amendmentNumber'])
+            url = 'http://wyoleg.gov/{}/Amends/{}.pdf'.format(
+                session, amendment['amendmentNumber'])
 
             if amendment['sponsor'] and amendment['status']:
                 title = 'Amendment {} ({}) - {} ({})'.format(
@@ -259,8 +259,8 @@ class WYBillScraper(Scraper, LXMLMixin):
                 v.vote(option="other",
                        voter=name)
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
-            vote_json['billNumber'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/{}/{}'.format(
+            session, vote_json['billNumber'])
         v.add_source(source_url)
 
         yield v
