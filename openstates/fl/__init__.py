@@ -2,7 +2,7 @@
 import logging
 from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
-# from .people import FlPersonScraper
+from .people import FlPersonScraper
 # from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
 from openstates.utils import url_xpath
@@ -18,7 +18,7 @@ class Florida(Jurisdiction):
 
     scrapers = {
         "bills": FlBillScraper,
-        # "people": FlPersonScraper,
+        "people": FlPersonScraper,
         # "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }

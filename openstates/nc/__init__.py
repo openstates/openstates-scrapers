@@ -1,6 +1,6 @@
 import lxml
 from pupa.scrape import Jurisdiction, Organization
-# from .people import NCPersonScraper
+from .people import NCPersonScraper
 # from .committees import NCCommitteeScraper
 from .bills import NCBillScraper
 
@@ -11,7 +11,7 @@ class NorthCarolina(Jurisdiction):
     name = "North Carolina"
     url = "http://www.ncleg.net/"
     scrapers = {
-        # 'people': NCPersonScraper,
+        'people': NCPersonScraper,
         # 'committees': NCCommitteeScraper,
         'bills': NCBillScraper,
     }

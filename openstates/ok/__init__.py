@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-# from .people import OKPersonScraper
+from .people import OKPersonScraper
 # from .committees import OKCommitteeScraper
 # from .events import OKEventScraper
 from .bills import OKBillScraper
@@ -11,7 +11,7 @@ class Oklahoma(Jurisdiction):
     name = "Oklahoma"
     url = "http://www.oklegislature.gov/"
     scrapers = {
-        # 'people': OKPersonScraper,
+        'people': OKPersonScraper,
         # 'committees': OKCommitteeScraper,
         # 'events': OKEventScraper,
         'bills': OKBillScraper,

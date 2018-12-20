@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 import scrapelib
 import lxml.html
-# from .people import SDLegislatorScraper
+from .people import SDLegislatorScraper
 from .bills import SDBillScraper
 
 
@@ -11,7 +11,7 @@ class SouthDakota(Jurisdiction):
     name = "South Dakota"
     url = "http://www.sdlegislature.gov/"
     scrapers = {
-        # 'people': SDLegislatorScraper,
+        'people': SDLegislatorScraper,
         'bills': SDBillScraper
     }
     legislative_sessions = [

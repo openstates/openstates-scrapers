@@ -3,7 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
-# from .people import VaPersonScraper
+from .people import VaPersonScraper
 from .bills import VaBillScraper
 
 
@@ -21,7 +21,7 @@ class Virginia(Jurisdiction):
     name = "Virginia"
     url = "http://virginiageneralassembly.gov/"
     scrapers = {
-        # "people": VaPersonScraper,
+        "people": VaPersonScraper,
         "bills": VaBillScraper,
     }
     legislative_sessions = [

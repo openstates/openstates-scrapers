@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import RIBillScraper
 # from .events import RIEventScraper
-# from .people import RIPersonScraper
+from .people import RIPersonScraper
 # from .committees import RICommitteeScraper
 
 
@@ -16,7 +16,7 @@ class RhodeIsland(Jurisdiction):
     scrapers = {
         'bills': RIBillScraper,
         # 'events': RIEventScraper,
-        # 'people': RIPersonScraper,
+        'people': RIPersonScraper,
         # 'committees': RICommitteeScraper,
     }
     legislative_sessions = [

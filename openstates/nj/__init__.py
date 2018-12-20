@@ -3,7 +3,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import NJBillScraper
 from .events import NJEventScraper
-# from .people import NJPersonScraper
+from .people import NJPersonScraper
 # from .committees import NJCommitteeScraper
 
 # don't retry- if a file isn't on FTP just let it go
@@ -18,7 +18,7 @@ class NewJersey(Jurisdiction):
     scrapers = {
         'bills': NJBillScraper,
         'events': NJEventScraper,
-        # 'people': NJPersonScraper,
+        'people': NJPersonScraper,
         # 'committees': NJCommitteeScraper,
     }
     legislative_sessions = [

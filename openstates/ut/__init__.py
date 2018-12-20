@@ -4,7 +4,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
-# from .people import UTPersonScraper
+from .people import UTPersonScraper
 from .events import UTEventScraper
 # from .committees import UTCommitteeScraper
 from .bills import UTBillScraper
@@ -16,7 +16,7 @@ class Utah(Jurisdiction):
     name = "Utah"
     url = "http://le.utah.gov/"
     scrapers = {
-        # 'people': UTPersonScraper,
+        'people': UTPersonScraper,
         'events': UTEventScraper,
         # 'committees': UTCommitteeScraper,
         'bills': UTBillScraper,

@@ -1,4 +1,4 @@
-# from .people import DEPersonScraper
+from .people import DEPersonScraper
 from .bills import DEBillScraper
 # from .events import DEEventScraper
 # from .committees import DECommitteeScraper
@@ -14,7 +14,7 @@ class Delaware(Jurisdiction):
     name = "Delaware"
     url = "http://legis.delaware.gov/"
     scrapers = {
-        # 'people': DEPersonScraper,
+        'people': DEPersonScraper,
         'bills': DEBillScraper,
         # 'events': DEEventScraper,
         # 'committees': DECommitteeScraper,

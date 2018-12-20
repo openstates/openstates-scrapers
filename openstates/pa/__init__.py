@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import PABillScraper
 from .events import PAEventScraper
-# from .people import PALegislatorScraper
+from .people import PALegislatorScraper
 # from .committees import PACommitteeScraper
 
 settings = {'SCRAPELIB_RPM': 30}
@@ -18,7 +18,7 @@ class Pennsylvania(Jurisdiction):
     scrapers = {
         'bills': PABillScraper,
         'events': PAEventScraper,
-        # 'people': PALegislatorScraper,
+        'people': PALegislatorScraper,
         # 'committees': PACommitteeScraper,
     }
     legislative_sessions = [

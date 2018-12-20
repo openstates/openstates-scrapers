@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import MNBillScraper
 # from .committees import MNCommitteeScraper
-# from .people import MNPersonScraper
+from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 # from .events import MNEventScraper
 
@@ -28,7 +28,7 @@ class Minnesota(Jurisdiction):
     scrapers = {
         "bills": MNBillScraper,
         # "committees": MNCommitteeScraper,
-        # "people": MNPersonScraper,
+        "people": MNPersonScraper,
         "votes": MNVoteScraper,
         # "events": MNEventScraper,
     }

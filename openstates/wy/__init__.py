@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .bills import WYBillScraper
-# from .people import WYPersonScraper
+from .people import WYPersonScraper
 # from .committees import WYCommitteeScraper
 
 import requests
@@ -15,7 +15,7 @@ class Wyoming(Jurisdiction):
     url = "http://legisweb.state.wy.us/"
     scrapers = {
         'bills': WYBillScraper,
-        # 'people': WYPersonScraper,
+        'people': WYPersonScraper,
         # 'committees': WYCommitteeScraper,
     }
     legislative_sessions = [
