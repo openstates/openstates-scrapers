@@ -81,7 +81,7 @@ class WYBillScraper(Scraper, LXMLMixin):
         bill.add_title(bill_json['billTitle'])
 
         source_url = 'http://lso.wyoleg.gov/Legislation/{}/{}'.format(session,
-            bill_json['bill'])
+                                                                      bill_json['bill'])
         bill.add_source(source_url)
 
         for action_json in bill_json['billActions']:
