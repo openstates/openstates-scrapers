@@ -42,6 +42,7 @@ metadata = {
             'sessions': [
                 '2017RS',
                 '2018RS',
+                '2018SS',
             ]
         },
     ],
@@ -120,6 +121,11 @@ metadata = {
             'start_date': datetime.date(2018, 1, 2),
             'display_name': '2018 Regular Session',
             '_scraped_name': '2018 Regular Session',
+        },
+        '2018SS': {
+            'type': 'primary',
+            'display_name': '2018 Special Session',
+            '_scraped_name': '2018 Special Session',
         },
     },
     'feature_flags': ['subjects', 'events', 'influenceexplorer'],
