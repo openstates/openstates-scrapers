@@ -119,6 +119,14 @@ class California(Jurisdiction):
             "identifier": "20172018",
             "name": "2017-2018 Regular Session",
             "start_date": "2016-12-05"
+        },
+        {
+            "_scraped_name": "2019-2020",
+            "classification": "primary",
+            "identifier": "20192020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-02",
+            "end_date": "2020-12-31",
         }
     ]
     ignored_scraped_sessions = [
