@@ -41,6 +41,12 @@ class NorthDakota(Jurisdiction):
             "name": "65th Legislative Assembly (2017-2018)",
             "start_date": "2017-01-03",
             "end_date": "2017-04-27",
+        },
+        {
+            "_scraped_name": "66th Legislative Assembly (2019-20)",
+            "identifier": "66",
+            "name": "66th Legislative Assembly (2019-2020)",
+            "start_date": "2019-01-03",
         }
     ]
     ignored_scraped_sessions = [

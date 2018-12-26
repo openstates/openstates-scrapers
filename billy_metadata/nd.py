@@ -20,6 +20,8 @@ metadata = dict(
          'start_year': 2015, 'end_year': 2016},
         {'name': '65', 'sessions': ['65'],
          'start_year': 2017, 'end_year': 2018},
+        {'name': '66', 'sessions': ['66'],
+         'start_year': 2019, 'end_year': 2020},
     ],
     session_details={
         '62': {'start_date': datetime.date(2011, 1, 4),
@@ -37,6 +39,10 @@ metadata = dict(
         '65': {'start_date': datetime.date(2017, 1, 3),
                'display_name': '65th Legislative Assembly (2017-2018)',
                '_scraped_name': '65th Legislative Assembly (2017-18)',
+               },
+        '66': {
+               'display_name': '66th Legislative Assembly (2019-2020)',
+               '_scraped_name': '66th Legislative Assembly (2019-20)',
                },
     },
     feature_flags=['influenceexplorer'],
