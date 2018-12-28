@@ -80,12 +80,12 @@ class Indiana(Jurisdiction):
             "start_date": "2018-05-14",
             "end_date": "2018-05-24",
         },
-        # {
-        #     "_scraped_name": "First Regular Session 121st General Assembly (2019)",
-        #     "identifier": "2019",
-        #     "name": "2019 Regular Session",
-        #     "start_date": "2019-01-14"
-        # },
+        {
+            "_scraped_name": "First Regular Session 121st General Assembly (2019)",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-14"
+        },
     ]
     ignored_scraped_sessions = [
         "First Regular Session 121st General Assembly (2019)",

@@ -22,6 +22,8 @@ metadata = dict(
          'end_year': 2016, 'sessions': ['2015', '2016']},
         {'name': '2017-2018', 'start_year': 2017,
          'end_year': 2018, 'sessions': ['2017', '2018', '2018ss1']},
+        {'name': '2019-2020', 'start_year': 2019,
+          'end_year': 2020, 'sessions': ['2019']},
     ],
     session_details={
         '2009': {'display_name': '2009 Regular Session',
@@ -49,6 +51,7 @@ metadata = dict(
         '2018ss1': {'display_name': '2018 Special Session',
             "_scraped_name": "Special Session 120th General Assembly (2018)",
         },
+        '2019': {'display_name': '2019 Regular Session', },
     },
     feature_flags=['subjects', 'capitol_maps', 'influenceexplorer'],
     capitol_maps=[
