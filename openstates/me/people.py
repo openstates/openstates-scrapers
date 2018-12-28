@@ -36,6 +36,11 @@ class MEPersonScraper(Scraper):
         page = lxml.html.fromstring(page)
         page.make_links_absolute(url)
 
+        main = page.xpath('//div[@id="main-info"]')[0]
+        if 'Resigned' in main.text_content():
+            print("Member resigned {}".format(url))
+            raise StopIteration   # don't yield anything
+
         name = page.xpath('//div[@class="member-name"]/text()')[0].strip()
         name = re.sub(r'\s+', ' ', name)
         district_number = page.xpath('//span[contains(text(), "House District:")]/following-sibling::span/text()')[0].strip()
@@ -63,6 +68,7 @@ class MEPersonScraper(Scraper):
         )
 
         person.add_contact_detail(type='address', value=address, note='District Office')
+        person.add_contact_detail(type='email', value=email, note='District Office')
 
         person.add_source(url)
 
