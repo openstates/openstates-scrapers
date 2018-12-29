@@ -2,7 +2,6 @@ import re
 from pupa.scrape import Person, Scraper
 
 import lxml.html
-import xlrd
 
 _party_map = {
     'D': 'Democratic',
@@ -43,9 +42,11 @@ class MEPersonScraper(Scraper):
 
         name = page.xpath('//div[@class="member-name"]/text()')[0].strip()
         name = re.sub(r'\s+', ' ', name)
-        district_number = page.xpath('//span[contains(text(), "House District:")]/following-sibling::span/text()')[0].strip()
+        district_number = page.xpath(
+            '//span[contains(text(), "House District:")]'
+            '/following-sibling::span/text()')[0].strip()
         # remove anything after first whitespace
-        district_number = re.sub('\s.*', '', district_number.strip())
+        district_number = re.sub(r'\s.*', '', district_number.strip())
 
         email = None
         email_content = page.xpath('//a[./i[contains(@class,"fa-envelope")]]/text()')
@@ -57,7 +58,8 @@ class MEPersonScraper(Scraper):
         party = self.get_rep_table_by_header(page, 'Party Affiliation').text.strip()
         party = _party_map[party[0]]  # standardize
 
-        address = [t.strip() for t in page.xpath('//div[@id="main-info"]/p/text()') if t.strip()][0]
+        main_p_text = page.xpath('//div[@id="main-info"]/p/text()')
+        address = [t.strip() for t in main_p_text if t.strip()][0]
 
         person = Person(
             name=name,
