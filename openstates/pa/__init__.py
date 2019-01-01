@@ -59,7 +59,15 @@ class Pennsylvania(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-03",
             "end_date": "2017-12-31"
-        }
+        },
+        {
+            "_scraped_name": "2019-2020 Regular Session",
+            "classification": "primary",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-01",
+            "end_date": "2019-12-31"
+        },
     ]
     ignored_scraped_sessions = [
         "1965-1966 Special Session #1",
