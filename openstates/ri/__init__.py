@@ -75,6 +75,14 @@ class RhodeIsland(Jurisdiction):
             "start_date": "2018-01-02",
             "end_date": "2018-06-30",
         },
+        {
+            "_scraped_name": "2019",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-01",
+            "end_date": "2019-06-30",
+        },
     ]
     ignored_scraped_sessions = [
         "2015",
