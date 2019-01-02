@@ -67,6 +67,13 @@ class Connecticut(Jurisdiction):
             "start_date": "2018-02-07",
             "end_date": "2018-05-09",
         },
+        {
+            "_scraped_name": "2019",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-09",
+            "end_date": "2019-06-05",
+        },
     ]
     ignored_scraped_sessions = [
         "2010",
