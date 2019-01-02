@@ -49,11 +49,16 @@ class NewYork(Jurisdiction):
             "name": "2017 Regular Session",
             "start_date": "2017-01-04",
             "end_date": "2018-12-31",
+        },
+        {
+            "_scraped_name": "2019",
+            "identifier": "2019-2020",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-03",
+            "end_date": "2019-12-31",
         }
     ]
-    ignored_scraped_sessions = [
-        "2009"
-    ]
+    ignored_scraped_sessions = []
 
     def get_organizations(self):
         legislature_name = "New York Legislature"
