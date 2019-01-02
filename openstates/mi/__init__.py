@@ -49,7 +49,7 @@ class Michigan(Jurisdiction):
             "classification": "primary",
             "identifier": "2019-2020",
             "name": "2019-2020 Regular Session",
-            "start_date": "2019-01-11",
+            "start_date": "2019-01-09",
             "end_date": "2019-12-31"
         }
     ]
