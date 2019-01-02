@@ -40,6 +40,13 @@ class DistrictOfColumbia(Jurisdiction):
             "name": "22nd Council Period (2017-2018)",
             "start_date": "2017-01-01",
             "end_date": "2017-12-31",
+        },
+        {
+            "_scraped_name": "23",
+            "identifier": "23",
+            "name": "23rd Council Period (2019-2020)",
+            "start_date": "2019-01-02",
+            "end_date": "2020-12-31",
         }
     ]
     ignored_scraped_sessions = [
