@@ -22,6 +22,8 @@ metadata = dict(
          'start_year': 2015, 'end_year': 2016},
         {'name': '2017-2018', 'sessions': ['22'],
          'start_year': 2017, 'end_year': 2018},
+        {'name': '2019-2020', 'sessions': ['23'],
+         'start_year': 2019, 'end_year': 2020},
         ],
     session_details={
         '19': {'display_name': '19th Council Period (2011-2012)',
