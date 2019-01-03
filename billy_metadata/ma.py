@@ -30,6 +30,12 @@ metadata = {
             'start_year': 2018,
             'name': '190',
             'sessions': ['190th']
+        },
+        {
+            'end_year': 2019,
+            'start_year': 2020,
+            'name': '191',
+            'sessions': ['191st']
         }
     ],
     'name': 'Massachusetts',
@@ -60,6 +66,11 @@ metadata = {
             'type': 'primary',
             'display_name': '190th Legislature (2017-2018)',
             '_scraped_name': '190th',
+        },
+        '191st': {
+            'type': 'primary',
+            'display_name': '191st Legislature (2019-2020)',
+            '_scraped_name': '191st',
         },
     },
     'legislature_name': 'Massachusetts General Court',
