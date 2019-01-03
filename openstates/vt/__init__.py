@@ -68,7 +68,14 @@ class Vermont(Jurisdiction):
             "identifier": "2018ss1",
             "name": "2018 Special Session",
             "start_date": "2018-05-22",
-        }
+        },
+        {
+            "_scraped_name": "2019-2020 Session",
+            "classification": "primary",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-09",
+        },
     ]
     ignored_scraped_sessions = [
         "2020 Training Session",
