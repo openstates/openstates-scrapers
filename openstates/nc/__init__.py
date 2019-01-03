@@ -102,6 +102,14 @@ class NorthCarolina(Jurisdiction):
             "name": "2018 Extra Session 3",
             "start_date": "2018-10-02"
         },
+        {
+            "_scraped_name": "2019-2020 Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019-2020 Session",
+            "start_date": "2019-01-03",
+            "end_date": "2020-08-01"
+        },
     ]
     ignored_scraped_sessions = [
         '2008 Extra Session',
@@ -154,7 +162,7 @@ class NorthCarolina(Jurisdiction):
         from openstates.utils.lxmlize import url_xpath
         # This is the URL that populates the session `<select>` in the
         # state homepage header navigation
-        return url_xpath('https://www.ncleg.net/webservices/api/sessionselectlist/false',
+        return url_xpath('https://webservices.ncleg.net/sessionselectlist/false',
                          '//option/text()')
 
     def extract_text(self, doc, data):
