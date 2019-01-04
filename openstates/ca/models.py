@@ -1,7 +1,7 @@
 from sqlalchemy import (Column, Integer, String, ForeignKey,
                         DateTime, Numeric, UnicodeText)
 from sqlalchemy.sql import and_
-from sqlalchemy.orm import backref, relation
+from sqlalchemy.orm import backref, relation, foreign
 from sqlalchemy.ext.declarative import declarative_base
 
 from lxml import etree
@@ -225,8 +225,7 @@ class CAVoteSummary(Base):
 class CAVoteDetail(Base):
     __tablename__ = "bill_detail_vote_tbl"
 
-    bill_id = Column(String(20), ForeignKey(CABill.bill_id),
-                     ForeignKey(CAVoteSummary.bill_id), primary_key=True)
+    bill_id = Column(String(20), ForeignKey(CABill.bill_id), primary_key=True)
     location_code = Column(String(6), ForeignKey(CAVoteSummary.location_code),
                            primary_key=True)
     legislator_name = Column(String(50), primary_key=True)
@@ -240,10 +239,12 @@ class CAVoteDetail(Base):
     trans_uid = Column(String(30), primary_key=True)
     trans_update = Column(DateTime, primary_key=True)
 
-    bill = relation(CABill, backref=backref('detail_votes'))
+    bill = relation(CABill,
+                    primaryjoin="CABill.bill_id == foreign(CAVoteDetail.bill_id)",
+                    backref=backref('detail_votes'))
     summary = relation(
         CAVoteSummary,
-        primaryjoin=and_(CAVoteSummary.bill_id == bill_id,
+        primaryjoin=and_(CAVoteSummary.bill_id == foreign(bill_id),
                          CAVoteSummary.location_code == location_code,
                          CAVoteSummary.vote_date_time == vote_date_time,
                          CAVoteSummary.vote_date_seq == vote_date_seq,
