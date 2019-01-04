@@ -32,6 +32,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     postgresql-dev \
     mongodb-tools \
     postgresql-client \
+    mariadb \
     mariadb-dev \
     mysql-client && \
   apk add --no-cache \
