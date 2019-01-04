@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from .models import CACommitteeHearing, CALocation
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'mysql')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
 

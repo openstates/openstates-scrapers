@@ -24,7 +24,7 @@ import _mysql_exceptions
 
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+MYSQL_USER = os.environ.get('MYSQL_USER', 'mysql')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
 BASE_URL = 'https://downloads.leginfo.legislature.ca.gov/'
