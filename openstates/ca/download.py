@@ -269,6 +269,7 @@ def db_create():
         sql_statements = f.read().split(';')
 
     connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+    print(f'mysql connection host={MYSQL_HOST}, user={MYSQL_USER}, password={MYSQL_PASSWORD}')
     connection.autocommit(True)
     cursor = connection.cursor()
 
