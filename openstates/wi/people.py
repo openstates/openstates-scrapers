@@ -16,11 +16,12 @@ class WIPersonScraper(Scraper):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session['identifier'])
 
-    def scrape_chamber(self, chamber):
-        url = 'http://legis.wisconsin.gov/Pages/leg-list.aspx?h={}'.format(
-            {'upper': 's', 'lower': 'a'}[chamber],
+    def scrape_chamber(self, chamber, session):
+        url = 'https://docs.legis.wisconsin.gov/{}/legislators/{}'.format(
+            session,
+            {'upper': 'senate', 'lower': 'assembly'}[chamber],
         )
 
         body = self.get(url).text
@@ -30,7 +31,7 @@ class WIPersonScraper(Scraper):
         for row in page.xpath(".//div[@class='box-content']/div[starts-with(@id,'district')]"):
             if row.xpath(".//a/@href") and not row.xpath(".//a[text()='Vacant']"):
                 rep_url = row.xpath(".//a[text()='Details']/@href")[0].strip("https://")
-                rep_url = "https://docs." + rep_url
+                rep_url = "https://" + rep_url
                 rep_doc = lxml.html.fromstring(self.get(rep_url).text)
                 rep_doc.make_links_absolute(rep_url)
 
