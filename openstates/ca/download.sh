@@ -1,6 +1,6 @@
 #!/bin/sh
 
-until mysql -h "${MYSQL_HOST:-"localhost"}" -u "${MYSQL_USER:-"root"}" -e "SHOW DATABASES"; do
+until mysql -h "${MYSQL_HOST:-"localhost"}" -u "${MYSQL_USER:-"mysql"}" -e "SHOW DATABASES"; do
   sleep 1
 done
 
