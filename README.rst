@@ -72,8 +72,3 @@ A few states require credentials to access their APIs. If you want to run code f
 
   * Get credentials at: http://docs.api.iga.in.gov/introduction.html
   * Set in environment prior to running scrape: ``INDIANA_API_KEY``
-
-* OR
-
-  * Get credentials at: https://www.oregonlegislature.gov/citizen_engagement/Pages/data.aspx
-  * Set in environment prior to running scrape: ``OLODATA_USERNAME`` and ``OLODATA_PASSWORD``
