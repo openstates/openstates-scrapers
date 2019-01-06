@@ -56,6 +56,14 @@ class Kansas(Jurisdiction):
             "identifier": "2017-2018",
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09"
+        },
+        {
+            "_scraped_name": "b2019_20",
+            "classification": "primary",
+            "end_date": "2019-05-10",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-14"
         }
     ]
     ignored_scraped_sessions = []
