@@ -24,6 +24,10 @@ metadata = dict(
          'sessions': ['2017A', '2017B', '2018A'],
          'start_year': 2017, 'end_year': 2018},
         ],
+        {'name': '2019-2020',
+         'sessions': ['2019A'],
+         'start_year': 2019, 'end_year': 2020},
+        ],
     session_details={
         '2011A': {
             'start_date': datetime.date(2011, 1, 26),
@@ -79,6 +83,12 @@ metadata = dict(
              'display_name': '2018 Regular Session',
              '_scraped_name': "2018 Regular Session",
              '_data_id': '45771'
+          },
+         '2019A': {
+             'type': 'primary',
+             'display_name': '2019 Regular Session',
+             '_scraped_name': "2019 Regular Session",
+             '_data_id': '57701'
           },
     },
     feature_flags=['influenceexplorer'],
