@@ -77,6 +77,12 @@ metadata = {
             'end_year': 2018,
             'sessions': ['2017', '2018'],
         },
+        {
+            'name': '2019-2020',
+            'start_year': 2019,
+            'end_year': 2020,
+            'sessions': ['2019', '2020'],
+        },
     ],
     'session_details': {
         #'1998': {'type': 'primary',
@@ -210,6 +216,11 @@ metadata = {
             'display_name': '64th Legislature, 2nd Regular Session (2018)',
             '_scraped_name': '2018 Session',
         },
+        '2019' : {
+            'type': 'primary',
+            'display_name': '65th Legislature, 1st Regular Session (2019)',
+            '_scraped_name': '2019 Session',
+        },
     },
     'feature_flags': ['influenceexplorer'],
     '_ignored_scraped_sessions': [
@@ -224,7 +235,7 @@ metadata = {
         '2003 Session',
         '2002 Session',
         '2001 Session',
-        '2000 Extraordinary Session', 
+        '2000 Extraordinary Session',
         '2000 Session',
         '1999 Session',
         '1998 Session',

@@ -83,14 +83,14 @@ class Idaho(Jurisdiction):
             "start_date": "2018-01-08"
         },
         # TODO: Uncomment and remove from ignore_scraped when filing begins
-        # {
-        #     "_scraped_name": "2019 Session",
-        #     "classification": "primary",
-        #     "identifier": "2019",
-        #     "name": "65th Legislature, 1st Regular Session (2019)",
-        #     "start_date": "2019-01-07"
-        #     "end_date": "2019-03-29",
-        # }
+        {
+            "_scraped_name": "2019 Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "65th Legislature, 1st Regular Session (2019)",
+            "start_date": "2019-01-07",
+            "end_date": "2019-03-29",
+        }
     ]
     ignored_scraped_sessions = [
         "2019 Session",
