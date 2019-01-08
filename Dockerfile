@@ -28,6 +28,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     py-virtualenv \
     libxml2-dev \
     libxslt-dev \
+    yaml-dev \
     poppler-utils \
     postgresql-dev \
     mongodb-tools \
