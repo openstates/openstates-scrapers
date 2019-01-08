@@ -30,7 +30,8 @@ BILL_SEARCH_URL = (
     '&bill_type=%s&submit_bill=GO'
 )
 
-# revisor.mn.gov identifiers of sessions, indexed by session name
+# https://www.revisor.mn.gov/bills/status_search.php?body=House
+# select[name="session"] values
 SITE_IDS = {
     '2009-2010': '0862009',
     '2010 1st Special Session': '1862010',
@@ -44,6 +45,7 @@ SITE_IDS = {
     '2015s1': '1892015',
     '2017-2018': '0902017',
     '2017s1': '1902017',
+    '2019-2020': '0912019'
 }
 
 
