@@ -8,6 +8,7 @@ import xlrd
 import scrapelib
 import lxml.html
 import pytz
+import re
 
 
 class OHBillScraper(Scraper):
@@ -93,10 +94,17 @@ class OHBillScraper(Scraper):
             all_analysis = self.get_other_data_source(first_page, base_url, "analysiss")
 
             for row in self.get_bill_rows(session):
-                number_link, _ga, title, primary_sponsor, status = row.xpath('td')
+                spacer, number_link, _ga, title, primary_sponsor, status, spacer = row.xpath('td')
 
-                bill_id = number_link.text_content()
+                # S.R.No.1 -> SR1
+                bill_id = number_link.text_content().replace('No.', '')
+                bill_id = bill_id.replace('.', '').replace(' ', '')
+                # put one space back in between type and number
+                bill_id = re.sub(r'(\w+)(\d+)', r'\1 \2', bill_id)
+
                 title = title.text_content().strip()
+                title = re.sub(r'^Title', '', title)
+
                 chamber = 'lower' if 'H' in bill_id else 'upper'
                 classification = 'bill' if 'B' in bill_id else 'resolution'
 
@@ -265,7 +273,7 @@ class OHBillScraper(Scraper):
 
     def get_bill_rows(self, session, start=1):
         # bill API endpoint times out so we're now getting this from the normal search
-        bill_url = ('https://www.legislature.ohio.gov/legislation?pageSize=500&start={}&'
+        bill_url = ('https://www.legislature.ohio.gov/legislation/search?pageSize=500&start={}&'
                     'sort=LegislationNumber&dir=asc&statusCode&generalAssemblies={}'.format(
                         start, session)
                     )
