@@ -44,6 +44,13 @@ class Ohio(Jurisdiction):
             "name": "132st Legislature (2017-2018)",
             "start_date": "2017-01-02",
             "end_date": "2017-12-31"
+        },
+        {
+            "_scraped_name": "133",
+            "identifier": "133",
+            "name": "133rd Legislature (2019-2020)",
+            "start_date": "2019-01-07",
+            "end_date": "2019-12-31"
         }
     ]
     ignored_scraped_sessions = []
@@ -64,7 +71,9 @@ class Ohio(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        sessions = url_xpath('https://www.legislature.ohio.gov/legislation/search-legislation',
-                             '//div[@class="selectedValues"]/ul/span/li/text()')
+        sessions = url_xpath('https://www.legislature.ohio.gov/legislation/search'
+                             '?generalAssemblies=133&pageSize=10&start=1&isInitial=true',
+                             '//div[@id="generalAssemblyValues"]//'
+                             'div[contains(@class, "optionLabel")]/text()')
         # Archive does not include current session
         return sessions
