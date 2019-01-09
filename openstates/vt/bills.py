@@ -85,9 +85,13 @@ class VTBillScraper(Scraper, LXMLMixin):
                     format(info['BillNumber'])
                 )
 
+            bill_id = info['BillNumber'].replace('.', '').replace(' ', '')
+            # put one space back in between type and number
+            bill_id = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', bill_id)
+
             # Create the bill using its basic information
             bill = Bill(
-                identifier=info['BillNumber'],
+                identifier=bill_id,
                 legislative_session=session,
                 chamber=bill_chamber,
                 title=info['Title'],
