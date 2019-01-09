@@ -13,6 +13,11 @@ from ._utils import canonicalize_url
 
 
 session_details = {
+    '101st': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '101', 'SessionId': '108'},
+    },
     '100th-special': {
         'speaker': 'Madigan',
         'president': 'Cullerton',
@@ -244,7 +249,6 @@ class IlBillScraper(Scraper):
         params['num1'] = '1'
         params['num2'] = '10000'
         params['DocTypeID'] = doc_type
-
         html = self.get(self.LEGISLATION_URL, params=params).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.LEGISLATION_URL)
