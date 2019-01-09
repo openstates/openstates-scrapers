@@ -100,7 +100,7 @@ class OHBillScraper(Scraper):
                 bill_id = number_link.text_content().replace('No.', '')
                 bill_id = bill_id.replace('.', '').replace(' ', '')
                 # put one space back in between type and number
-                bill_id = re.sub(r'(\[a-zA-Z]+)(\d+)', r'\1 \2', bill_id)
+                bill_id = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', bill_id)
 
                 title = title.text_content().strip()
                 title = re.sub(r'^Title', '', title)
