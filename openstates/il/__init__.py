@@ -45,9 +45,21 @@ class Illinois(Jurisdiction):
         {'name': '99th Regular Session', 'identifier': '99th', 'classification': 'primary',
          '_scraped_name': '99   (2015-2016)',
          },
-        {'name': '100th Special Session', 'identifier': '100th-special',
-         'classification': 'special'},
+        {
+            'name': '100th Special Session',
+            'identifier': '100th-special',
+            'classification': 'special',
+            '_scraped_name': '100   (2017-2018)',
+        },
         {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
+        {
+            'name': '101st Regular Session',
+            'identifier': '101st',
+            'start_date': '2019-01-09',
+            'end_date': '2019-12-31',
+            'classification': 'primary',
+        },
+
     ]
 
     ignored_scraped_sessions = [
