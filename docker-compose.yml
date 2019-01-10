@@ -10,8 +10,6 @@ services:
     - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
-    depends_on:
-    - database
     entrypoint: /opt/openstates/openstates/pupa-scrape.sh
   postgres:
     image: mdillon/postgis:10-alpine
