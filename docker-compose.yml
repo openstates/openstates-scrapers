@@ -3,7 +3,6 @@ services:
   scrape:
     image: openstates/openstates
     environment:
-    - BILLY_MONGO_HOST=database
     - MYSQL_HOST=mysql
     - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
     - NEW_YORK_API_KEY
@@ -16,19 +15,6 @@ services:
     depends_on:
     - database
     entrypoint: /opt/openstates/openstates/pupa-scrape.sh
-  openstates.org:
-    image: openstates/openstates.org
-    command: python manage.py runserver 0.0.0.0:8000
-    environment:
-    - MONGO_HOST=database
-    ports:
-    - "8000:8000"
-    depends_on:
-    - database
-  database:
-    image: mongo
-    ports:
-    - "27017:27017"
   postgres:
     image: mdillon/postgis:10-alpine
     ports:
