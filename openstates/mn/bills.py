@@ -30,7 +30,8 @@ BILL_SEARCH_URL = (
     '&bill_type=%s&submit_bill=GO'
 )
 
-# revisor.mn.gov identifiers of sessions, indexed by session name
+# https://www.revisor.mn.gov/bills/status_search.php?body=House
+# select[name="session"] values
 SITE_IDS = {
     '2009-2010': '0862009',
     '2010 1st Special Session': '1862010',
@@ -44,6 +45,7 @@ SITE_IDS = {
     '2015s1': '1892015',
     '2017-2018': '0902017',
     '2017s1': '1902017',
+    '2019-2020': '0912019'
 }
 
 
@@ -147,9 +149,8 @@ class MNBillScraper(Scraper, LXMLMixin):
                 doc = lxml.html.fromstring(html)
 
                 # get table containing bills
-                rows = doc.xpath('//table[@class="guided"]/tbody/tr')
+                rows = doc.xpath('//table[contains(@class,"table")]/tbody/tr')
                 total_rows.extend(rows)
-
                 # Out of rows
                 if len(rows) == 0:
                     self.debug("Total Bills Found: %d" % len(total_rows))
@@ -200,7 +201,7 @@ class MNBillScraper(Scraper, LXMLMixin):
             return
 
         # Get the basic parts of the bill
-        bill_id = self.get_node(doc, '//h1/text()')
+        bill_id = self.get_node(doc, '//h1[contains(@class,"card-title float-left mr-4")]/text()')
         self.logger.debug(bill_id)
         bill_title_text = self.get_node(
             doc,
@@ -223,7 +224,7 @@ class MNBillScraper(Scraper, LXMLMixin):
                 self.logger.warning('No title found for {}.'.format(bill_id))
         self.logger.debug(bill_title)
         bill_type = {'F': 'bill', 'R': 'resolution',
-                     'C': 'concurrent resolution'}[bill_id[1]]
+                     'C': 'concurrent resolution'}[bill_id[1].upper()]
         bill = Bill(bill_id, legislative_session=session, chamber=chamber,
                     title=bill_title, classification=bill_type)
 
@@ -296,7 +297,7 @@ class MNBillScraper(Scraper, LXMLMixin):
         """
 
         bill_actions = list()
-        action_tables = doc.xpath('//table[@class="actions"]')
+        action_tables = doc.xpath('//table[contains(@class,"actions")]')
 
         for cur_table in action_tables:
             for row in cur_table.xpath('.//tr'):
@@ -310,10 +311,10 @@ class MNBillScraper(Scraper, LXMLMixin):
                 # but also links to committee elements or other spanned
                 # content.
                 action_date = date_col.text_content().strip()
-                action_text = the_rest.text.strip()
+                action_text = row.xpath('td[2]/div/div')[0].text_content().strip()
+
                 committee = the_rest.xpath("a[contains(@href,'committee')]/text()")
                 extra = ''.join(the_rest.xpath('span[not(@style)]/text() | a/text()'))
-
                 # skip non-actions (don't have date)
                 if action_text in ('Chapter number', 'See also', 'See',
                                    'Effective date', 'Secretary of State'):

@@ -107,6 +107,14 @@ class Minnesota(Jurisdiction):
             'start_date': '2017-01-03',
             'end_date': '2018-05-21'
         },
+        {
+            '_scraped_name': '91st Legislature, 2019-2020',
+            'classification': 'primary',
+            'identifier': '2019-2020',
+            'name': '2019-2020Regular Session',
+            'start_date': '2019-01-08',
+            'end_date': '2019-06-20'
+        },
     ]
     ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',
