@@ -20,7 +20,11 @@ class NHPersonScraper(Scraper, LXMLMixin):
 
     def _get_photo(self, url, chamber):
         """Attempts to find a portrait in the given legislator profile."""
-        doc = self.lxmlize(url)
+        try:
+            doc = self.lxmlize(url)
+        except Exception as e:
+            self.warning("skipping {}: {}".format(url, e))
+            return ""
 
         if chamber == 'upper':
             src = doc.xpath('//div[@id="page_content"]//img[contains(@src, '
