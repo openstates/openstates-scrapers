@@ -33,8 +33,6 @@ class DEEventScraper(Scraper, LXMLMixin):
         fmt = "%m/%d/%y %I:%M %p"
         start_time = dt.datetime.strptime(str(item['MeetingDateTime']), fmt)
         location_name = str(item['AddressAliasNickname'])
-        # description is provided because of WARNING
-        # billy: Value u'' for field '<obj>.description' cannot be blank'
         event = Event(location_name=location_name,
                       start_date=self._tz.localize(start_time),
                       name=event_name,

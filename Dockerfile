@@ -3,7 +3,6 @@ MAINTAINER  James Turk <james@openstates.org>
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
-ENV BILLY_ENV /opt/openstates/venv-billy/
 ENV PUPA_ENV /opt/openstates/venv-pupa/
 
 RUN apk add --no-cache --virtual .build-dependencies \
@@ -21,8 +20,6 @@ RUN apk add --no-cache --virtual .build-dependencies \
     libressl-dev \
     libffi-dev \
     freetds-dev \
-    python \
-    python-dev \
     python3 \
     python3-dev \
     py-virtualenv \
@@ -31,7 +28,6 @@ RUN apk add --no-cache --virtual .build-dependencies \
     yaml-dev \
     poppler-utils \
     postgresql-dev \
-    mongodb-tools \
     postgresql-client \
     mariadb \
     mariadb-dev \
@@ -55,10 +51,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
 
 ADD . /opt/openstates/openstates
 
-RUN virtualenv -p $(which python2) /opt/openstates/venv-billy/ && \
-    /opt/openstates/venv-billy/bin/pip install -e git+https://github.com/openstates/billy.git#egg=billy && \
-    /opt/openstates/venv-billy/bin/pip install python-dateutil && \
-  virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
+RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
     /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
     /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
     /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt && \
