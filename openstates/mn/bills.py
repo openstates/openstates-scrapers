@@ -445,9 +445,6 @@ class MNBillScraper(Scraper, LXMLMixin):
 
     #     TODO: Follow links for Houses and get votes for individuals.
     #     Above todo done in votes.py
-
-    #     About votes:
-    #     https://billy.readthedocs.org/en/latest/scrapers.html#billy.scrape.votes.Vote
     #     """
 
     #     # Check if there is vote at all
