@@ -7,8 +7,6 @@ services:
     - DATABASE_URL=postgres://postgres:secret@postgres:5432/openstates
     - NEW_YORK_API_KEY
     - INDIANA_API_KEY
-    - OLODATA_USERNAME
-    - OLODATA_PASSWORD
     - PUPA_ARGS
     volumes:
     - .:/opt/openstates/openstates/
