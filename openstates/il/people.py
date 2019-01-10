@@ -1,5 +1,6 @@
 from pupa.scrape import Scraper, Person
 import lxml.html
+from openstates.utils import validate_phone_number
 
 
 CHAMBER_URLS = {
@@ -140,6 +141,9 @@ class IlPersonScraper(Scraper):
                 table = leg_doc.xpath(xpath)
                 if table:
                     for type, value in self._table_to_office(table[3]):
+                        if type in ('fax', 'voice') and not validate_phone_number(value):
+                            continue
+
                         p.add_contact_detail(type=type, value=value, note=location)
 
         return legs
@@ -166,7 +170,7 @@ class IlPersonScraper(Scraper):
             yield 'address', addr
 
     def _memberships(self, latest_only):
-        CURRENT_TERM = 100
+        CURRENT_TERM = 101
 
         terms = [CURRENT_TERM] if latest_only else range(93, CURRENT_TERM+1)
 
