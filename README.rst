@@ -40,6 +40,11 @@ Then run database migrations and import jurisdictions::
 
     docker-compose run --rm dbinit
 
+You also need to enable the import of certain entities into the database. Change pupa_settings.py to::
+
+    ENABLE_PEOPLE_AND_ORGS = True
+    ENABLE_BILLS = True
+
 Now you can run the scrape service without the `--scrape` flag, and data will be imported into postgres. You can connect to the database and inspect data using `psql` (credentials are set in `docker-compose.yml`)::
 
     psql postgres://postgres:secret@localhost:5432/openstates
