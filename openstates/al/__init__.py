@@ -93,9 +93,18 @@ class Alabama(Jurisdiction):
         {
             "_scraped_name": "Regular Session 2018",
             "classification": "primary",
+            "end_date": "2018-03-29",
             "identifier": "2018rs",
             "name": "2018 Regular Session",
-            "start_date": "2018-01-09"
+            "start_date": "2018-01-09",
+        },
+        {
+            "_scraped_name": "Regular Session 2019",
+            "classification": "primary",
+            "end_date": "2019-06-17",
+            "identifier": "2019rs",
+            "name": "2019 Regular Session",
+            "start_date": "2019-03-05"
         }
     ]
     ignored_scraped_sessions = [
