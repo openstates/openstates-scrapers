@@ -23,4 +23,5 @@ SESSION_KEYS = {
     "2017 Regular Session": "2017R1",
     "2018 Regular Session": "2018R1",
     "2018 Special Session": "2018S1",
+    "2019 Regular Session": "2019R1",
 }

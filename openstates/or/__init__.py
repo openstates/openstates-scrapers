@@ -98,6 +98,13 @@ class Oregon(Jurisdiction):
             "start_date": "2018-05-21",
             "end_date": "2018-05-21",
         },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "identifier": "2019 Regular Session",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-22",
+            "end_date": "2019-06-30",
+        },
     ]
     ignored_scraped_sessions = [
         "Today",
