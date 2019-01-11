@@ -53,6 +53,13 @@ class Nebraska(Jurisdiction):
             "identifier": "105",
             "name": "105th Legislature (2017-2018)",
             "start_date": "2017-01-04"
+        },
+        {
+            "_scraped_name": "106th Legislature 1st and 2nd Sessions",
+            "end_date": "2020-12-31",
+            "identifier": "106",
+            "name": "106th Legislature (2019-2020)",
+            "start_date": "2019-01-04"
         }
     ]
     ignored_scraped_sessions = [
