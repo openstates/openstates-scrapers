@@ -33,8 +33,8 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         document_links = self.get_nodes(
             page,
-            '//div[@class="main-content"]//div[@class="panel panel-leg"]//'
-            'table[@class="table table-condensed"]/tbody/tr/td[1]/a')
+            '//div[@class="main-content"]//div[@class="table-responsive"]//'
+            'table[@class="table"]/tbody/tr/td[1]/a')
 
         for document_link in document_links:
             # bill_number = document_link.text
@@ -55,7 +55,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         long_title = self.get_node(
             bill_page,
-            '//div[@class="main-content"]/div[1]/div/h2').text.split()
+            '//div[@class="main-content"]/h2').text.split()
 
         bill_number = long_title[0]
         title = ''
@@ -76,14 +76,15 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         introduced_by = self.get_node(
             bill_page,
-            '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/a[1]/text()')
+            '//body/div[3]/div[2]/div[2]/div/div[2]/div[1]/ul/li[1]/a[1]/text()')
 
         if not introduced_by:
             introduced_by = self.get_node(
                 bill_page,
-                '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/text()')
+                '//body/div[3]/div[2]/div[2]/div/div[2]/div[1]/ul/li[1]/text()')
             introduced_by = introduced_by.split('Introduced By:')[1].strip()
 
+        introduced_by = introduced_by.strip()
         bill.add_sponsorship(
             name=introduced_by,
             entity_type='person',
@@ -93,7 +94,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         action_nodes = self.get_nodes(
             bill_page,
-            '//div[@class="main-content"]/div[5]//table/tbody/tr')
+            '//div[@class="main-content"]/div[4]//table/tbody/tr')
 
         for action_node in action_nodes:
             date = self.get_node(
@@ -128,8 +129,8 @@ class NEBillScraper(Scraper, LXMLMixin):
         # Grabs bill version documents.
         version_links = self.get_nodes(
             bill_page,
-            '//div[@class="main-content"]/div[3]/div[2]/'
-            'div[@class="hidden-xs"]/ul[1]/li/a')
+            '/html/body/div[3]/div[2]/div[2]/div/'
+            'div[2]/div[2]/ul/li/a')
 
         for version_link in version_links:
             version_name = version_link.text
