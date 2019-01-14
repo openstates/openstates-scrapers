@@ -51,7 +51,7 @@ class IABillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         # We need a good bill page to scrape from. Check for "HF " + bill_offset
-        bill_offset = "HF27"
+        bill_offset = "HR1"
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
