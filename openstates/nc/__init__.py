@@ -112,6 +112,7 @@ class NorthCarolina(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        '2016 First Extra Session',
         '2008 Extra Session',
         '2007-2008 Session',
         '2007 Extra Session',
