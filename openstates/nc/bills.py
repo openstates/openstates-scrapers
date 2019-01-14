@@ -70,7 +70,9 @@ class NCBillScraper(Scraper):
             bill_type = 'bill'
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-        bill_title = doc.xpath('//div[contains(@class, "h5")]')[0].text_content().strip()
+        bill_title = doc.xpath(
+            '/html/body/div/div/main/div[2]/div[contains(@class,"col-12")]/a')[0]
+        bill_title = bill_title.text_content().strip()
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
                     classification=bill_type)
@@ -144,7 +146,8 @@ class NCBillScraper(Scraper):
 
             bill.add_action(action, act_date, chamber=actor, classification=atype)
 
-        yield from self.scrape_votes(bill, doc)
+        # TODO: Fix vote scraper
+        # yield from self.scrape_votes(bill, doc)
 
         yield bill
 
