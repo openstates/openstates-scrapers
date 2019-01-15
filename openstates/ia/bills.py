@@ -2,7 +2,6 @@ import re
 import datetime
 import lxml.html
 import requests
-from collections import defaultdict
 from pupa.scrape import Scraper, Bill
 
 
@@ -60,7 +59,6 @@ class IABillScraper(Scraper):
         subjects = page.xpath('//div[@class="taggedTopics"]/a/text()')
         for subject in subjects:
             bill.add_subject(subject.strip())
-
 
     def scrape_bill(self, chamber, session, session_id, bill_id, url):
         sidebar = lxml.html.fromstring(self.get(url).text)
