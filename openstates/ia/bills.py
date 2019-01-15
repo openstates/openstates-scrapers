@@ -1,49 +1,16 @@
 import re
 import datetime
 import lxml.html
-from collections import defaultdict
+import requests
 from pupa.scrape import Scraper, Bill
 
 
 class IABillScraper(Scraper):
 
-    _subjects = defaultdict(list)
-
-    def _build_subject_map(self, session):
-        # if already built a subject map, skip doing it again
-        if self._subjects:
-            return
-
-        session_id = self.get_session_id(session)
-        url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp?'
-               'Category=BillInfo&Service=DspGASI&ga=%s&frame=y') % session_id
-        doc = lxml.html.fromstring(self.get(url).text)
-
-        # get all subjects from dropdown
-        for option in doc.xpath('//select[@name="SelectOrig"]/option')[1:]:
-            # if it has a "See also" strip that part off
-            subject = option.text.strip().split(' - See also')[0]
-            # skip sub-subjects
-            if subject.startswith('--'):
-                continue
-
-            value = option.get('value')
-
-            # open the subject url and get all bill_ids
-            subj_url = ('http://coolice.legis.state.ia.us/Cool-ICE/default.asp'
-                        '?Category=BillInfo&Service=DsplData&var=gasi&ga=%s&'
-                        'typ=o&key=%s') % (session_id, value)
-            subj_doc = lxml.html.fromstring(self.get(subj_url).text)
-            bill_ids = subj_doc.xpath('//td[@width="10%"]/a/text()')
-            for bill_id in bill_ids:
-                self._subjects[bill_id.replace(' ', '')].append(subject)
-
     def scrape(self, session=None, chamber=None):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-
-        self._build_subject_map(session)
 
         chambers = [chamber] if chamber else ['upper', 'lower']
         for chamber in chambers:
@@ -51,7 +18,7 @@ class IABillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         # We need a good bill page to scrape from. Check for "HF " + bill_offset
-        bill_offset = "HF27"
+        bill_offset = "HR1"
 
         base_url = "https://www.legis.iowa.gov/legislation/BillBook?ga=%s&ba=%s"
 
@@ -74,6 +41,25 @@ class IABillScraper(Scraper):
 
             yield self.scrape_bill(chamber, session, session_id, bill_id, bill_url)
 
+    def scrape_subjects(self, bill, bill_number, session, req):
+
+        req.headers.update({'X-Requested-With': 'XMLHttpRequest'})
+
+        session_id = self.get_session_id(session)
+        bill_id = bill_number.replace(' ', '+')
+        subject_url = 'https://www.legis.iowa.gov/legislation/BillBook?ga={}' \
+            '&billName={}&billVersion=i&action=getTaggedTopics&bl=false'.format(
+                session_id,
+                bill_id
+            )
+
+        html = req.get(subject_url, cookies=req.cookies).text
+        page = lxml.html.fromstring(html)
+
+        subjects = page.xpath('//div[@class="taggedTopics"]/a/text()')
+        for subject in subjects:
+            bill.add_subject(subject.strip())
+
     def scrape_bill(self, chamber, session, session_id, bill_id, url):
         sidebar = lxml.html.fromstring(self.get(url).text)
         sidebar.make_links_absolute("https://www.legis.iowa.gov")
@@ -82,12 +68,17 @@ class IABillScraper(Scraper):
             f'https://www.legis.iowa.gov/legislation/billTracking/'
             f'billHistory?billName={bill_id}&ga={session_id}'
         )
+        req_session = requests.Session()
+        req = requests.get(hist_url)
+        if (req.status_code == 500):
+            self.warning("500 error on {}, skipping".format(hist_url))
+            return
 
-        page = lxml.html.fromstring(self.get(hist_url).text)
+        page = lxml.html.fromstring(req.text)
         page.make_links_absolute("https://www.legis.iowa.gov")
 
         title = page.xpath('string(//div[@id="content"]/div[@class='
-                           '"divideVert"]/div[not(@class)])').strip()
+                           '"divideVert"]/div/div[4]/div[2])').strip()
 
         if title == '':
             self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
@@ -106,11 +97,11 @@ class IABillScraper(Scraper):
             bill_type = ['bill']
 
         bill = Bill(
-                bill_id,
-                legislative_session=session,
-                chamber=chamber,
-                title=title,
-                classification=bill_type)
+            bill_id,
+            legislative_session=session,
+            chamber=chamber,
+            title=title,
+            classification=bill_type)
 
         bill.add_source(hist_url)
 
@@ -149,14 +140,15 @@ class IABillScraper(Scraper):
                     url=version_pdf_url,
                     media_type='application/pdf')
 
-        sponsors_str = page.xpath(
-            "string(//div[@id='content']/div[@class='divideVert']/div[@class='divideVert'])"
-        ).strip()
+        sponsors_str = page.xpath('string(//div[@id="content"]/div[@class='
+                                  '"divideVert"]/div/div[4]/div[1])').strip()
+
         if re.search('^By ', sponsors_str):
             sponsors = re.split(',| and ', sponsors_str.split('By ')[1])
         # for some bills sponsors listed in different format
         else:
-            sponsors = re.findall(r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)', sponsors_str)
+            sponsors = re.findall(
+                r'[\w-]+(?:, [A-Z]\.)?(?:,|(?: and)|\.$)', sponsors_str)
 
         for sponsor in sponsors:
             sponsor = sponsor.replace(' and', '').strip(' .,')
@@ -178,10 +170,10 @@ class IABillScraper(Scraper):
                 continue
 
             bill.add_sponsorship(
-                    name=sponsor,
-                    classification='primary',
-                    entity_type='person',
-                    primary=True)
+                name=sponsor,
+                classification='primary',
+                entity_type='person',
+                primary=True)
 
         for tr in page.xpath("//table[contains(@class, 'billActionTable')][1]/tbody/tr"):
             date = tr.xpath("string(td[contains(text(), ', 20')])").strip()
@@ -198,8 +190,10 @@ class IABillScraper(Scraper):
             action = re.sub(r'\s+', ' ', action)
 
             # Capture any amendment links.
-            links = [link for link in [version['links'] for version in bill.versions]]
-            version_urls = [link['url'] for link in [i for sub in links for i in sub]]
+            links = [link for link in [version['links']
+                                       for version in bill.versions]]
+            version_urls = [link['url']
+                            for link in [i for sub in links for i in sub]]
             if 'amendment' in action.lower():
                 for anchor in tr.xpath('td[2]/a'):
                     if '-' in anchor.text:
@@ -212,9 +206,9 @@ class IABillScraper(Scraper):
 
                         if url not in version_urls:
                             bill.add_version_link(
-                                    note=anchor.text,
-                                    url=url,
-                                    media_type='text/html')
+                                note=anchor.text,
+                                url=url,
+                                media_type='text/html')
                             version_urls.append(url)
 
             if 'S.J.' in action or 'SCS' in action:
@@ -261,7 +255,7 @@ class IABillScraper(Scraper):
                 atype = 'passage'
             elif (action.startswith('Committee report') and
                   action.endswith('passage.')):
-                    atype = 'committee-passage'
+                atype = 'committee-passage'
             elif action.startswith('Withdrawn'):
                 atype = 'withdrawal'
             else:
@@ -275,13 +269,12 @@ class IABillScraper(Scraper):
 
             if '$history' not in action:
                 bill.add_action(
-                        description=action,
-                        date=date,
-                        chamber=actor,
-                        classification=atype)
+                    description=action,
+                    date=date,
+                    chamber=actor,
+                    classification=atype)
 
-        for subject in self._subjects[bill_id]:
-            bill.add_subject(subject['Name'])
+        self.scrape_subjects(bill, bill_id, session, req_session)
 
         yield bill
 
@@ -289,4 +282,5 @@ class IABillScraper(Scraper):
         return {"2011-2012": "84",
                 "2013-2014": "85",
                 "2015-2016": "86",
-                "2017-2018": "87"}[session]
+                "2017-2018": "87",
+                "2019-2020": "88"}[session]
