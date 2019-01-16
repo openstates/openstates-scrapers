@@ -150,11 +150,16 @@ class IlPersonScraper(Scraper):
 
     # function for turning an IL contact info table to office details
     def _table_to_office(self, table):
-        addr = ''
+        addr = []
         for row in table.xpath('tr'):
             row = row.text_content().strip()
             # skip rows that aren't part of address
-            if 'Office:' in row or row == 'Cook County':
+            if (not row or
+                    'Office:' in row or
+                    row == 'Cook County' or
+                    row.startswith("Senator") or
+                    row == 'Additional District Addresses' or
+                    row == ', IL'):
                 continue
             # fax number row ends with FAX
             elif 'FAX' in row:
@@ -164,10 +169,10 @@ class IlPersonScraper(Scraper):
                 yield 'voice', row
             # everything else is an address
             else:
-                addr += (row + '\n')
+                addr.append(row)
 
         if addr:
-            yield 'address', addr
+            yield 'address', '\n'.join(addr)
 
     def _memberships(self, latest_only):
         CURRENT_TERM = 101
