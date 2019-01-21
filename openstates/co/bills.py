@@ -351,6 +351,11 @@ class COBillScraper(Scraper, LXMLMixin):
             if abstain_counts:
                 abstain_count = int(abstain_counts[0])
 
+            # fix for
+            # http://leg.colorado.gov/content/hb19-1029vote65e72e
+            if absent_count == -1:
+                absent_count = 0
+
             passed = yes_count > no_count
             vote = VoteEvent(chamber=chamber,
                              start_date=self._tz.localize(date),
