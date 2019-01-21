@@ -168,7 +168,7 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             chambers_passed = set()
             for action in actions:
-                action = {k: v.strip() for k, v in action.items()}
+                action = {k: v for k, v in action.items() if v is not None}
 
                 if "Signed by Governor" in action['FullStatus']:
                     actor = 'executive'
