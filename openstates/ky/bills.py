@@ -1,7 +1,6 @@
 import re
 import datetime
 from collections import defaultdict
-import lxml.html
 from pytz import timezone
 
 from pupa.scrape import Scraper, Bill
@@ -131,7 +130,6 @@ class KYBillScraper(Scraper, LXMLMixin):
             self.info("{} Withdrawn, skipping".format(bill_id))
             return
 
-        short_bill_id = re.sub(r'(H|S)([JC])R', r'\1\2', bill_id)
         version = self.parse_bill_field(page, 'Bill Documents')
         source_url = version.xpath('a[1]/@href')[0]
         version_title = version.xpath('a[1]/text()')[0].strip()
