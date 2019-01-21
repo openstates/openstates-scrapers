@@ -93,6 +93,10 @@ class NMBillScraper(Scraper):
         for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
 
+        # McSorley resigned so they removed him from the API
+        # but he is still attached to some bills
+        sponsor_map['SMCSO'] = 'Cisco McSorley'
+
         subject_map = {}
         for subject in self.access_to_csv('TblSubjects'):
             subject_map[subject['SubjectCode']] = subject['Subject']
