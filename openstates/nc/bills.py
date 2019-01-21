@@ -230,10 +230,15 @@ class NCBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-        url = ('http://www.ncleg.net/gascripts/SimpleBillInquiry/'
-               'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s') % (session, chamber)
 
-        data = self.get(url).text
+        url = 'https://www3.ncleg.gov/gascripts/SimpleBillInquiry/displaybills.pl'
+        post_data = {
+            'Session': session,
+            'tab': 'Chamber',
+            'Chamber': chamber
+        }
+
+        data = self.post(url, post_data).text
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]
