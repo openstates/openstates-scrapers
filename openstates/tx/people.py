@@ -203,8 +203,8 @@ class TXPersonScraper(Scraper, LXMLMixin):
         district = str(self.district_re.search(district_text).group(1))
 
         # Vacant house "members" are named after their district numbers:
-        if re.match(r'^\d+$', scraped_name):
-            yield None
+        if re.match(r'^District \d+$', scraped_name):
+            return None
 
         party = parties[district]
 
