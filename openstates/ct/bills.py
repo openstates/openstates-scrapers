@@ -30,8 +30,8 @@ class CTBillScraper(Scraper):
         self.scrape_introducers('upper')
         self.scrape_introducers('lower')
         yield from self.scrape_bill_info(session, chambers)
-        for chamber in chambers:
-            self.scrape_versions(chamber, session)
+        # for chamber in chambers:
+        #     self.scrape_versions(chamber, session)
         self.scrape_bill_history()
 
         for bill in self.bills.values():
@@ -115,6 +115,9 @@ class CTBillScraper(Scraper):
 
         for link in page.xpath("//a[contains(@href, '/BA/')]"):
             bill.add_document_link(link.text.strip(), link.attrib['href'])
+
+        for link in page.xpath("//a[contains(@href, '/pdf/') and contains(@href, '/TOB/')]"):
+            bill.add_version_link(link.text.strip(), link.attrib['href'], media_type='application/pdf')
 
         for link in page.xpath("//a[contains(@href, 'VOTE')]"):
             # 2011 HJ 31 has a blank vote, others might too
@@ -283,7 +286,7 @@ class CTBillScraper(Scraper):
 
     def scrape_versions(self, chamber, session):
         chamber_letter = {'upper': 's', 'lower': 'h'}[chamber]
-        versions_url = "ftp://ftp.cga.ct.gov/%s/tob/%s/" % (
+        versions_url = "ftp://ftp.cga.ct.gov/%s/tob/%s/pdf/" % (
             session, chamber_letter)
 
         page = self.get(versions_url).text
@@ -303,7 +306,7 @@ class CTBillScraper(Scraper):
                 continue
 
             url = versions_url + f.filename
-            bill.add_version_link(media_type='text/html',
+            bill.add_version_link(media_type='application/pdf',
                                   url=url,
                                   note=match.group(2))
 
