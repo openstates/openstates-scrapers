@@ -117,7 +117,11 @@ class CTBillScraper(Scraper):
             bill.add_document_link(link.text.strip(), link.attrib['href'])
 
         for link in page.xpath("//a[contains(@href, '/pdf/') and contains(@href, '/TOB/')]"):
-            bill.add_version_link(link.text.strip(), link.attrib['href'], media_type='application/pdf')
+            bill.add_version_link(
+                link.text.strip(),
+                link.attrib['href'],
+                media_type='application/pdf'
+            )
 
         for link in page.xpath("//a[contains(@href, 'VOTE')]"):
             # 2011 HJ 31 has a blank vote, others might too
