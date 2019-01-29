@@ -1,28 +1,6 @@
 from pupa.scrape import Scraper, Person
 import lxml.html
 
-party_map = {'Dem': 'Democratic',
-             'Rep': 'Republican',
-             'Una': 'Unaffiliated',
-             'D': 'Democratic',
-             'R': 'Republican',
-             'U': 'Unaffiliated'}
-
-
-def get_table_item(doc, name):
-    # get span w/ item
-    try:
-        span = doc.xpath('//span[text()="{0}"]'.format(name))[0]
-        # get neighboring td's span
-        dataspan = span.getparent().getnext().getchildren()[0]
-        if dataspan.text:
-            return (dataspan.text + '\n' +
-                    '\n'.join([x.tail for x in dataspan.getchildren()])).strip()
-        else:
-            return None
-    except IndexError:
-        return None
-
 
 class NCPersonScraper(Scraper):
     def scrape(self, chamber=None):
@@ -33,25 +11,26 @@ class NCPersonScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        url = "http://www.ncleg.net/gascripts/members/memberListNoPic.pl?sChamber="
-
-        if chamber == 'lower':
-            url += 'House'
-        else:
-            url += 'Senate'
+        chamber_letter = dict(lower='H',
+                       upper='S')[chamber]
+        url = 'https://www.ncleg.gov/Members/MemberTable/{}'.format(
+            chamber_letter
+        )
 
         data = self.get(url).text
         doc = lxml.html.fromstring(data)
         doc.make_links_absolute('http://www.ncleg.net')
-        rows = doc.xpath('/html/body/div/table/tr/td[1]/table/tr')
+        rows = doc.xpath('//table[@id="memberTable"]/tbody/tr')
+        self.warning('rows found: {}'.format(len(rows)))
 
-        for row in rows[1:]:
-            party, district, full_name, counties = row.getchildren()
+        for row in rows:
+            party, district, _, _, full_name, counties = row.getchildren()
 
-            party = party.text_content().strip("()")
-            party = party_map[party]
+            party = party.text_content().strip()
+            party = dict(D='Democratic',
+                         R='Republican')[party]
 
-            district = district.text_content().replace("District", "").strip()
+            district = district.text_content().strip()
 
             notice = full_name.xpath('span')
             if notice:
@@ -69,18 +48,17 @@ class NCPersonScraper(Scraper):
             lhtml = self.get(link).text
             ldoc = lxml.html.fromstring(lhtml)
             ldoc.make_links_absolute('http://www.ncleg.net')
-            photo_url = ldoc.xpath('//a[contains(@href, "pictures")]/@href')[0]
-            phone = (get_table_item(ldoc, 'District Phone:') or
-                     get_table_item(ldoc, 'Phone:') or None)
-            address = (get_table_item(ldoc, 'District Address:') or
-                       get_table_item(ldoc, 'Address:') or None)
-            email = ldoc.xpath('//a[starts-with(@href, "mailto:")]')[0]
-            capitol_email = email.text
-            capitol_phone = email.xpath('ancestor::tr[1]/preceding-sibling::tr[1]/td/span')[0].text
-            capitol_address = email.xpath('ancestor::tr[1]/preceding-sibling::tr[2]/td/text()')
-            capitol_address = [x.strip() for x in capitol_address]
-            capitol_address = '\n'.join(capitol_address) or None
-            capitol_phone = capitol_phone.strip() or None
+            photo_url = ldoc.xpath('//figure/a/@href')[0]
+
+            address_xpath = '//h6[@class="mt-3"]/following-sibling::p'
+            address = '\n'.join([element.text_content()
+                                 for element
+                                 in ldoc.xpath(address_xpath)])
+            self.warning(address)
+
+            link_xpath = '//a[starts-with(@href, "{}:")]'
+            email = ldoc.xpath(link_xpath.format('mailto'))[0].text
+            phone = ldoc.xpath(link_xpath.format('tel'))[0].text
 
             # save legislator
             person = Person(name=full_name, district=district,
@@ -90,19 +68,18 @@ class NCPersonScraper(Scraper):
             person.extras['notice'] = notice
             person.add_link(link)
             person.add_source(link)
+            self.warning(photo_url)
+            self.warning(address)
+            self.warning(phone)
+            self.warning(email)
+
             if address:
                 person.add_contact_detail(type='address', value=address,
-                                          note='District Office')
+                                          note='Capitol Office')
             if phone:
                 person.add_contact_detail(type='voice', value=phone,
-                                          note='District Office')
-            if capitol_address:
-                person.add_contact_detail(type='address', value=capitol_address,
                                           note='Capitol Office')
-            if capitol_phone:
-                person.add_contact_detail(type='voice', value=capitol_phone,
-                                          note='Capitol Office')
-            if capitol_email:
-                person.add_contact_detail(type='email', value=capitol_email,
+            if email:
+                person.add_contact_detail(type='email', value=email,
                                           note='Capitol Office')
             yield person
