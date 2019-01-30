@@ -12,7 +12,7 @@ class NCPersonScraper(Scraper):
 
     def scrape_chamber(self, chamber):
         chamber_letter = dict(lower='H',
-                       upper='S')[chamber]
+                              upper='S')[chamber]
         url = 'https://www.ncleg.gov/Members/MemberTable/{}'.format(
             chamber_letter
         )
