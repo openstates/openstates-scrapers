@@ -55,7 +55,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         long_title = self.get_node(
             bill_page,
-            '//div[@class="main-content"]/h2').text.split()
+            '//div[@class="main-content"]//h2').text.split()
 
         bill_number = long_title[0]
         title = ''
@@ -76,7 +76,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         introduced_by = self.get_node(
             bill_page,
-            '//body/div[3]/div[2]/div[2]/div/div[2]/div[1]/ul/li[1]/a[1]/text()')
+            '//body/div[3]/div[2]/div[2]/div/div[3]/div[1]/ul/li[1]/a[1]/text()')
 
         if not introduced_by:
             introduced_by = self.get_node(
@@ -94,7 +94,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         action_nodes = self.get_nodes(
             bill_page,
-            '//div[@class="main-content"]/div[4]//table/tbody/tr')
+            '//div[@class="main-content"]/div[5]//table/tbody/tr')
 
         for action_node in action_nodes:
             date = self.get_node(
@@ -130,7 +130,7 @@ class NEBillScraper(Scraper, LXMLMixin):
         version_links = self.get_nodes(
             bill_page,
             '/html/body/div[3]/div[2]/div[2]/div/'
-            'div[2]/div[2]/ul/li/a')
+            'div[3]/div[2]/ul/li/a')
 
         for version_link in version_links:
             version_name = version_link.text

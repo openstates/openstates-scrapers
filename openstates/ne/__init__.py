@@ -79,5 +79,5 @@ class Nebraska(Jurisdiction):
         yield executive
 
     def get_session_list(self):
-        return url_xpath('http://nebraskalegislature.gov/bills/',
+        return url_xpath('https://nebraskalegislature.gov/bills/',
                          "//select[@name='Legislature']/option/text()")[:-1]
