@@ -201,7 +201,7 @@ class MSBillScraper(Scraper):
 
                 bill.add_action(action, self._tz.localize(date),
                                 chamber=actor,
-                                classification=atype if atype is not 'other' else None)
+                                classification=atype if atype != 'other' else None)
 
                 # use committee names as scraped subjects
                 subjects = details_root.xpath('//H_NAME/text()')
