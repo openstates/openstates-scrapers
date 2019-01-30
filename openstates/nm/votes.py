@@ -202,7 +202,7 @@ class NMVoteScraper(Scraper):
             fname = fname.split(' ')[0]
 
             match = re.match(r'([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
-            if match == None:
+            if match is None:
                 self.warning('No match, skipping')
                 continue
 
