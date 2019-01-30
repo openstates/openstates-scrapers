@@ -88,12 +88,12 @@ class PRBillScraper(Scraper):
 
     def parse_action(self, chamber, bill, action, action_url, date):
         # if action.startswith('Referido'):
-                # committees = action.split(',',1)
-                # multiple committees
+        # committees = action.split(',',1)
+        # multiple committees
         if action.startswith('Ley N'):
-                action = action[0:42]
+            action = action[0:42]
         elif action.startswith('Res. Conj.'):
-                action = action[0:42]
+            action = action[0:42]
         action_actor = ''
         atype = None
         # check it has a url and is not just text
