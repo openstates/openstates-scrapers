@@ -95,7 +95,6 @@ class NVBillScraper(Scraper, LXMLMixin):
                 session_slug, doc_type, time.time() * 1000)
             listing_page = lxml.html.fromstring(self.get(listing_url).text)
             listing_page.make_links_absolute('https://www.leg.state.nv.us')
-            # bill_row_xpath = '//div[contains(@class, "listing") and contains(@class, "row")]'
             bill_row_xpath = '//table/tr/td/span'
             for row in listing_page.xpath(bill_row_xpath):
                 link_url = row.xpath('a/@href')[0]
