@@ -309,6 +309,7 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
+        v.pupa_id = url.split('/')[-1]
         v.set_count('yes', yes)
         v.set_count('no', no)
 
