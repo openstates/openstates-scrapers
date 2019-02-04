@@ -1,6 +1,7 @@
 import lxml.html
-
+import scrapelib
 from pupa.scrape import Jurisdiction, Organization
+
 from .people import CTPersonScraper
 from .bills import CTBillScraper
 from .events import CTEventScraper
@@ -8,6 +9,8 @@ from .events import CTEventScraper
 settings = {
     'SCRAPELIB_RPM': 20
 }
+
+SKIP_SESSIONS = {'incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', 'FOI_1', 'stainedglass'}
 
 
 class Connecticut(Jurisdiction):
@@ -99,14 +102,9 @@ class Connecticut(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        import scrapelib
         text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
         sessions = [line.split()[-1] for line in text.splitlines()]
-
-        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', "apaac",
-                                 'FOI_1', 'stainedglass', ):
-            sessions.remove(not_session_name)
-        return sessions
+        return [session for session in sessions if session not in SKIP_SESSIONS]
 
     def get_extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)
