@@ -1,6 +1,5 @@
 import re
 import csv
-from io import StringIO
 import urllib
 import datetime
 import pytz
@@ -19,6 +18,7 @@ def get_utf_16_ftp_content(url):
     # Also, legislature may use `NUL` bytes when a cell is empty
     NULL_BYTE_CODE = '\x00'
     text = raw.replace(NULL_BYTE_CODE, '')
+    text = text.replace('\r', '')
     return text
 
 
@@ -40,7 +40,7 @@ class ARBillScraper(Scraper):
 
     def scrape_bill(self, chamber, session):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/LegislativeMeasures.txt"
-        page = csv.reader(StringIO(get_utf_16_ftp_content(url)), delimiter='|')
+        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter='|')
 
         for row in page:
             bill_chamber = {'H': 'lower', 'S': 'upper'}[row[0]]
@@ -84,7 +84,7 @@ class ARBillScraper(Scraper):
 
     def scrape_actions(self):
         url = "ftp://www.arkleg.state.ar.us/SessionInformation/ChamberActions.txt"
-        page = csv.reader(StringIO(get_utf_16_ftp_content(url)), delimiter='|')
+        page = csv.reader(get_utf_16_ftp_content(url).splitlines(), delimiter='|')
 
         for row in page:
             bill_id = "%s%s %s" % (row[1], row[2], row[3])
