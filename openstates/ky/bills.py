@@ -15,7 +15,7 @@ def chamber_abbr(chamber):
 
 
 def session_url(session):
-    return "http://www.lrc.ky.gov/record/%s/" % session[2:]
+    return "https://apps.legislature.ky.gov/record/%s/" % session[2:]
 
 
 class KYBillScraper(Scraper, LXMLMixin):
@@ -182,7 +182,7 @@ class KYBillScraper(Scraper, LXMLMixin):
             bill.add_document_link(
                 "Fiscal Note", source_url, media_type=mimetype)
 
-        for link in page.xpath("//a[contains(@href, 'legislator/')]"):
+        for link in page.xpath("//td/span/a[contains(@href, 'Legislator-Profile')]"):
             bill.add_sponsorship(link.text.strip(), classification='primary',
                                  entity_type='person', primary=True)
 

@@ -29,7 +29,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2011-01-04"
         },
         {
-            "_scraped_name": "2011 Extraordinary Session",
+            "_scraped_name": "2011 Special Session",
             "classification": "special",
             "end_date": "2011-04-06",
             "identifier": "2011SS",
@@ -45,7 +45,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2012-01-03"
         },
         {
-            "_scraped_name": "2012 Extraordinary Session",
+            "_scraped_name": "2012 Special Session",
             "classification": "special",
             "end_date": "2012-04-20",
             "identifier": "2012SS",
@@ -61,7 +61,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2013-01-08"
         },
         {
-            "_scraped_name": "2013 Extraordinary Session",
+            "_scraped_name": "2013 Special Session",
             "classification": "special",
             "end_date": "2013-08-19",
             "identifier": "2013SS",
@@ -124,7 +124,33 @@ class Kentucky(Jurisdiction):
             "start_date": "2019-01-08"
         },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        '2019 Regular Session Prefiled Bills',
+        '2011 Special Session',
+        '2011 Regular Session',
+        '2010 Special Session',
+        '2010 Regular Session',
+        '2009 Special Session',
+        '2009 Regular Session',
+        '2008 Special Session',
+        '2008 Regular Session',
+        '2007 2nd Special Session',
+        '2007 Special Session',
+        '2007 Regular Session',
+        '2006 Special Session',
+        '2006 Regular Session',
+        '2005 Regular Session',
+        '2004 Special Session',
+        '2004 Regular Session',
+        '2003 Regular Session',
+        '2002 Special Session',
+        '2002 Regular Session',
+        '2001 Regular Session',
+        '2000 Regular Session',
+        '1998 Regular Session',
+        '1997 Special Session (Sept)',
+        '1997 Special Session (May)',
+    ]
 
     def get_organizations(self):
         legislature_name = "Kentucky General Assembly"
@@ -142,11 +168,12 @@ class Kentucky(Jurisdiction):
 
     def get_session_list(self):
         sessions = url_xpath(
-            'http://www.lrc.ky.gov/legislation.htm',
-            '//a[contains(@href, "record.htm")]/text()[normalize-space()]')
+            'https://apps.legislature.ky.gov/record/pastses.html',
+            '//td/div/a/text()')
 
         for index, session in enumerate(sessions):
             # Remove escaped whitespace characters.
-            sessions[index] = re.sub(r'[\r\n\t]+', '', session)
+            sessions[index] = re.sub(r'\s\s+', ' ', session)
+            sessions[index] = sessions[index].strip()
 
         return sessions
