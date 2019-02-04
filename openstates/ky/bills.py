@@ -16,7 +16,7 @@ def chamber_abbr(chamber):
 
 def session_url(session):
     return "https://apps.legislature.ky.gov/record/%s/" % session[2:]
-    # https://apps.legislature.ky.gov/record/19rs/record.html
+
 
 class KYBillScraper(Scraper, LXMLMixin):
     _TZ = timezone('America/Kentucky/Louisville')
