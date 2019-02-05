@@ -3,8 +3,8 @@ import re
 import itertools
 import copy
 import tempfile
+import urllib
 from datetime import datetime
-from urllib.parse import urljoin
 from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -155,11 +155,11 @@ class MTBillScraper(Scraper, LXMLMixin):
 
     def parse_bill_status_page(self, url, page, session, chamber):
         # see 2007 HB 2... weird.
-        bill_re = r'.*?/([A-Z]+)0*(\d+)\.pdf'
-        bill_xpath = '//a[contains(@href, ".pdf") and contains(@href, "billpdf")]/@href'
-        bill_id = re.search(bill_re, page.xpath(bill_xpath)[0],
-                            re.IGNORECASE).groups()
-        bill_id = "{0} {1}".format(bill_id[0], int(bill_id[1]))
+        parsed_url = urllib.parse.urlparse(url)
+        parsed_query = dict(urllib.parse.parse_qsl(parsed_url.query))
+        bill_id = "{0} {1}".format(
+            parsed_query['P_BLTP_BILL_TYP_CD'],
+            parsed_query['P_BILL_NO1'])
 
         try:
             xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
@@ -274,7 +274,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
             doc = self.lxmlize(url)
             for fn in doc.xpath('//a/@href')[1:]:
-                _url = urljoin(url, fn)
+                _url = urllib.parse.urljoin(url, fn)
                 fn = fn.split('/')[-1]
                 m = re.search(r'([A-Z]+)0*(\d+)_?(.*?)\.pdf', fn)
                 if m:
