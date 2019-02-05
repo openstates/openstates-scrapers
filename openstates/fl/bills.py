@@ -433,7 +433,7 @@ class HouseBillPage(Page):
 class HouseComVote(Page):
 
     def handle_page(self):
-        date, = self.doc.xpath('//span[contains(@id, "lblDate"]/text()')
+        date, = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
         date = format_datetime(datetime.datetime.strptime(date, '%m/%d/%Y %I:%M:%S %p'),
                                'US/Eastern')
 
