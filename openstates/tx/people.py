@@ -119,14 +119,14 @@ class TXPersonScraper(Scraper, LXMLMixin):
             '//div[@class="mempicdiv"]/a[1]/@href')
         # Sort by district for easier spotting of omissions:
         member_urls.sort(key=lambda url: int(re.search(r'\d+$', url).group()))
-        #logger.warn(member_urls)
+        # logger.warn(member_urls)
         parties = self._get_chamber_parties('upper')
-        #logger.warn(parties)
+        # logger.warn(parties)
         for member_url in member_urls:
             yield from self._scrape_senator(member_url, parties)
 
     def _scrape_senator(self, url, parties):
-        #logger.info(f'Generating senator person object from {url}')
+        # logger.info(f'Generating senator person object from {url}')
         """
         Returns a Person object representing a member of the upper
         legislative chamber.
@@ -160,17 +160,16 @@ class TXPersonScraper(Scraper, LXMLMixin):
 
         office_ids = []
         # Get offices based on table headers
-        for th_tag in member_page.xpath(
-            '//table[@class="memdir"]/tr/th'):
-            #logger.warn([th_tag.xpath('text()'),th_tag.xpath('@id')])
+        for th_tag in member_page.xpath('//table[@class="memdir"]/tr/th'):
+            # logger.warn([th_tag.xpath('text()'),th_tag.xpath('@id')])
             id = th_tag.xpath('@id')[0] if th_tag.xpath('@id') else ''
             label = th_tag.xpath('text()')[0].strip() if th_tag.xpath('text()') else ''
             if id != '' and label != '':
                 office_ids.append({'id': id, 'label': label})
 
-        #logger.warn(office_ids)
+        # logger.warn(office_ids)
         for office in office_ids:
-            #logger.warn(office)
+            # logger.warn(office)
             row = member_page.xpath(
                 f'//table[@class="memdir"]/tr/td[@headers="{office["id"]}"]')
             # A few member pages have broken ids for office listings:
@@ -180,7 +179,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
             if len(row) > 0:
                 details = " ".join(row[0].xpath('text()')).strip()
                 details = details.replace('\r', '').replace('\n', '')
-            #logger.warn(details)
+            # logger.warn(details)
             # A few member pages have blank office listings:
             if details == '':
                 continue
@@ -226,7 +225,7 @@ class TXPersonScraper(Scraper, LXMLMixin):
             yield from self._scrape_representative(member_url, parties)
 
     def _scrape_representative(self, url, parties):
-        #logger.info(f'Generating representative person object from {url}')
+        # logger.info(f'Generating representative person object from {url}')
         """
         Returns a Person object representing a member of the lower
         legislative chamber.
