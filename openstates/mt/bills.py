@@ -86,9 +86,9 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         bill_urls = []
         for bill_url in bills_page.xpath('//tr//a[contains(@href, "ActionQuery")]/@href'):
-            if 'lower' in chambers and 'HB' in bill_url:
+            if 'lower' in chambers and ('HB' in bill_url or 'HJ' in bill_url or 'HR' in bill_url):
                 bill_urls.append(bill_url)
-            if 'upper' in chambers and 'SB' in bill_url:
+            if 'upper' in chambers and ('SB' in bill_url or 'SJ' in bill_url or 'SR' in bill_url):
                 bill_urls.append(bill_url)
 
         for bill_url in bill_urls:
