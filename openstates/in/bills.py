@@ -54,7 +54,14 @@ class INBillScraper(Scraper):
 
         for r in rollcalls:
             proxy_link = proxy["url"] + r["link"]
-            (path, resp) = self.urlretrieve(proxy_link)
+
+            try:
+                (path, resp) = self.urlretrieve(proxy_link)
+            except scrapelib.HTTPError as e:
+                self.warning(e)
+                self.warning("Unable to contact openstates proxy, skipping vote {}".format(r['link']))
+                continue
+
             text = convert_pdf(path, 'text').decode("utf-8")
             lines = text.split("\n")
             os.remove(path)
