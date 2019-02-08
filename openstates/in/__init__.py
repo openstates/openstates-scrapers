@@ -126,8 +126,10 @@ class Indiana(Jurisdiction):
 
     def get_session_list(self):
         apikey = os.environ['INDIANA_API_KEY']
+        useragent = os.environ['USER_AGENT'] or "openstates"
         headers = {"Authorization": apikey,
-                   "Accept": "application/json"}
+                   "Accept": "application/json",
+                   "User-Agent": useragent}
         resp = requests.get("https://api.iga.in.gov/sessions", headers=headers)
         resp.raise_for_status()
         return [session["name"] for session in resp.json()["items"]]

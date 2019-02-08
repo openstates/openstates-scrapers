@@ -15,7 +15,7 @@ you have Docker installed.  Inside of the directory you cloned this project into
 
   docker-compose run --rm scrape <abbreviated state code>  # Scrapes the state indicated by the code e.g. "ny"
 
-For each state, you can also select one or more individual scrapers to run.  The scraper names vary from state to state; look at the ``scrapers`` listed in the state's ``__init__.py``. For example, Tennessee has:: 
+For each state, you can also select one or more individual scrapers to run.  The scraper names vary from state to state; look at the ``scrapers`` listed in the state's ``__init__.py``. For example, Tennessee has::
 
     scrapers = {
         'bills': TNBillScraper,
@@ -44,7 +44,7 @@ Now you can run the scrape service without the `--scrape` flag, and data will be
 
     psql postgres://postgres:secret@localhost:5432/openstates
 
-After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging. 
+After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging.
 
 Check out the `writing scrapers guide <https://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
 
@@ -72,3 +72,4 @@ A few states require credentials to access their APIs. If you want to run code f
 
   * Get credentials at: http://docs.api.iga.in.gov/introduction.html
   * Set in environment prior to running scrape: ``INDIANA_API_KEY``
+  * Indiana requires a user-agent as well, so set in environment prior to running scrape: ```USER_AGENT```
