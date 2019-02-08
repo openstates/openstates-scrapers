@@ -59,7 +59,8 @@ class INBillScraper(Scraper):
                 (path, resp) = self.urlretrieve(proxy_link)
             except scrapelib.HTTPError as e:
                 self.warning(e)
-                self.warning("Unable to contact openstates proxy, skipping vote {}".format(r['link']))
+                self.warning("Unable to contact openstates proxy, skipping vote {}"
+                             .format(r['link']))
                 continue
 
             text = convert_pdf(path, 'text').decode("utf-8")
