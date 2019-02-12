@@ -329,9 +329,12 @@ class WABillScraper(Scraper, LXMLMixin):
             action_actor_str = xpath(hearing, 'string(wa:CommitteeMeeting/wa:Agency)')
             action_actor = 'upper' if action_actor_str == 'Senate' else 'lower'
 
-            committee_name = xpath(hearing, 'string(wa:CommitteeMeeting/wa:Committees/wa:Committee/wa:Name)')
+            committee_name = xpath(hearing,
+                                   'string(wa:CommitteeMeeting/wa:Committees/'
+                                   'wa:Committee/wa:Name)')
 
-            # Scheduled for public hearing in the Senate Committee on Law & Justice at 10:00 AM (Subject to change). (Committee Materials)
+            # Scheduled for public hearing in the Senate Committee on Law & Justice
+            # at 10:00 AM (Subject to change). (Committee Materials)
             action_name = "Scheduled for public hearing in the {}" \
                           " Committee on {} at {}".format(
                               action_actor_str,
