@@ -68,7 +68,7 @@ class ApiClient(object):
     def __init__(self, scraper):
         self.scraper = scraper
         self.apikey = os.environ['INDIANA_API_KEY']
-        self.user_agent = os.environ['USER_AGENT'] or "openstates"
+        self.user_agent = os.getenv('USER_AGENT', 'openstates')
 
     @check_response
     def geturl(self, url):
