@@ -160,6 +160,14 @@ class Louisiana(Jurisdiction):
             "name": "2018, 3rd Extraordinary Session",
             "start_date": "2018-06-19",
         },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-04-08",
+            "end_date": "2019-06-06",
+        },
     ]
     ignored_scraped_sessions = [
         "2016 Organizational Session",
