@@ -126,7 +126,6 @@ class Indiana(Jurisdiction):
 
     def get_session_list(self):
         apikey = os.environ['INDIANA_API_KEY']
-        # useragent = os.environ['USER_AGENT'] or "openstates"
         useragent = os.getenv('USER_AGENT', 'openstates')
         headers = {"Authorization": apikey,
                    "Accept": "application/json",
