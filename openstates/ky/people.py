@@ -1,5 +1,4 @@
 import lxml.html
-from functools import reduce
 
 from pupa.scrape import Person, Scraper
 
