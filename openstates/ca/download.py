@@ -20,7 +20,6 @@ from collections import namedtuple
 
 import requests
 import MySQLdb
-import _mysql_exceptions
 
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
@@ -60,7 +59,7 @@ def db_drop():
     try:
         connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER,
                                      passwd=MYSQL_PASSWORD, db='capublic')
-    except _mysql_exceptions.OperationalError:
+    except MySQLdb._exceptions.OperationalError:
         # The database doesn't exist.
         logger.info('...no such database. Bailing.')
         return
