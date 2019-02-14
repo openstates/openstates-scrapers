@@ -1,19 +1,19 @@
 # common
-xlrd
-lxml>=2.2
-pytz>=2010l
-feedparser>=4.1
+xlrd>=1.2,<2
+lxml>=4.3,<5
+pytz>=2018
+feedparser>=5.2,<6
 spatula
 
+# development
+ipdb>=0.11
+
 # California
-SQLAlchemy
-mysqlclient
+SQLAlchemy>=1.3,<2
+mysqlclient>=1.4,<2
 
-# dev
-ipdb
+# Connecticut
+chardet>=3,<4
 
-#CT
-chardet
-
-# GA
-suds-py3
+# Georgia
+suds-py3>=1.3,<2
