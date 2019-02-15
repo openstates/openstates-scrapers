@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   scrape:
     image: openstates/openstates
@@ -11,13 +12,17 @@ services:
     volumes:
     - .:/opt/openstates/openstates/
     entrypoint: /opt/openstates/openstates/pupa-scrape.sh
+
   postgres:
     image: mdillon/postgis:10-alpine
     ports:
-    - "5432:5432"
+    # Expose Postgres to the host on port 5433, instead of the
+    # default 5432, to avoid conflicts with local Postgres
+    - "5433:5432"
     environment:
     - POSTGRES_PASSWORD=secret
     - POSTGRES_DB=openstates
+
   dbinit:
     image: openstates/openstates
     environment:
@@ -27,6 +32,7 @@ services:
     - .:/opt/openstates/openstates/
     depends_on:
     - postgres
+
   mysql:
     image: mysql:5.7
     command: mysqld --max_allowed_packet=512M
@@ -35,6 +41,7 @@ services:
     environment:
     - MYSQL_DATABASE=capublic
     - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+
   ca-download:
     image: openstates/openstates
     entrypoint: /opt/openstates/openstates/openstates/ca/download.sh

@@ -42,7 +42,7 @@ Then run database migrations and import jurisdictions::
 
 Now you can run the scrape service without the `--scrape` flag, and data will be imported into postgres. You can connect to the database and inspect data using `psql` (credentials are set in `docker-compose.yml`)::
 
-    psql postgres://postgres:secret@localhost:5432/openstates
+    psql postgres://postgres:secret@localhost:5433/openstates
 
 After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging.
 
