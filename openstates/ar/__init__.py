@@ -157,6 +157,8 @@ class Arkansas(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
+        "Regular Session",
+        "Fiscal Session",
         "Regular Session, 2009",
         "Fiscal Session, 2010",
         "Regular Session, 2007",
@@ -209,8 +211,8 @@ class Arkansas(Jurisdiction):
         headers = {}
         headers['user-agent'] = "openstates"
 
-        page = requests.get('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-                        '/Previous%20Legislatures.aspx', headers=headers).content
+        page = requests.get('http://www.arkleg.state.ar.us/assembly/2019/2019R/Pages'
+                        '/Previous%20Legislatures.aspx', headers=headers, timeout=60).content
         page = lxml.html.fromstring(page)
         links = page.xpath('//a')
 
