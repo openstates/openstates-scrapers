@@ -1,6 +1,9 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
+import requests
+import lxml
+
 from .people import ARLegislatorScraper
 from .bills import ARBillScraper
 # from .committees import ARCommitteeScraper
@@ -203,8 +206,16 @@ class Arkansas(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-                          '/Previous%20Legislatures.aspx', '//a')
+        headers = {}
+        headers['user-agent'] = "openstates"
+
+        page = requests.get('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
+                        '/Previous%20Legislatures.aspx', headers=headers).content
+        page = lxml.html.fromstring(page)
+        links = page.xpath('//a')
+
+        # links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
+        #                   '/Previous%20Legislatures.aspx', '//a')
         sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
                     'title', '')]
         return sessions
