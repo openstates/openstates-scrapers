@@ -9,7 +9,7 @@ spatula
 ipdb>=0.11
 
 # California
-SQLAlchemy>=1.3,<2
+SQLAlchemy>=1.2,<2
 mysqlclient>=1.4,<2
 
 # Connecticut
