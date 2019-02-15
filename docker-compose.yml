@@ -28,7 +28,7 @@ services:
     depends_on:
     - postgres
   mysql:
-    image: mysql:5.7
+    image: mysql:8
     command: mysqld --max_allowed_packet=512M
     ports:
     - "3306:3306"
