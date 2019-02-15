@@ -208,16 +208,17 @@ class Arkansas(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        headers = {}
-        headers['user-agent'] = "openstates"
+        # headers = {}
+        # headers['user-agent'] = "openstates"
 
-        page = requests.get('http://www.arkleg.state.ar.us/assembly/2019/2019R/Pages'
-                        '/Previous%20Legislatures.aspx', headers=headers, timeout=60).content
-        page = lxml.html.fromstring(page)
-        links = page.xpath('//a')
+        # page = requests.get('http://www.arkleg.state.ar.us/assembly/2019/2019R/Pages'
+        #                 '/Previous%20Legislatures.aspx', headers=headers, timeout=60).content
+        # page = lxml.html.fromstring(page)
+        # links = page.xpath('//a')
 
-        # links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-        #                   '/Previous%20Legislatures.aspx', '//a')
-        sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
-                    'title', '')]
+        # # links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
+        # #                   '/Previous%20Legislatures.aspx', '//a')
+        # sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
+        #             'title', '')]
+        sessions = ['Regular Session, 2019']
         return sessions
