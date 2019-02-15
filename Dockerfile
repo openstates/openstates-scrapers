@@ -33,7 +33,6 @@ RUN apk add --no-cache --virtual .build-dependencies \
     postgresql-client \
     mariadb \
     mariadb-dev \
-    mysql-client && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
     libcrypto1.1 && \
