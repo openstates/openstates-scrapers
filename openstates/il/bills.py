@@ -332,8 +332,7 @@ class IlBillScraper(Scraper):
                 (name, source), = [(a.text, a.get('href')) for a in
                                    action_elem.xpath('a')
                                    if 'committee' in a.get('href')]
-                # hack 101st session back to 100th, to match openstates/people
-                source = canonicalize_url(source).replace('&GA=101', '&GA=100')
+                source = canonicalize_url(source)
                 actor_id = {'sources__url': source,
                             'classification': 'committee'}
                 committee_actors[source] = name
@@ -424,8 +423,7 @@ class IlBillScraper(Scraper):
                                in committee_actors.items()
                                if committee.startswith(first_word) and
                                chamber in url]
-                    # hack 101st session back to 100th, to match openstates/people
-                    actor = {'sources__url': source.replace('&GA=101', '&GA=100'),
+                    actor = {'sources__url': source,
                              'classification': 'committee'}
                 except ValueError:
                     self.warning("Can't resolve voting body for %s" %
