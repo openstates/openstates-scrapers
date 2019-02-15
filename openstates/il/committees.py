@@ -93,8 +93,9 @@ class IlCommitteeScraper(Scraper):
                 if len(bad_keys) > 0:
                     bad_keys.sort(key=lambda tup: tup[0])
                     # formatted for quick copy-paste insertion into _committees.py
-                    bad_keys_str = '\n'.join(['(\''+'\', \''.join(bad)+'\'): \'\',' for bad in bad_keys])
-                    raise ValueError('unknown committees:\n' +bad_keys_str)
+                    bad_keys_str = \
+                        '\n'.join(['(\''+'\', \''.join(bad)+'\'): \'\',' for bad in bad_keys])
+                    raise ValueError('unknown committees:\n' + bad_keys_str)
         top_level = {o_id: committee for o_id, committee in
                      committees.items() if 'chamber' in committee}
 
