@@ -28,8 +28,8 @@ services:
     depends_on:
     - postgres
   mysql:
-    image: mysql:8
-    command: mysqld --max_allowed_packet=512M
+    image: mariadb:10.3
+    command: mysqld_safe --max_allowed_packet=512M
     ports:
     - "3306:3306"
     environment:
