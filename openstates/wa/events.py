@@ -3,7 +3,6 @@ from datetime import timedelta
 import datetime
 
 import pytz
-import re
 import lxml
 
 from pupa.scrape import Scraper, Event
@@ -16,7 +15,7 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     meetings = None
 
-    chambers = { 'Senate': 'upper', 'House': 'lower', 'Agency': 'joint'}
+    chambers = {'Senate': 'upper', 'House': 'lower', 'Agency': 'joint'}
 
     def scrape(self, chamber=None, session=None, start=None, end=None):
         if not session:
@@ -42,7 +41,7 @@ class WAEventScraper(Scraper, LXMLMixin):
 
     # Only need to fetch the XML once for both chambers
     def get_xml(self, start, end):
-        if self.meetings != None:
+        if self.meetings is not None:
             return self.meetings
 
         event_url = 'http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx' \
@@ -68,7 +67,8 @@ class WAEventScraper(Scraper, LXMLMixin):
             if self.chambers[event_chamber] != chamber:
                 continue
 
-            event_date = datetime.datetime.strptime(xpath(row, 'string(wa:Date)'), "%Y-%m-%dT%H:%M:%S")
+            event_date = datetime.datetime.strptime(
+                xpath(row, 'string(wa:Date)'), "%Y-%m-%dT%H:%M:%S")
             event_date = self._tz.localize(event_date)
             event_com = xpath(row, 'string(wa:Committees/'
                                    'wa:Committee/wa:LongName)')
@@ -88,10 +88,11 @@ class WAEventScraper(Scraper, LXMLMixin):
             )
 
             event = Event(name=event_com, start_date=event_date,
-                            location_name=location,
-                            description=notes)
+                          location_name=location,
+                          description=notes)
 
-            source_url = 'https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}'.format(agenda_id)
+            source_url = 'https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}'.format(
+                agenda_id)
             event.add_source(source_url)
 
             event.add_participant(event_com, type='committee', note='host')
@@ -101,7 +102,6 @@ class WAEventScraper(Scraper, LXMLMixin):
             self.scrape_agenda_items(agenda_id, event)
 
             yield event
-
 
     def scrape_agenda_items(self, agenda_id, event):
         agenda_url = 'http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx/' \
@@ -119,20 +119,3 @@ class WAEventScraper(Scraper, LXMLMixin):
             if bill_id:
                 item = event.add_agenda_item(desc)
                 item.add_bill(bill_id)
-
-                # event = Event(name=meeting_title, start_date=self._tz.localize(when),
-                #               location_name=location,
-                #               description=meeting_title)
-
-                # event.add_participant(who.strip(), type='committee', note='host')
-                # event.add_source(url)
-
-                # # only scraping public hearing bills for now.
-                # bills = meeting.xpath(".//div[text() = 'Public Hearing']/following-sibling::li"
-                #                       "[contains(@class, 'visible-lg')]")
-                # for bill in bills:
-                #     bill_id, descr = bill.xpath("./a/text()")[0].split(" - ")
-                #     item = event.add_agenda_item(descr.strip())
-                #     item.add_bill(bill_id.strip())
-
-                # yield event
