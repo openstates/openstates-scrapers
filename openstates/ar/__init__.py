@@ -1,9 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
-import requests
-import lxml
-
 from .people import ARLegislatorScraper
 from .bills import ARBillScraper
 # from .committees import ARCommitteeScraper
@@ -157,8 +154,6 @@ class Arkansas(Jurisdiction):
         },
     ]
     ignored_scraped_sessions = [
-        "Regular Session",
-        "Fiscal Session",
         "Regular Session, 2009",
         "Fiscal Session, 2010",
         "Regular Session, 2007",
@@ -208,17 +203,8 @@ class Arkansas(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        # headers = {}
-        # headers['user-agent'] = "openstates"
-
-        # page = requests.get('http://www.arkleg.state.ar.us/assembly/2019/2019R/Pages'
-        #                 '/Previous%20Legislatures.aspx', headers=headers, timeout=60).content
-        # page = lxml.html.fromstring(page)
-        # links = page.xpath('//a')
-
-        # # links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
-        # #                   '/Previous%20Legislatures.aspx', '//a')
-        # sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
-        #             'title', '')]
-        sessions = ['Regular Session, 2019']
+        links = url_xpath('http://www.arkleg.state.ar.us/assembly/2013/2013R/Pages'
+                          '/Previous%20Legislatures.aspx', '//a')
+        sessions = [a.text_content() for a in links if 'Session' in a.attrib.get(
+                    'title', '')]
         return sessions

@@ -25,8 +25,6 @@ def get_utf_16_ftp_content(url):
 class ARBillScraper(Scraper):
 
     def scrape(self, chamber=None, session=None):
-        self.user_agent = 'GovHawk.com'
-
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
