@@ -81,8 +81,13 @@ class IABillScraper(Scraper):
                            '"divideVert"]/div/div[4]/div[2])').strip()
 
         if title == '':
-            self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
-            return
+            # Sometimes the title is moved, see
+            # https://www.legis.iowa.gov/legislation/billTracking/billHistory?billName=SF%20139&ga=88
+            title = page.xpath('string(//div[@id="content"]/div[@class='
+                               '"divideVert"]/div[4]/div[2])').strip()
+            if title == '':
+                self.warning("URL: %s gives us an *EMPTY* bill. Aborting." % url)
+                return
 
         if title.lower().startswith("in"):
             title = page.xpath("string(//table[2]/tr[3])").strip()
