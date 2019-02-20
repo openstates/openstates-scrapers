@@ -1,94 +1,138 @@
 from openstates.utils import LXMLMixin
 from datetime import timedelta
-import datetime as dt
+import datetime
 
 import pytz
 import re
+import lxml
 
 from pupa.scrape import Scraper, Event
-
-event_page = "http://app.leg.wa.gov/mobile/MeetingSchedules/Committees?AgencyId=%s&" + \
-             "StartDate=%s&EndDate=%s&ScheduleType=2"
-# arg1: committee type (house=3, joint=4, senate=7)
-# arg2: start date (format 2/1/2015)
-# arg3: end date
+from .utils import xpath
 
 
 class WAEventScraper(Scraper, LXMLMixin):
     _tz = pytz.timezone('US/Pacific')
     _ns = {'wa': "http://WSLWebServices.leg.wa.gov/"}
 
-    def scrape_agenda(self, ols):
-        if len(ols) == 0:
-            return []
-        ret = []
-        # ok. game on.
-        for ol in ols:
-            try:
-                ol = ol[0]
-            except IndexError:
-                continue
-            lis = ol.xpath(".//li")
-            regex = r'(S|H)J?(R|B|M) \d{4}'
-            for li in lis:
-                agenda_item = li.text_content()
-                bill = re.search(regex, agenda_item)
-                if bill is not None:
-                    start, end = bill.regs[0]
-                    ret.append({
-                        "bill": agenda_item[start:end],
-                        "descr": agenda_item
-                    })
-        return ret
+    meetings = None
 
-    def scrape(self, chamber=None, session=None):
+    chambers = { 'Senate': 'upper', 'House': 'lower', 'Agency': 'joint'}
+
+    def scrape(self, chamber=None, session=None, start=None, end=None):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
-        chambers = [chamber] if chamber else ['upper', 'lower']
+
+        now = datetime.datetime.now()
+        print_format = "%Y-%m-%d"
+
+        if start is None:
+            start = now.strftime(print_format)
+        else:
+            start = datetime.datetime.strptime(start, '%Y-%m-%d').strftime(print_format)
+
+        if end is None:
+            end = (now+timedelta(days=30)).strftime(print_format)
+        else:
+            end = datetime.datetime.strptime(end, '%Y-%m-%d').strftime(print_format)
+
+        chambers = [chamber] if chamber else ['upper', 'lower', 'joint']
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber, session)
+            yield from self.scrape_chamber(chamber, session, start, end)
 
-    def scrape_chamber(self, chamber, session):
-        cha = {"upper": "7", "lower": "3", "other": "4"}[chamber]
+    # Only need to fetch the XML once for both chambers
+    def get_xml(self, start, end):
+        if self.meetings != None:
+            return self.meetings
 
-        print_format = "%m/%d/%Y"
-        now = dt.datetime.now()
+        event_url = 'http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx' \
+                    '/GetCommitteeMeetings?beginDate={}&endDate={}'
 
-        start = now.strftime(print_format)
-        end = (now+timedelta(days=30)).strftime(print_format)
-        url = event_page % (cha, start, end)
+        url = event_url.format(start, end)
 
-        page = self.lxmlize(url)
+        page = self.get(url).content
+        page = lxml.etree.fromstring(page)
 
-        committees = page.xpath("//a[contains(@href,'Agendas?CommitteeId')]/@href")
-        for comm in committees:
-            comm_page = self.lxmlize(comm)
-            meetings = comm_page.xpath("//li[contains(@class, 'partialagendaitems')]")
-            for meeting in meetings:
-                heading, content = meeting.xpath("./ul/li")
-                who, when = heading.text.split(" - ")
-                meeting_title = "Scheduled meeting of %s" % who.strip()
-                where_lines = content.text_content().split("\r\n")
-                where = "\r\n".join([l.strip() for l in where_lines[6:9]])
+        self.meetings = page
+        return page
 
-                when = dt.datetime.strptime(when.strip(), "%m/%d/%Y %I:%M:%S %p")
+    def scrape_chamber(self, chamber, session, start, end):
+        page = self.get_xml(start, end)
 
-                location = (where or '').strip() or "unknown"
+        for row in xpath(page, '//wa:CommitteeMeeting'):
+            event_cancelled = xpath(row, 'string(wa:Cancelled)')
+            if event_cancelled == 'true':
+                continue
 
-                event = Event(name=meeting_title, start_date=self._tz.localize(when),
-                              location_name=location,
-                              description=meeting_title)
+            event_chamber = xpath(row, 'string(wa:Agency)')
+            if self.chambers[event_chamber] != chamber:
+                continue
 
-                event.add_participant(who.strip(), type='committee', note='host')
-                event.add_source(url)
+            event_date = datetime.datetime.strptime(xpath(row, 'string(wa:Date)'), "%Y-%m-%dT%H:%M:%S")
+            event_date = self._tz.localize(event_date)
+            event_com = xpath(row, 'string(wa:Committees/'
+                                   'wa:Committee/wa:LongName)')
+            agenda_id = xpath(row, 'string(wa:AgendaId)')
+            notes = xpath(row, 'string(wa:Notes)')
+            room = xpath(row, 'string(wa:Room)')
+            building = xpath(row, 'string(wa:Building)')
+            # XML has a wa:Address but it seems useless
+            city = xpath(row, 'string(wa:City)')
+            state = xpath(row, 'string(wa:State)')
 
-                # only scraping public hearing bills for now.
-                bills = meeting.xpath(".//div[text() = 'Public Hearing']/following-sibling::li"
-                                      "[contains(@class, 'visible-lg')]")
-                for bill in bills:
-                    bill_id, descr = bill.xpath("./a/text()")[0].split(" - ")
-                    item = event.add_agenda_item(descr.strip())
-                    item.add_bill(bill_id.strip())
+            location = '{}, {}, {} {}'.format(
+                room,
+                building,
+                city,
+                state
+            )
 
-                yield event
+            event = Event(name=event_com, start_date=event_date,
+                            location_name=location,
+                            description=notes)
+
+            source_url = 'https://app.leg.wa.gov/committeeschedules/Home/Agenda/{}'.format(agenda_id)
+            event.add_source(source_url)
+
+            event.add_participant(event_com, type='committee', note='host')
+
+            event.extras['agendaId'] = agenda_id
+
+            self.scrape_agenda_items(agenda_id, event)
+
+            yield event
+
+
+    def scrape_agenda_items(self, agenda_id, event):
+        agenda_url = 'http://wslwebservices.leg.wa.gov/CommitteeMeetingService.asmx/' \
+                     'GetCommitteeMeetingItems?agendaId={}'.format(agenda_id)
+
+        page = self.get(agenda_url).content
+        page = lxml.etree.fromstring(page)
+
+        rows = xpath(page, '//wa:CommitteeMeetingItem')
+
+        for row in rows:
+            bill_id = xpath(row, 'string(wa:BillId)')
+            desc = xpath(row, 'string(wa:ItemDescription)')
+
+            if bill_id:
+                item = event.add_agenda_item(desc)
+                item.add_bill(bill_id)
+
+                # event = Event(name=meeting_title, start_date=self._tz.localize(when),
+                #               location_name=location,
+                #               description=meeting_title)
+
+                # event.add_participant(who.strip(), type='committee', note='host')
+                # event.add_source(url)
+
+                # # only scraping public hearing bills for now.
+                # bills = meeting.xpath(".//div[text() = 'Public Hearing']/following-sibling::li"
+                #                       "[contains(@class, 'visible-lg')]")
+                # for bill in bills:
+                #     bill_id, descr = bill.xpath("./a/text()")[0].split(" - ")
+                #     item = event.add_agenda_item(descr.strip())
+                #     item.add_bill(bill_id.strip())
+
+                # yield event
