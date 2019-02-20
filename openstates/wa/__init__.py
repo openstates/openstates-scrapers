@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import WAPersonScraper
-# from .events import WAEventScraper
+from .events import WAEventScraper
 # from .committees import WACommitteeScraper
 from .bills import WABillScraper
 
@@ -14,7 +14,7 @@ class Washington(Jurisdiction):
     url = "http://www.leg.wa.gov"
     scrapers = {
         'people': WAPersonScraper,
-        # 'events': WAEventScraper,
+        'events': WAEventScraper,
         # 'committees': WACommitteeScraper,
         'bills': WABillScraper,
     }
