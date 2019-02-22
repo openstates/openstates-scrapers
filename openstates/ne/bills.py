@@ -115,6 +115,10 @@ class NEBillScraper(Scraper, LXMLMixin):
             else:
                 actor = 'legislature'
 
+            # TODO: check td[3] for a vote link, or maybe just any href=
+            # https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=37528
+            # https://nebraskalegislature.gov/bills/view_votes.php?KeyID=3737
+
             action_type = self.action_types(action)
             bill.add_action(
                 action,
@@ -166,7 +170,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
     def scrape_votes(self, bill, bill_page, chamber):
         vote_links = bill_page.xpath(
-            '//div[contains(@class, "col-sm-8")]//a[contains(@href, "view_votes")]')
+            '//table[contains(@class,"history")]//a[contains(@href, "view_votes")]')
         for vote_link in vote_links:
             vote_url = vote_link.attrib['href']
             date_td, motion_td, *_ = vote_link.xpath('ancestor::tr/td')
@@ -177,7 +181,7 @@ class NEBillScraper(Scraper, LXMLMixin):
                 'Passed' in motion_text or
                 'Advanced' in motion_text
             )
-            cells = vote_page.xpath('//table[contains(@class, "calendar-table")]//td')
+            cells = vote_page.xpath('//div[contains(@class,"table-responsive")]/table//td')
             vote = VoteEvent(
                 bill=bill,
                 chamber=chamber,
@@ -186,6 +190,19 @@ class NEBillScraper(Scraper, LXMLMixin):
                 classification='passage',
                 result='pass' if passed else 'fail',
             )
+
+            yes_count = self.process_count(vote_page, 'Yes:')
+            no_count = self.process_count(vote_page, 'No:')
+            exc_count = self.process_count(vote_page, 'Excused - Not Voting:')
+            absent_count = self.process_count(vote_page, 'Absent - Not Voting:')
+            present_count = self.process_count(vote_page, 'Present - Not Voting:')
+
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('excused', exc_count)
+            vote.set_count('absent', absent_count)
+            vote.set_count('abstain', present_count)
+
             query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
             vote.pupa_id = query_params['KeyID'][0]
             vote.add_source(vote_url)
@@ -195,6 +212,12 @@ class NEBillScraper(Scraper, LXMLMixin):
                 if name and vote_type:
                     vote.vote(VOTE_TYPE_MAP.get(vote_type.lower(), 'other'), name)
             yield vote
+
+    # Find the vote count row containing row_string, and return the integer count
+    def process_count(self, page, row_string):
+        count_xpath = 'string(//ul[contains(@class,"list-unstyled")]/li[contains(text(),"{}")])'
+        count_text = page.xpath(count_xpath.format(row_string))
+        return int(''.join(x for x in count_text if x.isdigit()))
 
     def action_types(self, action):
         if 'Date of introduction' in action:

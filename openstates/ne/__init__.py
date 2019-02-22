@@ -2,7 +2,6 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from openstates.ne.bills import NEBillScraper
-# from openstates.ne.votes import NEVoteScraper
 from openstates.ne.people import NEPersonScraper
 # from openstates.ne.committees import NECommitteeScraper
 
@@ -14,7 +13,6 @@ class Nebraska(Jurisdiction):
     url = "http://nebraskalegislature.gov/"
     scrapers = {
         'bills': NEBillScraper,
-        # 'votes': NEVoteScraper,
         'people': NEPersonScraper,
         # 'committees': NECommitteeScraper,
     }
