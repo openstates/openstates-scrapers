@@ -139,8 +139,8 @@ class MTBillScraper(Scraper, LXMLMixin):
         for link in page.xpath('//div[contains(@class,"container white")]/a'):
             link_text = link.xpath('text()')[0].strip()
             link_url = link.xpath('@href')[0]
-            bill.add_version_link(link_text, link_url, media_type='application/pdf', on_duplicate='ignore')
-
+            bill.add_version_link(
+                link_text, link_url, media_type='application/pdf', on_duplicate='ignore')
 
     def _get_tabledata(self, status_page):
         '''Montana doesn't currently list co/multisponsors on any of the
