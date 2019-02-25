@@ -56,6 +56,14 @@ class AZBillScraper(Scraper):
     def scrape_versions_and_documents(self, bill, internal_id):
         # Careful, this sends XML to a browser but JSON to machines
         # https://apps.azleg.gov/api/DocType/?billStatusId=68408
+
+        # These DocumentGroupName items will be saved as versions not documents
+        version_types = [
+            'Bill Versions',
+            'Adopted Amendments',
+            'Proposed Amendments'
+        ]
+
         versions_url = 'https://apps.azleg.gov/api/DocType/?billStatusId={}'.format(internal_id)
         page = json.loads(self.get(versions_url).content.decode('utf-8'))
         for document_set in page:
@@ -69,7 +77,7 @@ class AZBillScraper(Scraper):
                 if not url.startswith('http'):
                     url = 'https://apps.azleg.gov{}'.format(url)
 
-                if type_ == 'Bill Versions':
+                if type_ in version_types:
                     bill.add_version_link(
                         note=doc['DocumentName'],
                         url=url,
@@ -123,28 +131,8 @@ class AZBillScraper(Scraper):
         So map that backwards using action_map
         """
         for status in page['BillStatusAction']:
-            if status['Action'] in utils.status_action_map:
-                category = utils.status_action_map[status['Action']]
-                if status['Committee']['TypeName'] == 'Floor':
-                    categories = [category]
-                    if status['Committee']['CommitteeShortName'] == 'THIRD':
-                        categories.append('reading-3')
-                elif status['Committee']['TypeName'] == 'Standing':
-                    categories = ['committee-{}'.format(category)]
-                else:
-                    raise ValueError(
-                        'Unexpected committee type: {}'.format(status['Committee']['TypeName']))
-                action_date = datetime.datetime.strptime(
-                    status['ReportDate'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
-                bill.add_action(
-                    description=status['Action'],
-                    chamber={
-                        'S': 'upper',
-                        'H': 'lower',
-                    }[status['Committee']['LegislativeBody']],
-                    date=action_date,
-                    classification=categories,
-                )
+            self.action_from_struct(bill, status)
+
         for action in utils.action_map:
             if page[action] and utils.action_map[action]['name'] != '':
                 try:
@@ -200,6 +188,38 @@ class AZBillScraper(Scraper):
                 date=action_date,
                 classification=action_type
             )
+
+    def action_from_struct(self, bill, status):
+        if status['Action'] in utils.status_action_map:
+            category = utils.status_action_map[status['Action']]
+            if status['Committee']['TypeName'] == 'Floor':
+                categories = [category]
+                if status['Committee']['CommitteeShortName'] == 'THIRD':
+                    categories.append('reading-3')
+            elif status['Committee']['TypeName'] == 'Standing':
+                # Differentiate committee passage from chamber passage
+                if category == 'passage':
+                    categories = ['committee-passage']
+                else:
+                    categories = [category]
+            else:
+                raise ValueError(
+                    'Unexpected committee type: {}'.format(status['Committee']['TypeName']))
+            action_date = datetime.datetime.strptime(
+                status['ReportDate'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
+            bill.add_action(
+                description=status['Action'],
+                chamber={
+                    'S': 'upper',
+                    'H': 'lower',
+                }[status['Committee']['LegislativeBody']],
+                date=action_date,
+                classification=categories,
+            )
+        else:
+            # most of the unclassified ones are hearings
+            # https://www.azleg.gov/faq/abbreviations/
+            self.info("Unclassified action: {}".format(status['Action']))
 
     def actor_from_action(self, bill, action, self_chamber):
         """
