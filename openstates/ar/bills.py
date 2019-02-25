@@ -153,7 +153,7 @@ class ARBillScraper(Scraper):
         for link in page.xpath("//a[contains(@href, 'Amendments')]"):
             num = link.xpath("string(../../td[2])")
             name = "Amendment %s" % num
-            bill.add_document_link(name, link.attrib['href'])
+            bill.add_version_link(name, link.attrib['href'], media_type='application/pdf')
 
         try:
             cosponsor_link = page.xpath(
