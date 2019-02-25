@@ -268,6 +268,9 @@ class WYBillScraper(Scraper, LXMLMixin):
             date_str = date_str + '.0'
 
         date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        # Truncate microseconds; opencivicdata limits action date to 25 characters
+        # TODO: Fix in opencivicdata
+        date_obj = date_obj.replace(microsecond=0)
         local_date = TIMEZONE.localize(date_obj)
         utc_action_date = local_date.astimezone(pytz.utc)
         return utc_action_date
