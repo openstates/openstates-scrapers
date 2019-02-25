@@ -1,6 +1,7 @@
 import re
 import json
 import datetime
+import requests
 
 import lxml.html
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -179,8 +180,16 @@ class KSBillScraper(Scraper):
                                        on_duplicate='ignore')
 
     def parse_vote(self, bill, link):
-        text = self.get(link).text
-        if 'Page Not Found' in text:
+        # Server sometimes sends proper error headers,
+        # sometimes not
+        try:
+            self.info("Get {}".format(link))
+            text = requests.get(link).text
+        except requests.exceptions.HTTPError as err:
+            self.warning("{} fetching vote {}, skipping".format(err, link))
+            return
+
+        if 'Page Not Found' in text or 'Page Unavailable' in text:
             self.warning("missing vote, skipping")
             return
         member_doc = lxml.html.fromstring(text)
