@@ -125,10 +125,22 @@ class MTBillScraper(Scraper, LXMLMixin):
         url = set(doc.xpath('//a/@href[contains(., "billpdf")]')).pop()
         bill.add_version_link(version_name, url, media_type='application/pdf')
 
+        new_versions_url = doc.xpath('//a[text()="Previous Version(s)"]/@href')
+        if new_versions_url:
+            self.scrape_new_site_versions(bill, new_versions_url[0])
+
         # Add bill url as a source.
         bill.add_source(bill_url)
 
         return bill, votes
+
+    def scrape_new_site_versions(self, bill, url):
+        page = self.lxmlize(url)
+        for link in page.xpath('//div[contains(@class,"container white")]/a'):
+            link_text = link.xpath('text()')[0].strip()
+            link_url = link.xpath('@href')[0]
+            bill.add_version_link(link_text, link_url, media_type='application/pdf', on_duplicate='ignore')
+
 
     def _get_tabledata(self, status_page):
         '''Montana doesn't currently list co/multisponsors on any of the
