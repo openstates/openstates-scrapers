@@ -74,7 +74,7 @@ class MSBillScraper(Scraper):
             link = mr.xpath('string(ACTIONLINK)').replace("..", "")
             main_doc = mr.xpath('string(MEASURELINK)').replace("../../../", "")
             main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
-            bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
+            bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf%s' % (session, link)
             try:
                 details_page = self.get(bill_details_url)
             except scrapelib.HTTPError:
