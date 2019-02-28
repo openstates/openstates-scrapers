@@ -7,7 +7,6 @@ from openstates.utils import LXMLMixin
 import lxml.html
 import scrapelib
 
-
 SUB_BLACKLIST = [
     "Second Substitute",
     "Third Substitute",
@@ -27,6 +26,14 @@ class UTBillScraper(Scraper, LXMLMixin):
         if not session:
             session = self.latest_session()
             self.info('no session specified, using %s', session)
+
+        # if you need to test on an individual bill...
+        # yield from self.scrape_bill(
+        #             chamber='lower',
+        #             session='2019',
+        #             bill_id='H.B. 87',
+        #             url='https://le.utah.gov/~2019/bills/static/HB0087.html'
+        #         )
 
         # Identify the index page for the given session
         sessions = self.lxmlize(
@@ -270,7 +277,7 @@ class UTBillScraper(Scraper, LXMLMixin):
             yes = yno[0]
             no, other = None, None
         else:
-            yes, no, other = rows.xpath(".//td")[:3]
+            yes, _, no, _, other = rows.xpath(".//td")[:5]
 
         def proc_block(obj, typ):
             if obj is None:
@@ -280,9 +287,9 @@ class UTBillScraper(Scraper, LXMLMixin):
                     "votes": []
                 }
             votes = []
-            for vote in obj.xpath(".//br"):
-                if vote.tail:
-                    vote = vote.tail.strip()
+            for vote in obj.xpath("./text()"):
+                if vote.strip():
+                    vote = vote.strip()
                     if vote:
                         votes.append(vote)
             count = len(votes)
