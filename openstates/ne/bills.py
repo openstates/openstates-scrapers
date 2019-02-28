@@ -115,10 +115,6 @@ class NEBillScraper(Scraper, LXMLMixin):
             else:
                 actor = 'legislature'
 
-            # TODO: check td[3] for a vote link, or maybe just any href=
-            # https://nebraskalegislature.gov/bills/view_bill.php?DocumentID=37528
-            # https://nebraskalegislature.gov/bills/view_votes.php?KeyID=3737
-
             action_type = self.action_types(action)
             bill.add_action(
                 action,
