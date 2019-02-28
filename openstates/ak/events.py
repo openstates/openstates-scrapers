@@ -1,7 +1,7 @@
 import pytz
-import datetime
 import lxml
 import dateutil.parser
+import re
 
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Event
@@ -9,13 +9,14 @@ from pupa.scrape import Scraper, Event
 
 class AKEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone('US/Alaska')
-    _DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
     API_BASE = 'http://www.legis.state.ak.us/publicservice/basis'
     NS = {'ak': "http://www.legis.state.ak.us/Basis"}
     CHAMBERS = {'S': 'upper', 'H': 'lower'}
-    COMMITTEES = {'upper':{}, 'lower':{}}
+    COMMITTEES = {'upper': {}, 'lower': {}}
     COMMITTEES_PRETTY = {'upper': 'SENATE', 'lower': 'HOUSE'}
 
+    # date_filter argument can give you just one day;
+    # format is "2/28/2019" per AK's site
     def scrape(self, chamber=None, session=None, date_filter=None):
         if session is None:
             session = self.latest_session()
@@ -23,21 +24,20 @@ class AKEventScraper(Scraper, LXMLMixin):
 
         listing_url = '/meetings'
         args = {
-            'minifyresult': 'false',
+            'minifyresult': 'true',
             'session': session
         }
         headers = {
-            'X-Alaska-Legislature-Basis-Query':'meetings;details'
+            'X-Alaska-Legislature-Basis-Query': 'meetings;details'
         }
 
-        # ;date=2/28/2019
+        # 2/28/2019
         if date_filter is not None:
             args['date'] = date_filter
 
         # load the committee abbrevs
         self.scrape_committees(session)
 
-        # only need to grab events list once across chambers
         page = self.api_request(listing_url, args, headers)
 
         events_xml = page.xpath('//Meeting')
@@ -93,28 +93,22 @@ class AKEventScraper(Scraper, LXMLMixin):
             note='host',
         )
 
-            # event.add_participant(
-            #     info.xpath('span[@class="col01"]/text()')[0].title(),
-            #     type='committee',
-            #     note='host',
-            # )
-
-            # for document in doc.xpath('//td[@data-label="Document"]/a'):
-            #     event.add_document(
-            #         document.xpath('text()')[0],
-            #         url=document.xpath('@href')[0]
-            #     )
-
-            # event.add_source(EVENTS_URL)
-            # event.add_source(event_url.replace(" ", "%20"))
+        for item in row.xpath('Agenda/Item'):
+            agenda_desc = item.xpath('string(Text)').strip()
+            if agenda_desc != '':
+                agenda_item = event.add_agenda_item(description=agenda_desc)
+                if item.xpath('BillRoot'):
+                    bill_id = item.xpath('string(BillRoot)')
+                    # AK Bill ids have a bunch of extra spaces
+                    bill_id = re.sub(r'\s+', ' ', bill_id)
+                    agenda_item.add_bill(bill_id)
 
         yield event
-
 
     def scrape_committees(self, session):
         listing_url = '/committees'
         args = {
-            'minifyresult': 'false',
+            'minifyresult': 'true',
             'session': session
         }
         page = self.api_request(listing_url, args)
@@ -134,7 +128,6 @@ class AKEventScraper(Scraper, LXMLMixin):
         # http://www.akleg.gov/basis/BasisPublicServiceAPI.pdf
 
         # http://www.legis.state.ak.us/publicservice/basis/meetings?minifyresult=false&session=31
-        # http://www.legis.state.ak.us/publicservice/basis/meetings?minifyresult=false&session=31
         # X-Alaska-Legislature-Basis-Version:1.2
         # X-Alaska-Legislature-Basis-Query:meetings;details
         headers['X-Alaska-Legislature-Basis-Version'] = '1.2'
@@ -143,10 +136,3 @@ class AKEventScraper(Scraper, LXMLMixin):
         page = self.get(url, params=args, headers=headers)
         page = lxml.etree.fromstring(page.content)
         return page
-
-    def xpath(elem, path):
-        """
-        A helper to run xpath with the proper namespaces for the Washington
-        Legislative API.
-        """
-        return elem.xpath(path, namespaces=NS)
