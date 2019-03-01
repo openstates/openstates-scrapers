@@ -7,6 +7,7 @@ from pupa.scrape import Jurisdiction, Organization
 from .people import MAPersonScraper
 # from .committees import MACommitteeScraper
 from .bills import MABillScraper
+from .events import MAEventScraper
 
 
 class Massachusetts(Jurisdiction):
@@ -18,6 +19,7 @@ class Massachusetts(Jurisdiction):
         'people': MAPersonScraper,
         # 'committees': MACommitteeScraper,
         'bills': MABillScraper,
+        'events': MAEventScraper,
     }
     legislative_sessions = [
         {
