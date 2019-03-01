@@ -236,7 +236,7 @@ class MIBillScraper(Scraper):
                 name = name[0]
             else:
                 name = row.text_content().strip()
-            url = BASE_URL + a[0].get('href').replace('../', '/')
+            url = a[0].get('href')
             return name, url
 
     def parse_roll_call(self, url, rc_num):
