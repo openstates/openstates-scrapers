@@ -2,10 +2,10 @@ import pytz
 import lxml
 import dateutil.parser
 import datetime
-import re
 
 from openstates.utils import LXMLMixin
 from pupa.scrape import Scraper, Event
+
 
 class MAEventScraper(Scraper, LXMLMixin):
     _TZ = pytz.timezone('US/Eastern')
@@ -15,15 +15,17 @@ class MAEventScraper(Scraper, LXMLMixin):
         if start is None:
             start_date = datetime.datetime.now().strftime(self.date_format)
         else:
-            start_date = datetime.datetime.strptime("%Y-%m-%d")
+            start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
+            start_date = start_date.strftime(self.date_format)
 
         # default to 30 days if no end
         if end is None:
             dtdelta = datetime.timedelta(days=30)
-            end_date =  datetime.datetime.now() + dtdelta
+            end_date = datetime.datetime.now() + dtdelta
             end_date = end_date.strftime(self.date_format)
         else:
-            end_date = datetime.datetime.strptime("%Y-%m-%d")
+            end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
+            end_date = end_date.strftime(self.date_format)
 
         url = 'https://malegislature.gov/Events/FilterEventResults'
 
@@ -59,12 +61,13 @@ class MAEventScraper(Scraper, LXMLMixin):
         page.make_links_absolute('https://malegislature.gov/')
 
         title = page.xpath('string(//div[contains(@class,"followable")]/h1)')
-        title = title.replace('Hearing Details','').strip()
+        title = title.replace('Hearing Details', '').strip()
+        title = title.replace('Special Event Details', '')
 
         start_day = page.xpath('string(//dl[contains(@class,"eventInformation")]/dd[2])').strip()
         start_time = page.xpath('string(//dl[contains(@class,"eventInformation")]/dd[3])').strip()
 
-        location = page.xpath('string(//dl[contains(@class,"eventInformation")]/dd[4]/a)').strip()
+        location = page.xpath('string(//dl[contains(@class,"eventInformation")]/dd[4]//a)').strip()
 
         description = page.xpath('string(//dl[contains(@class,"eventInformation")]/dd[5])').strip()
 
@@ -84,11 +87,16 @@ class MAEventScraper(Scraper, LXMLMixin):
         event.add_source(url)
 
         agenda_rows = page.xpath(
-            '//div[contains(@class,"col-sm-8") and .//h2[contains(@class,"agendaHeader")]]/div/div/div[contains(@class,"panel-default")]')
+            '//div[contains(@class,"col-sm-8") and .//h2[contains(@class,"agendaHeader")]]'
+            '/div/div/div[contains(@class,"panel-default")]')
 
         for row in agenda_rows:
             # only select the text node, not the spans
             agenda_title = row.xpath('string(.//h4/a/text()[normalize-space()])').strip()
+
+            if agenda_title == '':
+                agenda_title = row.xpath('string(.//h4/text()[normalize-space()])').strip()
+
             agenda = event.add_agenda_item(description=agenda_title)
 
             bills = row.xpath('.//tbody/tr/td[1]/a/text()')
