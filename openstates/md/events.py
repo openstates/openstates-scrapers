@@ -89,6 +89,13 @@ class MDEventScraper(Scraper, LXMLMixin):
             bill = item.xpath('.//div[@class="col-xs-1 Item"]/a/text()')[0].strip()
             agenda.add_bill(bill)
 
+        video = row.xpath('.//a[./span[@class="OnDemand"]]')
+        if video:
+            event.add_media_link(
+                'Video of Hearing',
+                video[0].xpath('@href')[0],
+                'text/html'
+            )
 
         if 'subcommittee' in title.lower():
             subcom = title.split('-')[0].strip()
