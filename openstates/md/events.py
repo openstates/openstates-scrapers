@@ -1,8 +1,6 @@
 import pytz
-import lxml
 import dateutil.parser
 import datetime
-import re
 
 from urllib.parse import urlsplit, parse_qs
 from openstates.utils import LXMLMixin
@@ -42,7 +40,8 @@ class MDEventScraper(Scraper, LXMLMixin):
             yield from self.scrape_chamber(page, chamber)
 
     def scrape_chamber(self, page, chamber):
-        xpath = '//div[@id="ContentPlaceHolder1_div{}SingleColumn"]/div'.format(self.chambers[chamber])
+        xpath = '//div[@id="ContentPlaceHolder1_div{}SingleColumn"]' \
+                '/div'.format(self.chambers[chamber])
         com = None
         rows = page.xpath(xpath)
 
@@ -82,7 +81,8 @@ class MDEventScraper(Scraper, LXMLMixin):
                 on_duplicate="ignore"
             )
 
-        for item in row.xpath('.//div[contains(@class,"ItemContainer")][./div[@class="col-xs-1 Item"]]'):
+        for item in row.xpath('.//div[contains(@class,"ItemContainer")]'
+                              '[./div[@class="col-xs-1 Item"]]'):
             description = item.xpath('string(.)').strip()
             agenda = event.add_agenda_item(description=description)
 
@@ -99,7 +99,6 @@ class MDEventScraper(Scraper, LXMLMixin):
 
         if 'subcommittee' in title.lower():
             subcom = title.split('-')[0].strip()
-            print(subcom)
             event.add_participant(
                 subcom,
                 type='committee',
