@@ -577,10 +577,10 @@ class CABillScraper(Scraper):
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
-                    chamber = 'lower'
+                    vote_chamber = 'lower'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 elif first_part.startswith('sen'):
-                    chamber = 'upper'
+                    vote_chamber = 'upper'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
@@ -632,7 +632,7 @@ class CABillScraper(Scraper):
                     result='pass' if result else 'fail',
                     classification=vtype,
                     # organization=org,
-                    chamber=chamber,
+                    chamber=vote_chamber,
                     bill=fsbill,
                 )
                 fsvote.extras = {'threshold': vote.threshold}
