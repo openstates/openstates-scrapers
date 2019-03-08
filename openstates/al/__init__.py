@@ -105,7 +105,14 @@ class Alabama(Jurisdiction):
             "identifier": "2019rs",
             "name": "2019 Regular Session",
             "start_date": "2019-03-05"
-        }
+        },
+        {
+            "_scraped_name": "First Special Session 2019",
+            "classification": "special",
+            "identifier": "2019fs",
+            "name": "First Special Session 2019",
+            "start_date": "2019-03-08"
+        },
     ]
     ignored_scraped_sessions = [
         "Regular Session 1998",
