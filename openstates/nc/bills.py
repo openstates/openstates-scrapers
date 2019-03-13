@@ -99,7 +99,7 @@ class NCBillScraper(Scraper):
         spon_row = doc.xpath('//div[contains(text(), "Sponsors")]/following-sibling::div')[0]
         # first sponsors are primary, until we see (Primary)
         spon_type = 'primary'
-        spon_lines = spon_row.text_content().replace('\r\n',';')
+        spon_lines = spon_row.text_content().replace('\r\n', ';')
         for leg in spon_lines.split(';'):
             name = leg.replace(u'\xa0', ' ').strip()
             if name.startswith('(Primary)') or name.endswith('(Primary)'):
