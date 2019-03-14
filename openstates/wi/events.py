@@ -83,6 +83,11 @@ class WIEventScraper(Scraper, LXMLMixin):
 
             event.add_document("notice", notice, media_type='application/pdf')
 
+            for entry in what:
+                item = event.add_agenda_item(entry)
+                if entry.startswith('AB') or entry.startswith('SB'):
+                    item.add_bill(entry)
+
             for thing in who:
                 event.add_person(thing['name'])
 
