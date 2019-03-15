@@ -4,6 +4,7 @@ lxml>=4.3,<5
 pytz>=2018
 feedparser>=5.2,<6
 spatula
+python-dateutil
 
 # development
 ipdb>=0.11
