@@ -205,17 +205,20 @@ class AZBillScraper(Scraper):
             else:
                 raise ValueError(
                     'Unexpected committee type: {}'.format(status['Committee']['TypeName']))
-            action_date = datetime.datetime.strptime(
-                status['ReportDate'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
-            bill.add_action(
-                description=status['Action'],
-                chamber={
-                    'S': 'upper',
-                    'H': 'lower',
-                }[status['Committee']['LegislativeBody']],
-                date=action_date,
-                classification=categories,
-            )
+            if status['ReportDate']:
+                action_date = datetime.datetime.strptime(
+                    status['ReportDate'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
+                bill.add_action(
+                    description=status['Action'],
+                    chamber={
+                        'S': 'upper',
+                        'H': 'lower',
+                    }[status['Committee']['LegislativeBody']],
+                    date=action_date,
+                    classification=categories,
+                )
+            else:
+                self.info("Action without report date: {}".format(status['Action']))
         else:
             # most of the unclassified ones are hearings
             # https://www.azleg.gov/faq/abbreviations/
