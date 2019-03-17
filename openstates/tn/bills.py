@@ -285,10 +285,10 @@ class TNBillScraper(Scraper):
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
-            for bill_link in bill_list_page.xpath(
+            for bill_link in set(bill_list_page.xpath(
                 '//h1[text()="Legislation"]/following-sibling::div/'
                 'div/div/div//a/@href'
-            ):
+            )):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
                     yield bill
