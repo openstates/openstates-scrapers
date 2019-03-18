@@ -315,6 +315,7 @@ class CABillScraper(Scraper):
                 'SB': 'bill',
                 'SCA': 'constitutional amendment',
                 'SCR': 'concurrent resolution',
+                'SJR': 'joint resolution',
                 'SR': 'resolution',
             }
         }
