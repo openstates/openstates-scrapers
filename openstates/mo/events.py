@@ -32,16 +32,25 @@ class MOEventScraper(Scraper, LXMLMixin):
     def scrape_upper(self):
         listing_url = 'https://www.senate.mo.gov/hearingsschedule/hrings.htm'
 
-        page = self.lxmlize(listing_url)
+        html = self.get(listing_url).text
 
-        ct = 0
-        for row in page.xpath('//hr'):
-            when_date = self.row_content(page, 'Date:', ct)
-            when_time = self.row_content(page, 'Time:', ct)
-            location = self.row_content(page, 'Room:', ct)
+        bill_link_xpath = './/a[contains(@href, "Bill.aspx") ' \
+                        'or contains(@href, "bill.aspx")]/text()'
 
-            # com = self.row_content(page, 'Committee:', ct)
+        # The HTML here isn't wrapped in a container per-event
+        # which makes xpath a pain. So string split by <hr>
+        # then parse each event's fragment for cleaner results
+        for fragment in html.split('<hr />')[1:]:
+            page = lxml.html.fromstring(fragment)
+            ct = 0
+
+            when_date = self.row_content(page, 'Date:')
+            when_time = self.row_content(page, 'Time:')
+            location = self.row_content(page, 'Room:')
+
+            # com = self.row_content(page, 'Committee:')
             com = page.xpath('//td[descendant::b[contains(text(),"Committee")]]/a/text()')[ct]
+            com = com.split(', Senator')[0].strip()
 
             start_date = self._TZ.localize(
                 dateutil.parser.parse('{} {}'.format(when_date, when_time))
@@ -61,48 +70,26 @@ class MOEventScraper(Scraper, LXMLMixin):
                 note='host',
             )
 
-            ct += 1
+            for bill_table in page.xpath('//table[@width="85%" and @border="0"]'):
+                bill_link = ''
+                if bill_table.xpath(bill_link_xpath):
+                    agenda_line = bill_table.xpath('string(tr[2])').strip()
+                    agenda_item = event.add_agenda_item(description=agenda_line)
 
-            print(when_date, when_time, location, com)
+                    bill_link = bill_table.xpath(bill_link_xpath)[0].strip()
+                    agenda_item.add_bill(bill_link)
+                else:
+                    agenda_line = bill_table.xpath('string(tr[1])').strip()
+                    agenda_item = event.add_agenda_item(description=agenda_line)
+
             yield event
 
-        # start_date = dateutil.parser.parse(row.xpath('string(Schedule)'))
-        # # todo: do i need to self._TZ.localize() ?
-
-        # event = Event(
-        #     start_date=start_date,
-        #     name=name,
-        #     location_name=location
-        # )
-
-        # event.add_source('http://w3.akleg.gov/index.php#tab4')
-
-        # event.add_participant(
-        #     committee_name,
-        #     type='committee',
-        #     note='host',
-        # )
-
-        # for item in row.xpath('Agenda/Item'):
-        #     agenda_desc = item.xpath('string(Text)').strip()
-        #     if agenda_desc != '':
-        #         agenda_item = event.add_agenda_item(description=agenda_desc)
-        #         if item.xpath('BillRoot'):
-        #             bill_id = item.xpath('string(BillRoot)')
-        #             # AK Bill ids have a bunch of extra spaces
-        #             bill_id = re.sub(r'\s+', ' ', bill_id)
-        #             agenda_item.add_bill(bill_id)
-
-        # yield event
 
     # Given <td><b>header</b> other text</td>,
-    # return the ct-th occurrence of 'other text'
-    def row_content(self, page, header, ct):
+    # return 'other text'
+    def row_content(self, page, header):
         content = page.xpath('//td[descendant::b[contains(text(),"{}")]]/text()'.format(header))
-        if len(content) > ct:
-            return content[ct].strip()
+        if len(content) > 0:
+            return content[0].strip()
         else:
             return ""
-
-    # $x('//table[following::hr[9] and preceding::hr[1]]');
-    # //table[preceding::hr[10]]
