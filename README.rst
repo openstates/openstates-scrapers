@@ -1,4 +1,4 @@
-The Open States Project collects and makes available data about state legislative activities, including bill summaries, votes, sponsorships and state legislator information. This data is gathered directly from the states and made available in a common format for interested developers, through a JSON API and data dumps.
+The Open States project collects and makes available data about state legislative activities, including bill summaries, votes, sponsorships and state legislator information. This data is gathered directly from the states and made available in a common format for interested developers, through a JSON API and data dumps.
 
 Links
 =====
@@ -10,12 +10,15 @@ Links
 
 Getting Started
 ===============
+
 We use `Docker <https://www.docker.com/products/docker>`_ to provide a reproducible development environment. Make sure
-you have Docker installed.  Inside of the directory you cloned this project into::
+you have Docker installed.
 
-  docker-compose run --rm scrape <abbreviated state code>  # Scrapes the state indicated by the code e.g. "ny"
+Inside your Open States repository directory, run a scrape for a specific state by running::
 
-For each state, you can also select one or more individual scrapers to run.  The scraper names vary from state to state; look at the ``scrapers`` listed in the state's ``__init__.py``. For example, Tennessee has::
+  docker-compose run --rm scrape <state postal code>
+
+You can also choose to scrape only specific data types for a state. The data types available vary from state to state; look at the ``scrapers`` listed in the state's ``__init__.py`` for a list. For example, Tennessee (with a state postal code of ``tn``) has::
 
     scrapers = {
         'bills': TNBillScraper,
@@ -24,39 +27,38 @@ For each state, you can also select one or more individual scrapers to run.  The
         'people': TNPersonScraper,
     }
 
-So you can limit the scrape to Tennessee's (tn) committees and legislators using::
+So you can limit a Tennessee scrape to only committees and legislators using::
 
   docker-compose run --rm scrape tn committees people
 
-After retrieving everything from the state, `scrape` imports the data into a Postgresql database. If you want to skip this step, include a `--scrape` modifier at the end of the command line, like so::
+After retrieving everything from the state, ``scrape`` imports the data into a PostgreSQL database. If you want to skip this step, include a ``--scrape`` flag at the end of your command, like so::
 
-  docker-compose run --rm scrape tn people --scrape
+  docker-compose run --rm scrape tn committees people --scrape
 
-To import data into a postgres database, start the postgres service using docker compose::
+If you *do* want to import data into Postgres, start a Postgres service using Docker Compose::
 
     docker-compose up postgres
 
-Then run database migrations and import jurisdictions::
+Then run database migrations and import `jurisdictions <https://opencivicdata.readthedocs.io/en/latest/data/jurisdiction.html>`_, thus initializing the database contents::
 
     docker-compose run --rm dbinit
 
-Now you can run the scrape service without the `--scrape` flag, and data will be imported into postgres. You can connect to the database and inspect data using `psql` (credentials are set in `docker-compose.yml`)::
+Now you can run the scrape service without the ``--scrape`` flag, and data will be imported into Postgres. You can connect to the database and inspect data using ``psql`` (credentials are set in ``docker-compose.yml``)::
 
     psql postgres://postgres:secret@localhost:5432/openstates
 
-After you run `scrape`, it will leave .json files, one for each entity scraped, in the ``_data`` project subdirectory. These contain the transformed, scraped data, and are very useful for debugging.
+After you run ``scrape`` (with or without the Postgres import), it will leave one JSON file in the ``_data`` subdirectory for each entity that was scraped. These JSON files contain the transformed, scraped data, and are very useful for debugging.
 
-Check out the `writing scrapers guide <https://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand how the scrapers work & how to contribute.
+Check out the `writing scrapers guide <https://docs.openstates.org/en/latest/contributing/getting-started.html>`_ to understand more about how the scrapers work, and how you can contribute.
 
 Testing
 =======
-To run all tests::
+
+Our scraping framework, Pupa, has a strong test harness, and requires well-structured data when ingesting. Furthermore, Open States scrapers should be written to fail when they encounter unexpected data, rather than guessing at its format and possibly ingesting bad data. Together, this means that there aren't many benefits to writing unit tests for particular Open States scrapers, versus high upkeep costs.
+
+Occasionally, states *will* have unit tests, though, for specific structural cases. To run all tests::
 
   docker-compose run --rm --entrypoint=nosetests scrape /srv/openstates-web/openstates
-
-Note that Illinois is the only state with scraper tests right now.
-
-Our scraping framework, Pupa, has a strong test harness, and requires well-structured data when ingesting. Furthermore, Open States scrapers should be written to fail when they encounter unexpected data, rather than guessing at its format and possibly ingesting bad data. Together, this means that there aren't many benefits to writing unit tests for particular Open States scrapers, versus relatively high upkeep costs.
 
 API Keys
 ========
@@ -65,11 +67,11 @@ A few states require credentials to access their APIs. If you want to run code f
 
 * NY
 
-  * Get credentials at: http://legislation.nysenate.gov/
+  * Get credentials at: https://legislation.nysenate.gov/#signup
   * Set in environment prior to running scrape: ``NEW_YORK_API_KEY``
 
 * IN
 
-  * Get credentials at: http://docs.api.iga.in.gov/introduction.html
+  * Get credentials at: http://docs.api.iga.in.gov/introduction.html#security-and-authentication
   * Set in environment prior to running scrape: ``INDIANA_API_KEY``
-  * Indiana requires a user-agent as well, so set in environment prior to running scrape: ```USER_AGENT```
+  * As a side note, Indiana also requires a `user-agent string <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent>`_, so set that in your environment as well, prior to running scrape: ``USER_AGENT``
