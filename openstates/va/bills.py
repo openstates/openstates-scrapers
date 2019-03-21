@@ -168,6 +168,18 @@ class BillDetailPage(Page, Spatula):
                                           media_type='text/html',
                                           on_duplicate='ignore')
 
+        # amendments
+        for va in self.doc.xpath('//h4[text()="AMENDMENTS"]/following-sibling::ul[1]/li/a[1]'):
+            version_name = va.xpath('string(.)')
+            if ('adopted' in version_name.lower() \
+                    or 'engrossed' in version_name.lower()) \
+                    and 'not adopted' not in version_name.lower() \
+                    and 'not engrossed' not in version_name.lower():
+                version_url = va.xpath('@href')[0]
+                self.obj.add_version_link(version_name, version_url,
+                                          media_type='text/html',
+                                          on_duplicate='ignore')
+
         # actions
         cached_vote = None
         cached_action = None
