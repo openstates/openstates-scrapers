@@ -1,6 +1,7 @@
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 from datetime import datetime
+from .utils import append_parens
 import lxml.etree
 import os
 import re
@@ -197,13 +198,14 @@ class MSBillScraper(Scraper):
 
                 pdf_url = 'http://billstatus.ls.state.ms.us/' + pdf_url
                 html_url = 'http://billstatus.ls.state.ms.us/' + html_url
-                print (name, pdf_url)
-                bill.add_version_link(name, pdf_url,
-                                      on_duplicate='ignore',
-                                      media_type='application/pdf')
-                bill.add_version_link(name, html_url,
-                                      on_duplicate='ignore',
-                                      media_type='text/html')
+
+                if 'adopted' in name.lower() or 'amendment report' in name.lower():
+                    bill.add_version_link(name, pdf_url,
+                                          on_duplicate='ignore',
+                                          media_type='application/pdf')
+                    bill.add_version_link(name, html_url,
+                                          on_duplicate='ignore',
+                                          media_type='text/html')
 
             # avoid duplicate votes
             seen_votes = set()
