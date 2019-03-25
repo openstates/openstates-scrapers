@@ -189,6 +189,11 @@ class KSBillScraper(Scraper):
             self.warning("{} fetching vote {}, skipping".format(err, link))
             return
 
+        if 'Varnish cache server' in text:
+            self.warning("Scrape rate is too high, try re-scraping with "
+                         "The --rpm set to a lower number")
+            return
+
         if 'Page Not Found' in text or 'Page Unavailable' in text:
             self.warning("missing vote, skipping")
             return
@@ -199,7 +204,6 @@ class KSBillScraper(Scraper):
         vote_chamber = chamber_date_line_words[0]
         vote_date = datetime.datetime.strptime(chamber_date_line_words[-1], '%m/%d/%Y')
         vote_status = " ".join(chamber_date_line_words[2:-2])
-
         opinions = member_doc.xpath("//div[@id='main_content']/h3[position() > 1]/text()")
         if len(opinions) > 0:
             vote_status = vote_status if vote_status.strip() else motion[0]
