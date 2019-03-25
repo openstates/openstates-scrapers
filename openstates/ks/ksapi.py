@@ -188,4 +188,5 @@ action_codes = {
     'mot_susp_206': None,
     'cur_con_101': None,  # concur. failed
     'cur_om_141': 'referral-committee',
+    'misc_he_200': None,
 }
