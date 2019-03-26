@@ -407,9 +407,9 @@ class ALBillScraper(Scraper):
 
                 if amendment:
                     amend_url = (
-                    'http://alisondb.legislature.state.al.us/ALISON/'
-                    'SearchableInstruments/{0}/PrintFiles/{1}.pdf'.
-                    format(self.session, amendment))
+                        'http://alisondb.legislature.state.al.us/ALISON/'
+                        'SearchableInstruments/{0}/PrintFiles/{1}.pdf'.
+                        format(self.session, amendment))
 
                     amend_name = 'Amd/Sub {}'.format(amendment)
 
