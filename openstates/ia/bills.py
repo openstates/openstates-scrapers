@@ -200,21 +200,22 @@ class IABillScraper(Scraper):
             version_urls = [link['url']
                             for link in [i for sub in links for i in sub]]
             if 'amendment' in action.lower():
-                for anchor in tr.xpath('td[2]/a'):
+                for anchor in tr.xpath('.//a[1]'):
                     if '-' in anchor.text:
-                        # These links aren't given hrefs for some reason
-                        # (needs to be fixed upstream)
-                        try:
-                            url = anchor.attrib['href']
-                        except KeyError:
-                            continue
+                        # https://www.legis.iowa.gov/docs/publications/AMDI/88/S3071.pdf
+                        amd_pattern = 'https://www.legis.iowa.gov/docs/publications/AMDI/{}/{}.pdf'
+                        amd_id = anchor.text.replace('-', '').strip()
+                        amd_url = amd_pattern.format(session_id, amd_id)
+                        amd_name = 'Amendment {}'.format(anchor.text.strip())
 
-                        if url not in version_urls:
+                        if amd_url not in version_urls:
                             bill.add_version_link(
-                                note=anchor.text,
-                                url=url,
-                                media_type='text/html')
-                            version_urls.append(url)
+                                note=amd_name,
+                                url=amd_url,
+                                media_type='application/pdf')
+                            version_urls.append(amd_url)
+                        else:
+                            self.info("Already Added {}, skipping".format(amd_url))
 
             if 'S.J.' in action or 'SCS' in action:
                 actor = 'upper'
