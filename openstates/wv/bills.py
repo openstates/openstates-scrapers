@@ -134,6 +134,8 @@ class WVBillScraper(Scraper):
         for version in self.scrape_versions(session, chamber, page, bill_id):
             bill.add_version_link(**version)
 
+        self.scrape_amendments(page, bill)
+
         # Resolution pages have different html.
         values = {}
         trs = page.xpath('//div[@id="bhistcontent"]/table/tr')
@@ -422,6 +424,14 @@ class WVBillScraper(Scraper):
             name = link.xpath('@title')[0].split('-')[1].strip()
             yield {'note': name, 'url': link.get('href'),
                    'media_type': 'text/html'}
+
+    def scrape_amendments(self, page, bill):
+        for row in page.xpath('//a[contains(@class,"billbundle") and contains(text(),"adopted")]'):
+            version_name = row.xpath('string(.)').strip()
+            version_url = row.xpath('@href')[0]
+            bill.add_version_link(version_name, version_url,
+                                  media_type='text/html',
+                                  on_duplicate='ignore')
 
     def scrape_versions(self, session, chamber, page, bill_id):
         '''
