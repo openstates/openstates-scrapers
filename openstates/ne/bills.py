@@ -167,12 +167,14 @@ class NEBillScraper(Scraper, LXMLMixin):
         yield from self.scrape_votes(bill, bill_page, actor)
 
     def scrape_amendments(self, bill, bill_page):
-        for row in bill_page.xpath('//div[contains(@class,"amends") and not(contains(@class,"mb-3"))]'):
+        amd_xpath = '//div[contains(@class,"amends") and not(contains(@class,"mb-3"))]'
+        for row in bill_page.xpath(amd_xpath):
             status = row.xpath('string(./div[2])').strip()
             if 'adopted' in status.lower():
                 version_url = row.xpath('./div[1]/a/@href')[0]
                 version_name = row.xpath('./div[1]/a/text()')[0]
-                bill.add_version_link(version_name, version_url, media_type='application/pdf', on_duplicate='ignore')
+                bill.add_version_link(
+                    version_name, version_url, media_type='application/pdf', on_duplicate='ignore')
 
     def scrape_votes(self, bill, bill_page, chamber):
         vote_links = bill_page.xpath(
