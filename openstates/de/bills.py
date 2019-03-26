@@ -338,7 +338,6 @@ class DEBillScraper(Scraper, LXMLMixin):
         if page == b'':
             return
         else:
-            print(page)
             page = json.loads(page)
 
         for row in page['Data']:
