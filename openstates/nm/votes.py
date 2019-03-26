@@ -71,6 +71,8 @@ def correct_name(name):
 
 
 def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
+    # When they vote in a substitute they mark it as XHB
+    bill_id = bill_id.replace('XHB', 'HB')
     passed = len(vote_record['yes']) > len(vote_record['no'])
     vote_event = VoteEvent(
         result='pass' if passed else 'fail',
