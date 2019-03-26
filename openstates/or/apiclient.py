@@ -1,5 +1,3 @@
-import os
-
 import requests
 
 
@@ -18,7 +16,8 @@ class OregonLegislatorODataClient(object):
         committee_members='Committees(CommitteeCode=\'{committee}\','
                           'SessionKey=\'{session}\')/CommitteeMembers',
         measures='LegislativeSessions(\'{session}\')/Measures'
-                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions',
+                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions,'
+                 'CommitteeAgendaItems/CommitteeProposedAmendments',
         votes='LegislativeSessions(\'{session}\')/Measures'
               '?$expand=MeasureHistoryActions/MeasureVotes,CommitteeAgendaItems/CommitteeVotes'
     )
@@ -34,8 +33,6 @@ class OregonLegislatorODataClient(object):
         if not scraper:
             scraper = requests.Session()
         self.scraper = scraper
-        self.username = os.environ['OLODATA_USERNAME']
-        self.password = os.environ['OLODATA_PASSWORD']
 
     def all_sessions(self):
         return self.get('sessions')
@@ -54,7 +51,6 @@ class OregonLegislatorODataClient(object):
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
         requests_kwargs.update(verify=True)
-        requests_kwargs.update(auth=(self.username, self.password))
         headers = requests_kwargs.get('headers', {})
         headers['Accept'] = "application/json"
         requests_kwargs['headers'] = headers

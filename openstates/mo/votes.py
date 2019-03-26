@@ -138,7 +138,7 @@ class MOVoteScraper(Scraper, LXMLMixin):
                         continue
                     if re.match(
                             r".*(Monday|Tuesday|Wednesday|Thursday|Friday|"
-                            "Saturday|Sunday), .* \d+, \d+.*",
+                            r"Saturday|Sunday), .* \d+, \d+.*",
                             line):
                         continue
 

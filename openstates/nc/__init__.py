@@ -1,6 +1,6 @@
 import lxml
 from pupa.scrape import Jurisdiction, Organization
-# from .people import NCPersonScraper
+from .people import NCPersonScraper
 # from .committees import NCCommitteeScraper
 from .bills import NCBillScraper
 
@@ -11,7 +11,7 @@ class NorthCarolina(Jurisdiction):
     name = "North Carolina"
     url = "http://www.ncleg.net/"
     scrapers = {
-        # 'people': NCPersonScraper,
+        'people': NCPersonScraper,
         # 'committees': NCCommitteeScraper,
         'bills': NCBillScraper,
     }
@@ -102,8 +102,17 @@ class NorthCarolina(Jurisdiction):
             "name": "2018 Extra Session 3",
             "start_date": "2018-10-02"
         },
+        {
+            "_scraped_name": "2019-2020 Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019-2020 Session",
+            "start_date": "2019-01-03",
+            "end_date": "2020-08-01"
+        },
     ]
     ignored_scraped_sessions = [
+        '2016 First Extra Session',
         '2008 Extra Session',
         '2007-2008 Session',
         '2007 Extra Session',
@@ -135,30 +144,15 @@ class NorthCarolina(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "North Carolina General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 120
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 50
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
         executive = Organization(name='Executive Office of the Governor',
                                  classification="executive")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield executive
@@ -169,7 +163,7 @@ class NorthCarolina(Jurisdiction):
         from openstates.utils.lxmlize import url_xpath
         # This is the URL that populates the session `<select>` in the
         # state homepage header navigation
-        return url_xpath('https://www.ncleg.net/webservices/api/sessionselectlist/false',
+        return url_xpath('https://webservices.ncleg.net/sessionselectlist/false',
                          '//option/text()')
 
     def extract_text(self, doc, data):

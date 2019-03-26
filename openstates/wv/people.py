@@ -97,7 +97,7 @@ class WVPersonScraper(Scraper):
                 capitol_phone = officedata['Capitol Phone:'][0]
             else:
                 raise ValueError('Invalid phone number')
-        except (IndexError, ValueError) as e:
+        except (IndexError, ValueError):
             capitol_phone = None
 
         if officedata['Capitol Office:']:
@@ -125,7 +125,7 @@ class WVPersonScraper(Scraper):
                 district_phone = officedata['Business Phone:'][0]
             else:
                 raise ValueError('Invalid phone number')
-        except (IndexError, ValueError) as e:
+        except (IndexError, ValueError):
             district_phone = None
 
         if officedata['Home:']:

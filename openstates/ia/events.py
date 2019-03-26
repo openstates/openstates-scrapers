@@ -64,7 +64,7 @@ class IAEventScraper(Scraper):
             for key in junk:
                 when = when.replace(key, '')
 
-            when = re.sub("\s+", " ", when).strip()
+            when = re.sub(r"\s+", " ", when).strip()
             if "tbd" in when.lower():
                 # OK. This is a partial date of some sort.
                 when = datetime.datetime.strptime(

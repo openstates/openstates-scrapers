@@ -13,6 +13,11 @@ from ._utils import canonicalize_url
 
 
 session_details = {
+    '101st': {
+        'speaker': 'Madigan',
+        'president': 'Cullerton',
+        'params': {'GA': '101', 'SessionId': '108'},
+    },
     '100th-special': {
         'speaker': 'Madigan',
         'president': 'Cullerton',
@@ -244,7 +249,6 @@ class IlBillScraper(Scraper):
         params['num1'] = '1'
         params['num2'] = '10000'
         params['DocTypeID'] = doc_type
-
         html = self.get(self.LEGISLATION_URL, params=params).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(self.LEGISLATION_URL)
@@ -285,7 +289,7 @@ class IlBillScraper(Scraper):
             return
 
         # bill id, title, summary
-        bill_num = re.findall('DocNum=(\d+)', url)[0]
+        bill_num = re.findall(r'DocNum=(\d+)', url)[0]
         bill_type = bill_type or DOC_TYPES[doc_type[1:]]
         bill_id = doc_type + bill_num
 
@@ -367,13 +371,27 @@ class IlBillScraper(Scraper):
         html = self.get(version_url).text
         doc = lxml.html.fromstring(html)
         doc.make_links_absolute(version_url)
+        pdf_only = False
+
+        # Some bills don't have html versions, even though they link to them
+        # http://ilga.gov/legislation/fulltext.asp?DocName=&
+        # SessionId=108&GA=101&DocTypeId=HB&DocNum=66&GAID=15&LegID=113888&SpecSess=&Session=
+        # These bills only show one PDF link at a time, so we're safe in the loop below
+        if 'HTML full text does not exist for this appropriations document' in html:
+            pdf_only = True
 
         for link in doc.xpath('//a[contains(@href, "fulltext")]'):
             name = link.text
             url = link.get('href')
+            url = '{}&print=true'.format(url)
+            mimetype = 'text/html'
             if name in VERSION_TYPES:
-                bill.add_version_link(name, url + '&print=true',
-                                      media_type='text/html')
+                if pdf_only:
+                    pdf_link = doc.xpath('//a[text()="PDF"]')[0]
+                    url = pdf_link.get('href')
+                    mimetype = 'application/pdf'
+
+                bill.add_version_link(name, url, media_type=mimetype)
             elif 'Amendment' in name or name in FULLTEXT_DOCUMENT_TYPES:
                 bill.add_document_link(name, url)
             elif 'Printer-Friendly' in name:

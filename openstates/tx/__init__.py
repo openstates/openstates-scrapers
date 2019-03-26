@@ -3,9 +3,9 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import TXBillScraper
 # from .committees import TXCommitteeScraper
-# from .events import TXEventScraper
-# from .people import TXPersonScraper
-# from .votes import TXVoteScraper
+from .events import TXEventScraper
+from .people import TXPersonScraper
+from .votes import TXVoteScraper
 
 
 class Texas(Jurisdiction):
@@ -14,12 +14,12 @@ class Texas(Jurisdiction):
     name = "Texas"
     url = "https://capitol.texas.gov/"
     scrapers = {
-        # 'people': TXPersonScraper,
+        'people': TXPersonScraper,
         # 'committees': TXCommitteeScraper,
         'bills': TXBillScraper,
         # Re-enable vote scraper when adding next regular session
-        # 'votes': TXVoteScraper,
-        # 'events': TXEventScraper
+        'votes': TXVoteScraper,
+        'events': TXEventScraper
     }
     legislative_sessions = [
         {
@@ -109,7 +109,15 @@ class Texas(Jurisdiction):
             "identifier": "851",
             "name": "85nd Legislature, 1st Called Session (2017)",
             "start_date": "2017-07-10"
-        }
+        },
+        {
+            "_scraped_name": "86(R) - 2019",
+            "classification": "primary",
+            "end_date": "2019-05-27",
+            "identifier": "86",
+            "name": "86th Legislature (2019)",
+            "start_date": "2019-01-08"
+        },
         # TODO: Re-enable vote scraper when adding next regular session
     ]
     ignored_scraped_sessions = [
@@ -148,28 +156,13 @@ class Texas(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Texas Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 150
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 31
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature

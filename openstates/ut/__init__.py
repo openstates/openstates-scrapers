@@ -4,8 +4,8 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
-# from .people import UTPersonScraper
-# from .events import UTEventScraper
+from .people import UTPersonScraper
+from .events import UTEventScraper
 # from .committees import UTCommitteeScraper
 from .bills import UTBillScraper
 
@@ -16,8 +16,8 @@ class Utah(Jurisdiction):
     name = "Utah"
     url = "http://le.utah.gov/"
     scrapers = {
-        # 'people': UTPersonScraper,
-        # 'events': UTEventScraper,
+        'people': UTPersonScraper,
+        'events': UTEventScraper,
         # 'committees': UTCommitteeScraper,
         'bills': UTBillScraper,
     }
@@ -160,6 +160,21 @@ class Utah(Jurisdiction):
             "name": "2017 2nd Special Session",
             "start_date": "2018-07-18",
         },
+        {
+            "_scraped_name": "2018 3rd Special Session",
+            "classification": "special",
+            "identifier": "2018S3",
+            "name": "2017 3rd Special Session",
+            "start_date": "2018-12-03",
+        },
+        {
+            "_scraped_name": "2019 General Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019 General Session",
+            "start_date": "2019-01-28",
+            "end_date": "2019-03-08",
+        },
     ]
     ignored_scraped_sessions = [
         "2011 Veto Override Session",
@@ -204,28 +219,13 @@ class Utah(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Utah State Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 75
-        lower_title = "Senator"
-        upper_chamber_name = "Senate"
-        upper_seats = 29
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         # fiscal analyst
         # fisc = Organization('Office of the Legislative Fiscal Analyst',

@@ -67,14 +67,14 @@ class TXCommitteeScraper(Scraper, LXMLMixin):
 
                     # Clean titles from member names.
                     if chamber == 'upper':
-                        member_name = re.sub('^Sen\.[\s]*', '',
+                        member_name = re.sub(r'^Sen\.[\s]*', '',
                                              member_name_text)
                     elif chamber == 'lower':
-                        member_name = re.sub('^Rep\.[\s]*', '',
+                        member_name = re.sub(r'^Rep\.[\s]*', '',
                                              member_name_text)
 
                     # Collapse multiple whitespaces in member names.
-                    member_name = re.sub('[\s]{2,}', ' ', member_name).strip()
+                    member_name = re.sub(r'[\s]{2,}', ' ', member_name).strip()
 
                     committee.add_member(member_name, member_role)
 

@@ -9,6 +9,7 @@ from functools import wraps
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 import lxml.html
+import urllib
 
 # Workaround to prevent chunking error (thanks @showerst)
 #
@@ -101,13 +102,13 @@ class SCBillScraper(Scraper):
     """
     urls = {
         'lower': {
-            'daily-bill-index': "http://www.scstatehouse.gov/hintro/hintros.php",
-            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil"
+            'daily-bill-index': "https://www.scstatehouse.gov/hintro/hintros.php",
+            'prefile-index': "https://www.scstatehouse.gov/sessphp/prefil"
                              "{last_two_digits_of_session_year}.php",
         },
         'upper': {
-            'daily-bill-index': "http://www.scstatehouse.gov/sintro/sintros.php",
-            'prefile-index': "http://www.scstatehouse.gov/sessphp/prefil"
+            'daily-bill-index': "https://www.scstatehouse.gov/sintro/sintros.php",
+            'prefile-index': "https://www.scstatehouse.gov/sessphp/prefil"
                              "{last_two_digits_of_session_year}.php",
         }
     }
@@ -137,9 +138,10 @@ class SCBillScraper(Scraper):
             '2013-2014': '120',
             '2015-2016': '121',
             '2017-2018': '122',
+            '2019-2020': '123',
         }[session]
 
-        subject_search_url = 'http://www.scstatehouse.gov/subjectsearch.php'
+        subject_search_url = 'https://www.scstatehouse.gov/subjectsearch.php'
         data = self.post(subject_search_url,
                          data=dict((
                              ('GETINDEX', 'Y'),
@@ -155,10 +157,21 @@ class SCBillScraper(Scraper):
             code = option.get('value')
             url = '%s?AORB=B&session=%s&indexcode=%s' % (subject_search_url,
                                                          session_code, code)
-            data = self.get(url).text
+
+            # SC's server is sending some noncomplient server responses
+            # that are confusing self.get
+            # workaround via
+            # https://stackoverflow.com/questions/14442222/how-to-handle-incompleteread-in-python
+            try:
+                self.info(url)
+                data = urllib.request.urlopen(url).read()
+            except (http.client.IncompleteRead) as e:
+                self.warning("Client IncompleteRead error on {}".format(url))
+                data = e.partial
+
             doc = lxml.html.fromstring(data)
             for bill in doc.xpath('//span[@style="font-weight:bold;"]'):
-                match = re.match('(?:H|S) \d{4}', bill.text)
+                match = re.match(r'(?:H|S) \d{4}', bill.text)
                 if match:
                     # remove * and leading zeroes
                     bill_id = match.group().replace('*', ' ')
@@ -278,7 +291,7 @@ class SCBillScraper(Scraper):
             # if a vfunc is active
             elif current_vfunc:
                 # split names apart by 3 or more spaces
-                names = re.split('\s{3,}', line)
+                names = re.split(r'\s{3,}', line)
                 for name in names:
                     if name:
                         if not option:

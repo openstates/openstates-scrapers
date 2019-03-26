@@ -85,9 +85,13 @@ class VTBillScraper(Scraper, LXMLMixin):
                     format(info['BillNumber'])
                 )
 
+            bill_id = info['BillNumber'].replace('.', '').replace(' ', '')
+            # put one space back in between type and number
+            bill_id = re.sub(r'([a-zA-Z]+)(\d+)', r'\1 \2', bill_id)
+
             # Create the bill using its basic information
             bill = Bill(
-                identifier=info['BillNumber'],
+                identifier=bill_id,
                 legislative_session=session,
                 chamber=bill_chamber,
                 title=info['Title'],
@@ -164,7 +168,7 @@ class VTBillScraper(Scraper, LXMLMixin):
 
             chambers_passed = set()
             for action in actions:
-                action = {k: v.strip() for k, v in action.items()}
+                action = {k: v for k, v in action.items() if v is not None}
 
                 if "Signed by Governor" in action['FullStatus']:
                     actor = 'executive'
@@ -251,6 +255,7 @@ class VTBillScraper(Scraper, LXMLMixin):
                 nay_count = int(re.search(r'Nays = (\d+)', vote['FullStatus']).group(1))
 
                 vote_to_add = VoteEvent(
+                    bill=bill,
                     chamber=('lower' if vote['ChamberCode'] == 'H' else 'upper'),
                     start_date=datetime.datetime.strftime(
                         datetime.datetime.strptime(vote['StatusDate'], '%m/%d/%Y'),
@@ -260,8 +265,6 @@ class VTBillScraper(Scraper, LXMLMixin):
                     result='pass' if did_pass else 'fail',
                     classification='passage',
                     legislative_session=session,
-                    bill=info['BillNumber'],
-                    bill_chamber=bill_chamber
                 )
                 vote_to_add.add_source(roll_call_url)
 

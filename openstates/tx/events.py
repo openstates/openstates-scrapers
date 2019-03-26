@@ -27,7 +27,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         metainfo = {}
         plaintext = ""
         for p in info:
-            content = re.sub("\s+", " ", p.text_content())
+            content = re.sub(r"\s+", " ", p.text_content())
             plaintext += content + "\n"
             if ":" in content:
                 key, val = content.split(":", 1)
@@ -43,7 +43,7 @@ class TXEventScraper(Scraper, LXMLMixin):
         if "CHAIR" in metainfo:
             chair = metainfo['CHAIR']
 
-        plaintext = re.sub("\s+", " ", plaintext).strip()
+        plaintext = re.sub(r"\s+", " ", plaintext).strip()
         regexp = r"(S|J|H)(B|M|R) (\d+)"
         bills = re.findall(regexp, plaintext)
 

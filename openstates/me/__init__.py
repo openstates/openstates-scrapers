@@ -2,7 +2,9 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import MEBillScraper
-# from .people import MEPersonScraper
+from .people import MEPersonScraper
+from .events import MEEventScraper
+
 # from .committees import MECommitteeScraper
 
 
@@ -13,7 +15,8 @@ class Maine(Jurisdiction):
     url = "http://legislature.maine.gov"
     scrapers = {
         'bills': MEBillScraper,
-        # 'people': MEPersonScraper,
+        'people': MEPersonScraper,
+        'events': MEEventScraper,
         # 'committees': MECommitteeScraper,
     }
     legislative_sessions = [
@@ -58,34 +61,28 @@ class Maine(Jurisdiction):
             "name": "128th Legislature (2017-2018)",
             "start_date": "2016-12-07",
             "end_date": "2017-06-14",
+        },
+        {
+            "_scraped_name": "129th Legislature",
+            "identifier": "129",
+            "name": "129th Legislature (2019-2020)",
+            "start_date": "2018-12-05",
+            "end_date": "2019-06-09",
         }
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        '2001-2002'
+    ]
 
     def get_organizations(self):
         legislature_name = "Maine Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 151
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 35
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield Organization(name='Office of the Governor', classification='executive')
@@ -95,6 +92,4 @@ class Maine(Jurisdiction):
     def get_session_list(self):
         sessions = url_xpath('http://www.mainelegislature.org/LawMakerWeb/advancedsearch.asp',
                              '//select[@name="LegSession"]/option/text()')
-        sessions.remove('jb-Test')
-        sessions.remove('2001-2002')
         return sessions

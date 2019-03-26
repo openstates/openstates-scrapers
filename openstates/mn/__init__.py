@@ -4,7 +4,7 @@ from openstates.utils import url_xpath
 
 from .bills import MNBillScraper
 # from .committees import MNCommitteeScraper
-# from .people import MNPersonScraper
+from .people import MNPersonScraper
 from .vote_events import MNVoteScraper
 # from .events import MNEventScraper
 
@@ -28,7 +28,7 @@ class Minnesota(Jurisdiction):
     scrapers = {
         "bills": MNBillScraper,
         # "committees": MNCommitteeScraper,
-        # "people": MNPersonScraper,
+        "people": MNPersonScraper,
         "votes": MNVoteScraper,
         # "events": MNEventScraper,
     }
@@ -107,6 +107,14 @@ class Minnesota(Jurisdiction):
             'start_date': '2017-01-03',
             'end_date': '2018-05-21'
         },
+        {
+            '_scraped_name': '91st Legislature, 2019-2020',
+            'classification': 'primary',
+            'identifier': '2019-2020',
+            'name': '2019-2020Regular Session',
+            'start_date': '2019-01-08',
+            'end_date': '2019-06-20'
+        },
     ]
     ignored_scraped_sessions = [
         '85th Legislature, 2007-2008',
@@ -138,14 +146,6 @@ class Minnesota(Jurisdiction):
         lower = Organization('Minnesota House of Representatives',
                              classification='lower', parent_id=legis._id)
 
-        for n in range(1, 68):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:mn/sldu:{}'.format(n))
-            lower.add_post(label=str(n) + 'A', role='Representative',
-                           division_id='ocd-division/country:us/state:mn/sldl:{}a'.format(n))
-            lower.add_post(label=str(n) + 'B', role='Representative',
-                           division_id='ocd-division/country:us/state:mn/sldl:{}b'.format(n))
-
         yield Organization('Governor of Minnesota', classification='executive')
         yield legis
         yield upper
@@ -154,4 +154,4 @@ class Minnesota(Jurisdiction):
     def get_session_list(self):
         return url_xpath('https://www.revisor.mn.gov/bills/'
                          'status_search.php?body=House',
-                         '//select[@name="session"]/option/text()', verify=False)
+                         '//select[@name="session"]/option/text()')

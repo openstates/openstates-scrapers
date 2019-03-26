@@ -70,7 +70,9 @@ class NCBillScraper(Scraper):
             bill_type = 'bill'
             bill_id = bill_id[0] + 'B ' + bill_id[1:]
 
-        bill_title = doc.xpath('//div[contains(@class, "h5")]')[0].text_content().strip()
+        bill_title = doc.xpath(
+            '/html/body/div/div/main/div[2]/div[contains(@class,"col-12")]/a')[0]
+        bill_title = bill_title.text_content().strip()
 
         bill = Bill(bill_id, legislative_session=session, title=bill_title, chamber=chamber,
                     classification=bill_type)
@@ -93,13 +95,22 @@ class NCBillScraper(Scraper):
             bill.add_version_link(version_name, version_url, media_type=media_type,
                                   on_duplicate='ignore')
 
+        # rows with a 'adopted' in the text and an amendment link, skip failed amds
+        for row in doc.xpath('//div[@class="card-body"]/div[contains(., "Adopted")'
+                             ' and contains(@class,"row")]//a[@title="Amendment"]'):
+            version_url = row.xpath('@href')[0]
+            version_name = row.xpath('string(.)').strip()
+            bill.add_version_link(version_name, version_url, media_type='application/pdf',
+                                  on_duplicate='ignore')
+
         # sponsors
         spon_row = doc.xpath('//div[contains(text(), "Sponsors")]/following-sibling::div')[0]
         # first sponsors are primary, until we see (Primary)
         spon_type = 'primary'
-        for leg in spon_row.text_content().split(';'):
+        spon_lines = spon_row.text_content().replace('\r\n', ';')
+        for leg in spon_lines.split(';'):
             name = leg.replace(u'\xa0', ' ').strip()
-            if name.startswith('(Primary)'):
+            if name.startswith('(Primary)') or name.endswith('(Primary)'):
                 name = name.replace('(Primary)', '').strip()
                 spon_type = 'cosponsor'
             if not name:
@@ -144,7 +155,8 @@ class NCBillScraper(Scraper):
 
             bill.add_action(action, act_date, chamber=actor, classification=atype)
 
-        yield from self.scrape_votes(bill, doc)
+        # TODO: Fix vote scraper
+        # yield from self.scrape_votes(bill, doc)
 
         yield bill
 
@@ -227,10 +239,15 @@ class NCBillScraper(Scraper):
 
     def scrape_chamber(self, chamber, session):
         chamber = {'lower': 'House', 'upper': 'Senate'}[chamber]
-        url = ('http://www.ncleg.net/gascripts/SimpleBillInquiry/'
-               'displaybills.pl?Session=%s&tab=Chamber&Chamber=%s') % (session, chamber)
 
-        data = self.get(url).text
+        url = 'https://www3.ncleg.gov/gascripts/SimpleBillInquiry/displaybills.pl'
+        post_data = {
+            'Session': session,
+            'tab': 'Chamber',
+            'Chamber': chamber
+        }
+
+        data = self.post(url, post_data).text
         doc = lxml.html.fromstring(data)
         for row in doc.xpath('//table[@cellpadding=3]/tr')[1:]:
             bill_id = row.xpath('td[1]/a/text()')[0]

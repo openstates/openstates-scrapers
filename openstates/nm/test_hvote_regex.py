@@ -96,7 +96,7 @@ RCS# 2811                    Fiftieth Legislature                       2/24/11
                             ___________________________________ (Chief Clerk)"""
 
 
-HOUSE_VOTE_RE = re.compile('([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
+HOUSE_VOTE_RE = re.compile(r'([YNE ])\s+([A-Z][a-z\'].+?)(?=\s[\sNYE])')
 
 
 def check_regex_against_vote(vote, y, n, a, e):

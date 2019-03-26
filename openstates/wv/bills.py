@@ -134,6 +134,8 @@ class WVBillScraper(Scraper):
         for version in self.scrape_versions(session, chamber, page, bill_id):
             bill.add_version_link(**version)
 
+        self.scrape_amendments(page, bill)
+
         # Resolution pages have different html.
         values = {}
         trs = page.xpath('//div[@id="bhistcontent"]/table/tr')
@@ -162,12 +164,12 @@ class WVBillScraper(Scraper):
         # Add cosponsors.
         if values.get('SPONSORS:'):
             sponsors = strip_sponsors('', values['SPONSORS:'])
-            sponsors = re.split(', (?![A-Z]\.)', sponsors)
+            sponsors = re.split(r', (?![A-Z]\.)', sponsors)
             for name in sponsors:
                 name = name.strip(', \n\r')
                 if name:
                     # Fix name splitting bug where "Neale, D. Hall"
-                    match = re.search('(.+?), ([DM]\. Hall)', name)
+                    match = re.search(r'(.+?), ([DM]\. Hall)', name)
                     if match:
                         for name in match.groups():
                             bill.add_sponsorship(
@@ -336,7 +338,7 @@ class WVBillScraper(Scraper):
         text = convert_pdf(filename, 'text').decode('utf-8')
         os.remove(filename)
 
-        if re.search('Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
+        if re.search(r'Yea:\s+\d+\s+Nay:\s+\d+\s+Absent:\s+\d+', text):
             yield from self.scrape_senate_vote_3col(bill, vote, text, url, date)
             return
 
@@ -422,6 +424,14 @@ class WVBillScraper(Scraper):
             name = link.xpath('@title')[0].split('-')[1].strip()
             yield {'note': name, 'url': link.get('href'),
                    'media_type': 'text/html'}
+
+    def scrape_amendments(self, page, bill):
+        for row in page.xpath('//a[contains(@class,"billbundle") and contains(text(),"adopted")]'):
+            version_name = row.xpath('string(.)').strip()
+            version_url = row.xpath('@href')[0]
+            bill.add_version_link(version_name, version_url,
+                                  media_type='text/html',
+                                  on_duplicate='ignore')
 
     def scrape_versions(self, session, chamber, page, bill_id):
         '''

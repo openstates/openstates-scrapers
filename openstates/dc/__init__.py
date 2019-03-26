@@ -1,11 +1,10 @@
-import requests
 from pupa.scrape import Jurisdiction, Organization
 
-# from .people import DCPersonScraper
+from .people import DCPersonScraper
 # from .committees import DCCommitteeScraper
 from .bills import DCBillScraper
 # from .events import DCEventScraper
-from .utils import decode_json
+from .utils import api_request
 
 
 class DistrictOfColumbia(Jurisdiction):
@@ -14,7 +13,7 @@ class DistrictOfColumbia(Jurisdiction):
     name = "District of Columbia"
     url = "https://dc.gov"
     scrapers = {
-        # 'people': DCPersonScraper,
+        'people': DCPersonScraper,
         # 'committees': DCCommitteeScraper,
         # 'events': DCEventScraper,
         'bills': DCBillScraper,
@@ -41,6 +40,13 @@ class DistrictOfColumbia(Jurisdiction):
             "name": "22nd Council Period (2017-2018)",
             "start_date": "2017-01-01",
             "end_date": "2017-12-31",
+        },
+        {
+            "_scraped_name": "23",
+            "identifier": "23",
+            "name": "23rd Council Period (2019-2020)",
+            "start_date": "2019-01-02",
+            "end_date": "2020-12-31",
         }
     ]
     ignored_scraped_sessions = [
@@ -58,23 +64,10 @@ class DistrictOfColumbia(Jurisdiction):
     ]
 
     def get_organizations(self):
-        council = Organization(name="Council of the District of Columbia",
-                               classification="legislature")
-        mayor = Organization(name="Executive Office of the Mayor",
-                             classification="executive")
-
-        council.add_post('Chairman', role="Chairman", division_id=self.division_id)
-        council.add_post('At-Large', role="Councilmember", division_id=self.division_id)
-
-        for n in range(1, 8+1):
-            council.add_post('Ward {}'.format(n), role="member",
-                             division_id='{}/ward:{}'.format(self.division_id, n))
-        yield mayor
-        yield council
+        yield Organization(name="Council of the District of Columbia",
+                           classification="legislature")
+        yield Organization(name="Executive Office of the Mayor", classification="executive")
 
     def get_session_list(self):
-        r = requests.post(
-            'http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/LIMSLookups',
-            headers={'content-type': 'application/json'})
-        data = decode_json(r.json())
+        data = api_request('/LIMSLookups')
         return [c['Prefix'] for c in data['d']['CouncilPeriods']]

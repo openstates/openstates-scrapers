@@ -1,6 +1,7 @@
 from pupa.scrape import Scraper, Bill, VoteEvent
 from pupa.utils.generic import convert_pdf
 from datetime import datetime
+from .utils import append_parens
 import lxml.etree
 import os
 import re
@@ -74,7 +75,7 @@ class MSBillScraper(Scraper):
             link = mr.xpath('string(ACTIONLINK)').replace("..", "")
             main_doc = mr.xpath('string(MEASURELINK)').replace("../../../", "")
             main_doc_url = 'http://billstatus.ls.state.ms.us/%s' % main_doc
-            bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf/%s' % (session, link)
+            bill_details_url = 'http://billstatus.ls.state.ms.us/%s/pdf%s' % (session, link)
             try:
                 details_page = self.get(bill_details_url)
             except scrapelib.HTTPError:
@@ -164,6 +165,48 @@ class MSBillScraper(Scraper):
                                       on_duplicate='ignore',
                                       media_type='text/html')
 
+            # amendments
+            # ex: http://billstatus.ls.state.ms.us/2018/pdf/history/HB/HB1040.xml
+            for amd in details_root.xpath('//AMENDMENTS/*'):
+                if amd.tag == 'HAM':
+                    name = amd.xpath('HAM_DESC[1]/text()')[0]
+                    name = append_parens(amd, 'HAM_DISP', name)
+                    name = append_parens(amd, 'HAM_VDESC', name)
+
+                    pdf_url = amd.xpath('string(HAM_PDF'
+                                        ')').replace("../", "")
+
+                    html_url = amd.xpath('string(HAM_OTHER'
+                                         ')').replace("../", "")
+                elif amd.tag == 'SAM':
+                    name = amd.xpath('SAM_DESC[1]/text()')[0]
+                    name = append_parens(amd, 'SAM_DISP', name)
+                    name = append_parens(amd, 'SAM_VDESC', name)
+
+                    pdf_url = amd.xpath('string(SAM_PDF'
+                                        ')').replace("../", "")
+
+                    html_url = amd.xpath('string(SAM_OTHER'
+                                         ')').replace("../", "")
+                elif amd.tag == 'AMRPT':
+                    name = amd.xpath('AMRPT_DESC[1]/text()')[0]
+                    pdf_url = amd.xpath('string(AMRPT_PDF'
+                                        ')').replace("../", "")
+
+                    html_url = amd.xpath('string(AMRPT_OTHER'
+                                         ')').replace("../", "")
+
+                pdf_url = 'http://billstatus.ls.state.ms.us/' + pdf_url
+                html_url = 'http://billstatus.ls.state.ms.us/' + html_url
+
+                if 'adopted' in name.lower() or 'amendment report' in name.lower():
+                    bill.add_version_link(name, pdf_url,
+                                          on_duplicate='ignore',
+                                          media_type='application/pdf')
+                    bill.add_version_link(name, html_url,
+                                          on_duplicate='ignore',
+                                          media_type='text/html')
+
             # avoid duplicate votes
             seen_votes = set()
 
@@ -201,7 +244,7 @@ class MSBillScraper(Scraper):
 
                 bill.add_action(action, self._tz.localize(date),
                                 chamber=actor,
-                                classification=atype if atype is not 'other' else None)
+                                classification=atype if atype != 'other' else None)
 
                 # use committee names as scraped subjects
                 subjects = details_root.xpath('//H_NAME/text()')

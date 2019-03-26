@@ -63,9 +63,9 @@ class WYBillScraper(Scraper, LXMLMixin):
     def scrape_bill(self, bill_num, session):
         chamber_map = {'House': 'lower', 'Senate': 'upper', 'LSO': 'executive'}
         # Sample with all keys: https://gist.github.com/showerst/d6cd03eff3e8b12ab01dbb219876db45
-        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/2018/' \
+        bill_json_url = 'http://wyoleg.gov/LsoService/api/BillInformation/{}/' \
                         '{}?calendarDate='.format(
-                            bill_num)
+                            session, bill_num)
         response = self.get(bill_json_url)
         bill_json = json.loads(response.content.decode('utf-8'))
 
@@ -80,16 +80,12 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         bill.add_title(bill_json['billTitle'])
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
-            bill_json['bill'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/{}/{}'.format(session,
+                                                                      bill_json['bill'])
         bill.add_source(source_url)
 
         for action_json in bill_json['billActions']:
-            # provided dates are ISO 8601, but in mountain time
-            action_date = datetime.datetime.strptime(
-                action_json['statusDate'], '%Y-%m-%dT%H:%M:%S')
-            local_action_date = TIMEZONE.localize(action_date)
-            utc_action_date = local_action_date.astimezone(pytz.utc)
+            utc_action_date = self.parse_local_date(action_json['statusDate'])
 
             actor = None
             if action_json['location'] and action_json['location'] in chamber_map:
@@ -147,8 +143,8 @@ class WYBillScraper(Scraper, LXMLMixin):
 
         for amendment in bill_json['amendments']:
             # http://wyoleg.gov/2018/Amends/SF0050H2001.pdf
-            url = 'http://wyoleg.gov/2018/Amends/{}.pdf'.format(
-                amendment['amendmentNumber'])
+            url = 'http://wyoleg.gov/{}/Amends/{}.pdf'.format(
+                session, amendment['amendmentNumber'])
 
             if amendment['sponsor'] and amendment['status']:
                 title = 'Amendment {} ({}) - {} ({})'.format(
@@ -259,15 +255,22 @@ class WYBillScraper(Scraper, LXMLMixin):
                 v.vote(option="other",
                        voter=name)
 
-        source_url = 'http://lso.wyoleg.gov/Legislation/2018/{}'.format(
-            vote_json['billNumber'])
+        source_url = 'http://lso.wyoleg.gov/Legislation/{}/{}'.format(
+            session, vote_json['billNumber'])
         v.add_source(source_url)
 
         yield v
 
     def parse_local_date(self, date_str):
         # provided dates are ISO 8601, but in mountain time
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+        # and occasionally have fractional time at the end
+        if '.' not in date_str:
+            date_str = date_str + '.0'
+
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        # Truncate microseconds; opencivicdata limits action date to 25 characters
+        # TODO: Fix in opencivicdata
+        date_obj = date_obj.replace(microsecond=0)
         local_date = TIMEZONE.localize(date_obj)
         utc_action_date = local_date.astimezone(pytz.utc)
         return utc_action_date

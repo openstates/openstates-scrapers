@@ -3,20 +3,20 @@ from openstates.utils.actions import Rule, BaseCategorizer
 
 
 rules = (
-    Rule([('(?P<yes_votes>\d+) Yeas - (?P<no_votes>\d+) '
-           'Nays- (?P<excused>\d+) Excused - (?P<absent>\d+) Absent'),
-          ('(?P<yes_votes>\d+) -Yeas, (?P<no_votes>\d+) -Nays, '
-           '(?P<excused>\d+) -Excused, (?P<absent>\d+) -Absent'),
-          '(?P<committees>Committee on .+?) suggested and ordered printed',
-          ('\(Yeas (?P<yes_votes>\d+) - Nays (?P<no_votes>\d+) - Absent '
-           '(?P<absent>\d+) - Excused (?P<excused>\d+)\)( \(Vacancy '
-           '(?P<vacant>\d+)\))?')]),
+    Rule([(r'(?P<yes_votes>\d+) Yeas - (?P<no_votes>\d+) '
+           r'Nays- (?P<excused>\d+) Excused - (?P<absent>\d+) Absent'),
+          (r'(?P<yes_votes>\d+) -Yeas, (?P<no_votes>\d+) -Nays, '
+           r'(?P<excused>\d+) -Excused, (?P<absent>\d+) -Absent'),
+          r'(?P<committees>Committee on .+?) suggested and ordered printed',
+          (r'\(Yeas (?P<yes_votes>\d+) - Nays (?P<no_votes>\d+) - Absent '
+           r'(?P<absent>\d+) - Excused (?P<excused>\d+)\)( \(Vacancy '
+           r'(?P<vacant>\d+)\))?')]),
 
-    Rule(['Representative (?P<legislators>.+?) of \S+',
-          'Senator (?P<legislators>.+?of \S+)',
-          'Representative (?P<legislators>[A-Z]+?( of [A-Za-z]+))',
-          'Senator (?P<legislators>\S+ of \S+)',
-          'Representative [A-Z ]+? of \S+']),
+    Rule([r'Representative (?P<legislators>.+?) of \S+',
+          r'Senator (?P<legislators>.+?of \S+)',
+          r'Representative (?P<legislators>[A-Z]+?( of [A-Za-z]+))',
+          r'Senator (?P<legislators>\S+ of \S+)',
+          r'Representative [A-Z ]+? of \S+']),
 
     Rule('REFERRED to the (?P<committees>Committee on [A-Z ]+(?![a-z]))',
          'referral-committee'),
@@ -24,7 +24,7 @@ rules = (
     Rule(['(?i)read once'], ['reading-1']),
     Rule('(?i)finally passed', 'passage'),
     Rule('(?i)passed to be enacted', 'passage'),
-    Rule('COMMITTED to the (?P<committees>Committee on .+?)\.',
+    Rule(r'COMMITTED to the (?P<committees>Committee on .+?)\.',
          'referral-committee'),
     Rule(r'Sent to the Engrossing Department', 'became-law'),
     Rule(r'VETO was NOT SUSTAINED', 'veto-override-passage'),

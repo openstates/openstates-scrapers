@@ -346,15 +346,19 @@ class NYPersonScraper(Scraper, LXMLMixin):
             office = self._parse_office(office_node)
 
             if office is not None:
+                office_type = '{} Office'.format(office['type'].title())
                 if office['address']:
-                    person.add_contact_detail(type='address', value=office['address'],
-                                              note='District Office')
+                    person.add_contact_detail(type='address',
+                                              value=office['address'],
+                                              note=office_type)
                 if office['phone']:
-                    person.add_contact_detail(type='voice', value=office['phone'],
-                                              note='District Office')
+                    person.add_contact_detail(type='voice',
+                                              value=office['phone'],
+                                              note=office_type)
                 if office['fax']:
-                    person.add_contact_detail(type='fax', value=office['fax'],
-                                              note='District Office')
+                    person.add_contact_detail(type='fax',
+                                              value=office['fax'],
+                                              note=office_type)
 
     def scrape_lower_chamber(self, chamber):
         url = 'http://assembly.state.ny.us/mem/?sh=email'
@@ -444,7 +448,9 @@ class NYPersonScraper(Scraper, LXMLMixin):
 
         for data in page.xpath('//div[@class="addrcola"]'):
             office_name = data.xpath('./div[@class="officehdg"]/text()')[0]
-            address = data.xpath('./div[@class="officeaddr"]//text()')
+            address = [line.strip()
+                       for line
+                       in data.xpath('./div[@class="officeaddr"]//text()')]
 
             if 'district' in office_name.lower():
                 office_type = 'District'
@@ -455,20 +461,22 @@ class NYPersonScraper(Scraper, LXMLMixin):
             address.pop()
 
             fax = None
-            if address[-1].startswith("Fax: "):
-                fax = address.pop().replace("Fax: ", "")
-
             phone = None
-            if re.search(r'\d{3}[-\s]?\d{3}[-\s]?\d{4}', address[-1]):
-                phone = address.pop()
+            if address:
+                if address[-1].startswith("Fax: "):
+                    fax = address.pop().replace("Fax: ", "")
 
-            address = '\n'.join(address)
+                if re.search(r'\d{3}[-\s]?\d{3}[-\s]?\d{4}', address[-1]):
+                    phone = address.pop()
 
-            person.add_contact_detail(type='address', value=address,
-                                      note=office_type + ' Office')
-            if phone:
-                person.add_contact_detail(type='voice', value=phone,
-                                          note=office_type + ' Office')
-            if fax:
-                person.add_contact_detail(type='fax', value=fax,
-                                          note=office_type + ' Office')
+                address = '\n'.join(address)
+
+                if len(address) > 1:
+                    person.add_contact_detail(type='address', value=address,
+                                              note=office_type + ' Office')
+                if phone:
+                    person.add_contact_detail(type='voice', value=phone,
+                                              note=office_type + ' Office')
+                if fax:
+                    person.add_contact_detail(type='fax', value=fax,
+                                              note=office_type + ' Office')

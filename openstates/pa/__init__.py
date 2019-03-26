@@ -3,8 +3,8 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 
 from .bills import PABillScraper
-# from .events import PAEventScraper
-# from .people import PALegislatorScraper
+from .events import PAEventScraper
+from .people import PALegislatorScraper
 # from .committees import PACommitteeScraper
 
 settings = {'SCRAPELIB_RPM': 30}
@@ -17,8 +17,8 @@ class Pennsylvania(Jurisdiction):
     url = "http://www.legis.state.pa.us/"
     scrapers = {
         'bills': PABillScraper,
-        # 'events': PAEventScraper,
-        # 'people': PALegislatorScraper,
+        'events': PAEventScraper,
+        'people': PALegislatorScraper,
         # 'committees': PACommitteeScraper,
     }
     legislative_sessions = [
@@ -59,7 +59,15 @@ class Pennsylvania(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-03",
             "end_date": "2017-12-31"
-        }
+        },
+        {
+            "_scraped_name": "2019-2020 Regular Session",
+            "classification": "primary",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-01",
+            "end_date": "2019-12-31"
+        },
     ]
     ignored_scraped_sessions = [
         "1965-1966 Special Session #1",
@@ -197,28 +205,13 @@ class Pennsylvania(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Pennsylvania General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 203
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 50
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper

@@ -75,7 +75,7 @@ _categorizer_rules = (
 
     # Amendments
     Rule(r'^Am\..+?tabled', 'amendment-deferral'),
-    Rule('^Am\. withdrawn\.\(Amendment \d+ \- (?P<version>\S+)',
+    Rule(r'^Am\. withdrawn\.\(Amendment \d+ \- (?P<version>\S+)',
          'amendment-withdrawal'),
     Rule(r'^Am\. reconsidered(, withdrawn)?\.\(Amendment \d \- (?P<version>.+?\))',
          'amendment-withdrawal'),
@@ -285,10 +285,10 @@ class TNBillScraper(Scraper):
             bill_list_page = lxml.html.fromstring(bill_list_page)
             bill_list_page.make_links_absolute(bill_listing)
 
-            for bill_link in bill_list_page.xpath(
+            for bill_link in set(bill_list_page.xpath(
                 '//h1[text()="Legislation"]/following-sibling::div/'
-                'div/div/div/label//a/@href'
-            ):
+                'div/div/div//a/@href'
+            )):
                 bill = self.scrape_bill(session, bill_link)
                 if bill:
                     yield bill
@@ -428,7 +428,7 @@ class TNBillScraper(Scraper):
                 yield vote
 
     def scrape_votes_for_chamber(self, chamber, vote_data, bill, link):
-        raw_vote_data = re.split('\w+? by [\w ]+?\s+-', vote_data.strip())[1:]
+        raw_vote_data = re.split(r'\w+? by [\w ]+?\s+-', vote_data.strip())[1:]
 
         motion_count = 1
 
@@ -436,7 +436,7 @@ class TNBillScraper(Scraper):
             raw_vote = raw_vote.split(u'\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0')
             motion = raw_vote[0]
 
-            vote_date = re.search('(\d+/\d+/\d+)', motion)
+            vote_date = re.search(r'(\d+/\d+/\d+)', motion)
             if vote_date:
                 vote_date = datetime.datetime.strptime(vote_date.group(), '%m/%d/%Y')
 
@@ -446,10 +446,10 @@ class TNBillScraper(Scraper):
                 'Rec. for pass' in motion or
                 'Adopted' in raw_vote[1]
             )
-            vote_regex = re.compile('\d+$')
-            aye_regex = re.compile('^.+voting aye were: (.+) -')
-            no_regex = re.compile('^.+voting no were: (.+) -')
-            not_voting_regex = re.compile('^.+present and not voting were: (.+) -')
+            vote_regex = re.compile(r'\d+$')
+            aye_regex = re.compile(r'^.+voting aye were: (.+) -')
+            no_regex = re.compile(r'^.+voting no were: (.+) -')
+            not_voting_regex = re.compile(r'^.+present and not voting were: (.+) -')
             yes_count = 0
             no_count = 0
             not_voting_count = 0

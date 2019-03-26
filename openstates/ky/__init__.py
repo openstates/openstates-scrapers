@@ -4,7 +4,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 
-# from .people import KYPersonScraper
+from .people import KYPersonScraper
 # from .committees import KYCommitteeScraper
 from .bills import KYBillScraper
 
@@ -15,7 +15,7 @@ class Kentucky(Jurisdiction):
     name = "Kentucky"
     url = "http://www.lrc.ky.gov/"
     scrapers = {
-        # 'people': KYPersonScraper,
+        'people': KYPersonScraper,
         # 'committees': KYCommitteeScraper,
         'bills': KYBillScraper,
     }
@@ -29,7 +29,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2011-01-04"
         },
         {
-            "_scraped_name": "2011 Extraordinary Session",
+            "_scraped_name": "2011 Special Session",
             "classification": "special",
             "end_date": "2011-04-06",
             "identifier": "2011SS",
@@ -45,7 +45,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2012-01-03"
         },
         {
-            "_scraped_name": "2012 Extraordinary Session",
+            "_scraped_name": "2012 Special Session",
             "classification": "special",
             "end_date": "2012-04-20",
             "identifier": "2012SS",
@@ -61,7 +61,7 @@ class Kentucky(Jurisdiction):
             "start_date": "2013-01-08"
         },
         {
-            "_scraped_name": "2013 Extraordinary Session",
+            "_scraped_name": "2013 Special Session",
             "classification": "special",
             "end_date": "2013-08-19",
             "identifier": "2013SS",
@@ -108,33 +108,59 @@ class Kentucky(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-02"
         },
+        {
+            "_scraped_name": "2018 Special Session",
+            "classification": "special",
+            "end_date": "2018-12-18",
+            "identifier": "2018SS",
+            "name": "2018 Special Session",
+            "start_date": "2018-12-19"
+        },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "classification": "primary",
+            "identifier": "2019RS",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-08"
+        },
     ]
-    ignored_scraped_sessions = []
+    ignored_scraped_sessions = [
+        '2019 Regular Session Prefiled Bills',
+        '2011 Special Session',
+        '2011 Regular Session',
+        '2010 Special Session',
+        '2010 Regular Session',
+        '2009 Special Session',
+        '2009 Regular Session',
+        '2008 Special Session',
+        '2008 Regular Session',
+        '2007 2nd Special Session',
+        '2007 Special Session',
+        '2007 Regular Session',
+        '2006 Special Session',
+        '2006 Regular Session',
+        '2005 Regular Session',
+        '2004 Special Session',
+        '2004 Regular Session',
+        '2003 Regular Session',
+        '2002 Special Session',
+        '2002 Regular Session',
+        '2001 Regular Session',
+        '2000 Regular Session',
+        '1998 Regular Session',
+        '1997 Special Session (Sept)',
+        '1997 Special Session (May)',
+    ]
 
     def get_organizations(self):
         legislature_name = "Kentucky General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 100
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 38
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
@@ -142,11 +168,12 @@ class Kentucky(Jurisdiction):
 
     def get_session_list(self):
         sessions = url_xpath(
-            'http://www.lrc.ky.gov/legislation.htm',
-            '//a[contains(@href, "record.htm")]/text()[normalize-space()]')
+            'https://apps.legislature.ky.gov/record/pastses.html',
+            '//td/div/a/text()')
 
         for index, session in enumerate(sessions):
             # Remove escaped whitespace characters.
-            sessions[index] = re.sub(r'[\r\n\t]+', '', session)
+            sessions[index] = re.sub(r'\s\s+', ' ', session)
+            sessions[index] = sessions[index].strip()
 
         return sessions

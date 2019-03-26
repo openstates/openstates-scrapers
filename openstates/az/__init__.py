@@ -4,7 +4,7 @@ import requests
 
 from pupa.scrape import Jurisdiction, Organization
 
-# from .people import AZPersonScraper
+from .people import AZPersonScraper
 # from .committees import AZCommitteeScraper
 # from .events import AZEventScraper
 from .bills import AZBillScraper
@@ -16,7 +16,7 @@ class Arizona(Jurisdiction):
     name = "Arizona"
     url = "http://www.azleg.gov/"
     scrapers = {
-        # 'people': AZPersonScraper,
+        'people': AZPersonScraper,
         # 'committees': AZCommitteeScraper,
         # 'events': AZEventScraper,
         'bills': AZBillScraper,
@@ -220,6 +220,14 @@ class Arizona(Jurisdiction):
             "start_date": "2018-01-08",
             "end_date": "2018-05-03",
         },
+        {
+            "_scraped_name": "2019 - Fifty-fourth Legislature - First Regular Session",
+            "classification": "primary",
+            "identifier": "54th-1st-regular",
+            "name": "54th Legislature - 1st Regular Session",
+            "start_date": "2019-01-14",
+            "end_date": "2019-03-29",
+        },
     ]
     ignored_scraped_sessions = [
         "2008 - Forty-eighth Legislature - Second Regular Session",
@@ -298,28 +306,13 @@ class Arizona(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Arizona State Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 30
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 30
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization('Office of the Governor', classification='executive')
         yield legislature

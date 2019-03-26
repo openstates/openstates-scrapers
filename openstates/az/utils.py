@@ -65,6 +65,13 @@ action_chamber_map = {
 status_action_map = {
     'PASSED': 'passage',
     'FAILED': 'failure',
+    'DPA/SE': 'amendment-passage',
+    'DPA': 'amendment-passage',
+    'DP': 'passage',
+    'FP': 'passage',
+    'INTRO': 'introduction',
+    'AMEND': 'amendment-introduction',
+    'W/D': 'withdrawal',
 }
 
 action_map = {

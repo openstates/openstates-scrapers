@@ -247,7 +247,7 @@ def get_committee_name_regex():
     _committee_abbrs = sorted(_committee_abbrs, reverse=True, key=len)
 
     _committee_abbr_regex = [
-        '%s' % '[\s,]*'.join(abbr.replace(',', '').split(' '))
+        '%s' % r'[\s,]*'.join(abbr.replace(',', '').split(' '))
         for abbr in _committee_abbrs
     ]
     _committee_abbr_regex = re.compile(
@@ -315,6 +315,7 @@ class CABillScraper(Scraper):
                 'SB': 'bill',
                 'SCA': 'constitutional amendment',
                 'SCR': 'concurrent resolution',
+                'SJR': 'joint resolution',
                 'SR': 'resolution',
             }
         }
@@ -342,6 +343,10 @@ class CABillScraper(Scraper):
             bill_id = bill.short_bill_id
 
             fsbill = Bill(bill_id, session, title='', chamber=chamber)
+            if ((bill_id.startswith('S') and chamber == 'lower') or
+                    (bill_id.startswith('A') and chamber == 'upper')):
+                print("!!!! BAD ID/CHAMBER PAIR !!!!", bill)
+                continue
 
             # # Construct session for web query, going from '20092010' to '0910'
             # source_session = session[2:4] + session[6:8]
@@ -545,7 +550,7 @@ class CABillScraper(Scraper):
                     kwargs['actor_info'] = actor_info
 
                 # Add strings for related legislators, if any.
-                rgx = '(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
+                rgx = r'(?:senator|assembly[mwp][^ .,:;]+)\s+[^ .,:;]+'
                 legislators = re.findall(rgx, action.action, re.I)
                 if legislators:
                     kwargs['legislators'] = legislators
@@ -577,10 +582,10 @@ class CABillScraper(Scraper):
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
-                    chamber = 'lower'
+                    vote_chamber = 'lower'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 elif first_part.startswith('sen'):
-                    chamber = 'upper'
+                    vote_chamber = 'upper'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
@@ -632,7 +637,7 @@ class CABillScraper(Scraper):
                     result='pass' if result else 'fail',
                     classification=vtype,
                     # organization=org,
-                    chamber=chamber,
+                    chamber=vote_chamber,
                     bill=fsbill,
                 )
                 fsvote.extras = {'threshold': vote.threshold}

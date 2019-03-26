@@ -2,10 +2,10 @@ from utils.lxmlize import url_xpath
 from .utils import text_after_line_numbers, pdfdata_to_text
 
 from pupa.scrape import Jurisdiction, Organization
-# from .people import NVPeopleScraper
+from .people import NVPeopleScraper
 # from .committees import NVCommitteeScraper
 from .bills import NVBillScraper
-# from .events import NVEventScraper
+from .events import NVEventScraper
 
 
 class Nevada(Jurisdiction):
@@ -14,10 +14,10 @@ class Nevada(Jurisdiction):
     name = "Nevada"
     url = "http://www.leg.state.nv.us/"
     scrapers = {
-        # 'people': NVPeopleScraper,
+        'people': NVPeopleScraper,
         # 'committees': NVCommitteeScraper,
         'bills': NVBillScraper,
-        # 'events': NVEventScraper,
+        'events': NVEventScraper,
     }
     legislative_sessions = [
         {
@@ -88,16 +88,15 @@ class Nevada(Jurisdiction):
             "name": "2017 Regular Session",
             "start_date": "2017-02-06"
         },
-        # {
-        #     "_scraped_name": "80th (2019) Session",
-        #     "classification": "primary",
-        #     "identifier": "80",
-        #     "name": "2019 Regular Session",
-        #     "start_date": "2019-02-04"
-        # },
+        {
+            "_scraped_name": "80th (2019) Session",
+            "classification": "primary",
+            "identifier": "80",
+            "name": "2019 Regular Session",
+            "start_date": "2019-02-04"
+        },
     ]
     ignored_scraped_sessions = [
-        "80th (2019) Session",
         "25th (2008) Special Session",
         "24th (2008) Special Session",
         "23rd (2007) Special Session",
@@ -124,28 +123,10 @@ class Nevada(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Nevada Legislature"
-        lower_chamber_name = "Assembly"
-        lower_seats = 42
-        lower_title = "Assembly Member"
-        upper_chamber_name = "Senate"
-        upper_seats = 21
-        upper_title = "Senator"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
+        lower = Organization('Assembly', classification='lower', parent_id=legislature._id)
 
         yield Organization('Office of the Governor', classification='executive')
         yield legislature

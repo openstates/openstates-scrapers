@@ -118,7 +118,7 @@ class MOPersonScraper(Scraper):
         page = self.get(roster_url).text
         page = lxml.html.fromstring(page)
         # This is the ASP.net table container
-        table_xpath = ("//table[@id='gvMembers_DXMainTable']")
+        table_xpath = ("//table[@id='theTable']")
         table = page.xpath(table_xpath)[0]
         for tr in table.xpath('tr')[3:]:
             # If a given term hasn't occurred yet, then ignore it

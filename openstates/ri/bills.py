@@ -279,7 +279,7 @@ class RIBillScraper(Scraper):
                 b.subject = subs
 
                 # keep bill ID around
-                self._bill_id_by_type[(chamber, re.findall('\d+', billid)[0])] = billid
+                self._bill_id_by_type[(chamber, re.findall(r'\d+', billid)[0])] = billid
 
                 self.process_actions(bill['actions'], b)
                 sponsors = bill['sponsors'][len("BY"):].strip()

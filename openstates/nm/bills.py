@@ -21,7 +21,7 @@ class NMBillScraper(Scraper):
     def _init_mdb(self, session):
         ftp_base = 'ftp://www.nmlegis.gov/other/'
         fname = 'LegInfo{}'.format(session[2:])
-        fname_re = '(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
+        fname_re = r'(\d{{2}}-\d{{2}}-\d{{2}}  \d{{2}}:\d{{2}}(?:A|P)M) .* '\
             '({fname}.*zip)'.format(fname=fname)
 
         # use listing to get latest modified LegInfo zip
@@ -93,6 +93,10 @@ class NMBillScraper(Scraper):
         for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
 
+        # McSorley resigned so they removed him from the API
+        # but he is still attached to some bills
+        sponsor_map['SMCSO'] = 'Cisco McSorley'
+
         subject_map = {}
         for subject in self.access_to_csv('TblSubjects'):
             subject_map[subject['SubjectCode']] = subject['Subject']
@@ -161,6 +165,7 @@ class NMBillScraper(Scraper):
         lesc_url = 'http://www.nmlegis.gov/Sessions/{}/LESCAnalysis/'.format(
             s_slug)
         final_url = 'http://www.nmlegis.gov/Sessions/{}/final/'.format(s_slug)
+        amd_url = 'http://www.nmlegis.gov/Sessions/{}/Amendments_In_Context/'.format(s_slug)
 
         # go through all of the links on these pages and add them to the
         # appropriate bills
@@ -170,7 +175,7 @@ class NMBillScraper(Scraper):
 
             for fname in doc.xpath('//a/text()'):
                 # split filename into bill_id format
-                match = re.match('([A-Z]+)0*(\d{1,4})', fname)
+                match = re.match(r'([A-Z]+)0*(\d{1,4})', fname)
                 if match:
                     bill_type, bill_num = match.groups()
                     mimetype = 'application/pdf' if fname.lower()\
@@ -189,11 +194,16 @@ class NMBillScraper(Scraper):
                                 bill.add_version_link(
                                     'Final Version', url + fname,
                                     media_type=mimetype)
+                            elif doc_type == 'Amendments in Context':
+                                bill.add_version_link(
+                                    doc_type, url + fname,
+                                    media_type=mimetype)
                             else:
                                 bill.add_document_link(doc_type, url + fname,
                                                        media_type=mimetype,
                                                        on_duplicate='ignore')
 
+        check_docs(amd_url, 'Amendments in Context')
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
         check_docs(final_url, 'Final Version')
@@ -386,7 +396,7 @@ class NMBillScraper(Scraper):
             if fname.endswith('pdf') and 'VOTE' not in fname:
                 continue
 
-            match = re.match('([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
+            match = re.match(r'([A-Z]+)0*(\d{1,4})([^.]*)', fname.upper())
             if match is None:
                 self.warning('No match, skipping')
                 continue
@@ -410,8 +420,8 @@ class NMBillScraper(Scraper):
                                       media_type=media_type)
 
             # floor amendments
-            elif re.match('F(S|H)\d', suffix):
-                a_chamber, num = re.match('F(S|H)(\d)', suffix).groups()
+            elif re.match(r'F(S|H)\d', suffix):
+                a_chamber, num = re.match(r'F(S|H)(\d)', suffix).groups()
                 a_chamber = 'House' if a_chamber == 'H' else 'Senate'
                 bill.add_document_link(
                     '{} Floor Amendment {}'.format(a_chamber, num),

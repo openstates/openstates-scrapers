@@ -263,7 +263,8 @@ class MDBillScraper(Scraper):
 
         # Keywords for identifying where names are located in the pdf
         show_stoppers = ['Voting Nay', 'Not Voting',
-                         'COPY', 'Excused', 'indicates vote change']
+                         'COPY', 'Excused', 'indicates vote change',
+                         'Indicates Vote Change']
         vote_index = 0
 
         # For matching number of names extracted with vote counts(extracted independently)
@@ -564,7 +565,7 @@ class MDBillScraper(Scraper):
 
         ranges = doc.xpath('//table[@class="box1leg"]//td/text()')
         for range_text in ranges:
-            match = re.match('(\w{2})0*(\d+) - \wB0*(\d+)', range_text.strip())
+            match = re.match(r'(\w{2})0*(\d+) - \wB0*(\d+)', range_text.strip())
             if match:
                 prefix, begin, end = match.groups()
                 if prefix[0] == chamber_prefix:

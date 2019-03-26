@@ -8,7 +8,7 @@ from pupa.scrape import Scraper, VoteEvent as Vote
 
 
 date_re = r".*(?P<date>(MONDAY|TUESDAY|WEDNESDAY|" + \
-              "THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
+              r"THURSDAY|FRIDAY|SATURDAY|SUNDAY),\s\w+\s\d{1,2},\s\d{4}).*"
 chamber_re = r".*JOURNAL OF THE ((HOUSE)|(SENATE)).*\d+.*DAY.*"
 page_re = r"Page\s\d+"
 
@@ -30,6 +30,7 @@ class NDVoteScraper(Scraper, LXMLMixin):
                 '63': '63-2013',
                 '64': '64-2015',
                 '65': '65-2017',
+                '66': '66-2019',
                 }[session]
 
         # Open the index page of the session's Registers, and open each

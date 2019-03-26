@@ -72,6 +72,7 @@ class MIBillScraper(Scraper):
                 return
 
         doc = lxml.html.fromstring(html)
+        doc.make_links_absolute('http://legislature.mi.gov')
 
         title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
 
@@ -116,8 +117,21 @@ class MIBillScraper(Scraper):
             classification = categorize_action(action)
             bill.add_action(action, date, chamber=actor, classification=classification)
 
+            # check if action mentions a sub
+            submatch = re.search(r'WITH SUBSTITUTE\s+([\w\-\d]+)', action, re.IGNORECASE)
+            if submatch and tds[2].xpath('a'):
+                version_url = tds[2].xpath('a/@href')[0]
+                version_name = tds[2].xpath('a/text()')[0].strip()
+                version_name = 'Substitute {}'.format(version_name)
+                self.info("Found Substitute {}".format(version_url))
+                if version_url.lower().endswith('.pdf'):
+                    mimetype = 'application/pdf'
+                elif version_url.lower().endswith('.htm'):
+                    mimetype = 'text/html'
+                bill.add_version_link(version_name, version_url, media_type=mimetype)
+
             # check if action mentions a vote
-            rcmatch = re.search('Roll Call # (\d+)', action, re.IGNORECASE)
+            rcmatch = re.search(r'Roll Call # (\d+)', action, re.IGNORECASE)
             if rcmatch:
                 rc_num = rcmatch.groups()[0]
                 # in format mileg.aspx?page=getobject&objectname=2011-SJ-02-10-011
@@ -138,12 +152,12 @@ class MIBillScraper(Scraper):
                     )
 
                     # check the expected counts vs actual
-                    count = re.search('YEAS (\d+)', action, re.IGNORECASE)
+                    count = re.search(r'YEAS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(results['yes']):
                         self.warning('vote count mismatch for %s %s, %d != %d' %
                                      (bill_id, action, count, len(results['yes'])))
-                    count = re.search('NAYS (\d+)', action, re.IGNORECASE)
+                    count = re.search(r'NAYS (\d+)', action, re.IGNORECASE)
                     count = int(count.groups()[0]) if count else 0
                     if count != len(results['no']):
                         self.warning('vote count mismatch for %s %s, %d != %d' %
@@ -222,7 +236,7 @@ class MIBillScraper(Scraper):
                 name = name[0]
             else:
                 name = row.text_content().strip()
-            url = BASE_URL + a[0].get('href').replace('../', '/')
+            url = a[0].get('href')
             return name, url
 
     def parse_roll_call(self, url, rc_num):
@@ -259,7 +273,7 @@ class MIBillScraper(Scraper):
                 break
             elif vtype:
                 # split on spaces not preceeded by commas
-                for l in re.split('(?<!,)\s+', p):
+                for l in re.split(r'(?<!,)\s+', p):
                     if l:
                         results[vtype].append(l)
             else:

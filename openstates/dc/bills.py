@@ -1,13 +1,30 @@
 import datetime
 import json
-import requests
+import pytz
+import re
 
 from pupa.scrape import Scraper, Bill, VoteEvent
 
-from .utils import decode_json
+from .utils import api_request
 
 
 class DCBillScraper(Scraper):
+    _TZ = pytz.timezone('US/Eastern')
+
+    _action_classifiers = (
+        ('Introduced', 'introduction'),
+        ('Transmitted to Mayor', 'executive-receipt'),
+        ('Signed', 'executive-signature'),
+        ('Enacted', 'became-law'),
+        ('First Reading', 'reading-1'),
+        ('1st Reading', 'reading-1'),
+        ('Second Reading', 'reading-2'),
+        ('2nd Reading', 'reading-2'),
+        ('Final Reading|Third Reading|3rd Reading', 'reading-3'),
+        ('Third Reading', 'reading-3'),
+        ('3rd Reading', 'reading-3'),
+        ('Referred to', 'referral-committee'),
+    )
 
     def scrape(self, session=None):
         if not session:
@@ -19,10 +36,6 @@ class DCBillScraper(Scraper):
         per_page = 10       # seems like it gives 10 no matter what.
         start_record = 0
 
-        headers = {"Content-Type": "application/json"}
-        url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
-               "GetPublicAdvancedSearch")
-        bill_url = "http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/GetPublicData"
         params = {
             "request": {
                 "sEcho": 2,
@@ -62,13 +75,12 @@ class DCBillScraper(Scraper):
             }
         }
         param_json = json.dumps(params)
-        response = requests.post(url, headers=headers, data=param_json)
+        response = api_request('/GetPublicAdvancedSearch', data=param_json)
         # the response is a terrible string-of-nested-json-strings. Yuck.
-        response = decode_json(response.json()["d"])
+        response = response["d"]
         data = response["aaData"]
 
         while len(data) > 0:
-
             for bill in data:
                 # sometimes they're in there more than once, so we'll keep track
                 bill_id = bill["Title"]
@@ -76,10 +88,10 @@ class DCBillScraper(Scraper):
                     # actually an agenda, skip
                     continue
                 bill_params = {"legislationId": bill_id}
-                bill_info = requests.post(bill_url, headers=headers,
-                                          data=json.dumps(bill_params))
-                bill_info = decode_json(bill_info.json()["d"])["data"]
-                bill_source_url = "http://lims.dccouncil.us/Legislation/"+bill_id
+                bill_info = api_request('/GetPublicData',
+                                        data=json.dumps(bill_params))
+                bill_info = bill_info["d"]["data"]
+                bill_source_url = "http://lims.dccouncil.us/Legislation/" + bill_id
 
                 legislation_info = bill_info["Legislation"][0]
                 title = legislation_info["ShortTitle"]
@@ -95,10 +107,6 @@ class DCBillScraper(Scraper):
                 # sponsors and cosponsors
                 if "Introducer" in legislation_info:
                     introducers = legislation_info["Introducer"]
-                    intro_date = self.date_format(
-                        legislation_info["IntroductionDate"])
-                    bill.add_action("Introduced", intro_date,
-                                    classification="introduction")
                 else:
                     # sometimes there are introducers, sometimes not.
                     # Set Introducers to empty array to avoid downstream breakage,
@@ -171,6 +179,40 @@ class DCBillScraper(Scraper):
                         a.add_related_entity(
                             withdrawn_by, entity_type='person')
 
+                for action in bill_info['LegislationBillHistory']:
+                    action_name = action['Description']
+                    action_date = datetime.datetime.strptime(
+                        action['ActionDate'], '%Y/%m/%d %H:%M:%S'
+                    )
+                    action_date = self._TZ.localize(action_date)
+                    action_class = self.classify_action(action_name)
+
+                    if "mayor" in action_name.lower():
+                        actor = 'executive'
+                    else:
+                        actor = 'legislature'
+
+                    a = bill.add_action(
+                        action_name, action_date, classification=action_class, chamber=actor)
+
+                    if action_class is not None and 'referral-committee' in action_class:
+                        if "CommitteeReferral" in legislation_info:
+                            committees = []
+                            for committee in legislation_info["CommitteeReferral"]:
+                                if committee["Name"].lower() == "retained by the council":
+                                    committees = []
+                                    break
+                                else:
+                                    committees.append(committee["Name"])
+                            if committees != []:
+                                for com in committees:
+                                    a.add_related_entity(
+                                        com, entity_type='organization')
+                        if "CommitteeReferralComments" in legislation_info:
+                            for committee in legislation_info["CommitteeReferralComments"]:
+                                a.add_related_entity(
+                                    committee["Name"], entity_type='organization')
+
                 # deal with actions involving the mayor
                 mayor = bill_info["MayorReview"]
                 if mayor != []:
@@ -179,17 +221,6 @@ class DCBillScraper(Scraper):
                     if "TransmittedDate" in mayor:
                         transmitted_date = self.date_format(
                             mayor["TransmittedDate"])
-
-                        bill.add_action("transmitted to mayor", transmitted_date,
-                                        chamber="executive",
-                                        classification="executive-receipt")
-
-                    if 'SignedDate' in mayor:
-                        signed_date = self.date_format(mayor["SignedDate"])
-
-                        bill.add_action("signed", signed_date,
-                                        chamber="executive",
-                                        classification="executive-signature")
 
                     # if returned but not signed, it was vetoed
                     elif 'ReturnedDate' in mayor:
@@ -231,26 +262,6 @@ class DCBillScraper(Scraper):
                                         "action date. Skipping")
                     continue
                 date = self.date_format(date)
-                if "CommitteeReferral" in legislation_info:
-                    committees = []
-                    for committee in legislation_info["CommitteeReferral"]:
-                        if committee["Name"].lower() == "retained by the council":
-                            committees = []
-                            break
-                        else:
-                            committees.append(committee["Name"])
-                    if committees != []:
-                        a = bill.add_action("referred to committee", date,
-                                            classification="referral-committee")
-                        for com in committees:
-                            a.add_related_entity(
-                                com, entity_type='organization')
-
-                if "CommitteeReferralComments" in legislation_info:
-                    a = bill.add_action("comments from committee", date)
-                    for committee in legislation_info["CommitteeReferralComments"]:
-                        a.add_related_entity(
-                            committee["Name"], entity_type='organization')
 
                 # deal with random docs floating around
                 docs = bill_info["OtherDocuments"]
@@ -296,19 +307,17 @@ class DCBillScraper(Scraper):
             start_record += per_page
             params["request"]["iDisplayStart"] = start_record
             param_json = json.dumps(params)
-            response = requests.post(url, headers=headers, data=param_json)
-            response = decode_json(response.json()["d"])
+            response = api_request('/GetPublicAdvancedSearch', data=param_json)
+            response = response["d"]
             data = response["aaData"]
 
     def get_member_ids(self):
         # three levels: from session to member_id to name
         member_dict = {}
-        search_data_url = ("http://lims.dccouncil.us/_layouts/15/uploader/AdminProxy.aspx/"
-                           "GetPublicSearchData")
-        response = requests.post(search_data_url, headers={
-                                 "Content-Type": "application/json"})
+        search_data_url = '/GetPublicSearchData'
+        response = api_request(search_data_url)
 
-        member_data = decode_json(response.json()['d'])["Members"]
+        member_data = response['d']["Members"]
         for session_id, members in member_data.items():
             member_dict[session_id] = {}
             for member in members:
@@ -409,7 +418,6 @@ class DCBillScraper(Scraper):
         else:
             t = None
 
-        bill.add_action(motion, date, classification=t)
         if t:
             if "amendment" in t:
                 vote["type"] = "amendment"
@@ -508,3 +516,9 @@ class DCBillScraper(Scraper):
     def date_format(self, d):
         # the time seems to be 00:00:00 all the time, so ditching it with split
         return datetime.datetime.strptime(d.split()[0], "%Y/%m/%d").strftime('%Y-%m-%d')
+
+    def classify_action(self, action):
+        for pattern, types in self._action_classifiers:
+            if re.findall(pattern, action):
+                return types
+        return None

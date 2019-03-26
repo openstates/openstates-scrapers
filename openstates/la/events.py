@@ -134,7 +134,7 @@ class LAEventScraper(Scraper, LXMLMixin):
                 ',') if s] + [None]*3)[:3]
 
             # check for time in date because of missing comma
-            time_srch = re.search('\d{2}:\d{2} (AM|PM)', date)
+            time_srch = re.search(r'\d{2}:\d{2} (AM|PM)', date)
             if time_srch:
                 location = time
                 time = time_srch.group()

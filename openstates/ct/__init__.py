@@ -1,13 +1,16 @@
 import lxml.html
-
+import scrapelib
 from pupa.scrape import Jurisdiction, Organization
-# from .people import CTPersonScraper
+
+from .people import CTPersonScraper
 from .bills import CTBillScraper
-# from .events import CTEventScraper
+from .events import CTEventScraper
 
 settings = {
     'SCRAPELIB_RPM': 20
 }
+
+SKIP_SESSIONS = {'incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', 'FOI_1', 'stainedglass'}
 
 
 class Connecticut(Jurisdiction):
@@ -16,9 +19,9 @@ class Connecticut(Jurisdiction):
     name = "Connecticut"
     url = "http://www.cga.ct.gov/"
     scrapers = {
-        # 'people': CTPersonScraper,
+        'people': CTPersonScraper,
         'bills': CTBillScraper,
-        # 'events': CTEventScraper,
+        'events': CTEventScraper,
     }
     legislative_sessions = [
         {
@@ -67,6 +70,13 @@ class Connecticut(Jurisdiction):
             "start_date": "2018-02-07",
             "end_date": "2018-05-09",
         },
+        {
+            "_scraped_name": "2019",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-09",
+            "end_date": "2019-06-05",
+        },
     ]
     ignored_scraped_sessions = [
         "2010",
@@ -79,42 +89,22 @@ class Connecticut(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Connecticut General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 151
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 36
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        import scrapelib
         text = scrapelib.Scraper().get('ftp://ftp.cga.ct.gov').text
         sessions = [line.split()[-1] for line in text.splitlines()]
-
-        for not_session_name in ('incoming', 'pub', 'CGAAudio', 'rba', 'NCSL', "apaac",
-                                 'FOI_1', 'stainedglass', ):
-            sessions.remove(not_session_name)
-        return sessions
+        return [session for session in sessions if session not in SKIP_SESSIONS]
 
     def get_extract_text(self, doc, data):
         doc = lxml.html.fromstring(data)

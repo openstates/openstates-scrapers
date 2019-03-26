@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 
 from .bills import WYBillScraper
-# from .people import WYPersonScraper
+from .people import WYPersonScraper
 # from .committees import WYCommitteeScraper
 
 import requests
@@ -15,7 +15,7 @@ class Wyoming(Jurisdiction):
     url = "http://legisweb.state.wy.us/"
     scrapers = {
         'bills': WYBillScraper,
-        # 'people': WYPersonScraper,
+        'people': WYPersonScraper,
         # 'committees': WYCommitteeScraper,
     }
     legislative_sessions = [
@@ -71,6 +71,14 @@ class Wyoming(Jurisdiction):
             "start_date": "2018-02-12",
             "end_date": "2018-03-16",
         },
+        {
+            "_scraped_name": "2019",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "2019 General Session",
+            "start_date": "2019-02-12",
+            "end_date": "2019-03-05",
+        },
     ]
     ignored_scraped_sessions = [
         "2019",
@@ -90,28 +98,13 @@ class Wyoming(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Wyoming State Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 60
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 30
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization(name='Governor of Wyoming', classification='executive')
         yield legislature

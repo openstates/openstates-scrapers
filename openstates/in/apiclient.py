@@ -68,23 +68,26 @@ class ApiClient(object):
     def __init__(self, scraper):
         self.scraper = scraper
         self.apikey = os.environ['INDIANA_API_KEY']
+        self.user_agent = os.getenv('USER_AGENT', 'openstates')
 
     @check_response
     def geturl(self, url):
         headers = {}
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         self.scraper.info('Api GET next page: %r, %r' % (url, headers))
-        return self.scraper.get(url, headers=headers, verify=False)
+        return self.scraper.get(url, headers=headers)
 
     @check_response
     def get_relurl(self, url):
         headers = {}
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         url = urljoin(self.root, url)
         self.scraper.info('Api GET: %r, %r' % (url, headers))
-        return self.scraper.get(url, headers=headers, verify=False)
+        return self.scraper.get(url, headers=headers)
 
     def make_url(self, resource_name, **url_format_args):
         # Build up the url.
@@ -104,10 +107,10 @@ class ApiClient(object):
         # Add in the api key.
         requests_args = requests_args or ()
         requests_kwargs = requests_kwargs or {}
-        requests_kwargs.update(verify=False)
         headers = requests_kwargs.get('headers', {})
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         requests_kwargs['headers'] = headers
 
         args = (url, requests_args, requests_kwargs)

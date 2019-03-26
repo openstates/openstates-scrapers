@@ -16,6 +16,7 @@ SESSION_DATA_ID = {
     '2017A': '10171',
     '2017B': '27016',
     '2018A': '45771',
+    '2019A': '57701',
 }
 
 BAD_URLS = [
@@ -349,6 +350,11 @@ class COBillScraper(Scraper, LXMLMixin):
             abstain_count = 0
             if abstain_counts:
                 abstain_count = int(abstain_counts[0])
+
+            # fix for
+            # http://leg.colorado.gov/content/hb19-1029vote65e72e
+            if absent_count == -1:
+                absent_count = 0
 
             passed = yes_count > no_count
             vote = VoteEvent(chamber=chamber,

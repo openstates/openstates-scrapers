@@ -1,11 +1,12 @@
 import re
 import pytz
+import time
 from datetime import datetime
 from collections import defaultdict
 import lxml.html
-import scrapelib
 from openstates.utils.lxmlize import LXMLMixin
-from pupa.scrape import Scraper, Bill, VoteEvent
+from pupa.scrape import Scraper, Bill
+from urllib.parse import unquote
 
 
 class NVBillScraper(Scraper, LXMLMixin):
@@ -52,10 +53,7 @@ class NVBillScraper(Scraper, LXMLMixin):
         if 'Special' not in session_slug:
             self.scrape_subjects(session_slug, session, year)
 
-        if chamber == 'upper':
-            yield from self.scrape_senate_bills(chamber, session_slug, session, year)
-        else:
-            yield from self.scrape_assem_bills(chamber, session_slug, session, year)
+        yield from self.scrape_bills(chamber, session_slug, session, year)
 
     def scrape_subjects(self, insert, session, year):
         url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
@@ -82,325 +80,303 @@ class NVBillScraper(Scraper, LXMLMixin):
                                    else None)
                         self.subject_mapping[bill_id].append(subject)
 
-    def scrape_senate_bills(self, chamber, insert, session, year):
-        doc_type = {2: 'bill', 4: 'resolution', 7: 'concurrent resolution',
-                    8: 'joint resolution'}
+    def scrape_bills(self, chamber, session_slug, session, year):
 
-        for docnum, bill_type in doc_type.items():
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/Reports/' \
-                             'HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
-            links = self.scrape_links(parentpage_url)
-            count = 0
-            for link in links:
-                count += 1
-                page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
+        doc_types = {
+            'lower': ['AB', 'IP', 'AJR', 'ACR', 'AR'],
+            'upper': ['SB', 'SJR', 'SCR', 'SR']
+        }
 
-                page = self.get(page_path).text
-                page = page.replace(u"\xa0", " ")
-                root = lxml.html.fromstring(page)
+        listing_url_base = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/HomeBill/' \
+            'GetBillsForNavSubPanels?startNumber=1&endNumber=9999&documentCode={}&_={}'
 
-                bill_id = root.xpath('string(/html/body/div[@id="content"]' +
-                                     '/table[1]/tr[1]/td[1]/font)')
-                title = self.get_node(
-                    root,
-                    '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
-                    'b[contains(text(), "By:")]]/td/em/text()')
+        for doc_type in doc_types[chamber]:
+            listing_url = listing_url_base.format(
+                session_slug, doc_type, time.time() * 1000)
+            listing_page = lxml.html.fromstring(self.get(listing_url).text)
+            listing_page.make_links_absolute('https://www.leg.state.nv.us')
+            bill_row_xpath = '//table/tr/td/span'
+            for row in listing_page.xpath(bill_row_xpath):
+                link_url = row.xpath('a/@href')[0]
+                yield self.scrape_bill(session, session_slug, chamber, link_url)
 
-                bill = Bill(bill_id,
-                            legislative_session=session,
-                            chamber=chamber,
-                            title=title,
-                            classification=bill_type
-                            )
-                bill.subject = list(set(self.subject_mapping[bill_id]))
+    def scrape_bill(self, session, session_slug, chamber, url):
+        page = lxml.html.fromstring(self.get(url).text)
+        bill_no = page.xpath('//*[@id="item-header"]/text()')[0].strip()
+        # state bill id
+        internal_id = re.search(r'\/Bill\/(\d+)\/Overview', url).group(1)
 
-                for table in root.xpath('//div[@id="content"]/table'):
-                    if 'Bill Text' in table.text_content():
-                        bill_text = table.xpath("string(tr/td[2]/a/@href)")
-                        text_url = "http://www.leg.state.nv.us" + bill_text
-                        bill.add_version_link(note="Bill Text",
-                                              url=text_url,
-                                              media_type='application/pdf')
+        # bill data gets filled in from another call
+        bill_data_base = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/Bill/' \
+            'FillSelectedBillTab?selectedTab=Overview&billKey={}&_={}'
+        bill_data_url = bill_data_base.format(
+            session_slug, internal_id, time.time() * 1000)
 
-                primary, secondary = self.scrape_sponsors(page)
+        bill_page = lxml.html.fromstring(self.get(bill_data_url).text)
 
-                for leg in primary:
-                    bill.add_sponsorship(name=leg,
-                                         classification='primary',
-                                         entity_type='person',
-                                         primary=True)
-                for leg in secondary:
-                    bill.add_sponsorship(name=leg,
-                                         classification='cosponsor',
-                                         entity_type='person',
-                                         primary=False)
+        short_title = self.get_header_field(bill_page, 'Summary:').text
+        short_title = short_title.replace(u'\u00a0', ' ')
 
-                minutes_count = 2
-                for mr in root.xpath('//table[4]/tr/td[3]/a'):
-                    minutes = mr.xpath("string(@href)")
-                    minutes_url = "http://www.leg.state.nv.us" + minutes
-                    minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
-                    minutes_date = mr.xpath(minutes_date_path).split()
-                    minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Agenda"
-                    # bill.add_document(minutes_date, minutes_url)
-                    bill.add_document_link(note=minutes_date,
-                                           url=minutes_url)
-                    minutes_count = minutes_count + 1
+        bill = Bill(
+            identifier=bill_no,
+            legislative_session=session,
+            title=short_title,
+            chamber=chamber
+        )
 
-                self.scrape_actions(root, bill, "upper")
-                yield from self.scrape_votes(page, page_path, bill, insert, year)
-                bill.add_source(page_path)
-                bdr = self.extract_bdr(title)
-                if bdr:
-                    bill.extras['BDR'] = bdr
+        long_title = self.get_header_field(bill_page, 'Title:').text
+        if long_title is not None:
+            bill.add_abstract(long_title, 'Summary')
 
-                yield bill
+        sponsor_div = self.get_header_field(bill_page, 'Primary Sponsor')
+        if sponsor_div is not None:
+            self.add_sponsors(sponsor_div, bill, 'primary')
 
-    def scrape_assem_bills(self, chamber, insert, session, year):
+        cosponsor_div = self.get_header_field(bill_page, 'Co-Sponsor')
+        if cosponsor_div is not None:
+            self.add_sponsors(cosponsor_div, bill, 'cosponsor')
 
-        doc_type = {1: 'bill', 3: 'resolution', 5: 'concurrent resolution',
-                    6: 'joint resolution', 9: 'petition'}
-        for docnum, bill_type in doc_type.items():
-            parentpage_url = 'http://www.leg.state.nv.us/Session/%s/' \
-                             'Reports/HistListBills.cfm?DoctypeID=%s' % (insert, docnum)
-            links = self.scrape_links(parentpage_url)
-            count = 0
-            for link in links:
-                count = count + 1
-                page_path = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (insert, link)
-                page = self.get(page_path).text
-                page = page.replace(u"\xa0", " ")
-                root = lxml.html.fromstring(page)
-                root.make_links_absolute("http://www.leg.state.nv.us/")
+        self.add_actions(bill_page, bill, chamber)
+        self.add_versions(session_slug, internal_id, bill)
 
-                bill_id = root.xpath('string(/html/body/div[@id="content"]'
-                                     '/table[1]/tr[1]/td[1]/font)')
-                title = self.get_node(
-                    root,
-                    '//div[@id="content"]/table/tr[preceding-sibling::tr/td/'
-                    'b[contains(text(), "By:")]]/td/em/text()')
+        bill.subject = list(set(self.subject_mapping[bill_no]))
 
-                bill = Bill(bill_id, legislative_session=session, chamber=chamber,
-                            title=title, classification=bill_type)
+        bdr = self.extract_bdr(short_title)
+        if bdr:
+            bill.extras['BDR'] = bdr
 
-                bill.subject = list(set(self.subject_mapping[bill_id]))
-                billtext = root.xpath("//b[text()='Bill Text']")[0].getparent().getnext()
-                text_urls = billtext.xpath("./a")
-                for text_url in text_urls:
-                    version_name = text_url.text.strip()
-                    version_url = text_url.attrib['href']
-                    bill.add_version_link(note=version_name, url=version_url,
-                                          media_type='application/pdf')
+        bill.extras['NV_ID'] = internal_id
 
-                primary, secondary = self.scrape_sponsors(page)
+        bill.add_source(url)
+        yield bill
 
-                for leg in primary:
-                    bill.add_sponsorship(classification='primary',
-                                         name=leg, entity_type='person',
-                                         primary=True)
-                for leg in secondary:
-                    bill.add_sponsorship(classification='cosponsor',
-                                         name=leg, entity_type='person',
-                                         primary=False)
+    def add_sponsors(self, page, bill, classification):
+        seen = []
+        person_sponsors = page.xpath('.//a[@class="bio"]/text()')
+        for leg in person_sponsors:
+            name = leg.strip()
+            if name not in seen:
+                seen.append(name)
+                bill.add_sponsorship(name=name,
+                                     classification=classification,
+                                     entity_type='person',
+                                     primary=True)
 
-                minutes_count = 2
-                for mr in root.xpath('//table[4]/tr/td[3]/a'):
-                    minutes = mr.xpath("string(@href)")
-                    minutes_url = "http://www.leg.state.nv.us" + minutes
-                    minutes_date_path = "string(//table[4]/tr[%s]/td[2])" % minutes_count
-                    minutes_date = mr.xpath(minutes_date_path).split()
-                    minutes_date = minutes_date[0] + minutes_date[1] + minutes_date[2] + " Minutes"
-                    bill.add_document_link(note=minutes_date, url=minutes_url)
-                    minutes_count += 1
+        com_sponsors = page.xpath(
+            './/a[contains(@href, "/Committee/")]/text()')
+        for com in com_sponsors:
+            name = com.strip()
+            if name not in seen:
+                seen.append(name)
+                bill.add_sponsorship(name=name,
+                                     classification=classification,
+                                     entity_type='organization',
+                                     primary=True)
 
-                self.scrape_actions(root, bill, "lower")
-                yield from self.scrape_votes(page, page_path, bill, insert, year)
-                bill.add_source(page_path)
-                bdr = self.extract_bdr(title)
-                if bdr:
-                    bill.extras['BDR'] = bdr
+    def get_header_field(self, page, title_text):
+        # NV bill page has the same structure for lots of fields
+        # this finds field content after the div containing title_text
+        # We're returning the element and not the text,
+        # because sometimes we need to parse the html
+        header_xpath = '//div[./div[contains(text(), "{}")]]' \
+            '/div[contains(@class, "col-sm-10") or contains(@class, "col-xs-10")]'.format(
+                title_text)
+        if page.xpath(header_xpath):
+            return page.xpath(header_xpath)[0]
+        else:
+            return None
 
-                yield bill
+    def add_versions(self, session_slug, internal_id, bill):
+        text_tab_url_base = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/Bill/' \
+                            'FillSelectedBillTab?selectedTab=Text&billKey={}&_={}'
+        text_tab_url = text_tab_url_base.format(
+            session_slug, internal_id, time.time() * 1000)
+        text_page = lxml.html.fromstring(self.get(text_tab_url).text)
 
-    def scrape_links(self, url):
-        links = []
+        version_links = text_page.xpath(
+            '//*[contains(@class,"text-revision-link")]')
+        for link in version_links:
+            document_key = link.get('id')
+            if link.tag == 'input':
+                document_name = link.get('value')
+            elif link.tag == 'a':
+                document_name = link.text.strip()
 
-        page = self.get(url).text
-        root = lxml.html.fromstring(page)
-        path = '/html/body/div[@id="ScrollMe"]/table/tr[1]/td[1]/a'
-        for mr in root.xpath(path):
-            if '*' not in mr.text:
-                web_end = mr.xpath('string(@href)')
-                links.append(web_end)
-        return links
+            iframe_url_base = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/Bill/' \
+                              'DisplayBillText?billDocumentKey={}&_={}'
+            iframe_url = iframe_url_base.format(
+                session_slug, document_key, time.time() * 1000)
 
-    def scrape_sponsors(self, page):
-        primary = []
-        sponsors = []
+            iframe_page = lxml.html.fromstring(self.get(iframe_url).text)
 
-        doc = lxml.html.fromstring(page)
-        # These bold tagged elements should contain the primary sponsors.
-        b_nodes = self.get_nodes(
-            doc,
-            '//div[@id="content"]/table/tr/td[contains(./b/text(), "By:")]/b/'
-            'text()')
+            # web-accessible filename is the final URL arg (encoded) in the iframe's SRC:
+            # /App/NELIS/REL/80th2019/PDF/Viewer?
+            # file=%2FApp%2FNELIS%2FREL%2F80th2019%2FDocumentViewer%2FRemoteURLDocument%3F
+            # remoteURL%3Dhttps%253A%252F%252Fwww.leg.state.nv.us%252FSession%252F80th2019%252FBills%252FSB%252FSB1.pdf
+            # %26downloadFileName%3DSB1.pdf&downloadFileName=SB1.pdf
+            # here:
+            # &remoteURL=https%3A%2F%2Fwww.leg.state.nv.us%2FSession%2F80th2019%2FBills%2FSB%2FSB1.pdf
 
-        for b in b_nodes:
-            name = b.strip()
-            # add these as sponsors (excluding junk text)
-            if name not in ('By:', 'Bolded'):
-                primary.append(name)
+            iframe = iframe_page.xpath('//iframe[@id="pdf-viewer"]/@src')[0]
+            parts = iframe.split('remoteURL=')
+            if len(parts) > 1:
+                doc_url = parts[1]
+                doc_url = unquote(doc_url)
+                bill.add_version_link(
+                    document_name,
+                    doc_url,
+                    media_type='application/pdf',
+                )
 
-        nb_nodes = self.get_nodes(
-            doc,
-            '//div[@id="content"]/table/tr/td[contains(./b/text(), "By:")]/text()')
+    def add_actions(self, page, bill, chamber):
+        actor = chamber
 
-        # tail of last b has remaining sponsors
-        for node in nb_nodes:
-            if node == ' name indicates primary sponsorship)':
-                continue
-            names = re.sub('([\(\r\t\n\s])', '', node).split(',')
+        for tr in page.xpath('//tbody[@class="bill-history"]/tr'):
 
-            for name in names:
-                if name:
-                    sponsors.append(name.strip())
+            action_date = tr.xpath('td[1]/text()')[0].strip()
+            action_date = datetime.strptime(action_date, "%b %d, %Y")
+            action_date = self._tz.localize(action_date)
+            action = tr.xpath(
+                'td[2]/text()')[0].strip().replace(u'\u00a0', ' ')
+            # catch chamber changes
+            if action.startswith('In Assembly'):
+                actor = 'lower'
+            elif action.startswith('In Senate'):
+                actor = 'upper'
+            elif 'Governor' in action:
+                actor = 'executive'
 
-        return primary, sponsors
+            action_type = None
+            for pattern, atype in self._classifiers:
+                if re.match(pattern, action):
+                    action_type = atype
+                    break
 
-    def scrape_actions(self, root, bill, actor):
-        path = '/html/body/div[@id="content"]/table/tr/td/p[1]'
-        for mr in root.xpath(path):
-            date = mr.text_content().strip()
-            date = date.split()[0] + " " + date.split()[1] + " " + date.split()[2]
-            date = datetime.strptime(date, "%b %d, %Y")
-            for el in mr.xpath('../../following-sibling::tr[1]/td/ul/li'):
-                action = el.text_content().strip()
-
-                # skip blank actions
-                if not action:
+            if "Committee on" in action:
+                committees = re.findall(
+                    r"Committee on ([a-zA-Z, ]*)\.", action)
+                if len(committees) > 0:
+                    related_entities = []
+                    for committee in committees:
+                        related_entities.append({
+                            "type": "committee",
+                            "name": committee
+                        })
+                    bill.add_action(description=action,
+                                    date=action_date,
+                                    chamber=actor,
+                                    classification=action_type,
+                                    related_entities=related_entities
+                                    )
                     continue
 
-                action = " ".join(action.split())
+            bill.add_action(description=action,
+                            date=action_date,
+                            chamber=actor,
+                            classification=action_type)
 
-                # catch chamber changes
-                if action.startswith('In Assembly'):
-                    actor = 'lower'
-                elif action.startswith('In Senate'):
-                    actor = 'upper'
-                elif 'Governor' in action:
-                    actor = 'executive'
+    def add_fiscal_notes(self, session_slug, internal_id, bill):
+        text_tab_url_base = 'https://www.leg.state.nv.us/App/NELIS/REL/{}/Bill/' \
+            'FillSelectedBillTab?selectedTab=FiscalNotes&billKey={}&_={}'
+        text_tab_url = text_tab_url_base.format(
+            session_slug, internal_id, time.time() * 1000)
+        text_page = lxml.html.fromstring(self.get(text_tab_url).text)
 
-                action_type = None
-                for pattern, atype in self._classifiers:
-                    if re.match(pattern, action):
-                        action_type = atype
-                        break
+        note_links = text_page.xpath(
+            '//a[contains(@class,"text-icon-exhibit")]')
+        for link in note_links:
+            name = link.text_content().strip()
+            name = 'Fiscal Note: {}'.format(name)
+            url = link.get('href')
+            bill.add_document_link(
+                note=name,
+                url=url,
+                media_type='application/pdf'
+            )
 
-                if "Committee on" in action:
-                    committees = re.findall("Committee on ([a-zA-Z, ]*)\.", action)
-                    if len(committees) > 0:
-                        related_entities = []
-                        for committee in committees:
-                            related_entities.append({
-                                 "type": "committee",
-                                 "name": committee
-                                 })
-                        bill.add_action(description=action,
-                                        date=self._tz.localize(date),
-                                        chamber=actor,
-                                        classification=action_type,
-                                        related_entities=related_entities
-                                        )
-                        continue
+    # def scrape_votes(self, bill_page, page_url, bill, insert, year):
+    #     root = lxml.html.fromstring(bill_page)
+    #     trs = root.xpath('/html/body/div/table[6]//tr')
+    #     assert len(trs) >= 1, "Didn't find the Final Passage Votes' table"
 
-                bill.add_action(description=action,
-                                date=self._tz.localize(date),
-                                chamber=actor,
-                                classification=action_type)
+    #     for tr in trs[1:]:
+    #         links = tr.xpath('td/a[contains(text(), "Passage")]')
+    #         if len(links) == 0:
+    #             self.warning("Non-passage vote found for {}; ".format(bill.identifier) +
+    #                          "probably a motion for the calendar. It will be skipped.")
+    #         else:
+    #             assert len(links) == 1, \
+    #                 "Too many votes found for XPath query, on bill {}".format(bill.identifier)
+    #             link = links[0]
 
-    def scrape_votes(self, bill_page, page_url, bill, insert, year):
-        root = lxml.html.fromstring(bill_page)
-        trs = root.xpath('/html/body/div/table[6]//tr')
-        assert len(trs) >= 1, "Didn't find the Final Passage Votes' table"
+    #         motion = link.text
+    #         if 'Assembly' in motion:
+    #             chamber = 'lower'
+    #         else:
+    #             chamber = 'upper'
 
-        for tr in trs[1:]:
-            links = tr.xpath('td/a[contains(text(), "Passage")]')
-            if len(links) == 0:
-                self.warning("Non-passage vote found for {}; ".format(bill.identifier) +
-                             "probably a motion for the calendar. It will be skipped.")
-            else:
-                assert len(links) == 1, \
-                    "Too many votes found for XPath query, on bill {}".format(bill.identifier)
-                link = links[0]
+    #         votes = {}
+    #         tds = tr.xpath('td')
+    #         for td in tds:
+    #             if td.text:
+    #                 text = td.text.strip()
+    #                 date = re.match('... .*?, ....', text)
+    #                 count = re.match('(?P<category>.*?) (?P<votes>[0-9]+)[,]?', text)
+    #                 if date:
+    #                     vote_date = datetime.strptime(text, '%b %d, %Y')
+    #                 elif count:
+    #                     votes[count.group('category')] = int(count.group('votes'))
 
-            motion = link.text
-            if 'Assembly' in motion:
-                chamber = 'lower'
-            else:
-                chamber = 'upper'
+    #         yes = votes['Yea']
+    #         no = votes['Nay']
+    #         excused = votes['Excused']
+    #         not_voting = votes['Not Voting']
+    #         absent = votes['Absent']
+    #         other = excused + not_voting + absent
+    #         passed = yes > no
 
-            votes = {}
-            tds = tr.xpath('td')
-            for td in tds:
-                if td.text:
-                    text = td.text.strip()
-                    date = re.match('... .*?, ....', text)
-                    count = re.match('(?P<category>.*?) (?P<votes>[0-9]+)[,]?', text)
-                    if date:
-                        vote_date = datetime.strptime(text, '%b %d, %Y')
-                    elif count:
-                        votes[count.group('category')] = int(count.group('votes'))
+    #         vote = VoteEvent(chamber=chamber, start_date=self._tz.localize(vote_date),
+    #                          motion_text=motion, result='pass' if passed else 'fail',
+    #                          classification='passage', bill=bill,
+    #                          )
+    #         vote.set_count('yes', yes)
+    #         vote.set_count('no', no)
+    #         vote.set_count('other', other)
+    #         vote.set_count('not voting', not_voting)
+    #         vote.set_count('absent', absent)
+    #         # try to get vote details
+    #         try:
+    #             vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
+    #                 insert, link.get('href'))
+    #             vote.pupa_id = vote_url
+    #             vote.add_source(vote_url)
 
-            yes = votes['Yea']
-            no = votes['Nay']
-            excused = votes['Excused']
-            not_voting = votes['Not Voting']
-            absent = votes['Absent']
-            other = excused + not_voting + absent
-            passed = yes > no
+    #             if vote_url in self._seen_votes:
+    #                 self.warning('%s is included twice, skipping second', vote_url)
+    #                 continue
+    #             else:
+    #                 self._seen_votes.add(vote_url)
 
-            vote = VoteEvent(chamber=chamber, start_date=self._tz.localize(vote_date),
-                             motion_text=motion, result='pass' if passed else 'fail',
-                             classification='passage', bill=bill,
-                             )
-            vote.set_count('yes', yes)
-            vote.set_count('no', no)
-            vote.set_count('other', other)
-            vote.set_count('not voting', not_voting)
-            vote.set_count('absent', absent)
-            # try to get vote details
-            try:
-                vote_url = 'http://www.leg.state.nv.us/Session/%s/Reports/%s' % (
-                    insert, link.get('href'))
-                vote.pupa_id = vote_url
-                vote.add_source(vote_url)
+    #             page = self.get(vote_url).text
+    #             page = page.replace(u"\xa0", " ")
+    #             root = lxml.html.fromstring(page)
 
-                if vote_url in self._seen_votes:
-                    self.warning('%s is included twice, skipping second', vote_url)
-                    continue
-                else:
-                    self._seen_votes.add(vote_url)
+    #             for el in root.xpath('//table[2]/tr'):
+    #                 tds = el.xpath('td')
+    #                 name = tds[1].text_content().strip()
+    #                 vote_result = tds[2].text_content().strip()
 
-                page = self.get(vote_url).text
-                page = page.replace(u"\xa0", " ")
-                root = lxml.html.fromstring(page)
+    #                 if vote_result == 'Yea':
+    #                     vote.yes(name)
+    #                 elif vote_result == 'Nay':
+    #                     vote.no(name)
+    #                 else:
+    #                     vote.vote('other', name)
+    #             vote.add_source(page_url)
+    #         except scrapelib.HTTPError:
+    #             self.warning("failed to fetch vote page, adding vote without details")
 
-                for el in root.xpath('//table[2]/tr'):
-                    tds = el.xpath('td')
-                    name = tds[1].text_content().strip()
-                    vote_result = tds[2].text_content().strip()
-
-                    if vote_result == 'Yea':
-                        vote.yes(name)
-                    elif vote_result == 'Nay':
-                        vote.no(name)
-                    else:
-                        vote.vote('other', name)
-                vote.add_source(page_url)
-            except scrapelib.HTTPError:
-                self.warning("failed to fetch vote page, adding vote without details")
-
-            yield vote
+    #         yield vote
 
     # bills in NV start with a 'bill draft request'
     # the number is in the title but it's useful as a structured extra

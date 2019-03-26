@@ -31,7 +31,9 @@ class KSPersonScraper(Scraper, LXMLMixin):
 
         slug = {'2013-2014': 'b2013_14',
                 '2015-2016': 'b2015_16',
-                '2017-2018': 'b2017_18'}[session]
+                '2017-2018': 'b2017_18',
+                '2019-2020': 'b2019_20',
+                }[session]
         leg_url = 'http://www.kslegislature.org/li/%s/members/%s/' % (slug, kpid)
 
         try:

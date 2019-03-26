@@ -1,6 +1,7 @@
 import re
 import datetime
 import scrapelib
+import pytz
 from collections import defaultdict
 
 from .actions import Categorizer
@@ -19,6 +20,8 @@ class WABillScraper(Scraper, LXMLMixin):
     _base_url = 'http://wslwebservices.leg.wa.gov/legislationservice.asmx'
     categorizer = Categorizer()
     _subjects = defaultdict(list)
+
+    _TZ = pytz.timezone('US/Eastern')
 
     ORDINALS = {
         '2': 'Second',
@@ -45,7 +48,7 @@ class WABillScraper(Scraper, LXMLMixin):
             rss = re.sub(r'^[^<]+', '', self.get(link).text)
             rss = feedparser.parse(rss)
             for e in rss['entries']:
-                match = re.match('\w\w \d{4}', e['title'])
+                match = re.match(r'\w\w \d{4}', e['title'])
                 if match:
                     self._subjects[match.group()].append(subject)
 
@@ -220,7 +223,7 @@ class WABillScraper(Scraper, LXMLMixin):
                     continue
 
                 # normalize bill_id
-                bill_id_norm = re.findall('(?:S|H)(?:B|CR|JM|JR|R) \d+',
+                bill_id_norm = re.findall(r'(?:S|H)(?:B|CR|JM|JR|R) \d+',
                                           bill_id)
                 if not bill_id_norm:
                     self.warning("illegal bill_id %s" % bill_id)
@@ -278,6 +281,7 @@ class WABillScraper(Scraper, LXMLMixin):
 
         self.scrape_sponsors(bill)
         self.scrape_actions(bill, bill_num)
+        self.scrape_hearings(bill, bill_num)
         yield from self.scrape_votes(bill)
         bill.subject = list(set(self._subjects[bill_id]))
         yield bill
@@ -300,6 +304,45 @@ class WABillScraper(Scraper, LXMLMixin):
                                  primary=spon_type == 'primary')
             first = False
 
+    def scrape_hearings(self, bill, bill_num):
+        # http://wslwebservices.leg.wa.gov/LegislationService.asmx?op=GetHearings&
+        # biennium=2019-20&billNumber=5000
+        url = (
+            "http://wslwebservices.leg.wa.gov/LegislationService.asmx/GetHearings"
+            "?biennium={}&billNumber={}".format(self.biennium, bill_num)
+        )
+        try:
+            page = self.get(url)
+        except scrapelib.HTTPError as e:
+            self.warning(e)
+            return
+
+        page = lxml.etree.fromstring(page.content)
+        for hearing in xpath(page, "//wa:Hearing"):
+            action_date = xpath(hearing, 'string(wa:CommitteeMeeting/wa:Date)')
+            action_date = datetime.datetime.strptime(action_date, "%Y-%m-%dT%H:%M:%S")
+
+            # build the time before we convert to utc
+            action_time = action_date.strftime("%I:%M %p")
+
+            action_date = self._TZ.localize(action_date)
+            action_actor_str = xpath(hearing, 'string(wa:CommitteeMeeting/wa:Agency)')
+            action_actor = 'upper' if action_actor_str == 'Senate' else 'lower'
+
+            committee_name = xpath(hearing,
+                                   'string(wa:CommitteeMeeting/wa:Committees/'
+                                   'wa:Committee/wa:Name)')
+
+            # Scheduled for public hearing in the Senate Committee on Law & Justice
+            # at 10:00 AM (Subject to change). (Committee Materials)
+            action_name = "Scheduled for public hearing in the {}" \
+                          " Committee on {} at {}".format(
+                              action_actor_str,
+                              committee_name,
+                              action_time
+                          )
+            bill.add_action(action_name, action_date, chamber=action_actor)
+
     def scrape_actions(self, bill, bill_num):
         session = bill.legislative_session
         # chamber = bill['chamber']
@@ -308,6 +351,7 @@ class WABillScraper(Scraper, LXMLMixin):
         # unlike GetLegislativeStatusChangesByBillId
         # http://wslwebservices.leg.wa.gov/legislationservice.asmx/GetLegislativeStatusChangesByBillNumber?
         # biennium=2015-16&billNumber=1002&beginDate=2014-01-01&endDate=2018-12-31&chamber=senate
+        # biennium=2019-20&billNumber=5121&beginDate=2019-01-01&endDate=2019-12-31&chamber=house
 
         # Set the start date back a year to catch prefile / intro actions
         start_date = datetime.date(int(session[0:4])-1, 1, 1)

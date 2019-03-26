@@ -59,7 +59,7 @@ class SDBillScraper(Scraper, LXMLMixin):
 
         regex_ns = "http://exslt.org/regular-expressions"
         version_links = page.xpath(
-            "//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
+            r"//a[re:test(@href, 'Bill.aspx\?File=.*\.htm', 'i')]",
             namespaces={'re': regex_ns})
         for link in version_links:
             bill.add_version_link(
@@ -140,6 +140,19 @@ class SDBillScraper(Scraper, LXMLMixin):
             if 'Motion to amend, Passed Amendment' in action:
                 atypes.append('amendment-introduction')
                 atypes.append('amendment-passage')
+                amd = row.xpath('td[2]/a[contains(@href,"Amendment.aspx")]')[0]
+                version_name = amd.xpath('string(.)')
+                version_url = amd.xpath('@href')[0]
+                if 'htm' in version_url:
+                    mimetype = 'text/html'
+                elif 'pdf' in version_url:
+                    mimetype = 'application/pdf'
+                bill.add_version_link(
+                    version_name,
+                    version_url,
+                    media_type=mimetype,
+                    on_duplicate='ignore'
+                )
 
             if 'Veto override, Passed' in action:
                 atypes.append('veto-override-passage')
@@ -157,7 +170,7 @@ class SDBillScraper(Scraper, LXMLMixin):
                     actor = 'lower'
 
             date = row.xpath("string(td[1])").strip()
-            match = re.match('\d{2}/\d{2}/\d{4}', date)
+            match = re.match(r'\d{2}/\d{2}/\d{4}', date)
             if not match:
                 self.warning("Bad date: %s" % date)
                 continue

@@ -1,11 +1,11 @@
 import re
-import lxml.html
-import requests
 from pupa.scrape import Jurisdiction, Organization
-# from .people import IAPersonScraper
+
+from openstates.utils import url_xpath
+from .people import IAPersonScraper
 from .bills import IABillScraper
 from .votes import IAVoteScraper
-# from .events import IAEventScraper
+from .events import IAEventScraper
 
 
 class Iowa(Jurisdiction):
@@ -14,10 +14,10 @@ class Iowa(Jurisdiction):
     name = "Iowa"
     url = "https://www.legis.iowa.gov/"
     scrapers = {
-        # 'people': IAPersonScraper,
+        'people': IAPersonScraper,
         'bills': IABillScraper,
         'votes': IAVoteScraper,
-        # 'events': IAEventScraper,
+        'events': IAEventScraper,
     }
     legislative_sessions = [
         {
@@ -43,6 +43,13 @@ class Iowa(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
             "end_date": "2017-04-22",
+        },
+        {
+            "_scraped_name": "General Assembly: 88",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-14",
+            "end_date": "2019-05-03",
         }
     ]
     ignored_scraped_sessions = [
@@ -62,46 +69,25 @@ class Iowa(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Iowa General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 100
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 50
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        def url_xpath(url, path):
-            doc = lxml.html.fromstring(requests.get(url, verify=False).text)
-            return doc.xpath(path)
-
         sessions = url_xpath(
             'https://www.legis.iowa.gov/legislation/findLegislation',
             "//section[@class='grid_6']//li/a/text()[normalize-space()]"
         )
 
-        sessions = [x[0] for x in filter(lambda x: x != [], [
+        return [x[0] for x in filter(lambda x: x != [], [
             re.findall(r'^.*Assembly: [0-9]+', session)
             for session in sessions
         ])]
-
-        return sessions

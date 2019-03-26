@@ -24,9 +24,9 @@ ACTION_CLASSIFIERS = (
     ('Approved by Governor', 'executive-signature'),
     ('Vetoed by Governor', 'executive-veto'),
     ('(House|Senate) sustained Governor\'s veto', 'veto-override-failure'),
-    ('\s*Amendment(s)? .+ agreed', 'amendment-passage'),
-    ('\s*Amendment(s)? .+ withdrawn', 'amendment-withdrawal'),
-    ('\s*Amendment(s)? .+ rejected', 'amendment-failure'),
+    (r'\s*Amendment(s)? .+ agreed', 'amendment-passage'),
+    (r'\s*Amendment(s)? .+ withdrawn', 'amendment-withdrawal'),
+    (r'\s*Amendment(s)? .+ rejected', 'amendment-failure'),
     ('Subject matter referred', 'referral-committee'),
     ('Rereferred to', 'referral-committee'),
     ('Referred to', 'referral-committee'),
@@ -165,6 +165,18 @@ class BillDetailPage(Page, Spatula):
             else:
                 # VA duplicates reprinted bills, lets keep the original name
                 self.obj.add_version_link(desc, link, date=date,
+                                          media_type='text/html',
+                                          on_duplicate='ignore')
+
+        # amendments
+        for va in self.doc.xpath('//h4[text()="AMENDMENTS"]/following-sibling::ul[1]/li/a[1]'):
+            version_name = va.xpath('string(.)')
+            if ('adopted' in version_name.lower()
+                    or 'engrossed' in version_name.lower()) \
+                    and 'not adopted' not in version_name.lower() \
+                    and 'not engrossed' not in version_name.lower():
+                version_url = va.xpath('@href')[0]
+                self.obj.add_version_link(version_name, version_url,
                                           media_type='text/html',
                                           on_duplicate='ignore')
 
@@ -346,7 +358,7 @@ class VotePage(Page):
                 # and so needs the lookbehind assertion.
                 return [
                     x.strip()
-                    for x in re.split('(?<!Bell), (?!\w\.\w?\.?)', pieces[1])
+                    for x in re.split(r'(?<!Bell), (?!\w\.\w?\.?)', pieces[1])
                     if x.strip()
                 ]
         else:

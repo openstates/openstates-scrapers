@@ -62,7 +62,7 @@ class BaseCategorizer(object):
 
     def categorize(self, text):
 
-        whitespace = partial(re.sub, '\s{1,4}', '\s{,4}')
+        whitespace = partial(re.sub, r'\s{1,4}', r'\s{,4}')
 
         # Run the before hook.
         text = self.before_categorize(text)

@@ -1,6 +1,6 @@
 from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
-# from .people import NMPersonScraper
+from .people import NMPersonScraper
 # from .committees import NMCommitteeScraper
 from .bills import NMBillScraper
 from .votes import NMVoteScraper
@@ -12,7 +12,7 @@ class NewMexico(Jurisdiction):
     name = "New Mexico"
     url = "https://www.nmlegis.gov"
     scrapers = {
-        # 'people': NMPersonScraper,
+        'people': NMPersonScraper,
         # 'committees': NMCommitteeScraper,
         'bills': NMBillScraper,
         'votes': NMVoteScraper
@@ -93,6 +93,14 @@ class NewMexico(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-17"
         },
+        {
+            "_scraped_name": "2019 Regular",
+            "classification": "primary",
+            "end_date": "2019-03-16",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-15"
+        },
     ]
     ignored_scraped_sessions = [
         "2010 2nd Special",
@@ -132,28 +140,13 @@ class NewMexico(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "New Mexico Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 70
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 42
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature

@@ -2,7 +2,7 @@
 import logging
 from pupa.scrape import Jurisdiction, Organization
 from .bills import FlBillScraper
-# from .people import FlPersonScraper
+from .people import FlPersonScraper
 # from .committees import FlCommitteeScraper
 # from .events import FlEventScraper
 from openstates.utils import url_xpath
@@ -18,7 +18,7 @@ class Florida(Jurisdiction):
 
     scrapers = {
         "bills": FlBillScraper,
-        # "people": FlPersonScraper,
+        "people": FlPersonScraper,
         # "committees": FlCommitteeScraper,
         # "events": FlEventScraper,
     }
@@ -52,9 +52,17 @@ class Florida(Jurisdiction):
             'identifier': '2017A', 'classification': 'special'},
         {'name': '2018 Regular Session', 'identifier': '2018', 'classification': 'primary',
          'start_date': '2018-01-08', 'end_date': '2018-03-09'},
+        {'name': '2019 Regular Session', 'identifier': '2019', 'classification': 'primary',
+         'start_date': '2019-03-05', 'end_date': '2019-05-03'},
     ]
-    ignored_scraped_sessions = ['2010',
-                                '2010A', '2010O', '2012O', '2016O', '2014O', '2018', '2019']
+    ignored_scraped_sessions = [
+        *(str(each) for each in range(1997, 2010)),
+        '2010', '2010A', '2010O',
+        '2012O',
+        '2014O',
+        '2016O',
+        '2018O',
+    ]
 
     def get_organizations(self):
         legis = Organization(name="Florida Legislature",
@@ -64,13 +72,6 @@ class Florida(Jurisdiction):
             'Florida Senate', classification='upper', parent_id=legis._id)
         lower = Organization('Florida House of Representatives', classification='lower',
                              parent_id=legis._id)
-
-        for n in range(1, 41):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:fl/sldu:{}'.format(n))
-        for n in range(1, 121):
-            lower.add_post(label=str(n), role='Representative',
-                           division_id='ocd-division/country:us/state:fl/sldl:{}'.format(n))
 
         yield legis
         yield upper

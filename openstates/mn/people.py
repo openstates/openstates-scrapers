@@ -24,21 +24,21 @@ class SenList(CSV):
     def _scrape_extra_info(self):
         self.extra_info = collections.defaultdict(dict)
 
-        resp = self.scraper.get(self._html_url, verify=False)
+        resp = self.scraper.get(self._html_url)
         doc = lxml.html.fromstring(resp.text)
         doc.make_links_absolute(self._html_url)
-        xpath = ('//div[@id="hide_show_alpha_all"]'
-                 '//td[@style="vertical-align:top;"]')
-        for td in doc.xpath(xpath):
-            main_link, email_link = td.xpath('.//a')
+        xpath = ('//div[@id="alphabetically"]'
+                 '//div[@class="media my-3"]')
+        for div in doc.xpath(xpath):
+            main_link, email_link = filter(lambda link: link.get('href'), div.xpath('.//a'))
             name = main_link.text_content().split(' (')[0]
             leg = self.extra_info[name]
             leg['office_phone'] = next(filter(
-                lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string),
-                td.xpath('.//p/text()')
+                lambda string: re.match(r'\d{3}-\d{3}-\d{4}', string.strip()),
+                div.xpath('.//text()')
             )).strip()
             leg['url'] = main_link.get('href')
-            leg['image'] = td.xpath('./preceding-sibling::td//img/@src')[0]
+            leg['image'] = div.xpath('.//img/@src')[0]
             if 'mailto:' in email_link.get('href'):
                 leg['email'] = email_link.get('href').replace('mailto:', '')
 
@@ -100,13 +100,12 @@ class SenList(CSV):
 
 class RepList(Page):
     url = 'http://www.house.leg.state.mn.us/members/hmem.asp'
-    list_xpath = '//div[@id="hide_show_alpha_all"]/table/tr/td/table/tr'
+    list_xpath = '//div[@id="Alpha"]//div[@class="media my-3"]'
 
     def handle_list_item(self, item):
-        photo_url = item.xpath('./td[1]/a/img/@src')[0]
-        info_nodes = item.xpath('./td[2]/p/a')
-        name_text = info_nodes[0].xpath('./b/text()')[0]
-        url = info_nodes[0].get('href')
+        photo_url = item.xpath('./img/@src')[0]
+        url = item.xpath('.//h5/a/@href')[0]
+        name_text = item.xpath('.//h5/a/b/text()')[0]
 
         name_match = re.match(r'^(.+)\(([0-9]{2}[AB]), ([A-Z]+)\)$', name_text)
         name = name_match.group(1).strip()
@@ -115,7 +114,7 @@ class RepList(Page):
         party = PARTIES[party_text]
 
         info_texts = [x.strip() for x in item.xpath(
-            './td[2]/p/text()[normalize-space() and preceding-sibling::br]'
+            './div/text()[normalize-space()]'
         ) if x.strip()]
         address = '\n'.join((info_texts[0], info_texts[1]))
 
@@ -123,9 +122,7 @@ class RepList(Page):
         if validate_phone_number(phone_text):
             phone = phone_text
 
-        email_node = info_nodes[1]
-        email_text = email_node.text
-        email_text = email_text.replace('Email: ', '').strip()
+        email_text = item.xpath('.//a/@href')[1].replace('mailto:', '').strip()
         if validate_email_address(email_text):
             email = email_text
 

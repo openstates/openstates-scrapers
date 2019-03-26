@@ -1,7 +1,7 @@
 from pupa.scrape import Jurisdiction, Organization
 from .people import IDPersonScraper
 # from .committees import IDCommitteeScraper
-# from .bills import IDBillScraper
+from .bills import IDBillScraper
 from openstates.utils.lxmlize import url_xpath
 
 
@@ -13,7 +13,7 @@ class Idaho(Jurisdiction):
     scrapers = {
         'people': IDPersonScraper,
         # 'committees': IDCommitteeScraper,
-        # 'bills': IDBillScraper
+        'bills': IDBillScraper
     }
     legislative_sessions = [
         {
@@ -81,9 +81,19 @@ class Idaho(Jurisdiction):
             "identifier": "2018",
             "name": "64th Legislature, 2nd Regular Session (2018)",
             "start_date": "2018-01-08"
+        },
+        # TODO: Uncomment and remove from ignore_scraped when filing begins
+        {
+            "_scraped_name": "2019 Session",
+            "classification": "primary",
+            "identifier": "2019",
+            "name": "65th Legislature, 1st Regular Session (2019)",
+            "start_date": "2019-01-07",
+            "end_date": "2019-03-29",
         }
     ]
     ignored_scraped_sessions = [
+        "2019 Session",
         "2010 Session",
         "2009 Session",
         "2008 Session",
@@ -103,36 +113,18 @@ class Idaho(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Idaho State Legislature"
-        lower_chamber_name = "House"
-        lower_seats = 35
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 35
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper
         yield lower
 
     def get_session_list(self):
-        sessions = url_xpath('https://legislature.idaho.gov/sessioninfo/',
-                             '//select[@id="ddlsessions"]/option/text()',
-                             verify=False)
-        print('GOT IT')
-        return sessions
+        return url_xpath('https://legislature.idaho.gov/sessioninfo/',
+                         '//select[@id="ddlsessions"]/option/text()')

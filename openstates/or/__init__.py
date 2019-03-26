@@ -1,5 +1,5 @@
 from pupa.scrape import Jurisdiction, Organization
-# from .people import ORPersonScraper
+from .people import ORPersonScraper
 # from .committees import ORCommitteeScraper
 from .bills import ORBillScraper
 from .votes import ORVoteScraper
@@ -11,7 +11,7 @@ class Oregon(Jurisdiction):
     name = "Oregon"
     url = "https://olis.leg.state.or.us"
     scrapers = {
-        # 'people': ORPersonScraper,
+        'people': ORPersonScraper,
         # 'committees': ORCommitteeScraper,
         'bills': ORBillScraper,
         'votes': ORVoteScraper
@@ -98,6 +98,13 @@ class Oregon(Jurisdiction):
             "start_date": "2018-05-21",
             "end_date": "2018-05-21",
         },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "identifier": "2019 Regular Session",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-22",
+            "end_date": "2019-06-30",
+        },
     ]
     ignored_scraped_sessions = [
         "Today",
@@ -113,28 +120,13 @@ class Oregon(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Oregon Legislative Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 60
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 30
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield upper

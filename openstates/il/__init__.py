@@ -2,8 +2,8 @@
 from openstates.utils import url_xpath
 from pupa.scrape import Jurisdiction, Organization
 from .bills import IlBillScraper
-# from .people import IlPersonScraper
-# from .events import IlEventScraper
+from .people import IlPersonScraper
+from .events import IlEventScraper
 # from .committees import IlCommitteeScraper
 
 
@@ -14,8 +14,8 @@ class Illinois(Jurisdiction):
     url = "http://www.ilga.gov/"
     scrapers = {
         "bills": IlBillScraper,
-        # "people": IlPersonScraper,
-        # "events": IlEventScraper,
+        "people": IlPersonScraper,
+        "events": IlEventScraper,
         # "committees": IlCommitteeScraper,
     }
     legislative_sessions = [
@@ -45,9 +45,21 @@ class Illinois(Jurisdiction):
         {'name': '99th Regular Session', 'identifier': '99th', 'classification': 'primary',
          '_scraped_name': '99   (2015-2016)',
          },
-        {'name': '100th Special Session', 'identifier': '100th-special',
-         'classification': 'special'},
+        {
+            'name': '100th Special Session',
+            'identifier': '100th-special',
+            'classification': 'special',
+            '_scraped_name': '100   (2017-2018)',
+        },
         {'name': '100th Regular Session', 'identifier': '100th', 'classification': 'primary'},
+        {
+            'name': '101st Regular Session',
+            'identifier': '101st',
+            'start_date': '2019-01-09',
+            'end_date': '2019-12-31',
+            'classification': 'primary',
+        },
+
     ]
 
     ignored_scraped_sessions = [
@@ -75,13 +87,6 @@ class Illinois(Jurisdiction):
         upper = Organization('Illinois Senate', classification='upper', parent_id=legis._id)
         lower = Organization('Illinois House of Representatives', classification='lower',
                              parent_id=legis._id)
-
-        for n in range(1, 60):
-            upper.add_post(label=str(n), role='Senator',
-                           division_id='ocd-division/country:us/state:il/sldu:{}'.format(n))
-        for n in range(1, 119):
-            lower.add_post(label=str(n), role='Representative',
-                           division_id='ocd-division/country:us/state:il/sldl:{}'.format(n))
 
         yield legis
         yield upper

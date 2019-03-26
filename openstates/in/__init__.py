@@ -3,7 +3,7 @@ import os
 import requests
 from pupa.scrape import Jurisdiction, Organization
 
-# from .people import INPersonScraper
+from .people import INPersonScraper
 # from .committees import INCommitteeScraper
 from .bills import INBillScraper
 
@@ -14,7 +14,7 @@ class Indiana(Jurisdiction):
     name = "Indiana"
     url = "http://www.in.gov/"
     scrapers = {
-        # 'people': INPersonScraper,
+        'people': INPersonScraper,
         # 'committees': INCommitteeScraper,
         'bills': INBillScraper
 
@@ -76,11 +76,19 @@ class Indiana(Jurisdiction):
         {
             "_scraped_name": "Special Session 120th General Assembly (2018)",
             "identifier": "2018ss1",
-            "name": "2018 Special Session"
+            "name": "2018 Special Session",
+            "start_date": "2018-05-14",
+            "end_date": "2018-05-24",
+        },
+        {
+            "_scraped_name": "First Regular Session 121st General Assembly (2019)",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-14"
         },
     ]
     ignored_scraped_sessions = [
-        "Special Session 120th General Assembly (2018)",
+        "First Regular Session 121st General Assembly (2019)",
         "2012 Regular Session",
         "2011 Regular Session",
         "2010 Regular Session",
@@ -103,28 +111,13 @@ class Indiana(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Indiana General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 100
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 50
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
-
-        for n in range(1, upper_seats+1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats+1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
@@ -133,8 +126,10 @@ class Indiana(Jurisdiction):
 
     def get_session_list(self):
         apikey = os.environ['INDIANA_API_KEY']
+        useragent = os.getenv('USER_AGENT', 'openstates')
         headers = {"Authorization": apikey,
-                   "Accept": "application/json"}
-        resp = requests.get("https://api.iga.in.gov/sessions", headers=headers, verify=False)
+                   "Accept": "application/json",
+                   "User-Agent": useragent}
+        resp = requests.get("https://api.iga.in.gov/sessions", headers=headers)
         resp.raise_for_status()
         return [session["name"] for session in resp.json()["items"]]

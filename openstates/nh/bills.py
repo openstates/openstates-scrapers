@@ -46,7 +46,7 @@ def classify_action(action):
 
 
 def extract_amendment_id(action):
-    piece = re.findall('Amendment #(\d{4}-\d+[hs])', action)
+    piece = re.findall(r'Amendment #(\d{4}-\d+[hs])', action)
     if piece:
         return piece[0]
 

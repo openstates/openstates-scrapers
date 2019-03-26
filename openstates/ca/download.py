@@ -20,14 +20,13 @@ from collections import namedtuple
 
 import requests
 import MySQLdb
-import _mysql_exceptions
 
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
 MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
 MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 
-BASE_URL = 'http://downloads.leginfo.legislature.ca.gov/'
+BASE_URL = 'https://downloads.leginfo.legislature.ca.gov/'
 
 
 # ----------------------------------------------------------------------------
@@ -60,7 +59,7 @@ def db_drop():
     try:
         connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER,
                                      passwd=MYSQL_PASSWORD, db='capublic')
-    except _mysql_exceptions.OperationalError:
+    except MySQLdb._exceptions.OperationalError:
         # The database doesn't exist.
         logger.info('...no such database. Bailing.')
         return
@@ -269,6 +268,7 @@ def db_create():
         sql_statements = f.read().split(';')
 
     connection = MySQLdb.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD)
+    print(f'mysql connection host={MYSQL_HOST}, user={MYSQL_USER}, password={MYSQL_PASSWORD}')
     connection.autocommit(True)
     cursor = connection.cursor()
 
@@ -302,7 +302,7 @@ def get_contents():
     #     resp[filename] = date
     # return resp
 
-    html = requests.get(BASE_URL, verify=False).text
+    html = requests.get(BASE_URL).text
     doc = lxml.html.fromstring(html)
     # doc.make_links_absolute(BASE_URL)
     rows = doc.xpath('//table/tr')

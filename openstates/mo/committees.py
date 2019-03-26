@@ -118,7 +118,7 @@ class MOCommitteeScraper(Scraper, LXMLMixin):
 
                 mem_parts = member.text_content().strip().split(',')
                 # Senator title stripping mainly for post-2015.
-                mem_name = re.sub('^Senator[\s]+', '', mem_parts[0])
+                mem_name = re.sub(r'^Senator[\s]+', '', mem_parts[0])
 
                 # this one time, MO forgot the comma between
                 # the member and his district. Very rarely relevant

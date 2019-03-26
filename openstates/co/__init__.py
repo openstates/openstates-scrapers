@@ -2,10 +2,10 @@ import re
 from openstates.utils import url_xpath
 
 from pupa.scrape import Jurisdiction, Organization
-# from .people import COLegislatorScraper
+from .people import COLegislatorScraper
 # from .committees import COCommitteeScraper
 from .bills import COBillScraper
-# from .events import COEventScraper
+from .events import COEventScraper
 
 
 class Colorado(Jurisdiction):
@@ -14,10 +14,10 @@ class Colorado(Jurisdiction):
     name = "Colorado"
     url = "http://leg.colorado.gov/"
     scrapers = {
-        # 'people': COLegislatorScraper,
+        'people': COLegislatorScraper,
         # 'committees': COCommitteeScraper,
         'bills': COBillScraper,
-        # 'events': COEventScraper,
+        'events': COEventScraper,
     }
     legislative_sessions = [
         {
@@ -88,6 +88,14 @@ class Colorado(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-10",
             "end_date": "2018-03-11",
+        },
+        {
+            "_scraped_name": "2019 Regular Session",
+            "classification": "primary",
+            "identifier": "2019A",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-04",
+            "end_date": "2019-05-03",
         }
     ]
     ignored_scraped_sessions = [
@@ -115,29 +123,14 @@ class Colorado(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Colorado General Assembly"
-        lower_chamber_name = "House"
-        lower_seats = 65
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        upper_seats = 35
-        upper_title = "Senator"
 
         legislature = Organization(name=legislature_name,
                                    classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
+        upper = Organization('Senate', classification='upper',
                              parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
+        lower = Organization('House', classification='lower',
                              parent_id=legislature._id)
         executive = Organization('Office of the Governor', classification='executive')
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
 
         yield legislature
         yield executive
@@ -146,7 +139,7 @@ class Colorado(Jurisdiction):
 
     def get_session_list(self):
         sessions = []
-        regex = "2[0-9][0-9][0-9]\ .*\ Session"
+        regex = r"2[0-9][0-9][0-9]\ .*\ Session"
 
         tags = url_xpath(
             'http://www.leg.state.co.us/clics/cslFrontPages.nsf/PrevSessionInfo?OpenForm',

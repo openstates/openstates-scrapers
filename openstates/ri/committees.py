@@ -6,7 +6,7 @@ import lxml.html
 
 
 def clean(stream):
-    return re.sub('\s+', ' ', stream).strip()
+    return re.sub(r'\s+', ' ', stream).strip()
 
 
 class RICommitteeScraper(Scraper):

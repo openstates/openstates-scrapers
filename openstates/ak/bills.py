@@ -120,7 +120,7 @@ class AKBillScraper(Scraper):
         # Get sponsors
         spons_str = doc.xpath('//b[contains(text(), "SPONSOR")]')[0].tail.strip()
         sponsors_match = re.match(
-            '(SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
+            r'(SENATOR|REPRESENTATIVE)\([Ss]\) ([^,]+(,[^,]+){0,})',
             spons_str)
         if sponsors_match:
             sponsors = sponsors_match.group(2).split(',')
@@ -177,7 +177,7 @@ class AKBillScraper(Scraper):
             elif raw_chamber == "(S)":
                 act_chamber = "upper"
 
-            if re.match("\w+ Y(\d+)", action):
+            if re.match(r"\w+ Y(\d+)", action):
                 vote_href = journal.xpath('.//a/@href')
                 if vote_href:
                     yield from self.parse_vote(bill, action, act_chamber, act_date,
@@ -185,7 +185,7 @@ class AKBillScraper(Scraper):
 
             action, atype = self.clean_action(action)
 
-            match = re.match('^Prefile released (\d+/\d+/\d+)$', action)
+            match = re.match(r'^Prefile released (\d+/\d+/\d+)$', action)
             if match:
                 action = 'Prefile released'
                 act_date = datetime.datetime.strptime(match.group(1), '%m/%d/%y')

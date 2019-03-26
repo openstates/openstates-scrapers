@@ -1,7 +1,5 @@
-import os
-import csv
 from pupa.scrape import Jurisdiction, Organization
-# from .people import NHPersonScraper
+from .people import NHPersonScraper
 # from .committees import NHCommitteeScraper
 from .bills import NHBillScraper
 
@@ -12,7 +10,7 @@ class NewHampshire(Jurisdiction):
     name = "New Hampshire"
     url = "TODO"
     scrapers = {
-        # 'people': NHPersonScraper,
+        'people': NHPersonScraper,
         # 'committees': NHCommitteeScraper,
         'bills': NHBillScraper,
     }
@@ -61,6 +59,13 @@ class NewHampshire(Jurisdiction):
             "name": "2018 Regular Session",
             "start_date": "2018-01-03",
         },
+        {
+            "_scraped_name": "2019 Session",
+            "end_date": "2019-06-30",
+            "identifier": "2019",
+            "name": "2019 Regular Session",
+            "start_date": "2019-01-02",
+        },
     ]
     ignored_scraped_sessions = [
         "2013 Session",
@@ -69,36 +74,9 @@ class NewHampshire(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "New Hampshire General Court"
-        lower_chamber_name = "House"
-        # lower_seats = None
-        lower_title = "Representative"
-        upper_chamber_name = "Senate"
-        # upper_seats = 0
-        upper_title = "Senator"
-
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
-
-        # NH names all their districts, so pull them manually.
-        csv_file = '{}/../../manual_data/districts/nh.csv'.format(os.path.dirname(__file__))
-        with open(csv_file, mode='r') as infile:
-            districts = csv.DictReader(infile)
-            for district in districts:
-                if district['chamber'] == 'lower':
-                    lower.add_post(
-                        label=district['name'],
-                        role=lower_title,
-                        division_id=district['division_id'])
-                elif district['chamber'] == 'upper':
-                    upper.add_post(
-                        label=district['name'],
-                        role=upper_title,
-                        division_id=district['division_id'])
-
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
+        lower = Organization('House', classification='lower', parent_id=legislature._id)
         yield legislature
         yield upper
         yield lower

@@ -32,6 +32,7 @@ class LABillScraper(Scraper, LXMLMixin):
         '2018': '18RS',
         '2018 2nd Extraordinary Session': '182ES',
         '2018 3rd Extraordinary Session': '183ES',
+        '2019': '19RS',
     }
 
     def pdf_to_lxml(self, filename, type='html'):
@@ -87,7 +88,7 @@ class LABillScraper(Scraper, LXMLMixin):
                 return
 
             href = hrefs[0].attrib['href']
-            tokens = re.match(".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
+            tokens = re.match(r".*\(\'(?P<token>.*)\',\'.*", href).groupdict()
 
             page = self.do_post_back(
                 page,
@@ -176,7 +177,7 @@ class LABillScraper(Scraper, LXMLMixin):
         vote_type = None
         body = html.xpath('string(/html/body)')
 
-        date_match = re.search('Date: (\d{1,2}/\d{1,2}/\d{4})', body)
+        date_match = re.search(r'Date: (\d{1,2}/\d{1,2}/\d{4})', body)
         try:
             date = date_match.group(1)
         except AttributeError:
@@ -257,6 +258,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         title = page.xpath(
             "//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
+        title = title.replace('\u00a0\u00a0', ' ')
         actions = page.xpath(
             "//div[@id='ctl00_PageBody_PanelBillInfo']/"
             "/table[@style='font-size:small']/tr")

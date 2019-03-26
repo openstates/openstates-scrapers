@@ -23,6 +23,7 @@ class OKBillScraper(Scraper):
         '2017SS1': '171X',
         '2017SS2': '172X',
         '2017-2018': '1800',
+        '2019-2020': '1900',
     }
 
     def scrape(self, chamber=None, session=None, only_bills=None):
@@ -67,12 +68,13 @@ class OKBillScraper(Scraper):
         bill_nums = []
         for link in page.xpath("//a[contains(@href, 'BillInfo')]"):
             bill_id = link.text.strip()
-            bill_num = int(re.findall('\d+', bill_id)[0])
+            bill_num = int(re.findall(r'\d+', bill_id)[0])
             if bill_num >= 9900:
                 self.warning('skipping likely bad bill %s' % bill_id)
                 continue
             if only_bills is not None and bill_id not in only_bills:
-                self.warning('skipping bill we are not interested in %s' % bill_id)
+                self.warning(
+                    'skipping bill we are not interested in %s' % bill_id)
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
@@ -172,6 +174,8 @@ class OKBillScraper(Scraper):
             bill.add_version_link(note=name, url=version_url,
                                   media_type='application/pdf')
 
+        self.scrape_amendments(bill, page)
+
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             if 'HT_' not in link.attrib['href']:
                 yield from self.scrape_votes(bill, self.urlescape(link.attrib['href']))
@@ -187,13 +191,23 @@ class OKBillScraper(Scraper):
             # Otherwise, save the bills.
             yield bill
 
+    def scrape_amendments(self, bill, page):
+        amd_xpath = '//table[@id="ctl00_ContentPlaceHolder1_' \
+                    'TabContainer1_TabPanel2_tblAmendments"]//a[contains(@href,".PDF")]'
+
+        for link in page.xpath(amd_xpath):
+            version_url = link.xpath('@href')[0]
+            version_name = link.xpath('string(.)').strip()
+            bill.add_version_link(version_name, version_url,
+                                  media_type='application/pdf')
+
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.get(url).text.replace(u'\xa0', ' '))
 
         seen_rcs = set()
 
         re_ns = "http://exslt.org/regular-expressions"
-        path = "//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
+        path = r"//p[re:test(text(), 'OKLAHOMA\s+(HOUSE|STATE\s+SENATE)')]"
         for header in page.xpath(path, namespaces={'re': re_ns}):
             bad_vote = False
             # Each chamber has the motion name on a different line of the file
@@ -242,7 +256,7 @@ class OKBillScraper(Scraper):
                 if "*****" in line:
                     break
                 regex = (r'(YEAS|NAYS|EXCUSED|VACANT|CONSTITUTIONAL '
-                         'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)')
+                         r'PRIVILEGE|NOT VOTING|N/V)\s*:\s*(\d+)(.*)')
                 match = re.match(regex, line)
                 if match:
                     if match.group(1) == 'YEAS' and 'RCS#' not in line:

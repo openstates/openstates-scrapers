@@ -16,11 +16,12 @@ class WIPersonScraper(Scraper):
         chambers = [chamber] if chamber is not None else ['upper', 'lower']
 
         for chamber in chambers:
-            yield from self.scrape_chamber(chamber)
+            yield from self.scrape_chamber(chamber, session['identifier'])
 
-    def scrape_chamber(self, chamber):
-        url = 'http://legis.wisconsin.gov/Pages/leg-list.aspx?h={}'.format(
-            {'upper': 's', 'lower': 'a'}[chamber],
+    def scrape_chamber(self, chamber, session):
+        url = 'https://docs.legis.wisconsin.gov/{}/legislators/{}'.format(
+            session,
+            {'upper': 'senate', 'lower': 'assembly'}[chamber],
         )
 
         body = self.get(url).text
@@ -30,7 +31,7 @@ class WIPersonScraper(Scraper):
         for row in page.xpath(".//div[@class='box-content']/div[starts-with(@id,'district')]"):
             if row.xpath(".//a/@href") and not row.xpath(".//a[text()='Vacant']"):
                 rep_url = row.xpath(".//a[text()='Details']/@href")[0].strip("https://")
-                rep_url = "https://docs." + rep_url
+                rep_url = "https://" + rep_url
                 rep_doc = lxml.html.fromstring(self.get(rep_url).text)
                 rep_doc.make_links_absolute(rep_url)
 
@@ -38,7 +39,7 @@ class WIPersonScraper(Scraper):
                     './/div[@id="district"]/h1/text()'
                 )[0].replace("Senator ", "").replace("Representative ", "")
 
-                party = rep_doc.xpath('.//div[@id="district"]/h3/small/text()')
+                party = rep_doc.xpath('.//div[@id="district"]//small/text()')
                 if len(party) > 0:
                     party = PARTY_DICT[party[0].split("-")[0].strip("(").strip()]
                 else:
@@ -74,12 +75,12 @@ class WIPersonScraper(Scraper):
 
                 phone = rep_doc.xpath('.//span[@class="info telephone"]/text()')
                 if phone:
-                    phone = re.sub('\s+', ' ', phone[1]).strip()
+                    phone = re.sub(r'\s+', ' ', phone[1]).strip()
                     person.add_contact_detail(type='voice', value=phone, note='Capitol Office')
 
                 fax = rep_doc.xpath('.//span[@class="info fax"]/text()')
                 if fax:
-                    fax = re.sub('\s+', ' ', fax[1]).strip()
+                    fax = re.sub(r'\s+', ' ', fax[1]).strip()
                     person.add_contact_detail(type='fax', value=fax, note='Capitol Office')
 
                 if email:

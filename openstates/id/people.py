@@ -68,7 +68,7 @@ class IDPersonScraper(Scraper):
         """
         # self.validate_term(term, latest_only=True)
         url = BASE_URL % CHAMBERS[chamber].lower()
-        index = self.get(url, verify=False).text
+        index = self.get(url).text
         html = lxml.html.fromstring(index)
         html.make_links_absolute(url)
 
@@ -83,7 +83,7 @@ class IDPersonScraper(Scraper):
                 continue
 
             name = inner.xpath('p/strong')[0].text.replace(u'\xa0', ' ').strip()
-            name = re.sub('\s+', ' ', name)
+            name = re.sub(r'\s+', ' ', name)
             party = PARTY[inner.xpath('p/strong')[0].tail.strip()]
             email = inner.xpath('p/strong/a')[0].text
             district = inner.xpath('p/a')[0].text.replace('District ', '')

@@ -37,7 +37,7 @@ class IlEventScraper(Scraper):
         description = "{}, {}".format(ctty_name, subject_matter)
 
         datetime = metainf['Scheduled Date:']
-        datetime = re.sub("\s+", " ", datetime)
+        datetime = re.sub(r"\s+", " ", datetime)
         repl = {
             "AM": " AM",
             "PM": " PM"  # Space shim.

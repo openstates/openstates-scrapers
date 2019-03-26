@@ -2,8 +2,7 @@ from pupa.scrape import Jurisdiction, Organization
 
 from openstates.utils import url_xpath
 from openstates.ne.bills import NEBillScraper
-from openstates.ne.votes import NEVoteScraper
-# from openstates.ne.people import NEPersonScraper
+from openstates.ne.people import NEPersonScraper
 # from openstates.ne.committees import NECommitteeScraper
 
 
@@ -14,8 +13,7 @@ class Nebraska(Jurisdiction):
     url = "http://nebraskalegislature.gov/"
     scrapers = {
         'bills': NEBillScraper,
-        'votes': NEVoteScraper,
-        # 'people': NEPersonScraper,
+        'people': NEPersonScraper,
         # 'committees': NECommitteeScraper,
     }
     legislative_sessions = [
@@ -53,6 +51,13 @@ class Nebraska(Jurisdiction):
             "identifier": "105",
             "name": "105th Legislature (2017-2018)",
             "start_date": "2017-01-04"
+        },
+        {
+            "_scraped_name": "106th Legislature 1st and 2nd Sessions",
+            "end_date": "2020-12-31",
+            "identifier": "106",
+            "name": "106th Legislature (2019-2020)",
+            "start_date": "2019-01-04"
         }
     ]
     ignored_scraped_sessions = [
@@ -64,21 +69,13 @@ class Nebraska(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "Nebraska Legislature"
-        seats = 49
-        title = "Senator"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
+        legislature = Organization(name=legislature_name, classification="legislature")
         executive = Organization(name='Office of the Governor',
                                  classification="executive")
-        for n in range(1, seats + 1):
-            legislature.add_post(
-                label=str(n), role=title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-
         yield legislature
         yield executive
 
     def get_session_list(self):
-        return url_xpath('http://nebraskalegislature.gov/bills/',
+        return url_xpath('https://nebraskalegislature.gov/bills/',
                          "//select[@name='Legislature']/option/text()")[:-1]

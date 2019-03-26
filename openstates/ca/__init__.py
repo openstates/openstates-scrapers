@@ -5,7 +5,7 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import CABillScraper
 # from .events import CAEventScraper
-# from .people import CAPersonScraper
+from .people import CAPersonScraper
 # from .committees import CACommitteeScraper
 
 
@@ -20,7 +20,7 @@ class California(Jurisdiction):
     scrapers = {
         'bills': CABillScraper,
         # 'events': CAEventScraper,
-        # 'people': CAPersonScraper,
+        'people': CAPersonScraper,
         # 'committees': CACommitteeScraper,
     }
     legislative_sessions = [
@@ -119,6 +119,14 @@ class California(Jurisdiction):
             "identifier": "20172018",
             "name": "2017-2018 Regular Session",
             "start_date": "2016-12-05"
+        },
+        {
+            "_scraped_name": "2019-2020",
+            "classification": "primary",
+            "identifier": "20192020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-02",
+            "end_date": "2020-12-31",
         }
     ]
     ignored_scraped_sessions = [
@@ -137,28 +145,10 @@ class California(Jurisdiction):
 
     def get_organizations(self):
         legislature_name = "California State Legislature"
-        lower_chamber_name = "Assembly"
-        lower_seats = 80
-        lower_title = "Assemblymember"
-        upper_chamber_name = "Senate"
-        upper_seats = 40
-        upper_title = "Senator"
 
-        legislature = Organization(name=legislature_name,
-                                   classification="legislature")
-        upper = Organization(upper_chamber_name, classification='upper',
-                             parent_id=legislature._id)
-        lower = Organization(lower_chamber_name, classification='lower',
-                             parent_id=legislature._id)
-
-        for n in range(1, upper_seats + 1):
-            upper.add_post(
-                label=str(n), role=upper_title,
-                division_id='{}/sldu:{}'.format(self.division_id, n))
-        for n in range(1, lower_seats + 1):
-            lower.add_post(
-                label=str(n), role=lower_title,
-                division_id='{}/sldl:{}'.format(self.division_id, n))
+        legislature = Organization(name=legislature_name, classification="legislature")
+        upper = Organization('Senate', classification='upper', parent_id=legislature._id)
+        lower = Organization('Assembly', classification='lower', parent_id=legislature._id)
 
         yield Organization(name='Office of the Governor', classification='executive')
         yield legislature
@@ -170,6 +160,6 @@ class California(Jurisdiction):
             'http://www.leginfo.ca.gov/bilinfo.html',
             "//select[@name='sess']/option/text()")
         return [
-            re.findall('\(.*\)', session)[0][1:-1]
+            re.findall(r'\(.*\)', session)[0][1:-1]
             for session in sessions
         ]
