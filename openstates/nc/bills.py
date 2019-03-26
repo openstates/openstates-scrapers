@@ -95,6 +95,14 @@ class NCBillScraper(Scraper):
             bill.add_version_link(version_name, version_url, media_type=media_type,
                                   on_duplicate='ignore')
 
+        # rows with a 'adopted' in the text and an amendment link, skip failed amds
+        for row in doc.xpath('//div[@class="card-body"]/div[contains(., "Adopted")'
+                             ' and contains(@class,"row")]//a[@title="Amendment"]'):
+            version_url = row.xpath('@href')[0]
+            version_name = row.xpath('string(.)').strip()
+            bill.add_version_link(version_name, version_url, media_type='application/pdf',
+                                  on_duplicate='ignore')
+
         # sponsors
         spon_row = doc.xpath('//div[contains(text(), "Sponsors")]/following-sibling::div')[0]
         # first sponsors are primary, until we see (Primary)
