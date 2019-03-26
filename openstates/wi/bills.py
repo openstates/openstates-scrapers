@@ -24,7 +24,8 @@ action_classifiers = {
     '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment-passage',
     '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment-deferral',
     '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment-withdrawal',
-    'Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment': 'amendment-passage',
+    'Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment':
+        'amendment-passage',
     'Report (passage|concurrence).* recommended': 'committee-passage-favorable',
     'Report approved by the Governor with partial veto': 'executive-veto-line-item',
     'Report approved by the Governor on': 'executive-signature',
