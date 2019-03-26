@@ -171,7 +171,7 @@ class BillDetailPage(Page, Spatula):
         # amendments
         for va in self.doc.xpath('//h4[text()="AMENDMENTS"]/following-sibling::ul[1]/li/a[1]'):
             version_name = va.xpath('string(.)')
-            if ('adopted' in version_name.lower() \
+            if ('adopted' in version_name.lower()
                     or 'engrossed' in version_name.lower()) \
                     and 'not adopted' not in version_name.lower() \
                     and 'not engrossed' not in version_name.lower():
