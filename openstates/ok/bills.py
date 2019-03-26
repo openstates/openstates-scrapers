@@ -73,7 +73,8 @@ class OKBillScraper(Scraper):
                 self.warning('skipping likely bad bill %s' % bill_id)
                 continue
             if only_bills is not None and bill_id not in only_bills:
-                self.warning('skipping bill we are not interested in %s' % bill_id)
+                self.warning(
+                    'skipping bill we are not interested in %s' % bill_id)
                 continue
             bill_nums.append(bill_num)
             yield from self.scrape_bill(chamber, session, bill_id, link.attrib['href'])
@@ -173,6 +174,8 @@ class OKBillScraper(Scraper):
             bill.add_version_link(note=name, url=version_url,
                                   media_type='application/pdf')
 
+        self.scrape_amendments(bill, page)
+
         for link in page.xpath(".//a[contains(@href, '_VOTES')]"):
             if 'HT_' not in link.attrib['href']:
                 yield from self.scrape_votes(bill, self.urlescape(link.attrib['href']))
@@ -187,6 +190,16 @@ class OKBillScraper(Scraper):
         else:
             # Otherwise, save the bills.
             yield bill
+
+    def scrape_amendments(self, bill, page):
+        amd_xpath = '//table[@id="ctl00_ContentPlaceHolder1_' \
+                    'TabContainer1_TabPanel2_tblAmendments"]//a[contains(@href,".PDF")]'
+
+        for link in page.xpath(amd_xpath):
+            version_url = link.xpath('@href')[0]
+            version_name = link.xpath('string(.)').strip()
+            bill.add_version_link(version_name, version_url,
+                                  media_type='application/pdf')
 
     def scrape_votes(self, bill, url):
         page = lxml.html.fromstring(self.get(url).text.replace(u'\xa0', ' '))
