@@ -86,33 +86,65 @@ class PABillScraper(Scraper):
         yield bill
 
     def parse_bill_versions(self, bill, page):
-        mimetypes = {
-            'icon-IE': 'text/html',
-            'icon-file-pdf': 'application/pdf',
-            'icon-file-word': 'application/msword',
-        }
-        for a in page.xpath('//*[contains(@class, "BillInfo-PNTable")]//td/a'):
-            try:
-                span = a[0]
-            except IndexError:
-                continue
-            for cls in span.attrib['class'].split():
-                if cls in mimetypes:
-                    mimetype = mimetypes[cls]
-                    break
+        for row in page.xpath('//table[contains(@class, "BillInfo-PNTable")]/tbody/tr'):
+            printers_number = 0
+            for a in row.xpath('td[2]/a'):
+                mimetype = self.mimetype_from_class(a)
 
-            href = a.attrib['href']
-            params = urllib.parse.parse_qs(href[href.find("?") + 1:])
+                href = a.attrib['href']
+                params = urllib.parse.parse_qs(href[href.find("?") + 1:])
 
-            for key in ('pn', 'PrintersNumber'):
-                try:
-                    printers_number = params[key][0]
-                    break
-                except KeyError:
-                    continue
+                for key in ('pn', 'PrintersNumber'):
+                    try:
+                        printers_number = params[key][0]
+                        break
+                    except KeyError:
+                        continue
 
-            bill.add_version_link("Printer's No. %s" % printers_number,
-                                  href, media_type=mimetype, on_duplicate='ignore')
+                bill.add_version_link("Printer's No. %s" % printers_number,
+                                      href, media_type=mimetype, on_duplicate='ignore')
+
+            # House and Senate Amendments
+            for a in row.xpath('td[3]/a'):
+                self.scrape_amendments(bill, a.attrib['href'], 'House')
+
+            for a in row.xpath('td[4]/a'):
+                self.scrape_amendments(bill, a.attrib['href'], 'Senate')
+
+            # House Fiscal Notes
+            for a in row.xpath('td[5]/a'):
+                mimetype = self.mimetype_from_class(a)
+                href = a.attrib['href']
+                bill.add_document_link("House Fiscal Note",
+                                       href, media_type=mimetype, on_duplicate='ignore')
+
+            # Senate Fiscal Notes
+            for a in row.xpath('td[6]/a'):
+                mimetype = self.mimetype_from_class(a)
+                href = a.attrib['href']
+                bill.add_document_link("Senate Fiscal Note",
+                                       href, media_type=mimetype, on_duplicate='ignore')
+
+            # Actuarial Notes
+            for a in row.xpath('td[7]/a'):
+                mimetype = self.mimetype_from_class(a)
+                href = a.attrib['href']
+                bill.add_document_link("Actuarial Note {}".format(printers_number),
+                                       href, media_type=mimetype, on_duplicate='ignore')
+
+    def scrape_amendments(self, bill, link, chamber_pretty):
+        html = self.get(link).text
+        page = lxml.html.fromstring(html)
+        page.make_links_absolute(link)
+
+        for row in page.xpath('//div[contains(@class,"AmendList-Wrapper")]'):
+            version_name = row.xpath('div[contains(@class,"AmendList-AmendNo")]/text()')[0].strip()
+            version_name = '{} Amendment {}'.format(chamber_pretty, version_name)
+            for a in row.xpath('div[contains(@class,"AmendList-FileTypes")]/a'):
+                mimetype = self.mimetype_from_class(a)
+                version_link = a.attrib['href']
+                bill.add_version_link(
+                    version_name, version_link, media_type=mimetype, on_duplicate='ignore')
 
     def parse_history(self, bill, chamber, url):
         bill.add_source(url)
@@ -376,3 +408,19 @@ class PABillScraper(Scraper):
         rollcall['passed'] = rollcall['yes_count'] > rollcall['no_count']
 
         return dict(rollcall)
+
+    def mimetype_from_class(self, link):
+        mimetypes = {
+            'icon-IE': 'text/html',
+            'icon-file-pdf': 'application/pdf',
+            'icon-file-word': 'application/msword',
+        }
+
+        try:
+            span = link[0]
+        except IndexError:
+            return
+        for cls in span.attrib['class'].split():
+            if cls in mimetypes:
+                mimetype = mimetypes[cls]
+                return mimetype
