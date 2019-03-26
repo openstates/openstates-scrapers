@@ -149,6 +149,10 @@ class DEBillScraper(Scraper, LXMLMixin):
             self.scrape_fiscal_note(bill, fiscal)
 
         self.scrape_actions(bill, row['LegislationId'])
+
+        if row['HasAmendments'] is True:
+            self.scrape_amendments(bill, row['LegislationId'])
+
         yield from self.scrape_votes(bill, row['LegislationId'], session)
 
         yield bill
@@ -317,6 +321,53 @@ class DEBillScraper(Scraper, LXMLMixin):
                 action.add_related_entity(l, 'person')
             for c in categorization['committees']:
                 action.add_related_entity(c, 'organization')
+
+    def scrape_amendments(self, bill, legislation_id):
+        # http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId?legislationId=47185
+        # http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId
+        amds_url = 'http://legis.delaware.gov/json/BillDetail/GetRelatedAmendmentsByLegislationId'
+        form = {
+            'legislationId': legislation_id,
+            'sort': '',
+            'group': '',
+            'filter': '',
+        }
+        self.info('Fetching amendments for {}'.format(bill.identifier))
+        # page = self.post(url=amds_url, data=form, allow_redirects=True).json()
+        page = self.post(url=amds_url, data=form, allow_redirects=True).content
+        if page == b'':
+            return
+        else:
+            page = json.loads(page)
+
+        for row in page['Data']:
+            if row['PublicStatusName'] == 'Passed':
+                # http://legis.delaware.gov/json/BillDetail/GeneratePdfDocument
+                # ?legislationId=47252&legislationTypeId=5&docTypeId=2&legislationName=HA1
+                # http://legis.delaware.gov/json/BillDetail/GenerateHtmlDocument
+                # ?legislationId=47252&legislationTypeId=5&docTypeId=2&legislationName=HA1
+
+                pdf_url = 'http://legis.delaware.gov/json/BillDetail/GeneratePdfDocument?' \
+                          'legislationId={}&legislationTypeId=5&docTypeId=2'.format(
+                              row['AmendmentLegislationId'])
+
+                bill.add_version_link(
+                    row['AmendmentCode'],
+                    pdf_url,
+                    media_type='application/pdf',
+                    on_duplicate='ignore'
+                )
+
+                html_url = 'http://legis.delaware.gov/json/BillDetail/GenerateHtmlDocument?' \
+                    'legislationId={}&legislationTypeId=5&docTypeId=2'.format(
+                        row['AmendmentLegislationId'])
+
+                bill.add_version_link(
+                    row['AmendmentCode'],
+                    html_url,
+                    media_type='text/html',
+                    on_duplicate='ignore'
+                )
 
     def classify_bill(self, bill_id):
         legislation_types = (
