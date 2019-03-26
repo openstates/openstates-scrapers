@@ -94,6 +94,20 @@ class ORBillScraper(Scraper):
                                           media_type='application/pdf')
                 except ValueError:
                     logger.warn('Duplicate link found for {}'.format(document['DocumentUrl']))
+
+            for agenda_item in measure['CommitteeAgendaItems']:
+                for document in agenda_item['CommitteeProposedAmendments']:
+                    if 'adopted' in document['Meaning'].lower():
+                        amd_name = '{} Amendment {}'.format(
+                            document['CommitteeCode'],
+                            document['AmendmentNumber'],
+                        )
+                        bill.add_version_link(
+                            amd_name,
+                            document['ProposedAmendmentUrl'],
+                            media_type='application/pdf',
+                            on_duplicate='ignore')
+
             for action in measure['MeasureHistoryActions']:
                 classifiers = self.determine_action_classifiers(action['ActionText'])
                 when = datetime.datetime.strptime(action['ActionDate'], '%Y-%m-%dT%H:%M:%S')
