@@ -326,11 +326,6 @@ class CABillScraper(Scraper):
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr,
                          committee_abbr_regex=get_committee_name_regex()):
-        if chamber == 'upper':
-            chamber_name = 'SENATE'
-        else:
-            chamber_name = 'ASSEMBLY'
-
         bills = self.session.query(CABill).filter_by(
             session_year=session).filter_by(
             measure_type=type_abbr)
@@ -458,14 +453,13 @@ class CABillScraper(Scraper):
                 fsbill.add_title(title)
 
             for author in version.authors:
-                if author.house == chamber_name:
-                    fsbill.add_sponsorship(
-                        author.name,
-                        classification=SPONSOR_TYPES[author.contribution],
-                        primary=author.primary_author_flg == 'Y',
-                        entity_type='person',
-                    )
-                    # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
+                fsbill.add_sponsorship(
+                    author.name,
+                    classification=SPONSOR_TYPES[author.contribution],
+                    primary=author.primary_author_flg == 'Y',
+                    entity_type='person',
+                )
+                # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
             for action in bill.actions:
