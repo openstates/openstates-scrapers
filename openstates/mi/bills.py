@@ -87,6 +87,10 @@ class MIBillScraper(Scraper):
         sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
         for sponsor in sponsors:
             name = sponsor.text.replace(u'\xa0', ' ')
+            # sometimes district gets added as a link
+            if name.isnumeric():
+                continue
+
             if len(sponsors) > 1:
                 classification = (
                     'primary'
