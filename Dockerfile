@@ -17,6 +17,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     git \
     curl \
     unzip \
+    gcc \
     glib \
     glib-dev \
     libressl-dev \
