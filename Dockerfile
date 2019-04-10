@@ -1,5 +1,5 @@
-FROM        alpine:3.8
-MAINTAINER  James Turk <james@openstates.org>
+FROM  alpine:3.8
+LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
