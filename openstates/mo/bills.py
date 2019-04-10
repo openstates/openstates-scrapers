@@ -202,6 +202,14 @@ class MOBillScraper(Scraper, LXMLMixin):
         if len(versions_url) > 0 and versions_url[0].attrib.get('href'):
             self._parse_senate_bill_versions(bill, versions_url[0].attrib['href'])
 
+        amendment_links = bill_page.xpath('//a[contains(@href,"ShowAmendment.asp")]')
+        for link in amendment_links:
+            link_text = link.xpath('string(.)').strip()
+            if 'adopted' in link_text.lower():
+                link_url = link.xpath('@href')[0]
+                bill.add_version_link(link_text, link_url, media_type='application/pdf',
+                                      on_duplicate='ignore')
+
         yield bill
 
     def _parse_senate_bill_versions(self, bill, url):
