@@ -93,6 +93,10 @@ class NMBillScraper(Scraper):
         for sponsor in self.access_to_csv('tblSponsors'):
             sponsor_map[sponsor['SponsorCode']] = sponsor['FullName']
 
+        # McSorley resigned so they removed him from the API
+        # but he is still attached to some bills
+        sponsor_map['SMCSO'] = 'Cisco McSorley'
+
         subject_map = {}
         for subject in self.access_to_csv('TblSubjects'):
             subject_map[subject['SubjectCode']] = subject['Subject']
@@ -161,6 +165,7 @@ class NMBillScraper(Scraper):
         lesc_url = 'http://www.nmlegis.gov/Sessions/{}/LESCAnalysis/'.format(
             s_slug)
         final_url = 'http://www.nmlegis.gov/Sessions/{}/final/'.format(s_slug)
+        amd_url = 'http://www.nmlegis.gov/Sessions/{}/Amendments_In_Context/'.format(s_slug)
 
         # go through all of the links on these pages and add them to the
         # appropriate bills
@@ -189,11 +194,16 @@ class NMBillScraper(Scraper):
                                 bill.add_version_link(
                                     'Final Version', url + fname,
                                     media_type=mimetype)
+                            elif doc_type == 'Amendments in Context':
+                                bill.add_version_link(
+                                    doc_type, url + fname,
+                                    media_type=mimetype)
                             else:
                                 bill.add_document_link(doc_type, url + fname,
                                                        media_type=mimetype,
                                                        on_duplicate='ignore')
 
+        check_docs(amd_url, 'Amendments in Context')
         check_docs(firs_url, 'Fiscal Impact Report')
         check_docs(lesc_url, 'LESC Analysis')
         check_docs(final_url, 'Final Version')

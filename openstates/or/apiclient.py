@@ -16,7 +16,8 @@ class OregonLegislatorODataClient(object):
         committee_members='Committees(CommitteeCode=\'{committee}\','
                           'SessionKey=\'{session}\')/CommitteeMembers',
         measures='LegislativeSessions(\'{session}\')/Measures'
-                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions',
+                 '?$expand=MeasureSponsors,MeasureDocuments,MeasureHistoryActions,'
+                 'CommitteeAgendaItems/CommitteeProposedAmendments',
         votes='LegislativeSessions(\'{session}\')/Measures'
               '?$expand=MeasureHistoryActions/MeasureVotes,CommitteeAgendaItems/CommitteeVotes'
     )

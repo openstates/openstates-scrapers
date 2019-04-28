@@ -43,6 +43,13 @@ class Iowa(Jurisdiction):
             "name": "2017-2018 Regular Session",
             "start_date": "2017-01-09",
             "end_date": "2017-04-22",
+        },
+        {
+            "_scraped_name": "General Assembly: 88",
+            "identifier": "2019-2020",
+            "name": "2019-2020 Regular Session",
+            "start_date": "2019-01-14",
+            "end_date": "2019-05-03",
         }
     ]
     ignored_scraped_sessions = [

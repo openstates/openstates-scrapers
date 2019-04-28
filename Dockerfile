@@ -1,9 +1,11 @@
-FROM        alpine:3.8
-MAINTAINER  James Turk <james@openstates.org>
+FROM  alpine:3.8
+LABEL maintainer="James Turk <james@openstates.org>"
 
 ENV PYTHONIOENCODING 'utf-8'
 ENV LANG 'en_US.UTF-8'
 ENV PUPA_ENV /opt/openstates/venv-pupa/
+
+ADD . /opt/openstates/openstates
 
 RUN apk add --no-cache --virtual .build-dependencies \
     wget \
@@ -15,6 +17,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     git \
     curl \
     unzip \
+    gcc \
     glib \
     glib-dev \
     libressl-dev \
@@ -31,7 +34,7 @@ RUN apk add --no-cache --virtual .build-dependencies \
     postgresql-client \
     mariadb \
     mariadb-dev \
-    mysql-client && \
+    mariadb-client && \
   apk add --no-cache \
     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main \
     libcrypto1.1 && \
@@ -47,11 +50,8 @@ RUN apk add --no-cache --virtual .build-dependencies \
     autoreconf -i -f && \
     ./configure --disable-man && make && make install && \
     cd /tmp && \
-    rm -rf mdbtools-0.7.1
-
-ADD . /opt/openstates/openstates
-
-RUN virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
+    rm -rf mdbtools-0.7.1 && \
+  virtualenv -p $(which python3) /opt/openstates/venv-pupa/ && \
     /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/python-opencivicdata-django.git#egg=opencivicdata && \
     /opt/openstates/venv-pupa/bin/pip install -e git+https://github.com/opencivicdata/pupa.git#egg=pupa && \
     /opt/openstates/venv-pupa/bin/pip install -r /opt/openstates/openstates/requirements.txt && \

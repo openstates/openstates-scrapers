@@ -85,11 +85,7 @@ class WYBillScraper(Scraper, LXMLMixin):
         bill.add_source(source_url)
 
         for action_json in bill_json['billActions']:
-            # provided dates are ISO 8601, but in mountain time
-            action_date = datetime.datetime.strptime(
-                action_json['statusDate'], '%Y-%m-%dT%H:%M:%S')
-            local_action_date = TIMEZONE.localize(action_date)
-            utc_action_date = local_action_date.astimezone(pytz.utc)
+            utc_action_date = self.parse_local_date(action_json['statusDate'])
 
             actor = None
             if action_json['location'] and action_json['location'] in chamber_map:
@@ -267,7 +263,14 @@ class WYBillScraper(Scraper, LXMLMixin):
 
     def parse_local_date(self, date_str):
         # provided dates are ISO 8601, but in mountain time
-        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+        # and occasionally have fractional time at the end
+        if '.' not in date_str:
+            date_str = date_str + '.0'
+
+        date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+        # Truncate microseconds; opencivicdata limits action date to 25 characters
+        # TODO: Fix in opencivicdata
+        date_obj = date_obj.replace(microsecond=0)
         local_date = TIMEZONE.localize(date_obj)
         utc_action_date = local_date.astimezone(pytz.utc)
         return utc_action_date

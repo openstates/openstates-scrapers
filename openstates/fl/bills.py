@@ -433,20 +433,18 @@ class HouseBillPage(Page):
 class HouseComVote(Page):
 
     def handle_page(self):
-        (date, ) = self.doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblDate"]/text()')
+        date, = self.doc.xpath('//span[contains(@id, "lblDate")]/text()')
         date = format_datetime(datetime.datetime.strptime(date, '%m/%d/%Y %I:%M:%S %p'),
                                'US/Eastern')
 
-        totals = self.doc.xpath('//table//table')[-1].text_content()
-        totals = re.sub(r'(?mu)\s+', " ", totals).strip()
-        (yes_count, no_count, other_count) = [int(x) for x in re.search(
-            r'(?m)Total Yeas:\s+(\d+)\s+Total Nays:\s+(\d+)\s+'
-            r'Total Missed:\s+(\d+)', totals).groups()]
+        yes_count = int(self.doc.xpath('//span[contains(@id, "lblYeas")]/text()')[0])
+        no_count = int(self.doc.xpath('//span[contains(@id, "lblNays")]/text()')[0])
+        other_count = int(self.doc.xpath('//span[contains(@id, "lblMissed")]/text()')[0])
         result = 'pass' if yes_count > no_count else 'fail'
 
-        (committee, ) = self.doc.xpath(
-            '//span[@id="ctl00_ContentPlaceHolder1_lblCommittee"]/text()')
-        (action, ) = self.doc.xpath('//span[@id="ctl00_ContentPlaceHolder1_lblAction"]/text()')
+        committee, = self.doc.xpath(
+            '//span[contains(@id, "lblCommittee")]/text()')
+        action, = self.doc.xpath('//span[contains(@id, "lblAction")]/text()')
         motion = "{} ({})".format(action, committee)
 
         vote = VoteEvent(start_date=date,
@@ -461,12 +459,12 @@ class HouseComVote(Page):
         vote.set_count('no', no_count)
         vote.set_count('not voting', other_count)
 
-        for member_vote in self.doc.xpath('//table//table//table//td'):
+        for member_vote in self.doc.xpath('//ul[contains(@class, "vote-list")]/li'):
             if not member_vote.text_content().strip():
                 continue
 
-            (member, ) = member_vote.xpath('span[2]//text()')
-            (member_vote, ) = member_vote.xpath('span[1]//text()')
+            member, = member_vote.xpath('span[2]//text()')
+            member_vote, = member_vote.xpath('span[1]//text()')
 
             if member_vote == "Y":
                 vote.yes(member)

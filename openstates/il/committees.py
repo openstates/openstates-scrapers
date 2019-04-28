@@ -33,10 +33,12 @@ class IlCommitteeScraper(Scraper):
 
         for chamber, chamber_name in chambers:
 
-            CURRENT_SESSION = 100
+            CURRENT_SESSION = 101
             sessions = [CURRENT_SESSION] if latest_only else range(93, CURRENT_SESSION+1)
 
             for session in sessions:
+
+                bad_keys = []
 
                 url = 'http://ilga.gov/{0}/committees/default.asp?GA={1}'.format(
                     chamber_name, session)
@@ -57,6 +59,10 @@ class IlCommitteeScraper(Scraper):
                         o_id = (name, code)
                     else:
                         code = code.text_content().strip()
+                        if (name, code) not in COMMITTEES:
+                            bad_keys.append((name, code))
+                            continue
+
                         o_id = COMMITTEES[(name, code)]
 
                     skip_code = False
@@ -84,7 +90,12 @@ class IlCommitteeScraper(Scraper):
                     else:
                         committees[o_id]['chamber'] = chamber
                         top_level_com = o_id
-
+                if len(bad_keys) > 0:
+                    bad_keys.sort(key=lambda tup: tup[0])
+                    # formatted for quick copy-paste insertion into _committees.py
+                    bad_keys_str = \
+                        '\n'.join(['(\''+'\', \''.join(bad)+'\'): \'\',' for bad in bad_keys])
+                    raise ValueError('unknown committees:\n' + bad_keys_str)
         top_level = {o_id: committee for o_id, committee in
                      committees.items() if 'chamber' in committee}
 

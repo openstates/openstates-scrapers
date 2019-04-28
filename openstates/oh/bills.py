@@ -274,7 +274,8 @@ class OHBillScraper(Scraper):
     def get_bill_rows(self, session, start=1):
         # bill API endpoint times out so we're now getting this from the normal search
         bill_url = ('https://www.legislature.ohio.gov/legislation/search?pageSize=500&start={}&'
-                    'sort=LegislationNumber&dir=asc&statusCode&generalAssemblies={}'.format(
+                    'sort=LegislationNumber&dir=asc&statusCode&generalAssemblies={}'
+                    '&legislationTypes=HR,HB,SR,SB,HCR,SCR,HJR,SJR'.format(
                         start, session)
                     )
         doc = self.get(bill_url)

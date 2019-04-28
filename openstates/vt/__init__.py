@@ -102,6 +102,9 @@ class Vermont(Jurisdiction):
         yield lower
 
     def get_session_list(self):
-        return url_xpath(
+        sessions = url_xpath(
                 'http://legislature.vermont.gov/bill/search/2016',
-                '//fieldset/div[@id="selected_session"]/div/select/option/text()')
+                '//fieldset/div[@id="Form_SelectSession_selected_session_Holder"]'
+                '/div/select/option/text()')
+        sessions = (session.replace(',', '').strip() for session in sessions)
+        return sessions

@@ -71,6 +71,8 @@ def correct_name(name):
 
 
 def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
+    # When they vote in a substitute they mark it as XHB
+    bill_id = bill_id.replace('XHB', 'HB')
     passed = len(vote_record['yes']) > len(vote_record['no'])
     vote_event = VoteEvent(
         result='pass' if passed else 'fail',
@@ -80,7 +82,7 @@ def build_vote(session, bill_id, url, vote_record, chamber, motion_text):
         classification='passage',
         legislative_session=session,
         bill=bill_id,
-        bill_chamber='upper' if bill_id[0] is 'S' else 'lower'
+        bill_chamber='upper' if bill_id[0] == 'S' else 'lower'
     )
     vote_event.pupa_id = url
     vote_event.set_count('yes', len(vote_record['yes']))
@@ -212,7 +214,7 @@ class NMVoteScraper(Scraper):
             bill_id = bill_type + ' ' + bill_num
 
             # votes
-            if 'SVOTE' in suffix and chamber is 'upper':
+            if 'SVOTE' in suffix and chamber == 'upper':
                 sv_text = self.scrape_vote_text(doc_path + fname)
                 if not sv_text:
                     continue
@@ -225,7 +227,7 @@ class NMVoteScraper(Scraper):
                 else:
                     yield vote
 
-            elif 'HVOTE' in suffix and chamber is 'lower':
+            elif 'HVOTE' in suffix and chamber == 'lower':
                 hv_text = self.scrape_vote_text(doc_path + fname)
                 if not hv_text:
                     continue

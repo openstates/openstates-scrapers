@@ -95,7 +95,8 @@ class AKPersonScraper(Scraper, LXMLMixin):
         for item in items:
             photo_url = item.xpath('.//img/@src')[0]
             name = item.xpath('.//strong/text()')[0]
-            leg_url = item.xpath('.//a/@href')[0]
+            leg_url = next(iter(item.xpath('.//a/@href')), None)
+
             email = item.xpath('.//a[text()="Email Me"]/@href')
             if email:
                 email = email[0].replace('mailto:', '')
@@ -127,8 +128,10 @@ class AKPersonScraper(Scraper, LXMLMixin):
                 party=self._party_map[party],
                 image=photo_url,
             )
-            person.add_source(leg_url)
-            person.add_link(leg_url)
+
+            if leg_url is not None:
+                person.add_source(leg_url)
+                person.add_link(leg_url)
 
             self._scrape_offices(person, leg_url, email)
 

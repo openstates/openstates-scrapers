@@ -3,8 +3,8 @@ import re
 import itertools
 import copy
 import tempfile
+import urllib
 from datetime import datetime
-from urllib.parse import urljoin
 from collections import defaultdict
 
 from pupa.scrape import Scraper, Bill, VoteEvent
@@ -86,9 +86,9 @@ class MTBillScraper(Scraper, LXMLMixin):
 
         bill_urls = []
         for bill_url in bills_page.xpath('//tr//a[contains(@href, "ActionQuery")]/@href'):
-            if 'lower' in chambers and 'HB' in bill_url:
+            if 'lower' in chambers and ('HB' in bill_url or 'HJ' in bill_url or 'HR' in bill_url):
                 bill_urls.append(bill_url)
-            if 'upper' in chambers and 'SB' in bill_url:
+            if 'upper' in chambers and ('SB' in bill_url or 'SJ' in bill_url or 'SR' in bill_url):
                 bill_urls.append(bill_url)
 
         for bill_url in bill_urls:
@@ -125,10 +125,22 @@ class MTBillScraper(Scraper, LXMLMixin):
         url = set(doc.xpath('//a/@href[contains(., "billpdf")]')).pop()
         bill.add_version_link(version_name, url, media_type='application/pdf')
 
+        new_versions_url = doc.xpath('//a[text()="Previous Version(s)"]/@href')
+        if new_versions_url:
+            self.scrape_new_site_versions(bill, new_versions_url[0])
+
         # Add bill url as a source.
         bill.add_source(bill_url)
 
         return bill, votes
+
+    def scrape_new_site_versions(self, bill, url):
+        page = self.lxmlize(url)
+        for link in page.xpath('//div[contains(@class,"container white")]/a'):
+            link_text = link.xpath('text()')[0].strip()
+            link_url = link.xpath('@href')[0]
+            bill.add_version_link(
+                link_text, link_url, media_type='application/pdf', on_duplicate='ignore')
 
     def _get_tabledata(self, status_page):
         '''Montana doesn't currently list co/multisponsors on any of the
@@ -155,11 +167,11 @@ class MTBillScraper(Scraper, LXMLMixin):
 
     def parse_bill_status_page(self, url, page, session, chamber):
         # see 2007 HB 2... weird.
-        bill_re = r'.*?/([A-Z]+)0*(\d+)\.pdf'
-        bill_xpath = '//a[contains(@href, ".pdf") and contains(@href, "billpdf")]/@href'
-        bill_id = re.search(bill_re, page.xpath(bill_xpath)[0],
-                            re.IGNORECASE).groups()
-        bill_id = "{0} {1}".format(bill_id[0], int(bill_id[1]))
+        parsed_url = urllib.parse.urlparse(url)
+        parsed_query = dict(urllib.parse.parse_qsl(parsed_url.query))
+        bill_id = "{0} {1}".format(
+            parsed_query['P_BLTP_BILL_TYP_CD'],
+            parsed_query['P_BILL_NO1'])
 
         try:
             xp = '//b[text()="Short Title:"]/../following-sibling::td/text()'
@@ -274,7 +286,7 @@ class MTBillScraper(Scraper, LXMLMixin):
         for url in doc.xpath('//a[contains(@href, "/bills/")]/@href')[1:]:
             doc = self.lxmlize(url)
             for fn in doc.xpath('//a/@href')[1:]:
-                _url = urljoin(url, fn)
+                _url = urllib.parse.urljoin(url, fn)
                 fn = fn.split('/')[-1]
                 m = re.search(r'([A-Z]+)0*(\d+)_?(.*?)\.pdf', fn)
                 if m:

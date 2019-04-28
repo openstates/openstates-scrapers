@@ -32,6 +32,7 @@ class LABillScraper(Scraper, LXMLMixin):
         '2018': '18RS',
         '2018 2nd Extraordinary Session': '182ES',
         '2018 3rd Extraordinary Session': '183ES',
+        '2019': '19RS',
     }
 
     def pdf_to_lxml(self, filename, type='html'):
@@ -257,6 +258,7 @@ class LABillScraper(Scraper, LXMLMixin):
 
         title = page.xpath(
             "//span[@id='ctl00_PageBody_LabelShortTitle']/text()")[0]
+        title = title.replace('\u00a0\u00a0', ' ')
         actions = page.xpath(
             "//div[@id='ctl00_PageBody_PanelBillInfo']/"
             "/table[@style='font-size:small']/tr")

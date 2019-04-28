@@ -72,6 +72,7 @@ class MIBillScraper(Scraper):
                 return
 
         doc = lxml.html.fromstring(html)
+        doc.make_links_absolute('http://legislature.mi.gov')
 
         title = doc.xpath('//span[@id="frg_billstatus_ObjectSubject"]')[0].text_content()
 
@@ -86,6 +87,10 @@ class MIBillScraper(Scraper):
         sponsors = doc.xpath('//span[@id="frg_billstatus_SponsorList"]/a')
         for sponsor in sponsors:
             name = sponsor.text.replace(u'\xa0', ' ')
+            # sometimes district gets added as a link
+            if name.isnumeric():
+                continue
+
             if len(sponsors) > 1:
                 classification = (
                     'primary'
@@ -115,6 +120,19 @@ class MIBillScraper(Scraper):
             actor = 'upper' if 'SJ' in journal else 'lower'
             classification = categorize_action(action)
             bill.add_action(action, date, chamber=actor, classification=classification)
+
+            # check if action mentions a sub
+            submatch = re.search(r'WITH SUBSTITUTE\s+([\w\-\d]+)', action, re.IGNORECASE)
+            if submatch and tds[2].xpath('a'):
+                version_url = tds[2].xpath('a/@href')[0]
+                version_name = tds[2].xpath('a/text()')[0].strip()
+                version_name = 'Substitute {}'.format(version_name)
+                self.info("Found Substitute {}".format(version_url))
+                if version_url.lower().endswith('.pdf'):
+                    mimetype = 'application/pdf'
+                elif version_url.lower().endswith('.htm'):
+                    mimetype = 'text/html'
+                bill.add_version_link(version_name, version_url, media_type=mimetype)
 
             # check if action mentions a vote
             rcmatch = re.search(r'Roll Call # (\d+)', action, re.IGNORECASE)
@@ -222,7 +240,7 @@ class MIBillScraper(Scraper):
                 name = name[0]
             else:
                 name = row.text_content().strip()
-            url = BASE_URL + a[0].get('href').replace('../', '/')
+            url = a[0].get('href')
             return name, url
 
     def parse_roll_call(self, url, rc_num):

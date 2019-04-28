@@ -3,9 +3,9 @@ from pupa.scrape import Jurisdiction, Organization
 from openstates.utils import url_xpath
 from .bills import TXBillScraper
 # from .committees import TXCommitteeScraper
-# from .events import TXEventScraper
+from .events import TXEventScraper
 from .people import TXPersonScraper
-# from .votes import TXVoteScraper
+from .votes import TXVoteScraper
 
 
 class Texas(Jurisdiction):
@@ -18,8 +18,8 @@ class Texas(Jurisdiction):
         # 'committees': TXCommitteeScraper,
         'bills': TXBillScraper,
         # Re-enable vote scraper when adding next regular session
-        # 'votes': TXVoteScraper,
-        # 'events': TXEventScraper
+        'votes': TXVoteScraper,
+        'events': TXEventScraper
     }
     legislative_sessions = [
         {

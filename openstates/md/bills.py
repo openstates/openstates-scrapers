@@ -263,7 +263,8 @@ class MDBillScraper(Scraper):
 
         # Keywords for identifying where names are located in the pdf
         show_stoppers = ['Voting Nay', 'Not Voting',
-                         'COPY', 'Excused', 'indicates vote change']
+                         'COPY', 'Excused', 'indicates vote change',
+                         'Indicates Vote Change']
         vote_index = 0
 
         # For matching number of names extracted with vote counts(extracted independently)

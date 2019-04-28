@@ -78,7 +78,13 @@ class CTPersonScraper(Scraper):
                          district=district,
                          party=party
                          )
-            leg.add_link(row['URL'])
+
+            legislator_url = row['URL'].replace('\\', '//').strip()
+            if legislator_url != '':
+                if not legislator_url.startswith('http'):
+                    legislator_url = 'http://'
+                leg.add_link(legislator_url)
+
             leg.add_party(party=party)
 
             office_address = "%s\nRoom %s\nHartford, CT 06106" % (

@@ -1,5 +1,4 @@
 import lxml.html
-from functools import reduce
 
 from pupa.scrape import Person, Scraper
 
@@ -13,20 +12,26 @@ class KYPersonScraper(Scraper):
             yield from self.scrape_chamber('lower')
 
     def scrape_chamber(self, chamber):
-        url = ('http://www.lrc.ky.gov/senate/senmembers.htm' if chamber == 'upper'
-               else 'http://www.lrc.ky.gov/house/hsemembers.htm')
+        url = ('https://legislature.ky.gov/Legislators/senate' if chamber == 'upper'
+               else 'https://legislature.ky.gov/Legislators/house-of-representatives')
         page = self.get(url).text
         page = lxml.html.fromstring(page)
+        page.make_links_absolute(url)
 
-        for link in page.xpath('//a[@onmouseout="hidePicture();"]'):
+        for link in page.xpath('//a[contains(@class, "Legislator-Card")]'):
+            if 'Vacant Seat' in link.text_content():
+                continue
             yield from self.scrape_member(chamber, link.get('href'))
 
     def scrape_member(self, chamber, member_url):
         member_page = self.get(member_url).text
         doc = lxml.html.fromstring(member_page)
+        doc.make_links_absolute(member_url)
 
-        photo_url = doc.xpath('//div[@id="bioImage"]/img/@src')[0]
-        name_pieces = doc.xpath('//span[@id="name"]/text()')[0].split()
+        photo_url = doc.xpath('//a[@class="download"]/@href')[0]
+
+        name_pieces = doc.xpath('//div[@class="row profile-top"]/h2/text()')[0].split()
+
         full_name = ' '.join(name_pieces[1:-1]).strip()
 
         party = name_pieces[-1]
@@ -37,34 +42,36 @@ class KYPersonScraper(Scraper):
         elif party == '(I)':
             party = 'Independent'
 
-        district = doc.xpath('//span[@id="districtHeader"]/text()')[0].split()[-1]
+        sidebar = doc.xpath('//div[@class="relativeContent col-sm-4 col-xs-12"]')[0]
+
+        district = sidebar.xpath('//div[@class="circle"]/h3/text()')[0]
+        district = district.lstrip('0')
 
         person = Person(name=full_name, district=district, party=party,
                         primary_org=chamber, image=photo_url)
         person.add_source(member_url)
         person.add_link(member_url)
 
-        address = '\n'.join(doc.xpath('//div[@id="FrankfortAddresses"]//'
-                                      'span[@class="bioText"]/text()'))
+        info = {}
+        sidebar_items = iter(sidebar.getchildren())
+        for item in sidebar_items:
+            if item.tag == 'p':
+                info[item.text] = next(sidebar_items)
+
+        address = '\n'.join(info['Legislative Address'].xpath('./text()'))
 
         phone = None
         fax = None
-        phone_numbers = doc.xpath('//div[@id="PhoneNumbers"]//span[@class="bioText"]/text()')
+        phone_numbers = info['Phone Number(s)'].xpath('./text()')
         for num in phone_numbers:
-            if num.startswith('Annex: '):
-                num = num.replace('Annex: ', '')
+            kind, num = num.split(': ')
+            if kind == 'LRC':
                 if num.endswith(' (fax)'):
                     fax = num.replace(' (fax)', '')
                 else:
                     phone = num
 
-        emails = doc.xpath(
-            '//div[@id="EmailAddresses"]//span[@class="bioText"]//a/text()'
-        )
-        email = reduce(
-            lambda match, address: address if '@lrc.ky.gov' in str(address) else match,
-            [None] + emails
-        )
+        email = info['Email'].text
 
         if phone:
             person.add_contact_detail(type='voice', value=phone, note='Capitol Office')

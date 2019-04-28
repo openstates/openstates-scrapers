@@ -68,12 +68,14 @@ class ApiClient(object):
     def __init__(self, scraper):
         self.scraper = scraper
         self.apikey = os.environ['INDIANA_API_KEY']
+        self.user_agent = os.getenv('USER_AGENT', 'openstates')
 
     @check_response
     def geturl(self, url):
         headers = {}
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         self.scraper.info('Api GET next page: %r, %r' % (url, headers))
         return self.scraper.get(url, headers=headers)
 
@@ -82,6 +84,7 @@ class ApiClient(object):
         headers = {}
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         url = urljoin(self.root, url)
         self.scraper.info('Api GET: %r, %r' % (url, headers))
         return self.scraper.get(url, headers=headers)
@@ -107,6 +110,7 @@ class ApiClient(object):
         headers = requests_kwargs.get('headers', {})
         headers['Authorization'] = self.apikey
         headers['Accept'] = "application/json"
+        headers['User-Agent'] = self.user_agent
         requests_kwargs['headers'] = headers
 
         args = (url, requests_args, requests_kwargs)

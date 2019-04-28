@@ -33,8 +33,8 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         document_links = self.get_nodes(
             page,
-            '//div[@class="main-content"]//div[@class="panel panel-leg"]//'
-            'table[@class="table table-condensed"]/tbody/tr/td[1]/a')
+            '//div[@class="main-content"]//div[@class="table-responsive"]//'
+            'table[@class="table"]/tbody/tr/td[1]/a')
 
         for document_link in document_links:
             # bill_number = document_link.text
@@ -55,7 +55,7 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         long_title = self.get_node(
             bill_page,
-            '//div[@class="main-content"]/div[1]/div/h2').text.split()
+            '//div[@class="main-content"]//h2').text.split()
 
         bill_number = long_title[0]
         title = ''
@@ -76,14 +76,15 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         introduced_by = self.get_node(
             bill_page,
-            '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/a[1]/text()')
+            '//body/div[3]/div[2]/div[2]/div/div[3]/div[1]/ul/li[1]/a[1]/text()')
 
         if not introduced_by:
             introduced_by = self.get_node(
                 bill_page,
-                '//div[@class="main-content"]/div[3]/div[1]/ul/li[1]/text()')
+                '//body/div[3]/div[2]/div[2]/div/div[2]/div[1]/ul/li[1]/text()')
             introduced_by = introduced_by.split('Introduced By:')[1].strip()
 
+        introduced_by = introduced_by.strip()
         bill.add_sponsorship(
             name=introduced_by,
             entity_type='person',
@@ -128,8 +129,8 @@ class NEBillScraper(Scraper, LXMLMixin):
         # Grabs bill version documents.
         version_links = self.get_nodes(
             bill_page,
-            '//div[@class="main-content"]/div[3]/div[2]/'
-            'div[@class="hidden-xs"]/ul[1]/li/a')
+            '/html/body/div[3]/div[2]/div[2]/div/'
+            'div[3]/div[2]/ul/li/a')
 
         for version_link in version_links:
             version_name = version_link.text
@@ -148,6 +149,8 @@ class NEBillScraper(Scraper, LXMLMixin):
             amendment_url = amendment_link.attrib['href']
             bill.add_document_link(amendment_name, amendment_url)
 
+        self.scrape_amendments(bill, bill_page)
+
         # Related transcripts.
         transcript_links = self.get_nodes(
             bill_page,
@@ -163,9 +166,19 @@ class NEBillScraper(Scraper, LXMLMixin):
 
         yield from self.scrape_votes(bill, bill_page, actor)
 
+    def scrape_amendments(self, bill, bill_page):
+        amd_xpath = '//div[contains(@class,"amends") and not(contains(@class,"mb-3"))]'
+        for row in bill_page.xpath(amd_xpath):
+            status = row.xpath('string(./div[2])').strip()
+            if 'adopted' in status.lower():
+                version_url = row.xpath('./div[1]/a/@href')[0]
+                version_name = row.xpath('./div[1]/a/text()')[0]
+                bill.add_version_link(
+                    version_name, version_url, media_type='application/pdf', on_duplicate='ignore')
+
     def scrape_votes(self, bill, bill_page, chamber):
         vote_links = bill_page.xpath(
-            '//div[contains(@class, "col-sm-8")]//a[contains(@href, "view_votes")]')
+            '//table[contains(@class,"history")]//a[contains(@href, "view_votes")]')
         for vote_link in vote_links:
             vote_url = vote_link.attrib['href']
             date_td, motion_td, *_ = vote_link.xpath('ancestor::tr/td')
@@ -176,7 +189,7 @@ class NEBillScraper(Scraper, LXMLMixin):
                 'Passed' in motion_text or
                 'Advanced' in motion_text
             )
-            cells = vote_page.xpath('//table[contains(@class, "calendar-table")]//td')
+            cells = vote_page.xpath('//div[contains(@class,"table-responsive")]/table//td')
             vote = VoteEvent(
                 bill=bill,
                 chamber=chamber,
@@ -185,6 +198,19 @@ class NEBillScraper(Scraper, LXMLMixin):
                 classification='passage',
                 result='pass' if passed else 'fail',
             )
+
+            yes_count = self.process_count(vote_page, 'Yes:')
+            no_count = self.process_count(vote_page, 'No:')
+            exc_count = self.process_count(vote_page, 'Excused - Not Voting:')
+            absent_count = self.process_count(vote_page, 'Absent - Not Voting:')
+            present_count = self.process_count(vote_page, 'Present - Not Voting:')
+
+            vote.set_count('yes', yes_count)
+            vote.set_count('no', no_count)
+            vote.set_count('excused', exc_count)
+            vote.set_count('absent', absent_count)
+            vote.set_count('abstain', present_count)
+
             query_params = urllib.parse.parse_qs(urllib.parse.urlparse(vote_url).query)
             vote.pupa_id = query_params['KeyID'][0]
             vote.add_source(vote_url)
@@ -194,6 +220,12 @@ class NEBillScraper(Scraper, LXMLMixin):
                 if name and vote_type:
                     vote.vote(VOTE_TYPE_MAP.get(vote_type.lower(), 'other'), name)
             yield vote
+
+    # Find the vote count row containing row_string, and return the integer count
+    def process_count(self, page, row_string):
+        count_xpath = 'string(//ul[contains(@class,"list-unstyled")]/li[contains(text(),"{}")])'
+        count_text = page.xpath(count_xpath.format(row_string))
+        return int(''.join(x for x in count_text if x.isdigit()))
 
     def action_types(self, action):
         if 'Date of introduction' in action:

@@ -315,6 +315,7 @@ class CABillScraper(Scraper):
                 'SB': 'bill',
                 'SCA': 'constitutional amendment',
                 'SCR': 'concurrent resolution',
+                'SJR': 'joint resolution',
                 'SR': 'resolution',
             }
         }
@@ -325,11 +326,6 @@ class CABillScraper(Scraper):
 
     def scrape_bill_type(self, chamber, session, bill_type, type_abbr,
                          committee_abbr_regex=get_committee_name_regex()):
-        if chamber == 'upper':
-            chamber_name = 'SENATE'
-        else:
-            chamber_name = 'ASSEMBLY'
-
         bills = self.session.query(CABill).filter_by(
             session_year=session).filter_by(
             measure_type=type_abbr)
@@ -342,6 +338,10 @@ class CABillScraper(Scraper):
             bill_id = bill.short_bill_id
 
             fsbill = Bill(bill_id, session, title='', chamber=chamber)
+            if ((bill_id.startswith('S') and chamber == 'lower') or
+                    (bill_id.startswith('A') and chamber == 'upper')):
+                print("!!!! BAD ID/CHAMBER PAIR !!!!", bill)
+                continue
 
             # # Construct session for web query, going from '20092010' to '0910'
             # source_session = session[2:4] + session[6:8]
@@ -453,14 +453,13 @@ class CABillScraper(Scraper):
                 fsbill.add_title(title)
 
             for author in version.authors:
-                if author.house == chamber_name:
-                    fsbill.add_sponsorship(
-                        author.name,
-                        classification=SPONSOR_TYPES[author.contribution],
-                        primary=author.primary_author_flg == 'Y',
-                        entity_type='person',
-                    )
-                    # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
+                fsbill.add_sponsorship(
+                    author.name,
+                    classification=SPONSOR_TYPES[author.contribution],
+                    primary=author.primary_author_flg == 'Y',
+                    entity_type='person',
+                )
+                # fsbill.sponsorships[-1]['extras'] = {'official_type': author.contribution}
 
             seen_actions = set()
             for action in bill.actions:
@@ -577,10 +576,10 @@ class CABillScraper(Scraper):
                 full_loc = vote.location.description
                 first_part = full_loc.split(' ')[0].lower()
                 if first_part in ['asm', 'assembly']:
-                    chamber = 'lower'
+                    vote_chamber = 'lower'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 elif first_part.startswith('sen'):
-                    chamber = 'upper'
+                    vote_chamber = 'upper'
                     # vote_location = ' '.join(full_loc.split(' ')[1:])
                 else:
                     raise ScrapeError("Bad location: %s" % full_loc)
@@ -632,7 +631,7 @@ class CABillScraper(Scraper):
                     result='pass' if result else 'fail',
                     classification=vtype,
                     # organization=org,
-                    chamber=chamber,
+                    chamber=vote_chamber,
                     bill=fsbill,
                 )
                 fsvote.extras = {'threshold': vote.threshold}

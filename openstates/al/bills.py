@@ -4,7 +4,6 @@ import datetime
 
 import lxml.html
 import scrapelib
-
 from pupa.scrape import Scraper, Bill, VoteEvent
 from .common import SESSION_SITE_IDS
 
@@ -357,7 +356,14 @@ class ALBillScraper(Scraper):
                         action.xpath('td[1]/font/text()')[0], self.DATE_FORMAT)
 
                 (action_chamber, ) = action.xpath('td[2]/font/text()')
+
+                if action.xpath('td[3]/font/u/text()'):
+                    (amendment, ) = action.xpath('td[3]/font/u/text()')
+                else:
+                    amendment = None
+
                 (action_text, ) = action.xpath('td[4]/font/text()')
+
                 action_type = _categorize_action(action_text)
 
                 # check for occasional extra last row
@@ -397,6 +403,21 @@ class ALBillScraper(Scraper):
                         vote_id=vote_id,
                         vote_date=TIMEZONE.localize(action_date),
                         action_text=action_text
+                    )
+
+                if amendment:
+                    amend_url = (
+                        'http://alisondb.legislature.state.al.us/ALISON/'
+                        'SearchableInstruments/{0}/PrintFiles/{1}.pdf'.
+                        format(self.session, amendment))
+
+                    amend_name = 'Amd/Sub {}'.format(amendment)
+
+                    bill.add_version_link(
+                        amend_name,
+                        amend_url,
+                        media_type='application/pdf',
+                        on_duplicate='ignore',
                     )
 
             yield bill

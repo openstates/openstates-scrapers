@@ -24,6 +24,8 @@ action_classifiers = {
     '(Senate|Assembly)( substitute)? amendment .* adopted': 'amendment-passage',
     '(Senate|Assembly)( substitute)? amendment .* laid on table': 'amendment-deferral',
     '(Senate|Assembly)( substitute)? amendment .* withdrawn': 'amendment-withdrawal',
+    'Report (adoption|introduction and adoption) of Senate( Substitute)? Amendment':
+        'amendment-passage',
     'Report (passage|concurrence).* recommended': 'committee-passage-favorable',
     'Report approved by the Governor with partial veto': 'executive-veto-line-item',
     'Report approved by the Governor on': 'executive-signature',
@@ -211,7 +213,7 @@ class WIBillScraper(Scraper):
             # classify actions
             atype = None
             for regex, type in action_classifiers.items():
-                if re.match(regex, action):
+                if re.match(regex, action, re.IGNORECASE):
                     atype = type
                     break
 
@@ -224,6 +226,17 @@ class WIBillScraper(Scraper):
                 }]
 
             bill.add_action(action, TIMEZONE.localize(date), chamber=actor, classification=atype)
+
+            # Amendment links, only on passage
+            if atype is not None and 'amendment-passage' in atype:
+                amd_link = action_td.xpath('a')[0]
+                version_name = amd_link.text_content()
+                version_url = amd_link.get('href')
+                bill.add_version_link(version_name, version_url, media_type='text/html',
+                                      on_duplicate='ignore')
+                pdf_url = '{}.pdf'.format(version_url)
+                bill.add_version_link(version_name, pdf_url, media_type='application/pdf',
+                                      on_duplicate='ignore')
 
             # if this is a vote, add a Vote to the bill
             if 'Ayes' in action:
@@ -309,6 +322,7 @@ class WIBillScraper(Scraper):
             classification=vtype,
             bill=bill,
         )
+        v.pupa_id = url.split('/')[-1]
         v.set_count('yes', yes)
         v.set_count('no', no)
 

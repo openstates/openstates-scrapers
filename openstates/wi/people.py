@@ -39,7 +39,7 @@ class WIPersonScraper(Scraper):
                     './/div[@id="district"]/h1/text()'
                 )[0].replace("Senator ", "").replace("Representative ", "")
 
-                party = rep_doc.xpath('.//div[@id="district"]/h3/small/text()')
+                party = rep_doc.xpath('.//div[@id="district"]//small/text()')
                 if len(party) > 0:
                     party = PARTY_DICT[party[0].split("-")[0].strip("(").strip()]
                 else:
