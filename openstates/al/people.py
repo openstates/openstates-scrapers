@@ -110,7 +110,10 @@ class ALPersonScraper(Scraper, LXMLMixin):
                 self.warning('Found empty seat, for district {}; skipping'.format(district))
                 continue
 
-            party = self._parties[party_text.strip()]
+            if party_text.strip() in self._parties.keys():
+                party = self._parties[party_text.strip()]
+            else:
+                party = None
 
             phone_number = self.get_node(
                 info_node,
