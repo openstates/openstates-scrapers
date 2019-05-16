@@ -99,19 +99,19 @@ class Alabama(Jurisdiction):
             "start_date": "2018-01-09",
         },
         {
+            "_scraped_name": "First Special Session 2019",
+            "classification": "special",
+            "identifier": "2019fs",
+            "name": "First Special Session 2019",
+            "start_date": "2019-03-08"
+        },
+        {
             "_scraped_name": "Regular Session 2019",
             "classification": "primary",
             "end_date": "2019-06-17",
             "identifier": "2019rs",
             "name": "2019 Regular Session",
             "start_date": "2019-03-05"
-        },
-        {
-            "_scraped_name": "First Special Session 2019",
-            "classification": "special",
-            "identifier": "2019fs",
-            "name": "First Special Session 2019",
-            "start_date": "2019-03-08"
         },
     ]
     ignored_scraped_sessions = [
