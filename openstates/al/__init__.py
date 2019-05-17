@@ -106,7 +106,7 @@ class Alabama(Jurisdiction):
             "start_date": "2019-03-08"
         },
         {
-            "_scraped_name": "Regular Session 2019",
+            "_scraped_name": " Regular Session 2019",
             "classification": "primary",
             "end_date": "2019-06-17",
             "identifier": "2019rs",
